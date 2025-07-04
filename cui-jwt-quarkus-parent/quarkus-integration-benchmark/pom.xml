@@ -30,8 +30,8 @@
         <jmh.result.filePrefix>benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
         <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>2</jmh.warmupIterations>
-        <jmh.forks>1</jmh.forks>
-        <jmh.threads>2</jmh.threads>
+        <jmh.forks>3</jmh.forks>
+        <jmh.threads>8</jmh.threads>
         
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>

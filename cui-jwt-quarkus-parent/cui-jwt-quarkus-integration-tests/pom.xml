@@ -231,5 +231,28 @@
                 </plugins>
             </build>
         </profile>
+        <!-- Profile for PGO instrumentation (step 1) -->
+        <profile>
+            <id>pgo-instrument</id>
+            <properties>
+                <quarkus.native.enabled>true</quarkus.native.enabled>
+                <quarkus.native.container-build>true</quarkus.native.container-build>
+                <quarkus.native.builder-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.native.builder-image>
+                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
+                <quarkus.native.additional-build-args>--pgo-instrument</quarkus.native.additional-build-args>
+            </properties>
+        </profile>
+        
+        <!-- Profile for PGO optimized build (step 3) -->
+        <profile>
+            <id>pgo-optimize</id>
+            <properties>
+                <quarkus.native.enabled>true</quarkus.native.enabled>
+                <quarkus.native.container-build>true</quarkus.native.container-build>
+                <quarkus.native.builder-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.native.builder-image>
+                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
+                <quarkus.native.additional-build-args>--pgo=${project.basedir}/default.iprof</quarkus.native.additional-build-args>
+            </properties>
+        </profile>
     </profiles>
 </project>

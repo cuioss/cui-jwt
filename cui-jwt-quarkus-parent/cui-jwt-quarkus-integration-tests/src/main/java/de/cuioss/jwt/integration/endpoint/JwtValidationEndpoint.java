@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -36,6 +37,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RegisterForReflection
+@RunOnVirtualThread
 public class JwtValidationEndpoint {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwtValidationEndpoint.class);
