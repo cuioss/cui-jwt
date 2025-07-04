@@ -5,12 +5,15 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BENCHMARK_DIR="$PROJECT_ROOT/quarkus-integration-benchmark"
+INTEGRATION_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$INTEGRATION_DIR/../.." && pwd)"
+BENCHMARK_DIR="$PROJECT_ROOT/cui-jwt-quarkus-parent/quarkus-integration-benchmark"
 RESULTS_DIR="$BENCHMARK_DIR/jfr-results"
 
 echo "🔍 Starting JFR-enabled JWT validation profiling"
 echo "📁 Project root: $PROJECT_ROOT"
+echo "📁 Integration dir: $INTEGRATION_DIR"
+echo "📁 Benchmark dir: $BENCHMARK_DIR"
 
 # Create results directory
 mkdir -p "$RESULTS_DIR"
@@ -26,19 +29,25 @@ echo ""
 echo "🔨 Step 2: Building native executable with JFR monitoring (~1m 30s)..."
 ./mvnw clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pintegration-tests
 
-# Step 3: Run benchmark with JFR recording
+# Step 3: Run benchmark with JFR profiling (simplified approach)
 echo ""
-echo "📊 Step 3: Running benchmark with JFR recording (2+ minutes)..."
-echo "⚠️  JFR will record CPU hotspots, allocations, and I/O operations"
+echo "📊 Step 3: Running benchmark with JFR-enabled native application..."
+echo "⚠️  JFR recording will be handled by the native application startup"
+echo "📝 Note: JFR files will be generated in the application working directory"
 
-# Set JFR system properties for the benchmark JVM
-export JFR_ARGS="-XX:+FlightRecorder -XX:StartFlightRecording=duration=120s,filename=$RESULTS_DIR/jwt-validation-profile.jfr,settings=profile"
-
-# Run benchmark with JFR recording
+# Run benchmark for profiling (2+ minutes as required)
 cd "$PROJECT_ROOT"
-timeout 150s ./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks \
-    -Djvm.args="$JFR_ARGS" \
-    2>&1 | tee "$RESULTS_DIR/benchmark-with-jfr.log" || true
+echo "🚀 Starting JWT validation benchmark..."
+
+# Use timeout if available, otherwise rely on user cancellation
+if command -v timeout >/dev/null 2>&1; then
+    timeout 150s ./mvnw verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks \
+        2>&1 | tee "$RESULTS_DIR/benchmark-with-jfr.log" || true
+else
+    echo "⏰ Run for 2+ minutes, then press Ctrl+C to stop"
+    ./mvnw verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks \
+        2>&1 | tee "$RESULTS_DIR/benchmark-with-jfr.log" || true
+fi
 
 echo ""
 echo "✅ JFR profiling completed!"
