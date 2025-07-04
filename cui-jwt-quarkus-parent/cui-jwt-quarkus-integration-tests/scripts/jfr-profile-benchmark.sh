@@ -5,7 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BENCHMARK_DIR="$PROJECT_ROOT/quarkus-integration-benchmark"
 RESULTS_DIR="$BENCHMARK_DIR/jfr-results"
 

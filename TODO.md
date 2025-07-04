@@ -113,10 +113,11 @@ grep -E "(WARN|WARNING|ERROR|Exception|Failed)" benchmark-results.log | sort | u
 **Research Summary**: JFR support for Quarkus native images is mature in 2025, offering comprehensive profiling with minimal overhead.
 
 **Tasks:**
-- [ ] **1.1** Add JFR support to native build configuration
+- [x] **1.1** Add JFR support to native build configuration ✅
   - Modify `application.properties`: `quarkus.native.additional-build-args=--enable-monitoring=jfr`
   - Add runtime JFR recording: `-XX:StartFlightRecording=duration=30s,filename=jwt-profile.jfr`
   - **Build & Verify**: Run full cycle, commit if successful
+  - **Script Location**: `cui-jwt-quarkus-integration-tests/scripts/jfr-profile-benchmark.sh`
 - [ ] **1.2** Create profiling script for JWT validation workload
   - Script to run benchmark with JFR recording
   - Target: Identify CPU hotspots in token validation pipeline
