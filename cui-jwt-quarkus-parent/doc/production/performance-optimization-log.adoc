@@ -20,6 +20,7 @@ This document maintains a comprehensive record of ALL performance optimization a
 This document records ALL performance optimization attempts for the CUI JWT Quarkus integration, including both successful and unsuccessful changes. Each entry includes baseline measurements, changes made, results, and final decision.
 
 **Key Metrics**:
+
 - **ops/s**: Operations per second (throughput)
 - **ms/request**: Average time per JWT validation request (latency)
 - **ms/token**: Average time per JWT token processing (latency)  
@@ -33,6 +34,7 @@ This document records ALL performance optimization attempts for the CUI JWT Quar
 **Status**: ✅ ESTABLISHED - Ready for optimization testing
 
 **System Configuration**:
+
 - Apple M4, 10 CPU cores, 32 GB RAM
 - Docker containers for JWT validation and Keycloak
 - GraalVM/Mandrel native image compilation

@@ -36,6 +36,7 @@ Before applying any optimization:
 For detailed performance measurements and optimization attempts, see xref:performance-optimization-log.adoc[Performance Optimization Log].
 
 Key verified optimizations:
+
 - **Virtual Threads**: 24-30% throughput improvement
 - **JMH Configuration**: Better benchmark quality
 
@@ -65,6 +66,7 @@ Configure native image compiler flags:
 ----
 
 **Verification Process**:
+
 1. Run baseline benchmark without optimization flags
 2. Add -O2, rebuild, benchmark again
 3. Compare results - keep only if >5% improvement

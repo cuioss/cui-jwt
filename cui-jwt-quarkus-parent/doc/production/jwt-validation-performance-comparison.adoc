@@ -38,6 +38,7 @@ public Response validateToken(@HeaderParam("Authorization") String token) {
 ----
 
 **Characteristics**:
+
 - Uses virtual threads for efficient I/O handling
 - Blocking JWT validation calls
 - Simple, synchronous programming model
@@ -57,6 +58,7 @@ public Uni<Response> validateToken(@HeaderParam("Authorization") String token) {
 ----
 
 **Characteristics**:
+
 - Non-blocking API with Mutiny Uni
 - Defers execution to worker pool
 - Reactive streams compatibility
@@ -75,6 +77,7 @@ public Response validateToken(@HeaderParam("Authorization") String token) {
 ----
 
 **Characteristics**:
+
 - No JWT parsing or validation
 - Measures pure REST/HTTP overhead
 - Baseline for framework performance

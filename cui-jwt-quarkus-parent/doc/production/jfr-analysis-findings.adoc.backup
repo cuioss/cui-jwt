@@ -84,13 +84,11 @@ Based on code analysis of `TokenValidator.processTokenPipeline()`:
 - **JDK crypto signature verification** (most expensive)
 
 **Supported Algorithms**:
-
 - RSA: RS256, RS384, RS512
 - ECDSA: ES256, ES384, ES512  
 - RSA-PSS: PS256, PS384, PS512
 
 **Optimization Opportunities**:
-
 - Key caching effectiveness (already implemented)
 - Algorithm choice impact (RSA vs ECDSA)
 - JDK crypto provider optimization
