@@ -28,9 +28,16 @@
 **Verification Requirements**:
 - Minimum 2-minute benchmark run for each change
 - Document before/after metrics (ops/s, latency, memory)
+- **Monitor CPU/Memory utilization** - target 90% for both
 - Commit ONLY if improvement is verified (>5% threshold)
 - Record failed attempts with specific numbers and reasons
 - Remove failed optimizations immediately
+
+**Resource Utilization Monitoring**:
+- Use `benchmark-with-monitoring.sh` script for all performance tests
+- Target: CPU utilization ≥ 90%, Memory utilization ≥ 90%
+- If utilization < 90%, increase load before measuring optimizations
+- Document resource usage alongside performance metrics
 
 **Documentation**: See [Performance Optimization Log](cui-jwt-quarkus-parent/doc/production/performance-optimization-log.adoc) for all attempted optimizations and their outcomes.
 

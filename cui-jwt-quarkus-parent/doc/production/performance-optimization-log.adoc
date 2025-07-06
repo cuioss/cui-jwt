@@ -39,6 +39,57 @@ Initial measurements before any optimizations:
 |Runtime RSS memory
 |===
 
+== Resource Utilization Monitoring
+
+**New Requirement**: All benchmarks must achieve ≥90% CPU and memory utilization to ensure we're testing at full capacity.
+
+=== Monitoring Setup
+
+**Script**: `cui-jwt-quarkus-integration-tests/scripts/benchmark-with-monitoring.sh`
+
+**Captures**:
+- System-wide CPU usage (normalized to available cores)
+- System memory usage percentage
+- Container-specific CPU and memory usage
+- Load average and performance metrics
+
+=== Current Utilization (Baseline)
+
+[cols="3,2,2,2,3"]
+|===
+|Resource |Average |Maximum |Target |Status
+
+|System CPU
+|TBD
+|TBD
+|90%
+|❓ Needs measurement
+
+|System Memory
+|TBD
+|TBD
+|90%
+|❓ Needs measurement
+
+|JWT Container CPU
+|TBD
+|TBD
+|90%
+|❓ Needs measurement
+
+|JWT Container Memory
+|TBD
+|TBD
+|90%
+|❓ Needs measurement
+|===
+
+**Action Required**: Before testing any optimization, ensure resource utilization is at target levels. If not:
+1. Increase JMH threads
+2. Add more concurrent load
+3. Reduce memory limits to increase pressure
+4. Adjust workload complexity
+
 == Successful Optimizations
 
 === Virtual Threads Implementation

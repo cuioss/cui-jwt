@@ -1,0 +1,30 @@
+= Resource Utilization Report - 20250706-100013
+:toc: left
+
+== Summary
+
+=== System Resource Utilization
+
+[cols="2,1,1,1"]
+|===
+|Metric |Average |Maximum |Target
+
+|CPU Usage
+|224,4% |499,0% |90%
+
+|Memory Usage
+|3,5% |8,0% |90%
+|===
+
+=== Benchmark Performance
+
+
+=== Recommendations
+
+
+== Raw Data Files
+
+* System stats: link:system-stats-20250706-100013.csv[]
+* JWT service stats: link:jwt-service-stats-20250706-100013.csv[]
+* Keycloak stats: link:keycloak-stats-20250706-100013.csv[]
+* Benchmark output: link:benchmark-output-20250706-100013.log[]
