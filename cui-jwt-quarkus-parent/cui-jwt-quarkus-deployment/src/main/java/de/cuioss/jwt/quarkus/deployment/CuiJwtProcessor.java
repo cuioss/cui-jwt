@@ -22,6 +22,37 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+// JWT validation pipeline classes
+import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
+import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
+import de.cuioss.jwt.validation.pipeline.TokenHeaderValidator;
+import de.cuioss.jwt.validation.pipeline.TokenClaimValidator;
+import de.cuioss.jwt.validation.pipeline.TokenBuilder;
+import de.cuioss.jwt.validation.pipeline.DecodedJwt;
+// JWKS classes
+import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
+import de.cuioss.jwt.validation.jwks.key.KeyInfo;
+import de.cuioss.jwt.validation.jwks.parser.JwksParser;
+// Security and algorithm classes
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
+// Domain token classes
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.domain.token.IdTokenContent;
+import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
+import de.cuioss.jwt.validation.domain.token.TokenContent;
+import de.cuioss.jwt.validation.domain.token.BaseTokenContent;
+import de.cuioss.jwt.validation.domain.token.MinimalTokenContent;
+// Claim handling classes
+import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.claim.ClaimName;
+import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+// Claim mappers
+import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.StringSplitterMapper;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -106,20 +137,20 @@ public class CuiJwtProcessor {
     public ReflectiveClassBuildItem registerJwtPipelineClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Critical validation pipeline classes (50-60% of processing time)
-                "de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser",
-                "de.cuioss.jwt.validation.pipeline.TokenSignatureValidator", 
-                "de.cuioss.jwt.validation.pipeline.TokenHeaderValidator",
-                "de.cuioss.jwt.validation.pipeline.TokenClaimValidator",
-                "de.cuioss.jwt.validation.pipeline.TokenBuilder",
-                "de.cuioss.jwt.validation.pipeline.DecodedJwt",
+                NonValidatingJwtParser.class,
+                TokenSignatureValidator.class, 
+                TokenHeaderValidator.class,
+                TokenClaimValidator.class,
+                TokenBuilder.class,
+                DecodedJwt.class,
                 // JWKS loading classes (10-15% of processing time)
-                "de.cuioss.jwt.validation.jwks.http.HttpJwksLoader",
-                "de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader",
-                "de.cuioss.jwt.validation.jwks.key.KeyInfo",
-                "de.cuioss.jwt.validation.jwks.parser.JwksParser",
+                HttpJwksLoader.class,
+                JWKSKeyLoader.class,
+                KeyInfo.class,
+                JwksParser.class,
                 // Security and algorithm classes
-                "de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences",
-                "de.cuioss.jwt.validation.security.JwkAlgorithmPreferences")
+                SignatureAlgorithmPreferences.class,
+                JwkAlgorithmPreferences.class)
                 .methods(true)
                 .fields(true)
                 .constructors(true)
@@ -137,22 +168,22 @@ public class CuiJwtProcessor {
     public ReflectiveClassBuildItem registerJwtDomainClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Token content classes
-                "de.cuioss.jwt.validation.domain.token.AccessTokenContent",
-                "de.cuioss.jwt.validation.domain.token.IdTokenContent", 
-                "de.cuioss.jwt.validation.domain.token.RefreshTokenContent",
-                "de.cuioss.jwt.validation.domain.token.TokenContent",
-                "de.cuioss.jwt.validation.domain.token.BaseTokenContent",
-                "de.cuioss.jwt.validation.domain.token.MinimalTokenContent",
+                AccessTokenContent.class,
+                IdTokenContent.class, 
+                RefreshTokenContent.class,
+                TokenContent.class,
+                BaseTokenContent.class,
+                MinimalTokenContent.class,
                 // Claim handling classes  
-                "de.cuioss.jwt.validation.domain.claim.ClaimValue",
-                "de.cuioss.jwt.validation.domain.claim.ClaimName",
-                "de.cuioss.jwt.validation.domain.claim.ClaimValueType",
+                ClaimValue.class,
+                ClaimName.class,
+                ClaimValueType.class,
                 // Claim mappers for performance optimization
-                "de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper",
-                "de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper",
-                "de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper",
-                "de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper",
-                "de.cuioss.jwt.validation.domain.claim.mapper.StringSplitterMapper")
+                IdentityMapper.class,
+                JsonCollectionMapper.class,
+                OffsetDateTimeMapper.class,
+                ScopeMapper.class,
+                StringSplitterMapper.class)
                 .methods(true)
                 .fields(true)
                 .constructors(true)
