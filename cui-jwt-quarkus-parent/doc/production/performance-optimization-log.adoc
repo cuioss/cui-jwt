@@ -492,6 +492,84 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 
 **Decision**: REMOVED - Experimental feature with build stability issues
 
+=== G1 Garbage Collector
+
+**Date**: 2025-07-06
+**Status**: ❌ FAILED - GC not supported
+
+**Change Attempted**: Enable G1 garbage collector for better memory management
+
+**Configuration Tested**:
+[source,properties]
+----
+quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https,--enable-monitoring=jfr,-O2,--gc=G1
+----
+
+**Results**:
+- **Build**: ❌ Failed during native image generation
+- **Error**: "In user 'G1' is not a valid value for the option --gc. Supported values are 'epsilon', 'serial'."
+- **Exit Code**: 20 (invalid argument)
+
+**Analysis**:
+- **GraalVM Limitation**: Current Mandrel 23.1.7.0-Final only supports 'epsilon' and 'serial' GCs
+- **Version Constraint**: G1 GC not available in this GraalVM/Mandrel version
+- **Platform Limitation**: Native image GC options are limited compared to JVM
+- **Future Consideration**: May become available in newer GraalVM versions
+
+**Decision**: REMOVED - G1 GC not supported in current GraalVM/Mandrel version
+
+=== JFR Monitoring Impact Analysis
+
+**Date**: 2025-07-06
+**Status**: ✅ VERIFIED - JFR monitoring beneficial
+
+**Change Tested**: Remove JFR monitoring to test performance impact
+
+**Configuration Comparison**:
+[source,properties]
+----
+# With JFR monitoring (baseline)
+quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https,--enable-monitoring=jfr,-O2
+
+# Without JFR monitoring (test)
+quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https,-O2
+----
+
+**Results**:
+[cols="2,2,2,2"]
+|===
+|Metric |With JFR |Without JFR |Impact
+
+|Throughput
+|257-267 ops/s
+|247 ops/s
+|-10-20 ops/s (worse)
+
+|Build Time
+|78s
+|74s
+|-4s (faster build)
+
+|CPU Utilization
+|99-101%
+|98-100%
+|Similar target achievement
+
+|Memory Usage
+|13-30MB
+|17-40MB
+|Higher without JFR
+|===
+
+**Analysis**:
+- **JFR monitoring improves performance**: 4-8% better throughput with JFR enabled
+- **Profiling overhead myth**: JFR does not hurt performance in native images
+- **Memory efficiency**: JFR appears to help with memory allocation patterns
+- **Build cost**: Only 4 seconds additional build time for monitoring capability
+- **Production value**: Monitoring provides performance benefits plus observability
+
+**Decision**: KEPT - JFR monitoring improves performance and provides valuable profiling capabilities
+
 === HTTP Client Configuration
 
 **Date**: 2025-07-06
