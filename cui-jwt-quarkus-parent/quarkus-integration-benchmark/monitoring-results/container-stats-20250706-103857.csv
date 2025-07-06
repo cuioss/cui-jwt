@@ -1,0 +1,2 @@
+timestamp,container,cpu_percent,mem_usage_mb,mem_limit_mb,mem_percent,net_io,block_io
+2025-07-06 10:42:16,cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1,0.00,11.58,256,0,1.25kB / 126B,8.19kB / 0B

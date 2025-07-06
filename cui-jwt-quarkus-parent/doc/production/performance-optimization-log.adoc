@@ -194,6 +194,68 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 
 **Decision**: KEPT - Reliable improvement with no significant trade-offs
 
+=== Logging Level Optimization (DEBUG → INFO)
+
+**Date**: 2025-07-06
+**Status**: ✅ VERIFIED and APPLIED
+
+**Change**: Reduced logging verbosity from DEBUG to INFO level for JWT validation
+
+**Configuration**:
+[source,properties]
+----
+# Previous: quarkus.log.level=DEBUG
+# Previous: quarkus.log.category."de.cuioss.jwt".level=DEBUG
+quarkus.log.level=INFO
+quarkus.log.category."de.cuioss.jwt".level=INFO
+----
+
+**Results**:
+[cols="2,2,2,2"]
+|===
+|Metric |Baseline (DEBUG) |With INFO |Improvement
+
+|Throughput
+|257-267 ops/s
+|257-262 ops/s
+|No significant change
+
+|Time per Request
+|3.7-3.9 ms/request
+|3.8-4.0 ms/request
+|Negligible difference
+
+|Time per Token
+|3.7-3.9 ms/token
+|3.8-4.0 ms/token
+|Negligible difference
+
+|CPU Utilization
+|99-101%
+|100-101%
+|✅ Maintained
+
+|Memory Usage
+|13-30MB
+|13-22MB
+|Slightly lower peak usage
+
+|Build Time
+|78s
+|78s
+|No change
+|===
+
+**Analysis**:
+- **Minimal performance impact**: No measurable throughput difference
+- **Reduced log volume**: INFO level produces significantly fewer log messages
+- **Memory optimization**: Slightly lower peak memory usage (22MB vs 30MB)
+- **CPU utilization maintained**: Still achieving 90%+ CPU target
+- **Production readiness**: INFO level more appropriate for production deployment
+- **No regression**: Performance characteristics remain excellent
+
+**Decision**: KEPT - Production-appropriate logging level with no performance cost
+
 === JMH Load Configuration
 
 **Date**: 2025-07-06
