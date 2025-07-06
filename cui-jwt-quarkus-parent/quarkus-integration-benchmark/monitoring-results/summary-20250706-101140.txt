@@ -1,0 +1,16 @@
+=== Benchmark Resource Utilization Summary ===
+Timestamp: 20250706-101140
+Duration: s
+Snapshots: 0
+
+=== Performance Metrics ===
+Throughput measurements:
+
+=== Resource Usage Observations ===
+
+=== Container Resource Usage ===
+No container data captured
+
+=== Recommendations ===
+Review /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/quarkus-integration-benchmark/monitoring-results/resource-stats-20250706-101140.txt for detailed resource snapshots
+Check /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/quarkus-integration-benchmark/monitoring-results/benchmark-20250706-101140.log for complete benchmark output

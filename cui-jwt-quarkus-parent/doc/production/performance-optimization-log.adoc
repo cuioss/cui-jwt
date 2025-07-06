@@ -55,34 +55,62 @@ Initial measurements before any optimizations:
 
 === Current Utilization (Baseline)
 
+**System Specs**: Apple M4, 10 CPU cores, 32 GB RAM
+
 [cols="3,2,2,2,3"]
 |===
-|Resource |Average |Maximum |Target |Status
+|Resource |Current |Target |Gap |Status
 
 |System CPU
-|TBD
-|TBD
+|~40% used
 |90%
-|❓ Needs measurement
+|50%
+|❌ Underutilized
 
 |System Memory
-|TBD
-|TBD
+|97% used
 |90%
-|❓ Needs measurement
+|0%
+|✅ Good utilization
 
 |JWT Container CPU
 |TBD
-|TBD
 |90%
-|❓ Needs measurement
+|TBD
+|❓ Needs container running
 
 |JWT Container Memory
 |TBD
-|TBD
 |90%
-|❓ Needs measurement
+|TBD
+|❓ Needs container running
 |===
+
+**Current Configuration**:
+- JMH Threads: 10 (updated to match CPU cores) ✅
+- JMH Forks: 3
+- Virtual Threads: Enabled
+
+=== Load Adjustments for Full Utilization
+
+==== JMH Thread Increase
+
+**Date**: 2025-07-06
+
+**Change**: Increased JMH threads from 8 to 10 to match available CPU cores
+
+**Configuration**:
+[source,xml]
+----
+<jmh.threads>10</jmh.threads>  <!-- was 8 -->
+----
+
+**Expected Impact**: 
+- Better CPU utilization (target: from 40% to 90%)
+- More realistic concurrent load testing
+- Better use of available M4 cores
+
+**Status**: ❓ Needs testing with monitoring
 
 **Action Required**: Before testing any optimization, ensure resource utilization is at target levels. If not:
 1. Increase JMH threads
