@@ -1,0 +1,292 @@
+= Performance Optimization Log
+:toc: left
+:toclevels: 3
+:source-highlighter: rouge
+:icons: font
+
+== Overview
+
+This document records ALL performance optimization attempts for the CUI JWT Quarkus integration, including both successful and unsuccessful changes. Each entry includes baseline measurements, changes made, results, and final decision.
+
+**Key Metrics**:
+- **ops/s**: Operations per second (primary metric)
+- **Startup Time**: Native application startup time
+- **Memory**: RSS memory usage
+- **Build Time**: Native image compilation time
+
+== Baseline Performance
+
+Initial measurements before any optimizations:
+
+[cols="2,3,5"]
+|===
+|Metric |Value |Notes
+
+|Throughput
+|~200 ops/s
+|JWT validation endpoint performance
+
+|Startup Time
+|Not measured
+|Native executable startup
+
+|JMH Threads
+|2
+|Benchmark concurrency setting
+
+|Memory Usage
+|Not measured
+|Runtime RSS memory
+|===
+
+== Successful Optimizations
+
+=== Virtual Threads Implementation
+
+**Date**: Initial optimization phase
+
+**Change**: Added `@RunOnVirtualThread` annotation to `JwtValidationEndpoint`
+
+**Configuration**:
+[source,properties]
+----
+quarkus.virtual-threads.name-prefix=jwt-validation
+quarkus.virtual-threads.shutdown-timeout=10s
+----
+
+**Results**:
+[cols="2,2,2,3"]
+|===
+|Metric |Before |After |Improvement
+
+|Throughput
+|200 ops/s
+|248-260 ops/s
+|24-30% ✅
+
+|Startup Time
+|Not measured
+|0.212s
+|N/A
+
+|Memory Impact
+|Not measured
+|Not measured
+|Unknown
+|===
+
+**Decision**: KEPT - Significant performance improvement
+
+**Commit**: Added virtual threads support to JWT validation endpoints
+
+=== JMH Thread Configuration
+
+**Date**: Initial optimization phase
+
+**Change**: Increased JMH benchmark threads from 2 to 8
+
+**Configuration**:
+[source,xml]
+----
+<jmh.threads>8</jmh.threads>  <!-- was 2 -->
+<jmh.forks>3</jmh.forks>      <!-- was 1 -->
+----
+
+**Results**:
+- Better benchmark concurrency
+- More realistic load testing
+- No direct performance impact on application
+
+**Decision**: KEPT - Improved benchmark quality
+
+== Unverified Optimizations (Need Testing)
+
+=== JFR Monitoring Support
+
+**Status**: Added but impact not measured
+
+**Change**: Added `--enable-monitoring=jfr` to native build
+
+**Configuration**:
+[source,properties]
+----
+quarkus.native.additional-build-args=--enable-monitoring=jfr
+----
+
+**Required Testing**:
+1. Baseline without JFR
+2. Performance with JFR enabled
+3. Native image size impact
+4. Runtime overhead measurement
+
+=== Native Compiler Optimization Flags
+
+**Status**: Added `-O2` but improvement not quantified
+
+**Change**: Added compiler optimization flag
+
+**Configuration**:
+[source,properties]
+----
+quarkus.native.additional-build-args=-O2
+----
+
+**Required Testing**:
+1. Baseline without optimization flags
+2. Performance with -O2
+3. Performance with -O3
+4. Build time impact
+5. Binary size impact
+
+=== Memory Runtime Options
+
+**Status**: Added but impact not verified
+
+**Change**: Container memory limit configuration
+
+**Configuration**:
+[source,properties]
+----
+quarkus.native.container-runtime-options=-m=256m
+----
+
+**Required Testing**:
+1. Memory usage without limit
+2. Performance impact of memory constraint
+3. GC behavior changes
+4. Stability under load
+
+== Failed/Removed Optimizations
+
+=== HTTP Client Configuration
+
+**Date**: Removed after user feedback
+
+**Change**: Attempted to optimize HTTP client settings
+
+**Configuration Attempted**:
+[source,properties]
+----
+quarkus.http-client.max-pool-size=50
+quarkus.http-client.connection-ttl=30s
+quarkus.http-client.keep-alive-timeout=30s
+quarkus.http-client.connect-timeout=10s
+quarkus.http-client.read-timeout=30s
+----
+
+**Result**: Not applicable - JWT validation doesn't use HTTP client
+
+**Decision**: REMOVED - Incorrect optimization target
+
+=== G1 Garbage Collector
+
+**Date**: Native build configuration phase
+
+**Change**: Attempted to use G1 GC for native image
+
+**Configuration Attempted**:
+[source,properties]
+----
+quarkus.native.additional-build-args=--gc=G1
+----
+
+**Result**: Build failed - G1 not supported in Mandrel, only 'serial' and 'epsilon' available
+
+**Decision**: REMOVED - Not supported
+
+=== JVM Runtime Arguments
+
+**Date**: Native configuration phase
+
+**Change**: Attempted JVM-style runtime arguments
+
+**Configuration Attempted**:
+[source,properties]
+----
+quarkus.native.jvm-args=-XX:+UseG1GC,-XX:MaxGCPauseMillis=50
+----
+
+**Result**: Not applicable to native images
+
+**Decision**: REMOVED - Wrong configuration approach
+
+== Testing Protocol
+
+For each optimization attempt, follow this protocol:
+
+=== 1. Baseline Measurement
+[source,bash]
+----
+# Clean build without optimization
+./mvnw clean package -Pnative
+# Run 2+ minute benchmark
+./mvnw verify -pl quarkus-integration-benchmark -Pintegration-benchmarks
+# Record: ops/s, startup time, memory usage
+----
+
+=== 2. Apply Single Change
+- Modify ONE configuration parameter
+- Document exact change in this log
+
+=== 3. Measurement with Change
+[source,bash]
+----
+# Rebuild with optimization
+./mvnw clean package -Pnative
+# Run identical benchmark
+./mvnw verify -pl quarkus-integration-benchmark -Pintegration-benchmarks
+# Record same metrics
+----
+
+=== 4. Decision Criteria
+- **Keep if**: >5% improvement in primary metric
+- **Remove if**: <5% improvement or regression
+- **Document**: Exact numbers and reasoning
+
+== Pending Optimizations to Test
+
+Based on research and profiling, these optimizations should be tested individually:
+
+1. **Compiler Optimization Levels**
+   - Test -O1, -O2, -O3 individually
+   - Measure build time vs runtime performance trade-off
+
+2. **GC Selection**
+   - Test serial vs epsilon GC
+   - Measure impact on JWT validation workload
+
+3. **Memory Configuration**
+   - Test different heap sizes
+   - Measure impact on throughput and GC pauses
+
+4. **Security Services**
+   - Test `--enable-all-security-services` impact
+   - Measure crypto operation performance
+
+5. **Profile-Guided Optimization (PGO)**
+   - Requires Oracle GraalVM
+   - Test instrumented build → profile → optimized build workflow
+
+6. **Reactive Implementation**
+   - Implement parallel reactive endpoint
+   - Compare virtual threads vs reactive performance
+
+== Lessons Learned
+
+1. **Virtual Threads**: Most significant improvement for I/O-bound JWT validation (24-30% gain)
+
+2. **HTTP Client**: Not used in JWT validation - avoid HTTP client optimizations
+
+3. **Native Image Constraints**: Many JVM optimizations don't apply to native images
+
+4. **Measurement Critical**: Always measure - theoretical improvements often don't materialize
+
+5. **Single Change Rule**: Testing one change at a time is essential for understanding impact
+
+== References
+
+- Original performance: ~200 ops/s
+- Current optimized performance: 248-260 ops/s
+- Target performance: 400+ ops/s
+- Improvement achieved: 24-30%
+- Improvement needed: Additional 54-61% to reach target

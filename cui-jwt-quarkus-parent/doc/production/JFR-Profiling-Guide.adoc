@@ -176,26 +176,17 @@ Based on JFR analysis, common performance issues include:
 
 Apply these optimizations based on JFR findings:
 
-==== Verified Optimizations
+=== Optimization Results
 
-[source,properties]
-----
-# Virtual Threads Configuration (Verified: 24-30% improvement)
-quarkus.virtual-threads.name-prefix=jwt-validation
-quarkus.virtual-threads.shutdown-timeout=10s
-----
+For comprehensive optimization results and all attempted changes, see link:performance-optimization-log.adoc[Performance Optimization Log].
 
-==== Unverified Optimizations (Require Testing)
+The log contains:
+- All optimization attempts (successful and failed)
+- Specific performance measurements
+- Configuration examples
+- Decision rationale for each change
 
-[source,properties]
-----
-# Native Image Runtime Configuration (Impact unknown - needs measurement)
-# quarkus.native.container-runtime-options=-m=256m
-
-# Other potential optimizations should be tested individually
-----
-
-**Important**: Only apply optimizations after verifying their impact through benchmarking.
+**Key Finding**: Virtual threads provided the most significant improvement (24-30%) for JWT validation workloads.
 
 == Production Monitoring
 

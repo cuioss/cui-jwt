@@ -22,38 +22,13 @@ Before applying any optimization:
 
 == Verified Optimizations
 
-These optimizations have been tested and shown measurable improvements:
+For detailed performance measurements and optimization attempts, see link:performance-optimization-log.adoc[Performance Optimization Log].
 
-=== Virtual Threads
+Key verified optimizations:
+- **Virtual Threads**: 24-30% throughput improvement
+- **JMH Configuration**: Better benchmark quality
 
-**Verified Impact**: 24-30% throughput improvement (200 ops/s → 248-260 ops/s)
-
-[source,java]
-----
-// Add to REST endpoint class
-@RunOnVirtualThread
-public class JwtValidationEndpoint {
-    // endpoint methods
-}
-----
-
-[source,properties]
-----
-# application.properties
-quarkus.virtual-threads.name-prefix=jwt-validation
-quarkus.virtual-threads.shutdown-timeout=10s
-----
-
-=== JMH Thread Configuration
-
-**Verified Impact**: Improved benchmark concurrency and more realistic load testing
-
-[source,xml]
-----
-<!-- pom.xml -->
-<jmh.threads>8</jmh.threads>  <!-- Increased from 2 -->
-<jmh.forks>3</jmh.forks>      <!-- Increased from 1 -->
-----
+For implementation details and configuration, refer to the optimization log.
 
 == Build-Time Optimizations (Verification Needed)
 
@@ -526,21 +501,13 @@ The optimization strategies have been tested and validated in production environ
 
 == Performance Expectations
 
-=== Verified Results
+=== Performance Results
 
-Based on actual measurements:
+For complete performance measurements and optimization attempts, see link:performance-optimization-log.adoc[Performance Optimization Log].
 
-* **Virtual Threads**: 24-30% throughput improvement (200 → 248-260 ops/s)
-* **Native Startup Time**: 0.212 seconds (measured)
-* **JMH Concurrency**: Better load distribution with 8 threads
+**Summary**:
+* Baseline: ~200 ops/s
+* Current: 248-260 ops/s (24-30% improvement via virtual threads)
+* Target: 400+ ops/s
 
-=== Potential Improvements (Requires Verification)
-
-These are theoretical improvements that need measurement:
-
-* **Compiler Optimizations (-O2, -O3)**: Unknown impact
-* **Memory Tuning**: Unknown impact  
-* **GC Selection**: Unknown impact
-* **PGO with Oracle GraalVM**: 15-30% (claimed by Oracle, needs verification)
-
-**Important**: Always measure before claiming any performance improvement. Remove any optimization that doesn't show >5% gain.
+All optimization attempts (successful and failed) are documented in the performance log.

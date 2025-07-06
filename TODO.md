@@ -12,22 +12,27 @@
 - **Native build -O2 flag**: Added but improvement not quantified
 - **Memory runtime options**: Added but impact not verified
 
-## CRITICAL OPTIMIZATION RULE
+## CRITICAL OPTIMIZATION RULES
 
-**⚠️ CRITICAL**: Make each change separately and ONLY use changes/documentation if they are VERIFIED to improve performance with concrete numbers.
+**⚠️ RULE 1**: Make each change separately and ONLY use changes/documentation if they are VERIFIED to improve performance with concrete numbers.
+
+**⚠️ RULE 2**: Record EVERY optimization attempt (successful AND unsuccessful) with concrete outcomes.
 
 **Mandatory Process**:
 1. **Baseline Measurement**: Record current performance before ANY change
 2. **Single Change**: Implement ONLY ONE optimization at a time
 3. **Verification**: Run benchmarks and measure actual impact
-4. **Documentation**: Only document optimizations with proven results
+4. **Documentation**: Document ALL attempts in `cui-jwt-quarkus-parent/doc/production/performance-optimization-log.adoc`
 5. **Rollback**: Remove any change that doesn't show measurable improvement
 
 **Verification Requirements**:
 - Minimum 2-minute benchmark run for each change
 - Document before/after metrics (ops/s, latency, memory)
 - Commit ONLY if improvement is verified (>5% threshold)
+- Record failed attempts with specific numbers and reasons
 - Remove failed optimizations immediately
+
+**Documentation**: See [Performance Optimization Log](cui-jwt-quarkus-parent/doc/production/performance-optimization-log.adoc) for all attempted optimizations and their outcomes.
 
 ## Build and Verification Workflow
 
