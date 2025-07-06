@@ -1,4 +1,0 @@
-timestamp,container,cpu_percent,mem_usage_mb,mem_limit_mb,mem_percent,net_io,block_io
-2025-07-06 10:53:35,cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1,0.00,11.54,256,0,1.66kB / 126B,8.19kB / 0B
-2025-07-06 10:53:35,cui-jwt-quarkus-integration-tests-keycloak-1,236.56,620.8,7937.024,0,2.41kB / 534B,54.3MB / 105MB
-2025-07-06 10:53:41,cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1,0.00,11.54,256,0,1.66kB / 126B,8.19kB / 0B
