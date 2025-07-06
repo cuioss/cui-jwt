@@ -1,317 +1,370 @@
 #!/bin/bash
-# Benchmark with CPU/Memory Monitoring Script
-# Captures system resource utilization during JWT validation benchmarks
+# Comprehensive Benchmark with JFR and Container Monitoring
+# Integrates JFR profiling, container resource monitoring, and system metrics
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INTEGRATION_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_ROOT="$(cd "$INTEGRATION_DIR/../.." && pwd)"
-BENCHMARK_DIR="$PROJECT_ROOT/cui-jwt-quarkus-parent/quarkus-integration-benchmark"
-RESULTS_DIR="$BENCHMARK_DIR/monitoring-results"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+RESULTS_DIR="$PROJECT_ROOT/cui-jwt-quarkus-parent/quarkus-integration-benchmark/monitoring-results"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-echo "🔍 JWT Validation Benchmark with Resource Monitoring"
+echo "🔍 JWT Validation Benchmark with Comprehensive Monitoring"
+echo "========================================================="
 echo "📁 Project root: $PROJECT_ROOT"
-echo "📊 Results will be saved to: $RESULTS_DIR"
+echo "📊 Results: $RESULTS_DIR"
+echo "⏰ Timestamp: $TIMESTAMP"
 echo ""
 
 # Create results directory
 mkdir -p "$RESULTS_DIR"
 
-# Function to get CPU and Memory usage
-get_system_stats() {
-    TIMESTAMP=$(date +%Y-%m-%d\ %H:%M:%S)
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS - more accurate resource usage
-        CPU_COUNT=$(sysctl -n hw.ncpu)
-        # Get total CPU usage as percentage (100% = 1 core fully used)
-        CPU_USAGE=$(ps aux | awk '{sum+=$3} END {printf "%.1f", sum}')
-        # Normalize to percentage of total available CPU
-        CPU_USAGE_NORMALIZED=$(echo "scale=1; $CPU_USAGE / $CPU_COUNT" | bc)
-        # Memory usage percentage
-        MEM_INFO=$(vm_stat | perl -ne '/page size of (\d+)/ and $size=$1; /Pages\s+([^:]+):\s+(\d+)/ and $mem{$1}=$2; END { $total = $mem{"active"} + $mem{"inactive"} + $mem{"wired down"} + $mem{"compressed"}; $used = $mem{"active"} + $mem{"wired down"}; printf "%.1f", $used/$total * 100 if $total > 0 }')
-        LOAD_AVG=$(sysctl -n vm.loadavg | awk '{print $2}')
-    else
-        # Linux
-        CPU_COUNT=$(nproc)
-        CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
-        MEM_USAGE=$(free | grep Mem | awk '{printf "%.1f", ($3/$2) * 100.0}')
-        LOAD_AVG=$(uptime | awk -F'load average:' '{print $2}' | awk -F',' '{print $1}' | xargs)
-    fi
-    echo "$TIMESTAMP,$CPU_USAGE_NORMALIZED,$MEM_INFO,$LOAD_AVG,$CPU_COUNT"
-}
+# Check prerequisites
+echo "🔧 Checking prerequisites..."
+if ! command -v maven >/dev/null 2>&1 && ! command -v mvn >/dev/null 2>&1; then
+    echo "❌ Maven not found"
+    exit 1
+fi
 
-# Function to monitor container stats
-monitor_container_stats() {
-    local CONTAINER_NAME=$1
-    local OUTPUT_FILE=$2
-    
-    echo "timestamp,cpu_percent,memory_usage_mb,memory_limit_mb,memory_percent" > "$OUTPUT_FILE"
+if ! docker info >/dev/null 2>&1; then
+    echo "❌ Docker not running"
+    exit 1
+fi
+
+MAVEN_CMD="mvn"
+if command -v ./mvnw >/dev/null 2>&1; then
+    MAVEN_CMD="./mvnw"
+fi
+
+echo "✅ Using Maven: $MAVEN_CMD"
+echo "✅ Docker available"
+echo ""
+
+# Output files
+SYSTEM_LOG="$RESULTS_DIR/system-stats-$TIMESTAMP.csv"
+CONTAINER_LOG="$RESULTS_DIR/container-stats-$TIMESTAMP.csv"
+BENCHMARK_LOG="$RESULTS_DIR/benchmark-output-$TIMESTAMP.log"
+JFR_FILE="$RESULTS_DIR/jwt-validation-$TIMESTAMP.jfr"
+FINAL_REPORT="$RESULTS_DIR/comprehensive-report-$TIMESTAMP.adoc"
+
+# System monitoring function
+monitor_system() {
+    echo "timestamp,cpu_usage_percent,memory_usage_percent,load_average,cpu_count" > "$SYSTEM_LOG"
     
     while kill -0 $BENCHMARK_PID 2>/dev/null; do
-        if docker ps --format "{{.Names}}" | grep -q "$CONTAINER_NAME"; then
-            STATS=$(docker stats --no-stream --format "{{.CPUPerc}},{{.MemUsage}}" "$CONTAINER_NAME" 2>/dev/null || echo "0%,0MiB / 0MiB")
-            CPU_PERCENT=$(echo "$STATS" | cut -d',' -f1 | sed 's/%//')
-            MEM_USAGE=$(echo "$STATS" | cut -d',' -f2 | awk '{print $1}' | sed 's/MiB//' | sed 's/GiB/*1024/' | bc 2>/dev/null || echo "0")
-            MEM_LIMIT=$(echo "$STATS" | cut -d',' -f2 | awk '{print $3}' | sed 's/MiB//' | sed 's/GiB/*1024/' | bc 2>/dev/null || echo "0")
-            MEM_PERCENT=$(echo "scale=2; $MEM_USAGE / $MEM_LIMIT * 100" | bc 2>/dev/null || echo "0")
-            
-            echo "$(date +%Y-%m-%d\ %H:%M:%S),$CPU_PERCENT,$MEM_USAGE,$MEM_LIMIT,$MEM_PERCENT" >> "$OUTPUT_FILE"
+        local TIMESTAMP=$(date +%Y-%m-%d\ %H:%M:%S)
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            local CPU_COUNT=$(sysctl -n hw.ncpu)
+            local CPU_USAGE=$(ps aux | awk '{sum+=$3} END {printf "%.1f", sum}')
+            local CPU_NORMALIZED=$(echo "scale=1; $CPU_USAGE / $CPU_COUNT" | bc 2>/dev/null || echo "0")
+            local MEM_USAGE=$(vm_stat | perl -ne '/page size of (\d+)/ and $size=$1; /Pages\s+([^:]+):\s+(\d+)/ and $mem{$1}=$2; END { $total = $mem{"active"} + $mem{"inactive"} + $mem{"wired down"} + $mem{"compressed"}; $used = $mem{"active"} + $mem{"wired down"}; printf "%.1f", $used/$total * 100 if $total > 0 }' 2>/dev/null || echo "0")
+            local LOAD_AVG=$(sysctl -n vm.loadavg | awk '{print $2}')
+        else
+            # Linux
+            local CPU_COUNT=$(nproc)
+            local CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
+            local CPU_NORMALIZED="$CPU_USAGE"
+            local MEM_USAGE=$(free | grep Mem | awk '{printf "%.1f", ($3/$2) * 100.0}')
+            local LOAD_AVG=$(uptime | awk -F'load average:' '{print $2}' | awk -F',' '{print $1}' | xargs)
         fi
+        
+        echo "$TIMESTAMP,$CPU_NORMALIZED,$MEM_USAGE,$LOAD_AVG,$CPU_COUNT" >> "$SYSTEM_LOG"
+        sleep 3
+    done
+}
+
+# Container monitoring function
+monitor_containers() {
+    echo "timestamp,container,cpu_percent,mem_usage_mb,mem_limit_mb,mem_percent,net_io,block_io" > "$CONTAINER_LOG"
+    
+    while kill -0 $BENCHMARK_PID 2>/dev/null; do
+        local TIMESTAMP=$(date +%Y-%m-%d\ %H:%M:%S)
+        
+        # Find JWT and Keycloak containers
+        local CONTAINERS=$(docker ps --format "{{.Names}}" | grep -E "(jwt|keycloak)" || echo "")
+        
+        for CONTAINER in $CONTAINERS; do
+            if [[ -n "$CONTAINER" ]]; then
+                # Get container stats
+                local STATS=$(docker stats --no-stream --format "{{.CPUPerc}},{{.MemUsage}},{{.NetIO}},{{.BlockIO}}" "$CONTAINER" 2>/dev/null || echo "")
+                
+                if [[ -n "$STATS" ]]; then
+                    local CPU_PCT=$(echo "$STATS" | cut -d',' -f1 | sed 's/%//')
+                    local MEM_USAGE=$(echo "$STATS" | cut -d',' -f2 | awk '{print $1}' | sed 's/MiB//' | sed 's/GiB/*1024/' | bc 2>/dev/null || echo "0")
+                    local MEM_LIMIT=$(echo "$STATS" | cut -d',' -f2 | awk '{print $3}' | sed 's/MiB//' | sed 's/GiB/*1024/' | bc 2>/dev/null || echo "1")
+                    local NET_IO=$(echo "$STATS" | cut -d',' -f3)
+                    local BLOCK_IO=$(echo "$STATS" | cut -d',' -f4)
+                    
+                    # Calculate memory percentage safely
+                    local MEM_PCT=0
+                    if [[ "$MEM_LIMIT" != "0" ]] && [[ "$MEM_LIMIT" != "" ]]; then
+                        MEM_PCT=$(echo "scale=1; $MEM_USAGE / $MEM_LIMIT * 100" | bc 2>/dev/null || echo "0")
+                    fi
+                    
+                    echo "$TIMESTAMP,$CONTAINER,$CPU_PCT,$MEM_USAGE,$MEM_LIMIT,$MEM_PCT,$NET_IO,$BLOCK_IO" >> "$CONTAINER_LOG"
+                fi
+            fi
+        done
+        
         sleep 2
     done
 }
 
-# Start system monitoring
-echo "📊 Starting system resource monitoring..."
-SYSTEM_LOG="$RESULTS_DIR/system-stats-$TIMESTAMP.csv"
-echo "timestamp,cpu_usage_percent,memory_usage_percent,load_average,cpu_count" > "$SYSTEM_LOG"
-
-# Background system monitoring
-(
-    while true; do
-        get_system_stats >> "$SYSTEM_LOG"
-        sleep 2
+# Live dashboard function
+show_dashboard() {
+    while kill -0 $BENCHMARK_PID 2>/dev/null; do
+        clear
+        echo "🔄 JWT Validation Benchmark - Live Monitoring Dashboard"
+        echo "======================================================="
+        echo "Duration: $(( $(date +%s) - START_TIME ))s | Target: 120s minimum"
+        echo ""
+        
+        # System stats
+        if [[ -f "$SYSTEM_LOG" ]] && [[ $(wc -l < "$SYSTEM_LOG") -gt 1 ]]; then
+            local LATEST_SYSTEM=$(tail -1 "$SYSTEM_LOG")
+            local CPU_USE=$(echo "$LATEST_SYSTEM" | cut -d',' -f2)
+            local MEM_USE=$(echo "$LATEST_SYSTEM" | cut -d',' -f3)
+            local LOAD=$(echo "$LATEST_SYSTEM" | cut -d',' -f4)
+            
+            echo "📊 System Resources:"
+            echo "   CPU Usage: ${CPU_USE}% (Target: 90%)"
+            echo "   Memory Usage: ${MEM_USE}% (Target: 90%)"
+            echo "   Load Average: $LOAD"
+            echo ""
+        fi
+        
+        # Container stats
+        if [[ -f "$CONTAINER_LOG" ]] && [[ $(wc -l < "$CONTAINER_LOG") -gt 1 ]]; then
+            echo "🐳 Container Resources:"
+            # Show latest stats for each container
+            local CONTAINERS=$(tail -10 "$CONTAINER_LOG" | cut -d',' -f2 | sort -u)
+            for CONTAINER in $CONTAINERS; do
+                local LATEST=$(grep "$CONTAINER" "$CONTAINER_LOG" | tail -1)
+                if [[ -n "$LATEST" ]]; then
+                    local CPU=$(echo "$LATEST" | cut -d',' -f3)
+                    local MEM_MB=$(echo "$LATEST" | cut -d',' -f4)
+                    local MEM_PCT=$(echo "$LATEST" | cut -d',' -f6)
+                    echo "   $CONTAINER: CPU ${CPU}%, Memory ${MEM_MB}MB (${MEM_PCT}%)"
+                fi
+            done
+            echo ""
+        fi
+        
+        # Benchmark progress
+        if [[ -f "$BENCHMARK_LOG" ]]; then
+            local OPS_COUNT=$(grep -c "ops/s" "$BENCHMARK_LOG" 2>/dev/null || echo "0")
+            local LATEST_OPS=$(grep "ops/s" "$BENCHMARK_LOG" 2>/dev/null | tail -1 || echo "Waiting for benchmark...")
+            echo "📈 Benchmark Progress:"
+            echo "   Measurements: $OPS_COUNT"
+            echo "   Latest: $LATEST_OPS"
+            echo ""
+        fi
+        
+        # JFR status
+        if [[ -f "$JFR_FILE" ]]; then
+            local JFR_SIZE=$(du -h "$JFR_FILE" 2>/dev/null | cut -f1 || echo "0")
+            echo "📊 JFR Profiling: Active (${JFR_SIZE})"
+        else
+            echo "📊 JFR Profiling: Waiting for containers..."
+        fi
+        
+        echo ""
+        echo "Press Ctrl+C to stop monitoring after 2+ minutes"
+        
+        sleep 5
     done
-) &
-SYSTEM_MONITOR_PID=$!
-
-# Build if necessary
-echo ""
-echo "🔨 Ensuring integration tests are built..."
-cd "$PROJECT_ROOT"
-./mvnw clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -q || {
-    echo "❌ Build failed"
-    kill $SYSTEM_MONITOR_PID 2>/dev/null
-    exit 1
 }
 
-# Start benchmark
-echo ""
-echo "🚀 Starting JWT validation benchmark..."
-BENCHMARK_LOG="$RESULTS_DIR/benchmark-output-$TIMESTAMP.log"
-
-# Run benchmark in background
-./mvnw verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks > "$BENCHMARK_LOG" 2>&1 &
-BENCHMARK_PID=$!
-
-# Wait for containers to start
-echo "⏳ Waiting for containers to start..."
-sleep 10
-
-# Monitor Docker containers
-KEYCLOAK_LOG="$RESULTS_DIR/keycloak-stats-$TIMESTAMP.csv"
-JWT_SERVICE_LOG="$RESULTS_DIR/jwt-service-stats-$TIMESTAMP.csv"
-
-monitor_container_stats "cui-jwt-quarkus-integration-tests-keycloak-1" "$KEYCLOAK_LOG" &
-KEYCLOAK_MONITOR_PID=$!
-
-monitor_container_stats "cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1" "$JWT_SERVICE_LOG" &
-JWT_MONITOR_PID=$!
-
-# Function to display live stats
-display_stats() {
-    clear
-    echo "🔄 JWT Validation Benchmark - Live Monitoring"
-    echo "=============================================="
-    echo ""
-    
-    # System stats
-    if [[ -f "$SYSTEM_LOG" ]]; then
-        LATEST_SYSTEM=$(tail -1 "$SYSTEM_LOG")
-        CPU_USE=$(echo "$LATEST_SYSTEM" | cut -d',' -f2)
-        MEM_USE=$(echo "$LATEST_SYSTEM" | cut -d',' -f3)
-        LOAD=$(echo "$LATEST_SYSTEM" | cut -d',' -f4)
-        echo "📊 System Resources:"
-        echo "   CPU Usage: ${CPU_USE}%"
-        echo "   Memory Usage: ${MEM_USE}%"
-        echo "   Load Average: $LOAD"
-        echo ""
-    fi
-    
-    # Container stats
-    if [[ -f "$JWT_SERVICE_LOG" ]] && [[ $(wc -l < "$JWT_SERVICE_LOG") -gt 1 ]]; then
-        LATEST_JWT=$(tail -1 "$JWT_SERVICE_LOG")
-        JWT_CPU=$(echo "$LATEST_JWT" | cut -d',' -f2)
-        JWT_MEM=$(echo "$LATEST_JWT" | cut -d',' -f3)
-        JWT_MEM_PCT=$(echo "$LATEST_JWT" | cut -d',' -f5)
-        echo "🐳 JWT Service Container:"
-        echo "   CPU: ${JWT_CPU}%"
-        echo "   Memory: ${JWT_MEM}MB (${JWT_MEM_PCT}%)"
-        echo ""
-    fi
-    
-    # Benchmark progress
-    if [[ -f "$BENCHMARK_LOG" ]]; then
-        OPS_COUNT=$(grep -c "ops/s" "$BENCHMARK_LOG" 2>/dev/null || echo "0")
-        LATEST_OPS=$(grep "ops/s" "$BENCHMARK_LOG" 2>/dev/null | tail -1 | grep -oE '[0-9]+\.[0-9]+ ops/s' || echo "N/A")
-        echo "📈 Benchmark Progress:"
-        echo "   Iterations: $OPS_COUNT"
-        echo "   Latest: $LATEST_OPS"
-    fi
-}
-
-# Display live stats every 5 seconds
-echo ""
-echo "📊 Displaying live statistics (press Ctrl+C to stop)..."
-echo ""
-
-trap cleanup INT TERM
-
+# Cleanup function
 cleanup() {
     echo ""
-    echo "🛑 Stopping monitoring..."
-    kill $SYSTEM_MONITOR_PID 2>/dev/null || true
-    kill $KEYCLOAK_MONITOR_PID 2>/dev/null || true
-    kill $JWT_MONITOR_PID 2>/dev/null || true
-    kill $BENCHMARK_PID 2>/dev/null || true
+    echo "🛑 Stopping monitoring and generating report..."
     
-    # Generate summary report
-    generate_summary_report
+    # Stop background processes
+    [[ -n "$SYSTEM_MONITOR_PID" ]] && kill $SYSTEM_MONITOR_PID 2>/dev/null || true
+    [[ -n "$CONTAINER_MONITOR_PID" ]] && kill $CONTAINER_MONITOR_PID 2>/dev/null || true
+    [[ -n "$BENCHMARK_PID" ]] && kill $BENCHMARK_PID 2>/dev/null || true
     
+    # Generate comprehensive report
+    generate_report
+    
+    echo "✅ Monitoring completed!"
     exit 0
 }
 
-# Monitor for 2 minutes or until benchmark completes
-DURATION=120
-START_TIME=$(date +%s)
+# Report generation function
+generate_report() {
+    echo "📄 Generating comprehensive report..."
+    
+    cat > "$FINAL_REPORT" << EOF
+= JWT Validation Benchmark Report - $TIMESTAMP
+:toc: left
+:toclevels: 3
 
-while kill -0 $BENCHMARK_PID 2>/dev/null; do
-    display_stats
-    
-    CURRENT_TIME=$(date +%s)
-    ELAPSED=$((CURRENT_TIME - START_TIME))
-    
-    if [[ $ELAPSED -ge $DURATION ]]; then
-        echo ""
-        echo "⏰ 2-minute monitoring period completed"
-        break
-    fi
-    
-    sleep 5
-done
+== Executive Summary
 
-# Stop monitoring
-kill $SYSTEM_MONITOR_PID 2>/dev/null || true
-kill $KEYCLOAK_MONITOR_PID 2>/dev/null || true
-kill $JWT_MONITOR_PID 2>/dev/null || true
+Comprehensive benchmark with JFR profiling and resource monitoring.
 
-# Wait a moment for final data
-sleep 2
+Duration: $(( $(date +%s) - START_TIME )) seconds
+Target: 120+ seconds for reliable measurements
 
-# Function to generate summary report
-generate_summary_report() {
-    local REPORT_FILE="$RESULTS_DIR/monitoring-report-$TIMESTAMP.adoc"
-    
-    echo "= Resource Utilization Report - $TIMESTAMP" > "$REPORT_FILE"
-    echo ":toc: left" >> "$REPORT_FILE"
-    echo "" >> "$REPORT_FILE"
-    echo "== Summary" >> "$REPORT_FILE"
-    echo "" >> "$REPORT_FILE"
-    
-    # System stats analysis
+EOF
+
+    # System resource analysis
     if [[ -f "$SYSTEM_LOG" ]] && [[ $(wc -l < "$SYSTEM_LOG") -gt 1 ]]; then
-        AVG_CPU=$(awk -F',' 'NR>1 {sum+=$2; count++} END {if(count>0) printf "%.1f", sum/count; else print "0"}' "$SYSTEM_LOG")
-        MAX_CPU=$(awk -F',' 'NR>1 {if($2>max) max=$2} END {printf "%.1f", max}' "$SYSTEM_LOG")
-        AVG_MEM=$(awk -F',' 'NR>1 {sum+=$3; count++} END {if(count>0) printf "%.1f", sum/count; else print "0"}' "$SYSTEM_LOG")
-        MAX_MEM=$(awk -F',' 'NR>1 {if($3>max) max=$3} END {printf "%.1f", max}' "$SYSTEM_LOG")
+        local AVG_CPU=$(awk -F',' 'NR>1 {sum+=$2; count++} END {if(count>0) printf "%.1f", sum/count; else print "0"}' "$SYSTEM_LOG")
+        local MAX_CPU=$(awk -F',' 'NR>1 {if($2>max) max=$2} END {printf "%.1f", max}' "$SYSTEM_LOG")
+        local AVG_MEM=$(awk -F',' 'NR>1 {sum+=$3; count++} END {if(count>0) printf "%.1f", sum/count; else print "0"}' "$SYSTEM_LOG")
+        local MAX_MEM=$(awk -F',' 'NR>1 {if($3>max) max=$3} END {printf "%.1f", max}' "$SYSTEM_LOG")
         
-        echo "=== System Resource Utilization" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        echo "[cols=\"2,1,1,1\"]" >> "$REPORT_FILE"
-        echo "|===" >> "$REPORT_FILE"
-        echo "|Metric |Average |Maximum |Target" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        echo "|CPU Usage" >> "$REPORT_FILE"
-        printf "|%.1f%% |%.1f%% |90%%\n" "$AVG_CPU" "$MAX_CPU" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        echo "|Memory Usage" >> "$REPORT_FILE"
-        printf "|%.1f%% |%.1f%% |90%%\n" "$AVG_MEM" "$MAX_MEM" >> "$REPORT_FILE"
-        echo "|===" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        
-        # Check if we're hitting targets
-        if (( $(echo "$AVG_CPU < 80" | bc -l) )); then
-            echo "WARNING: Average CPU usage (${AVG_CPU}%) is below 80% - system may be underutilized" >> "$REPORT_FILE"
-            echo "" >> "$REPORT_FILE"
-        fi
-        
-        if (( $(echo "$AVG_MEM < 80" | bc -l) )); then
-            echo "WARNING: Average memory usage (${AVG_MEM}%) is below 80% - system may be underutilized" >> "$REPORT_FILE"
-            echo "" >> "$REPORT_FILE"
-        fi
+        cat >> "$FINAL_REPORT" << EOF
+== System Resource Utilization
+
+[cols="2,1,1,1,1"]
+|===
+|Metric |Average |Maximum |Target |Status
+
+|CPU Usage
+|${AVG_CPU}%
+|${MAX_CPU}%
+|90%
+|$(if (( $(echo "$AVG_CPU < 90" | bc -l 2>/dev/null || echo "1") )); then echo "❌ Underutilized"; else echo "✅ Good"; fi)
+
+|Memory Usage
+|${AVG_MEM}%
+|${MAX_MEM}%
+|90%
+|$(if (( $(echo "$AVG_MEM < 90" | bc -l 2>/dev/null || echo "1") )); then echo "❌ Underutilized"; else echo "✅ Good"; fi)
+|===
+
+EOF
     fi
-    
-    # Container stats analysis
-    if [[ -f "$JWT_SERVICE_LOG" ]] && [[ $(wc -l < "$JWT_SERVICE_LOG") -gt 1 ]]; then
-        AVG_JWT_CPU=$(awk -F',' 'NR>1 {sum+=$2; count++} END {print sum/count}' "$JWT_SERVICE_LOG")
-        MAX_JWT_CPU=$(awk -F',' 'NR>1 {if($2>max) max=$2} END {print max}' "$JWT_SERVICE_LOG")
-        AVG_JWT_MEM=$(awk -F',' 'NR>1 {sum+=$5; count++} END {print sum/count}' "$JWT_SERVICE_LOG")
-        MAX_JWT_MEM=$(awk -F',' 'NR>1 {if($5>max) max=$5} END {print max}' "$JWT_SERVICE_LOG")
+
+    # Container resource analysis
+    if [[ -f "$CONTAINER_LOG" ]] && [[ $(wc -l < "$CONTAINER_LOG") -gt 1 ]]; then
+        echo "== Container Resource Utilization" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
         
-        echo "=== JWT Service Container Utilization" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        echo "[cols=\"2,1,1,1\"]" >> "$REPORT_FILE"
-        echo "|===" >> "$REPORT_FILE"
-        echo "|Metric |Average |Maximum |Target" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        echo "|Container CPU" >> "$REPORT_FILE"
-        printf "|%.1f%% |%.1f%% |90%%\n" "$AVG_JWT_CPU" "$MAX_JWT_CPU" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        echo "|Container Memory" >> "$REPORT_FILE"
-        printf "|%.1f%% |%.1f%% |90%%\n" "$AVG_JWT_MEM" "$MAX_JWT_MEM" >> "$REPORT_FILE"
-        echo "|===" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
+        local CONTAINERS=$(cut -d',' -f2 "$CONTAINER_LOG" | sort -u | grep -v "container")
+        for CONTAINER in $CONTAINERS; do
+            local AVG_CPU=$(grep "$CONTAINER" "$CONTAINER_LOG" | awk -F',' '{sum+=$3; count++} END {if(count>0) printf "%.1f", sum/count; else print "0"}')
+            local MAX_CPU=$(grep "$CONTAINER" "$CONTAINER_LOG" | awk -F',' 'BEGIN{max=0} {if($3>max) max=$3} END {printf "%.1f", max}')
+            local AVG_MEM=$(grep "$CONTAINER" "$CONTAINER_LOG" | awk -F',' '{sum+=$6; count++} END {if(count>0) printf "%.1f", sum/count; else print "0"}')
+            
+            cat >> "$FINAL_REPORT" << EOF
+=== $CONTAINER
+
+* CPU: Average ${AVG_CPU}%, Maximum ${MAX_CPU}%
+* Memory: Average ${AVG_MEM}%
+* Status: $(if (( $(echo "$AVG_CPU < 90" | bc -l 2>/dev/null || echo "1") )); then echo "❌ CPU underutilized"; else echo "✅ Well utilized"; fi)
+
+EOF
+        done
     fi
-    
+
     # Benchmark results
     if [[ -f "$BENCHMARK_LOG" ]]; then
-        echo "=== Benchmark Performance" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
-        
-        # Extract throughput numbers
-        grep "ops/s" "$BENCHMARK_LOG" | tail -5 >> "$REPORT_FILE" 2>/dev/null || echo "No benchmark results found" >> "$REPORT_FILE"
-        echo "" >> "$REPORT_FILE"
+        echo "== Benchmark Performance" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "Latest throughput measurements:" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "----" >> "$FINAL_REPORT"
+        grep "ops/s" "$BENCHMARK_LOG" | tail -5 >> "$FINAL_REPORT" 2>/dev/null || echo "No performance data available" >> "$FINAL_REPORT"
+        echo "----" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
     fi
-    
-    echo "=== Recommendations" >> "$REPORT_FILE"
-    echo "" >> "$REPORT_FILE"
-    
-    # Generate recommendations based on utilization
-    if (( $(echo "$AVG_CPU < 80" | bc -l) )); then
-        echo "* Increase JMH threads or concurrent load to improve CPU utilization" >> "$REPORT_FILE"
+
+    # JFR analysis
+    if [[ -f "$JFR_FILE" ]]; then
+        echo "== JFR Profiling Results" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "JFR file generated: $(basename "$JFR_FILE")" >> "$FINAL_REPORT"
+        echo "Size: $(du -h "$JFR_FILE" | cut -f1)" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "Analysis commands:" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "----" >> "$FINAL_REPORT"
+        echo "# Summary" >> "$FINAL_REPORT"
+        echo "jfr summary $JFR_FILE" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "# CPU hotspots" >> "$FINAL_REPORT"
+        echo "jfr print --events CPUSample $JFR_FILE" >> "$FINAL_REPORT"
+        echo "" >> "$FINAL_REPORT"
+        echo "# Memory allocation" >> "$FINAL_REPORT"
+        echo "jfr print --events ObjectAllocationInNewTLAB $JFR_FILE" >> "$FINAL_REPORT"
+        echo "----" >> "$FINAL_REPORT"
     fi
-    
-    if (( $(echo "$AVG_MEM < 80" | bc -l) )); then
-        echo "* Consider increasing workload complexity or reducing memory limits" >> "$REPORT_FILE"
-    fi
-    
-    if (( $(echo "$AVG_JWT_CPU < 80" | bc -l) )); then
-        echo "* JWT service CPU underutilized - increase concurrent requests" >> "$REPORT_FILE"
-    fi
-    
-    echo "" >> "$REPORT_FILE"
-    echo "== Raw Data Files" >> "$REPORT_FILE"
-    echo "" >> "$REPORT_FILE"
-    echo "* System stats: link:system-stats-$TIMESTAMP.csv[]" >> "$REPORT_FILE"
-    echo "* JWT service stats: link:jwt-service-stats-$TIMESTAMP.csv[]" >> "$REPORT_FILE"
-    echo "* Keycloak stats: link:keycloak-stats-$TIMESTAMP.csv[]" >> "$REPORT_FILE"
-    echo "* Benchmark output: link:benchmark-output-$TIMESTAMP.log[]" >> "$REPORT_FILE"
-    
-    echo ""
-    echo "📄 Report generated: $REPORT_FILE"
+
+    cat >> "$FINAL_REPORT" << EOF
+
+== Recommendations
+
+$(if [[ -f "$SYSTEM_LOG" ]] && (( $(awk -F',' 'NR>1 {sum+=$2; count++} END {print (sum/count < 80)}' "$SYSTEM_LOG" 2>/dev/null || echo "1") )); then echo "* Increase system load - CPU utilization below 80%"; fi)
+$(if [[ -f "$CONTAINER_LOG" ]] && grep -q "jwt" "$CONTAINER_LOG"; then echo "* Container metrics captured for JWT service"; else echo "* No JWT container metrics - ensure containers are running"; fi)
+$(if [[ -f "$JFR_FILE" ]]; then echo "* Analyze JFR file for performance hotspots"; else echo "* JFR profiling not captured - check native image JFR support"; fi)
+
+== Data Files
+
+* System metrics: link:$(basename "$SYSTEM_LOG")[]
+* Container metrics: link:$(basename "$CONTAINER_LOG")[]
+* Benchmark log: link:$(basename "$BENCHMARK_LOG")[]
+$(if [[ -f "$JFR_FILE" ]]; then echo "* JFR profile: link:$(basename "$JFR_FILE")[]"; fi)
+
+Generated: $(date)
+EOF
+
+    echo "📊 Report saved: $FINAL_REPORT"
 }
 
-# Generate final report
-generate_summary_report
+# Main execution
+trap cleanup INT TERM
 
+echo "🔨 Step 1: Building integration tests (~6 seconds)..."
+cd "$PROJECT_ROOT"
+$MAVEN_CMD clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -q
+
+echo "🔨 Step 2: Building native executable with JFR support (~90 seconds)..."
+$MAVEN_CMD clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pintegration-tests -q
+
+echo "🚀 Step 3: Starting benchmark with comprehensive monitoring..."
+echo "📊 Monitoring will capture system, container, and JFR data"
+echo "⏰ Run for 2+ minutes, then press Ctrl+C"
 echo ""
-echo "✅ Monitoring completed!"
-echo "📊 Results saved to: $RESULTS_DIR"
-echo ""
-echo "Key files:"
-echo "  - Monitoring report: monitoring-report-$TIMESTAMP.adoc"
-echo "  - System stats: system-stats-$TIMESTAMP.csv"
-echo "  - Container stats: jwt-service-stats-$TIMESTAMP.csv"
-echo "  - Benchmark log: benchmark-output-$TIMESTAMP.log"
+
+# Start benchmark with JFR recording
+START_TIME=$(date +%s)
+$MAVEN_CMD verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks > "$BENCHMARK_LOG" 2>&1 &
+BENCHMARK_PID=$!
+
+# Wait for containers to start
+echo "⏳ Waiting for containers to initialize..."
+sleep 15
+
+# Check if containers are running
+CONTAINERS=$(docker ps --format "{{.Names}}" | grep -E "(jwt|keycloak)" || echo "")
+if [[ -n "$CONTAINERS" ]]; then
+    echo "✅ Found containers: $CONTAINERS"
+    
+    # Start JFR recording if possible
+    JWT_CONTAINER=$(echo "$CONTAINERS" | grep jwt | head -1)
+    if [[ -n "$JWT_CONTAINER" ]]; then
+        echo "📊 Starting JFR recording for $JWT_CONTAINER..."
+        docker exec "$JWT_CONTAINER" sh -c "jcmd 1 JFR.start duration=120s filename=/tmp/jwt-profile.jfr" 2>/dev/null || echo "⚠️  JFR recording not available (container may not support jcmd)"
+        
+        # Copy JFR file after recording
+        (sleep 125; docker cp "$JWT_CONTAINER:/tmp/jwt-profile.jfr" "$JFR_FILE" 2>/dev/null || echo "⚠️  JFR file not available") &
+    fi
+else
+    echo "⚠️  No JWT/Keycloak containers found - container monitoring will be limited"
+fi
+
+# Start monitoring in background
+monitor_system &
+SYSTEM_MONITOR_PID=$!
+
+monitor_containers &
+CONTAINER_MONITOR_PID=$!
+
+# Show live dashboard
+show_dashboard

@@ -34,10 +34,12 @@
 - Remove failed optimizations immediately
 
 **Resource Utilization Monitoring**:
-- Use `benchmark-with-monitoring.sh` script for all performance tests
-- Target: CPU utilization ≥ 90%, Memory utilization ≥ 90%
+- Use unified `benchmark-with-monitoring.sh` script for all performance tests
+- **Comprehensive monitoring**: System + Container + JFR in single execution
+- Target: CPU utilization ≥ 90%, Memory utilization ≥ 90% (both system and container)
+- **Independent measurements**: Container metrics separate from system metrics
 - If utilization < 90%, increase load before measuring optimizations
-- Document resource usage alongside performance metrics
+- Automatic report generation with all metrics and recommendations
 
 **Documentation**: See [Performance Optimization Log](cui-jwt-quarkus-parent/doc/production/performance-optimization-log.adoc) for all attempted optimizations and their outcomes.
 

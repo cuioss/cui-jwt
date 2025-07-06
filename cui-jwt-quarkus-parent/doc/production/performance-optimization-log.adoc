@@ -112,31 +112,39 @@ Initial measurements before any optimizations:
 
 **Status**: ❓ Needs testing with monitoring
 
-=== Container Monitoring Infrastructure
+=== Comprehensive Monitoring Integration
 
 **Date**: 2025-07-06
 
-**Change**: Created independent container resource monitoring scripts
+**Change**: Consolidated all monitoring into single comprehensive script
 
-**Scripts Created**:
-- `container-resource-monitor.sh`: Dedicated container monitoring with CSV output
-- `demo-container-monitor.sh`: Demo version for testing monitoring capability
-- `test-container-monitoring.sh`: Full test with container startup
+**Unified Script**: `benchmark-with-monitoring.sh`
 
-**Capabilities**:
-- Independent measurement of container CPU, memory, network I/O
-- Real-time monitoring with 2-second intervals
-- CSV data export for detailed analysis  
-- Automated report generation with target comparison
-- Support for multiple container monitoring
+**Integrated Capabilities**:
+- **System Monitoring**: CPU, memory, load average (3-second intervals)
+- **Container Monitoring**: JWT and Keycloak containers independently (2-second intervals)  
+- **JFR Profiling**: Automatic JFR recording from JWT container
+- **Live Dashboard**: Real-time monitoring display
+- **Comprehensive Reporting**: AsciiDoc report with all metrics
 
-**Demo Results**: Successfully monitored existing container showing:
-- CPU tracking: 0.0% (idle container)
-- Memory tracking: 54.46MiB / 7.751GiB usage
-- Network I/O tracking: 256kB / 16kB
-- Data collection: 8 samples over 30 seconds
+**Key Features**:
+- Automatic container detection (JWT and Keycloak)
+- Independent container vs system measurements
+- 90% utilization target tracking
+- CSV data export for detailed analysis
+- JFR file extraction from containers
+- Prerequisites checking (Maven, Docker)
 
-**Status**: ✅ Ready for JWT container monitoring once containers are running
+**Output Files**:
+- `system-stats-{timestamp}.csv`: System resource usage
+- `container-stats-{timestamp}.csv`: Container resource usage
+- `benchmark-output-{timestamp}.log`: Benchmark results
+- `jwt-validation-{timestamp}.jfr`: JFR profiling data
+- `comprehensive-report-{timestamp}.adoc`: Final analysis report
+
+**Removed Scripts**: Simplified by removing 6 redundant scripts, keeping only essential utilities
+
+**Status**: ✅ Single comprehensive monitoring solution ready
 
 **Action Required**: Before testing any optimization, ensure resource utilization is at target levels. If not:
 1. Increase JMH threads
