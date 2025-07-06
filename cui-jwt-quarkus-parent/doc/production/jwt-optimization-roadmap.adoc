@@ -28,16 +28,16 @@ This document provides a comprehensive roadmap for optimizing JWT validation per
 
 * **Signature Verification**: 50-60% of processing time (cryptographic operations + JWKS key lookup)
 * **JSON Parsing**: 15-20% of processing time (Jakarta JSON API with security limits)
-* **JWKS Key Loading**: 10-15% of processing time (HTTP calls and health checks)
+* **JWKS Key Loading**: 10-15% of processing time (potential bug: keys should be preloaded, health checks should be bypassed when all keys loaded)
 * **Token/Claims Processing**: 10-15% of processing time (claim extraction and validation)
 
 **Performance Gap Root Cause**:
 
 * Library standalone: 30,000 ops/s
-* Integration performance: 260 ops/s (115x slower)
+* Integration performance: 260 ops/s (115x slower - FIRST PRIORITY: investigate missing Quarkus optimizations)
 * Primary bottlenecks: Network I/O (40-50%) + Cryptographic operations (30-40%)
 
-**Key Insight**: The optimization focus has shifted from framework overhead to specific JWT validation pipeline bottlenecks identified through detailed method-level analysis.
+**Key Insight**: The optimization focus is on closing the 115x performance gap between library capability (30k ops/s) and integration performance (260 ops/s) through missing Quarkus optimizations and JWT validation pipeline improvements.
 
 == Current Performance Status
 
@@ -105,43 +105,84 @@ This document provides a comprehensive roadmap for optimizing JWT validation per
 * **Improvement Threshold**: >5% throughput gain required
 * **Analysis**: JFR profiling mandatory for understanding bottlenecks
 
-== Priority 1: Signature Algorithm Performance Testing 🔥
+== FIRST PRIORITY: Quarkus Integration Optimization Gap 🚨
+
+=== Status: CRITICAL - Must Investigate Immediately
+
+**Objective**: Close the 115x performance gap between cui-jwt-validation library (30k ops/s) and Quarkus integration (260 ops/s).
+
+**Critical Analysis Required**:
+
+- [ ] **Research missing Quarkus native optimizations for cui-jwt-validation**
++
+Investigate:
++
+* Missing reflection configuration in CuiJwtProcessor.java
+* Incomplete native image hints for cui-jwt-validation classes
+* Missing build-time optimizations in Quarkus extension
+* Potential CDI/dependency injection overhead
+
+- [ ] **Verify cui-jwt-validation module build requirements**
++
+**MANDATORY**: cui-jwt-validation module must be built BEFORE building native image for changes to take effect:
++
+[source,bash]
+----
+# Required build sequence
+./mvnw clean install -pl cui-jwt-validation
+./mvnw clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pnative
+----
+
+- [ ] **Profile Quarkus-specific integration overhead**
++
+Identify sources of 115x performance degradation:
++
+* HTTP request/response processing layers
+* JSON serialization/deserialization overhead  
+* CDI proxy creation and method interception
+* Missing Quarkus 3.20+ optimizations (reflection-free Jackson)
+
+**This investigation has HIGHEST PRIORITY before all other optimizations.**
+
+== Priority 2: Signature Algorithm Performance Optimization 🔥
 
 === Status: Ready to Execute
 
-**Objective**: Test signature algorithm performance characteristics based on JFR analysis showing 50-60% of processing time spent in signature verification.
+**Objective**: Optimize signature verification performance for ALL JOSE-compliant algorithms. Since JWT signature algorithms are defined by JOSE Requirements, we must improve performance across all supported algorithms rather than favoring specific ones.
+
+**Critical Constraint**: All JOSE algorithms must maintain equivalent performance - no algorithm selection bias allowed.
 
 **Tasks**:
 
-- [ ] **1.1** Benchmark signature algorithms comparative performance
+- [ ] **1.1** Benchmark ALL signature algorithms for optimization opportunities
 +
-Configure test issuers with different signature algorithms:
+Test optimization techniques across ALL JOSE algorithms:
 +
-* **ECDSA (ES256/384/512)**: Expected fastest verification performance
-* **RSA (RS256/384/512)**: Most common, moderate performance  
-* **RSA-PSS (PS256/384/512)**: Expected slowest due to PSS parameters
+* **ECDSA (ES256/384/512)**: JOSE required - optimize JDK crypto provider usage
+* **RSA (RS256/384/512)**: JOSE required - optimize RSA verification efficiency  
+* **RSA-PSS (PS256/384/512)**: JOSE required - optimize PSS parameter handling
++
+**Note**: Must ensure Quarkus native compatibility for ALL algorithm optimizations.
 
-- [ ] **1.2** Measure algorithm-specific JFR performance
+- [ ] **1.2** Profile crypto provider performance optimizations
 +
-Profile signature verification methods specifically:
+Optimize underlying cryptographic operations:
 +
-* `TokenSignatureValidator.validateSignature()`
-* JDK crypto provider performance for each algorithm
-* JWKS key lookup patterns and cache effectiveness
+* JDK crypto provider configuration for native image
+* Memory allocation patterns in signature verification
+* Key material access patterns and caching
 
 - [ ] **1.3** Implement signature verification result caching (if beneficial)
 +
-Cache verified tokens for short TTL (30-60 seconds):
+Cache verified tokens maintaining security:
 +
 * Target: Eliminate repeated crypto verification for identical tokens
-* Expected Impact: 50-60% improvement for cached tokens
 * Security: Maintain token security while optimizing repeated verifications
+* **Quarkus Native**: Ensure caching works correctly in native image
 
-**Expected Impact**: 20-40% improvement from optimal algorithm choice
+**Implementation Rule**: ALL optimizations must work for ALL JOSE algorithms in Quarkus native context.
 
-**Risk**: Low (configuration changes only)
-
-== Priority 2: JSON Parser Performance Optimization 🔥
+== Priority 3: JSON Parser Performance Optimization 🔥
 
 === Status: Ready to Execute
 
@@ -149,14 +190,15 @@ Cache verified tokens for short TTL (30-60 seconds):
 
 **Tasks**:
 
-- [ ] **2.1** Compare JSON parser alternatives
+- [ ] **2.1** Compare JSON parser alternatives (Quarkus Native Compatible Only)
 +
-Test JWT payload parsing performance (typically 1-4KB):
+Test JWT payload parsing performance with libraries optimized for Quarkus native:
 +
-* **Jakarta JSON API** (current): Security-first design with limits
-* **Jackson ObjectMapper**: Industry standard with performance focus
-* **jsoniter**: High-performance JSON library
-* **fast-json**: Alternative high-performance option
+* **Jakarta JSON API** (current): Security-first design, native image compatible
+* **Jackson ObjectMapper**: IF properly configured for Quarkus native (reflection-free mode)
+* **Quarkus Jackson**: Built-in Quarkus Jackson extension with native optimizations
++
+**MANDATORY**: Each library must be verified working and optimized for Quarkus native image before testing.
 
 - [ ] **2.2** Analyze security limits impact on parsing speed
 +
@@ -180,11 +222,9 @@ Profile Base64 URL decoding for all 3 JWT parts:
 * Test impact of JWT part size on decoding performance
 * Optimize security vs performance balance
 
-**Expected Impact**: 15-20% improvement from faster JSON processing
+**Implementation Rule**: ALL JSON parser alternatives must work correctly in Quarkus native image context.
 
-**Risk**: Medium (library changes with security validation required)
-
-== Priority 3: JWKS Caching Optimization 🔥
+== Priority 4: JWKS Caching Optimization 🔥
 
 === Status: Ready to Execute
 
@@ -192,29 +232,38 @@ Profile Base64 URL decoding for all 3 JWT parts:
 
 **Tasks**:
 
-- [ ] **3.1** Profile JWKS cache hit/miss patterns under load
+- [ ] **4.1** Profile JWKS cache hit/miss patterns under load
 +
 Analyze cache effectiveness during benchmark runs:
 +
-* Target >95% cache hit rate for production workloads
+* Measure cache hit rate for production workloads
 * Measure HTTP call frequency for JWKS endpoints
 * Profile issuer config resolution patterns
 
-- [ ] **3.2** Optimize issuer config health check patterns
+- [ ] **4.2** Optimize issuer config health check patterns (POTENTIAL BUG)
 +
-Reduce network I/O overhead:
+**CRITICAL**: Implement optimized path when all keys are loaded - eliminate health checks completely:
 +
 [source,java]
 ----
-// Current health check iteration
+// OPTIMIZED: Skip health checks when keys preloaded
 for (IssuerConfig config : issuerConfigs) {
-    if (config.isHealthy() && config.matchesIssuer(issuer)) {
-        return config;
+    if (config.matchesIssuer(issuer)) {
+        // If all keys loaded, skip health check
+        if (config.areAllKeysLoaded()) {
+            return config;
+        }
+        // Only check health if keys need loading
+        if (config.isHealthy()) {
+            return config;
+        }
     }
 }
 ----
++
+**Investigation Required**: Current implementation may contain bug - JWKS keys should be preloaded and health checks bypassed when all keys available.
 
-- [ ] **3.3** Implement circuit breaker patterns for failing JWKS endpoints
+- [ ] **4.3** Implement circuit breaker patterns for failing JWKS endpoints
 +
 Reduce HTTP call frequency:
 +
@@ -222,77 +271,58 @@ Reduce HTTP call frequency:
 * Circuit breaker for consistently failing endpoints
 * Optimize health check timing and frequency
 
-**Expected Impact**: 10-15% improvement from reduced network I/O
-
-**Risk**: Medium (configuration and caching logic changes)
+**Implementation Rule**: ALL JWKS optimizations must maintain security compliance and work correctly in Quarkus native image context.
 
 == Implementation Strategy
 
-=== Phase 1: Core Optimizations (Week 1-2)
+=== Implementation Order (Critical Priority Sequence)
 
-**Focus**: Implement highest-impact optimizations identified through JFR analysis
+**FIRST**: Quarkus Integration Gap Analysis - MUST be completed before other optimizations
 
-1. **Signature Algorithm Testing** - Quick configuration changes with immediate results
-2. **JSON Parser Benchmarking** - Focused library comparison with security validation
-3. **JWKS Caching Analysis** - Understanding current cache effectiveness
+**SECOND**: Signature Algorithm Optimization - All JOSE algorithms must maintain equivalent performance
 
-**Timeline**: 1-2 weeks for core optimization implementation
+**THIRD**: JSON Parser Replacement - Only Quarkus native compatible alternatives
 
-**Success Criteria**: 10-20x performance improvement (2,500-5,000 ops/s)
+**FOURTH**: JWKS Caching Enhancement - Focus on health check bypass when keys preloaded
 
-=== Phase 2: Advanced Optimizations (Week 2-3)
+=== Build Requirements
 
-**Focus**: Implement more complex optimizations requiring architectural changes
+**CRITICAL BUILD SEQUENCE**:
 
-1. **Signature Verification Caching** - Moderate complexity with security considerations
-2. **JSON Parser Replacement** - Higher complexity with security validation
-3. **JWKS Health Check Optimization** - Configuration tuning and monitoring
+[source,bash]
+----
+# MANDATORY: Build cui-jwt-validation first for changes to take effect
+./mvnw clean install -pl cui-jwt-validation
 
-**Timeline**: 1-2 weeks for advanced optimization implementation
+# Then build native integration
+./mvnw clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pnative
+----
 
-**Success Criteria**: 20-40x performance improvement (5,000-10,000 ops/s)
+=== Success Criteria
 
-=== Phase 3: Architectural Changes (Week 3+)
+**Measurement Focus**: Closing the 115x performance gap through systematic optimization of identified bottlenecks.
 
-**Focus**: Major architectural changes if core optimizations insufficient
+**Performance Target**: Progress toward library capability (30k ops/s) from current integration performance (260 ops/s).
 
-1. **Token-Level Caching** - Complex security considerations (POSTPONED)
-2. **Custom JSON Parsing Implementation** - Significant implementation effort
-3. **Integration Overhead Reduction** - Quarkus-specific optimizations
+== Optimization Constraints and Requirements
 
-**Timeline**: 2+ weeks for architectural changes
+=== Quarkus Native Compatibility Requirements
 
-**Success Criteria**: 40-60x performance improvement (10,000-15,000 ops/s)
+**MANDATORY**: All optimizations must work correctly in Quarkus native image context:
 
-== Expected Performance Improvements
+* Reflection configuration must be complete for any new libraries
+* Native image compatibility testing required for all changes
+* Security compliance validation for parser/algorithm modifications
+* Performance testing must be conducted in native image mode
 
-=== Realistic Targets (Phase 1-2)
+=== Security Compliance Requirements
 
-**Target**: 2,500-5,000 ops/s (10-20x improvement)
+**MANDATORY**: All optimizations must maintain current security standards:
 
-**Breakdown**:
-
-* Signature algorithm optimization: ~40% time savings
-* JSON parsing optimization: ~15% time savings
-* JWKS caching optimization: ~20% time savings  
-* **Combined effect**: Potential 75% performance improvement
-
-=== Stretch Targets (Phase 3)
-
-**Target**: 10,000-15,000 ops/s (40-60x improvement)
-
-**Requirements**:
-
-* Architectural changes (token-level caching)
-* Advanced signature verification optimizations
-* Custom JSON parsing implementation
-* Significant integration overhead reduction
-
-=== Theoretical Maximum
-
-**Target**: Approaching library performance limits (20,000-30,000 ops/s)
-
-**Requirements**: Major architectural changes and custom implementations
+* JSON parsing security limits must be preserved or improved
+* JOSE algorithm compliance must be maintained across all optimizations
+* Token validation security must not be compromised for performance gains
+* Authentication and authorization behavior must remain unchanged
 
 == Success Metrics and Monitoring
 
@@ -300,10 +330,10 @@ Reduce HTTP call frequency:
 
 **Primary Success Criteria**:
 
-* **Throughput**: >2,500 ops/s (10x minimum improvement)
-* **Latency**: <0.4ms per request (10x improvement)
+* **Performance Gap Closure**: Progress toward library capability (30k ops/s)
 * **CPU Utilization**: Maintain ≥90% during load testing
 * **Memory Utilization**: Maintain efficient usage (<90% acceptable)
+* **Security Compliance**: No degradation in security standards
 
 **Verification Process**:
 
@@ -329,19 +359,19 @@ Reduce HTTP call frequency:
 
 == Next Actions
 
-=== Immediate Actions (This Week)
+=== Immediate Actions
 
-**Week 1 Priorities**:
+**CRITICAL FIRST PRIORITY**: Quarkus Integration Gap Investigation
 
-1. **Execute Phase 1.1**: Benchmark signature algorithm performance (ECDSA vs RSA vs RSA-PSS)
-2. **Execute Phase 2.1**: Compare JSON parser alternatives with security validation
-3. **Execute Phase 3.1**: Profile JWKS cache effectiveness under load
+1. **Research missing Quarkus optimizations** for cui-jwt-validation integration
+2. **Verify build requirements** - cui-jwt-validation module must be built before native image
+3. **Profile integration overhead** to identify the 115x performance gap sources
 
-**Preparation Requirements**:
+**Subsequent Optimization Priorities**:
 
-* Set up signature algorithm test configurations
-* Prepare JSON parser benchmark environment  
-* Configure JWKS cache monitoring for analysis
+1. **Signature Algorithm Optimization**: Improve performance for ALL JOSE algorithms in Quarkus native context
+2. **JSON Parser Investigation**: Test Quarkus native compatible alternatives only
+3. **JWKS Health Check Optimization**: Implement bypassing when all keys are preloaded
 
 === Documentation and Monitoring
 
