@@ -28,10 +28,10 @@
         <!-- JMH Configuration Properties -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>3</jmh.iterations>
-        <jmh.warmupIterations>2</jmh.warmupIterations>
-        <jmh.forks>3</jmh.forks>
-        <jmh.threads>10</jmh.threads>
+        <jmh.iterations>5</jmh.iterations>
+        <jmh.warmupIterations>3</jmh.warmupIterations>
+        <jmh.forks>5</jmh.forks>
+        <jmh.threads>200</jmh.threads>
         
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
