@@ -192,6 +192,7 @@ Apply these optimizations based on JFR findings:
 For comprehensive optimization results and all attempted changes, see link:performance-optimization-log.adoc[Performance Optimization Log].
 
 The log contains:
+
 - All optimization attempts (successful and failed)
 - Specific performance measurements
 - Configuration examples

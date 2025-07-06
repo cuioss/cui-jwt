@@ -115,6 +115,7 @@ quarkus.native.container-runtime-options=-m=64m
 |===
 
 **Resource Utilization Verification**:
+
 - **JWT Container CPU**: 99-101% during benchmark (consistently above 90% target)
 - **JWT Container Memory**: Memory limits adjusted for optimization testing (<90% acceptable)
 - **System CPU**: 0% normalized (measurement limitation on macOS)
@@ -143,6 +144,7 @@ public class JwtValidationEndpoint {
 ----
 
 **Results**:
+
 - **Improvement**: 24-30% over original baseline
 - **Impact**: Significant performance gain for I/O-bound JWT validation
 - **Decision**: KEPT - Major optimization success
@@ -197,6 +199,7 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 |===
 
 **Analysis**:
+
 - **Modest but consistent improvement**: 1-2% throughput gain
 - **Faster response times**: 0.1-0.2ms reduction in request/token processing time
 - **Better warmup behavior**: Higher minimum performance (210 vs 192 ops/s)
@@ -286,6 +289,7 @@ quarkus.log.category."de.cuioss.jwt".level=INFO
 ----
 
 **Results**:
+
 - **JWT Container CPU**: Achieved 100%+ utilization
 - **Load Generation**: Proper stress testing capability
 - **Decision**: KEPT - Essential for meaningful benchmarks
@@ -304,6 +308,7 @@ quarkus.native.container-runtime-options=-m=64m
 ----
 
 **Results**:
+
 - **Memory Utilization**: 78-91% (target achieved)
 - **Memory Usage**: 50-58MB actual usage
 - **Performance**: No degradation with memory constraint
@@ -323,6 +328,7 @@ For each optimization attempt, follow this protocol:
 ----
 
 === 2. Apply Single Change
+
 - Modify ONE configuration parameter only
 - Document exact change in this log
 - Keep all other settings at baseline values
@@ -337,12 +343,14 @@ For each optimization attempt, follow this protocol:
 ----
 
 === 4. Decision Criteria
+
 - **Keep if**: >5% improvement in ops/s AND CPU utilization targets maintained
 - **Remove if**: <5% improvement OR CPU utilization drops below 90% OR regression
 - **Document**: Exact numbers, reasoning, and impact analysis
 - **Memory Note**: Memory utilization <90% acceptable during optimization testing
 
 === 5. Update Baseline
+
 - If optimization is kept, update this document
 - If removed, document in "Failed Optimizations" section
 - Always maintain current working configuration
@@ -366,6 +374,7 @@ quarkus.native.container-runtime-options=-m=80m
 ----
 
 **Expected Impact**:
+
 - Find optimal memory pressure point
 - Balance between utilization target and performance
 - Validate memory constraint impact
@@ -387,6 +396,7 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 ----
 
 **Expected Impact**:
+
 - Potential memory management optimization
 - May affect startup time and memory usage patterns
 - Could impact benchmark consistency
@@ -409,6 +419,7 @@ quarkus.native.additional-build-args=...,-O2,--gc=epsilon
 ----
 
 **Results**:
+
 - **Build**: ✅ Successful (1m 19s, 58.98MB image vs 64.98MB with Serial GC)
 - **Startup**: ✅ Fast (0.196s)
 - **Runtime (256M)**: ❌ Benchmark stalled at first warmup iteration, 205MB usage
@@ -418,17 +429,20 @@ quarkus.native.additional-build-args=...,-O2,--gc=epsilon
 **Deep Technical Analysis**:
 
 **Epsilon GC Mechanics:**
+
 - **No-Op Collector**: Zero garbage collection - linear allocation until heap exhaustion
 - **TLAB Management**: Thread-local allocation buffers with no memory reclamation
 - **Immediate Failure**: OutOfMemoryError when heap space consumed
 
 **JWT Validation Memory Pressure:**
+
 - **Per-Request Allocations**: 50-100KB per JWT validation (conservative estimate)
 - **Allocation Sources**: Jackson JSON parsing (10x content size), Base64 decoding, cryptographic operations, string manipulation
 - **200 Concurrent Threads**: 200 × 50KB = 10MB minimum per concurrent batch
 - **High-Frequency Operations**: JSON parsing, signature validation, claims processing
 
 **Why Failure Was Inevitable:**
+
 - **Allocation Rate**: 10MB+ per second under 1000 req/s load
 - **Collection Rate**: 0 bytes/second (Epsilon GC does no collection)
 - **Time to Failure**: Heap size ÷ allocation rate = mathematical certainty of failure
@@ -442,6 +456,7 @@ quarkus.native.additional-build-args=...,-O2,--gc=epsilon
 5. **Thread-Local Caches**: Per-thread parser instances and security contexts
 
 **Container Evidence Analysis:**
+
 - **256M Test**: 205MB usage, benchmark stalled (80% heap utilization)
 - **512M Test**: 410MB usage, benchmark stalled (80% heap utilization) 
 - **Pattern**: Consistent 80% usage suggests allocation failure threshold
@@ -467,11 +482,13 @@ quarkus.native.container-runtime-options=-m=80m
 ----
 
 **Results**:
+
 - **48MB Test**: ❌ Build failed - GraalVM requires minimum 512MB for native compilation
 - **80MB Test**: ❌ Build failed - GraalVM requires minimum 512MB for native compilation
 - **Error**: "Requirements for building native images are not fulfilled [need at least 512MiB]"
 
 **Analysis**:
+
 - **Build Constraint**: `quarkus.native.container-runtime-options` affects build container, not runtime
 - **GraalVM Requirement**: Native image compilation requires minimum 512MB regardless of runtime needs
 - **Configuration Limitation**: Cannot reduce build memory below GraalVM minimum requirements
@@ -493,11 +510,13 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 ----
 
 **Results**:
+
 - **Build**: ❌ Failed during image generation
 - **Warning**: "The option '-H:+AggressiveInlining' is experimental and must be enabled via '-H:+UnlockExperimentalVMOptions'"
 - **Error**: Image generation failed with exit code 1
 
 **Analysis**:
+
 - **Experimental Feature**: AggressiveInlining is not stable in current GraalVM/Mandrel
 - **Build Failure**: Experimental options cause build instability
 - **Unlock Required**: Would need additional experimental VM options to enable
@@ -519,11 +538,13 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 ----
 
 **Results**:
+
 - **Build**: ❌ Failed during native image generation
 - **Error**: "In user 'G1' is not a valid value for the option --gc. Supported values are 'epsilon', 'serial'."
 - **Exit Code**: 20 (invalid argument)
 
 **Analysis**:
+
 - **GraalVM Limitation**: Current Mandrel 23.1.7.0-Final only supports 'epsilon' and 'serial' GCs
 - **Version Constraint**: G1 GC not available in this GraalVM/Mandrel version
 - **Platform Limitation**: Native image GC options are limited compared to JVM
@@ -575,6 +596,7 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 |===
 
 **Analysis**:
+
 - **JFR monitoring improves performance**: 4-8% better throughput with JFR enabled
 - **Profiling overhead myth**: JFR does not hurt performance in native images
 - **Memory efficiency**: JFR appears to help with memory allocation patterns
