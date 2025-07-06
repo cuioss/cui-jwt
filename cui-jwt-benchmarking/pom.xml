@@ -20,14 +20,14 @@
         <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
         <version.mockwebserver3>5.0.0-alpha.12</version.mockwebserver3>
-        
+
         <!-- JMH Configuration Properties -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/micro-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>3</jmh.iterations>
-        <jmh.warmupIterations>2</jmh.warmupIterations>
-        <jmh.forks>1</jmh.forks>
-        <jmh.threads>2</jmh.threads>
+        <jmh.iterations>5</jmh.iterations>
+        <jmh.warmupIterations>1</jmh.warmupIterations>
+        <jmh.forks>5</jmh.forks>
+        <jmh.threads>200</jmh.threads>
     </properties>
 
     <dependencyManagement>

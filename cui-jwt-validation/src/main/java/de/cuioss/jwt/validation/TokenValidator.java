@@ -38,6 +38,7 @@ import lombok.NonNull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -131,6 +132,12 @@ public class TokenValidator {
      */
     private final AtomicReference<Map<String, IssuerConfig>> validatedIssuerConfig =
             new AtomicReference<>(new ConcurrentHashMap<>());
+
+    /**
+     * Flag to track whether the issuer config cache has been optimized for read-only access.
+     * Once set to true, no more modifications to the cache are allowed.
+     */
+    private final AtomicBoolean isOptimized = new AtomicBoolean(false);
 
     /**
      * Counter for security events that occur during token processing.
@@ -334,10 +341,22 @@ public class TokenValidator {
     /**
      * Resolves the appropriate issuer configuration for the given issuer.
      * <p>
-     * This method searches through all configured IssuerConfig instances to find
-     * healthy ones. It uses a cache for performance optimization and scans all configs
-     * for healthy ones, caching them and removing them from the issuerConfigs queue.
-     * The issuer is resolved after all configs have been processed and cached.
+     * This method implements a performance optimization strategy with thread safety:
+     * <ol>
+     *   <li>First checks the cache for already-validated configurations</li>
+     *   <li>If not found, uses synchronized access to process issuer configs</li>
+     *   <li>Double-check pattern to avoid unnecessary synchronization</li>
+     *   <li>Once all configs are processed, optimizes the cache for read-only access</li>
+     *   <li>Returns the resolved configuration for the specific issuer</li>
+     * </ol>
+     * <p>
+     * Thread Safety:
+     * This method is thread-safe using selective synchronization. The fast path
+     * (cache hit) is lock-free for optimal performance. Only cache misses when
+     * not yet optimized require synchronization.
+     * <p>
+     * Performance:
+     * Optimized for read-heavy workloads with minimal synchronization overhead.
      * </p>
      *
      * @param issuer the issuer to resolve configuration for
@@ -345,33 +364,50 @@ public class TokenValidator {
      * @throws TokenValidationException if no configuration found or issuer is unhealthy
      */
     private IssuerConfig resolveIssuerConfig(String issuer) {
-        // Check cache first for performance
+        // Check cache first for performance (lock-free fast path)
         IssuerConfig cachedConfig = validatedIssuerConfig.get().get(issuer);
         if (cachedConfig != null) {
             LOGGER.debug("Using cached issuer config for: %s", issuer);
             return cachedConfig;
         }
 
-        // Scan all issuer configs for healthy ones
-        Iterator<IssuerConfig> iterator = issuerConfigs.iterator();
-        while (iterator.hasNext()) {
-            IssuerConfig issuerConfig = iterator.next();
+        // Use synchronized block only for the critical section
+        synchronized (this) {
+            // Double-check pattern: recheck cache after acquiring lock
+            cachedConfig = validatedIssuerConfig.get().get(issuer);
+            if (cachedConfig != null) {
+                LOGGER.debug("Using cached issuer config after sync for: %s", issuer);
+                return cachedConfig;
+            }
 
-            // Check if the issuer config is healthy
-            if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
-                // Found healthy issuer config, cache it and remove from queue
-                validatedIssuerConfig.get().put(issuerConfig.getIssuerIdentifier(), issuerConfig);
-                iterator.remove(); // Thread-safe removal during iteration
-                LOGGER.debug("Found healthy issuer config, cached and removed from queue for: %s", issuer);
-            } else {
-                LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.format(issuer));
+            // Only proceed if not yet optimized
+            if (!isOptimized.get()) {
+                // Scan and process issuer configs
+                Iterator<IssuerConfig> iterator = issuerConfigs.iterator();
+                while (iterator.hasNext()) {
+                    IssuerConfig issuerConfig = iterator.next();
+
+                    // Check if the issuer config is healthy
+                    if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
+                        // Found healthy issuer config, cache it and remove from queue
+                        validatedIssuerConfig.get().put(issuerConfig.getIssuerIdentifier(), issuerConfig);
+                        iterator.remove(); // Thread-safe removal during iteration
+                        LOGGER.debug("Found healthy issuer config, cached and removed from queue for: %s", issuer);
+                    } else {
+                        LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.format(issuer));
+                    }
+                }
+
+                // Optimize only after all processing is complete
+                if (issuerConfigs.isEmpty()) {
+                    optimizeForReadOnlyAccess();
+                    isOptimized.set(true);
+                    LOGGER.debug("Issuer config cache optimized for read-only access");
+                }
             }
         }
 
-        // Optimize for read-only access if all configs are processed
-        optimizeForReadOnlyAccess();
-
-        // Resolve issuer after scanning all configs
+        // Final resolution after synchronized processing
         IssuerConfig resolvedConfig = validatedIssuerConfig.get().get(issuer);
         if (resolvedConfig != null) {
             LOGGER.debug("Using resolved issuer config for: %s", issuer);
