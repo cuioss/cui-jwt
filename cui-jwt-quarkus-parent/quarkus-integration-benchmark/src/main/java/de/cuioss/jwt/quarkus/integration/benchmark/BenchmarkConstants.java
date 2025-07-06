@@ -35,6 +35,11 @@ public class BenchmarkConstants {
     public static final String JWT_REACTIVE_VALIDATE_ID_TOKEN_PATH = "/jwt/reactive/validate/id-token";
     public static final String JWT_REACTIVE_VALIDATE_REFRESH_TOKEN_PATH = "/jwt/reactive/validate/refresh-token";
 
+    // REST endpoint paths - NOOP (No Validation)
+    public static final String JWT_NOOP_VALIDATE_PATH = "/jwt/noop/validate";
+    public static final String JWT_NOOP_VALIDATE_ID_TOKEN_PATH = "/jwt/noop/validate/id-token";
+    public static final String JWT_NOOP_VALIDATE_REFRESH_TOKEN_PATH = "/jwt/noop/validate/refresh-token";
+
     public static final String HEALTH_CHECK_PATH = "/q/health/live";
 
     // HTTP headers

@@ -145,6 +145,26 @@ public class IntegrationTokenValidationBenchmark {
                         .body(TOKEN_TEMPLATE.formatted(warmupRefreshToken))
                         .when()
                         .post("/jwt/reactive/validate/refresh-token");
+
+                // Warmup NOOP access token validation
+                RestAssured.given()
+                        .header("Authorization", "Bearer " + warmupToken)
+                        .when()
+                        .post("/jwt/noop/validate");
+
+                // Warmup NOOP ID token validation
+                RestAssured.given()
+                        .contentType(APPLICATION_JSON)
+                        .body(TOKEN_TEMPLATE.formatted(warmupIdToken))
+                        .when()
+                        .post("/jwt/noop/validate/id-token");
+
+                // Warmup NOOP refresh token validation
+                RestAssured.given()
+                        .contentType(APPLICATION_JSON)
+                        .body(TOKEN_TEMPLATE.formatted(warmupRefreshToken))
+                        .when()
+                        .post("/jwt/noop/validate/refresh-token");
             } catch (Exception e) {
                 LOGGER.debug("Warmup request failed (expected during startup): %s", e.getMessage());
             }
@@ -420,5 +440,97 @@ public class IntegrationTokenValidationBenchmark {
                 .body(TOKEN_TEMPLATE.formatted(refreshToken))
                 .when()
                 .post(JWT_REACTIVE_VALIDATE_REFRESH_TOKEN_PATH);
+    }
+
+    // ===== NOOP ENDPOINT BENCHMARKS =====
+
+    /**
+     * Benchmark NOOP valid token validation - baseline framework overhead measurement.
+     * This measures the pure REST/HTTP overhead without actual JWT validation.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkNoopValidTokenValidation() {
+        String token = tokenManager.getValidToken();
+        return RestAssured.given()
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
+                .when()
+                .post(JWT_NOOP_VALIDATE_PATH);
+    }
+
+    /**
+     * Benchmark NOOP average response time for valid tokens.
+     * This measures baseline latency without JWT validation overhead.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkNoopValidTokenLatency() {
+        String token = tokenManager.getValidToken();
+        return RestAssured.given()
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
+                .when()
+                .post(JWT_NOOP_VALIDATE_PATH);
+    }
+
+    /**
+     * Benchmark NOOP ID token validation - baseline ID token framework overhead.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkNoopValidIdTokenValidation() {
+        String idToken = tokenManager.getValidIdToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(idToken))
+                .when()
+                .post(JWT_NOOP_VALIDATE_ID_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark NOOP refresh token validation - baseline refresh token framework overhead.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkNoopValidRefreshTokenValidation() {
+        String refreshToken = tokenManager.getValidRefreshToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(refreshToken))
+                .when()
+                .post(JWT_NOOP_VALIDATE_REFRESH_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark NOOP ID token latency - baseline average response time for ID tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkNoopIdTokenLatency() {
+        String idToken = tokenManager.getValidIdToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(idToken))
+                .when()
+                .post(JWT_NOOP_VALIDATE_ID_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark NOOP refresh token latency - baseline average response time for refresh tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkNoopRefreshTokenLatency() {
+        String refreshToken = tokenManager.getValidRefreshToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(refreshToken))
+                .when()
+                .post(JWT_NOOP_VALIDATE_REFRESH_TOKEN_PATH);
     }
 }
