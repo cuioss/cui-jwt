@@ -1,0 +1,287 @@
+= JWT Performance Optimization Roadmap
+:toc: left
+:toclevels: 3
+:source-highlighter: rouge
+:icons: font
+
+== Executive Summary
+
+**CRITICAL DISCOVERY**: JWT validation represents a **1000x performance bottleneck** compared to framework overhead:
+- **JWT Validation**: 260 ops/s (3.75ms per request)
+- **Framework Baseline (NOOP)**: 280,000 ops/s (0.35ms per request)
+- **JWT Processing Cost**: 91% of total request time (3.4ms out of 3.75ms)
+
+**Key Insight**: The bottleneck is **NOT** the REST framework, HTTP handling, or programming model - it's the cryptographic JWT validation itself. This dramatically shifts optimization priorities.
+
+== Performance Analysis Results
+
+=== Measured Performance Baselines
+
+[cols="3,2,2,2"]
+|===
+|Implementation |Throughput (ops/s) |Latency (ms/req) |Overhead
+
+|**NOOP (Framework Only)**
+|279,000-288,000
+|~0.35ms
+|Baseline
+
+|**Blocking (Virtual Threads)**
+|257-267
+|3.7-3.9ms
+|1000x slower
+
+|**Reactive (Mutiny)**
+|252-253
+|3.9-4.0ms
+|1000x slower
+
+|**TokenValidator Library (JMH)**
+|~30,000 (research finding)
+|~0.033ms
+|**90% faster than current**
+|===
+
+=== Critical Performance Insights
+
+1. **Framework is Excellent** (280k ops/s) - no optimization needed
+2. **JWT Validation Dominates** (91% of request time) - primary optimization target
+3. **Programming Model Irrelevant** (<2% difference vs 1000x JWT cost)
+4. **Library Integration Issue** (30k ops/s capability vs 260 ops/s actual)
+
+== CRITICAL OPTIMIZATION RULES
+
+**⚠️ RULE 1**: Focus optimization on JWT validation logic, NOT framework
+**⚠️ RULE 2**: Test individual changes with >5% improvement threshold
+**⚠️ RULE 3**: Record ALL attempts in performance-optimization-log.adoc
+**⚠️ RULE 4**: Postpone caching (security implications) - optimize code first
+
+=== Mandatory Process
+
+1. **Baseline Measurement**: Use benchmark-with-monitoring.sh for all tests
+2. **Single Change**: Implement ONLY ONE optimization at a time
+3. **JFR Analysis**: Profile callstack for every optimization attempt
+4. **Verification**: Document before/after metrics with concrete numbers
+5. **Documentation**: Update performance logs immediately
+
+=== Resource Utilization Targets
+
+- **CPU Utilization**: ≥90% (currently 100%+ ✅)
+- **Memory Utilization**: ≥90% (currently achieved ✅)
+- **Improvement Threshold**: >5% throughput gain required
+- **Analysis**: JFR profiling mandatory for understanding bottlenecks
+
+== Priority 1: JWT Validation Optimization (High Impact)
+
+=== 1.1 JFR Callstack Analysis 🔥
+
+**Status**: ✅ JFR infrastructure ready, needs deep analysis
+
+**Objective**: Identify specific bottlenecks in JWT validation pipeline
+
+**Tasks**:
+- [ ] **1.1.1** Deep JFR callstack analysis of JWT validation
+  - Profile tokenValidator.createAccessToken() method specifically
+  - Identify CPU hotspots in: JSON parsing, signature validation, claims processing
+  - Measure object allocation patterns and GC impact
+  - **Target**: Find 80%+ time consumption sources within JWT validation
+  
+- [ ] **1.1.2** Compare JFR profiles: JWT vs NOOP
+  - Side-by-side analysis of execution paths
+  - Isolate JWT-specific CPU consumption vs framework
+  - Quantify exact time spent in each JWT validation phase
+  - **Verification**: Concrete timing breakdown documented
+
+- [ ] **1.1.3** Method-level profiling within TokenValidator
+  - Profile cui-jwt-validation library calls individually
+  - Identify slowest methods within JWT processing
+  - Correlate with library's own JMH benchmarks (30k ops/s capability)
+  - **Target**: Understand 10x performance gap (30k library vs 3k integration)
+
+**Expected Impact**: Identify optimization targets representing 50-80% of processing time
+**Risk**: Low (analysis only)
+
+=== 1.2 TokenValidator Integration Analysis 🔥
+
+**Research Finding**: TokenValidator library achieves ~30k ops/s in isolation but only 260 ops/s in Quarkus integration.
+
+**Objective**: Understand and eliminate 100x integration performance loss
+
+**Tasks**:
+- [ ] **1.2.1** Quarkus-specific overhead analysis
+  - Compare standalone TokenValidator performance vs Quarkus integration
+  - Profile CDI injection, proxy overhead, transaction boundaries
+  - Identify Quarkus-specific processing layers
+  - **Target**: Isolate Quarkus integration tax on JWT validation
+
+- [ ] **1.2.2** Configuration and context overhead
+  - Analyze JWT issuer configuration loading per request
+  - Profile JWKS cache lookups and key resolution
+  - Measure HTTP client overhead for well-known discovery
+  - **Target**: Identify per-request configuration overhead
+
+- [ ] **1.2.3** Object lifecycle and pooling analysis
+  - Profile TokenValidator instantiation patterns
+  - Analyze object reuse vs recreation per request
+  - Identify potential pooling opportunities for expensive objects
+  - **Target**: Reduce object allocation overhead by 50%+
+
+**Expected Impact**: 5-10x performance improvement by fixing integration inefficiencies
+**Risk**: Medium (may require architectural changes)
+
+=== 1.3 JWT Processing Pipeline Optimization 🔥
+
+**Objective**: Optimize specific JWT validation steps without caching
+
+**Tasks**:
+- [ ] **1.3.1** JSON parsing optimization
+  - Profile Jackson ObjectMapper usage in JWT claims parsing
+  - Evaluate faster JSON parsing alternatives (jsoniter, dsl-json)
+  - Implement streaming JSON parsing for large claims
+  - **Target**: 20-30% reduction in JSON parsing time
+
+- [ ] **1.3.2** Signature validation optimization
+  - Profile RSA signature verification performance
+  - Evaluate signature algorithm performance (RSA vs ECDSA)
+  - Optimize key loading and preparation
+  - **Target**: 15-25% reduction in signature validation time
+
+- [ ] **1.3.3** Claims processing optimization
+  - Profile JWT claims extraction and validation
+  - Optimize claim parsing patterns (lazy vs eager evaluation)
+  - Reduce string operations and object allocations
+  - **Target**: 10-20% reduction in claims processing time
+
+**Expected Impact**: 30-50% cumulative improvement in JWT validation
+**Risk**: Medium (library changes required)
+
+=== 1.4 Native Image Optimization for JWT Workloads
+
+**Objective**: Optimize GraalVM native image specifically for cryptographic workloads
+
+**Tasks**:
+- [ ] **1.4.1** Crypto-specific native optimizations
+  - Enable crypto-specific compiler flags (-H:+EnableCryptoIntrinsics)
+  - Optimize RSA/ECDSA native implementations
+  - Configure reflection hints for crypto operations
+  - **Target**: 5-15% improvement in signature validation
+
+- [ ] **1.4.2** Memory layout optimization
+  - Optimize object layout for JWT validation objects
+  - Configure heap and GC for allocation-heavy workloads
+  - Enable compressed OOPs if beneficial
+  - **Target**: 5-10% improvement in memory efficiency
+
+- [ ] **1.4.3** PGO (Profile-Guided Optimization)
+  - Generate profiles from JWT validation workloads
+  - Build optimized native image with JWT-specific PGO
+  - Measure PGO impact on JWT validation specifically
+  - **Target**: 10-20% improvement with Oracle GraalVM PGO
+
+**Expected Impact**: 20-30% improvement in native image JWT performance
+**Risk**: Medium (build system changes)
+
+== Priority 2: Library and Framework Integration (Medium Impact)
+
+=== 2.1 Alternative JWT Library Evaluation
+
+**Objective**: Evaluate JWT libraries optimized for high-performance scenarios
+
+**Tasks**:
+- [ ] **2.1.1** JWT library performance comparison
+  - Benchmark nimbus-jose-jwt, jjwt, vertx-auth-jwt
+  - Compare parsing, validation, and signature verification performance
+  - Test compatibility with existing cui-jwt-validation architecture
+  - **Target**: Find library with 2-5x better performance
+
+- [ ] **2.1.2** Custom JWT parser implementation
+  - Implement minimal JWT parser focused on validation-only use case
+  - Eliminate unnecessary features (JWT creation, complex claims handling)
+  - Focus on signature validation and basic claims extraction
+  - **Target**: 3-5x improvement by eliminating unused functionality
+
+**Expected Impact**: 2-5x improvement if current library is suboptimal
+**Risk**: High (potential breaking changes)
+
+=== 2.2 Quarkus Integration Optimization
+
+**Objective**: Optimize how TokenValidator integrates with Quarkus
+
+**Tasks**:
+- [ ] **2.2.1** CDI optimization for JWT validation
+  - Implement ApplicationScoped TokenValidator instances
+  - Eliminate per-request dependency injection overhead
+  - Use static caching for configuration-heavy objects
+  - **Target**: Reduce CDI overhead by 50%+
+
+- [ ] **2.2.2** REST endpoint optimization
+  - Bypass unnecessary REST processing layers
+  - Implement direct endpoint handlers for JWT validation
+  - Optimize request/response serialization
+  - **Target**: 10-20% improvement in endpoint processing
+
+**Expected Impact**: 15-30% improvement in Quarkus integration efficiency
+**Risk**: Medium (architectural changes)
+
+== Priority 3: Advanced Optimizations (Lower Impact)
+
+=== 3.1 Reactive Implementation Analysis
+
+**Note**: Reactive implementation shows equivalent performance to virtual threads (252 vs 257 ops/s) but adds complexity.
+
+**Tasks**:
+- [ ] **3.1.1** Reactive JWT validation pipeline
+  - Implement fully reactive JWT validation using Mutiny
+  - Optimize for reactive streams backpressure scenarios
+  - **Target**: Baseline performance parity maintenance
+
+**Expected Impact**: Minimal performance change, architectural consistency benefit
+**Risk**: Low (already implemented)
+
+=== 3.2 Caching Strategies (POSTPONED - Security Implications)
+
+**Note**: Caching is postponed due to security implications. Focus on optimizing the underlying code first.
+
+**Security Concerns**:
+- Token replay attacks with cached validation results
+- Cache invalidation complexity for revoked tokens
+- Memory security for cached sensitive data
+- Cache timing attacks
+
+**Future Consideration**: Only implement after exhausting non-caching optimizations
+
+== Implementation Strategy
+
+=== Phase 1: Analysis and Profiling (Weeks 1-2)
+1. Deep JFR analysis of JWT validation pipeline
+2. TokenValidator integration overhead analysis
+3. Performance gap root cause identification
+
+=== Phase 2: Core Optimizations (Weeks 3-4)
+1. JWT processing pipeline optimization
+2. Quarkus integration efficiency improvements
+3. Native image crypto-specific optimizations
+
+=== Phase 3: Advanced Optimizations (Weeks 5-6)
+1. Alternative library evaluation
+2. PGO implementation with Oracle GraalVM
+3. Custom JWT parser if needed
+
+== Success Metrics
+
+**Performance Targets** (based on 30k ops/s library capability):
+- **Primary Target**: 5,000-10,000 ops/s (20-40x improvement)
+- **Stretch Target**: 15,000-20,000 ops/s (60-80x improvement)
+- **Theoretical Maximum**: 25,000-30,000 ops/s (approaching library limits)
+
+**Timeline**: 6 weeks for comprehensive optimization
+**Risk Mitigation**: Maintain current virtual thread implementation as fallback
+
+== Next Actions
+
+1. **Immediate** (Week 1): Execute Task 1.1.1 - Deep JFR callstack analysis
+2. **Week 1**: Execute Task 1.2.1 - TokenValidator integration analysis
+3. **Week 2**: Based on findings, prioritize highest-impact optimizations
+4. **Ongoing**: Document all findings in performance-optimization-log.adoc
+
+**Expected Outcome**: 10-50x performance improvement through systematic optimization of JWT validation bottlenecks, not framework overhead.
