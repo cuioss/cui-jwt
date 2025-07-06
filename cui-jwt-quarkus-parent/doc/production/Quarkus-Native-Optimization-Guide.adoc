@@ -1,8 +1,19 @@
 = Quarkus Native Image Optimization Guide
 :toc: left
 :toclevels: 3
-:source-highlighter: rouge
-:icons: font
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Purpose
+
+This guide provides concrete optimization steps for building and running Quarkus native images in production environments, with specific focus on JWT validation workloads.
+
+== Related Documentation
+
+* xref:jwt-optimization-roadmap.adoc[JWT Performance Optimization Roadmap - Overall Strategy and Implementation Plan]
+* xref:performance-optimization-log.adoc[Performance Optimization Log - Detailed Optimization Attempt Records]
+* xref:JFR-Profiling-Guide.adoc[JFR Profiling Guide - Performance Analysis and Monitoring Setup]
 
 == Overview
 
@@ -22,7 +33,7 @@ Before applying any optimization:
 
 == Verified Optimizations
 
-For detailed performance measurements and optimization attempts, see link:performance-optimization-log.adoc[Performance Optimization Log].
+For detailed performance measurements and optimization attempts, see xref:performance-optimization-log.adoc[Performance Optimization Log].
 
 Key verified optimizations:
 - **Virtual Threads**: 24-30% throughput improvement

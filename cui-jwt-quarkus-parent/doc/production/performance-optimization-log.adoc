@@ -1,8 +1,19 @@
 = Performance Optimization Log
 :toc: left
 :toclevels: 3
-:source-highlighter: rouge
-:icons: font
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Purpose
+
+This document maintains a comprehensive record of ALL performance optimization attempts for the CUI JWT Quarkus integration, including successful implementations, failed attempts, and their detailed analysis. This log serves as the authoritative source for optimization history and decision-making context.
+
+== Related Documentation
+
+* xref:jwt-optimization-roadmap.adoc[JWT Performance Optimization Roadmap - Overall Strategy and Implementation Plan]
+* xref:jfr-analysis-findings.adoc[JFR Analysis Findings - Complete JWT Validation Pipeline Analysis]
+* xref:JFR-Profiling-Guide.adoc[JFR Profiling Guide - Performance Analysis and Monitoring Setup]
 
 == Overview
 

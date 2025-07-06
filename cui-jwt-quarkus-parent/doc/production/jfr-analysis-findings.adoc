@@ -1,12 +1,23 @@
 = JFR Analysis Findings - JWT Validation Bottlenecks
 :toc: left
 :toclevels: 3
-:source-highlighter: rouge
-:icons: font
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Purpose
+
+This document provides comprehensive JFR (Java Flight Recorder) analysis findings for JWT validation performance bottlenecks in the CUI JWT Quarkus integration. It contains method-level performance breakdowns, root cause analysis, and specific optimization recommendations based on detailed code analysis and profiling data.
+
+== Related Documentation
+
+* xref:jwt-optimization-roadmap.adoc[JWT Performance Optimization Roadmap - Overall Strategy and Implementation Plan]
+* xref:performance-optimization-log.adoc[Performance Optimization Log - Detailed Optimization Attempt Records]
+* xref:JFR-Profiling-Guide.adoc[JFR Profiling Guide - Performance Analysis and Monitoring Setup]
 
 == Executive Summary
 
-**STATUS**: Initial analysis completed - Critical bottlenecks identified in JWT validation pipeline
+**STATUS**: Analysis completed - Critical bottlenecks identified in JWT validation pipeline
 
 **KEY DISCOVERY**: JWT validation does NOT use Jackson ObjectMapper as initially assumed, but uses **Jakarta JSON API + JDK Crypto**, which has different performance characteristics.
 

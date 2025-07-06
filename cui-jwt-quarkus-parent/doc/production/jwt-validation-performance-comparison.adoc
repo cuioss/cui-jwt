@@ -1,8 +1,19 @@
 = JWT Validation Performance Comparison
 :toc: left
 :toclevels: 3
-:source-highlighter: rouge
-:icons: font
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Purpose
+
+This document provides comprehensive performance comparison analysis of JWT validation implementations tested during the optimization process. It establishes baseline performance characteristics and validates implementation choices.
+
+== Related Documentation
+
+* xref:jwt-optimization-roadmap.adoc[JWT Performance Optimization Roadmap - Overall Strategy and Implementation Plan]
+* xref:jfr-analysis-findings.adoc[JFR Analysis Findings - Complete JWT Validation Pipeline Analysis]
+* xref:performance-optimization-log.adoc[Performance Optimization Log - Detailed Optimization Attempt Records]
 
 == Overview
 
