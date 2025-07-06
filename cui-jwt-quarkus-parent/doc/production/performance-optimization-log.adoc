@@ -436,6 +436,62 @@ quarkus.native.additional-build-args=...,-O2,--gc=epsilon
 
 **Decision**: REMOVED - Epsilon GC mathematically incompatible with continuous high-allocation workloads like JWT validation. Suitable only for batch processing with predictable, minimal allocations.
 
+=== Memory Limit Optimization (48MB/80MB)
+
+**Date**: 2025-07-06
+**Status**: ❌ FAILED - Build incompatibility
+
+**Change Attempted**: Reduce memory limits to 48MB and 80MB for higher memory utilization
+
+**Configuration Tested**:
+[source,properties]
+----
+# Test 1: 48MB limit
+quarkus.native.container-runtime-options=-m=48m
+
+# Test 2: 80MB limit  
+quarkus.native.container-runtime-options=-m=80m
+----
+
+**Results**:
+- **48MB Test**: ❌ Build failed - GraalVM requires minimum 512MB for native compilation
+- **80MB Test**: ❌ Build failed - GraalVM requires minimum 512MB for native compilation
+- **Error**: "Requirements for building native images are not fulfilled [need at least 512MiB]"
+
+**Analysis**:
+- **Build Constraint**: `quarkus.native.container-runtime-options` affects build container, not runtime
+- **GraalVM Requirement**: Native image compilation requires minimum 512MB regardless of runtime needs
+- **Configuration Limitation**: Cannot reduce build memory below GraalVM minimum requirements
+- **Runtime vs Build**: Memory limits apply to build process, not final application runtime
+
+**Decision**: REMOVED - Incompatible with GraalVM native image build requirements
+
+=== Aggressive Inlining Optimization
+
+**Date**: 2025-07-06
+**Status**: ❌ FAILED - Experimental option build failure
+
+**Change Attempted**: Enable aggressive method inlining for better performance
+
+**Configuration Tested**:
+[source,properties]
+----
+quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https,--enable-monitoring=jfr,-O2,-H:+AggressiveInlining
+----
+
+**Results**:
+- **Build**: ❌ Failed during image generation
+- **Warning**: "The option '-H:+AggressiveInlining' is experimental and must be enabled via '-H:+UnlockExperimentalVMOptions'"
+- **Error**: Image generation failed with exit code 1
+
+**Analysis**:
+- **Experimental Feature**: AggressiveInlining is not stable in current GraalVM/Mandrel
+- **Build Failure**: Experimental options cause build instability
+- **Unlock Required**: Would need additional experimental VM options to enable
+- **Risk vs Benefit**: Experimental features unsuitable for production optimization
+
+**Decision**: REMOVED - Experimental feature with build stability issues
+
 === HTTP Client Configuration
 
 **Date**: 2025-07-06

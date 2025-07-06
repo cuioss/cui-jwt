@@ -103,14 +103,20 @@ public class IntegrationTokenValidationBenchmark {
         // Warmup benchmark endpoints with real tokens
         for (int i = 0; i < 3; i++) {
             try {
-                // Warmup access token validation
+                // Warmup blocking access token validation
                 String warmupToken = tokenManager.getValidToken();
                 RestAssured.given()
                         .header("Authorization", "Bearer " + warmupToken)
                         .when()
                         .post("/jwt/validate");
 
-                // Warmup ID token validation
+                // Warmup reactive access token validation
+                RestAssured.given()
+                        .header("Authorization", "Bearer " + warmupToken)
+                        .when()
+                        .post("/jwt/reactive/validate");
+
+                // Warmup blocking ID token validation
                 String warmupIdToken = tokenManager.getValidIdToken();
                 RestAssured.given()
                         .contentType(APPLICATION_JSON)
@@ -118,13 +124,27 @@ public class IntegrationTokenValidationBenchmark {
                         .when()
                         .post("/jwt/validate/id-token");
 
-                // Warmup refresh token validation
+                // Warmup reactive ID token validation
+                RestAssured.given()
+                        .contentType(APPLICATION_JSON)
+                        .body(TOKEN_TEMPLATE.formatted(warmupIdToken))
+                        .when()
+                        .post("/jwt/reactive/validate/id-token");
+
+                // Warmup blocking refresh token validation
                 String warmupRefreshToken = tokenManager.getValidRefreshToken();
                 RestAssured.given()
                         .contentType(APPLICATION_JSON)
                         .body(TOKEN_TEMPLATE.formatted(warmupRefreshToken))
                         .when()
                         .post("/jwt/validate/refresh-token");
+
+                // Warmup reactive refresh token validation
+                RestAssured.given()
+                        .contentType(APPLICATION_JSON)
+                        .body(TOKEN_TEMPLATE.formatted(warmupRefreshToken))
+                        .when()
+                        .post("/jwt/reactive/validate/refresh-token");
             } catch (Exception e) {
                 LOGGER.debug("Warmup request failed (expected during startup): %s", e.getMessage());
             }
@@ -281,5 +301,124 @@ public class IntegrationTokenValidationBenchmark {
         return RestAssured.given()
                 .when()
                 .post(JWT_VALIDATE_PATH);
+    }
+
+    // ===== REACTIVE ENDPOINT BENCHMARKS =====
+
+    /**
+     * Benchmark reactive valid token validation - primary reactive performance metric.
+     * This tests the Mutiny-based reactive approach against virtual threads.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkReactiveValidTokenValidation() {
+        String token = tokenManager.getValidToken();
+        return RestAssured.given()
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_PATH);
+    }
+
+    /**
+     * Benchmark reactive invalid token handling - reactive error path performance.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkReactiveInvalidTokenValidation() {
+        String token = tokenManager.getInvalidToken();
+        return RestAssured.given()
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_PATH);
+    }
+
+    /**
+     * Benchmark reactive expired token handling - reactive time-based validation.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkReactiveExpiredTokenValidation() {
+        String token = tokenManager.getExpiredToken();
+        return RestAssured.given()
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_PATH);
+    }
+
+    /**
+     * Benchmark reactive average response time for valid tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkReactiveValidTokenLatency() {
+        String token = tokenManager.getValidToken();
+        return RestAssured.given()
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_PATH);
+    }
+
+    /**
+     * Benchmark reactive ID token validation - reactive ID token performance.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkReactiveValidIdTokenValidation() {
+        String idToken = tokenManager.getValidIdToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(idToken))
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_ID_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark reactive refresh token validation - reactive refresh token performance.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkReactiveValidRefreshTokenValidation() {
+        String refreshToken = tokenManager.getValidRefreshToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(refreshToken))
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_REFRESH_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark reactive ID token latency - reactive average response time for ID tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkReactiveIdTokenLatency() {
+        String idToken = tokenManager.getValidIdToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(idToken))
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_ID_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark reactive refresh token latency - reactive average response time for refresh tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkReactiveRefreshTokenLatency() {
+        String refreshToken = tokenManager.getValidRefreshToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(refreshToken))
+                .when()
+                .post(JWT_REACTIVE_VALIDATE_REFRESH_TOKEN_PATH);
     }
 }

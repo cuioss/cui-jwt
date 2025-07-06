@@ -25,10 +25,15 @@ import lombok.experimental.UtilityClass;
 @SuppressWarnings("java:S1075") // ok for benchmark testing
 public class BenchmarkConstants {
 
-    // REST endpoint paths
+    // REST endpoint paths - Blocking (Virtual Threads)
     public static final String JWT_VALIDATE_PATH = "/jwt/validate";
     public static final String JWT_VALIDATE_ID_TOKEN_PATH = "/jwt/validate/id-token";
     public static final String JWT_VALIDATE_REFRESH_TOKEN_PATH = "/jwt/validate/refresh-token";
+
+    // REST endpoint paths - Reactive (Mutiny)
+    public static final String JWT_REACTIVE_VALIDATE_PATH = "/jwt/reactive/validate";
+    public static final String JWT_REACTIVE_VALIDATE_ID_TOKEN_PATH = "/jwt/reactive/validate/id-token";
+    public static final String JWT_REACTIVE_VALIDATE_REFRESH_TOKEN_PATH = "/jwt/reactive/validate/refresh-token";
 
     public static final String HEALTH_CHECK_PATH = "/q/health/live";
 
