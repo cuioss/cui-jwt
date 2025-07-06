@@ -1,10 +1,33 @@
 # JWT Performance Optimization Roadmap
 
 ## Current Performance Status
-- **Baseline**: ~200 ops/s → **Optimized**: 248-260 ops/s (25-30% improvement)
-- **Virtual Threads**: ✅ Enabled on JWT validation endpoints
-- **Native Startup**: 0.212s (excellent)
-- **Threading**: Optimized from 2 to 8 JMH threads
+
+### Verified Optimizations (with measured improvements)
+- **Virtual Threads**: ✅ Enabled → 200 ops/s to 248-260 ops/s (24-30% improvement verified)
+- **JMH Threading**: ✅ 2 to 8 threads → Higher benchmark concurrency (verified improvement)
+- **Native Startup**: ✅ 0.212s (measured and verified)
+
+### Unverified Optimizations (to be tested individually)
+- **JFR Monitoring**: Added but performance impact not measured
+- **Native build -O2 flag**: Added but improvement not quantified
+- **Memory runtime options**: Added but impact not verified
+
+## CRITICAL OPTIMIZATION RULE
+
+**⚠️ CRITICAL**: Make each change separately and ONLY use changes/documentation if they are VERIFIED to improve performance with concrete numbers.
+
+**Mandatory Process**:
+1. **Baseline Measurement**: Record current performance before ANY change
+2. **Single Change**: Implement ONLY ONE optimization at a time
+3. **Verification**: Run benchmarks and measure actual impact
+4. **Documentation**: Only document optimizations with proven results
+5. **Rollback**: Remove any change that doesn't show measurable improvement
+
+**Verification Requirements**:
+- Minimum 2-minute benchmark run for each change
+- Document before/after metrics (ops/s, latency, memory)
+- Commit ONLY if improvement is verified (>5% threshold)
+- Remove failed optimizations immediately
 
 ## Build and Verification Workflow
 
@@ -115,20 +138,20 @@ grep -E "(WARN|WARNING|ERROR|Exception|Failed)" benchmark-results.log | sort | u
 **Tasks:**
 - [x] **1.1** Add JFR support to native build configuration ✅
   - Modify `application.properties`: `quarkus.native.additional-build-args=--enable-monitoring=jfr`
-  - Add runtime JFR recording: `-XX:StartFlightRecording=duration=30s,filename=jwt-profile.jfr`
-  - **Build & Verify**: Run full cycle, commit if successful
+  - **Verification Needed**: Measure performance impact of JFR enabled vs disabled
   - **Script Location**: `cui-jwt-quarkus-integration-tests/scripts/jfr-profile-benchmark.sh`
-- [ ] **1.2** Create profiling script for JWT validation workload
+- [x] **1.2** Create profiling script for JWT validation workload ✅
   - Script to run benchmark with JFR recording
   - Target: Identify CPU hotspots in token validation pipeline
-  - **Build & Verify**: Test script execution, commit working script
-- [ ] **1.3** Analyze JFR results autonomously
+  - **Status**: Script created and functional
+- [x] **1.3** Analyze JFR results autonomously ✅
   - Focus on: Object allocation, method profiling, I/O operations
-  - Generate actionable optimization recommendations
-  - **Verification**: JFR file generation and analysis completion
-- [ ] **1.4** Implement top 3 identified optimizations
-  - Based on profiling results (allocation reduction, method inlining, etc.)
-  - **Build & Verify**: Each optimization individually tested and committed
+  - **Status**: Analysis provided, optimizations implemented
+- [ ] **1.4** Verify each optimization separately
+  - **1.4.1** Test native build -O2 flag impact (baseline vs -O2)
+  - **1.4.2** Test memory runtime options impact (baseline vs -m=256m)
+  - **1.4.3** Remove any optimization that doesn't show >5% improvement
+  - **Build & Verify**: Each optimization tested with before/after metrics
 
 **Expected Impact**: 10-20% performance improvement
 **Effort**: Medium

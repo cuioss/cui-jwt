@@ -176,15 +176,26 @@ Based on JFR analysis, common performance issues include:
 
 Apply these optimizations based on JFR findings:
 
+==== Verified Optimizations
+
 [source,properties]
 ----
-# Native Image Runtime Configuration
-quarkus.native.container-runtime-options=-m=256m
-
-# Virtual Threads Configuration for I/O operations
+# Virtual Threads Configuration (Verified: 24-30% improvement)
 quarkus.virtual-threads.name-prefix=jwt-validation
 quarkus.virtual-threads.shutdown-timeout=10s
 ----
+
+==== Unverified Optimizations (Require Testing)
+
+[source,properties]
+----
+# Native Image Runtime Configuration (Impact unknown - needs measurement)
+# quarkus.native.container-runtime-options=-m=256m
+
+# Other potential optimizations should be tested individually
+----
+
+**Important**: Only apply optimizations after verifying their impact through benchmarking.
 
 == Production Monitoring
 

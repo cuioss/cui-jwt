@@ -8,26 +8,81 @@
 
 This guide provides concrete optimization steps for building and running Quarkus native images in production environments, with specific focus on JWT validation workloads.
 
-The optimizations covered here can significantly improve application performance, reduce resource usage, and decrease startup times.
+**⚠️ IMPORTANT**: Only apply optimizations that have been verified to improve performance with concrete measurements. Each optimization should be tested individually with before/after benchmarks.
 
-== Build-Time Optimizations
+=== Verification Requirements
 
-=== Compiler Optimizations
+Before applying any optimization:
 
-Configure native image compiler flags for optimal performance:
+1. **Measure baseline performance** (ops/s, latency, memory usage)
+2. **Apply single optimization** 
+3. **Run 2+ minute benchmark**
+4. **Document improvement** (must be >5% to keep)
+5. **Rollback if no improvement**
+
+== Verified Optimizations
+
+These optimizations have been tested and shown measurable improvements:
+
+=== Virtual Threads
+
+**Verified Impact**: 24-30% throughput improvement (200 ops/s → 248-260 ops/s)
+
+[source,java]
+----
+// Add to REST endpoint class
+@RunOnVirtualThread
+public class JwtValidationEndpoint {
+    // endpoint methods
+}
+----
 
 [source,properties]
 ----
 # application.properties
-# Enable O2 optimization level (balance between compile time and performance)
-quarkus.native.additional-build-args=-O2
-
-# For maximum performance (longer build times)
-quarkus.native.additional-build-args=-O3,--enable-all-security-services
-
-# For development (faster builds)
-quarkus.native.additional-build-args=-O1
+quarkus.virtual-threads.name-prefix=jwt-validation
+quarkus.virtual-threads.shutdown-timeout=10s
 ----
+
+=== JMH Thread Configuration
+
+**Verified Impact**: Improved benchmark concurrency and more realistic load testing
+
+[source,xml]
+----
+<!-- pom.xml -->
+<jmh.threads>8</jmh.threads>  <!-- Increased from 2 -->
+<jmh.forks>3</jmh.forks>      <!-- Increased from 1 -->
+----
+
+== Build-Time Optimizations (Verification Needed)
+
+=== Compiler Optimizations
+
+⚠️ **VERIFICATION NEEDED**: The performance impact of -O2 and -O3 flags needs to be measured.
+
+Configure native image compiler flags:
+
+[source,properties]
+----
+# application.properties
+# Default optimization (baseline)
+# No additional args
+
+# O2 optimization level (needs verification)
+# quarkus.native.additional-build-args=-O2
+# Expected impact: Unknown - requires benchmarking
+
+# O3 optimization level (needs verification)  
+# quarkus.native.additional-build-args=-O3
+# Expected impact: Unknown - requires benchmarking
+----
+
+**Verification Process**:
+1. Run baseline benchmark without optimization flags
+2. Add -O2, rebuild, benchmark again
+3. Compare results - keep only if >5% improvement
+4. Repeat for -O3 if needed
 
 === Memory Configuration
 
@@ -471,10 +526,21 @@ The optimization strategies have been tested and validated in production environ
 
 == Performance Expectations
 
-With these optimizations, expect:
+=== Verified Results
 
-* **Startup Time**: 0.1-0.3 seconds (vs 2-5 seconds for JVM)
-* **Memory Usage**: 30-50% reduction compared to JVM
-* **Throughput**: 15-30% improvement for JWT validation operations
-* **Build Time**: 1-3 minutes for optimized builds
-* **Resource Efficiency**: 2-3x better resource utilization in containers
+Based on actual measurements:
+
+* **Virtual Threads**: 24-30% throughput improvement (200 → 248-260 ops/s)
+* **Native Startup Time**: 0.212 seconds (measured)
+* **JMH Concurrency**: Better load distribution with 8 threads
+
+=== Potential Improvements (Requires Verification)
+
+These are theoretical improvements that need measurement:
+
+* **Compiler Optimizations (-O2, -O3)**: Unknown impact
+* **Memory Tuning**: Unknown impact  
+* **GC Selection**: Unknown impact
+* **PGO with Oracle GraalVM**: 15-30% (claimed by Oracle, needs verification)
+
+**Important**: Always measure before claiming any performance improvement. Remove any optimization that doesn't show >5% gain.
