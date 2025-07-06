@@ -1,0 +1,9 @@
+timestamp,container,cpu_percent,mem_usage,mem_limit,mem_percent,net_io,block_io
+2025-07-06 10:21:52,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:21:56,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:22:00,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:22:03,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:22:07,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:22:11,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:22:14,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
+2025-07-06 10:22:19,xenodochial_hertz,0.00%,54.46MiB / 7.751GiB,256kB / 16kB,29.8MB / 176kB
