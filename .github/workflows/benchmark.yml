@@ -60,9 +60,9 @@ jobs:
           ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Dskip.benchmark=false -DskipTests
 
           # Move micro benchmark results to expected location for upload
-          if [ -d "cui-jwt-benchmarking/benchmark-results" ]; then
+          if [ -d "cui-jwt-benchmarking/target/benchmark-results" ]; then
             echo "Moving micro benchmark results to upload location..."
-            mv cui-jwt-benchmarking/benchmark-results/* benchmark-results/ 2>/dev/null || true
+            mv cui-jwt-benchmarking/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
           fi
 
       - name: Set up Docker Buildx
@@ -79,9 +79,9 @@ jobs:
           ./mvnw --no-transfer-progress clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Dskip.benchmark=false -DskipTests
 
           # Move integration benchmark results to expected location for upload
-          if [ -d "cui-jwt-quarkus-parent/quarkus-integration-benchmark/benchmark-results" ]; then
+          if [ -d "cui-jwt-quarkus-parent/quarkus-integration-benchmark/target/benchmark-results" ]; then
             echo "Moving integration benchmark results to upload location..."
-            mv cui-jwt-quarkus-parent/quarkus-integration-benchmark/benchmark-results/* benchmark-results/ 2>/dev/null || true
+            mv cui-jwt-quarkus-parent/quarkus-integration-benchmark/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
           fi
 
           # Add timestamp to results

@@ -23,7 +23,7 @@
         
         <!-- JMH Configuration Properties -->
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>benchmark-results/micro-benchmark-result</jmh.result.filePrefix>
+        <jmh.result.filePrefix>target/benchmark-results/micro-benchmark-result</jmh.result.filePrefix>
         <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>2</jmh.warmupIterations>
         <jmh.forks>1</jmh.forks>
@@ -208,7 +208,7 @@
                             <executable>mkdir</executable>
                             <arguments>
                                 <argument>-p</argument>
-                                <argument>benchmark-results</argument>
+                                <argument>target/benchmark-results</argument>
                             </arguments>
                         </configuration>
                     </execution>

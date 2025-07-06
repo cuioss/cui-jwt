@@ -27,7 +27,7 @@
 
         <!-- JMH Configuration Properties -->
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
+        <jmh.result.filePrefix>target/benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
         <jmh.iterations>5</jmh.iterations>
         <jmh.warmupIterations>3</jmh.warmupIterations>
         <jmh.forks>5</jmh.forks>
@@ -113,6 +113,22 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
+                    <!-- Create benchmark results directory -->
+                    <execution>
+                        <id>create-benchmark-dir</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>mkdir</executable>
+                            <arguments>
+                                <argument>-p</argument>
+                                <argument>target/benchmark-results</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                     <!-- Start integration tests containers before benchmarks -->
                     <execution>
                         <id>start-integration-containers</id>
