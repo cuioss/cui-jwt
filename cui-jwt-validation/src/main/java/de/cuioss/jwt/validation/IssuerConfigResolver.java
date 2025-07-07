@@ -19,30 +19,42 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Handles the resolution and caching of issuer configurations in a thread-safe manner.
- * This class encapsulates the complex concurrency logic for managing issuer configs,
- * reducing the cyclomatic complexity of TokenValidator.
+ * This class encapsulates the issuer config management logic, reducing the cyclomatic 
+ * complexity of TokenValidator.
  * <p>
  * The resolver implements a two-phase approach:
  * <ol>
- *   <li>Lazy initialization phase: Configs are loaded and cached on-demand</li>
- *   <li>Optimized read-only phase: After all configs are loaded, the cache is optimized for reads</li>
+ *   <li><strong>Lazy initialization phase:</strong> Configs are processed from a pending queue 
+ *       and cached on first access using batch processing within a synchronized block</li>
+ *   <li><strong>Optimized read-only phase:</strong> After all configs are processed, the cache 
+ *       is converted to an immutable Map for optimal read performance</li>
  * </ol>
  * <p>
- * Thread Safety:
- * This class is thread-safe. Multiple threads can concurrently resolve issuer configs
- * with minimal synchronization overhead.
+ * <strong>Performance Characteristics:</strong>
+ * <ul>
+ *   <li><strong>Fast path:</strong> Direct map lookup for cached configs (lock-free)</li>
+ *   <li><strong>Warm-up:</strong> Single synchronized block processes all pending configs at once</li>
+ *   <li><strong>Post-optimization:</strong> Immediate rejection for unknown issuers</li>
+ * </ul>
+ * <p>
+ * <strong>Thread Safety:</strong>
+ * This class is thread-safe. Multiple threads can concurrently resolve cached issuer configs
+ * without synchronization. During the initialization phase, synchronization is used to ensure
+ * consistent batch processing of pending configurations.
  */
+@EqualsAndHashCode
+@ToString(of = {"configCache", "pendingConfigs"})
 public class IssuerConfigResolver {
 
     private static final CuiLogger LOGGER = new CuiLogger(IssuerConfigResolver.class);
@@ -54,19 +66,15 @@ public class IssuerConfigResolver {
 
     /**
      * Cache of resolved issuer configurations.
-     * Uses AtomicReference to allow atomic transition to immutable map.
+     * Initially a ConcurrentHashMap for thread-safe writes during initialization,
+     * then converted to an immutable Map for optimal read performance.
      */
-    private final AtomicReference<Map<String, IssuerConfig>> configCache;
+    private Map<String, IssuerConfig> configCache;
 
     /**
      * Flag indicating whether all configs have been processed and cache is optimized.
      */
     private volatile boolean isOptimized = false;
-    
-    /**
-     * Flag to ensure only one thread performs optimization.
-     */
-    private final AtomicBoolean optimizationInProgress = new AtomicBoolean(false);
 
     /**
      * Security event counter for tracking validation events.
@@ -74,21 +82,17 @@ public class IssuerConfigResolver {
     private final SecurityEventCounter securityEventCounter;
 
     /**
-     * Count of enabled configurations that were provided during construction.
-     */
-    private final int enabledConfigCount;
-
-    /**
      * Creates a new resolver with the given configurations.
-     * Only enabled configurations are processed and cached.
+     * Only enabled configurations are added to the pending queue for lazy processing.
+     * Disabled configurations are logged and ignored.
      *
-     * @param issuerConfigs array of issuer configurations to manage
-     * @param securityEventCounter counter for security events
+     * @param issuerConfigs array of issuer configurations to manage, must not be null
+     * @param securityEventCounter counter for security events, must not be null
      */
     IssuerConfigResolver(@NonNull IssuerConfig[] issuerConfigs,
             @NonNull SecurityEventCounter securityEventCounter) {
         this.securityEventCounter = securityEventCounter;
-        this.configCache = new AtomicReference<>(new ConcurrentHashMap<>());
+        this.configCache = new ConcurrentHashMap<>();
 
         // Initialize collections
         this.pendingConfigs = new ConcurrentLinkedQueue<>();
@@ -110,29 +114,29 @@ public class IssuerConfigResolver {
             }
         }
 
-        this.enabledConfigCount = enabledCount;
-
         LOGGER.debug("IssuerConfigResolver initialized with %s enabled configurations (%s total)", enabledCount, issuerConfigs.length);
     }
 
     /**
      * Resolves the issuer configuration for the given issuer identifier.
      * <p>
-     * This method provides:
+     * This method implements a three-tier resolution strategy:
      * <ol>
-     *   <li>Lock-free fast path for cached configs</li>
-     *   <li>Lock-free lazy initialization using ConcurrentHashMap</li>
-     *   <li>Automatic cache optimization after all configs are processed</li>
+     *   <li><strong>Fast path:</strong> Direct cache lookup (lock-free, constant time)</li>
+     *   <li><strong>Early exit:</strong> Immediate failure if cache is optimized and issuer not found</li>
+     *   <li><strong>Initialization path:</strong> Synchronized batch processing of all pending configs</li>
      * </ol>
+     * <p>
+     * <strong>Performance:</strong> After warm-up, all calls use the lock-free fast path.
+     * During initialization, synchronization ensures consistent batch processing.
      *
-     * @param issuer the issuer identifier to resolve
-     * @return the resolved issuer configuration
-     * @throws TokenValidationException if no healthy configuration is found
+     * @param issuer the issuer identifier to resolve, must not be null
+     * @return the resolved issuer configuration, never null
+     * @throws TokenValidationException if no healthy configuration is found for the issuer
      */
     IssuerConfig resolveConfig(@NonNull String issuer) {
         // Fast path - check cache first (lock-free)
-        Map<String, IssuerConfig> cache = configCache.get();
-        IssuerConfig cachedConfig = cache.get(issuer);
+        IssuerConfig cachedConfig = configCache.get(issuer);
         if (cachedConfig != null) {
             LOGGER.debug("Using cached issuer config for: %s", issuer);
             return cachedConfig;
@@ -149,120 +153,86 @@ public class IssuerConfigResolver {
 
 
     /**
-     * Resolves configuration from pending queue with minimal synchronization.
+     * Resolves configuration from pending queue using synchronized batch processing.
+     * <p>
+     * This method implements the "slow path" for issuer resolution when the config
+     * is not found in the cache and the system is not yet optimized. It uses 
+     * double-checked locking to minimize synchronization overhead.
+     * 
+     * @param issuer the issuer identifier to resolve
+     * @return the resolved issuer configuration
+     * @throws TokenValidationException if no healthy configuration is found
      */
     private IssuerConfig resolveFromPending(@NonNull String issuer) {
-        // Try lock-free processing first
-        IssuerConfig result = tryLockFreeResolve(issuer);
-        if (result != null) {
-            return result;
-        }
-        
+
         // If still not found and not optimized, use synchronized fallback
         if (!isOptimized) {
             synchronized (this) {
                 // Double-check after acquiring lock
-                result = configCache.get().get(issuer);
+               var result = configCache.get(issuer);
                 if (result != null) {
+                    LOGGER.debug("Double-checked cached issuer config for: %s", issuer);
                     return result;
                 }
-                
+
                 // Process all pending configs while we have the lock
                 processAllPendingConfigs();
-                
+
                 // Try one more time
-                result = configCache.get().get(issuer);
+                result = configCache.get(issuer);
                 if (result != null) {
+                    LOGGER.debug("Final try on cached issuer config for: %s", issuer);
                     return result;
                 }
             }
         }
-        
+
         // Not found
         handleIssuerNotFound(issuer);
         throw new IllegalStateException("This line should not be reached");
     }
-    
-    /**
-     * Attempts lock-free resolution of a specific issuer.
-     */
-    private IssuerConfig tryLockFreeResolve(String targetIssuer) {
-        Map<String, IssuerConfig> currentCache = configCache.get();
-        if (!(currentCache instanceof ConcurrentHashMap<String, IssuerConfig> concurrentMap)) {
-            return null; // Already optimized
-        }
 
-        
-        // Look for the specific issuer in pending configs
-        for (IssuerConfig issuerConfig : pendingConfigs) {
-            if (targetIssuer.equals(issuerConfig.getIssuerIdentifier())) {
-                // Check if healthy
-                if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
-                    // Try to add to cache
-                    IssuerConfig existing = concurrentMap.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
-                    if (existing != null) {
-                        return existing; // Another thread beat us
-                    }
-                    // Remove from pending
-                    pendingConfigs.remove(issuerConfig);
-                    LOGGER.debug("Found healthy issuer config for: %s", targetIssuer);
-                    return issuerConfig;
-                }
-            }
-        }
-        return null;
-    }
-    
     /**
-     * Processes all pending configs - must be called while holding lock.
+     * Processes all pending configurations in a batch operation.
+     * <p>
+     * This method must be called while holding the synchronization lock.
+     * It processes all pending configs at once, checking their health status,
+     * caching healthy ones, and removing them from the pending queue.
+     * <p>
+     * When all configs are processed (pending queue is empty), the cache is
+     * optimized by converting from ConcurrentHashMap to an immutable Map.
      */
     private void processAllPendingConfigs() {
-        Map<String, IssuerConfig> currentCache = configCache.get();
-        if (!(currentCache instanceof ConcurrentHashMap<String, IssuerConfig> concurrentMap)) {
-            return; // Already optimized
-        }
-        
+
         Iterator<IssuerConfig> iterator = pendingConfigs.iterator();
         while (iterator.hasNext()) {
             IssuerConfig issuerConfig = iterator.next();
             if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
-                concurrentMap.put(issuerConfig.getIssuerIdentifier(), issuerConfig);
+                configCache.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
                 iterator.remove();
                 LOGGER.debug("Cached issuer config for: %s", issuerConfig.getIssuerIdentifier());
             } else {
                 LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.format(issuerConfig.getIssuerIdentifier()));
             }
         }
-        
+
         // Optimize if all processed
         if (pendingConfigs.isEmpty() && !isOptimized) {
-            optimizeForReadOnlyAccess();
+            configCache = Map.copyOf(configCache);
+            LOGGER.debug("Optimized issuer config cache for read-only access with %s entries", configCache.size());
             isOptimized = true;
             LOGGER.debug("Issuer config cache optimized for read-only access");
         }
     }
 
     /**
-     * Optimizes the cache for read-only access by converting to an immutable map.
-     * This improves performance for the common case where all configs are loaded.
-     * This method is always called from within a synchronized block.
-     */
-    private void optimizeForReadOnlyAccess() {
-        if (pendingConfigs.isEmpty()) {
-            // Convert to immutable map for optimal read performance
-            Map<String, IssuerConfig> currentMap = configCache.get();
-            if (currentMap instanceof ConcurrentHashMap) {
-                configCache.set(Map.copyOf(currentMap));
-                LOGGER.debug("Optimized issuer config cache for read-only access with {} entries", currentMap.size());
-            }
-        }
-    }
-
-    /**
      * Handles the case where no issuer configuration is found.
+     * <p>
+     * This method logs a warning, increments the security event counter,
+     * and throws a TokenValidationException with appropriate details.
      *
-     * @param issuer the issuer that wasn't found
-     * @throws TokenValidationException always
+     * @param issuer the issuer identifier that wasn't found
+     * @throws TokenValidationException always thrown with NO_ISSUER_CONFIG event type
      */
     private void handleIssuerNotFound(String issuer) {
         LOGGER.warn(JWTValidationLogMessages.WARN.NO_ISSUER_CONFIG.format(issuer));
@@ -271,14 +241,5 @@ public class IssuerConfigResolver {
                 SecurityEventCounter.EventType.NO_ISSUER_CONFIG,
                 "No healthy issuer configuration found for issuer: " + issuer
         );
-    }
-
-    /**
-     * Gets the total count of enabled configurations that were processed.
-     *
-     * @return the total number of enabled configurations
-     */
-    int getEnabledConfigCount() {
-        return enabledConfigCount;
     }
 }

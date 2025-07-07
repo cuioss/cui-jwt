@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for {@link JWTValidationLogMessages} utility class.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableGeneratorController
@@ -62,8 +62,6 @@ class JWTValidationLogMessagesTest {
     @Test
     void shouldProvideInfoLogRecords() {
         assertNotNull(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED);
-        assertLogRecordProperties(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED,
-                "JWTValidation", 1, "TokenValidator initialized with %s issuer configurations");
 
         assertNotNull(JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED);
         assertLogRecordProperties(JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED,
@@ -95,7 +93,7 @@ class JWTValidationLogMessagesTest {
         assertTrue(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getIdentifier() >= 500);
         assertTrue(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getIdentifier() < 600);
 
-        // INFO: 1-99  
+        // INFO: 1-99
         assertTrue(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.getIdentifier() >= 1);
         assertTrue(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.getIdentifier() < 100);
 

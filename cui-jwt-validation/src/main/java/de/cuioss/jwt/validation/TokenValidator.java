@@ -154,9 +154,7 @@ public class TokenValidator {
         // Let the IssuerConfigResolver handle all issuer config processing
         this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, securityEventCounter);
 
-        LOGGER.debug("Created TokenValidator with %s enabled issuer configurations (%s total)",
-                issuerConfigResolver.getEnabledConfigCount(), issuerConfigs.length);
-        LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.getEnabledConfigCount()));
+        LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
 
     /**

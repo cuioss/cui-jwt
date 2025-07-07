@@ -183,7 +183,7 @@ public final class JWTValidationLogMessages {
         public static final LogRecord TOKEN_FACTORY_INITIALIZED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(1)
-                .template("TokenValidator initialized with %s issuer configurations")
+                .template("TokenValidator initialized with %s")
                 .build();
 
         public static final LogRecord JWKS_KEYS_UPDATED = LogRecordModel.builder()

@@ -44,7 +44,6 @@ class IssuerConfigResolverTest {
     private SecurityEventCounter securityEventCounter;
     private TestTokenHolder tokenHolder1;
     private TestTokenHolder tokenHolder2;
-    private TestTokenHolder tokenHolder3;
 
     @BeforeEach
     void setUp() {
@@ -53,37 +52,6 @@ class IssuerConfigResolverTest {
         // Create multiple test token holders for testing
         tokenHolder1 = TestTokenGenerators.accessTokens().next();
         tokenHolder2 = TestTokenGenerators.accessTokens().next();
-        tokenHolder3 = TestTokenGenerators.accessTokens().next();
-    }
-
-    @Nested
-    @DisplayName("Constructor Tests")
-    class ConstructorTests {
-
-        @Test
-        @DisplayName("Initialize resolver with enabled configurations")
-        void initializesWithEnabledConfigs() {
-            IssuerConfig config1 = tokenHolder1.getIssuerConfig();
-            IssuerConfig config2 = tokenHolder2.getIssuerConfig();
-
-            IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config1, config2},
-                    securityEventCounter
-            );
-
-            assertEquals(2, resolver.getEnabledConfigCount(), "Should count enabled configs");
-        }
-
-        @Test
-        @DisplayName("Handle empty configuration array")
-        void handlesEmptyConfigArray() {
-            IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[0],
-                    securityEventCounter
-            );
-
-            assertEquals(0, resolver.getEnabledConfigCount());
-        }
     }
 
     @Nested

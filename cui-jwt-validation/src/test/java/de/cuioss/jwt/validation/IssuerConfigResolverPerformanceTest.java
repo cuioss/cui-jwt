@@ -228,7 +228,7 @@ class IssuerConfigResolverPerformanceTest {
         double avgTimeMs = totalTime / (double) threadCount / 1_000_000;
         double minTimeMs = minTime / 1_000_000.0;
         double maxTimeMs = maxTime / 1_000_000.0;
-        
+
         // Skip ratio test if measurements are too fast to be meaningful
         if (minTimeMs > 0.001 && avgTimeMs >= 0.01) {
             double ratio = maxTimeMs / minTimeMs;
