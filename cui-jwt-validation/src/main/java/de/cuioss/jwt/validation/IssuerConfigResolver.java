@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -61,6 +62,11 @@ public class IssuerConfigResolver {
      * Flag indicating whether all configs have been processed and cache is optimized.
      */
     private volatile boolean isOptimized = false;
+    
+    /**
+     * Flag to ensure only one thread performs optimization.
+     */
+    private final AtomicBoolean optimizationInProgress = new AtomicBoolean(false);
 
     /**
      * Security event counter for tracking validation events.
@@ -124,70 +130,115 @@ public class IssuerConfigResolver {
      * @throws TokenValidationException if no healthy configuration is found
      */
     IssuerConfig resolveConfig(@NonNull String issuer) {
-        // Check cache first for performance (lock-free fast path)
-        IssuerConfig cachedConfig = configCache.get().get(issuer);
+        // Fast path - check cache first (lock-free)
+        Map<String, IssuerConfig> cache = configCache.get();
+        IssuerConfig cachedConfig = cache.get(issuer);
         if (cachedConfig != null) {
             LOGGER.debug("Using cached issuer config for: %s", issuer);
             return cachedConfig;
         }
 
-        // Lock-free warm-up: try to populate cache
-        if (!isOptimized) {
-            tryLockFreeWarmup();
-
-            // Check cache again after warmup
-            cachedConfig = configCache.get().get(issuer);
-            if (cachedConfig != null) {
-                LOGGER.debug("Using cached issuer config after warmup for: %s", issuer);
-                return cachedConfig;
-            }
+        // If already optimized and not found, it doesn't exist
+        if (isOptimized) {
+            handleIssuerNotFound(issuer);
         }
 
-        // No healthy matching issuer configuration found
-        handleIssuerNotFound(issuer);
-        throw new IllegalStateException("This line should not be reached");
+        // Slow path - need to process pending configs
+        return resolveFromPending(issuer);
     }
 
 
     /**
-     * Attempts lock-free warmup by processing pending configs.
-     * Uses ConcurrentHashMap operations to avoid synchronization.
+     * Resolves configuration from pending queue with minimal synchronization.
      */
-    private void tryLockFreeWarmup() {
+    private IssuerConfig resolveFromPending(@NonNull String issuer) {
+        // Try lock-free processing first
+        IssuerConfig result = tryLockFreeResolve(issuer);
+        if (result != null) {
+            return result;
+        }
+        
+        // If still not found and not optimized, use synchronized fallback
+        if (!isOptimized) {
+            synchronized (this) {
+                // Double-check after acquiring lock
+                result = configCache.get().get(issuer);
+                if (result != null) {
+                    return result;
+                }
+                
+                // Process all pending configs while we have the lock
+                processAllPendingConfigs();
+                
+                // Try one more time
+                result = configCache.get().get(issuer);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        
+        // Not found
+        handleIssuerNotFound(issuer);
+        throw new IllegalStateException("This line should not be reached");
+    }
+    
+    /**
+     * Attempts lock-free resolution of a specific issuer.
+     */
+    private IssuerConfig tryLockFreeResolve(String targetIssuer) {
+        Map<String, IssuerConfig> currentCache = configCache.get();
+        if (!(currentCache instanceof ConcurrentHashMap<String, IssuerConfig> concurrentMap)) {
+            return null; // Already optimized
+        }
+
+        
+        // Look for the specific issuer in pending configs
+        for (IssuerConfig issuerConfig : pendingConfigs) {
+            if (targetIssuer.equals(issuerConfig.getIssuerIdentifier())) {
+                // Check if healthy
+                if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
+                    // Try to add to cache
+                    IssuerConfig existing = concurrentMap.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
+                    if (existing != null) {
+                        return existing; // Another thread beat us
+                    }
+                    // Remove from pending
+                    pendingConfigs.remove(issuerConfig);
+                    LOGGER.debug("Found healthy issuer config for: %s", targetIssuer);
+                    return issuerConfig;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Processes all pending configs - must be called while holding lock.
+     */
+    private void processAllPendingConfigs() {
         Map<String, IssuerConfig> currentCache = configCache.get();
         if (!(currentCache instanceof ConcurrentHashMap<String, IssuerConfig> concurrentMap)) {
             return; // Already optimized
         }
-
-        // Process all pending configs in a lock-free manner
+        
         Iterator<IssuerConfig> iterator = pendingConfigs.iterator();
         while (iterator.hasNext()) {
             IssuerConfig issuerConfig = iterator.next();
-
-            // Check if the issuer config is healthy
             if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
-                // Use putIfAbsent for lock-free insertion
-                IssuerConfig existing = concurrentMap.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
-                if (existing == null) {
-                    // Successfully inserted, remove from pending queue
-                    iterator.remove();
-                    LOGGER.debug("Found healthy issuer config, cached and removed from queue for: %s", issuerConfig.getIssuerIdentifier());
-                }
+                concurrentMap.put(issuerConfig.getIssuerIdentifier(), issuerConfig);
+                iterator.remove();
+                LOGGER.debug("Cached issuer config for: %s", issuerConfig.getIssuerIdentifier());
             } else {
                 LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.format(issuerConfig.getIssuerIdentifier()));
             }
         }
-
-        // Check if we can optimize - only one thread will succeed
+        
+        // Optimize if all processed
         if (pendingConfigs.isEmpty() && !isOptimized) {
-            synchronized (this) {
-                // Double-check pattern
-                if (pendingConfigs.isEmpty() && !isOptimized) {
-                    optimizeForReadOnlyAccess();
-                    isOptimized = true;
-                    LOGGER.debug("Issuer config cache optimized for read-only access");
-                }
-            }
+            optimizeForReadOnlyAccess();
+            isOptimized = true;
+            LOGGER.debug("Issuer config cache optimized for read-only access");
         }
     }
 
