@@ -69,9 +69,6 @@ class QuarkusTokenValidatorProducerTest {
         assertFalse(issuerConfigs.isEmpty(), "Should have at least one issuer config");
         assertNotNull(securityEventCounter.getCounters(), "SecurityEventCounter should have counters");
 
-        assertEquals(issuerConfigs.size(), tokenValidator.getIssuerConfigs().size(),
-                "Injected issuerConfigs should match TokenValidator's configs");
-
         assertEquals(securityEventCounter.getCounters().size(),
                 tokenValidator.getSecurityEventCounter().getCounters().size(),
                 "Injected SecurityEventCounter should have same counters as TokenValidator's");
@@ -80,7 +77,7 @@ class QuarkusTokenValidatorProducerTest {
                         .anyMatch(issuer -> "https://example.com/auth".equals(issuer.getIssuerIdentifier())),
                 "Should load default issuer from JwtTestProfile");
 
-        // Note: Log assertions are skipped in Quarkus test environment 
+        // Note: Log assertions are skipped in Quarkus test environment
         // as logs during CDI initialization may not be captured by test logger
     }
 

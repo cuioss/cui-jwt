@@ -50,9 +50,9 @@ public class BenchmarkRunner {
                 // Set measurement iterations
                 .measurementIterations(Integer.getInteger("jmh.iterations", 5))
                 // Set measurement time
-                .measurementTime(TimeValue.seconds(1))
+                .measurementTime(TimeValue.seconds(2))
                 // Set warmup time
-                .warmupTime(TimeValue.seconds(1))
+                .warmupTime(TimeValue.seconds(2))
                 // Set number of threads
                 .threads(Integer.getInteger("jmh.threads", 2))
                 // Use benchmark mode specified in individual benchmark annotations

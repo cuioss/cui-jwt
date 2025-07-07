@@ -24,9 +24,9 @@
         <!-- JMH Configuration Properties -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/micro-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>5</jmh.iterations>
+        <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
-        <jmh.forks>5</jmh.forks>
+        <jmh.forks>3</jmh.forks>
         <jmh.threads>200</jmh.threads>
     </properties>
 

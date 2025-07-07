@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
@@ -116,6 +117,7 @@ public class CuiJwtProcessor {
                 // Core validation components
                 TokenValidator.class,
                 IssuerConfig.class,
+                IssuerConfigResolver.class,
                 ParserConfig.class,
                 HttpJwksLoaderConfig.class,
                 SecurityEventCounter.class,
