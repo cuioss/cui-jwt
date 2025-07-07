@@ -1,0 +1,344 @@
+= Native Optimization Guide
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Purpose
+
+This guide provides technical configuration for optimizing Quarkus native images for JWT validation workloads. It defines compiler settings, runtime parameters, and build optimizations for production deployment.
+
+== Related Documentation
+
+* xref:jwt-validation-performance.adoc[JWT Validation Performance] - Performance baselines and metrics
+* xref:jfr-profiling-guide.adoc[JFR Profiling Guide] - Performance analysis tools
+* xref:../configuration/native-image-configuration.adoc[Native Image Configuration] - Basic configuration setup
+
+== Build Configuration
+
+=== Compiler Optimization Settings
+
+**Standard Optimization Level**:
+
+[source,properties]
+----
+# application.properties
+# O2 optimization level (verified improvement)
+quarkus.native.additional-build-args=-O2
+
+# Security services for JWT validation
+quarkus.native.additional-build-args=--enable-all-security-services
+
+# Protocol support for JWKS endpoints
+quarkus.native.additional-build-args=--enable-url-protocols=https,http
+----
+
+**Build Memory Configuration**:
+
+[source,properties]
+----
+# Increase build memory for complex applications
+quarkus.native.native-image-xmx=8g
+
+# Container build memory limits
+quarkus.native.container-runtime-options=-m=4g
+----
+
+=== Reflection Configuration
+
+**Enhanced Reflection for JWT Validation**:
+
+The CUI JWT Quarkus deployment automatically registers performance-critical classes for reflection:
+
+* JWT validation pipeline classes (NonValidatingJwtParser, TokenSignatureValidator, etc.)
+* JWKS loading classes (HttpJwksLoader, JWKSKeyLoader, KeyInfo, etc.)
+* Token content and claim processing classes
+* Security and algorithm preference classes
+
+**Total Reflection Classes**: 4,734+ types registered automatically.
+
+=== Garbage Collection Configuration
+
+**Production GC Settings**:
+
+[source,properties]
+----
+# Serial GC (default, optimal for JWT validation workloads)
+quarkus.native.additional-build-args=--gc=serial
+
+# Alternative: G1GC for high-throughput scenarios
+quarkus.native.additional-build-args=--gc=G1
+----
+
+**Memory Management**:
+
+[source,properties]
+----
+# Runtime memory configuration
+quarkus.native.additional-build-args=-J-Xms64m,-J-Xmx512m
+----
+
+== Runtime Configuration
+
+=== Virtual Thread Configuration
+
+**Virtual Thread Settings** (verified 24-30% improvement):
+
+[source,properties]
+----
+# Enable virtual threads for JWT validation
+quarkus.virtual-threads.name-prefix=jwt-validation
+quarkus.virtual-threads.shutdown-timeout=10s
+----
+
+**Application Annotation**:
+
+[source,java]
+----
+@RunOnVirtualThread
+public class JwtValidationResource {
+    // JWT validation endpoints
+}
+----
+
+=== Container Resource Configuration
+
+**Memory Limits**:
+
+[source,properties]
+----
+# Container memory limit for optimal utilization
+quarkus.native.container-runtime-options=-m=64m
+----
+
+**Container Runtime Options**:
+
+[source,bash]
+----
+# Docker container configuration
+docker run -m 64m --cpus="2.0" jwt-application:native
+----
+
+=== JFR Monitoring Configuration
+
+**Java Flight Recorder Support**:
+
+[source,properties]
+----
+# Enable JFR monitoring in native image
+quarkus.native.additional-build-args=--enable-monitoring=jfr
+
+# JFR recording options
+quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https
+----
+
+**JFR Runtime Configuration**:
+
+[source,bash]
+----
+# Start application with JFR recording
+./application -XX:+FlightRecorder -XX:StartFlightRecording=duration=60s,filename=jwt-profile.jfr
+----
+
+== Network and Security Configuration
+
+=== HTTPS Configuration
+
+**TLS Protocol Support**:
+
+[source,properties]
+----
+# Enable HTTPS for JWKS endpoints
+quarkus.native.additional-build-args=--enable-url-protocols=https
+
+# TLS certificate handling
+quarkus.native.resources.includes=**/*.p12,**/*.crt,**/*.key
+----
+
+=== Security Service Configuration
+
+**JWT Validation Security Services**:
+
+[source,properties]
+----
+# Enable all security services for comprehensive JWT support
+quarkus.native.additional-build-args=--enable-all-security-services
+
+# Alternative: Specific security services only
+quarkus.native.additional-build-args=--enable-security-services=crypto,random
+----
+
+== Build Performance Optimization
+
+=== Parallel Build Configuration
+
+**Multi-threaded Compilation**:
+
+[source,properties]
+----
+# Use available CPU cores for compilation
+quarkus.native.additional-build-args=-H:NumberOfAnalysisThreads=8
+
+# Memory configuration for parallel builds
+quarkus.native.additional-build-args=-J-Xmx8g
+----
+
+=== Build Caching
+
+**Native Image Build Cache**:
+
+[source,bash]
+----
+# Enable build cache directory
+export QUARKUS_NATIVE_CACHE_DIR=/tmp/quarkus-native-cache
+
+# Maven build with caching
+./mvnw clean package -Pnative -Dquarkus.native.reuse-existing=true
+----
+
+=== Incremental Build Configuration
+
+**Development Build Optimization**:
+
+[source,properties]
+----
+# Enable build reports for optimization analysis
+quarkus.native.enable-reports=true
+
+# Development monitoring
+quarkus.native.additional-build-args=--enable-monitoring=heapdump
+----
+
+== Complete Configuration Example
+
+=== Production Configuration
+
+**Complete application.properties for production**:
+
+[source,properties]
+----
+# Native Image Optimization
+quarkus.native.additional-build-args=-O2,--gc=serial,--enable-all-security-services,--enable-url-protocols=https,--enable-monitoring=jfr
+quarkus.native.native-image-xmx=8g
+quarkus.native.container-runtime-options=-m=64m
+
+# Virtual Threads
+quarkus.virtual-threads.name-prefix=jwt-validation
+quarkus.virtual-threads.shutdown-timeout=10s
+
+# Resource Inclusion
+quarkus.native.resources.includes=**/*.p12,**/*.crt,**/*.key
+
+# Build Reports
+quarkus.native.enable-reports=true
+----
+
+=== Development Configuration
+
+**Development environment settings**:
+
+[source,properties]
+----
+# Development Native Image Settings
+quarkus.native.additional-build-args=-O2,--enable-monitoring=jfr,heapdump
+quarkus.native.native-image-xmx=4g
+
+# Faster development builds
+quarkus.native.reuse-existing=true
+----
+
+== Build Commands
+
+=== Standard Build Process
+
+**Required Build Sequence**:
+
+[source,bash]
+----
+# Build cui-jwt-validation module first
+./mvnw clean install -pl cui-jwt-validation
+
+# Build native integration
+./mvnw clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pnative
+----
+
+=== Performance Testing Build
+
+**Benchmark-Ready Build**:
+
+[source,bash]
+----
+# Clean build with performance optimization
+./mvnw clean package -Pnative \
+  -Dquarkus.native.additional-build-args="-O2,--gc=serial,--enable-all-security-services"
+
+# Container build for testing
+./mvnw clean package -Pnative \
+  -Dquarkus.native.container-build=true \
+  -Dquarkus.native.container-runtime-options="-m=64m"
+----
+
+== Runtime Verification
+
+=== Performance Validation
+
+**Key Performance Indicators**:
+
+* Native image size: ~65MB (expected)
+* Startup time: <1 second
+* Memory usage: ~6.4MB baseline
+* CPU utilization: 90%+ under load
+
+**Validation Command**:
+
+[source,bash]
+----
+# Run performance benchmark
+./scripts/benchmark-with-monitoring.sh
+----
+
+=== Health Check Validation
+
+**Native Image Health Verification**:
+
+[source,bash]
+----
+# Check application health
+curl http://localhost:8080/q/health/live
+curl http://localhost:8080/q/health/ready
+----
+
+== Troubleshooting
+
+=== Common Build Issues
+
+**Missing Reflection Configuration**:
+
+* Ensure cui-jwt-validation module is built before native image
+* Verify reflection configuration is applied automatically by deployment
+
+**Memory Issues During Build**:
+
+* Increase native-image-xmx to 8g or higher
+* Use container build with adequate memory allocation
+
+**Runtime Performance Issues**:
+
+* Verify virtual threads are enabled
+* Check garbage collection configuration
+* Validate container resource limits
+
+=== Performance Regression Detection
+
+**Benchmark Comparison**:
+
+* Baseline: 240,000+ ops/s throughput
+* Memory: <10MB runtime usage
+* Latency: <0.01ms per request
+
+== See Also
+
+* xref:jwt-validation-performance.adoc[JWT Validation Performance] - Performance baselines and analysis
+* xref:jfr-profiling-guide.adoc[JFR Profiling Guide] - Performance monitoring setup
+* xref:../configuration/native-image-configuration.adoc[Native Image Configuration] - Basic configuration reference
