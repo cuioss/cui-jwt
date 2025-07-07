@@ -25,19 +25,20 @@ import lombok.ToString;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Handles the resolution and caching of issuer configurations in a thread-safe manner.
- * This class encapsulates the issuer config management logic, reducing the cyclomatic 
+ * This class encapsulates the issuer config management logic, reducing the cyclomatic
  * complexity of TokenValidator.
  * <p>
  * The resolver implements a two-phase approach:
  * <ol>
- *   <li><strong>Lazy initialization phase:</strong> Configs are processed from a pending queue 
+ *   <li><strong>Lazy initialization phase:</strong> Configs are processed from a pending queue
  *       and cached on first access using batch processing within a synchronized block</li>
- *   <li><strong>Optimized read-only phase:</strong> After all configs are processed, the cache 
+ *   <li><strong>Optimized read-only phase:</strong> After all configs are processed, the cache
  *       is converted to an immutable Map for optimal read performance</li>
  * </ol>
  * <p>
@@ -151,31 +152,86 @@ public class IssuerConfigResolver {
         return resolveFromPending(issuer);
     }
 
+    /**
+     * Finds a matching issuer configuration in the pending queue.
+     * <p>
+     * This method searches the pending queue for a configuration that matches
+     * the given issuer identifier. It does not modify the queue or perform
+     * health checks.
+     *
+     * @param issuer the issuer identifier to match
+     * @return the matching configuration, or null if not found
+     */
+    private IssuerConfig findMatchingPendingConfig(String issuer) {
+        for (IssuerConfig config : pendingConfigs) {
+            // For configs with static issuer identifier
+            if (issuer.equals(config.issuerIdentifier)) {
+                return config;
+            }
+
+            // For configs with dynamic issuer identifier (from JwksLoader)
+            if (LoaderStatus.OK.equals(config.jwksLoader.isHealthy())) {
+                Optional<String> jwksLoaderIssuer = config.jwksLoader.getIssuerIdentifier();
+                if (jwksLoaderIssuer.isPresent() && issuer.equals(jwksLoaderIssuer.get())) {
+                    return config;
+                }
+            }
+        }
+        return null;
+    }
 
     /**
-     * Resolves configuration from pending queue using synchronized batch processing.
+     * Resolves configuration from pending queue using optimized processing.
      * <p>
      * This method implements the "slow path" for issuer resolution when the config
-     * is not found in the cache and the system is not yet optimized. It uses 
-     * double-checked locking to minimize synchronization overhead.
-     * 
+     * is not found in the cache and the system is not yet optimized. It uses
+     * a non-blocking approach to minimize synchronization overhead.
+     *
      * @param issuer the issuer identifier to resolve
      * @return the resolved issuer configuration
      * @throws TokenValidationException if no healthy configuration is found
      */
     private IssuerConfig resolveFromPending(@NonNull String issuer) {
-
-        // If still not found and not optimized, use synchronized fallback
+        // If still not found and not optimized, use optimized processing
         if (!isOptimized) {
+            // First, try to find a matching config in the pending queue
+            IssuerConfig matchingConfig = findMatchingPendingConfig(issuer);
+
+            if (matchingConfig != null) {
+                // Process this specific config and add to cache if healthy
+                if (LoaderStatus.OK.equals(matchingConfig.isHealthy())) {
+                    // Use atomic operation to add to cache if not present
+                    IssuerConfig existing = configCache.putIfAbsent(issuer, matchingConfig);
+                    if (existing != null) {
+                        // Another thread already added it
+                        LOGGER.debug("Another thread already cached issuer config for: %s", issuer);
+                        return existing;
+                    }
+
+                    // Remove from pending queue
+                    pendingConfigs.remove(matchingConfig);
+                    LOGGER.debug("Cached issuer config for: %s", issuer);
+
+                    // Check if we should optimize
+                    checkAndOptimize();
+
+                    return matchingConfig;
+                } else {
+                    LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.format(issuer));
+                }
+            }
+
+            // If we couldn't find or process a matching config, try synchronized fallback
             synchronized (this) {
                 // Double-check after acquiring lock
-               var result = configCache.get(issuer);
+                var result = configCache.get(issuer);
                 if (result != null) {
                     LOGGER.debug("Double-checked cached issuer config for: %s", issuer);
                     return result;
                 }
 
-                // Process all pending configs while we have the lock
+                // Process all remaining configs while we have the lock
+                // This is a fallback for when we couldn't find a matching config
                 processAllPendingConfigs();
 
                 // Try one more time
@@ -203,7 +259,6 @@ public class IssuerConfigResolver {
      * optimized by converting from ConcurrentHashMap to an immutable Map.
      */
     private void processAllPendingConfigs() {
-
         Iterator<IssuerConfig> iterator = pendingConfigs.iterator();
         while (iterator.hasNext()) {
             IssuerConfig issuerConfig = iterator.next();
@@ -217,11 +272,25 @@ public class IssuerConfigResolver {
         }
 
         // Optimize if all processed
+        checkAndOptimize();
+    }
+
+    /**
+     * Checks if all pending configurations have been processed and optimizes the cache if needed.
+     * <p>
+     * This method checks if the pending queue is empty and, if so, optimizes the cache
+     * by converting it to an immutable Map for optimal read performance.
+     */
+    private void checkAndOptimize() {
         if (pendingConfigs.isEmpty() && !isOptimized) {
-            configCache = Map.copyOf(configCache);
-            LOGGER.debug("Optimized issuer config cache for read-only access with %s entries", configCache.size());
-            isOptimized = true;
-            LOGGER.debug("Issuer config cache optimized for read-only access");
+            synchronized (this) {
+                if (pendingConfigs.isEmpty() && !isOptimized) {
+                    configCache = Map.copyOf(configCache);
+                    LOGGER.debug("Optimized issuer config cache for read-only access with %s entries", configCache.size());
+                    isOptimized = true;
+                    LOGGER.debug("Issuer config cache optimized for read-only access");
+                }
+            }
         }
     }
 
