@@ -16,6 +16,9 @@
 package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
+import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
+import de.cuioss.jwt.quarkus.producer.HttpContextService;
+import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
@@ -129,6 +132,25 @@ public class CuiJwtProcessor {
     }
 
     /**
+     * Register Bearer Token classes for reflection.
+     * Separated to handle runtime-only classes that aren't available at deployment time.
+     *
+     * @return A {@link ReflectiveClassBuildItem} for Bearer Token classes
+     */
+    @BuildStep
+    @NonNull
+    public ReflectiveClassBuildItem registerBearerTokenClassesForReflection() {
+        return ReflectiveClassBuildItem.builder(
+                BearerTokenProducer.class,
+                HttpContextService.class,
+                BearerToken.class)
+                .methods(true)
+                .fields(true)
+                .constructors(true)
+                .build();
+    }
+
+    /**
      * Register JWT validation pipeline classes for reflection.
      * These are the performance-critical classes in the validation pipeline.
      *
@@ -193,6 +215,7 @@ public class CuiJwtProcessor {
     }
 
 
+
     /**
      * Register classes that need to be initialized at runtime.
      *
@@ -226,6 +249,8 @@ public class CuiJwtProcessor {
     public AdditionalBeanBuildItem additionalBeans() {
         return AdditionalBeanBuildItem.builder()
                 .addBeanClass(TokenValidatorProducer.class)
+                .addBeanClass(BearerTokenProducer.class)
+                .addBeanClass(HttpContextService.class)
                 .setUnremovable()
                 .build();
     }
@@ -243,9 +268,17 @@ public class CuiJwtProcessor {
                 DotName.createSimple(TokenValidator.class.getName())
         ));
 
-        // Ensure the producer is never removed
+        // Ensure the producers are never removed
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
                 DotName.createSimple(TokenValidatorProducer.class.getName())
+        ));
+        
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
+                DotName.createSimple(BearerTokenProducer.class.getName())
+        ));
+        
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
+                DotName.createSimple(HttpContextService.class.getName())
         ));
 
     }

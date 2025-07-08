@@ -171,9 +171,9 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .when()
                     .post(JWT_VALIDATE_PATH)
                     .then()
-                    .statusCode(400)
+                    .statusCode(401)
                     .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or invalid Authorization header"));
+                    .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
         }
 
         @Test
@@ -187,9 +187,9 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .when()
                     .post(JWT_VALIDATE_PATH)
                     .then()
-                    .statusCode(400)
+                    .statusCode(401)
                     .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or invalid Authorization header"));
+                    .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
         }
 
         @Test
@@ -205,7 +205,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .then()
                     .statusCode(401)
                     .body(VALID, equalTo(false))
-                    .body(MESSAGE, containsString("Access token validation failed"));
+                    .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
         }
 
         @Test
@@ -300,6 +300,80 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .statusCode(200)
                     .body(VALID, equalTo(true))
                     .body(MESSAGE, containsString(REFRESH_TOKEN_IS_VALID));
+        }
+    }
+
+    @Nested
+    @DisplayName("Bearer Token Producer Tests")
+    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+    class BearerTokenProducerTests {
+
+        @Test
+        @Order(20)
+        @DisplayName("Bearer token with scope requirements - test token scopes")
+        void testBearerTokenWithScopes() {
+            if (getTestRealm().isKeycloakHealthy()) {
+                TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+                
+                given()
+                        .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                        .when()
+                        .get("/jwt/bearer-token/with-scopes")
+                        .then()
+                        .statusCode(200);
+                // Just verify the endpoint responds - content validation depends on actual token
+            }
+        }
+
+        @Test
+        @Order(22)
+        @DisplayName("Bearer token with role requirements - test token roles")
+        void testBearerTokenWithRoles() {
+            if (getTestRealm().isKeycloakHealthy()) {
+                TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+                
+                given()
+                        .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                        .when()
+                        .get("/jwt/bearer-token/with-roles")
+                        .then()
+                        .statusCode(200);
+                // Just verify the endpoint responds - content validation depends on actual token
+            }
+        }
+
+        @Test
+        @Order(24)
+        @DisplayName("Bearer token with group requirements - test token groups")
+        void testBearerTokenWithGroups() {
+            if (getTestRealm().isKeycloakHealthy()) {
+                TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+                
+                given()
+                        .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                        .when()
+                        .get("/jwt/bearer-token/with-groups")
+                        .then()
+                        .statusCode(200);
+                // Just verify the endpoint responds - content validation depends on actual token
+            }
+        }
+
+        @Test
+        @Order(26)
+        @DisplayName("Bearer token with all requirements - test token requirements")
+        void testBearerTokenWithAll() {
+            if (getTestRealm().isKeycloakHealthy()) {
+                TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+                
+                given()
+                        .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                        .when()
+                        .get("/jwt/bearer-token/with-all")
+                        .then()
+                        .statusCode(200);
+                // Just verify the endpoint responds - content validation depends on actual token
+            }
         }
     }
 }

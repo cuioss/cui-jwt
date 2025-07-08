@@ -15,9 +15,15 @@
  */
 package de.cuioss.jwt.integration.endpoint;
 
+import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
@@ -45,6 +51,10 @@ public class JwtValidationEndpoint {
     private final TokenValidator tokenValidator;
 
     @Inject
+    @BearerToken(requiredScopes = "plattform", requiredRoles = "superRolle")
+    Optional<AccessTokenContent> basicToken;
+
+    @Inject
     public JwtValidationEndpoint(TokenValidator tokenValidator) {
         this.tokenValidator = tokenValidator;
         LOGGER.info("JwtValidationEndpoint initialized with TokenValidator: %s", (tokenValidator != null));
@@ -52,30 +62,29 @@ public class JwtValidationEndpoint {
 
     /**
      * Validates a JWT access token - primary endpoint for integration testing and benchmarking.
+     * Now uses BearerTokenProducer for simplified token handling.
      *
-     * @param token JWT token from Authorization header
      * @return Validation result
      */
     @POST
     @Path("/validate")
-    public Response validateToken(@HeaderParam("Authorization") String token) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            LOGGER.warn("Missing or invalid Authorization header");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ValidationResponse(false, "Missing or invalid Authorization header"))
+    public Response validateToken() {
+        if (basicToken.isPresent()) {
+            AccessTokenContent token = basicToken.get();
+            LOGGER.debug("Access token validation successful for subject: %s", token.getSubject());
+            return Response.ok(new ValidationResponse(true, "Access token is valid",
+                    Map.of(
+                        "subject", token.getSubject(),
+                        "scopes", token.getScopes(),
+                        "roles", token.getRoles(),
+                        "groups", token.getGroups(),
+                        "email", token.getEmail().orElse("not-present")
+                    )))
                     .build();
-        }
-
-        String jwtToken = token.substring(7); // Remove "Bearer " prefix
-        LOGGER.debug("Access token validation: %s", jwtToken);
-        try {
-            tokenValidator.createAccessToken(jwtToken);
-            return Response.ok(new ValidationResponse(true, "Access token is valid"))
-                    .build();
-        } catch (TokenValidationException e) {
-            LOGGER.warn("Access token validation error: %s", e.getMessage());
+        } else {
+            LOGGER.warn("Bearer token validation failed or token not present");
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(new ValidationResponse(false, "Access token validation failed: " + e.getMessage()))
+                    .entity(new ValidationResponse(false, "Bearer token validation failed or token not present", null))
                     .build();
         }
     }
@@ -140,11 +149,119 @@ public class JwtValidationEndpoint {
         }
     }
 
+    /**
+     * Tests BearerToken injection with scope requirements.
+     *
+     * @return Validation result for token with required scopes
+     */
+    @GET
+    @Path("/bearer-token/with-scopes")
+    public Response testTokenWithScopes() {
+        if (basicToken.isPresent()) {
+            AccessTokenContent token = basicToken.get();
+            boolean hasRequiredScope = token.providesScopes(List.of("read"));
+            return Response.ok(new ValidationResponse(hasRequiredScope,
+                    hasRequiredScope ? "Token has required scopes" : "Token does not have required scopes",
+                    Map.of(
+                        "subject", token.getSubject(),
+                        "scopes", token.getScopes(),
+                        "hasRequiredScope", hasRequiredScope
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests BearerToken injection with role requirements.
+     *
+     * @return Validation result for token with required roles
+     */
+    @GET
+    @Path("/bearer-token/with-roles")
+    public Response testTokenWithRoles() {
+        if (basicToken.isPresent()) {
+            AccessTokenContent token = basicToken.get();
+            boolean hasRequiredRole = token.providesRoles(List.of("user"));
+            return Response.ok(new ValidationResponse(hasRequiredRole,
+                    hasRequiredRole ? "Token has required roles" : "Token does not have required roles",
+                    Map.of(
+                        "subject", token.getSubject(),
+                        "roles", token.getRoles(),
+                        "hasRequiredRole", hasRequiredRole
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests BearerToken injection with group requirements.
+     *
+     * @return Validation result for token with required groups
+     */
+    @GET
+    @Path("/bearer-token/with-groups")
+    public Response testTokenWithGroups() {
+        if (basicToken.isPresent()) {
+            AccessTokenContent token = basicToken.get();
+            boolean hasRequiredGroup = token.providesGroups(List.of("test-group"));
+            return Response.ok(new ValidationResponse(hasRequiredGroup,
+                    hasRequiredGroup ? "Token has required groups" : "Token does not have required groups",
+                    Map.of(
+                        "subject", token.getSubject(),
+                        "groups", token.getGroups(),
+                        "hasRequiredGroup", hasRequiredGroup
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests BearerToken injection with all requirements.
+     *
+     * @return Validation result for token with all requirements
+     */
+    @GET
+    @Path("/bearer-token/with-all")
+    public Response testTokenWithAll() {
+        if (basicToken.isPresent()) {
+            AccessTokenContent token = basicToken.get();
+            boolean hasAllRequirements = token.providesScopes(List.of("read")) &&
+                                        token.providesRoles(List.of("user")) &&
+                                        token.providesGroups(List.of("test-group"));
+            return Response.ok(new ValidationResponse(hasAllRequirements,
+                    hasAllRequirements ? "Token meets all requirements" : "Token does not meet all requirements",
+                    Map.of(
+                        "subject", token.getSubject(),
+                        "scopes", token.getScopes(),
+                        "roles", token.getRoles(),
+                        "groups", token.getGroups(),
+                        "hasAllRequirements", hasAllRequirements
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+                    .build();
+        }
+    }
+
 
     // Request and Response DTOs
     public record TokenRequest(String token) {
     }
 
-    public record ValidationResponse(boolean valid, String message) {
+    public record ValidationResponse(boolean valid, String message, Map<String, Object> data) {
+        // Convenience constructor for backwards compatibility
+        public ValidationResponse(boolean valid, String message) {
+            this(valid, message, null);
+        }
     }
 }
