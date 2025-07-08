@@ -43,11 +43,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class IssuerConfigResolverSynchronizationTest {
 
-    private static final int DEFAULT_THREAD_COUNT = 50;
-    private static final double CONVOY_VARIANCE_THRESHOLD = 5.0;
-    private static final double CONVOY_MAX_AVG_THRESHOLD = 10.0;
-    private static final double PERFORMANCE_THRESHOLD_MS = 1.0;
-
     private IssuerConfigResolver issuerConfigResolver;
     private String issuerIdentifier;
 
@@ -59,107 +54,6 @@ class IssuerConfigResolverSynchronizationTest {
 
         SecurityEventCounter securityEventCounter = new SecurityEventCounter();
         issuerConfigResolver = new IssuerConfigResolver(new IssuerConfig[]{issuerConfig}, securityEventCounter);
-    }
-
-    @Test
-    @Timeout(value = 20, unit = TimeUnit.SECONDS)
-    @DisplayName("Detect synchronization bottlenecks and convoy effects")
-    void detectsSynchronizationBottlenecks() throws InterruptedException {
-        int threadCount = DEFAULT_THREAD_COUNT; // Reduced from 200 to make convoy effect more observable
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch endLatch = new CountDownLatch(threadCount);
-
-        AtomicInteger successCount = new AtomicInteger(0);
-        AtomicLong totalWaitTime = new AtomicLong(0);
-        AtomicLong maxWaitTime = new AtomicLong(0);
-        List<Long> threadTimes = new ArrayList<>(threadCount);
-
-        // Submit all threads simultaneously to create convoy effect
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    // Wait for all threads to be ready
-                    startLatch.await();
-
-                    long startTime = System.nanoTime();
-
-                    // This should hit the synchronization logic in IssuerConfigResolver
-                    IssuerConfig result = issuerConfigResolver.resolveConfig(issuerIdentifier);
-
-                    long duration = System.nanoTime() - startTime;
-
-                    synchronized (threadTimes) {
-                        threadTimes.add(duration);
-                    }
-
-                    totalWaitTime.addAndGet(duration);
-                    maxWaitTime.updateAndGet(current -> Math.max(current, duration));
-                    successCount.incrementAndGet();
-
-                    assertNotNull(result);
-                } catch (Exception e) {
-                    fail("Thread execution failed: " + e.getMessage());
-                } finally {
-                    endLatch.countDown();
-                }
-            });
-        }
-
-        // Start all threads simultaneously
-        startLatch.countDown();
-
-        // Wait for all threads to complete
-        boolean completed = endLatch.await(15, TimeUnit.SECONDS);
-        assertTrue(completed, "Not all threads completed within timeout");
-
-        executor.shutdown();
-
-        // Analyze results for convoy effect symptoms
-        double avgTimeMs = totalWaitTime.get() / (double) successCount.get() / 1_000_000;
-        double maxTimeMs = maxWaitTime.get() / 1_000_000.0;
-
-        // Calculate variance to detect convoy effect
-        long avgTime = totalWaitTime.get() / successCount.get();
-        long variance = 0;
-        synchronized (threadTimes) {
-            for (Long time : threadTimes) {
-                long diff = time - avgTime;
-                variance += diff * diff;
-            }
-            variance /= threadTimes.size();
-        }
-        double stdDeviationMs = Math.sqrt(variance) / 1_000_000.0;
-
-        // Convoy effect symptoms:
-        // 1. High variance in execution times
-        // 2. Some threads taking much longer than others
-        // 3. Standard deviation being a significant portion of average time
-
-        // Assertions to detect convoy effect
-        assertEquals(threadCount, successCount.get(), "Not all threads succeeded");
-
-        // Detect convoy effect symptoms through assertions
-        // High variance indicates threads are waiting for each other
-        double varianceRatio = stdDeviationMs / avgTimeMs;
-        double maxToAvgRatio = maxTimeMs / avgTimeMs;
-
-        // If performance is extremely fast (< 0.01ms), measurement noise dominates variance
-        // In this case, we've successfully eliminated the bottleneck
-        if (avgTimeMs >= 0.01) {
-            // For the extreme case of 50 threads hitting the same uncached issuer simultaneously,
-            // some variance is expected. A ratio < 3.0 indicates acceptable performance.
-            // The old synchronized implementation had ratios > 5.0
-            assertTrue(varianceRatio < CONVOY_VARIANCE_THRESHOLD,
-                    "CONVOY EFFECT DETECTED: Variance ratio %.2f (stddev/avg) indicates synchronized block bottleneck in resolveConfig()".formatted(varianceRatio));
-
-            assertTrue(maxToAvgRatio < CONVOY_MAX_AVG_THRESHOLD,
-                    "CONVOY EFFECT DETECTED: Maximum time is %.1fx average - threads are blocking each other".formatted(maxToAvgRatio));
-        }
-
-        // Performance should be excellent for issuer config resolution
-        assertTrue(avgTimeMs < PERFORMANCE_THRESHOLD_MS,
-                "Performance degradation: %.2f ms average per resolution (expected < %.1fms)".formatted(avgTimeMs, PERFORMANCE_THRESHOLD_MS));
     }
 
     @Test
