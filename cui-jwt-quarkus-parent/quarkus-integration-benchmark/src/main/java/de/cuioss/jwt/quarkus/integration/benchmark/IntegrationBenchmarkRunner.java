@@ -23,7 +23,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Main entry point for running JMH integration benchmarks.

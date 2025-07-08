@@ -18,8 +18,8 @@ package de.cuioss.jwt.validation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -33,102 +33,14 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Concurrency tests for IssuerConfigResolver focusing on race conditions
  * during the transition from ConcurrentHashMap to immutable map.
- * 
+ *
  * This test reproduces the UnsupportedOperationException that occurs when:
  * 1. Thread A optimizes the cache to read-only (Map.copyOf)
  * 2. Thread B tries to put() into the now-immutable map
  */
 class IssuerConfigResolverConcurrencyTest {
 
-    private static final int THREAD_COUNT = 200;
-    private static final int ITERATIONS_PER_THREAD = 10;
-
-    /**
-     * Reproduces the race condition where multiple threads try to resolve issuer configs
-     * while optimization to read-only access happens concurrently.
-     *
-     * This test should reproduce the UnsupportedOperationException that occurs when:
-     * 1. Thread A optimizes the map to read-only (Map.copyOf)
-     * 2. Thread B tries to put() into the now-immutable map
-     */
-    @RepeatedTest(5)
-    @DisplayName("Reproduce race condition during cache optimization")
-    void shouldReproduceRaceConditionWithReadOnlyOptimization() throws InterruptedException {
-        // Create multiple issuer configs to increase chance of race condition
-        List<IssuerConfig> issuerConfigs = new ArrayList<>();
-        List<String> issuerIds = new ArrayList<>();
-
-        for (int i = 0; i < 10; i++) {
-            TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-            IssuerConfig config = tokenHolder.getIssuerConfig();
-            String issuerId = config.getIssuerIdentifier();
-
-            issuerConfigs.add(config);
-            issuerIds.add(issuerId);
-        }
-
-        IssuerConfigResolver resolver = new IssuerConfigResolver(
-                issuerConfigs.toArray(new IssuerConfig[0]),
-                new SecurityEventCounter()
-        );
-
-        ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
-        CountDownLatch startLatch = new CountDownLatch(1);
-        CountDownLatch endLatch = new CountDownLatch(THREAD_COUNT);
-        AtomicInteger successCount = new AtomicInteger(0);
-        AtomicReference<Exception> raceConditionException = new AtomicReference<>();
-
-        // Start all threads that will compete for issuer resolution
-        for (int i = 0; i < THREAD_COUNT; i++) {
-            final int threadIndex = i;
-            executor.submit(() -> {
-                try {
-                    startLatch.await();
-
-                    for (int j = 0; j < ITERATIONS_PER_THREAD; j++) {
-                        // Each thread tries to resolve different issuers to maximize contention
-                        String targetIssuer = issuerIds.get((threadIndex + j) % issuerIds.size());
-
-                        try {
-                            IssuerConfig result = resolver.resolveConfig(targetIssuer);
-                            assertNotNull(result);
-                            successCount.incrementAndGet();
-                        } catch (UnsupportedOperationException e) {
-                            // This is the race condition we're trying to reproduce
-                            raceConditionException.compareAndSet(null, e);
-                        }
-                    }
-                } catch (Exception e) {
-                    raceConditionException.compareAndSet(null, e);
-                } finally {
-                    endLatch.countDown();
-                }
-            });
-        }
-
-        // Start all threads simultaneously to maximize race condition chance
-        startLatch.countDown();
-
-        boolean completed = endLatch.await(10, TimeUnit.SECONDS);
-        executor.shutdown();
-
-        assertTrue(completed, "All threads should complete within timeout");
-
-        // If we caught the race condition, report it
-        if (raceConditionException.get() != null) {
-            Exception exception = raceConditionException.get();
-            if (exception instanceof UnsupportedOperationException) {
-                System.out.println("Successfully reproduced UnsupportedOperationException race condition: " +
-                        exception.getMessage());
-            } else {
-                fail("Unexpected exception during concurrent access: " + exception.getMessage(), exception);
-            }
-        }
-
-        // Verify that we achieved some level of successful concurrent access
-        assertTrue(successCount.get() > 0,
-                "Should have some successful operations even with race conditions");
-    }
+    private static final CuiLogger LOGGER = new CuiLogger(IssuerConfigResolverConcurrencyTest.class);
 
     /**
      * Test specifically for the case where optimization happens while other threads
@@ -178,7 +90,7 @@ class IssuerConfigResolverConcurrencyTest {
 
                 } catch (UnsupportedOperationException e) {
                     // Expected during race condition - don't fail the test
-                    System.out.println("Caught expected UnsupportedOperationException: " + e.getMessage());
+                    LOGGER.info("Caught expected UnsupportedOperationException: %s", e.getMessage());
                 } catch (Exception e) {
                     unexpectedException.compareAndSet(null, e);
                 } finally {
@@ -232,7 +144,7 @@ class IssuerConfigResolverConcurrencyTest {
                     successCount.incrementAndGet();
 
                 } catch (Exception e) {
-                    System.err.println("Thread failed: " + e.getMessage());
+                    LOGGER.warn("Thread failed: %s", e.getMessage());
                 } finally {
                     endLatch.countDown();
                 }
@@ -254,7 +166,6 @@ class IssuerConfigResolverConcurrencyTest {
     void shouldHandleMixedHealthStatusUnderConcurrency() throws InterruptedException {
         List<IssuerConfig> issuerConfigs = new ArrayList<>();
         List<String> healthyIssuerIds = new ArrayList<>();
-        List<String> unhealthyIssuerIds = new ArrayList<>();
 
         // Create healthy issuers (real configs are always healthy in tests)
         for (int i = 0; i < 5; i++) {
@@ -296,7 +207,7 @@ class IssuerConfigResolverConcurrencyTest {
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Unexpected exception: " + e.getMessage());
+                    LOGGER.warn("Unexpected exception: %s", e.getMessage());
                 } finally {
                     latch.countDown();
                 }

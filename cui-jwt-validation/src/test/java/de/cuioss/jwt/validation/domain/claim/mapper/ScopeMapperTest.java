@@ -91,10 +91,6 @@ class ScopeMapperTest {
         String input = "openid profile openid email profile";
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        SortedSet<String> expected = new TreeSet<>();
-        expected.add("openid");
-        expected.add("profile");
-        expected.add("email");
         ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");

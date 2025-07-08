@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test to verify that IssuerConfigResolver.resolveConfig() operates without
  * synchronization bottlenecks under high concurrency.
- * 
+ *
  * This test directly measures the synchronization characteristics of
  * IssuerConfigResolver to ensure lock-free operation and detect convoy effects.
  */
@@ -135,7 +135,7 @@ class IssuerConfigResolverSynchronizationTest {
         // 1. High variance in execution times
         // 2. Some threads taking much longer than others
         // 3. Standard deviation being a significant portion of average time
-        
+
         // Assertions to detect convoy effect
         assertEquals(threadCount, successCount.get(), "Not all threads succeeded");
 
@@ -216,7 +216,7 @@ class IssuerConfigResolverSynchronizationTest {
         executor.shutdown();
 
         double avgTimeMs = totalTime.get() / (double) operations.get() / 1_000_000;
-        double throughputOpsPerSec = operations.get() / (totalTime.get() / 1_000_000_000.0);
+
 
         // During warmup phase, IssuerConfigResolver should be fast
         assertTrue(avgTimeMs < 1.0, "Operations should be fast during warmup (was: %.2f ms)".formatted(avgTimeMs));

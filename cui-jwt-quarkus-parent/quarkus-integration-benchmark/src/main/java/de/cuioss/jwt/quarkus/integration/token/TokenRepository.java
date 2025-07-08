@@ -32,40 +32,40 @@ import java.util.concurrent.ThreadLocalRandom;
  * Repository for managing pre-loaded JWT tokens from multiple Keycloak realms.
  * This class fetches real tokens upfront to avoid impacting benchmark performance
  * during actual measurements.
- * 
+ *
  * <h2>Multi-Realm Design Rationale</h2>
- * 
+ *
  * <p>This implementation has been enhanced to support multiple Keycloak realms
  * without code duplication. The key design decisions are:</p>
- * 
+ *
  * <h3>1. Realm Configuration Abstraction</h3>
  * <ul>
  *   <li>{@link RealmConfig} encapsulates realm-specific settings (client ID, credentials, etc.)</li>
  *   <li>Eliminates hardcoded realm values and enables parameterized token fetching</li>
  *   <li>Supports both public and confidential OAuth2 clients</li>
  * </ul>
- * 
+ *
  * <h3>2. Token Distribution Strategy</h3>
  * <ul>
  *   <li>Tokens are distributed evenly across all configured realms</li>
  *   <li>If tokenPoolSize=100 and 2 realms, each realm provides ~50 tokens</li>
  *   <li>Remainder tokens are distributed to ensure exact total count</li>
  * </ul>
- * 
+ *
  * <h3>3. Testing Benefits</h3>
  * <ul>
  *   <li>Benchmark realm: Tests well-known discovery configuration</li>
  *   <li>Integration realm: Tests direct JWKS URL configuration</li>
  *   <li>Validates both JWT validation pathways in a single benchmark run</li>
  * </ul>
- * 
+ *
  * <h3>4. Backward Compatibility</h3>
  * <ul>
  *   <li>Legacy single-realm constructor remains for existing code</li>
  *   <li>Deprecated methods guide migration to multi-realm approach</li>
  *   <li>Default behavior unchanged when using old constructor</li>
  * </ul>
- * 
+ *
  * <h3>5. Code Reuse vs Duplication</h3>
  * <p>Alternative approaches considered:</p>
  * <ul>
@@ -73,7 +73,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *   <li><strong>Separate Repositories:</strong> Would duplicate the complex retry/error handling logic</li>
  *   <li><strong>Configuration Objects (Chosen):</strong> Provides clean parameterization without duplication</li>
  * </ul>
- * 
+ *
  * @see RealmConfig
  * @see BenchmarkConfiguration#getRealmConfigurations()
  */
@@ -96,7 +96,7 @@ public class TokenRepository {
 
     /**
      * Creates a new token repository with multi-realm support.
-     * 
+     *
      * Design Note: This constructor enables fetching tokens from multiple realms
      * to test different JWT validation configurations without code duplication.
      * Tokens are distributed evenly across the provided realms.
@@ -116,18 +116,6 @@ public class TokenRepository {
         this.invalidTokens = new ArrayList<>();
     }
 
-    /**
-     * Creates a new token repository (legacy single-realm constructor).
-     * This constructor maintains backward compatibility by using the benchmark realm.
-     *
-     * @param keycloakUrl URL of the Keycloak server
-     * @param tokenPoolSize Number of tokens to pre-load for each type
-     * @deprecated Use the multi-realm constructor for better test coverage
-     */
-    @Deprecated
-    public TokenRepository(String keycloakUrl, int tokenPoolSize) {
-        this(keycloakUrl, tokenPoolSize, List.of(BenchmarkConfiguration.getBenchmarkRealmConfig()));
-    }
 
     /**
      * Initializes the token repository by fetching tokens from Keycloak.
@@ -312,7 +300,7 @@ public class TokenRepository {
         // In a real scenario, you might want to configure Keycloak with very short token lifetimes
         int expiredTokenLimit = Math.min(tokenPoolSize, 20); // Limit expired tokens for now
         RealmConfig firstRealm = realmConfigs.getFirst(); // Use first realm for expired tokens
-        
+
         for (int i = 0; i < expiredTokenLimit; i++) {
             try {
                 String token = fetchTokenFromKeycloak(firstRealm);
@@ -395,15 +383,6 @@ public class TokenRepository {
         return tokens.get(ACCESS_TOKEN);
     }
 
-    /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use the realm-specific version
-     */
-    @Deprecated
-    private Map<String, String> fetchAllTokensFromKeycloak() throws TokenFetchException {
-        return fetchAllTokensFromKeycloak(realmConfigs.getFirst());
-    }
-
     private Map<String, String> attemptAllTokensFetch(RealmConfig realmConfig) {
         Response response = createTokenRequest(realmConfig);
         return extractAllTokensFromResponse(response);
@@ -429,15 +408,6 @@ public class TokenRepository {
         return requestSpec
                 .when()
                 .post(tokenUrl);
-    }
-
-    /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use the realm-specific version
-     */
-    @Deprecated
-    private Map<String, String> attemptAllTokensFetch() {
-        return attemptAllTokensFetch(realmConfigs.getFirst());
     }
 
     private Map<String, String> extractAllTokensFromResponse(Response response) {

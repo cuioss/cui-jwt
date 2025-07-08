@@ -239,7 +239,8 @@ class IssuerConfigResolverTest {
                         assertNotNull(result);
                         assertEquals(targetIssuer, result.getIssuerIdentifier());
                         successCount.incrementAndGet();
-                    } catch (Exception e) {
+                    } catch (Exception ignored) {
+                        // Noop, not tested here
                     } finally {
                         latch.countDown();
                     }
@@ -305,7 +306,8 @@ class IssuerConfigResolverTest {
                         assertSame(config, result);
                         successCount.incrementAndGet();
 
-                    } catch (Exception e) {
+                    } catch (Exception ignored) {
+                        // Noop, not tested here
                     } finally {
                         latch.countDown();
                     }
