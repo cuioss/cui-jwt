@@ -141,21 +141,6 @@ public class PerformanceIndicatorBenchmark {
         bh.consume(response);
     }
 
-    /**
-     * Single shot time measurement - cold start performance.
-     * Provides single execution timing without warmup effects.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void measureSingleShotTime(Blackhole bh) {
-        String token = tokenManager.getValidToken();
-        Response response = RestAssured.given()
-                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
-                .when()
-                .post(JWT_VALIDATE_PATH);
-        bh.consume(response);
-    }
 
     /**
      * Calculates the weighted performance score using the same formula as the micro-benchmark module.

@@ -32,8 +32,8 @@
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>2</jmh.forks>
         <jmh.threads>MAX</jmh.threads>
-        <jmh.time>2s</jmh.time>
-        <jmh.warmupTime>2s</jmh.warmupTime>
+        <jmh.time>3s</jmh.time>
+        <jmh.warmupTime>3s</jmh.warmupTime>
 
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
@@ -157,6 +157,7 @@
                             <arguments>
                                 <argument>-classpath</argument>
                                 <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
+                                <argument>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argument>
                                 <argument>-Djmh.result.format=${jmh.result.format}</argument>
                                 <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
                                 <argument>-Djmh.iterations=${jmh.iterations}</argument>
