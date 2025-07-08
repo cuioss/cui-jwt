@@ -139,11 +139,13 @@
                 <executions>
                     <execution>
                         <id>test-jar</id>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
                         <configuration>
                             <classifier>generators</classifier>
+                            <finalName>${project.build.finalName}</finalName>
                             <includes>
                                 <include>de/cuioss/jwt/validation/test/**</include>
                             </includes>
