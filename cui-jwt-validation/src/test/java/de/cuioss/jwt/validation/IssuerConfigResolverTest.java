@@ -193,7 +193,6 @@ class IssuerConfigResolverTest {
                         results.add(result);
                     } catch (Exception e) {
                         exceptionCount.incrementAndGet();
-                        System.err.println("Exception in thread: " + e.getMessage());
                     } finally {
                         latch.countDown();
                     }
@@ -241,7 +240,6 @@ class IssuerConfigResolverTest {
                         assertEquals(targetIssuer, result.getIssuerIdentifier());
                         successCount.incrementAndGet();
                     } catch (Exception e) {
-                        System.err.println("Exception in concurrent test: " + e.getMessage());
                     } finally {
                         latch.countDown();
                     }
@@ -308,7 +306,6 @@ class IssuerConfigResolverTest {
                         successCount.incrementAndGet();
 
                     } catch (Exception e) {
-                        System.err.println("Thread failed: " + e.getMessage());
                     } finally {
                         latch.countDown();
                     }

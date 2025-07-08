@@ -34,28 +34,34 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * This class encapsulates the issuer config management logic, reducing the cyclomatic
  * complexity of TokenValidator.
  * <p>
- * The resolver implements a two-phase approach:
+ * The resolver implements a dual-cache approach to eliminate race conditions:
  * <ol>
- *   <li><strong>Lazy initialization phase:</strong> Configs are processed from a pending queue
- *       and cached on first access using batch processing within a synchronized block</li>
- *   <li><strong>Optimized read-only phase:</strong> After all configs are processed, the cache
- *       is converted to an immutable Map for optimal read performance</li>
+ *   <li><strong>Mutable cache:</strong> A ConcurrentHashMap used during initialization
+ *       for thread-safe writes while configs are being resolved from the pending queue</li>
+ *   <li><strong>Immutable cache:</strong> A read-only Map created after all configs are
+ *       processed, providing optimal performance for the fast path</li>
  * </ol>
  * <p>
  * <strong>Performance Characteristics:</strong>
  * <ul>
- *   <li><strong>Fast path:</strong> Direct map lookup for cached configs (lock-free)</li>
- *   <li><strong>Warm-up:</strong> Single synchronized block processes all pending configs at once</li>
- *   <li><strong>Post-optimization:</strong> Immediate rejection for unknown issuers</li>
+ *   <li><strong>Fast path:</strong> Direct lookup in the appropriate cache (lock-free)</li>
+ *   <li><strong>Initialization:</strong> Uses mutable cache with ConcurrentHashMap semantics</li>
+ *   <li><strong>Post-optimization:</strong> Uses immutable cache with immediate rejection for unknown issuers</li>
  * </ul>
  * <p>
  * <strong>Thread Safety:</strong>
- * This class is thread-safe. Multiple threads can concurrently resolve cached issuer configs
- * without synchronization. During the initialization phase, synchronization is used to ensure
- * consistent batch processing of pending configurations.
+ * This class is thread-safe using a dual-cache approach with proper memory ordering:
+ * <ul>
+ *   <li><strong>Mutable cache:</strong> ConcurrentHashMap provides thread-safe operations during initialization</li>
+ *   <li><strong>Immutable cache:</strong> Published via volatile write, ensuring safe publication without locks</li>
+ *   <li><strong>State determination:</strong> Null check on immutable cache determines optimization state</li>
+ *   <li><strong>No race conditions:</strong> Threads never attempt to modify the immutable cache</li>
+ * </ul>
+ * The volatile immutableCache field serves both as the optimized cache and the optimization
+ * state indicator, eliminating the need for a separate boolean flag.
  */
 @EqualsAndHashCode
-@ToString(of = {"configCache", "pendingConfigs"})
+@ToString(of = {"mutableCache", "immutableCache", "pendingConfigs"})
 public class IssuerConfigResolver {
 
     private static final CuiLogger LOGGER = new CuiLogger(IssuerConfigResolver.class);
@@ -66,16 +72,17 @@ public class IssuerConfigResolver {
     private final ConcurrentLinkedQueue<IssuerConfig> pendingConfigs;
 
     /**
-     * Cache of resolved issuer configurations.
-     * Initially a ConcurrentHashMap for thread-safe writes during initialization,
-     * then converted to an immutable Map for optimal read performance.
+     * Mutable cache used during initialization phase.
+     * This ConcurrentHashMap allows thread-safe writes while configs are being resolved.
      */
-    private Map<String, IssuerConfig> configCache;
-
+    private final ConcurrentHashMap<String, IssuerConfig> mutableCache;
+    
     /**
-     * Flag indicating whether all configs have been processed and cache is optimized.
+     * Immutable cache used after optimization for optimal read performance.
+     * This is set once when all configs have been processed and remains immutable thereafter.
+     * Null value indicates the cache is still in initialization phase; non-null indicates optimization is complete.
      */
-    private volatile boolean isOptimized = false;
+    private volatile Map<String, IssuerConfig> immutableCache;
 
     /**
      * Security event counter for tracking validation events.
@@ -93,7 +100,8 @@ public class IssuerConfigResolver {
     IssuerConfigResolver(@NonNull IssuerConfig[] issuerConfigs,
             @NonNull SecurityEventCounter securityEventCounter) {
         this.securityEventCounter = securityEventCounter;
-        this.configCache = new ConcurrentHashMap<>();
+        this.mutableCache = new ConcurrentHashMap<>();
+        this.immutableCache = null; // Will be set after optimization
 
         // Initialize collections
         this.pendingConfigs = new ConcurrentLinkedQueue<>();
@@ -136,16 +144,24 @@ public class IssuerConfigResolver {
      * @throws TokenValidationException if no healthy configuration is found for the issuer
      */
     IssuerConfig resolveConfig(@NonNull String issuer) {
-        // Fast path - check cache first (lock-free)
-        IssuerConfig cachedConfig = configCache.get(issuer);
-        if (cachedConfig != null) {
-            LOGGER.debug("Using cached issuer config for: %s", issuer);
-            return cachedConfig;
-        }
-
-        // If already optimized and not found, it doesn't exist
-        if (isOptimized) {
+        // Fast path - check immutable cache first if available (lock-free)
+        Map<String, IssuerConfig> optimizedCache = immutableCache;
+        if (optimizedCache != null) {
+            // Use immutable cache for optimal performance
+            IssuerConfig cachedConfig = optimizedCache.get(issuer);
+            if (cachedConfig != null) {
+                LOGGER.debug("Using cached issuer config from immutable cache for: %s", issuer);
+                return cachedConfig;
+            }
+            // If optimized and not found, it doesn't exist
             handleIssuerNotFound(issuer);
+        }
+        
+        // Fallback to mutable cache during initialization
+        IssuerConfig cachedConfig = mutableCache.get(issuer);
+        if (cachedConfig != null) {
+            LOGGER.debug("Using cached issuer config from mutable cache for: %s", issuer);
+            return cachedConfig;
         }
 
         // Slow path - need to process pending configs
@@ -193,15 +209,15 @@ public class IssuerConfigResolver {
      */
     private IssuerConfig resolveFromPending(@NonNull String issuer) {
         // If still not found and not optimized, use optimized processing
-        if (!isOptimized) {
+        if (immutableCache == null) {
             // First, try to find a matching config in the pending queue
             IssuerConfig matchingConfig = findMatchingPendingConfig(issuer);
 
             if (matchingConfig != null) {
                 // Process this specific config and add to cache if healthy
                 if (LoaderStatus.OK.equals(matchingConfig.isHealthy())) {
-                    // Use atomic operation to add to cache if not present
-                    IssuerConfig existing = configCache.putIfAbsent(issuer, matchingConfig);
+                    // Use atomic operation to add to mutable cache if not present
+                    IssuerConfig existing = mutableCache.putIfAbsent(issuer, matchingConfig);
                     if (existing != null) {
                         // Another thread already added it
                         LOGGER.debug("Another thread already cached issuer config for: %s", issuer);
@@ -224,7 +240,7 @@ public class IssuerConfigResolver {
             // If we couldn't find or process a matching config, try synchronized fallback
             synchronized (this) {
                 // Double-check after acquiring lock
-                var result = configCache.get(issuer);
+                var result = mutableCache.get(issuer);
                 if (result != null) {
                     LOGGER.debug("Double-checked cached issuer config for: %s", issuer);
                     return result;
@@ -235,7 +251,7 @@ public class IssuerConfigResolver {
                 processAllPendingConfigs();
 
                 // Try one more time
-                result = configCache.get(issuer);
+                result = mutableCache.get(issuer);
                 if (result != null) {
                     LOGGER.debug("Final try on cached issuer config for: %s", issuer);
                     return result;
@@ -263,7 +279,7 @@ public class IssuerConfigResolver {
         while (iterator.hasNext()) {
             IssuerConfig issuerConfig = iterator.next();
             if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
-                configCache.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
+                mutableCache.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
                 iterator.remove();
                 LOGGER.debug("Cached issuer config for: %s", issuerConfig.getIssuerIdentifier());
             } else {
@@ -278,16 +294,24 @@ public class IssuerConfigResolver {
     /**
      * Checks if all pending configurations have been processed and optimizes the cache if needed.
      * <p>
-     * This method checks if the pending queue is empty and, if so, optimizes the cache
-     * by converting it to an immutable Map for optimal read performance.
+     * This method checks if the pending queue is empty and, if so, creates an immutable
+     * copy of the mutable cache for optimal read performance. The immutable cache is set
+     * atomically via volatile write, ensuring thread-safe publication without requiring
+     * additional synchronization for reads.
+     * <p>
+     * The mutable cache is kept unchanged to avoid any race conditions during the
+     * transition period. Optimization state is determined by whether immutableCache is null.
      */
     private void checkAndOptimize() {
-        if (pendingConfigs.isEmpty() && !isOptimized) {
+        if (pendingConfigs.isEmpty() && immutableCache == null) {
             synchronized (this) {
-                if (pendingConfigs.isEmpty() && !isOptimized) {
-                    configCache = Map.copyOf(configCache);
-                    LOGGER.debug("Optimized issuer config cache for read-only access with %s entries", configCache.size());
-                    isOptimized = true;
+                if (pendingConfigs.isEmpty() && immutableCache == null) {
+                    // Create immutable copy from mutable cache
+                    Map<String, IssuerConfig> optimizedCache = Map.copyOf(mutableCache);
+                    LOGGER.debug("Created immutable cache for read-only access with %s entries", optimizedCache.size());
+                    
+                    // Set immutable cache via volatile write for thread-safe publication
+                    immutableCache = optimizedCache;
                     LOGGER.debug("Issuer config cache optimized for read-only access");
                 }
             }
