@@ -14,16 +14,84 @@ global.console = {
 };
 
 // Mock window object properties commonly used in DevUI components
-Object.defineProperty(window, 'location', {
-  value: {
-    href: 'http://localhost:8080/q/dev-ui',
-    hostname: 'localhost',
-    port: '8080',
-    protocol: 'http:',
-    pathname: '/q/dev-ui',
-  },
-  writable: true,
-});
+// Proper fix for jest-environment-jsdom ^30.0.4 to prevent navigation warnings
+// Save the original location object to preserve its property descriptors
+const originalLocation = window.location;
+
+// Delete the existing location property and recreate it properly
+delete window.location;
+window.location = Object.defineProperties(
+  {},
+  {
+    // Copy all original property descriptors to maintain jsdom compatibility
+    ...Object.getOwnPropertyDescriptors(originalLocation),
+    // Override specific properties with our test values
+    href: {
+      configurable: true,
+      enumerable: true,
+      get: () => 'http://localhost:8080/q/dev-ui',
+      set: () => {}, // No-op setter to prevent navigation
+    },
+    hostname: {
+      configurable: true,
+      enumerable: true,
+      get: () => 'localhost',
+      set: () => {},
+    },
+    port: {
+      configurable: true,
+      enumerable: true,
+      get: () => '8080',
+      set: () => {},
+    },
+    protocol: {
+      configurable: true,
+      enumerable: true,
+      get: () => 'http:',
+      set: () => {},
+    },
+    pathname: {
+      configurable: true,
+      enumerable: true,
+      get: () => '/q/dev-ui',
+      set: () => {},
+    },
+    search: {
+      configurable: true,
+      enumerable: true,
+      get: () => '',
+      set: () => {},
+    },
+    hash: {
+      configurable: true,
+      enumerable: true,
+      get: () => '',
+      set: () => {},
+    },
+    origin: {
+      configurable: true,
+      enumerable: true,
+      get: () => 'http://localhost:8080',
+      set: () => {},
+    },
+    // Mock navigation methods to prevent "Not implemented" errors
+    assign: {
+      configurable: true,
+      enumerable: true,
+      value: jest.fn(),
+    },
+    replace: {
+      configurable: true,
+      enumerable: true,
+      value: jest.fn(),
+    },
+    reload: {
+      configurable: true,
+      enumerable: true,
+      value: jest.fn(),
+    },
+  }
+);
 
 // Mock fetch API for HTTP requests
 global.fetch = jest.fn(() =>
