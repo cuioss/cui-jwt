@@ -47,7 +47,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "babel-jest": "^29.7.0",
     "core-js": "^3.39.0",
-    "css-tree": "^2.3.0",
+    "css-tree": "^3.1.0",
     "eslint": "^9.14.0",
     "@eslint/js": "^9.14.0",
     "eslint-config-prettier": "^9.0.0",
