@@ -154,6 +154,29 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Ensure test-jar with generators classifier is deployed -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>${project.build.directory}/${project.build.finalName}-generators.jar</file>
+                                    <type>jar</type>
+                                    <classifier>generators</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Force test compilation even when tests are skipped -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
