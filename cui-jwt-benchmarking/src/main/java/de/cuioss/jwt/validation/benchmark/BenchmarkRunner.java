@@ -50,18 +50,17 @@ public class BenchmarkRunner {
                 // Set measurement iterations
                 .measurementIterations(Integer.getInteger("jmh.iterations", 5))
                 // Set measurement time
-                .measurementTime(TimeValue.seconds(2))
+                .measurementTime(getMeasurementTime())
                 // Set warmup time
-                .warmupTime(TimeValue.seconds(2))
+                .warmupTime(getWarmupTime())
                 // Set number of threads
-                .threads(Integer.getInteger("jmh.threads", 2))
+                .threads(getThreadCount())
                 // Use benchmark mode specified in individual benchmark annotations
                 // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
                 // Configure result output - create a combined report for all benchmarks
                 .resultFormat(getResultFormat())
                 .result(getResultFile())
-                // Add JVM argument to configure logging for forked JVM instances
-                .jvmArgsAppend("-Djava.util.logging.config.file=src/test/resources/benchmark-logging.properties")
+                // JVM arguments are controlled by POM configuration
                 .build();
 
         // Run the benchmarks
@@ -96,5 +95,50 @@ public class BenchmarkRunner {
             return resultFile;
         }
         return "jmh-result.json";
+    }
+
+    /**
+     * Gets the measurement time from system property or defaults to 2 seconds.
+     */
+    private static TimeValue getMeasurementTime() {
+        String time = System.getProperty("jmh.time", "2s");
+        return parseTimeValue(time);
+    }
+
+    /**
+     * Gets the warmup time from system property or defaults to 2 seconds.
+     */
+    private static TimeValue getWarmupTime() {
+        String time = System.getProperty("jmh.warmupTime", "2s");
+        return parseTimeValue(time);
+    }
+
+    /**
+     * Gets the thread count from system property. Supports 'MAX' for maximum available cores.
+     */
+    private static int getThreadCount() {
+        String threads = System.getProperty("jmh.threads", "2");
+        if ("MAX".equals(threads)) {
+            return Runtime.getRuntime().availableProcessors();
+        }
+        try {
+            return Integer.parseInt(threads);
+        } catch (NumberFormatException e) {
+            return 2; // Default fallback
+        }
+    }
+
+    /**
+     * Parses a time value string (e.g., "2s", "1000ms") into a TimeValue object.
+     */
+    private static TimeValue parseTimeValue(String timeStr) {
+        if (timeStr.endsWith("s")) {
+            return TimeValue.seconds(Integer.parseInt(timeStr.substring(0, timeStr.length() - 1)));
+        } else if (timeStr.endsWith("ms")) {
+            return TimeValue.milliseconds(Integer.parseInt(timeStr.substring(0, timeStr.length() - 2)));
+        } else {
+            // Default to seconds if no unit specified
+            return TimeValue.seconds(Integer.parseInt(timeStr));
+        }
     }
 }

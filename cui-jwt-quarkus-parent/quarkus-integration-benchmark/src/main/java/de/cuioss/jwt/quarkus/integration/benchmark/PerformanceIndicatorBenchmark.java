@@ -80,7 +80,6 @@ public class PerformanceIndicatorBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    @Threads(Threads.MAX)
     public void measureThroughput(Blackhole bh) {
         String token = tokenManager.getValidToken();
         Response response = RestAssured.given()
@@ -98,7 +97,6 @@ public class PerformanceIndicatorBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @Threads(1)
     public void measureAverageTime(Blackhole bh) {
         String token = tokenManager.getValidToken();
         Response response = RestAssured.given()

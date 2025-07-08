@@ -54,9 +54,6 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
 public class TokenValidatorBenchmark {
 
     private TokenValidator tokenValidator;
@@ -173,7 +170,6 @@ public class TokenValidatorBenchmark {
      */
     @Benchmark
     @Group("concurrent")
-    @GroupThreads(4)
     public AccessTokenContent validateAccessTokenConcurrent() {
         return tokenValidator.createAccessToken(accessToken);
     }
@@ -184,7 +180,6 @@ public class TokenValidatorBenchmark {
      */
     @Benchmark
     @Group("concurrent")
-    @GroupThreads(2)
     public IdTokenContent validateIdTokenConcurrent() {
         return tokenValidator.createIdToken(idToken);
     }
@@ -195,7 +190,6 @@ public class TokenValidatorBenchmark {
      */
     @Benchmark
     @Group("concurrent")
-    @GroupThreads(2)
     public RefreshTokenContent validateRefreshTokenConcurrent() {
         return tokenValidator.createRefreshToken(refreshToken);
     }

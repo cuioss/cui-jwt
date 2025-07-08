@@ -38,9 +38,6 @@ import java.util.concurrent.TimeUnit;
  * that provides a single indicator of overall JWT validation performance.
  */
 @State(Scope.Benchmark)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
 @SuppressWarnings("java:S112")
 public class PerformanceIndicatorBenchmark {
 
@@ -67,7 +64,6 @@ public class PerformanceIndicatorBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    @Threads(Threads.MAX)
     public AccessTokenContent measureThroughput() {
         try {
             return tokenValidator.createAccessToken(validAccessToken);
@@ -87,7 +83,6 @@ public class PerformanceIndicatorBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    @Threads(1)
     public AccessTokenContent measureAverageTime() {
         try {
             return tokenValidator.createAccessToken(validAccessToken);

@@ -53,12 +53,13 @@ public class IssuerConfigResolver {
      * This ConcurrentHashMap allows thread-safe writes while configs are being resolved.
      */
     private final ConcurrentHashMap<String, IssuerConfig> mutableCache;
-    
+
     /**
      * Immutable cache used after optimization for optimal read performance.
      * This is set once when all configs have been processed and remains immutable thereafter.
      * Null value indicates the cache is still in initialization phase; non-null indicates optimization is complete.
      */
+    @SuppressWarnings("java:S3077") // Map.copyOf() creates truly immutable map, safe for concurrent reads after volatile publication
     private volatile Map<String, IssuerConfig> immutableCache;
 
     /**
@@ -122,7 +123,7 @@ public class IssuerConfigResolver {
         if (cachedFromImmutable.isPresent()) {
             return cachedFromImmutable.get();
         }
-        
+
         // Fallback to mutable cache during initialization
         IssuerConfig cachedFromMutable = mutableCache.get(issuer);
         if (cachedFromMutable != null) {
@@ -236,7 +237,7 @@ public class IssuerConfigResolver {
                     // Create immutable copy from mutable cache
                     Map<String, IssuerConfig> optimizedCache = Map.copyOf(mutableCache);
                     LOGGER.debug("Created immutable cache for read-only access with %s entries", optimizedCache.size());
-                    
+
                     // Set immutable cache via volatile write for thread-safe publication
                     immutableCache = optimizedCache;
                     LOGGER.debug("Issuer config cache optimized for read-only access");

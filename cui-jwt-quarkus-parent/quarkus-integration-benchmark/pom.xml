@@ -25,13 +25,15 @@
         <test.https.port>10443</test.https.port>
         <test.keycloak.port>1443</test.keycloak.port>
 
-        <!-- JMH Configuration Properties -->
+        <!-- JMH Configuration Properties - Optimized for measurement precision -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>5</jmh.iterations>
+        <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
-        <jmh.forks>5</jmh.forks>
-        <jmh.threads>200</jmh.threads>
+        <jmh.forks>2</jmh.forks>
+        <jmh.threads>MAX</jmh.threads>
+        <jmh.time>2s</jmh.time>
+        <jmh.warmupTime>2s</jmh.warmupTime>
 
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
@@ -161,6 +163,8 @@
                                 <argument>-Djmh.warmupIterations=${jmh.warmupIterations}</argument>
                                 <argument>-Djmh.forks=${jmh.forks}</argument>
                                 <argument>-Djmh.threads=${jmh.threads}</argument>
+                                <argument>-Djmh.time=${jmh.time}</argument>
+                                <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
                                 <argument>-Dtest.https.port=${test.https.port}</argument>
                                 <argument>-Dtest.keycloak.port=${test.keycloak.port}</argument>
                                 <argument>-Dbenchmark.keycloak.url=${benchmark.keycloak.url}</argument>

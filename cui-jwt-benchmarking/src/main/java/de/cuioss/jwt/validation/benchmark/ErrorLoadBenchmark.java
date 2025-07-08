@@ -40,9 +40,6 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @BenchmarkMode({Mode.Throughput, Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
 public class ErrorLoadBenchmark {
 
     public static final String TEST_SUBJECT = "test-subject-";
