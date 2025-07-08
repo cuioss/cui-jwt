@@ -31,7 +31,7 @@
         - Suppress JVM warnings with -XX:+IgnoreUnrecognizedVMOptions
         -->
         <junit-platform.version>1.13.1</junit-platform.version>
-        <version.weld-junit5>4.0.1.Final</version.weld-junit5>
+        <version.weld-junit5>5.0.1.Final</version.weld-junit5>
     </properties>
 
     <dependencyManagement>
