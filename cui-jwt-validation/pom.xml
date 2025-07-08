@@ -45,16 +45,6 @@
             <artifactId>jakarta.json-api</artifactId>
             <scope>provided</scope>
         </dependency>
-        <!-- Caffeine cache -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-        </dependency>
-        <!-- BouncyCastle for cryptographic operations -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-        </dependency>
 
         <!-- Unit testing -->
         <dependency>
@@ -85,10 +75,11 @@
             <scope>test</scope>
         </dependency>
         <!-- Implementation of jakarta.json-api-->
+        <!-- The concrete is up to the integration-->
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
             <artifactId>parsson</artifactId>
-            <scope>compile</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -120,17 +111,6 @@
             <artifactId>cui-test-juli-logger</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>de.cuioss.test</groupId>
-            <artifactId>cui-test-keycloak-integration</artifactId>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <!-- Simple implementation that is actually a bridge to juli logging. Used for test-containers slf4j -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -141,6 +121,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -186,67 +171,7 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Configure Surefire to exclude integration tests -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*IT.java</exclude>
-                        <exclude>**/*ITCase.java</exclude>
-                        <exclude>**/TokenKeycloakIT*.java</exclude>
-                    </excludes>
-                    <!-- Fix for class loading issues -->
-                    <useSystemClassLoader>false</useSystemClassLoader>
-                    <reuseForks>false</reuseForks>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>integration-tests</id>
-            <build>
-                <plugins>
-                    <!-- Skip Surefire Plugin (unit tests) when running integration tests -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <skipTests>true</skipTests>
-                        </configuration>
-                    </plugin>
-                    <!-- Maven Failsafe Plugin for Integration Tests -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <includes>
-                                <include>**/*IT.java</include>
-                                <include>**/*ITCase.java</include>
-                            </includes>
-                            <!-- Fix for class loading issues -->
-                            <useSystemClassLoader>false</useSystemClassLoader>
-                            <reuseForks>false</reuseForks>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>integration-test</id>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>verify</id>
-                                <goals>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

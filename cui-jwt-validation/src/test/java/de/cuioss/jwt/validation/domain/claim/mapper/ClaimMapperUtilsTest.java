@@ -238,7 +238,7 @@ class ClaimMapperUtilsTest {
         List<String> result = ClaimMapperUtils.extractStringsFromJsonArray(jsonArray);
 
         assertEquals(4, result.size(), "Result size should be 4");
-        assertEquals("string-value", result.get(0), "First element should be string-value");
+        assertEquals("string-value", result.getFirst(), "First element should be string-value");
     }
 
     @Test

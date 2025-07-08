@@ -29,7 +29,6 @@ import de.cuioss.jwt.validation.pipeline.TokenClaimValidator;
 import de.cuioss.jwt.validation.pipeline.TokenHeaderValidator;
 import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.tools.collect.MapBuilder;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
 import lombok.Getter;
@@ -62,16 +61,16 @@ import java.util.Optional;
  * <pre>
  * // Configure HTTP-based JWKS loading
  * HttpJwksLoaderConfig httpConfig = HttpJwksLoaderConfig.builder()
- *     .url("https://example.com/.well-known/jwks.json")
+ *     .jwksUrl("https://example.com/.well-known/jwks.json")
  *     .refreshIntervalSeconds(60)
  *     .build();
  *
  * // Create an issuer configuration
  * IssuerConfig issuerConfig = IssuerConfig.builder()
- *     .issuer("https://example.com")
+ *     .issuerIdentifier("https://example.com")
  *     .expectedAudience("my-client")
  *     .httpJwksLoaderConfig(httpConfig)
- *     .build();
+ *     .build(); // Validation happens automatically
  *
  * // Create the token validator
  * // The validator creates a SecurityEventCounter internally and passes it to all components
@@ -111,15 +110,22 @@ public class TokenValidator {
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidator.class);
 
     private final NonValidatingJwtParser jwtParser;
-    @Getter
-    private final Map<String, IssuerConfig> issuerConfigMap;
+
+
+    /**
+     * Resolver for issuer configurations that handles caching and concurrency.
+     * This encapsulates the complex logic for resolving issuer configs thread-safely.
+     */
+    private final IssuerConfigResolver issuerConfigResolver;
 
     /**
      * Counter for security events that occur during token processing.
      * This counter is thread-safe and can be accessed from outside to monitor security events.
      */
     @Getter
+    @NonNull
     private final SecurityEventCounter securityEventCounter;
+
 
     /**
      * Creates a new TokenValidator with the given issuer configurations.
@@ -138,27 +144,17 @@ public class TokenValidator {
      * @param issuerConfigs varargs of issuer configurations, must not be null and must contain at least one configuration
      */
     public TokenValidator(@NonNull ParserConfig config, @NonNull IssuerConfig... issuerConfigs) {
-
-        // Initialize security event counter
+        LOGGER.debug("Initialize token validator with %s and %s issuer configurations", config, issuerConfigs.length);
         this.securityEventCounter = new SecurityEventCounter();
-
-        // Initialize NonValidatingJwtParser with configuration
         this.jwtParser = NonValidatingJwtParser.builder()
                 .config(config)
                 .securityEventCounter(securityEventCounter)
                 .build();
 
-        // Initialize issuerConfigMap with issuers as keys
-        var builder = new MapBuilder<String, IssuerConfig>();
-        for (IssuerConfig issuerConfig : issuerConfigs) {
-            // Initialize the JwksLoader with the SecurityEventCounter
-            issuerConfig.initSecurityEventCounter(securityEventCounter);
-            builder.put(issuerConfig.getIssuer(), issuerConfig);
-        }
-        this.issuerConfigMap = builder.toImmutableMap();
+        // Let the IssuerConfigResolver handle all issuer config processing
+        this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, securityEventCounter);
 
-        LOGGER.debug("Created TokenValidator with %s issuer configurations", issuerConfigs.length);
-        LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigs.length));
+        LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
 
     /**
@@ -168,6 +164,7 @@ public class TokenValidator {
      * @return The parsed access token
      * @throws TokenValidationException if the token is invalid
      */
+    @NonNull
     public AccessTokenContent createAccessToken(@NonNull String tokenString) {
         LOGGER.debug("Creating access token");
         AccessTokenContent result = processTokenPipeline(
@@ -188,6 +185,7 @@ public class TokenValidator {
      * @return The parsed ID token
      * @throws TokenValidationException if the token is invalid
      */
+    @NonNull
     public IdTokenContent createIdToken(@NonNull String tokenString) {
         LOGGER.debug("Creating ID token");
         IdTokenContent result = processTokenPipeline(
@@ -208,6 +206,7 @@ public class TokenValidator {
      * @return The parsed refresh token
      * @throws TokenValidationException if the token is invalid
      */
+    @NonNull
     @SuppressWarnings("java:S3655") //owolff: False Positive: isPresent is checked
     public RefreshTokenContent createRefreshToken(@NonNull String tokenString) {
         LOGGER.debug("Creating refresh token");
@@ -267,12 +266,10 @@ public class TokenValidator {
         String issuer = validateAndExtractIssuer(decodedJwt);
         IssuerConfig issuerConfig = resolveIssuerConfig(issuer);
 
-        issuerConfig.initSecurityEventCounter(securityEventCounter);
-
         validateTokenHeader(decodedJwt, issuerConfig);
         validateTokenSignature(decodedJwt, issuerConfig);
-        Optional<T> token = buildToken(decodedJwt, issuerConfig, tokenBuilder);
-        T validatedToken = validateTokenClaims(token.get(), issuerConfig);
+        T token = buildToken(decodedJwt, issuerConfig, tokenBuilder);
+        T validatedToken = validateTokenClaims(token, issuerConfig);
 
         LOGGER.debug("Token successfully validated");
         return validatedToken;
@@ -306,17 +303,16 @@ public class TokenValidator {
         return issuer.get();
     }
 
+    /**
+     * Resolves the appropriate issuer configuration for the given issuer.
+     * Delegates to the IssuerConfigResolver for thread-safe resolution.
+     *
+     * @param issuer the issuer to resolve configuration for
+     * @return the issuer configuration if healthy and available
+     * @throws TokenValidationException if no configuration found or issuer is unhealthy
+     */
     private IssuerConfig resolveIssuerConfig(String issuer) {
-        IssuerConfig issuerConfig = issuerConfigMap.get(issuer);
-        if (issuerConfig == null) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.NO_ISSUER_CONFIG.format(issuer));
-            securityEventCounter.increment(SecurityEventCounter.EventType.NO_ISSUER_CONFIG);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.NO_ISSUER_CONFIG,
-                    "No issuer configuration found for issuer: " + issuer
-            );
-        }
-        return issuerConfig;
+        return issuerConfigResolver.resolveConfig(issuer);
     }
 
     private void validateTokenHeader(DecodedJwt decodedJwt, IssuerConfig issuerConfig) {
@@ -330,7 +326,8 @@ public class TokenValidator {
         signatureValidator.validateSignature(decodedJwt);
     }
 
-    private <T extends TokenContent> Optional<T> buildToken(
+    @NonNull
+    private <T extends TokenContent> T buildToken(
             DecodedJwt decodedJwt,
             IssuerConfig issuerConfig,
             TokenBuilderFunction<T> tokenBuilder) {
@@ -342,7 +339,7 @@ public class TokenValidator {
                     "Failed to build token from decoded JWT"
             );
         }
-        return token;
+        return token.get();
     }
 
     @SuppressWarnings("unchecked")
@@ -351,6 +348,7 @@ public class TokenValidator {
         TokenContent validatedContent = claimValidator.validate(token);
         return (T) validatedContent;
     }
+
 
     /**
      * Functional interface for building tokens with issuer config.

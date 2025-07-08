@@ -1,0 +1,55 @@
+{
+  "realm": "integration",
+  "enabled": true,
+  "displayName": "JWT Integration Realm",
+  "displayNameHtml": "<strong>JWT Integration</strong>",
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "attributes": {
+    "frontendUrl": "https://keycloak:8443"
+  },
+  "clients": [
+    {
+      "clientId": "integration-client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "integration-secret",
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "integration-user",
+      "enabled": true,
+      "firstName": "Integration",
+      "lastName": "User",
+      "email": "integration@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "integration-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Standard user role for integration testing"
+      }
+    ]
+  }
+}

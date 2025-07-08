@@ -15,14 +15,13 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
-import de.cuioss.jwt.quarkus.config.JwtValidationConfig;
+import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.QuarkusUnitTest;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -45,33 +44,26 @@ class CuiJwtProcessorTest {
      */
     @RegisterExtension
     static final QuarkusUnitTest unitTest = new QuarkusUnitTest()
-            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addClass(JwtValidationConfig.class))
+            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class))
             .withConfigurationResource("application-test.properties");
 
     @Inject
     Config config;
 
-    /**
-     * Test that verifies the configuration is properly available.
-     * This tests that the extension is properly set up and configuration can be accessed.
-     */
     @Test
-    @DisplayName("Should have JWT configuration available and properly configured")
     void jwtConfigAvailable() {
         assertNotNull(config, "Config should be injected");
 
         // Verify the default issuer is configured
-        assertTrue(config.getOptionalValue("cui.jwt.issuers.default.enabled", Boolean.class).orElse(false),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.ISSUERS.ENABLED.formatted("default"), Boolean.class).orElse(false),
                 "Default issuer should be enabled");
-        assertTrue(config.getOptionalValue("cui.jwt.issuers.default.identifier", String.class).isPresent(),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("default"), String.class).isPresent(),
                 "Default issuer should have identifier");
-        assertTrue(config.getOptionalValue("cui.jwt.parser.leeway-seconds", Integer.class).isPresent(),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.PARSER.MAX_TOKEN_SIZE, Integer.class).isPresent(),
                 "Parser config should be present");
     }
 
     @Test
-    @DisplayName("Should test CuiJwtProcessor instantiation and basic functionality")
     void shouldTestProcessorBasicFunctionality() {
         // Test that processor can be instantiated without issues
         assertDoesNotThrow(CuiJwtProcessor::new,

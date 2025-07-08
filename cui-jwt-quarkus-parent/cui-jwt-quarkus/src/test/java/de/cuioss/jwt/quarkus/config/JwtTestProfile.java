@@ -43,49 +43,27 @@ public class JwtTestProfile implements QuarkusTestProfile {
     public Map<String, String> getConfigOverrides() {
         Map<String, String> config = new HashMap<>();
 
-        // Default issuer configuration
-        config.put("cui.jwt.issuers.default.identifier", "https://example.com/auth");
-        config.put("cui.jwt.issuers.default.enabled", "true");
-        config.put("cui.jwt.issuers.default.public-key-location", "classpath:keys/public_key.pem");
+        // Override default issuer configuration from application.properties
+        config.put(JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("default"), "https://example.com/auth");
+        config.put(JwtPropertyKeys.ISSUERS.ENABLED.formatted("default"), "true");
+        config.put(JwtPropertyKeys.ISSUERS.JWKS_FILE_PATH.formatted("default"), ""); // Clear file path
+        config.put(JwtPropertyKeys.ISSUERS.JWKS_CONTENT.formatted("default"),
+                "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"kid\":\"default-key-1\",\"alg\":\"RS256\",\"n\":\"nzyis1ZjfNB0bBgKFMSvvkTtwlvBsaJq7S5wA-kzeVOVpVWwkWdVha4s38XM_pa_yr47av7-z3VTmvDRyAHcaT92whREFpLv9cj5lTeJSibyr_Mrm_YtjCZVWgaOYIhwrXwKLqPr_11inWsAkfIytvHWTxZYEcXLgAXFuUuaS3uF9gEiNQwzGTU1v0FqkqTBr4B8nW3HCN47XUu0t8Y0e3zvAIhySnxIZi9aDaPvSlAeZ7VVl5ivy_43QvTRpM3eBFs9A1Y9a9aCtHSP8KXRTYhH2TvPxLOOFg0Lu-pwrps6CqvbeZjQlqCh9cGowQ\",\"e\":\"AQAB\"}]}");
 
-        // Keycloak issuer configuration
-        config.put("cui.jwt.issuers.keycloak.identifier", "https://keycloak.example.com/auth/realms/master");
-        config.put("cui.jwt.issuers.keycloak.enabled", "true");
-        config.put("cui.jwt.issuers.keycloak.public-key-location", "classpath:keys/public_key.pem");
-        config.put("cui.jwt.issuers.keycloak.jwks.url",
-                "https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs");
-        config.put("cui.jwt.issuers.keycloak.jwks.cache-ttl-seconds", "7200");
-        config.put("cui.jwt.issuers.keycloak.jwks.refresh-interval-seconds", "600");
-        config.put("cui.jwt.issuers.keycloak.jwks.connection-timeout-seconds", "3");
-        config.put("cui.jwt.issuers.keycloak.jwks.read-timeout-seconds", "3");
-        config.put("cui.jwt.issuers.keycloak.jwks.max-retries", "5");
-        config.put("cui.jwt.issuers.keycloak.jwks.use-system-proxy", "true");
-        config.put("cui.jwt.issuers.keycloak.parser.audience", "my-app");
-        config.put("cui.jwt.issuers.keycloak.parser.leeway-seconds", "60");
-        config.put("cui.jwt.issuers.keycloak.parser.max-token-size-bytes", "16384");
-        config.put("cui.jwt.issuers.keycloak.parser.validate-not-before", "false");
-        config.put("cui.jwt.issuers.keycloak.parser.validate-expiration", "true");
-        config.put("cui.jwt.issuers.keycloak.parser.validate-issued-at", "true");
-        config.put("cui.jwt.issuers.keycloak.parser.allowed-algorithms", "RS256,ES256");
-
-
-        // Custom arbitrary issuer configuration to test dynamic discovery
-        config.put("cui.jwt.issuers.custom-auth-provider.identifier", "https://custom.example.com/auth");
-        config.put("cui.jwt.issuers.custom-auth-provider.enabled", "true");
-        config.put("cui.jwt.issuers.custom-auth-provider.jwks.url", "https://custom.example.com/jwks");
+        // Disable test-issuer from application.properties
+        config.put(JwtPropertyKeys.ISSUERS.ENABLED.formatted("test-issuer"), "false");
 
         // Global parser configuration
-        config.put("cui.jwt.parser.leeway-seconds", "30");
-        config.put("cui.jwt.parser.max-token-size-bytes", "8192");
-        config.put("cui.jwt.parser.validate-not-before", "true");
-        config.put("cui.jwt.parser.validate-expiration", "true");
-        config.put("cui.jwt.parser.validate-issued-at", "false");
-        config.put("cui.jwt.parser.allowed-algorithms", "RS256,RS384,RS512,ES256,ES384,ES512");
+        config.put(JwtPropertyKeys.PARSER.MAX_TOKEN_SIZE, "8192");
+        config.put(JwtPropertyKeys.PARSER.MAX_PAYLOAD_SIZE, "8192");
+        config.put(JwtPropertyKeys.PARSER.MAX_STRING_SIZE, "4096");
+        config.put(JwtPropertyKeys.PARSER.MAX_ARRAY_SIZE, "64");
+        config.put(JwtPropertyKeys.PARSER.MAX_DEPTH, "10");
 
         // Health check configuration
-        config.put("cui.jwt.health.enabled", "true");
-        config.put("cui.jwt.health.jwks.cache-seconds", "30");
-        config.put("cui.jwt.health.jwks.timeout-seconds", "5");
+        config.put(JwtPropertyKeys.HEALTH.ENABLED, "true");
+        config.put(JwtPropertyKeys.HEALTH.JWKS.CACHE_SECONDS, "30");
+        config.put(JwtPropertyKeys.HEALTH.JWKS.TIMEOUT_SECONDS, "5");
 
         return config;
     }

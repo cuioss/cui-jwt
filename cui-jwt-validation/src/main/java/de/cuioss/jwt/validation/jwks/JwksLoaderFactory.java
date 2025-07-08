@@ -15,19 +15,12 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.JsonException;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /**
  * Factory for creating instances of {@link JwksLoader}.
@@ -43,14 +36,14 @@ import java.nio.file.Path;
  * <pre>
  * // Create a SecurityEventCounter for tracking security events
  * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
- * 
+ *
  * // Configure and create an HTTP-based JWKS loader
  * HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
- *     .url("https://auth.example.com/.well-known/jwks.json")
+ *     .jwksUrl("https://auth.example.com/.well-known/jwks.json")
  *     .refreshIntervalSeconds(60)
  *     .build();
  * JwksLoader loader = JwksLoaderFactory.createHttpLoader(config, securityEventCounter);
- * 
+ *
  * // Get a key by ID
  * Optional&lt;KeyInfo&gt; keyInfo = loader.getKeyInfo("kid123");
  * </pre>
@@ -68,72 +61,47 @@ public class JwksLoaderFactory {
 
     /**
      * Creates a JwksLoader that loads JWKS from an HTTP endpoint.
+     * The SecurityEventCounter must be initialized separately via initJWKSLoader().
      *
-     * @param config               the configuration for the HTTP JWKS loader
-     * @param securityEventCounter the counter for security events
+     * @param config the configuration for the HTTP JWKS loader
      * @return an instance of JwksLoader
      */
-    public static JwksLoader createHttpLoader(@NonNull HttpJwksLoaderConfig config, @NonNull SecurityEventCounter securityEventCounter) {
-        return new HttpJwksLoader(config, securityEventCounter);
+    @NonNull
+    public static JwksLoader createHttpLoader(@NonNull HttpJwksLoaderConfig config) {
+        return new HttpJwksLoader(config);
     }
 
 
     /**
      * Creates a JwksLoader that loads JWKS from a file.
+     * The SecurityEventCounter must be initialized separately via initJWKSLoader().
      *
-     * @param filePath             the path to the JWKS file
-     * @param securityEventCounter the counter for security events
+     * @param filePath the path to the JWKS file
      * @return an instance of JwksLoader
      */
-    public static JwksLoader createFileLoader(@NonNull String filePath, @NonNull SecurityEventCounter securityEventCounter) {
+    @NonNull
+    public static JwksLoader createFileLoader(@NonNull String filePath) {
         LOGGER.debug("Resolving key loader for JWKS file: %s", filePath);
-        try {
-            String jwksContent = new String(Files.readAllBytes(Path.of(filePath)));
-            LOGGER.debug("Successfully read JWKS from file: %s", filePath);
-            JWKSKeyLoader keyLoader = JWKSKeyLoader.builder()
-                    .originalString(jwksContent)
-                    .securityEventCounter(securityEventCounter)
-                    .jwksType(JwksType.FILE)
-                    .build();
-            LOGGER.debug("Successfully loaded %s keys", keyLoader.keySet().size());
-            return keyLoader;
-        } catch (IOException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_READ_JWKS_FILE.format(filePath));
-            securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_READ_JWKS_FILE);
-            return JWKSKeyLoader.builder()
-                    .originalString("{}")
-                    .securityEventCounter(securityEventCounter)
-                    .jwksType(JwksType.FILE)
-                    .build(); // Empty JWKS
-        }
+        return JWKSKeyLoader.builder()
+                .jwksFilePath(filePath) // Store the file path for deferred loading
+                .jwksType(JwksType.FILE)
+                .build();
     }
 
     /**
      * Creates a JwksLoader that loads JWKS from in-memory string content.
+     * The SecurityEventCounter must be initialized separately via initJWKSLoader().
      *
-     * @param jwksContent          the JWKS content as a string
-     * @param securityEventCounter the counter for security events
+     * @param jwksContent the JWKS content as a string
      * @return an instance of JwksLoader
      */
-    public static JwksLoader createInMemoryLoader(@NonNull String jwksContent, @NonNull SecurityEventCounter securityEventCounter) {
+    @NonNull
+    public static JwksLoader createInMemoryLoader(@NonNull String jwksContent) {
         LOGGER.debug("Resolving key loader for in-memory JWKS data");
-        try {
-            JWKSKeyLoader keyLoader = JWKSKeyLoader.builder()
-                    .originalString(jwksContent)
-                    .securityEventCounter(securityEventCounter)
-                    .jwksType(JwksType.MEMORY)
-                    .build();
-            LOGGER.debug("Successfully loaded %s key(s)", keyLoader.keySet().size());
-            return keyLoader;
-        } catch (JsonException | IllegalArgumentException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format(e.getMessage()));
-            securityEventCounter.increment(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED);
-            return JWKSKeyLoader.builder()
-                    .originalString("{}")
-                    .securityEventCounter(securityEventCounter)
-                    .jwksType(JwksType.MEMORY)
-                    .build(); // Empty JWKS
-        }
+        return JWKSKeyLoader.builder()
+                .jwksContent(jwksContent) // Store the content for deferred loading
+                .jwksType(JwksType.MEMORY)
+                .build();
     }
 
 }

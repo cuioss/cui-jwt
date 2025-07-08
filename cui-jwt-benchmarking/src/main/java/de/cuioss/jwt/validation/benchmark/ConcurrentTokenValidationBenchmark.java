@@ -48,9 +48,6 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
 public class ConcurrentTokenValidationBenchmark {
 
     /**
@@ -104,7 +101,7 @@ public class ConcurrentTokenValidationBenchmark {
      * @throws RuntimeException if token validation fails unexpectedly
      */
     @Benchmark
-    @Threads(Threads.MAX)
+    @SuppressWarnings({"cui-jwt-quarkus-deployment", "java:S112"}) // ok for testing
     public AccessTokenContent validateAccessTokenConcurrently() {
         try {
             return tokenValidator.createAccessToken(validAccessToken);

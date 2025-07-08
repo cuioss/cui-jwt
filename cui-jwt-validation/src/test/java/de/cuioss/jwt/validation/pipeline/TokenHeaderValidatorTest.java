@@ -17,10 +17,10 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.security.AlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
@@ -43,8 +43,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests TokenHeaderValidator functionality")
 class TokenHeaderValidatorTest {
 
-    private static final String EXPECTED_ISSUER = "Token-Test-testIssuer";
-    private static final String WRONG_ISSUER = "wrong-issuer";
     private static final SecurityEventCounter SECURITY_EVENT_COUNTER = new SecurityEventCounter();
     private static final NonValidatingJwtParser JWT_PARSER = NonValidatingJwtParser.builder()
             .securityEventCounter(SECURITY_EVENT_COUNTER)
@@ -52,6 +50,8 @@ class TokenHeaderValidatorTest {
 
     // Helper method to create a TokenHeaderValidator with the shared SecurityEventCounter
     private TokenHeaderValidator createValidator(IssuerConfig issuerConfig) {
+        // Initialize the IssuerConfig with the SecurityEventCounter so JwksLoader is created
+        issuerConfig.initSecurityEventCounter(SECURITY_EVENT_COUNTER);
         return new TokenHeaderValidator(issuerConfig, SECURITY_EVENT_COUNTER);
     }
 
@@ -62,9 +62,10 @@ class TokenHeaderValidatorTest {
         @Test
         @DisplayName("Should create validator with expected issuer")
         void shouldCreateValidatorWithExpectedIssuer() {
-            // Given an IssuerConfig with expected issuer
+            // Given an IssuerConfig with JWKS content
             var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .build();
 
             // When creating the validator
@@ -72,7 +73,6 @@ class TokenHeaderValidatorTest {
 
             // Then the validator should be created without warnings
             assertNotNull(validator);
-            assertEquals(EXPECTED_ISSUER, issuerConfig.getIssuer());
             assertNotNull(issuerConfig.getAlgorithmPreferences());
         }
 
@@ -80,9 +80,10 @@ class TokenHeaderValidatorTest {
         @DisplayName("Should create validator with custom algorithm preferences")
         void shouldCreateValidatorWithCustomAlgorithmPreferences() {
             // Given an IssuerConfig with custom algorithm preferences
-            var customAlgorithmPreferences = new AlgorithmPreferences(List.of("RS256", "ES256"));
+            var customAlgorithmPreferences = new SignatureAlgorithmPreferences(List.of("RS256", "ES256"));
             var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .algorithmPreferences(customAlgorithmPreferences)
                     .build();
 
@@ -105,7 +106,8 @@ class TokenHeaderValidatorTest {
         void shouldValidateTokenWithSupportedAlgorithm() {
             // Given a validator with default algorithm preferences
             var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .build();
             TokenHeaderValidator validator = createValidator(issuerConfig);
 
@@ -124,9 +126,10 @@ class TokenHeaderValidatorTest {
             long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
 
             // Given a validator with custom algorithm preferences that only support ES256
-            var customAlgorithmPreferences = new AlgorithmPreferences(List.of("ES256"));
+            var customAlgorithmPreferences = new SignatureAlgorithmPreferences(List.of("ES256"));
             var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .algorithmPreferences(customAlgorithmPreferences)
                     .build();
             TokenHeaderValidator validator = createValidator(issuerConfig);
@@ -158,7 +161,8 @@ class TokenHeaderValidatorTest {
 
             // Given a validator
             var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .build();
             TokenHeaderValidator validator = createValidator(issuerConfig);
 
@@ -180,123 +184,4 @@ class TokenHeaderValidatorTest {
         }
     }
 
-    @Nested
-    @DisplayName("Issuer Validation Tests")
-    class IssuerValidationTests {
-
-        @Test
-        @DisplayName("Should validate validation with expected issuer")
-        void shouldValidateTokenWithExpectedIssuer() {
-            // Given a validator with expected issuer
-            var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
-                    .build();
-            TokenHeaderValidator validator = createValidator(issuerConfig);
-
-            // And a validation with the expected issuer
-            String token = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN)).getRawToken();
-            DecodedJwt decodedJwt = JWT_PARSER.decode(token);
-            assertEquals(EXPECTED_ISSUER, decodedJwt.getIssuer().orElse(null));
-
-            // When validating the validation, it should not throw an exception
-            assertDoesNotThrow(() -> validator.validate(decodedJwt));
-        }
-
-        @Test
-        @DisplayName("Should reject validation with wrong issuer")
-        void shouldRejectTokenWithWrongIssuer() {
-            // Get initial count
-            long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.ISSUER_MISMATCH);
-
-            // Given a validator with expected issuer
-            var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
-                    .build();
-            TokenHeaderValidator validator = createValidator(issuerConfig);
-
-            // And a validation with a wrong issuer
-            DecodedJwt decodedJwt = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN))
-                    .withClaim("iss", ClaimValue.forPlainString(WRONG_ISSUER))
-                    .asDecodedJwt();
-
-            // When validating the validation, it should throw an exception
-            var exception = assertThrows(TokenValidationException.class,
-                    () -> validator.validate(decodedJwt));
-
-            // Verify the exception has the correct event type
-            assertEquals(SecurityEventCounter.EventType.ISSUER_MISMATCH, exception.getEventType());
-
-            // And a warning should be logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    "Token issuer '" + WRONG_ISSUER + "' does not match expected issuer");
-
-            // Verify security event was recorded
-            assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.ISSUER_MISMATCH));
-        }
-
-        @Test
-        @DisplayName("Should reject validation with missing issuer")
-        void shouldRejectTokenWithMissingIssuer() {
-            // Get initial count
-            long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_CLAIM);
-
-            // Given a validator with expected issuer
-            var issuerConfig = IssuerConfig.builder()
-                    .issuer(EXPECTED_ISSUER)
-                    .build();
-            TokenHeaderValidator validator = createValidator(issuerConfig);
-
-            // And a validation with a missing issuer
-            DecodedJwt decodedJwt = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.builder()
-                    .missingIssuer(true)
-                    .build())
-                    .asDecodedJwt();
-
-            // When validating the validation, it should throw an exception
-            var exception = assertThrows(TokenValidationException.class,
-                    () -> validator.validate(decodedJwt));
-
-            // Verify the exception has the correct event type
-            assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType(),
-                    "Exception should have MISSING_CLAIM event type");
-
-            // And a warning should be logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Token is missing required claim: iss");
-
-            // Verify security event was recorded
-            assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
-        }
-
-        @Test
-        @DisplayName("Should validate issuer when expected issuer is configured")
-        void shouldValidateIssuerWhenExpectedIssuerIsConfigured() {
-            // Get initial count
-            long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.ISSUER_MISMATCH);
-
-            // Given a validator with an expected issuer that doesn't match the validation's issuer
-            var issuerConfig = IssuerConfig.builder()
-                    .issuer("dummy-issuer")
-                    .build();
-            TokenHeaderValidator validator = createValidator(issuerConfig);
-
-            // And a validation with a different issuer
-            String token = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN)).getRawToken();
-            DecodedJwt decodedJwt = JWT_PARSER.decode(token);
-            assertEquals(EXPECTED_ISSUER, decodedJwt.getIssuer().orElse(null));
-
-            // When validating the validation, it should throw an exception
-            var exception = assertThrows(TokenValidationException.class,
-                    () -> validator.validate(decodedJwt));
-
-            // Verify the exception has the correct event type
-            assertEquals(SecurityEventCounter.EventType.ISSUER_MISMATCH, exception.getEventType());
-
-            // And a warning should be logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    "Token issuer '" + EXPECTED_ISSUER + "' does not match expected issuer 'dummy-issuer'");
-
-            // Verify security event was recorded
-            assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.ISSUER_MISMATCH));
-        }
-    }
 }

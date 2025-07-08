@@ -20,22 +20,32 @@ package de.cuioss.jwt.validation.jwks;
  */
 public enum JwksType {
     /** HTTP JWKS endpoint */
-    HTTP("http"),
+    HTTP("http", false),
+    /** Well-known discovery JWKS endpoint */
+    WELL_KNOWN("well-known", true),
     /** File-based JWKS */
-    FILE("file"),
+    FILE("file", false),
     /** In-memory JWKS */
-    MEMORY("memory"),
+    MEMORY("memory", false),
     /** No JWKS configured */
-    NONE("none");
+    NONE("none", false);
 
     private final String value;
+    private final boolean providesIssuerIdentifier;
 
-    JwksType(String value) {
+    JwksType(String value, boolean providesIssuerIdentifier) {
         this.value = value;
+        this.providesIssuerIdentifier = providesIssuerIdentifier;
     }
 
-    public String getValue() {
-        return value;
+    /**
+     * Returns true if this JWKS type provides its own issuer identifier.
+     * Currently only true for well-known discovery endpoints.
+     *
+     * @return true if this type provides issuer identifier, false otherwise
+     */
+    public boolean providesIssuerIdentifier() {
+        return providesIssuerIdentifier;
     }
 
     @Override

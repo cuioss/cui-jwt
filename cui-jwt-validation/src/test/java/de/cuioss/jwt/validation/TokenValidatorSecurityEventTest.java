@@ -18,8 +18,8 @@ package de.cuioss.jwt.validation;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.security.AlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.JwtTokenTamperingUtil;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
@@ -57,11 +57,11 @@ class TokenValidatorSecurityEventTest {
 
         // Create issuer config
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer(TestTokenHolder.TEST_ISSUER)
+                .issuerIdentifier("Token-Test-testIssuer")
                 .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                 .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                 .jwksContent(jwksContent)
-                .algorithmPreferences(new AlgorithmPreferences())
+                .algorithmPreferences(new SignatureAlgorithmPreferences())
                 .build();
 
         // Create validation factory

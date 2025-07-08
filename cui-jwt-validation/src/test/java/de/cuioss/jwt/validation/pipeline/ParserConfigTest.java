@@ -22,7 +22,8 @@ import jakarta.json.JsonReaderFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Tests for {@link ParserConfig}.
@@ -42,7 +43,6 @@ class ParserConfigTest {
         assertEquals(ParserConfig.DEFAULT_MAX_STRING_SIZE, config.getMaxStringSize());
         assertEquals(ParserConfig.DEFAULT_MAX_ARRAY_SIZE, config.getMaxArraySize());
         assertEquals(ParserConfig.DEFAULT_MAX_DEPTH, config.getMaxDepth());
-        assertTrue(config.isLogWarningsOnDecodeFailure());
     }
 
     @Test
@@ -54,21 +54,18 @@ class ParserConfigTest {
         int customMaxStringSize = 1024;
         int customMaxArraySize = 32;
         int customMaxDepth = 5;
-        boolean customLogWarnings = false;
         ParserConfig config = ParserConfig.builder()
                 .maxTokenSize(customMaxTokenSize)
                 .maxPayloadSize(customMaxPayloadSize)
                 .maxStringSize(customMaxStringSize)
                 .maxArraySize(customMaxArraySize)
                 .maxDepth(customMaxDepth)
-                .logWarningsOnDecodeFailure(customLogWarnings)
                 .build();
         assertEquals(customMaxTokenSize, config.getMaxTokenSize());
         assertEquals(customMaxPayloadSize, config.getMaxPayloadSize());
         assertEquals(customMaxStringSize, config.getMaxStringSize());
         assertEquals(customMaxArraySize, config.getMaxArraySize());
         assertEquals(customMaxDepth, config.getMaxDepth());
-        assertEquals(customLogWarnings, config.isLogWarningsOnDecodeFailure());
     }
 
     @Test

@@ -171,13 +171,14 @@ This section provides guidance on configuring the library for secure token valid
 
 ```java
 // Example configuration using the library
-TokenValidator validator = TokenValidator.builder()
-    .issuerConfig(IssuerConfig.builder()
-        .issuerUrl("https://idp.example.com")
-        .expectedAudience("my-client-id")
-        .expectedClientId("my-client-id")
-        .build())
-    .build();
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .issuerIdentifier("https://idp.example.com")
+    .expectedAudience("my-client-id")
+    .expectedClientId("my-client-id")
+    .jwksContent(jwksContent) // or other JWKS configuration
+    .build(); // Validation happens automatically
+
+TokenValidator validator = new TokenValidator(issuerConfig);
 ```
 
 === Algorithm Configuration
@@ -189,13 +190,13 @@ This section provides guidance on securely configuring JWT algorithms. For detai
 1. **Use strong, asymmetric algorithms**
    * Prefer RS256, RS384, RS512, ES256, ES384, or ES512
    * Avoid using HS256, HS384, or HS512 as they require sharing of secrets
-   * *Implementation*: link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/AlgorithmPreferences.java[AlgorithmPreferences.java] automatically rejects HMAC algorithms
+   * *Implementation*: link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java] automatically rejects HMAC algorithms
 
 2. **Explicitly specify allowed algorithms**
    * Never allow the "none" algorithm
    * Explicitly specify which algorithms are allowed, don't rely on defaults
    * Prevent algorithm confusion attacks by strictly validating algorithm types
-   * *Implementation*: link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/AlgorithmPreferences.java[AlgorithmPreferences.java:53] explicitly rejects "none" and HMAC algorithms
+   * *Implementation*: link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] explicitly rejects "none" and HMAC algorithms
 
 3. **Enforce consistent algorithm usage**
    * Configure your application to expect tokens signed with a specific algorithm
@@ -206,11 +207,15 @@ This section provides guidance on securely configuring JWT algorithms. For detai
 
 ```java
 // Example configuration specifying allowed algorithms
-TokenValidator validator = TokenValidator.builder()
-    .algorithmPreferences(AlgorithmPreferences.builder()
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .issuerIdentifier("https://idp.example.com")
+    .algorithmPreferences(SignatureAlgorithmPreferences.builder()
         .allowedAlgorithms(List.of("RS256"))
         .build())
-    .build();
+    .jwksContent(jwksContent) // or other JWKS configuration
+    .build(); // Validation happens automatically
+
+TokenValidator validator = new TokenValidator(issuerConfig);
 ```
 
 == Key Management Best Practices

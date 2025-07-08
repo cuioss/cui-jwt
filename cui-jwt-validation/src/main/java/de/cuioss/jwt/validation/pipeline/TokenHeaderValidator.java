@@ -20,7 +20,6 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.annotation.Nonnull;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -29,7 +28,7 @@ import lombok.NonNull;
  * <p>
  * This class validates the following header elements:
  * <ul>
- *   <li>Algorithm (alg) - against configured AlgorithmPreferences</li>
+ *   <li>Algorithm (alg) - against configured SignatureAlgorithmPreferences</li>
  *   <li>Issuer (iss) - against configured expected issuer</li>
  *   <li>Absence of embedded JWK - to prevent CVE-2018-0114 attacks</li>
  * </ul>
@@ -68,15 +67,19 @@ public class TokenHeaderValidator {
 
     /**
      * Validates a decoded JWT Token's header.
+     * <p>
+     * Note: Issuer validation is now performed at the TokenValidator level during
+     * issuer configuration resolution, not here.
+     * </p>
      *
      * @param decodedJwt the decoded JWT Token to validate
      * @throws TokenValidationException if the token header is invalid
      */
-    public void validate(@Nonnull DecodedJwt decodedJwt) {
+    public void validate(@NonNull DecodedJwt decodedJwt) {
         LOGGER.trace("Validating validation header");
 
         validateAlgorithm(decodedJwt);
-        validateIssuer(decodedJwt);
+        // Issuer validation removed - now handled in TokenValidator.resolveIssuerConfig()
         validateNoEmbeddedJwk(decodedJwt);
 
         LOGGER.debug("Token header is valid");
@@ -131,35 +134,4 @@ public class TokenHeaderValidator {
         LOGGER.debug("Algorithm is valid: %s", algorithm.get());
     }
 
-    /**
-     * Validates the validation's issuer against the configured expected issuers.
-     *
-     * @param decodedJwt the decoded JWT Token
-     * @throws TokenValidationException if the issuer is invalid
-     */
-    @SuppressWarnings("java:S3655") // Suppress warning for using Optional.get()
-    // as we check for presence before calling it
-    private void validateIssuer(DecodedJwt decodedJwt) {
-
-        if (decodedJwt.getIssuer().isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required issuer (iss) claim in token"
-            );
-        }
-        var givenIssuer = decodedJwt.getIssuer().get();
-
-        if (!issuerConfig.getIssuer().equals(givenIssuer)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_MISMATCH.format(givenIssuer, issuerConfig.getIssuer()));
-            securityEventCounter.increment(SecurityEventCounter.EventType.ISSUER_MISMATCH);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.ISSUER_MISMATCH,
-                    "Issuer mismatch: expected '%s' but found '%s'".formatted(issuerConfig.getIssuer(), givenIssuer)
-            );
-        }
-
-        LOGGER.debug("Successfully validated issuer: %s", givenIssuer);
-    }
 }

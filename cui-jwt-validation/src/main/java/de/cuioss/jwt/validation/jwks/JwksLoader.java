@@ -15,11 +15,12 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import lombok.NonNull;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Interface for loading JSON Web Keys (JWK) from a JWKS source.
@@ -37,11 +38,11 @@ import java.util.Set;
  * String jwksFilePath = "/path/to/jwks.json";
  * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
  * JwksLoader fileJwksLoader = JwksLoaderFactory.createFileLoader(jwksFilePath, securityEventCounter);
- * 
+ *
  * // Get a key by ID
  * String keyId = "my-key-id";
  * Optional&lt;KeyInfo&gt; keyInfo = fileJwksLoader.getKeyInfo(keyId);
- * 
+ *
  * // Use the key if present
  * keyInfo.ifPresent(info -> {
  *     PublicKey publicKey = info.getKey();
@@ -55,20 +56,14 @@ import java.util.Set;
  * // Create an HTTP-based JWKS loader with 60-second refresh interval
  * String jwksEndpoint = "https://example.com/.well-known/jwks.json";
  * HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
- *     .url(jwksEndpoint)
+ *     .jwksUrl(jwksEndpoint)
  *     .refreshIntervalSeconds(60)
  *     .build();
  * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
  * JwksLoader httpJwksLoader = JwksLoaderFactory.createHttpLoader(config, securityEventCounter);
- * 
+ *
  * // Get a key by ID
  * Optional&lt;KeyInfo&gt; keyInfo = httpJwksLoader.getKeyInfo("my-key-id");
- * 
- * // Get the first available key
- * Optional&lt;KeyInfo&gt; firstKey = httpJwksLoader.getFirstKeyInfo();
- * 
- * // Get all available key IDs
- * Set&lt;String&gt; keyIds = httpJwksLoader.keySet();
  * </pre>
  * <p>
  * In-memory JWKS loader:
@@ -77,19 +72,19 @@ import java.util.Set;
  * String jwksContent = "{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"my-key-id\",\"use\":\"sig\",\"alg\":\"RS256\",\"n\":\"...\",\"e\":\"...\"}]}";
  * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
  * JwksLoader inMemoryJwksLoader = JwksLoaderFactory.createInMemoryLoader(jwksContent, securityEventCounter);
- * 
- * // Get all available keys
- * List&lt;KeyInfo&gt; allKeys = inMemoryJwksLoader.getAllKeyInfos();
+ *
+ * // Get a key by ID
+ * Optional&lt;KeyInfo&gt; keyInfo = inMemoryJwksLoader.getKeyInfo("my-key-id");
  * </pre>
  * <p>
  * For more details on the security aspects, see the
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/security.adoc">Security Specification</a>
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
-public interface JwksLoader {
+public interface JwksLoader extends HealthStatusProvider {
 
     /**
      * Gets a key by its ID.
@@ -100,27 +95,6 @@ public interface JwksLoader {
     Optional<KeyInfo> getKeyInfo(String kid);
 
     /**
-     * Gets the first available key.
-     *
-     * @return an Optional containing the first key info if available, empty otherwise
-     */
-    Optional<KeyInfo> getFirstKeyInfo();
-
-    /**
-     * Gets all available keys with their algorithms.
-     *
-     * @return a List containing all available key infos
-     */
-    List<KeyInfo> getAllKeyInfos();
-
-    /**
-     * Gets the set of all available key IDs.
-     *
-     * @return a Set containing all available key IDs
-     */
-    Set<String> keySet();
-
-    /**
      * Gets the type of JWKS source used by this loader.
      *
      * @return the JWKS source type
@@ -128,12 +102,30 @@ public interface JwksLoader {
     JwksType getJwksType();
 
     /**
-     * Gets the status of the JWKS loader.
+     * Gets the issuer identifier associated with this JWKS loader.
      * <p>
-     * A loader status is OK if it can load at least one key.
+     * For HTTP-based loaders using well-known discovery, this returns the issuer
+     * identifier from the discovery document. For other loaders, this may return
+     * an empty Optional if no issuer identifier is configured or available.
+     * </p>
      *
-     * @return the status of the loader
+     * @return an Optional containing the issuer identifier if available, empty otherwise
      */
-    LoaderStatus getStatus();
+    Optional<String> getIssuerIdentifier();
 
+    /**
+     * Initializes the JwksLoader with the provided SecurityEventCounter.
+     * <p>
+     * This method should be called after construction to complete the initialization
+     * of the JWKS loader with the security event counter for tracking security events.
+     * </p>
+     * <p>
+     * This method is not thread-safe and should be called before the object is shared
+     * between threads.
+     * </p>
+     *
+     * @param securityEventCounter the counter for security events, must not be null
+     * @throws NullPointerException if securityEventCounter is null
+     */
+    void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter);
 }

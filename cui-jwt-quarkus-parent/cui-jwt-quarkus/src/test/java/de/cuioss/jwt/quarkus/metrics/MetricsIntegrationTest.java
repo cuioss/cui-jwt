@@ -54,22 +54,14 @@ class MetricsIntegrationTest {
     @Test
     @DisplayName("Should record metrics for token validation")
     void shouldRecordMetricsForTokenValidation() {
-        // Given - an invalid token to trigger validation errors
         String invalidToken = "invalid.jwt.token";
 
-        // When - validate the token (will fail)
-        try {
-            tokenValidator.createAccessToken(invalidToken);
-            fail("Should have thrown an exception for invalid token");
-        } catch (Exception e) {
-            // Expected exception
-        }
+        assertThrows(TokenValidationException.class, () -> tokenValidator.createAccessToken(invalidToken),
+                "Should have thrown TokenValidationException for invalid token");
 
-        // Then - verify that error metrics were recorded
         assertNotNull(meterRegistry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS).counters(),
                 "Error counters should be registered");
 
-        // Verify that at least one counter exists (we can't verify values reliably in tests)
         assertFalse(meterRegistry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS).counters().isEmpty(), "Error counters should be registered");
     }
 
@@ -131,16 +123,13 @@ class MetricsIntegrationTest {
     @MethodSource("invalidTokenScenarios")
     @DisplayName("Should record metrics for different invalid token scenarios")
     void shouldRecordMetricsForDifferentInvalidTokens(String description, String invalidToken, Class<? extends Exception> expectedException) {
-        // When - validate the token (will fail)
-        Exception thrownException = assertThrows(Exception.class, () -> tokenValidator.createAccessToken(invalidToken), "Should throw an exception for invalid token: " + description);
+        Exception thrownException = assertThrows(expectedException, () -> tokenValidator.createAccessToken(invalidToken), "Should throw an exception for invalid token: " + description);
 
-        // Then - verify the exception is of expected type or a subclass
         assertTrue(expectedException.isAssignableFrom(thrownException.getClass()),
                 "Expected exception of type " + expectedException.getSimpleName() +
                         " but got " + thrownException.getClass().getSimpleName() +
                         " for scenario: " + description);
 
-        // Verify that error metrics were recorded
         assertFalse(meterRegistry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS).counters().isEmpty(),
                 "Error counters should be registered for scenario: " + description);
     }

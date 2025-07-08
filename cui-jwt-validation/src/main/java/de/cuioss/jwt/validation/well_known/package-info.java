@@ -17,5 +17,20 @@
  * Provides classes for handling OpenID Connect Discovery, specifically the
  * retrieval and processing of OIDC Provider Configuration Information from
  * well-known endpoints.
+ * <p>
+ * The main components include:
+ * <ul>
+ *   <li>{@link de.cuioss.jwt.validation.well_known.WellKnownResolver} - Interface for well-known endpoint resolution</li>
+ *   <li>{@link de.cuioss.jwt.validation.well_known.HttpWellKnownResolver} - HTTP-based implementation with health checking</li>
+ *   <li>Support classes for HTTP operations, JSON parsing, and endpoint mapping</li>
+ * </ul>
+ * <p>
+ * This package follows the same design patterns as the JWKS loader system, providing:
+ * <ul>
+ *   <li>Lazy loading with thread-safe initialization</li>
+ *   <li>Health checking and status reporting</li>
+ *   <li>Simple, direct endpoint loading without retry mechanisms</li>
+ *   <li>Configurable timeouts and SSL settings</li>
+ * </ul>
  */
 package de.cuioss.jwt.validation.well_known;

@@ -15,14 +15,13 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
-import de.cuioss.jwt.quarkus.config.JwtValidationConfig;
+import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.QuarkusUnitTest;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -47,35 +46,30 @@ class CuiJwtIntegrationTest {
      */
     @RegisterExtension
     static final QuarkusUnitTest unitTest = new QuarkusUnitTest()
-            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addClasses(JwtValidationConfig.class))
+            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class))
             .withConfigurationResource("application-integration.properties");
 
     @Inject
     Config config;
 
-    /**
-     * Test that the extension correctly configures multiple issuers.
-     */
     @Test
-    @DisplayName("Should configure multiple issuers correctly")
     void multipleIssuersConfiguration() {
         assertNotNull(config, "Config should be injected");
 
         // Verify default issuer
-        assertTrue(config.getOptionalValue("cui.jwt.issuers.default.enabled", Boolean.class).orElse(false),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.ISSUERS.ENABLED.formatted("default"), Boolean.class).orElse(false),
                 "Default issuer should be enabled");
-        assertTrue(config.getOptionalValue("cui.jwt.issuers.default.identifier", String.class).isPresent(),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("default"), String.class).isPresent(),
                 "Default issuer should have identifier");
 
         // Verify keycloak issuer
-        assertTrue(config.getOptionalValue("cui.jwt.issuers.keycloak.enabled", Boolean.class).orElse(false),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.ISSUERS.ENABLED.formatted("keycloak"), Boolean.class).orElse(false),
                 "Keycloak issuer should be enabled");
-        assertTrue(config.getOptionalValue("cui.jwt.issuers.keycloak.identifier", String.class).isPresent(),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("keycloak"), String.class).isPresent(),
                 "Keycloak issuer should have identifier");
 
         // Verify parser configuration
-        assertTrue(config.getOptionalValue("cui.jwt.parser.leeway-seconds", Integer.class).isPresent(),
+        assertTrue(config.getOptionalValue(JwtPropertyKeys.PARSER.MAX_TOKEN_SIZE, Integer.class).isPresent(),
                 "Parser config should be present");
     }
 }

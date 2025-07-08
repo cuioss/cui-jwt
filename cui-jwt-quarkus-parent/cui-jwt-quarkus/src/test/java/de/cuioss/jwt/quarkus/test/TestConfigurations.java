@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.quarkus.test;
 
+import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,9 +39,9 @@ public final class TestConfigurations {
      */
     public static TestConfig minimalValid() {
         return new TestConfig(Map.of(
-                "cui.jwt.issuers.test.enabled", "true",
-                "cui.jwt.issuers.test.identifier", "https://test.example.com",
-                "cui.jwt.issuers.test.public-key-location", "classpath:jwt-test.key"
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("test"), "https://test.example.com",
+                JwtPropertyKeys.ISSUERS.JWKS_FILE_PATH.formatted("test"), "classpath:keys/test_public_key.jwks"
         ));
     }
 
@@ -51,9 +53,9 @@ public final class TestConfigurations {
      */
     public static TestConfig invalidParser() {
         return new TestConfig(Map.of(
-                "cui.jwt.parser.max-token-size-bytes", "-1",
-                "cui.jwt.issuers.test.enabled", "true",
-                "cui.jwt.issuers.test.identifier", "https://test.example.com"
+                JwtPropertyKeys.PARSER.MAX_TOKEN_SIZE, "-1",
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("test"), "https://test.example.com"
         ));
     }
 
@@ -65,8 +67,8 @@ public final class TestConfigurations {
      */
     public static TestConfig noEnabledIssuers() {
         return new TestConfig(Map.of(
-                "cui.jwt.issuers.test.enabled", "false",
-                "cui.jwt.issuers.test.identifier", "https://test.example.com"
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "false",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("test"), "https://test.example.com"
         ));
     }
 
@@ -78,9 +80,9 @@ public final class TestConfigurations {
      */
     public static TestConfig conflictingIssuerConfig() {
         return new TestConfig(Map.of(
-                "cui.jwt.issuers.test.enabled", "true",
-                "cui.jwt.issuers.test.identifier", "https://test.example.com",
-                "cui.jwt.issuers.test.well-known-url", "https://test.example.com/.well-known/openid_configuration"
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("test"), "https://test.example.com",
+                JwtPropertyKeys.ISSUERS.WELL_KNOWN_URL.formatted("test"), "https://test.example.com/.well-known/openid_configuration"
         ));
     }
 
@@ -92,11 +94,11 @@ public final class TestConfigurations {
      */
     public static TestConfig withJwksUrl() {
         return new TestConfig(Map.of(
-                "cui.jwt.issuers.test.enabled", "true",
-                "cui.jwt.issuers.test.identifier", "https://test.example.com",
-                "cui.jwt.issuers.test.jwks.url", "https://test.example.com/jwks",
-                "cui.jwt.issuers.test.jwks.refresh-interval-seconds", "300",
-                "cui.jwt.issuers.test.jwks.connection-timeout-seconds", "5"
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("test"), "https://test.example.com",
+                JwtPropertyKeys.ISSUERS.JWKS_URL.formatted("test"), "https://test.example.com/jwks",
+                JwtPropertyKeys.ISSUERS.REFRESH_INTERVAL_SECONDS.formatted("test"), "300",
+                JwtPropertyKeys.ISSUERS.CONNECT_TIMEOUT_SECONDS.formatted("test"), "5"
         ));
     }
 
@@ -108,10 +110,10 @@ public final class TestConfigurations {
      */
     public static TestConfig withWellKnownUrl() {
         return new TestConfig(Map.of(
-                "cui.jwt.issuers.test.enabled", "true",
-                "cui.jwt.issuers.test.well-known-url", "https://test.example.com/.well-known/openid_configuration",
-                "cui.jwt.issuers.test.jwks.connection-timeout-seconds", "5",
-                "cui.jwt.issuers.test.jwks.read-timeout-seconds", "5"
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "true",
+                JwtPropertyKeys.ISSUERS.WELL_KNOWN_URL.formatted("test"), "https://test.example.com/.well-known/openid_configuration",
+                JwtPropertyKeys.ISSUERS.CONNECT_TIMEOUT_SECONDS.formatted("test"), "5",
+                JwtPropertyKeys.ISSUERS.READ_TIMEOUT_SECONDS.formatted("test"), "5"
         ));
     }
 
@@ -123,14 +125,14 @@ public final class TestConfigurations {
      */
     public static TestConfig multipleIssuers() {
         return new TestConfig(Map.of(
-                "cui.jwt.issuers.primary.enabled", "true",
-                "cui.jwt.issuers.primary.identifier", "https://primary.example.com",
-                "cui.jwt.issuers.primary.public-key-location", "classpath:jwt-test.key",
-                "cui.jwt.issuers.secondary.enabled", "true",
-                "cui.jwt.issuers.secondary.identifier", "https://secondary.example.com",
-                "cui.jwt.issuers.secondary.public-key-location", "classpath:jwt-test.key",
-                "cui.jwt.issuers.disabled.enabled", "false",
-                "cui.jwt.issuers.disabled.identifier", "https://disabled.example.com"
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("primary"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("primary"), "https://primary.example.com",
+                JwtPropertyKeys.ISSUERS.JWKS_URL.formatted("primary"), "https://primary.example.com/jwks",
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("secondary"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("secondary"), "https://secondary.example.com",
+                JwtPropertyKeys.ISSUERS.JWKS_URL.formatted("secondary"), "https://secondary.example.com/jwks",
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("disabled"), "false",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("disabled"), "https://disabled.example.com"
         ));
     }
 
@@ -142,14 +144,14 @@ public final class TestConfigurations {
      */
     public static TestConfig customParser() {
         return new TestConfig(Map.of(
-                "cui.jwt.parser.max-token-size-bytes", "16384",
-                "cui.jwt.parser.leeway-seconds", "60",
-                "cui.jwt.parser.validate-expiration", "true",
-                "cui.jwt.parser.validate-not-before", "false",
-                "cui.jwt.parser.allowed-algorithms", "RS256,ES256",
-                "cui.jwt.issuers.test.enabled", "true",
-                "cui.jwt.issuers.test.identifier", "https://test.example.com",
-                "cui.jwt.issuers.test.public-key-location", "classpath:jwt-test.key"
+                JwtPropertyKeys.PARSER.MAX_TOKEN_SIZE, "16384",
+                JwtPropertyKeys.PARSER.MAX_PAYLOAD_SIZE, "16384",
+                JwtPropertyKeys.PARSER.MAX_STRING_SIZE, "8192",
+                JwtPropertyKeys.PARSER.MAX_ARRAY_SIZE, "128",
+                JwtPropertyKeys.PARSER.MAX_DEPTH, "15",
+                JwtPropertyKeys.ISSUERS.ENABLED.formatted("test"), "true",
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted("test"), "https://test.example.com",
+                JwtPropertyKeys.ISSUERS.JWKS_FILE_PATH.formatted("test"), "classpath:keys/test_public_key.jwks"
         ));
     }
 
@@ -241,7 +243,7 @@ public final class TestConfigurations {
          * @return this builder
          */
         public IssuerConfigBuilder enabled(boolean enabled) {
-            parent.addProperty("cui.jwt.issuers." + issuerName + ".enabled", String.valueOf(enabled));
+            parent.addProperty(JwtPropertyKeys.ISSUERS.ENABLED.formatted(issuerName), String.valueOf(enabled));
             return this;
         }
 
@@ -252,7 +254,7 @@ public final class TestConfigurations {
          * @return this builder
          */
         public IssuerConfigBuilder identifier(String identifier) {
-            parent.addProperty("cui.jwt.issuers." + issuerName + ".identifier", identifier);
+            parent.addProperty(JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted(issuerName), identifier);
             return this;
         }
 
@@ -263,7 +265,7 @@ public final class TestConfigurations {
          * @return this builder
          */
         public IssuerConfigBuilder publicKeyLocation(String location) {
-            parent.addProperty("cui.jwt.issuers." + issuerName + ".public-key-location", location);
+            parent.addProperty(JwtPropertyKeys.ISSUERS.JWKS_FILE_PATH.formatted(issuerName), location);
             return this;
         }
 
@@ -274,7 +276,7 @@ public final class TestConfigurations {
          * @return this builder
          */
         public IssuerConfigBuilder jwksUrl(String url) {
-            parent.addProperty("cui.jwt.issuers." + issuerName + ".jwks.url", url);
+            parent.addProperty(JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(issuerName), url);
             return this;
         }
 
@@ -285,7 +287,7 @@ public final class TestConfigurations {
          * @return this builder
          */
         public IssuerConfigBuilder wellKnownUrl(String url) {
-            parent.addProperty("cui.jwt.issuers." + issuerName + ".well-known-url", url);
+            parent.addProperty(JwtPropertyKeys.ISSUERS.WELL_KNOWN_URL.formatted(issuerName), url);
             return this;
         }
 
@@ -296,7 +298,7 @@ public final class TestConfigurations {
          * @return this builder
          */
         public IssuerConfigBuilder jwksRefreshInterval(int seconds) {
-            parent.addProperty("cui.jwt.issuers." + issuerName + ".jwks.refresh-interval-seconds", String.valueOf(seconds));
+            parent.addProperty(JwtPropertyKeys.ISSUERS.REFRESH_INTERVAL_SECONDS.formatted(issuerName), String.valueOf(seconds));
             return this;
         }
 
@@ -335,52 +337,52 @@ public final class TestConfigurations {
          * @param bytes maximum token size
          * @return this builder
          */
-        public ParserConfigBuilder maxTokenSizeBytes(int bytes) {
-            parent.addProperty("cui.jwt.parser.max-token-size-bytes", String.valueOf(bytes));
+        public ParserConfigBuilder maxTokenSize(int bytes) {
+            parent.addProperty(JwtPropertyKeys.PARSER.MAX_TOKEN_SIZE, String.valueOf(bytes));
             return this;
         }
 
         /**
-         * Sets the leeway time in seconds.
+         * Sets the maximum payload size in bytes.
          *
-         * @param seconds leeway in seconds
+         * @param bytes maximum payload size
          * @return this builder
          */
-        public ParserConfigBuilder leewaySeconds(int seconds) {
-            parent.addProperty("cui.jwt.parser.leeway-seconds", String.valueOf(seconds));
+        public ParserConfigBuilder maxPayloadSize(int bytes) {
+            parent.addProperty(JwtPropertyKeys.PARSER.MAX_PAYLOAD_SIZE, String.valueOf(bytes));
             return this;
         }
 
         /**
-         * Sets whether to validate token expiration.
+         * Sets the maximum string size for JSON parsing.
          *
-         * @param validate true to validate expiration
+         * @param size maximum string size
          * @return this builder
          */
-        public ParserConfigBuilder validateExpiration(boolean validate) {
-            parent.addProperty("cui.jwt.parser.validate-expiration", String.valueOf(validate));
+        public ParserConfigBuilder maxStringSize(int size) {
+            parent.addProperty(JwtPropertyKeys.PARSER.MAX_STRING_SIZE, String.valueOf(size));
             return this;
         }
 
         /**
-         * Sets whether to validate not-before claim.
+         * Sets the maximum array size for JSON parsing.
          *
-         * @param validate true to validate not-before
+         * @param size maximum array size
          * @return this builder
          */
-        public ParserConfigBuilder validateNotBefore(boolean validate) {
-            parent.addProperty("cui.jwt.parser.validate-not-before", String.valueOf(validate));
+        public ParserConfigBuilder maxArraySize(int size) {
+            parent.addProperty(JwtPropertyKeys.PARSER.MAX_ARRAY_SIZE, String.valueOf(size));
             return this;
         }
 
         /**
-         * Sets the allowed signature algorithms.
+         * Sets the maximum depth for JSON parsing.
          *
-         * @param algorithms comma-separated list of allowed algorithms
+         * @param depth maximum depth
          * @return this builder
          */
-        public ParserConfigBuilder allowedAlgorithms(String algorithms) {
-            parent.addProperty("cui.jwt.parser.allowed-algorithms", algorithms);
+        public ParserConfigBuilder maxDepth(int depth) {
+            parent.addProperty(JwtPropertyKeys.PARSER.MAX_DEPTH, String.valueOf(depth));
             return this;
         }
 

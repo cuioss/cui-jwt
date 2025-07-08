@@ -29,13 +29,11 @@ cui:
           refresh-interval-seconds: 300
           read-timeout-ms: 5000
     parser:
-      max-token-size-bytes: 8192
-      audience: test-audience
-      leeway-seconds: 30
-      validate-not-before: true
-      validate-expiration: true
-      validate-issued-at: false
-      allowed-algorithms: RS256,RS384,RS512,ES256,ES384,ES512
+      max-token-size: 8192
+      max-payload-size: 8192
+      max-string-size: 4096
+      max-array-size: 64
+      max-depth: 10
     health:
       enabled: true
       jwks:

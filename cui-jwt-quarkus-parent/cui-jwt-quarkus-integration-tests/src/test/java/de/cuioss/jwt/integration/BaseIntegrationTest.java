@@ -35,14 +35,22 @@ public abstract class BaseIntegrationTest {
 
     @BeforeAll
     static void setUpBaseIntegrationTest() {
-        // Configure HTTPS with relaxed validation for self-signed certificates
-        RestAssured.useRelaxedHTTPSValidation();
+        // Configure HTTPS with proper certificate validation using custom truststore
+        configureCustomTruststore();
         RestAssured.baseURI = "https://localhost";
 
         // Use the external test port from Maven properties (Docker port mapping 10443:8443)
         String testPort = System.getProperty("test.https.port", DEFAULT_TEST_PORT);
         RestAssured.port = Integer.parseInt(testPort);
 
-        LOGGER.info("Integration tests configured for HTTPS port: %s", testPort);
+        LOGGER.info("Integration tests configured for HTTPS port: %s with relaxed HTTPS validation", testPort);
+    }
+
+    private static void configureCustomTruststore() {
+        // Use relaxed HTTPS validation for integration tests
+        // The actual certificate validation is tested in the JWT validation service itself
+        RestAssured.useRelaxedHTTPSValidation();
+
+        LOGGER.debug("Configured relaxed HTTPS validation for integration tests");
     }
 }

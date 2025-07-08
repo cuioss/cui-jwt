@@ -15,13 +15,12 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
-import de.cuioss.jwt.validation.security.BouncyCastleProviderSingleton;
 import jakarta.json.JsonObject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.bouncycastle.jce.ECNamedCurveTable;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -35,14 +34,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * This class provides methods for parsing and validating RSA and EC keys from JWK format.
  * It isolates the low-level cryptographic operations from the JWKSKeyLoader class.
  * <p>
- * This class uses Bouncy Castle (bcprov-jdk18on) for cryptographic operations, specifically:
- * <ul>
- *   <li>{@link org.bouncycastle.jce.ECNamedCurveTable} - For retrieving EC curve parameters</li>
- *   <li>{@link org.bouncycastle.jce.provider.BouncyCastleProvider} - As the security provider for cryptographic operations</li>
- * </ul>
+ * This class uses standard JDK cryptographic providers for key parsing and validation.
+ * It supports all standard elliptic curves (P-256, P-384, P-521) and RSA keys
+ * as defined in RFC 7517 (JSON Web Key) and RFC 7518 (JSON Web Algorithms).
  * <p>
- * Bouncy Castle is used to support a wide range of elliptic curves (P-256, P-384, P-521) and
- * to ensure consistent cryptographic operations across different JVM implementations.
+ * All operations use the standard JDK cryptographic providers available in Java 11+,
+ * ensuring excellent compatibility with GraalVM native image compilation.
  * <p>
  * For more details on the security aspects, see the
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/security.adoc">Security Specification</a>
@@ -111,52 +108,33 @@ public final class JwkKeyHandler {
     }
 
     /**
-     * Get the EC parameter spec for a given curve.
+     * Get the EC parameter spec for a given curve using standard JDK providers.
      *
      * @param curve the curve name (e.g., "P-256", "P-384", "P-521")
      * @return the EC parameter spec
      * @throws InvalidKeySpecException if the curve is not supported
      */
     private static ECParameterSpec getEcParameterSpec(String curve) throws InvalidKeySpecException {
-        // Ensure BouncyCastle provider is available using the singleton
-        BouncyCastleProviderSingleton.getInstance();
-
-        // Map JWK curve name to BouncyCastle curve name
-        String bcCurveName = switch (curve) {
+        // Map JWK curve name to standard JDK curve name
+        String jdkCurveName = switch (curve) {
             case "P-256" -> "secp256r1";
             case "P-384" -> "secp384r1";
             case "P-521" -> "secp521r1";
             default -> null;
         };
 
-        if (bcCurveName == null) {
+        if (jdkCurveName == null) {
             throw new InvalidKeySpecException("EC curve " + curve + " is not supported");
         }
 
-        var bcSpec = ECNamedCurveTable.getParameterSpec(bcCurveName);
-        if (bcSpec == null) {
-            throw new InvalidKeySpecException("Bouncy Castle does not support curve: " + curve);
+        try {
+            // Use standard JDK AlgorithmParameters to get the curve parameters
+            AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+            params.init(new ECGenParameterSpec(jdkCurveName));
+            return params.getParameterSpec(ECParameterSpec.class);
+        } catch (NoSuchAlgorithmException | InvalidParameterSpecException e) {
+            throw new InvalidKeySpecException("Failed to get EC parameters for curve: " + curve, e);
         }
-
-        // Create EC parameter spec from BouncyCastle spec
-        var field = new ECFieldFp(bcSpec.getCurve().getField().getCharacteristic());
-        var ellipticCurve = new EllipticCurve(
-                field,
-                bcSpec.getCurve().getA().toBigInteger(),
-                bcSpec.getCurve().getB().toBigInteger(),
-                bcSpec.getSeed()
-        );
-        var generator = new ECPoint(
-                bcSpec.getG().getAffineXCoord().toBigInteger(),
-                bcSpec.getG().getAffineYCoord().toBigInteger()
-        );
-
-        return new ECParameterSpec(
-                ellipticCurve,
-                generator,
-                bcSpec.getN(),
-                bcSpec.getH().intValue()
-        );
     }
 
     /**

@@ -16,245 +16,319 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.JWTValidationLogMessages.DEBUG;
-import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.util.ETagAwareHttpHandler;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.string.MoreStrings;
-import jakarta.json.JsonException;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import de.cuioss.tools.net.http.HttpHandler;
 import lombok.NonNull;
-import lombok.ToString;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.INFO;
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 
 /**
- * Implementation of {@link JwksLoader} that loads JWKS from an HTTP endpoint.
- * Uses Caffeine cache for caching keys.
- * <p>
- * This implementation includes several performance and reliability enhancements:
- * <ul>
- *   <li>HTTP 304 "Not Modified" handling: Uses the ETag header to avoid unnecessary downloads</li>
- *   <li>Content-based caching: Only creates new key loaders when content actually changes</li>
- *   <li>Fallback mechanism: Uses the last valid result if a new request fails</li>
- *   <li>Multi-issuer support: Efficiently caches keys for multiple issuers</li>
- *   <li>Adaptive caching: Adjusts cache behavior based on usage patterns</li>
- *   <li>Background refresh: Preemptively refreshes keys before they expire</li>
- *   <li>Cache size limits: Prevents memory issues in multi-issuer environments</li>
- * </ul>
- * <p>
- * For more details on the security aspects, see the
- * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/security.adoc">Security Specification</a>
+ * JWKS loader that loads from HTTP endpoint with caching and background refresh support.
+ * Supports both direct HTTP endpoints and well-known discovery.
+ * Uses ETagAwareHttpHandler for stateful HTTP caching with optional scheduled background refresh.
+ * Background refresh is automatically started after the first successful key load.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-@ToString(exclude = {"httpClient", "cacheManager", "backgroundRefreshManager", "securityEventCounter"})
-@EqualsAndHashCode(exclude = {"httpClient", "cacheManager", "backgroundRefreshManager", "securityEventCounter"})
-public class HttpJwksLoader implements JwksLoader, AutoCloseable {
+public class HttpJwksLoader implements JwksLoader {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpJwksLoader.class);
 
-    @Getter
+    private SecurityEventCounter securityEventCounter;
     private final HttpJwksLoaderConfig config;
-    private final JwksHttpClient httpClient;
-    private final JwksCacheManager cacheManager;
-    private final BackgroundRefreshManager backgroundRefreshManager;
-    @NonNull
-    private final SecurityEventCounter securityEventCounter;
-
+    private final AtomicReference<JWKSKeyLoader> keyLoader = new AtomicReference<>();
+    private final AtomicReference<ETagAwareHttpHandler> httpCache = new AtomicReference<>();
+    private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
+    private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
+    private final AtomicBoolean schedulerStarted = new AtomicBoolean(false);
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
-     * Creates a new HttpJwksLoader with the specified configuration and security event counter.
-     *
-     * @param config               the configuration
-     * @param securityEventCounter the counter for security events
-     * @throws IllegalArgumentException if the configuration is null
+     * Constructor using HttpJwksLoaderConfig.
+     * Supports both direct HTTP handlers and WellKnownResolver configurations.
+     * The SecurityEventCounter must be set via initJWKSLoader() before use.
      */
-    public HttpJwksLoader(@NonNull HttpJwksLoaderConfig config, @NonNull SecurityEventCounter securityEventCounter) {
+    public HttpJwksLoader(@NonNull HttpJwksLoaderConfig config) {
         this.config = config;
-        this.httpClient = JwksHttpClient.create(config);
-        this.securityEventCounter = securityEventCounter;
-        this.cacheManager = new JwksCacheManager(config, this::loadJwksKeyLoader, securityEventCounter);
-        this.backgroundRefreshManager = new BackgroundRefreshManager(config, cacheManager);
-
-        // Start background refresh if enabled - this helps with preloading the cache
-        // Initial JWKS content fetch to populate cache
-        cacheManager.resolve();
-
-        LOGGER.debug(DEBUG.INITIALIZED_JWKS_LOADER.format(
-                config.getHttpHandler().getUri().toString(), config.getRefreshIntervalSeconds()));
-
     }
 
-    /**
-     * Loads a JWKSKeyLoader for the given cache key.
-     * The cache calls this method when a value is not found or needs to be refreshed.
-     *
-     * @param cacheKey the cache key
-     * @return a JWKSKeyLoader instance
-     */
-    private JWKSKeyLoader loadJwksKeyLoader(String cacheKey) {
-        LOGGER.debug("Loading JWKS for key: %s", cacheKey);
-
-        // Get the current ETag from the cache manager
-        String etag = cacheManager.getCurrentEtag();
-
-        try {
-            // Fetch JWKS content from the HTTP endpoint
-            JwksHttpClient.JwksHttpResponse response = httpClient.fetchJwksContent(etag);
-
-            // Handle 304 Not Modified response
-            if (response.isNotModified()) {
-                return cacheManager.handleNotModified();
-            }
-
-            // Update the cache with the new content
-            JwksCacheManager.KeyRotationResult result = cacheManager.updateCache(
-                    response.getContent(), response.getEtag().orElse(null));
-
-            // Check if key rotation was detected
-            if (result.keyRotationDetected()) {
-                LOGGER.warn(WARN.KEY_ROTATION_DETECTED::format);
-                securityEventCounter.increment(SecurityEventCounter.EventType.KEY_ROTATION_DETECTED);
-            }
-
-            // Log successful loading and parsing of JWKS
-            LOGGER.info(JWTValidationLogMessages.INFO.JWKS_LOADED.format(
-                    config.getHttpHandler().getUri().toString(),
-                    result.keyLoader().keySet().size()));
-
-            return result.keyLoader();
-        } catch (IllegalArgumentException | IllegalStateException | JsonException e) {
-            LOGGER.warn(e, WARN.JWKS_FETCH_FAILED.format(e.getMessage()));
-            securityEventCounter.increment(SecurityEventCounter.EventType.JWKS_FETCH_FAILED);
-            // Return the last valid result if available, or an empty JWKS
-            return cacheManager.getLastValidResult().orElse(JWKSKeyLoader.builder()
-                    .originalString("{}")
-                    .securityEventCounter(securityEventCounter)
-                    .build());
-        }
-    }
-
-    /**
-     * Gets a key by its ID.
-     *
-     * @param kid the key ID
-     * @return an Optional containing the key info, or empty if not found
-     */
     @Override
     public Optional<KeyInfo> getKeyInfo(String kid) {
-        if (MoreStrings.isEmpty(kid)) {
-            LOGGER.debug(DEBUG.KEY_ID_EMPTY::format);
-            return Optional.empty();
+        ensureLoaded();
+        JWKSKeyLoader loader = keyLoader.get();
+        return loader != null ? loader.getKeyInfo(kid) : Optional.empty();
+    }
+
+
+    @Override
+    public JwksType getJwksType() {
+        // Distinguish between direct HTTP and well-known discovery based on configuration
+        if (config.getWellKnownResolver() != null) {
+            return JwksType.WELL_KNOWN;
+        } else {
+            return JwksType.HTTP;
         }
+    }
 
-        JWKSKeyLoader keyLoader = cacheManager.resolve();
-        Optional<KeyInfo> keyInfo = keyLoader.getKeyInfo(kid);
+    @Override
+    public LoaderStatus isHealthy() {
+        // For cached loader, we consider it healthy if we can load keys
+        // This will trigger lazy loading on first health check
+        if (keyLoader.get() == null) {
+            ensureLoaded();
+            if (status == LoaderStatus.ERROR) {
+                LOGGER.debug("Health check failed during key loading");
+                return LoaderStatus.ERROR;
+            }
+        }
+        return status;
+    }
 
-        if (keyInfo.isEmpty() && config.getRefreshIntervalSeconds() > 0) {
-            // Key not found, try refreshing the cache
-            LOGGER.debug(DEBUG.KEY_NOT_FOUND_REFRESHING.format(kid));
-            try {
-                cacheManager.refresh();
-                keyLoader = cacheManager.resolve();
-                keyInfo = keyLoader.getKeyInfo(kid);
-            } catch (IllegalArgumentException | IllegalStateException | JsonException e) {
-                // Handle connection errors gracefully
-                LOGGER.warn(e, WARN.JWKS_FETCH_FAILED.format(e.getMessage()));
-                securityEventCounter.increment(SecurityEventCounter.EventType.JWKS_FETCH_FAILED);
+    @Override
+    public Optional<String> getIssuerIdentifier() {
+        // Return issuer identifier from well-known resolver if configured
+        if (config.getWellKnownResolver() != null && config.getWellKnownResolver().isHealthy() == LoaderStatus.OK) {
+            Optional<HttpHandler> issuerResult = config.getWellKnownResolver().getIssuer();
+            if (issuerResult.isPresent()) {
+                return Optional.of(issuerResult.get().getUri().toString());
+            } else {
+                LOGGER.debug("Failed to retrieve issuer identifier from well-known resolver: issuer not available");
             }
         }
 
-        if (keyInfo.isEmpty()) {
-            LOGGER.warn(WARN.KEY_NOT_FOUND.format(kid));
-            securityEventCounter.increment(SecurityEventCounter.EventType.KEY_NOT_FOUND);
-        }
-
-        return keyInfo;
-    }
-
-    /**
-     * Gets the first available key.
-     *
-     * @return an Optional containing the first key info if available, empty otherwise
-     */
-    @Override
-    public Optional<KeyInfo> getFirstKeyInfo() {
-        JWKSKeyLoader keyLoader = cacheManager.resolve();
-        if (keyLoader.isNotEmpty()) {
-            return keyLoader.getFirstKeyInfo();
-        }
         return Optional.empty();
     }
 
+
     /**
-     * Gets all available keys with their algorithms.
-     *
-     * @return a List containing all available key infos
+     * Shuts down the background refresh scheduler if running.
+     * Package-private for testing purposes only.
      */
-    @Override
-    public List<KeyInfo> getAllKeyInfos() {
-        return cacheManager.resolve().getAllKeyInfos();
+    void shutdown() {
+        ScheduledFuture<?> task = refreshTask.get();
+        if (task != null && !task.isCancelled()) {
+            task.cancel(false);
+            LOGGER.debug("Background refresh task cancelled");
+        }
     }
 
     /**
-     * Gets the set of all available key IDs.
+     * Checks if background refresh is enabled and running.
+     * Package-private for testing purposes only.
      *
-     * @return a Set containing all available key IDs
+     * @return true if background refresh is active, false otherwise
      */
-    @Override
-    public Set<String> keySet() {
-        return cacheManager.resolve().keySet();
+    boolean isBackgroundRefreshActive() {
+        ScheduledFuture<?> task = refreshTask.get();
+        return task != null && !task.isCancelled() && !task.isDone();
     }
 
-    /**
-     * Gets the type of JWKS source used by this loader.
-     *
-     * @return the JWKS source type, always {@link de.cuioss.jwt.validation.jwks.JwksType#HTTP}
-     */
-    @Override
-    public JwksType getJwksType() {
-        return JwksType.HTTP;
+    private void ensureLoaded() {
+        if (!initialized.get()) {
+            throw new IllegalStateException("HttpJwksLoader not initialized. Call initJWKSLoader() first.");
+        }
+        if (keyLoader.get() == null) {
+            loadKeysIfNeeded();
+        }
     }
 
-    /**
-     * Gets the status of the JWKS loader.
-     * <p>
-     * A loader status is OK if it can load at least one key.
-     * This implementation lazily determines the status based on the availability
-     * of keys when this method is called.
-     *
-     * @return the status of the loader, which is OK if at least one key is available,
-     *         ERROR if keys could not be loaded, or UNDEFINED if not yet determined
-     */
-    @Override
-    public LoaderStatus getStatus() {
-        // Check if any keys have been loaded (without triggering a load)
-        JWKSKeyLoader currentLoader = cacheManager.getCurrentLoader();
-        if (currentLoader != null) {
-            // Delegate to the current loader's status
-            return currentLoader.getStatus();
+    private void loadKeysIfNeeded() {
+        // Double-checked locking pattern with AtomicReference
+        if (keyLoader.get() == null) {
+            synchronized (this) {
+                if (keyLoader.get() == null) {
+                    loadKeys();
+                }
+            }
+        }
+    }
+
+    private void loadKeys() {
+        // Ensure we have a healthy ETagAwareHttpHandler
+        Optional<ETagAwareHttpHandler> cacheOpt = ensureHttpCache();
+        if (cacheOpt.isEmpty()) {
+            this.status = LoaderStatus.ERROR;
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
+            return;
         }
 
-        // If no loader has been created yet, we're in UNDEFINED state
-        return LoaderStatus.UNDEFINED;
+        ETagAwareHttpHandler cache = cacheOpt.get();
+
+        ETagAwareHttpHandler.LoadResult result = cache.load();
+
+        // Only update key loader if data has changed and we have content
+        if (result.content() != null && (result.loadState().isDataChanged() || keyLoader.get() == null)) {
+            updateKeyLoader(result);
+            LOGGER.info(INFO.JWKS_KEYS_UPDATED.format(result.loadState()));
+
+            // Start background refresh after first successful load
+            startBackgroundRefreshIfNeeded();
+        }
+
+        // Log appropriate message based on load state and handle error states
+        switch (result.loadState()) {
+            case LOADED_FROM_SERVER:
+                LOGGER.info(INFO.JWKS_HTTP_LOADED::format);
+                break;
+            case CACHE_ETAG:
+                LOGGER.debug("JWKS content validated via ETag (304 Not Modified)");
+                break;
+            case CACHE_CONTENT:
+                LOGGER.debug("Using cached JWKS content");
+                break;
+            case ERROR_WITH_CACHE:
+                LOGGER.warn(WARN.JWKS_LOAD_FAILED_CACHED_CONTENT::format);
+                break;
+            case ERROR_NO_CACHE:
+                LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE::format);
+                this.status = LoaderStatus.ERROR;
+                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Failed to load JWKS and no cached content available"));
+                break;
+        }
+    }
+
+    private void updateKeyLoader(ETagAwareHttpHandler.LoadResult result) {
+        JWKSKeyLoader newLoader = JWKSKeyLoader.builder()
+                .jwksContent(result.content())
+                .jwksType(getJwksType())
+                .build();
+        // Initialize the JWKSKeyLoader with the SecurityEventCounter
+        newLoader.initJWKSLoader(securityEventCounter);
+        keyLoader.set(newLoader);
+        this.status = LoaderStatus.OK;
+    }
+
+    private void startBackgroundRefreshIfNeeded() {
+        if (config.getScheduledExecutorService() != null && config.getRefreshIntervalSeconds() > 0 && schedulerStarted.compareAndSet(false, true)) {
+
+            ScheduledExecutorService executor = config.getScheduledExecutorService();
+            int intervalSeconds = config.getRefreshIntervalSeconds();
+
+            ScheduledFuture<?> task = executor.scheduleAtFixedRate(
+                    this::backgroundRefresh,
+                    intervalSeconds,
+                    intervalSeconds,
+                    TimeUnit.SECONDS
+            );
+            refreshTask.set(task);
+
+            LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_STARTED.format(intervalSeconds));
+        }
+    }
+
+    private void backgroundRefresh() {
+        LOGGER.debug("Starting background JWKS refresh");
+        Optional<ETagAwareHttpHandler> cacheOpt = Optional.ofNullable(httpCache.get());
+        if (cacheOpt.isEmpty()) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_SKIPPED::format);
+            return;
+        }
+
+        ETagAwareHttpHandler cache = cacheOpt.get();
+
+        ETagAwareHttpHandler.LoadResult result = cache.load();
+
+        // Handle error states
+        if (result.loadState() == ETagAwareHttpHandler.LoadState.ERROR_WITH_CACHE ||
+                result.loadState() == ETagAwareHttpHandler.LoadState.ERROR_NO_CACHE) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.loadState()));
+            return;
+        }
+
+        // Only update keys if data has actually changed
+        if (result.content() != null && result.loadState().isDataChanged()) {
+            updateKeyLoader(result);
+            LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_UPDATED.format(result.loadState()));
+        } else {
+            LOGGER.debug("Background refresh completed, no changes detected: %s", result.loadState());
+        }
     }
 
     /**
-     * Closes resources used by this loader.
-     * This method should be called when the loader is no longer needed.
+     * Ensures that we have a healthy ETagAwareHttpHandler based on configuration.
+     * Creates the handler dynamically based on whether we have a direct HTTP handler
+     * or need to resolve via WellKnownResolver.
+     *
+     * @return Optional containing the ETagAwareHttpHandler if healthy, empty if sources are not healthy
      */
+    private Optional<ETagAwareHttpHandler> ensureHttpCache() {
+        // Fast path - already have a cache (set by direct constructor or previous initialization)
+        ETagAwareHttpHandler cache = httpCache.get();
+        if (cache != null) {
+            return Optional.of(cache);
+        }
+
+        // Slow path - need to create cache based on configuration
+        synchronized (this) {
+            // Double-check after acquiring lock
+            cache = httpCache.get();
+            if (cache != null) {
+                return Optional.of(cache);
+            }
+
+            switch (getJwksType()) {
+                case HTTP:
+                    // Direct HTTP handler configuration
+                    // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
+                    LOGGER.debug("Creating ETagAwareHttpHandler from direct HTTP configuration for URI: %s",
+                            config.getHttpHandler().getUri());
+                    cache = new ETagAwareHttpHandler(config.getHttpHandler());
+                    httpCache.set(cache);
+                    return Optional.of(cache);
+
+                case WELL_KNOWN:
+                    // Well-known resolver configuration
+                    LOGGER.debug("Creating ETagAwareHttpHandler from WellKnownResolver");
+
+                    // Check if well-known resolver is healthy
+                    if (config.getWellKnownResolver().isHealthy() != LoaderStatus.OK) {
+                        LOGGER.debug("WellKnownResolver is not healthy, cannot create HTTP cache");
+                        return Optional.empty();
+                    }
+
+                    // Extract JWKS URI from well-known resolver
+                    Optional<HttpHandler> jwksResult = config.getWellKnownResolver().getJwksUri();
+                    if (jwksResult.isEmpty()) {
+                        LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED::format);
+                        return Optional.empty();
+                    }
+
+                    HttpHandler jwksHandler = jwksResult.get();
+
+                    LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format(jwksHandler.getUri()));
+                    cache = new ETagAwareHttpHandler(jwksHandler);
+                    httpCache.set(cache);
+                    return Optional.of(cache);
+
+                default:
+                    LOGGER.error(JWTValidationLogMessages.ERROR.UNSUPPORTED_JWKS_TYPE.format(getJwksType()));
+                    return Optional.empty();
+            }
+        }
+    }
+
     @Override
-    public void close() {
-        backgroundRefreshManager.close();
+    public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        if (initialized.compareAndSet(false, true)) {
+            this.securityEventCounter = securityEventCounter;
+            LOGGER.debug("HttpJwksLoader initialized with SecurityEventCounter");
+        }
     }
 }

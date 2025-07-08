@@ -12,16 +12,16 @@ The extension provides sensible defaults for most configuration options. At mini
 [source,properties]
 ----
 # Minimal configuration example using well-known approach (recommended)
-cui.jwt.issuers.default.url=https://your-idp.example.com/
-cui.jwt.issuers.default.jwks.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
+cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
+cui.jwt.issuers.default.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
 
 # OR minimal configuration with direct JWKS URL
-# cui.jwt.issuers.default.url=https://your-idp.example.com/
+# cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
 # cui.jwt.issuers.default.jwks.url=https://your-idp.example.com/jwks.json
 
 # OR minimal configuration with public key
-# cui.jwt.issuers.default.url=https://your-idp.example.com/
-# cui.jwt.issuers.default.publicKeyLocation=classpath:keys/public_key.pem
+# cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
+# cui.jwt.issuers.default.jwks.file-path=classpath:keys/public_key.pem
 ----
 
 All other configuration options have default values as described below.
@@ -38,12 +38,11 @@ While the minimal configuration will work, we recommend the following best pract
 [source,properties]
 ----
 # Recommended configuration
-cui.jwt.issuers.default.url=https://your-idp.example.com/
-cui.jwt.issuers.default.jwks.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
-cui.jwt.issuers.default.parser.audience=your-application-id
-cui.jwt.issuers.default.jwks.connectionTimeoutSeconds=3
-cui.jwt.issuers.default.jwks.readTimeoutSeconds=3
-cui.jwt.issuers.default.jwks.maxRetries=3
+cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
+cui.jwt.issuers.default.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
+cui.jwt.issuers.default.jwks.http.connection-timeout-seconds=3
+cui.jwt.issuers.default.jwks.http.read-timeout-seconds=3
+cui.jwt.issuers.default.jwks.http.max-retries=3
 ----
 
 == Global Configuration
@@ -52,33 +51,25 @@ cui.jwt.issuers.default.jwks.maxRetries=3
 |===
 |Property |Type |Description
 
-|cui.jwt.parser.audience
-|Optional<String>
-|The expected audience claim value. If specified, the JWT must contain this value in its "aud" claim.
-
-|cui.jwt.parser.leewaySeconds
-|int (default: 30)
-|The leeway in seconds to allow for clock skew when validating expiration and not-before claims.
-
-|cui.jwt.parser.maxTokenSizeBytes
+|cui.jwt.parser.max-token-size
 |int (default: 8192)
-|The maximum token size in bytes. Tokens larger than this will be rejected.
+|Maximum size of a JWT token in bytes to prevent overflow attacks.
 
-|cui.jwt.parser.validateNotBefore
-|boolean (default: true)
-|Whether to validate the "nbf" (not before) claim.
+|cui.jwt.parser.max-payload-size
+|int (default: 2048)
+|Maximum size of decoded JSON payload in bytes.
 
-|cui.jwt.parser.validateExpiration
-|boolean (default: true)
-|Whether to validate the "exp" (expiration) claim.
+|cui.jwt.parser.max-string-size
+|int (default: 1024)
+|Maximum string size for JSON parsing.
 
-|cui.jwt.parser.validateIssuedAt
-|boolean (default: false)
-|Whether to validate the "iat" (issued at) claim.
+|cui.jwt.parser.max-array-size
+|int (default: 64)
+|Maximum array size for JSON parsing.
 
-|cui.jwt.parser.allowedAlgorithms
-|String (default: "RS256,RS384,RS512,ES256,ES384,ES512")
-|Comma-separated list of allowed signing algorithms.
+|cui.jwt.parser.max-depth
+|int (default: 10)
+|Maximum depth for JSON parsing.
 |===
 
 == Issuer Configuration
@@ -89,11 +80,11 @@ The extension supports multiple issuers, each with its own configuration. Replac
 |===
 |Property |Type |Description
 
-|cui.jwt.issuers.<issuer-name>.url
+|cui.jwt.issuers.<issuer-name>.issuer-identifier
 |String (required)
 |The issuer URL/identifier that will be matched against the "iss" claim in the JWT.
 
-|cui.jwt.issuers.<issuer-name>.publicKeyLocation
+|cui.jwt.issuers.<issuer-name>.jwks.file-path
 |Optional<String>
 |Location of the public key or certificate used to verify tokens from this issuer. This can be a file path, URL, or classpath resource.
 
@@ -102,42 +93,6 @@ The extension supports multiple issuers, each with its own configuration. Replac
 |Whether this issuer configuration is enabled.
 |===
 
-== Issuer-Specific Parser Configuration
-
-Each issuer can override the global parser configuration with its own settings.
-
-[cols="2,1,5"]
-|===
-|Property |Type |Description
-
-|cui.jwt.issuers.<issuer-name>.parser.audience
-|Optional<String>
-|The expected audience claim value for this issuer.
-
-|cui.jwt.issuers.<issuer-name>.parser.leewaySeconds
-|int
-|The leeway in seconds for this issuer.
-
-|cui.jwt.issuers.<issuer-name>.parser.maxTokenSizeBytes
-|int
-|The maximum token size in bytes for this issuer.
-
-|cui.jwt.issuers.<issuer-name>.parser.validateNotBefore
-|boolean
-|Whether to validate the "nbf" claim for this issuer.
-
-|cui.jwt.issuers.<issuer-name>.parser.validateExpiration
-|boolean
-|Whether to validate the "exp" claim for this issuer.
-
-|cui.jwt.issuers.<issuer-name>.parser.validateIssuedAt
-|boolean
-|Whether to validate the "iat" claim for this issuer.
-
-|cui.jwt.issuers.<issuer-name>.parser.allowedAlgorithms
-|String
-|Comma-separated list of allowed signing algorithms for this issuer.
-|===
 
 == JWKS Configuration
 
@@ -154,31 +109,31 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 |Optional<String>
 |The URL of the JWKS endpoint. This property is mutually exclusive with `wellKnownUrl`. If both are provided, the well-known approach takes precedence.
 
-|cui.jwt.issuers.<issuer-name>.jwks.wellKnownUrl
+|cui.jwt.issuers.<issuer-name>.well-known-url
 |Optional<String>
 |The URL of the OpenID Connect discovery document (well-known endpoint). When provided, the JWKS URL will be automatically discovered from this endpoint. This is the recommended approach for configuring JWKS as it follows the OpenID Connect discovery standard. Example: https://your-idp.com/realms/my-realm/.well-known/openid-configuration
 
-|cui.jwt.issuers.<issuer-name>.jwks.cacheTtlSeconds
-|int (default: 3600)
-|The cache time-to-live in seconds for the JWKS response.
+|cui.jwt.issuers.<issuer-name>.jwks.content
+|Optional<String>
+|The direct JWKS content as JSON string. Mutually exclusive with other JWKS sources.
 
-|cui.jwt.issuers.<issuer-name>.jwks.refreshIntervalSeconds
+|cui.jwt.issuers.<issuer-name>.jwks.http.refresh-interval-seconds
 |int (default: 300)
 |The refresh interval in seconds for the JWKS cache.
 
-|cui.jwt.issuers.<issuer-name>.jwks.connectionTimeoutSeconds
+|cui.jwt.issuers.<issuer-name>.jwks.http.connection-timeout-seconds
 |int (default: 5)
 |The connection timeout in seconds for the JWKS endpoint.
 
-|cui.jwt.issuers.<issuer-name>.jwks.readTimeoutSeconds
+|cui.jwt.issuers.<issuer-name>.jwks.http.read-timeout-seconds
 |int (default: 5)
 |The read timeout in seconds for the JWKS endpoint.
 
-|cui.jwt.issuers.<issuer-name>.jwks.maxRetries
+|cui.jwt.issuers.<issuer-name>.jwks.http.max-retries
 |int (default: 3)
 |The maximum number of retries for failed JWKS requests.
 
-|cui.jwt.issuers.<issuer-name>.jwks.useSystemProxy
+|cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy
 |boolean (default: false)
 |Whether to use HTTP proxy settings from the system properties.
 |===
@@ -209,43 +164,37 @@ For quick reference, here are all the default values in one place:
 |===
 |Property |Default Value
 
-|cui.jwt.parser.leewaySeconds
-|30
-
-|cui.jwt.parser.maxTokenSizeBytes
+|cui.jwt.parser.max-token-size
 |8192
 
-|cui.jwt.parser.validateNotBefore
-|true
+|cui.jwt.parser.max-payload-size
+|2048
 
-|cui.jwt.parser.validateExpiration
-|true
+|cui.jwt.parser.max-string-size
+|1024
 
-|cui.jwt.parser.validateIssuedAt
-|false
+|cui.jwt.parser.max-array-size
+|64
 
-|cui.jwt.parser.allowedAlgorithms
-|"RS256,RS384,RS512,ES256,ES384,ES512"
+|cui.jwt.parser.max-depth
+|10
 
 |cui.jwt.issuers.<issuer-name>.enabled
 |true
 
-|cui.jwt.issuers.<issuer-name>.jwks.cacheTtlSeconds
-|3600
-
-|cui.jwt.issuers.<issuer-name>.jwks.refreshIntervalSeconds
+|cui.jwt.issuers.<issuer-name>.jwks.http.refresh-interval-seconds
 |300
 
-|cui.jwt.issuers.<issuer-name>.jwks.connectionTimeoutSeconds
+|cui.jwt.issuers.<issuer-name>.jwks.http.connection-timeout-seconds
 |5
 
-|cui.jwt.issuers.<issuer-name>.jwks.readTimeoutSeconds
+|cui.jwt.issuers.<issuer-name>.jwks.http.read-timeout-seconds
 |5
 
-|cui.jwt.issuers.<issuer-name>.jwks.maxRetries
+|cui.jwt.issuers.<issuer-name>.jwks.http.max-retries
 |3
 
-|cui.jwt.issuers.<issuer-name>.jwks.useSystemProxy
+|cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy
 |false
 
 |cui.jwt.health.jwks.cache-seconds
@@ -259,35 +208,24 @@ For quick reference, here are all the default values in one place:
 [source,properties]
 ----
 # Global parser configuration
-cui.jwt.parser.leewaySeconds=30
-cui.jwt.parser.maxTokenSizeBytes=8192
-cui.jwt.parser.validateNotBefore=true
-cui.jwt.parser.validateExpiration=true
-cui.jwt.parser.validateIssuedAt=false
-cui.jwt.parser.allowedAlgorithms=RS256,RS384,RS512,ES256,ES384,ES512
+cui.jwt.parser.max-token-size=8192
+cui.jwt.parser.max-payload-size=8192
+cui.jwt.parser.max-string-size=4096
+cui.jwt.parser.max-array-size=64
+cui.jwt.parser.max-depth=10
 
 # Keycloak issuer configuration
-cui.jwt.issuers.keycloak.url=https://keycloak.example.com/auth/realms/master
-cui.jwt.issuers.keycloak.publicKeyLocation=classpath:keys/public_key.pem
+cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/auth/realms/master
+cui.jwt.issuers.keycloak.jwks.file-path=classpath:keys/public_key.pem
 cui.jwt.issuers.keycloak.enabled=true
 
 # JWKS configuration for Keycloak (direct URL approach)
 cui.jwt.issuers.keycloak.jwks.url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
-cui.jwt.issuers.keycloak.jwks.cacheTtlSeconds=7200
-cui.jwt.issuers.keycloak.jwks.refreshIntervalSeconds=600
-cui.jwt.issuers.keycloak.jwks.connectionTimeoutSeconds=3
-cui.jwt.issuers.keycloak.jwks.readTimeoutSeconds=3
-cui.jwt.issuers.keycloak.jwks.maxRetries=5
-cui.jwt.issuers.keycloak.jwks.useSystemProxy=true
-
-# Parser configuration for Keycloak
-cui.jwt.issuers.keycloak.parser.audience=my-app
-cui.jwt.issuers.keycloak.parser.leewaySeconds=60
-cui.jwt.issuers.keycloak.parser.maxTokenSizeBytes=16384
-cui.jwt.issuers.keycloak.parser.validateNotBefore=false
-cui.jwt.issuers.keycloak.parser.validateExpiration=true
-cui.jwt.issuers.keycloak.parser.validateIssuedAt=true
-cui.jwt.issuers.keycloak.parser.allowedAlgorithms=RS256,ES256
+cui.jwt.issuers.keycloak.jwks.http.refresh-interval-seconds=600
+cui.jwt.issuers.keycloak.jwks.http.connection-timeout-seconds=3
+cui.jwt.issuers.keycloak.jwks.http.read-timeout-seconds=3
+cui.jwt.issuers.keycloak.jwks.http.max-retries=5
+cui.jwt.issuers.keycloak.jwks.http.use-system-proxy=true
 ----
 
 === Example 2: OpenID Connect Discovery Configuration (Recommended)
@@ -295,28 +233,22 @@ cui.jwt.issuers.keycloak.parser.allowedAlgorithms=RS256,ES256
 [source,properties]
 ----
 # Global parser configuration
-cui.jwt.parser.leewaySeconds=30
-cui.jwt.parser.maxTokenSizeBytes=8192
-cui.jwt.parser.validateNotBefore=true
-cui.jwt.parser.validateExpiration=true
-cui.jwt.parser.validateIssuedAt=false
-cui.jwt.parser.allowedAlgorithms=RS256,RS384,RS512,ES256,ES384,ES512
+cui.jwt.parser.max-token-size=8192
+cui.jwt.parser.max-payload-size=8192
+cui.jwt.parser.max-string-size=4096
+cui.jwt.parser.max-array-size=64
+cui.jwt.parser.max-depth=10
 
 # Issuer configuration using well-known approach
-cui.jwt.issuers.auth0.url=https://your-tenant.auth0.com/
+cui.jwt.issuers.auth0.issuer-identifier=https://your-tenant.auth0.com/
 cui.jwt.issuers.auth0.enabled=true
 
 # JWKS configuration using OpenID Connect Discovery (well-known approach)
-cui.jwt.issuers.auth0.jwks.well-known-url=https://your-tenant.auth0.com/.well-known/openid-configuration
-cui.jwt.issuers.auth0.jwks.cacheTtlSeconds=3600
-cui.jwt.issuers.auth0.jwks.refreshIntervalSeconds=300
-cui.jwt.issuers.auth0.jwks.connectionTimeoutSeconds=5
-cui.jwt.issuers.auth0.jwks.readTimeoutSeconds=5
-cui.jwt.issuers.auth0.jwks.maxRetries=3
-
-# Parser configuration
-cui.jwt.issuers.auth0.parser.audience=your-api-identifier
-cui.jwt.issuers.auth0.parser.leewaySeconds=30
+cui.jwt.issuers.auth0.well-known-url=https://your-tenant.auth0.com/.well-known/openid-configuration
+cui.jwt.issuers.auth0.jwks.http.refresh-interval-seconds=300
+cui.jwt.issuers.auth0.jwks.http.connection-timeout-seconds=5
+cui.jwt.issuers.auth0.jwks.http.read-timeout-seconds=5
+cui.jwt.issuers.auth0.jwks.http.max-retries=3
 ----
 
 == Metrics Integration

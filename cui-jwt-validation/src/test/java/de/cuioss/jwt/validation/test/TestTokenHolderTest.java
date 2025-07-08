@@ -500,12 +500,11 @@ class TestTokenHolderTest {
             // The audience might be a single string or a collection depending on how many values there are
             Object jwtAudience = jwt.getPayload().get(ClaimName.AUDIENCE.getName());
             if (customAudience.size() == 1) {
-                assertEquals(customAudience.get(0), jwtAudience);
+                assertEquals(customAudience.getFirst(), jwtAudience);
             } else {
                 // Convert both to sets to compare values regardless of collection type
                 assertInstanceOf(Collection.class, jwtAudience, "Audience should be a collection");
-                @SuppressWarnings("unchecked")
-                Collection<String> audienceCollection = (Collection<String>) jwtAudience;
+                @SuppressWarnings("unchecked") Collection<String> audienceCollection = (Collection<String>) jwtAudience;
                 assertEquals(new HashSet<>(customAudience), new HashSet<>(audienceCollection));
             }
         }

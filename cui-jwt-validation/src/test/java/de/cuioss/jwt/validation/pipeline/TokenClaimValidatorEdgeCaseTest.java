@@ -24,6 +24,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
+import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
@@ -32,12 +33,15 @@ import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,9 +70,10 @@ class TokenClaimValidatorEdgeCaseTest {
         void shouldValidateTokenThatIsAboutToExpire() {
             // Given a validator
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                    .jwksContent("{\"keys\":[]}")
                     .build();
             var validator = createValidator(issuerConfig);
 
@@ -86,9 +91,10 @@ class TokenClaimValidatorEdgeCaseTest {
         void shouldFailValidationForTokenThatHasJustExpired() {
             // Given a validator
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                    .jwksContent("{\"keys\":[]}")
                     .build();
             var validator = createValidator(issuerConfig);
 
@@ -113,9 +119,10 @@ class TokenClaimValidatorEdgeCaseTest {
         void shouldValidateTokenWithNotBeforeTimeInThePast() {
             // Given a validator
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                    .jwksContent("{\"keys\":[]}")
                     .build();
             var validator = createValidator(issuerConfig);
 
@@ -133,9 +140,10 @@ class TokenClaimValidatorEdgeCaseTest {
         void shouldValidateTokenWithNotBeforeTimeSlightlyInTheFuture() {
             // Given a validator
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                    .jwksContent("{\"keys\":[]}")
                     .build();
             var validator = createValidator(issuerConfig);
 
@@ -154,9 +162,10 @@ class TokenClaimValidatorEdgeCaseTest {
         void shouldFailValidationForTokenWithNotBeforeTimeFarInTheFuture() {
             // Given a validator
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                    .jwksContent("{\"keys\":[]}")
                     .build();
             var validator = createValidator(issuerConfig);
 
@@ -185,7 +194,7 @@ class TokenClaimValidatorEdgeCaseTest {
 
             // Given an IssuerConfig with empty JWKS content
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                     .jwksContent("{}")  // Empty JWKS content
@@ -273,7 +282,7 @@ class TokenClaimValidatorEdgeCaseTest {
         }
 
         @Override
-        public Map<String, ClaimValue> getClaims() {
+        public @NonNull Map<String, ClaimValue> getClaims() {
             return customClaims;
         }
 
@@ -288,7 +297,8 @@ class TokenClaimValidatorEdgeCaseTest {
      */
     private static class FailingJwksKeyLoader extends JWKSKeyLoader {
         public FailingJwksKeyLoader() {
-            super("{}", null, null, new SecurityEventCounter(), JwksType.MEMORY); // Empty JWKS
+            super("{}", null, new JwkAlgorithmPreferences(), JwksType.MEMORY); // Empty JWKS
+            initJWKSLoader(new SecurityEventCounter());
         }
 
         @Override
@@ -297,22 +307,6 @@ class TokenClaimValidatorEdgeCaseTest {
             return Optional.empty();
         }
 
-        @Override
-        public Optional<KeyInfo> getFirstKeyInfo() {
-            // Simulate a network failure by returning an empty Optional
-            return Optional.empty();
-        }
-
-        @Override
-        public List<KeyInfo> getAllKeyInfos() {
-            // Simulate a network failure by returning an empty list
-            return Collections.emptyList();
-        }
-
-        @Override
-        public Set<String> keySet() {
-            // Simulate a network failure by returning an empty set
-            return Collections.emptySet();
-        }
+        // Removed overrides for methods that no longer exist in JwksLoader interface
     }
 }

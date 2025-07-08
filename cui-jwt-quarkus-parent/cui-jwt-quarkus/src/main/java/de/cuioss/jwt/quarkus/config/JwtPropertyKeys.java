@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
+import de.cuioss.jwt.validation.jwks.JwksLoader;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -49,147 +50,259 @@ public final class JwtPropertyKeys {
         public static final String BASE = PREFIX + ".parser";
 
         /**
-         * The expected audience claim value.
+         * Maximum size of a JWT token in bytes to prevent overflow attacks.
          */
-        public static final String AUDIENCE = BASE + ".audience";
+        public static final String MAX_TOKEN_SIZE = BASE + ".max-token-size";
 
         /**
-         * The leeway in seconds to allow for clock skew.
+         * Maximum size of decoded JSON payload in bytes.
          */
-        public static final String LEEWAY_SECONDS = BASE + ".leeway-seconds";
+        public static final String MAX_PAYLOAD_SIZE = BASE + ".max-payload-size";
 
         /**
-         * The maximum token size in bytes.
+         * Maximum string size for JSON parsing.
          */
-        public static final String MAX_TOKEN_SIZE_BYTES = BASE + ".max-token-size-bytes";
+        public static final String MAX_STRING_SIZE = BASE + ".max-string-size";
 
         /**
-         * Whether to validate the "nbf" (not before) claim.
+         * Maximum array size for JSON parsing.
          */
-        public static final String VALIDATE_NOT_BEFORE = BASE + ".validate-not-before";
+        public static final String MAX_ARRAY_SIZE = BASE + ".max-array-size";
 
         /**
-         * Whether to validate the "exp" (expiration) claim.
+         * Maximum depth for JSON parsing.
          */
-        public static final String VALIDATE_EXPIRATION = BASE + ".validate-expiration";
-
-        /**
-         * Whether to validate the "iat" (issued at) claim.
-         */
-        public static final String VALIDATE_ISSUED_AT = BASE + ".validate-issued-at";
-
-        /**
-         * Comma-separated list of allowed signing algorithms.
-         */
-        public static final String ALLOWED_ALGORITHMS = BASE + ".allowed-algorithms";
+        public static final String MAX_DEPTH = BASE + ".max-depth";
     }
 
     /**
      * Properties related to JWT issuers configuration.
+     * <p>
+     * These keys use a template system for dynamic issuer configuration.
+     * Usage pattern: KEY.formatted("issuerName") where "issuerName" is an arbitrary string.
+     * </p>
+     * <p>
+     * Example: ENABLED.formatted("default") -> "cui.jwt.issuers.default.enabled"
+     * </p>
+     * <p>
+     * <strong>JWKS Source Configuration (Mutually Exclusive):</strong>
+     * Only one JWKS source may be configured per issuer:
+     * <ul>
+     *   <li>{@link #JWKS_URL} - Direct JWKS endpoint (requires {@link #ISSUER_IDENTIFIER})</li>
+     *   <li>{@link #WELL_KNOWN_URL} - Well-known discovery (provides issuer identifier automatically)</li>
+     *   <li>{@link #JWKS_FILE_PATH} - Local file (requires {@link #ISSUER_IDENTIFIER})</li>
+     *   <li>{@link #JWKS_CONTENT} - Inline content (requires {@link #ISSUER_IDENTIFIER})</li>
+     * </ul>
      */
     @UtilityClass
     public static final class ISSUERS {
         /**
-         * Base path for issuer configurations.
+         * Base template for issuer configurations.
          */
-        public static final String BASE = PREFIX + ".issuers";
+        public static final String BASE = PREFIX + ".issuers.%s.";
 
         /**
-         * The issuer identifier that will be matched against the "iss" claim in JWT tokens.
+         * Base template for JWKS configurations.
          */
-        public static final String IDENTIFIER = BASE + ".identifier";
+        public static final String JWKS_BASE = BASE + "jwks.";
 
         /**
-         * The URL of the OpenID Connect discovery document (well-known endpoint).
+         * Base template for HTTP configurations.
          */
-        public static final String WELL_KNOWN_URL = BASE + ".well-known-url";
+        public static final String HTTP_BASE = JWKS_BASE + "http.";
 
-        /**
-         * Location of the public key or certificate.
-         */
-        public static final String PUBLIC_KEY_LOCATION = BASE + ".public-key-location";
+        // === Core Configuration ===
 
         /**
          * Whether this issuer configuration is enabled.
+         * Template: "cui.jwt.issuers.%s.enabled"
+         * <p>
+         * When set to {@code false}, this issuer configuration will be ignored during
+         * token validation and will not attempt to use the underlying {@link JwksLoader}.
+         * This allows for easy enabling/disabling of specific issuers without removing
+         * their configuration.
+         * Default value is {@code true}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
          */
-        public static final String ENABLED = BASE + ".enabled";
+        public static final String ENABLED = BASE + "enabled";
 
         /**
-         * Properties related to JWKS configuration.
+         * The issuer identifier that will be matched against the "iss" claim in JWT tokens.
+         * Template: "cui.jwt.issuers.%s.issuer-identifier"
+         * <p>
+         * This field is required for all JWKS loading variants except well-known discovery.
+         * For well-known discovery, the issuer identifier is automatically extracted from
+         * the discovery document and this field is optional.
+         * This identifier must match the "iss" claim in validated tokens.
+         * </p>
+         * <p>
+         * <strong>Required</strong> for {@link #JWKS_URL}, {@link #JWKS_FILE_PATH}, and {@link #JWKS_CONTENT}.
+         * <strong>Optional</strong> for {@link #WELL_KNOWN_URL} (extracted from discovery document).
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
          */
-        @UtilityClass
-        public static final class JWKS {
-            /**
-             * Base path for JWKS configurations.
-             */
-            public static final String BASE = ISSUERS.BASE + DOT_JWKS;
+        public static final String ISSUER_IDENTIFIER = BASE + "issuer-identifier";
 
-            /**
-             * The URL of the JWKS endpoint.
-             */
-            public static final String URL = BASE + ".url";
+        /**
+         * Set of expected audience values (comma-separated).
+         * Template: "cui.jwt.issuers.%s.expected-audience"
+         * <p>
+         * These values are matched against the "aud" claim in the token.
+         * If the token's audience claim matches any of these values, it is considered valid.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
+         */
+        public static final String EXPECTED_AUDIENCE = BASE + "expected-audience";
 
-            /**
-             * The URL of the OpenID Connect discovery document.
-             */
-            public static final String WELL_KNOWN_URL = BASE + ".well-known-url";
+        /**
+         * Set of expected client ID values (comma-separated).
+         * Template: "cui.jwt.issuers.%s.expected-client-id"
+         * <p>
+         * These values are matched against the "azp" or "client_id" claim in the token.
+         * If the token's client ID claim matches any of these values, it is considered valid.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
+         */
+        public static final String EXPECTED_CLIENT_ID = BASE + "expected-client-id";
 
-            /**
-             * The cache time-to-live in seconds.
-             */
-            public static final String CACHE_TTL_SECONDS = BASE + ".cache-ttl-seconds";
+        /**
+         * Signature algorithm preferences (comma-separated).
+         * Template: "cui.jwt.issuers.%s.algorithm-preferences"
+         * <p>
+         * This configuration controls which signature algorithms are preferred and allowed
+         * during token validation. It can be used to enforce security policies, such as
+         * requiring stronger algorithms or blacklisting weak ones.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
+         */
+        public static final String ALGORITHM_PREFERENCES = BASE + "algorithm-preferences";
 
-            /**
-             * The refresh interval in seconds.
-             */
-            public static final String REFRESH_INTERVAL_SECONDS = BASE + ".refresh-interval-seconds";
+        // === JWKS Source Configuration (Mutually Exclusive) ===
 
-            /**
-             * The connection timeout in milliseconds.
-             */
-            public static final String CONNECTION_TIMEOUT_MS = BASE + ".connection-timeout-ms";
+        /**
+         * The URL of the JWKS endpoint for direct loading.
+         * Template: "cui.jwt.issuers.%s.jwks.http.url"
+         * <p>
+         * This method configures the issuer to load JWKS (JSON Web Key Set) from a remote HTTP endpoint.
+         * This is the most common configuration for production environments where JWKS are served
+         * by an identity provider or authorization server.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #WELL_KNOWN_URL}, {@link #JWKS_FILE_PATH}, and {@link #JWKS_CONTENT}.
+         * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String JWKS_URL = HTTP_BASE + "url";
 
-            /**
-             * The connection timeout in seconds.
-             */
-            public static final String CONNECTION_TIMEOUT_SECONDS = BASE + ".connection-timeout-seconds";
+        /**
+         * The URL of the OpenID Connect discovery document (well-known endpoint).
+         * Template: "cui.jwt.issuers.%s.jwks.http.well-known-url"
+         * <p>
+         * This method configures the JWKS loading using well-known endpoint discovery from a URL string.
+         * This method creates a WellKnownConfig internally for dynamic JWKS URI resolution.
+         * The JWKS URI will be extracted at runtime from the well-known discovery document.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #JWKS_URL}, {@link #JWKS_FILE_PATH}, and {@link #JWKS_CONTENT}.
+         * Provides {@link #ISSUER_IDENTIFIER} automatically from discovery document.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String WELL_KNOWN_URL = HTTP_BASE + "well-known-url";
 
-            /**
-             * The read timeout in milliseconds.
-             */
-            public static final String READ_TIMEOUT_MS = BASE + ".read-timeout-ms";
+        /**
+         * File path for loading JWKS from a local file.
+         * Template: "cui.jwt.issuers.%s.jwks.file-path"
+         * <p>
+         * This method configures the issuer to load JWKS (JSON Web Key Set) from a local file.
+         * This is useful for development environments, testing, or scenarios where JWKS are
+         * distributed as part of the application deployment.
+         * The file should contain a valid JWKS JSON structure with public keys only.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #JWKS_URL}, {@link #WELL_KNOWN_URL}, and {@link #JWKS_CONTENT}.
+         * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
+         */
+        public static final String JWKS_FILE_PATH = JWKS_BASE + "file-path";
 
-            /**
-             * The read timeout in seconds.
-             */
-            public static final String READ_TIMEOUT_SECONDS = BASE + ".read-timeout-seconds";
+        /**
+         * JWKS content directly as a JSON string.
+         * Template: "cui.jwt.issuers.%s.jwks.content"
+         * <p>
+         * This method configures the issuer to use JWKS (JSON Web Key Set) provided directly
+         * as a JSON string. This is useful for testing, embedded configurations, or scenarios
+         * where JWKS are generated or provided programmatically.
+         * The content should be a valid JWKS JSON structure containing public keys only.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #JWKS_URL}, {@link #WELL_KNOWN_URL}, and {@link #JWKS_FILE_PATH}.
+         * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig
+         */
+        public static final String JWKS_CONTENT = JWKS_BASE + "content";
 
-            /**
-             * The maximum number of retries.
-             */
-            public static final String MAX_RETRIES = BASE + ".max-retries";
+        // === HTTP Configuration (Only for JWKS_URL and WELL_KNOWN_URL) ===
 
-            /**
-             * Whether to use HTTP proxy settings from the system properties.
-             */
-            public static final String USE_SYSTEM_PROXY = BASE + ".use-system-proxy";
+        /**
+         * The refresh interval in seconds for HTTP-based JWKS loading.
+         * Template: "cui.jwt.issuers.%s.jwks.http.refresh-interval-seconds"
+         * <p>
+         * The interval in seconds at which to refresh the keys.
+         * If set to 0, no time-based caching will be used.
+         * It defaults to 10 minutes (600 seconds).
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String REFRESH_INTERVAL_SECONDS = HTTP_BASE + "refresh-interval-seconds";
 
-            // String partials for dynamic property construction
-            /**
-             * Partial string for refresh interval seconds property.
-             */
-            public static final String REFRESH_INTERVAL_SECONDS_PARTIAL = DOT_JWKS + ".refresh-interval-seconds";
+        /**
+         * The connection timeout in seconds for HTTP requests.
+         * Template: "cui.jwt.issuers.%s.jwks.http.connect-timeout-seconds"
+         * <p>
+         * Sets the connection timeout in seconds for HTTP requests to JWKS endpoints.
+         * This timeout controls how long to wait when establishing a connection to the remote server.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String CONNECT_TIMEOUT_SECONDS = HTTP_BASE + "connect-timeout-seconds";
 
-            /**
-             * Partial string for connection timeout seconds property.
-             */
-            public static final String CONNECTION_TIMEOUT_SECONDS_PARTIAL = DOT_JWKS + ".connection-timeout-seconds";
-
-            /**
-             * Partial string for read timeout seconds property.
-             */
-            public static final String READ_TIMEOUT_SECONDS_PARTIAL = DOT_JWKS + ".read-timeout-seconds";
-        }
+        /**
+         * The read timeout in seconds for HTTP requests.
+         * Template: "cui.jwt.issuers.%s.jwks.http.read-timeout-seconds"
+         * <p>
+         * Sets the read timeout in seconds for HTTP requests to JWKS endpoints.
+         * This timeout controls how long to wait for data to be received from the remote server
+         * after the connection has been established.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
     }
 
     /**
@@ -223,9 +336,10 @@ public final class JwtPropertyKeys {
             public static final String CACHE_SECONDS = BASE + ".cache-seconds";
 
             /**
-             * The timeout in seconds for JWKS endpoint connectivity checks.
+             * The timeout in seconds for health check requests.
              */
             public static final String TIMEOUT_SECONDS = BASE + ".timeout-seconds";
+
         }
     }
 

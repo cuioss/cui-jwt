@@ -23,15 +23,20 @@
 
         <!-- HTTPS configuration for testing (reuse integration tests ports) -->
         <test.https.port>10443</test.https.port>
-        <test.keycloak.port>10080</test.keycloak.port>
+        <test.keycloak.port>1443</test.keycloak.port>
 
-        <!-- JMH Configuration Properties -->
+        <!-- JMH Configuration Properties - Optimized for measurement precision -->
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>1</jmh.iterations>
-        <jmh.warmupIterations>0</jmh.warmupIterations>
-        <jmh.forks>1</jmh.forks>
-        <jmh.threads>2</jmh.threads>
+        <jmh.result.filePrefix>target/benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
+        <jmh.iterations>3</jmh.iterations>
+        <jmh.warmupIterations>1</jmh.warmupIterations>
+        <jmh.forks>2</jmh.forks>
+        <jmh.threads>MAX</jmh.threads>
+        <jmh.time>3s</jmh.time>
+        <jmh.warmupTime>3s</jmh.warmupTime>
+
+        <!-- Benchmark Configuration Properties -->
+        <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
     </properties>
 
     <dependencyManagement>
@@ -101,6 +106,7 @@
                             <version>${version.jmh}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <release>21</release>
                 </configuration>
             </plugin>
 
@@ -109,6 +115,22 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
+                    <!-- Create benchmark results directory -->
+                    <execution>
+                        <id>create-benchmark-dir</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>mkdir</executable>
+                            <arguments>
+                                <argument>-p</argument>
+                                <argument>target/benchmark-results</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
                     <!-- Start integration tests containers before benchmarks -->
                     <execution>
                         <id>start-integration-containers</id>
@@ -135,14 +157,18 @@
                             <arguments>
                                 <argument>-classpath</argument>
                                 <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
+                                <argument>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argument>
                                 <argument>-Djmh.result.format=${jmh.result.format}</argument>
                                 <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
                                 <argument>-Djmh.iterations=${jmh.iterations}</argument>
                                 <argument>-Djmh.warmupIterations=${jmh.warmupIterations}</argument>
                                 <argument>-Djmh.forks=${jmh.forks}</argument>
                                 <argument>-Djmh.threads=${jmh.threads}</argument>
+                                <argument>-Djmh.time=${jmh.time}</argument>
+                                <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
                                 <argument>-Dtest.https.port=${test.https.port}</argument>
                                 <argument>-Dtest.keycloak.port=${test.keycloak.port}</argument>
+                                <argument>-Dbenchmark.keycloak.url=${benchmark.keycloak.url}</argument>
                                 <argument>de.cuioss.jwt.quarkus.integration.benchmark.IntegrationBenchmarkRunner</argument>
                             </arguments>
                         </configuration>

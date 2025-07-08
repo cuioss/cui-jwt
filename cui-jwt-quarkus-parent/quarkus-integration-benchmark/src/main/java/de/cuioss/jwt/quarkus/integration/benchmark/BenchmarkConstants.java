@@ -22,10 +22,13 @@ import lombok.experimental.UtilityClass;
  * Centralizes string literals used across multiple benchmark classes.
  */
 @UtilityClass
+@SuppressWarnings("java:S1075") // ok for benchmark testing
 public class BenchmarkConstants {
 
     // REST endpoint paths
     public static final String JWT_VALIDATE_PATH = "/jwt/validate";
+    public static final String JWT_VALIDATE_ID_TOKEN_PATH = "/jwt/validate/id-token";
+    public static final String JWT_VALIDATE_REFRESH_TOKEN_PATH = "/jwt/validate/refresh-token";
     public static final String HEALTH_CHECK_PATH = "/q/health/live";
 
     // HTTP headers

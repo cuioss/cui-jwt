@@ -34,10 +34,8 @@ import static de.cuioss.jwt.quarkus.integration.benchmark.BenchmarkConstants.*;
  *
  * Containers are managed by Maven lifecycle via exec-maven-plugin.
  */
-@BenchmarkMode(Mode.All)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Threads(4) // Simulate concurrent users
 public class ConcurrentIntegrationBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(ConcurrentIntegrationBenchmark.class);

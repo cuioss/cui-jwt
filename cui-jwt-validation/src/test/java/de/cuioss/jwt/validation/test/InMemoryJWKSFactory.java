@@ -28,7 +28,7 @@ import lombok.experimental.UtilityClass;
  *   <li>Supports multiple algorithms (RS256, RS384, RS512)</li>
  *   <li>Creates keys on the fly</li>
  *   <li>Stores keys in static fields instead of the filesystem</li>
- *   <li>Uses BouncyCastle for key material generation</li>
+ *   <li>Uses standard JDK providers for key material generation</li>
  * </ul>
  * <p>
  * It provides methods to create various types of JWKS content:

@@ -40,11 +40,9 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @BenchmarkMode({Mode.Throughput, Mode.AverageTime})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
 public class ErrorLoadBenchmark {
 
+    public static final String TEST_SUBJECT = "test-subject-";
     private TokenValidator tokenValidator;
     private List<String> validTokens;
     private List<String> invalidTokens;
@@ -75,7 +73,7 @@ public class ErrorLoadBenchmark {
             // Create a new token holder for each valid token
             TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
             // Add a unique subject to each token
-            tokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+            tokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
             validTokens.add(tokenHolder.getRawToken());
         }
 
@@ -91,28 +89,28 @@ public class ErrorLoadBenchmark {
                             .expiredToken(true)
                             .build();
                     TestTokenHolder expiredTokenHolder = new TestTokenHolder(baseTokenHolder.getTokenType(), expiredParams);
-                    expiredTokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                    expiredTokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
                     invalidToken = expiredTokenHolder.getRawToken();
                     break;
 
                 case 1: // Wrong issuer
                     TestTokenHolder wrongIssuerTokenHolder = baseTokenHolder.regenerateClaims()
                             .withClaim(ClaimName.ISSUER.getName(), ClaimValue.forPlainString("rogue-issuer-" + i))
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
                     invalidToken = wrongIssuerTokenHolder.getRawToken();
                     break;
 
                 case 2: // Wrong audience
                     TestTokenHolder wrongAudienceTokenHolder = baseTokenHolder.regenerateClaims()
                             .withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forList("rogue-audience-" + i, List.of("rogue-audience-" + i)))
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
                     invalidToken = wrongAudienceTokenHolder.getRawToken();
                     break;
 
                 case 3: // Invalid signature
                     TestTokenHolder invalidSignatureTokenHolder = baseTokenHolder.regenerateClaims()
                             .withKeyId("invalid-key-id-" + i)
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
                     invalidToken = invalidSignatureTokenHolder.getRawToken();
                     break;
 
@@ -128,7 +126,7 @@ public class ErrorLoadBenchmark {
 
     /**
      * Selects a token based on the configured error percentage.
-     * 
+     *
      * @return A token string that has the probability of being invalid
      * according to the errorPercentage parameter
      */

@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
-import de.cuioss.jwt.validation.security.BouncyCastleProviderSingleton;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,18 +49,15 @@ class KeyInfoTest {
 
     @BeforeEach
     void setup() throws Exception {
-        // Ensure BouncyCastle provider is registered
-        BouncyCastleProviderSingleton.getInstance();
-
-        // Generate RSA key pair using BouncyCastle
-        KeyPairGenerator rsaGenerator = KeyPairGenerator.getInstance("RSA", BouncyCastleProviderSingleton.getInstance().getProviderName());
+        // Generate RSA key pair using standard JDK providers
+        KeyPairGenerator rsaGenerator = KeyPairGenerator.getInstance("RSA");
         rsaGenerator.initialize(2048);
         KeyPair rsaKeyPair = rsaGenerator.generateKeyPair();
         rsaPublicKey = rsaKeyPair.getPublic();
 
-        // Generate EC key pair using BouncyCastle
-        KeyPairGenerator ecGenerator = KeyPairGenerator.getInstance("EC", BouncyCastleProviderSingleton.getInstance().getProviderName());
-        ecGenerator.initialize(new ECGenParameterSpec("P-256"));
+        // Generate EC key pair using standard JDK providers
+        KeyPairGenerator ecGenerator = KeyPairGenerator.getInstance("EC");
+        ecGenerator.initialize(new ECGenParameterSpec("secp256r1"));
         KeyPair ecKeyPair = ecGenerator.generateKeyPair();
         ecPublicKey = ecKeyPair.getPublic();
     }

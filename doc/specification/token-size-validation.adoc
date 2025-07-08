@@ -40,8 +40,10 @@ The `NonValidatingJwtParser` class implements token size validation with the fol
 
 * Default maximum token size of 8KB (`DEFAULT_MAX_TOKEN_SIZE`)
 * Default maximum payload size of 8KB (`DEFAULT_MAX_PAYLOAD_SIZE`)
+* Default maximum string size of 4KB (`DEFAULT_MAX_STRING_SIZE`)
 * Builder pattern using Lombok's `@Builder` annotation
-* Size validation in the `decode()` and `decodeJsonPart()` methods
+* Multi-layered size validation in the `decode()` and `decodeJsonPart()` methods
+* JSON parsing security limits through JsonReaderFactory configuration
 
 === TokenValidator
 
@@ -80,8 +82,11 @@ TokenValidator validator = new TokenValidator(
 // Create TokenValidator with custom token size limits
 TokenValidator validator = new TokenValidator(
     ParserConfig.builder()
-        .maxTokenSize(8 * 1024)  // 8KB
-        .maxPayloadSize(4 * 1024)  // 4KB
+        .maxTokenSize(8 * 1024)    // 8KB - entire token string
+        .maxPayloadSize(8 * 1024)  // 8KB - each decoded part
+        .maxStringSize(4 * 1024)   // 4KB - individual JSON strings
+        .maxArraySize(64)          // 64 - JSON array elements
+        .maxDepth(10)              // 10 - JSON nesting depth
         .build(),
     issuerConfigs);
 ----
@@ -92,10 +97,21 @@ TokenValidator validator = new TokenValidator(
 
 The default values in the `NonValidatingJwtParser` class:
 
-* `DEFAULT_MAX_TOKEN_SIZE = 8 * 1024` (8KB)
-* `DEFAULT_MAX_PAYLOAD_SIZE = 8 * 1024` (8KB)
+* `DEFAULT_MAX_TOKEN_SIZE = 8 * 1024` (8KB) - entire JWT token string
+* `DEFAULT_MAX_PAYLOAD_SIZE = 8 * 1024` (8KB) - each Base64-decoded part
+* `DEFAULT_MAX_STRING_SIZE = 4 * 1024` (4KB) - individual JSON string values
+* `DEFAULT_MAX_ARRAY_SIZE = 64` - JSON array element count
+* `DEFAULT_MAX_DEPTH = 10` - JSON nesting depth
 
 These values are also used as defaults in the `ParserConfig` class.
+
+=== Size Relationship Logic
+
+The defaults maintain logical size relationships:
+
+* **maxTokenSize (8KB)**: Applied to the entire JWT token string before processing
+* **maxPayloadSize (8KB)**: Applied to each decoded part after Base64 decoding. This allows for larger JWT payloads with extensive claims while still providing protection against memory exhaustion attacks
+* **maxStringSize (4KB)**: Applied to individual JSON string fields during parsing, preventing any single field from dominating the payload size
 
 === Thread Safety
 

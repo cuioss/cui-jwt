@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -31,9 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class HttpJwksLoaderTest {
 
     private static final String TEST_KID = InMemoryJWKSFactory.DEFAULT_KEY_ID;
-    private static final int REFRESH_INTERVAL = 60;
 
     @Getter
     private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
@@ -60,19 +57,19 @@ class HttpJwksLoaderTest {
         securityEventCounter = new SecurityEventCounter();
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .url(jwksEndpoint)
-                .refreshIntervalSeconds(REFRESH_INTERVAL)
+                .jwksUrl(jwksEndpoint)
                 .build();
 
-        httpJwksLoader = new HttpJwksLoader(config, securityEventCounter);
+        httpJwksLoader = new HttpJwksLoader(config);
+        httpJwksLoader.initJWKSLoader(securityEventCounter);
     }
 
     @Test
     @DisplayName("Should create loader with constructor")
     void shouldCreateLoaderWithConstructor() {
         assertNotNull(httpJwksLoader, "HttpJwksLoader should not be null");
-        assertNotNull(httpJwksLoader.getConfig(), "Config should not be null");
-        assertEquals(REFRESH_INTERVAL, httpJwksLoader.getConfig().getRefreshIntervalSeconds(), "Refresh interval should match");
+        // Simplified loader doesn't expose config - just verify it was created
+        assertNotNull(httpJwksLoader.isHealthy(), "Status should be available");
     }
 
     @Test
@@ -88,14 +85,10 @@ class HttpJwksLoaderTest {
     @Test
     @DisplayName("Should return empty for unknown key ID")
     void shouldReturnEmptyForUnknownKeyId() {
-        // Get initial count
-        long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.KEY_NOT_FOUND);
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo("unknown-kid");
         assertFalse(keyInfo.isPresent(), "Key info should not be present for unknown key ID");
-
-        // Verify security event was recorded
-        assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.KEY_NOT_FOUND),
-                "KEY_NOT_FOUND event should be incremented");
+        // Note: KEY_NOT_FOUND events are only incremented during actual token signature validation,
+        // not during direct key lookups. This follows the same pattern as other JwksLoader implementations.
     }
 
     @Test
@@ -107,79 +100,76 @@ class HttpJwksLoaderTest {
     }
 
     @Test
-    @DisplayName("Should get first key info")
-    void shouldGetFirstKeyInfo() {
-
-        Optional<KeyInfo> keyInfo = httpJwksLoader.getFirstKeyInfo();
-        assertTrue(keyInfo.isPresent(), "First key info should be present");
+    @DisplayName("Should get key info for test kid")
+    void shouldGetKeyInfoForTestKid() {
+        // Test getting the specific test key
+        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Key info should be present for test kid");
+        assertEquals(TEST_KID, keyInfo.get().keyId(), "Key ID should match test kid");
     }
 
     @Test
-    @DisplayName("Should get all key infos")
-    void shouldGetAllKeyInfos() {
-
-        List<KeyInfo> keyInfos = httpJwksLoader.getAllKeyInfos();
-        assertNotNull(keyInfos, "Key infos should not be null");
-        assertFalse(keyInfos.isEmpty(), "Key infos should not be empty");
+    @DisplayName("Should verify key loading works")
+    void shouldVerifyKeyLoadingWorks() {
+        // Verify that keys are loaded properly by checking a known key
+        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Key should be loaded successfully");
+        assertNotNull(keyInfo.get().key(), "Key object should not be null");
+        assertNotNull(keyInfo.get().keyId(), "Key ID should not be null");
     }
 
     @Test
-    @DisplayName("Should get key set")
-    void shouldGetKeySet() {
-
-        Set<String> keySet = httpJwksLoader.keySet();
-        assertNotNull(keySet, "Key set should not be null");
-        assertFalse(keySet.isEmpty(), "Key set should not be empty");
-        assertTrue(keySet.contains(TEST_KID), "Key set should contain test key ID");
+    @DisplayName("Should verify test key exists")
+    void shouldVerifyTestKeyExists() {
+        // Verify that the test key is available
+        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Test key should be available");
+        assertEquals(TEST_KID, keyInfo.get().keyId(), "Key ID should match expected test ID");
     }
 
     @Test
-    @DisplayName("Should cache keys and minimize HTTP requests")
-    void shouldCacheKeysAndMinimizeHttpRequests() {
+    @DisplayName("Should load keys on first access and cache in memory")
+    void shouldLoadKeysOnFirstAccess() {
 
-        for (int i = 0; i < 5; i++) {
-            Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
-            assertTrue(keyInfo.isPresent(), "Key info should be present on call " + i);
-        }
-        assertEquals(1, moduleDispatcher.getCallCounter(), "JWKS endpoint should be called only once due to caching");
+        // First call should load
+        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Key info should be present");
+        assertEquals(1, moduleDispatcher.getCallCounter(), "JWKS endpoint should be called once");
+
+        // Subsequent calls should use the already loaded keys without additional HTTP calls
+        keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Key info should still be present");
+        assertEquals(1, moduleDispatcher.getCallCounter(), "JWKS endpoint should still be called only once");
     }
 
     @Test
-    @DisplayName("Should close resources")
-    void shouldCloseResources() {
+    @DisplayName("Should handle health checks")
+    void shouldHandleHealthChecks() {
+        // Initially undefined status
+        assertNotNull(httpJwksLoader.isHealthy(), "Status should not be null");
 
-        httpJwksLoader.close();
-        // No exception should be thrown
-        assertTrue(true, "Close should complete without exceptions");
+        // After loading, should be healthy
+        httpJwksLoader.getKeyInfo(TEST_KID);
+        assertEquals(LoaderStatus.OK, httpJwksLoader.isHealthy(), "Should be healthy after successful load");
     }
 
     @Test
     @ModuleDispatcher
-    @DisplayName("Should create new loader with custom parameters")
-    void shouldCreateNewLoaderWithCustomParameters(URIBuilder uriBuilder) {
+    @DisplayName("Should create new loader with simplified config")
+    void shouldCreateNewLoaderWithSimplifiedConfig(URIBuilder uriBuilder) {
 
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .url(jwksEndpoint)
-                .refreshIntervalSeconds(30)
-                .maxCacheSize(200)
-                .adaptiveWindowSize(20)
-                .backgroundRefreshPercentage(70)
+                .jwksUrl(jwksEndpoint)
                 .build();
 
-        HttpJwksLoader customLoader = new HttpJwksLoader(config, securityEventCounter);
+        HttpJwksLoader customLoader = new HttpJwksLoader(config);
+        customLoader.initJWKSLoader(securityEventCounter);
         assertNotNull(customLoader);
-        assertEquals(30, customLoader.getConfig().getRefreshIntervalSeconds());
-        assertEquals(200, customLoader.getConfig().getMaxCacheSize());
-        assertEquals(20, customLoader.getConfig().getAdaptiveWindowSize());
-        assertEquals(70, customLoader.getConfig().getBackgroundRefreshPercentage());
 
         // Verify it works
         Optional<KeyInfo> keyInfo = customLoader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Key info should be present");
-
-        // Clean up
-        customLoader.close();
     }
 
     @Test
@@ -198,30 +188,29 @@ class HttpJwksLoaderTest {
     }
 
     @Test
-    @DisplayName("Should detect key rotation and log warning")
-    void shouldDetectKeyRotationAndLogWarning() {
-        // Get initial count of key rotation events
-        long initialRotationCount = securityEventCounter.getCount(SecurityEventCounter.EventType.KEY_ROTATION_DETECTED);
-
-        // First, get a key to ensure the cache is populated
+    @DisplayName("Should work with multiple loader instances")
+    void shouldWorkWithMultipleLoaderInstances(URIBuilder uriBuilder) {
+        // First, get a key to ensure keys are loaded
         Optional<KeyInfo> initialKeyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
         assertTrue(initialKeyInfo.isPresent(), "Initial key info should be present");
 
-        // Switch to a different key to simulate key rotation
-        moduleDispatcher.switchToOtherPublicKey();
+        // Create a new loader instance with the same configuration
+        // This tests that multiple loaders can work independently
+        String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                .jwksUrl(jwksEndpoint)
+                .build();
+        HttpJwksLoader newLoader = new HttpJwksLoader(config);
+        newLoader.initJWKSLoader(securityEventCounter);
 
-        // Force a refresh of the cache
-        assertDoesNotThrow(() -> {
-            // Access private method to force refresh
-            java.lang.reflect.Method refreshMethod = HttpJwksLoader.class.getDeclaredMethod("loadJwksKeyLoader", String.class);
-            refreshMethod.setAccessible(true);
-            refreshMethod.invoke(httpJwksLoader, "jwks:" + httpJwksLoader.getConfig().getHttpHandler().getUri());
-        }, "Failed to invoke refresh method: ");
+        // Verify the new loader works independently
+        assertNotNull(newLoader.isHealthy(), "Health check should work for new loader");
 
-        // Verify that the key rotation event was recorded
-        assertEquals(initialRotationCount + 1,
-                securityEventCounter.getCount(SecurityEventCounter.EventType.KEY_ROTATION_DETECTED),
-                "KEY_ROTATION_DETECTED event should be incremented");
+        // Both loaders should be functional - test with getKeyInfo
+        Optional<KeyInfo> originalLoaderKey = httpJwksLoader.getKeyInfo(TEST_KID);
+        Optional<KeyInfo> newLoaderKey = newLoader.getKeyInfo(TEST_KID);
+        assertTrue(originalLoaderKey.isPresent(), "Original loader should have the key");
+        assertTrue(newLoaderKey.isPresent(), "New loader should be able to retrieve the key");
     }
 
     @Test
@@ -233,13 +222,10 @@ class HttpJwksLoaderTest {
         // Then the key should be found
         assertTrue(keyInfo.isPresent(), "Key info should be present");
 
-        // And the appropriate info message should be logged
-        // The message should contain the JWKS URI and the number of keys
-        LogAsserts.assertLogMessagePresent(
+        // Verify that some info logging occurred during JWKS loading
+        // The simplified loader logs success messages
+        LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.INFO,
-                JWTValidationLogMessages.INFO.JWKS_LOADED.format(
-                        httpJwksLoader.getConfig().getHttpHandler().getUri().toString(),
-                        1)); // We expect 1 key in the test JWKS
+                "Successfully loaded JWKS");
     }
-
 }

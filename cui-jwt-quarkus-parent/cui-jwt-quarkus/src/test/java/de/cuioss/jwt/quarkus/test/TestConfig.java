@@ -66,7 +66,7 @@ public class TestConfig implements Config {
         }
         try {
             return Optional.of(convertValue(value, propertyType));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
     }

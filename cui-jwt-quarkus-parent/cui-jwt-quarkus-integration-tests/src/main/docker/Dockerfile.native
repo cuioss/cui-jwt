@@ -29,8 +29,10 @@ COPY --chmod=0755 --chown=root:root src/main/docker/health-check.sh /app/health-
 # Copy PEM certificates with restrictive permissions (root ownership)
 # Certificate (public) - readable by all but owned by root
 # Private key - restricted access and owned by root
+# Truststore - readable by application but owned by root
 COPY --chmod=0644 --chown=root:root src/main/docker/certificates/localhost.crt /app/certificates/localhost.crt
 COPY --chmod=0600 --chown=root:root src/main/docker/certificates/localhost.key /app/certificates/localhost.key
+COPY --chmod=0644 --chown=root:root src/main/docker/certificates/localhost-truststore.p12 /app/certificates/localhost-truststore.p12
 
 # Note: For read-only filesystem support, temporary directories will be mounted as tmpfs
 # Distroless images don't include shell commands, so tmpfs mounts are configured at runtime
@@ -49,4 +51,5 @@ HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=10s \
 USER nonroot
 
 # Use exec form for better signal handling and security
-ENTRYPOINT ["/app/application"]
+# SSL system properties for native image HTTPS client functionality (GraalVM best practice)
+ENTRYPOINT ["/app/application", "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12", "-Djavax.net.ssl.trustStorePassword=localhost-trust", "-Djavax.net.ssl.trustStoreType=PKCS12"]

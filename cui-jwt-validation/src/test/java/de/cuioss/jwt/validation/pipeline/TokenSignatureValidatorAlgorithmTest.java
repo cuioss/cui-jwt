@@ -44,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableTestLogger(rootLevel = TestLogLevel.DEBUG)
 @DisplayName("Tests TokenSignatureValidator with different algorithms")
 class TokenSignatureValidatorAlgorithmTest {
-    private static final String ISSUER = "Token-Test-testIssuer";
 
     private NonValidatingJwtParser jwtParser;
     private SecurityEventCounter securityEventCounter;
@@ -60,7 +59,8 @@ class TokenSignatureValidatorAlgorithmTest {
 
         // Create an in-memory JwksLoader with a valid key
         String jwksContent = InMemoryJWKSFactory.createMultiAlgorithmJwks();
-        JwksLoader jwksLoader = JwksLoaderFactory.createInMemoryLoader(jwksContent, securityEventCounter);
+        JwksLoader jwksLoader = JwksLoaderFactory.createInMemoryLoader(jwksContent);
+        jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
         validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
@@ -77,7 +77,7 @@ class TokenSignatureValidatorAlgorithmTest {
         Instant expiration = now.plus(1, ChronoUnit.HOURS);
 
         return Jwts.builder().subject("test-subject")
-                .issuer(ISSUER)
+
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
                 .header().add("kid", algorithm.name()).and()

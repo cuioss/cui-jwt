@@ -8,6 +8,9 @@
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
   "offlineSessionIdleTimeout": 2592000,
+  "attributes": {
+    "frontendUrl": "https://keycloak:8443"
+  },
   "clients": [
     {
       "clientId": "benchmark-client",

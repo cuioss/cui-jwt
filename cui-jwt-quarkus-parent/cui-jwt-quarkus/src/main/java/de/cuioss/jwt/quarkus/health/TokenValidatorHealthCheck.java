@@ -15,17 +15,25 @@
  */
 package de.cuioss.jwt.quarkus.health;
 
-import de.cuioss.jwt.validation.TokenValidator;
-import jakarta.enterprise.context.ApplicationScoped;
+import de.cuioss.jwt.validation.IssuerConfig;
 import jakarta.inject.Inject;
+import lombok.NonNull;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 
+import java.util.List;
+
+
+import jakarta.enterprise.context.ApplicationScoped;
+
 /**
- * Health check for TokenValidator functionality.
+ * Health check for JWT validation configuration.
+ * <p>
  * This class implements the SmallRye Health check interface to provide
- * liveness status for the JWT validation component.
+ * liveness status for the JWT validation component. It only needs access
+ * to the issuer configurations to verify they are properly loaded.
+ * </p>
  */
 @ApplicationScoped
 @Liveness // Marks this as a liveness check
@@ -35,27 +43,23 @@ public class TokenValidatorHealthCheck implements HealthCheck {
     private static final String ERROR_NO_ISSUER_CONFIGS = "No issuer configurations found";
     private static final String ERROR = "error";
 
-    private final TokenValidator tokenValidator;
+    private final List<IssuerConfig> issuerConfigs;
 
     @Inject
-    public TokenValidatorHealthCheck(TokenValidator tokenValidator) {
-        this.tokenValidator = tokenValidator;
+    public TokenValidatorHealthCheck(List<IssuerConfig> issuerConfigs) {
+        this.issuerConfigs = issuerConfigs;
     }
 
     @Override
+    @NonNull
     public HealthCheckResponse call() {
-        if (tokenValidator == null) {
-            return createErrorResponse("TokenValidator not available");
-        }
-
-        var issuerConfigMap = tokenValidator.getIssuerConfigMap();
-        if (issuerConfigMap.isEmpty()) {
+        if (issuerConfigs == null || issuerConfigs.isEmpty()) {
             return createErrorResponse(ERROR_NO_ISSUER_CONFIGS);
         }
 
         return HealthCheckResponse.named(HEALTHCHECK_NAME)
                 .up()
-                .withData("issuerCount", issuerConfigMap.size())
+                .withData("issuerCount", issuerConfigs.size())
                 .build();
     }
 

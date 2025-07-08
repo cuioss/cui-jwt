@@ -24,6 +24,7 @@ import lombok.Getter;
  * Ensures that tokens are loaded once and shared across all benchmark classes
  * to avoid impacting performance measurements.
  */
+@SuppressWarnings("java:S6548") // owolff: Singleton os ok for testing
 public class TokenRepositoryManager {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenRepositoryManager.class);
@@ -67,7 +68,8 @@ public class TokenRepositoryManager {
             String keycloakUrl = BenchmarkConfiguration.getKeycloakUrl();
             int tokenPoolSize = BenchmarkConfiguration.getTokenPoolSize();
 
-            tokenRepository = new TokenRepository(keycloakUrl, tokenPoolSize);
+            // Use multi-realm configuration for better test coverage
+            tokenRepository = new TokenRepository(keycloakUrl, tokenPoolSize, BenchmarkConfiguration.getRealmConfigurations());
             tokenRepository.initialize();
 
             initialized = true;
@@ -92,12 +94,30 @@ public class TokenRepositoryManager {
     }
 
     /**
-     * Gets a random valid token.
+     * Gets a random valid access token.
      *
-     * @return A valid JWT token
+     * @return A valid JWT access token
      */
     public String getValidToken() {
         return getTokenRepository().getValidToken();
+    }
+
+    /**
+     * Gets a random valid ID token.
+     *
+     * @return A valid JWT ID token
+     */
+    public String getValidIdToken() {
+        return getTokenRepository().getValidIdToken();
+    }
+
+    /**
+     * Gets a random valid refresh token.
+     *
+     * @return A valid JWT refresh token
+     */
+    public String getValidRefreshToken() {
+        return getTokenRepository().getValidRefreshToken();
     }
 
     /**

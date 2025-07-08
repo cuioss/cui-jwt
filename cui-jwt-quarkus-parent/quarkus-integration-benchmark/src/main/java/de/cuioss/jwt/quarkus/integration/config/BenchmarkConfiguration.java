@@ -18,6 +18,8 @@ package de.cuioss.jwt.quarkus.integration.config;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.experimental.UtilityClass;
 
+import java.util.List;
+
 /**
  * Configuration class for integration benchmark settings.
  * Provides centralized configuration for token repository and benchmark parameters.
@@ -29,13 +31,21 @@ public class BenchmarkConfiguration {
 
     // Token Repository Configuration
     public static final int DEFAULT_TOKEN_POOL_SIZE = 100;
-    public static final String DEFAULT_KEYCLOAK_URL = "http://localhost:10080";
+    public static final String DEFAULT_KEYCLOAK_URL = "https://keycloak:8443";
 
-    // Keycloak Configuration
+    // Benchmark Realm Configuration
     public static final String KEYCLOAK_REALM = "benchmark";
     public static final String KEYCLOAK_CLIENT_ID = "benchmark-client";
+    public static final String KEYCLOAK_CLIENT_SECRET = "benchmark-secret";
     public static final String KEYCLOAK_USERNAME = "benchmark-user";
     public static final String KEYCLOAK_PASSWORD = "benchmark-password";
+
+    // Integration Realm Configuration
+    public static final String INTEGRATION_REALM = "integration";
+    public static final String INTEGRATION_CLIENT_ID = "integration-client";
+    public static final String INTEGRATION_CLIENT_SECRET = "integration-secret";
+    public static final String INTEGRATION_USERNAME = "integration-user";
+    public static final String INTEGRATION_PASSWORD = "integration-password";
 
     // Benchmark Runtime Configuration
     public static final int WARMUP_TOKEN_REQUESTS = 5;
@@ -101,6 +111,15 @@ public class BenchmarkConfiguration {
     }
 
     /**
+     * Gets the Keycloak client secret for token requests.
+     *
+     * @return Keycloak client secret
+     */
+    public static String getKeycloakClientSecret() {
+        return System.getProperty("benchmark.keycloak.client.secret", KEYCLOAK_CLIENT_SECRET);
+    }
+
+    /**
      * Gets the Keycloak username for token requests.
      *
      * @return Keycloak username
@@ -147,6 +166,70 @@ public class BenchmarkConfiguration {
     }
 
     /**
+     * Creates a list of realm configurations for multi-realm token fetching.
+     * 
+     * Design Note: This method encapsulates the realm configurations to avoid
+     * code duplication while allowing the TokenRepository to work with multiple realms.
+     * Half the tokens will be fetched from each realm to provide balanced testing
+     * of both well-known discovery (benchmark) and direct JWKS URL (integration) configurations.
+     * 
+     * @return List of configured realms
+     */
+    public static List<RealmConfig> getRealmConfigurations() {
+        RealmConfig benchmarkRealm = RealmConfig.builder()
+                .realmName(getKeycloakRealm())
+                .clientId(getKeycloakClientId())
+                .clientSecret(getKeycloakClientSecret())
+                .username(getKeycloakUsername())
+                .password(getKeycloakPassword())
+                .displayName("Benchmark Realm (Well-Known Discovery)")
+                .build();
+
+        RealmConfig integrationRealm = RealmConfig.builder()
+                .realmName(INTEGRATION_REALM)
+                .clientId(INTEGRATION_CLIENT_ID)
+                .clientSecret(INTEGRATION_CLIENT_SECRET)
+                .username(INTEGRATION_USERNAME)
+                .password(INTEGRATION_PASSWORD)
+                .displayName("Integration Realm (Direct JWKS)")
+                .build();
+
+        return List.of(benchmarkRealm, integrationRealm);
+    }
+
+    /**
+     * Gets the benchmark realm configuration.
+     * 
+     * @return Benchmark realm configuration
+     */
+    public static RealmConfig getBenchmarkRealmConfig() {
+        return RealmConfig.builder()
+                .realmName(getKeycloakRealm())
+                .clientId(getKeycloakClientId())
+                .clientSecret(getKeycloakClientSecret())
+                .username(getKeycloakUsername())
+                .password(getKeycloakPassword())
+                .displayName("Benchmark Realm")
+                .build();
+    }
+
+    /**
+     * Gets the integration realm configuration.
+     * 
+     * @return Integration realm configuration
+     */
+    public static RealmConfig getIntegrationRealmConfig() {
+        return RealmConfig.builder()
+                .realmName(INTEGRATION_REALM)
+                .clientId(INTEGRATION_CLIENT_ID)
+                .clientSecret(INTEGRATION_CLIENT_SECRET)
+                .username(INTEGRATION_USERNAME)
+                .password(INTEGRATION_PASSWORD)
+                .displayName("Integration Realm")
+                .build();
+    }
+
+    /**
      * Logs the current configuration settings.
      */
     public static void logConfiguration() {
@@ -158,5 +241,10 @@ public class BenchmarkConfiguration {
         LOGGER.info("  Keycloak Client: %s", getKeycloakClientId());
         LOGGER.info("  Max Retries: %s", getMaxTokenFetchRetries());
         LOGGER.info("  Retry Delay: %s ms", getTokenFetchRetryDelay());
+        LOGGER.info("  Available Realms: %s", getRealmConfigurations().size());
+
+        // Log realm details
+        getRealmConfigurations().forEach(realm ->
+                LOGGER.info("    - %s: %s", realm.getEffectiveDisplayName(), realm.getRealmName()));
     }
 }

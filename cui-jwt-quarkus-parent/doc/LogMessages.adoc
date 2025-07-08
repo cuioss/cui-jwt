@@ -1,0 +1,99 @@
+= Log Messages for CUI JWT Quarkus Parent
+:toc: left
+:toclevels: 2
+
+== Overview
+
+This document catalogs all log messages across the CUI JWT Quarkus modules. Each module has its own LogMessages class with independent identifier numbering starting from 001.
+
+== Module Overview
+
+[cols="1,1,1", options="header"]
+|===
+|Module |Prefix |LogMessages Class
+|cui-jwt-quarkus |CUI_JWT_QUARKUS |CuiJwtQuarkusLogMessages
+|cui-jwt-quarkus-deployment |CUI_JWT_QUARKUS_DEPLOYMENT |CuiJwtQuarkusDeploymentLogMessages
+|===
+
+== CUI JWT Quarkus Runtime Module
+
+**Module:** `cui-jwt-quarkus`  
+**Prefix:** `CUI_JWT_QUARKUS`  
+**Class:** `de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages`
+
+=== INFO Level (001-099)
+
+==== Configuration Messages (001-010)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-001 |CONFIG |Resolving issuer configurations from properties |Logs start of issuer configuration resolution
+|CUI_JWT_QUARKUS-002 |CONFIG |Resolved issuer configuration: %s |Logs successful issuer configuration resolution
+|CUI_JWT_QUARKUS-003 |CONFIG |Resolved %s enabled issuer configurations |Logs total number of enabled issuer configurations
+|CUI_JWT_QUARKUS-004 |CONFIG |Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringSize=%s, maxArraySize=%s, maxDepth=%s |Logs parser configuration resolution details
+|===
+
+==== Validation Messages (011-020)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-011 |VALIDATION |Initializing JWT validation components from configuration |Logs start of JWT validation component initialization
+|CUI_JWT_QUARKUS-012 |VALIDATION |JWT validation components initialized successfully with %s issuers |Logs successful JWT validation component initialization
+|===
+
+==== Metrics Messages (021-030)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-021 |METRICS |Initializing JwtMetricsCollector |Logs JWT metrics collector initialization start
+|CUI_JWT_QUARKUS-022 |METRICS |JwtMetricsCollector initialized with %s event types |Logs successful JWT metrics collector initialization
+|===
+
+=== WARN Level (100-199)
+
+==== Health Check Warnings (100-110)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-100 |HEALTH |Error checking JWKS loader for issuer %s: %s |Warns about error checking JWKS loader during health check
+|===
+
+==== Metrics Warnings (111-120)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-111 |METRICS |SecurityEventCounter not available, metrics will not be collected |Warns about unavailable SecurityEventCounter affecting metrics collection
+|===
+
+=== ERROR Level (200-299)
+
+Currently no ERROR level messages are defined in the runtime module.
+
+== CUI JWT Quarkus Deployment Module
+
+**Module:** `cui-jwt-quarkus-deployment`  
+**Prefix:** `CUI_JWT_QUARKUS_DEPLOYMENT`  
+**Class:** `de.cuioss.jwt.quarkus.deployment.CuiJwtQuarkusDeploymentLogMessages`
+
+=== INFO Level (001-099)
+
+==== Deployment Messages (001-010)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS_DEPLOYMENT-001 |DEPLOYMENT |CUI JWT feature registered |Logs successful CUI JWT feature registration during build
+|===
+
+=== WARN Level (100-199)
+
+Currently no WARN level messages are defined in the deployment module.
+
+=== ERROR Level (200-299)
+
+Currently no ERROR level messages are defined in the deployment module.

@@ -31,9 +31,6 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
 public class FailureScenarioBenchmark {
 
     private TokenValidator tokenValidator;

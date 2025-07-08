@@ -40,6 +40,8 @@ import static de.cuioss.jwt.quarkus.integration.benchmark.BenchmarkConstants.*;
 public class IntegrationTokenValidationBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(IntegrationTokenValidationBenchmark.class);
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String TOKEN_TEMPLATE = "{\"token\":\"%s\"}";
 
     private TokenRepositoryManager tokenManager;
 
@@ -98,14 +100,32 @@ public class IntegrationTokenValidationBenchmark {
             }
         }
 
-        // Warmup benchmark endpoint with real tokens
+        // Warmup benchmark endpoints with real tokens
         for (int i = 0; i < 3; i++) {
             try {
+                // Warmup blocking access token validation
                 String warmupToken = tokenManager.getValidToken();
                 RestAssured.given()
                         .header("Authorization", "Bearer " + warmupToken)
                         .when()
                         .post("/jwt/validate");
+
+                // Warmup blocking ID token validation
+                String warmupIdToken = tokenManager.getValidIdToken();
+                RestAssured.given()
+                        .contentType(APPLICATION_JSON)
+                        .body(TOKEN_TEMPLATE.formatted(warmupIdToken))
+                        .when()
+                        .post("/jwt/validate/id-token");
+
+                // Warmup blocking refresh token validation
+                String warmupRefreshToken = tokenManager.getValidRefreshToken();
+                RestAssured.given()
+                        .contentType(APPLICATION_JSON)
+                        .body(TOKEN_TEMPLATE.formatted(warmupRefreshToken))
+                        .when()
+                        .post("/jwt/validate/refresh-token");
+
             } catch (Exception e) {
                 LOGGER.debug("Warmup request failed (expected during startup): %s", e.getMessage());
             }
@@ -113,6 +133,8 @@ public class IntegrationTokenValidationBenchmark {
 
         LOGGER.info("✅ Services warmed up");
     }
+
+    // ===== BLOCKING ENDPOINT BENCHMARKS =====
 
     /**
      * Benchmark valid token validation - primary performance metric.
@@ -188,6 +210,70 @@ public class IntegrationTokenValidationBenchmark {
     }
 
     /**
+     * Benchmark valid ID token validation - ID token performance.
+     * This measures performance of validating OpenID Connect ID tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkValidIdTokenValidation() {
+        String idToken = tokenManager.getValidIdToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(idToken))
+                .when()
+                .post(JWT_VALIDATE_ID_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark valid refresh token validation - refresh token performance.
+     * This measures performance of validating OAuth2 refresh tokens.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Response benchmarkValidRefreshTokenValidation() {
+        String refreshToken = tokenManager.getValidRefreshToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(refreshToken))
+                .when()
+                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark ID token latency - average response time for ID tokens.
+     * This measures latency characteristics for ID token validation.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkIdTokenLatency() {
+        String idToken = tokenManager.getValidIdToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(idToken))
+                .when()
+                .post(JWT_VALIDATE_ID_TOKEN_PATH);
+    }
+
+    /**
+     * Benchmark refresh token latency - average response time for refresh tokens.
+     * This measures latency characteristics for refresh token validation.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public Response benchmarkRefreshTokenLatency() {
+        String refreshToken = tokenManager.getValidRefreshToken();
+        return RestAssured.given()
+                .contentType(APPLICATION_JSON)
+                .body(TOKEN_TEMPLATE.formatted(refreshToken))
+                .when()
+                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH);
+    }
+
+    /**
      * Benchmark missing authorization header handling.
      * This measures error handling performance for malformed requests.
      */
@@ -199,4 +285,5 @@ public class IntegrationTokenValidationBenchmark {
                 .when()
                 .post(JWT_VALIDATE_PATH);
     }
+
 }

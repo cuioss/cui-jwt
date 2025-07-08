@@ -53,7 +53,7 @@ class CustomClaimMapperTest {
         ClaimMapper roleMapper = new JsonCollectionMapper();
 
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer(TestTokenHolder.TEST_ISSUER)
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
                 .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                 .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                 .jwksContent(jwksContent)
@@ -91,7 +91,7 @@ class CustomClaimMapperTest {
     @DisplayName("Use default mapper when no custom mapper is configured")
     void shouldUseDefaultMapperWhenNoCustomMapperIsConfigured() {
         IssuerConfig issuerConfigWithoutCustomMapper = IssuerConfig.builder()
-                .issuer(TestTokenHolder.TEST_ISSUER)
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
                 .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                 .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                 .jwksContent(jwksContent)

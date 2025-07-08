@@ -30,4 +30,4 @@ jobs:
         run: ./mvnw --no-transfer-progress clean install
 
       - name: Run Integration Tests
-        run: ./mvnw --no-transfer-progress clean verify -Pintegration-tests -pl cui-jwt-validation,cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+        run: ./mvnw --no-transfer-progress clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests

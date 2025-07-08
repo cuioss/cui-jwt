@@ -65,34 +65,33 @@ class WellKnownParserTest {
     @Test
     @DisplayName("Should parse valid JSON response successfully")
     void shouldParseValidJsonResponseSuccessfully() {
-        JsonObject result = parser.parseJsonResponse(VALID_JSON, wellKnownUrl);
+        Optional<JsonObject> result = parser.parseJsonResponse(VALID_JSON, wellKnownUrl);
 
-        assertNotNull(result);
-        assertTrue(result.containsKey("issuer"));
-        assertEquals("https://example.com", result.getString("issuer"));
-        assertTrue(result.containsKey("jwks_uri"));
-        assertEquals("https://example.com/.well-known/jwks.json", result.getString("jwks_uri"));
+        assertTrue(result.isPresent());
+        assertNotNull(result.get());
+        assertTrue(result.get().containsKey("issuer"));
+        assertEquals("https://example.com", result.get().getString("issuer"));
+        assertTrue(result.get().containsKey("jwks_uri"));
+        assertEquals("https://example.com/.well-known/jwks.json", result.get().getString("jwks_uri"));
     }
 
     @Test
-    @DisplayName("Should throw WellKnownDiscoveryException for invalid JSON")
-    void shouldThrowWellKnownDiscoveryExceptionForInvalidJson() {
-        WellKnownDiscoveryException exception = assertThrows(WellKnownDiscoveryException.class,
-                () -> parser.parseJsonResponse(INVALID_JSON, wellKnownUrl));
+    @DisplayName("Should return error result for invalid JSON")
+    void shouldReturnErrorResultForInvalidJson() {
+        Optional<JsonObject> result = parser.parseJsonResponse(INVALID_JSON, wellKnownUrl);
 
-        assertTrue(exception.getMessage().contains("Failed to parse JSON"));
-        assertTrue(exception.getMessage().contains(wellKnownUrl.toString()));
-        assertNotNull(exception.getCause());
+        assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle empty JSON response")
     void shouldHandleEmptyJsonResponse() {
         String emptyJson = "{}";
-        JsonObject result = parser.parseJsonResponse(emptyJson, wellKnownUrl);
+        Optional<JsonObject> result = parser.parseJsonResponse(emptyJson, wellKnownUrl);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertNotNull(result.get());
+        assertTrue(result.get().isEmpty());
     }
 
     @ParameterizedTest
@@ -103,8 +102,9 @@ class WellKnownParserTest {
             "non_existent_key, , false"
     })
     void shouldExtractStringValuesFromJsonObject(String key, String expectedValue, boolean shouldBePresent) {
-        JsonObject jsonObject = parser.parseJsonResponse(VALID_JSON, wellKnownUrl);
-        Optional<String> value = parser.getString(jsonObject, key);
+        Optional<JsonObject> result = parser.parseJsonResponse(VALID_JSON, wellKnownUrl);
+        assertTrue(result.isPresent());
+        Optional<String> value = parser.getString(result.get(), key);
 
         assertEquals(shouldBePresent, value.isPresent());
         if (shouldBePresent) {
@@ -121,9 +121,10 @@ class WellKnownParserTest {
                     "nullable_field": null
                 }
                 """;
-        JsonObject jsonObject = parser.parseJsonResponse(jsonWithNull, wellKnownUrl);
+        Optional<JsonObject> result = parser.parseJsonResponse(jsonWithNull, wellKnownUrl);
+        assertTrue(result.isPresent());
 
-        Optional<String> nullValue = parser.getString(jsonObject, "nullable_field");
+        Optional<String> nullValue = parser.getString(result.get(), "nullable_field");
         assertFalse(nullValue.isPresent());
     }
 
@@ -138,38 +139,34 @@ class WellKnownParserTest {
     })
     void shouldValidateMatchingIssuerSuccessfully(String issuer, String wellKnownUrl) throws MalformedURLException {
         URL wellKnown = URI.create(wellKnownUrl).toURL();
-        assertDoesNotThrow(() -> parser.validateIssuer(issuer, wellKnown));
+        boolean result = parser.validateIssuer(issuer, wellKnown);
+        assertTrue(result);
     }
 
     @Test
-    @DisplayName("Should throw exception for malformed issuer URL")
-    void shouldThrowExceptionForMalformedIssuerUrl() {
+    @DisplayName("Should return error for malformed issuer URL")
+    void shouldReturnErrorForMalformedIssuerUrl() {
         String malformedIssuer = "not-a-valid-url";
 
-        WellKnownDiscoveryException exception = assertThrows(WellKnownDiscoveryException.class,
-                () -> parser.validateIssuer(malformedIssuer, wellKnownUrl));
+        boolean result = parser.validateIssuer(malformedIssuer, wellKnownUrl);
 
-        assertTrue(exception.getMessage().contains("Issuer URL from discovery document is malformed"));
-        assertTrue(exception.getMessage().contains(malformedIssuer));
-        assertNotNull(exception.getCause());
+        assertFalse(result);
     }
 
     @ParameterizedTest
-    @DisplayName("Should throw exception for issuer validation failures")
+    @DisplayName("Should return error for issuer validation failures")
     @CsvSource({
             "http://example.com, https://example.com/.well-known/openid-configuration",
             "https://different.com, https://example.com/.well-known/openid-configuration",
             "https://example.com:8080, https://example.com:9090/.well-known/openid-configuration",
             "https://example.com/wrong/path, https://example.com/correct/path/.well-known/openid-configuration"
     })
-    void shouldThrowExceptionForIssuerValidationFailures(String issuer, String wellKnownUrl) throws MalformedURLException {
+    void shouldReturnErrorForIssuerValidationFailures(String issuer, String wellKnownUrl) throws MalformedURLException {
         URL wellKnown = URI.create(wellKnownUrl).toURL();
 
-        WellKnownDiscoveryException exception = assertThrows(WellKnownDiscoveryException.class,
-                () -> parser.validateIssuer(issuer, wellKnown));
+        boolean result = parser.validateIssuer(issuer, wellKnown);
 
-        assertTrue(exception.getMessage().contains("Issuer validation failed"));
-        assertTrue(exception.getMessage().contains(issuer));
+        assertFalse(result);
     }
 
     @Test
@@ -177,10 +174,11 @@ class WellKnownParserTest {
     void shouldHandleNullParserConfig() {
         WellKnownParser parserWithNullConfig = new WellKnownParser(null);
 
-        JsonObject result = parserWithNullConfig.parseJsonResponse(VALID_JSON, wellKnownUrl);
+        Optional<JsonObject> result = parserWithNullConfig.parseJsonResponse(VALID_JSON, wellKnownUrl);
 
-        assertNotNull(result);
-        assertTrue(result.containsKey("issuer"));
+        assertTrue(result.isPresent());
+        assertNotNull(result.get());
+        assertTrue(result.get().containsKey("issuer"));
     }
 
 }

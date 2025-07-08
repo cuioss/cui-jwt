@@ -86,11 +86,11 @@ Flexible key source options:
 ----
 // Create issuer configuration
 IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuer("https://your-issuer.com")
+        .issuerIdentifier("https://your-issuer.com")
         .expectedAudience("target-Audience")
         .expectedClientId("client-id")
         .httpJwksLoaderConfig(httpJwksLoaderConfig)
-        .build();
+        .build(); // Validation happens automatically // Validate configuration
 
 // Create validator
 TokenValidator validator = new TokenValidator(issuerConfig);
@@ -112,20 +112,22 @@ HttpJwksLoaderConfig httpConfig = HttpJwksLoaderConfig.builder()
         .build();
 
 // Configure multiple issuers
+// HTTP-based JWKS (well-known discovery - issuerIdentifier optional)
 IssuerConfig issuerHttpConfig = IssuerConfig.builder()
-        .issuer("https://issuer1.com")
-        .httpJwksLoaderConfig(httpConfig)
-        .build();
+        .httpJwksLoaderConfig(httpConfig) // For well-known discovery
+        .build(); // Validation happens automatically
 
+// File-based JWKS (issuerIdentifier required)
 IssuerConfig issuerFileConfig = IssuerConfig.builder()
-        .issuer("https://issuer2.com")
+        .issuerIdentifier("https://issuer2.com")
         .jwksFilePath("/path/to/jwks.json")
-        .build();
+        .build(); // Validation happens automatically
 
+// In-memory JWKS (issuerIdentifier required)
 IssuerConfig issuerMemoryConfig = IssuerConfig.builder()
-        .issuer("https://issuer3.com")
+        .issuerIdentifier("https://issuer3.com")
         .jwksContent("{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"key-id\",\"use\":\"sig\",\"alg\":\"RS256\",\"n\":\"...\",\"e\":\"...\"}]}")
-        .build();
+        .build(); // Validation happens automatically
 
 // Create validator supporting all issuers
 TokenValidator validator = new TokenValidator(
@@ -141,56 +143,59 @@ See xref:../doc/specification/well-known.adoc[OIDC Discovery Specification Detai
 
 OpenID Connect Discovery provides a standardized way for clients (Relying Parties) to dynamically discover information about an OpenID Provider (OP), such as its issuer identifier and JWKS URI. This is typically done by fetching a JSON document from a well-known endpoint: `/.well-known/openid-configuration` relative to the issuer's base URL.
 
-This library supports configuring the `HttpJwksLoaderConfig` (and subsequently the `TokenValidator`) using the information retrieved from such an endpoint via the `WellKnownHandler`.
+This library supports configuring the `HttpJwksLoaderConfig` (and subsequently the `TokenValidator`) using the information retrieved from such an endpoint via the `HttpWellKnownResolver`.
 
 === Benefits
 
-* **Simplified Configuration**: Reduces the need to manually configure the `jwks_uri` and `issuer` if they are discoverable.
-* **Dynamic Updates**: Although `WellKnownHandler` itself performs a one-time fetch, the principle of discovery allows for more dynamic setups if the handler is re-initialized based on external triggers (not covered by default).
+* **Simplified Configuration**: Reduces the need to manually configure the `jwks_uri` and `issuerIdentifier` if they are discoverable via well-known endpoints.
+* **Dynamic Updates**: Although `HttpWellKnownResolver` itself performs a one-time fetch, the principle of discovery allows for more dynamic setups if the handler is re-initialized based on external triggers (not covered by default).
 * **Standard Compliance**: Aligns with OIDC standards for provider information retrieval.
 
-==== Using WellKnownHandler
+==== Using HttpWellKnownResolver
 
-The `de.cuioss.jwt.validation.wellKnown.WellKnownHandler` class is responsible for fetching and parsing the OIDC discovery document.
+The `de.cuioss.jwt.validation.wellKnown.HttpWellKnownResolver` class is responsible for fetching and parsing the OIDC discovery document.
 
 [source,java]
 ----
-import de.cuioss.jwt.validation.well_known.WellKnownHandler;
+import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
 import de.cuioss.jwt.validation.well_known.WellKnownDiscoveryException;
 
 // ...
 
 try {
     String wellKnownUrl = "https://your-idp.com/realms/my-realm/.well-known/openid-configuration";
-    WellKnownHandler wellKnownHandler = WellKnownHandler.builder()
+    ParserConfig parserConfig = ParserConfig.builder().build(); // Use defaults or customize as needed
+    HttpWellKnownResolver wellKnownResolver = HttpWellKnownResolver.builder()
             .url(wellKnownUrl)
+            .parserConfig(parserConfig)
             .build();
 
-    // The handler now contains the discovered metadata, e.g.:
-    // HttpHandler jwksHandler = wellKnownHandler.getJwksUri();
-    // HttpHandler issuerHandler = wellKnownHandler.getIssuer();
+    // The resolver now contains the discovered metadata, e.g.:
+    // HttpHandler jwksHandler = wellKnownResolver.getJwksUri();
+    // HttpHandler issuerHandler = wellKnownResolver.getIssuer();
     // URL jwksUri = jwksHandler.getUrl();
     // URL issuerUrl = issuerHandler.getUrl();
 
-    // This handler can then be used to configure HttpJwksLoaderConfig
+    // This resolver can then be used to configure HttpJwksLoaderConfig
 } catch (WellKnownDiscoveryException e) {
     // Handle exceptions related to discovery, e.g., network issues, malformed JSON, missing required fields
     LOGGER.error("OIDC Discovery failed: %s", e.getMessage());
 }
 ----
-The `WellKnownHandler.builder().url().build()` pattern will fetch the document, parse it, and validate key aspects like the issuer consistency. It may throw a `WellKnownDiscoveryException` if the process fails.
+The `HttpWellKnownResolver.builder().url().build()` pattern will fetch the document, parse it, and validate key aspects like the issuer consistency. It may throw a `WellKnownDiscoveryException` if the process fails.
 
 ==== Configuring HttpJwksLoaderConfig
 
-Once you have a `WellKnownHandler` instance, you can use it to configure the `HttpJwksLoaderConfig`:
+Once you have a `HttpWellKnownResolver` instance, you can use it to configure the `HttpJwksLoaderConfig`:
 
 [source,java]
 ----
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-// Assuming wellKnownHandler is already initialized as shown above
+// Assuming wellKnownResolver is already initialized as shown above
 
 HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-    .wellKnown(wellKnownHandler) // This extracts the jwks_uri from the handler
+    .wellKnown(wellKnownResolver) // This extracts the jwks_uri from the handler
     // Optionally set other HttpJwksLoaderConfig properties like:
     // .refreshIntervalSeconds(300)
     // .connectTimeoutSeconds(30) // Connection timeout in seconds (default: system default)
@@ -201,34 +206,31 @@ HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
 
 ==== Configuring TokenValidator
 
-The `HttpJwksLoaderConfig` (configured via `WellKnownHandler`) is then used with `IssuerConfig` to set up the `TokenValidator`. It's crucial to use the issuer identifier obtained from the `WellKnownHandler` for the `expectedIssuer` in `IssuerConfig` to ensure consistency.
+The `HttpJwksLoaderConfig` (configured via `HttpWellKnownResolver`) is then used with `IssuerConfig` to set up the `TokenValidator`. For well-known discovery, the issuer identifier is automatically extracted from the discovery document, so you don't need to specify it explicitly.
 
 [source,java]
 ----
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.IssuerConfig;
 
-// Assuming jwksConfig is configured using wellKnownHandler as shown above
-// And wellKnownHandler is available
+// Assuming jwksConfig is configured using wellKnownResolver as shown above
 
-String expectedIssuerFromDiscovery = wellKnownHandler.getIssuer().getUrl().toString();
-
+// For well-known discovery, issuerIdentifier is automatically extracted
 IssuerConfig issuerConfig = IssuerConfig.builder()
-    .issuer(expectedIssuerFromDiscovery) // Use issuer from discovery
-    .addAudience("your-client-id")       // Set your expected audience(s)
-    // .expectedClientId("your-client-id") // If you need to check 'azp' or 'client_id' claims
-    .httpJwksLoaderConfig(jwksConfig)
-    .build();
+    .expectedAudience("your-client-id")     // Set your expected audience(s)
+    .expectedClientId("your-client-id")     // If you need to check 'azp' or 'client_id' claims
+    .httpJwksLoaderConfig(jwksConfig)       // Contains well-known resolver
+    .build(); // Validation happens automatically during build
 
 TokenValidator validator = new TokenValidator(issuerConfig);
 
-// Now the validator is ready to validate tokens against the dynamically discovered JWKS
-// and the discovered issuer.
+// The validator automatically uses the issuer identifier from the discovery document
+// for token validation - no manual configuration needed
 ----
 
 ==== Considerations
 
-* **Initial Latency**: The call to `WellKnownHandler.builder().url().build()` involves a network request to fetch the discovery document. This adds a one-time latency during initialization
+* **Initial Latency**: The call to `HttpWellKnownResolver.builder().url().build()` involves a network request to fetch the discovery document. This adds a one-time latency during initialization
 * **Error Handling**: Robust error handling for `WellKnownDiscoveryException` is important during application startup or when initializing the handler
 * **SSL/TLS**: Ensure the JVM running the application trusts the SSL certificate of the OIDC provider if its well-known endpoint is served over HTTPS. For fetching the JWKS via `HttpJwksLoader`, you can provide a custom `SSLContext` in `HttpJwksLoaderConfig`
 
@@ -249,11 +251,11 @@ ClaimMapper roleMapper = new JsonCollectionMapper();
 
 // Add the custom mapper to the issuer configuration
 IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuer("https://issuer.com")
-        .jwksLoader(jwksLoader)
+        .issuerIdentifier("https://issuer.com")
+        .jwksContent(jwksContent) // or other JWKS configuration
         // Add custom claim mapper for "role" claim
         .claimMapper("role", roleMapper)
-        .build();
+        .build(); // Validation happens automatically
 
 // Create a validator with the configured issuer
 TokenValidator validator = new TokenValidator(issuerConfig);
@@ -377,11 +379,11 @@ StringSplitterMapper colonMapper = new StringSplitterMapper(':');
 
 // Configure the issuer to use the custom mappers
 IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuer("https://issuer.com")
-        .jwksLoader(jwksLoader)
+        .issuerIdentifier("https://issuer.com")
+        .jwksContent(jwksContent) // or other JWKS configuration
         .claimMapper("roles", commaMapper) // For comma-separated roles
         .claimMapper("groups", colonMapper) // For colon-separated groups
-        .build();
+        .build(); // Validation happens automatically
 ----
 
 The `StringSplitterMapper` is particularly useful for handling formats that the default `JsonCollectionMapper` doesn't support:
@@ -412,11 +414,10 @@ The `ParserConfig` class provides important security settings for token processi
 // Create a TokenValidator with custom security settings
 ParserConfig config = ParserConfig.builder()
         .maxTokenSize(4 * 1024)        // Limit token size to 4KB (default is 8KB)
-        .maxPayloadSize(4 * 1024)      // Limit payload size to 4KB (default is 8KB)
-        .maxStringSize(2 * 1024)       // Limit JSON string size to 2KB (default is 4KB)
+        .maxPayloadSize(1 * 1024)      // Limit payload size to 1KB (default is 2KB)
+        .maxStringSize(512)            // Limit JSON string size to 512B (default is 1KB)
         .maxArraySize(32)              // Limit JSON array size to 32 elements (default is 64)
         .maxDepth(5)                   // Limit JSON parsing depth to 5 levels (default is 10)
-        .logWarningsOnDecodeFailure(true) // Log warnings when token decoding fails
         .build();
 
 TokenValidator validator = new TokenValidator(
@@ -424,11 +425,40 @@ TokenValidator validator = new TokenValidator(
         issuerConfig);
 ----
 
-These security settings help prevent various attacks:
+These security settings provide multiple layers of protection:
 
-* `maxTokenSize`: Prevents memory exhaustion attacks from oversized tokens
-* `maxPayloadSize`: Prevents memory exhaustion attacks from oversized payloads
-* `maxStringSize`, `maxArraySize`, `maxDepth`: Prevent JSON parsing attacks
+=== Security Layers and Size Relationships
+
+The parser configuration implements defense-in-depth with three distinct size limits:
+
+[cols="1,3,1,3"]
+|===
+|Setting |Purpose |Default |Applied When
+
+|`maxTokenSize`
+|Limits entire JWT token string
+|8KB
+|Before any processing, applied to the raw token string
+
+|`maxPayloadSize`
+|Limits each decoded JWT part
+|2KB
+|After Base64 decoding, applied to header and payload separately
+
+|`maxStringSize`
+|Limits individual JSON string values
+|1KB
+|During JSON parsing, applied to each string field
+|===
+
+*Size Logic:* Since Base64 encoding increases size by ~33%, an 8KB token yields ~6KB of decoded content. With 2KB limits per part, we can accommodate reasonable header and payload sizes while preventing oversized decoded content.
+
+*Attack Prevention:*
+
+* `maxTokenSize`: Prevents denial-of-service via extremely large token strings
+* `maxPayloadSize`: Prevents memory exhaustion from oversized decoded parts  
+* `maxStringSize`: Prevents JSON parsing attacks where individual fields contain massive strings
+* `maxArraySize`, `maxDepth`: Prevent JSON structure-based attacks
 
 == Configuration
 

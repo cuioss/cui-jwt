@@ -6,7 +6,7 @@
     <parent>
         <groupId>de.cuioss</groupId>
         <artifactId>cui-java-parent</artifactId>
-        <version>1.0.9</version>
+        <version>1.1.0</version>
         <relativePath/>
     </parent>
     <groupId>de.cuioss.jwt</groupId>
@@ -16,7 +16,7 @@
     <name>JWT Token Validation Parent</name>
     <description>A comprehensive framework for validating JWT tokens in multi-issuer environments.
         The module provides robust token parsing, validation, and management capabilities
-        with a focus on security and ease of use, using Bouncy Castle for cryptographic operations.
+        with a focus on security and ease of use, leveraging standard JDK cryptographic providers.
     </description>
 
     <url>https://github.com/cuioss/cui-jwt/</url>

@@ -15,17 +15,20 @@
  */
 package de.cuioss.jwt.quarkus.runtime;
 
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.domain.token.MinimalTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.tools.logging.CuiLogger;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
-import org.eclipse.microprofile.config.Config;
+import jakarta.inject.Inject;
+import jakarta.json.JsonException;
+import lombok.NonNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Runtime JSON-RPC service for CUI JWT DevUI.
@@ -38,8 +41,6 @@ import java.util.Map;
 @ApplicationScoped
 public class CuiJwtDevUIRuntimeService {
 
-    private static final CuiLogger LOGGER = new CuiLogger(CuiJwtDevUIRuntimeService.class);
-
     // String constants for commonly used literals
     private static final String RUNTIME = "RUNTIME";
     private static final String JWT_VALIDATION_DISABLED = "JWT validation is disabled";
@@ -51,22 +52,19 @@ public class CuiJwtDevUIRuntimeService {
     private static final String ISSUER = "issuer";
     private static final String HEALTH_STATUS = "healthStatus";
 
-    private final Instance<TokenValidator> tokenValidatorInstance;
-    private final Config config;
+    private final TokenValidator tokenValidator;
+    private final List<IssuerConfig> issuerConfigs;
 
     /**
      * Constructor for dependency injection.
-     * <p>
-     * Uses direct Config injection instead of JwtValidationConfig CDI injection to avoid
-     * known issues with @ConfigMapping CDI injection in Quarkus extensions.
-     * </p>
      *
-     * @param tokenValidatorInstance the token validator instance
-     * @param config the MicroProfile config instance
+     * @param tokenValidator the token validator
+     * @param issuerConfigs the issuer configurations from TokenValidatorProducer
      */
-    public CuiJwtDevUIRuntimeService(Instance<TokenValidator> tokenValidatorInstance, Config config) {
-        this.tokenValidatorInstance = tokenValidatorInstance;
-        this.config = config;
+    @Inject
+    public CuiJwtDevUIRuntimeService(TokenValidator tokenValidator, @NonNull List<IssuerConfig> issuerConfigs) {
+        this.tokenValidator = tokenValidator;
+        this.issuerConfigs = issuerConfigs;
     }
 
     /**
@@ -74,12 +72,13 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime validation status information
      */
+    @NonNull
     public Map<String, Object> getValidationStatus() {
         Map<String, Object> status = new HashMap<>();
 
         boolean isEnabled = isJwtEnabled();
         status.put("enabled", isEnabled);
-        status.put("validatorPresent", tokenValidatorInstance.isResolvable());
+        status.put("validatorPresent", tokenValidator != null);
         status.put("status", RUNTIME);
 
         if (isEnabled) {
@@ -96,18 +95,21 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime JWKS status information
      */
+    @NonNull
     public Map<String, Object> getJwksStatus() {
         Map<String, Object> jwksInfo = new HashMap<>();
 
         jwksInfo.put("status", RUNTIME);
 
         boolean isEnabled = isJwtEnabled();
+        int allConfiguredIssuers = countAllConfiguredIssuers();
+
         if (isEnabled) {
             jwksInfo.put(MESSAGE, "JWKS endpoints are configured and active");
-            jwksInfo.put("issuersConfigured", countEnabledIssuers());
+            jwksInfo.put("issuersConfigured", allConfiguredIssuers);
         } else {
             jwksInfo.put(MESSAGE, "JWKS endpoints are disabled");
-            jwksInfo.put("issuersConfigured", 0);
+            jwksInfo.put("issuersConfigured", allConfiguredIssuers);
         }
 
         return jwksInfo;
@@ -118,6 +120,7 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime configuration information
      */
+    @NonNull
     public Map<String, Object> getConfiguration() {
         Map<String, Object> configMap = new HashMap<>();
 
@@ -139,36 +142,36 @@ public class CuiJwtDevUIRuntimeService {
     }
 
     /**
-     * Validate a JWT token using the runtime validator.
+     * Validate a JWT access token using the runtime validator.
+     * Only validates access tokens, not ID tokens or refresh tokens.
      *
-     * @param token The JWT token to validate
+     * @param token The JWT access token to validate
      * @return A map containing validation result
      */
+    @NonNull
     public Map<String, Object> validateToken(String token) {
         Map<String, Object> result = new HashMap<>();
+        // Set default state - token is invalid until proven valid
+        result.put(VALID, false);
 
         if (token == null || token.trim().isEmpty()) {
-            result.put(VALID, false);
             result.put(ERROR, "Token is empty or null");
             return result;
         }
 
         if (!isJwtEnabled()) {
-            result.put(VALID, false);
             result.put(ERROR, JWT_VALIDATION_DISABLED);
             return result;
         }
 
-        if (!tokenValidatorInstance.isResolvable()) {
-            result.put(VALID, false);
+        if (tokenValidator == null) {
             result.put(ERROR, "Token validator is not available");
             return result;
         }
 
         try {
-            TokenValidator validator = tokenValidatorInstance.get();
-            // Try to create an access token first (most common case)
-            TokenContent tokenContent = validator.createAccessToken(token.trim());
+            // Only validate as access token
+            TokenContent tokenContent = tokenValidator.createAccessToken(token.trim());
 
             result.put(VALID, true);
             result.put(TOKEN_TYPE, "ACCESS_TOKEN");
@@ -176,37 +179,13 @@ public class CuiJwtDevUIRuntimeService {
             result.put(ISSUER, tokenContent.getIssuer());
 
         } catch (TokenValidationException e) {
-            // Try ID token if access token fails
-            try {
-                TokenValidator validator = tokenValidatorInstance.get();
-                TokenContent tokenContent = validator.createIdToken(token.trim());
-                result.put(VALID, true);
-                result.put(TOKEN_TYPE, "ID_TOKEN");
-                result.put(CLAIMS, tokenContent.getClaims());
-                result.put(ISSUER, tokenContent.getIssuer());
-            } catch (TokenValidationException e2) {
-                // Try refresh token if ID token also fails
-                try {
-                    TokenValidator validator = tokenValidatorInstance.get();
-                    MinimalTokenContent tokenContent = validator.createRefreshToken(token.trim());
-                    result.put(VALID, true);
-                    result.put(TOKEN_TYPE, "REFRESH_TOKEN");
-                    result.put("rawToken", tokenContent.getRawToken());
-                    // Refresh tokens may not have issuer or claims in the same way
-                    if (tokenContent instanceof TokenContent fullTokenContent) {
-                        result.put(CLAIMS, fullTokenContent.getClaims());
-                        result.put(ISSUER, fullTokenContent.getIssuer());
-                    }
-                } catch (TokenValidationException e3) {
-                    result.put(VALID, false);
-                    result.put(ERROR, e.getMessage());
-                    result.put("details", "Token validation failed for all token types");
-                }
-            }
-        } catch (Exception e) {
-            result.put(VALID, false);
-            result.put(ERROR, "Token validation error: " + e.getMessage());
-            result.put("details", "Exception during validation: " + e.getClass().getSimpleName());
+            // Token remains invalid (default state)
+            result.put(ERROR, e.getMessage());
+            result.put("details", "Access token validation failed");
+        } catch (JsonException | IllegalArgumentException e) {
+            // Handle JSON parsing errors and other token format issues
+            result.put(ERROR, "Invalid token format: " + e.getMessage());
+            result.put("details", "Token format is invalid");
         }
 
         return result;
@@ -217,11 +196,12 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime health information
      */
+    @NonNull
     public Map<String, Object> getHealthInfo() {
         Map<String, Object> health = new HashMap<>();
 
         boolean configValid = isJwtEnabled();
-        boolean validatorAvailable = tokenValidatorInstance.isResolvable();
+        boolean validatorAvailable = tokenValidator != null;
 
         health.put("configurationValid", configValid);
         health.put("tokenValidatorAvailable", validatorAvailable);
@@ -245,42 +225,35 @@ public class CuiJwtDevUIRuntimeService {
     /**
      * Helper method to determine if JWT validation is enabled.
      * JWT is considered enabled if there are any enabled issuers configured.
-     * Uses direct config access instead of ConfigMapping to avoid issues.
      *
      * @return true if JWT validation is enabled, false otherwise
      */
     private boolean isJwtEnabled() {
-        try {
-            return countEnabledIssuers() > 0;
-        } catch (Exception e) {
-            // If configuration cannot be loaded, consider JWT disabled
-            return false;
-        }
+        return countEnabledIssuers() > 0;
     }
 
     /**
-     * Counts the number of enabled issuers using direct config access.
-     * This avoids ConfigMapping issues in native images and extensions.
+     * Counts the number of enabled issuers using the resolved issuer configurations
+     * from TokenValidatorProducer. This leverages existing functionality and avoids
+     * duplication of configuration parsing logic.
      *
      * @return number of enabled issuers
      */
     private int countEnabledIssuers() {
-        try {
-            int count = 0;
-            String prefix = "cui.jwt.issuers.";
+        // Count only enabled issuers
+        return (int) issuerConfigs.stream()
+                .filter(IssuerConfig::isEnabled)
+                .count();
+    }
 
-            for (String propertyName : config.getPropertyNames()) {
-                if (propertyName.startsWith(prefix) && propertyName.endsWith(".enabled")) {
-                    boolean enabled = config.getOptionalValue(propertyName, Boolean.class).orElse(false);
-                    if (enabled) {
-                        count++;
-                    }
-                }
-            }
-            return count;
-        } catch (Exception e) {
-            LOGGER.debug("Error counting enabled issuers: " + e.getMessage());
-            return 0;
-        }
+    /**
+     * Counts the total number of configured issuers (both enabled and disabled) using
+     * the resolved issuer configurations from TokenValidatorProducer.
+     *
+     * @return number of all configured issuers
+     */
+    private int countAllConfiguredIssuers() {
+        // Count all configured issuers (enabled and disabled)
+        return issuerConfigs.size();
     }
 }

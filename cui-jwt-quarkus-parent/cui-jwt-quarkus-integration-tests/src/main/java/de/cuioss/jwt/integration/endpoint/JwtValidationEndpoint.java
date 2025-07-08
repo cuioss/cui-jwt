@@ -16,16 +16,16 @@
 package de.cuioss.jwt.integration.endpoint;
 
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * REST endpoint for JWT validation operations.
@@ -37,37 +37,21 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RegisterForReflection
+@RunOnVirtualThread
 public class JwtValidationEndpoint {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwtValidationEndpoint.class);
 
+    private final TokenValidator tokenValidator;
+
     @Inject
-    TokenValidator tokenValidator;
-
-    @PostConstruct
-    void init() {
-        LOGGER.info("JwtValidationEndpoint initialized with TokenValidator: " + (tokenValidator != null));
-    }
-
-    void onStart(@Observes StartupEvent ev) {
-        LOGGER.info("JwtValidationEndpoint started and ready at /jwt/validate");
-        LOGGER.info("TokenValidator injected: " + (tokenValidator != null));
+    public JwtValidationEndpoint(TokenValidator tokenValidator) {
+        this.tokenValidator = tokenValidator;
+        LOGGER.info("JwtValidationEndpoint initialized with TokenValidator: %s", (tokenValidator != null));
     }
 
     /**
-     * Health check endpoint to verify the service is running.
-     *
-     * @return Simple OK response
-     */
-    @GET
-    @Path("/health")
-    public Response health() {
-        return Response.ok(new ValidationResponse(true, "JWT validation endpoint is healthy"))
-                .build();
-    }
-
-    /**
-     * Validates a JWT token - primary endpoint for integration testing and benchmarking.
+     * Validates a JWT access token - primary endpoint for integration testing and benchmarking.
      *
      * @param token JWT token from Authorization header
      * @return Validation result
@@ -76,28 +60,91 @@ public class JwtValidationEndpoint {
     @Path("/validate")
     public Response validateToken(@HeaderParam("Authorization") String token) {
         if (token == null || !token.startsWith("Bearer ")) {
+            LOGGER.warn("Missing or invalid Authorization header");
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ValidationResponse(false, "Missing or invalid Authorization header"))
                     .build();
         }
 
         String jwtToken = token.substring(7); // Remove "Bearer " prefix
-
+        LOGGER.debug("Access token validation: %s", jwtToken);
         try {
             tokenValidator.createAccessToken(jwtToken);
-            return Response.ok(new ValidationResponse(true, "Token is valid"))
+            return Response.ok(new ValidationResponse(true, "Access token is valid"))
                     .build();
-        } catch (Exception e) {
-            LOGGER.warn("Token validation error: %s", e.getMessage());
+        } catch (TokenValidationException e) {
+            LOGGER.warn("Access token validation error: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(new ValidationResponse(false, "Token validation failed: " + e.getMessage()))
+                    .entity(new ValidationResponse(false, "Access token validation failed: " + e.getMessage()))
+                    .build();
+        }
+    }
+
+    /**
+     * Validates a JWT ID token.
+     *
+     * @param tokenRequest Request containing the ID token
+     * @return Validation result
+     */
+    @POST
+    @Path("/validate/id-token")
+    public Response validateIdToken(TokenRequest tokenRequest) {
+        if (tokenRequest == null || tokenRequest.token() == null || tokenRequest.token().trim().isEmpty()) {
+            LOGGER.warn("Missing or empty ID token in request body");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ValidationResponse(false, "Missing or empty ID token in request body"))
+                    .build();
+        }
+
+        String jwtToken = tokenRequest.token().trim();
+        LOGGER.debug("ID token validation: %s", jwtToken);
+        try {
+            tokenValidator.createIdToken(jwtToken);
+            return Response.ok(new ValidationResponse(true, "ID token is valid"))
+                    .build();
+        } catch (TokenValidationException e) {
+            LOGGER.warn("ID token validation error: %s", e.getMessage());
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(new ValidationResponse(false, "ID token validation failed: " + e.getMessage()))
+                    .build();
+        }
+    }
+
+    /**
+     * Validates a JWT refresh token.
+     *
+     * @param tokenRequest Request containing the refresh token
+     * @return Validation result
+     */
+    @POST
+    @Path("/validate/refresh-token")
+    public Response validateRefreshToken(TokenRequest tokenRequest) {
+        if (tokenRequest == null || tokenRequest.token() == null || tokenRequest.token().trim().isEmpty()) {
+            LOGGER.warn("Missing or empty refresh token in request body");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ValidationResponse(false, "Missing or empty refresh token in request body"))
+                    .build();
+        }
+
+        String jwtToken = tokenRequest.token().trim();
+        LOGGER.debug("Refresh token validation: %s", jwtToken);
+        try {
+            tokenValidator.createRefreshToken(jwtToken);
+            return Response.ok(new ValidationResponse(true, "Refresh token is valid"))
+                    .build();
+        } catch (TokenValidationException e) {
+            LOGGER.warn("Refresh token validation error: %s", e.getMessage());
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(new ValidationResponse(false, "Refresh token validation failed: " + e.getMessage()))
                     .build();
         }
     }
 
 
-    // Response DTOs
-    @RegisterForReflection
+    // Request and Response DTOs
+    public record TokenRequest(String token) {
+    }
+
     public record ValidationResponse(boolean valid, String message) {
     }
 }

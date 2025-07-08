@@ -45,7 +45,7 @@ class MyIntegrationTest extends BaseIntegrationTest {
 # JVM tests
 ../../mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
-# Native tests (5-10 minutes)
+# Native tests (5-10 minutes) -am=also make -> build all modules that are required
 ../../mvnw clean verify -Pintegration-tests,native -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
 
 # Manual testing
@@ -76,6 +76,24 @@ cui-jwt-quarkus-integration-tests/
     └── stop-integration-container.sh
 ----
 
+=== Maven Clean Integration
+
+The module integrates Docker cleanup with Maven's clean phase to prevent file lock issues during native builds:
+
+[source,bash]
+----
+# Standard clean command now stops Docker containers first
+mvn clean
+
+# What happens:
+# 1. Executes stop-integration-container.sh --clean (pre-clean phase)
+# 2. Stops and removes all Docker containers
+# 3. Cleans Docker images and volumes
+# 4. Deletes target directory (standard clean)
+----
+
+This ensures reliable cleanup of native executables and build artifacts without "file in use" errors.
+
 == Test Structure
 
 == Test Categories
@@ -83,9 +101,89 @@ cui-jwt-quarkus-integration-tests/
 * **HealthCheckIntegrationIT**: Health endpoint validation
 * **MetricsIntegrationIT**: Prometheus metrics verification
 * **HttpsJwtValidationIT**: HTTPS JWT validation testing
+* **JwtValidationKeycloakIT**: Benchmark realm validation (well-known discovery)
+* **JwtValidationIntegrationIT**: Integration realm validation (direct JWKS URL)
 * **DevUI*IT**: Development UI component testing
 
+=== Keycloak Integration Tests
+
+Both Keycloak test classes inherit from `BaseKeycloakIT` to avoid code duplication while testing different realm configurations:
+
+* **JwtValidationKeycloakIT**: Uses benchmark realm with well-known discovery
+* **JwtValidationIntegrationIT**: Uses integration realm with direct JWKS URL
+
+This approach validates both JWT validation pathways in a single test run.
+
 == Configuration
+
+=== Keycloak Realms
+
+The integration tests use **two Keycloak realms** to validate different JWT configuration patterns:
+
+==== Benchmark Realm (Well-Known Discovery)
+* **Realm**: `benchmark`
+* **Client**: `benchmark-client` (public client)
+* **User**: `benchmark-user` / `benchmark-password`
+* **Configuration**: Uses well-known discovery endpoint
+* **Purpose**: Tests automatic JWKS resolution via `/.well-known/openid_configuration`
+
+[source,properties]
+----
+cui.jwt.issuers.keycloak.issuer-identifier=http://localhost:1080/realms/benchmark
+cui.jwt.issuers.keycloak.jwks.http.well-known-url=http://keycloak:8080/realms/benchmark/.well-known/openid-configuration
+----
+
+==== Integration Realm (Direct JWKS)
+* **Realm**: `integration`
+* **Client**: `integration-client` / `integration-secret` (confidential client)
+* **User**: `integration-user` / `integration-password`
+* **Configuration**: Uses direct JWKS URL
+* **Purpose**: Tests explicit JWKS endpoint configuration
+
+[source,properties]
+----
+cui.jwt.issuers.integration.issuer-identifier=http://localhost:1080/realms/integration
+cui.jwt.issuers.integration.jwks.http.url=http://keycloak:8080/realms/integration/protocol/openid-connect/certs
+----
+
+Both realms are automatically imported into Keycloak during container startup via the `docker-compose.yml` configuration.
+
+=== URL Adaptation for Docker Networking
+
+==== Issue Background
+
+The integration tests encountered 401 validation failures due to issuer identifier mismatches between JWT tokens and application configuration. This was caused by Docker networking complexities where:
+
+* **External access**: Tests and browsers access Keycloak via `localhost:1080` (Docker port mapping)
+* **Internal access**: Application container accesses Keycloak via `keycloak:8080` (Docker network hostname)
+* **Token issuer claims**: JWT tokens contain the issuer URL as seen by the client obtaining the token
+
+==== Root Cause
+
+JWT tokens obtained from `http://localhost:1080/realms/integration` contain an `iss` (issuer) claim of `http://localhost:1080/realms/integration`. However, the application was initially configured with `issuer-identifier=http://keycloak:8080/realms/integration`, causing validation to fail with 401 errors because the token's issuer claim didn't match the configured issuer identifier.
+
+==== Solution
+
+The configuration was adapted to use **mixed URL patterns**:
+
+* **Issuer identifiers**: Use `localhost:1080` to match the `iss` claim in JWT tokens
+* **JWKS URLs**: Use `keycloak:8080` for internal Docker container-to-container communication
+
+[source,properties]
+----
+# Issuer identifier MUST match the 'iss' claim in tokens
+cui.jwt.issuers.integration.issuer-identifier=http://localhost:1080/realms/integration
+
+# JWKS URL uses internal Docker hostname for efficient container communication
+cui.jwt.issuers.integration.jwks.http.url=http://keycloak:8080/realms/integration/protocol/openid-connect/certs
+----
+
+==== Key Learnings
+
+1. **Issuer validation is strict**: The `issuer-identifier` must exactly match the `iss` claim in JWT tokens
+2. **Docker networking complexity**: External and internal hostnames differ in containerized environments
+3. **Mixed URL strategy**: Different URLs for token validation vs. key retrieval optimize both correctness and performance
+4. **Native image rebuilds required**: Configuration changes require rebuilding the native image with `./mvnw verify -Pintegration-tests`
 
 === HTTPS Setup
 
@@ -98,9 +196,13 @@ Self-signed certificates via `generate-certificates.sh`:
 
 [source,properties]
 ----
-# JWT
-de.cuioss.jwt.enabled=true
-de.cuioss.jwt.issuers.test.jwks.memory.enabled=true
+# JWT - Default test issuer
+cui.jwt.issuers.default.issuer-identifier=https://test-auth.example.com
+cui.jwt.issuers.default.jwks.file-path=classpath:test-jwks.json
+
+# JWT - Keycloak issuers (both realms)
+cui.jwt.issuers.keycloak.enabled=true
+cui.jwt.issuers.integration.enabled=true
 
 # Health & Metrics
 quarkus.smallrye-health.enabled=true

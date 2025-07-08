@@ -265,7 +265,7 @@ class AccessTokenContentTest implements ShouldHandleObjectContracts<AccessTokenC
     void shouldNotProvideClaimValuesWhenClaimNotPresent(ClaimName claimName, List<String> testValues, String description) {
         var accessTokenContent = createTokenWithClaims(new HashMap<>());
 
-        boolean result = providesClaimValues(accessTokenContent, claimName, List.of(testValues.get(0)));
+        boolean result = providesClaimValues(accessTokenContent, claimName, List.of(testValues.getFirst()));
 
         assertFalse(result, description + " should not provide when claim absent");
     }

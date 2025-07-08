@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
@@ -76,7 +77,8 @@ class TokenClaimValidatorTest {
         @DisplayName("Create validator with all recommended elements")
         void shouldCreateValidatorWithAllRecommendedElements() {
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .expectedAudience(Set.of(TestTokenHolder.TEST_AUDIENCE))
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                     .build();
@@ -94,7 +96,8 @@ class TokenClaimValidatorTest {
             long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_RECOMMENDED_ELEMENT);
 
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                     .build();
 
@@ -112,7 +115,8 @@ class TokenClaimValidatorTest {
             long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_RECOMMENDED_ELEMENT);
 
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .build();
 
@@ -130,7 +134,8 @@ class TokenClaimValidatorTest {
             long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_RECOMMENDED_ELEMENT);
 
             var issuerConfig = IssuerConfig.builder()
-                    .issuer("test-issuer")
+                    .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                     .build();
 
             TokenClaimValidator validator = createValidator(issuerConfig);

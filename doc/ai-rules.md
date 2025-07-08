@@ -32,6 +32,16 @@ When conflicting information exists, AI systems must follow this priority order:
 
 These rules govern ALL development activities:
 
+### 🚨 PRE-1.0 PROJECT RULE (HIGHEST PRIORITY)
+**This project is PRE-1.0 and therefore:**
+- **NEVER deprecate code** - Remove it directly if not needed
+- **NEVER add transitional comments** like "TODO: Remove in v2.0"
+- **NEVER enforce backward compatibility** - Make breaking changes freely
+- **NEVER add @Deprecated annotations** - Delete unnecessary code immediately
+- **Clean APIs aggressively** - Remove unused methods, classes, and patterns
+- **Focus on final API design** - Design for post-1.0 stability, not pre-1.0 transitions
+
+### General Process Rules
 1. **If in doubt, ask the user** - Never make assumptions
 2. **Always research topics** - Use available tools (WebSearch, WebFetch, etc.) to find the most recent best practices
 3. **Never guess or be creative** - If you cannot find best practices, ask the user
@@ -125,6 +135,7 @@ Common Maven commands for CUI projects:
 - Prefer composition over inheritance
 - Return empty collections instead of null
 - Use Optional for nullable return values
+- Never catch or throw generic Exception or RuntimeException - always use specific exception types
 - Use DSL-style nested constants for logging messages
 - Follow builder pattern for complex object creation
 - Implement fluent interfaces where appropriate

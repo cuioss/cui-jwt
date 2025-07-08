@@ -113,7 +113,7 @@ class ClientConfusionAttackTest {
 
         // Create an IssuerConfig with a different client ID than what's in the token
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer(tokenHolder.getIssuer())
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
                 .expectedClientId(ALTERNATIVE_CLIENT_ID) // Use a different client ID
                 .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                 .build();
@@ -194,13 +194,12 @@ class ClientConfusionAttackTest {
 
         // Create an IssuerConfig with the correct audience but no client ID
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer(tokenHolder.getIssuer())
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
                 .expectedAudience(tokenHolder.getAuthorizedParty())
                 .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                 .build();
 
-        LOGGER.debug("IssuerConfig: issuer=" + issuerConfig.getIssuer() +
-                ", expectedAudience=" + issuerConfig.getExpectedAudience() +
+        LOGGER.debug("IssuerConfig: expectedAudience=" + issuerConfig.getExpectedAudience() +
                 ", expectedClientId=" + issuerConfig.getExpectedClientId());
 
         // Create a token validator with the issuer config

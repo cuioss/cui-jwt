@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.CollectionClaimHandler;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
@@ -102,6 +103,7 @@ public class AccessTokenContent extends BaseTokenContent {
      * @return a List of scope strings
      * @throws IllegalStateException if the scope claim is not present in the token
      */
+    @NonNull
     public List<String> getScopes() {
         return getClaimOption(ClaimName.SCOPE)
                 .map(ClaimValue::getAsList)
@@ -115,6 +117,7 @@ public class AccessTokenContent extends BaseTokenContent {
      *
      * @return a List of role strings, or an empty list if the roles claim is not present
      */
+    @NonNull
     public List<String> getRoles() {
         return getClaimOption(ClaimName.ROLES)
                 .map(ClaimValue::getAsList)
@@ -128,6 +131,7 @@ public class AccessTokenContent extends BaseTokenContent {
      *
      * @return a List of group strings, or an empty list if the groups claim is not present
      */
+    @NonNull
     public List<String> getGroups() {
         return getClaimOption(ClaimName.GROUPS)
                 .map(ClaimValue::getAsList)
@@ -188,6 +192,7 @@ public class AccessTokenContent extends BaseTokenContent {
      * @return an empty-Set in case the token provides all expectedScopes, otherwise a
      * {@link TreeSet} containing all missing scopes.
      */
+    @NonNull
     public Set<String> determineMissingScopes(Collection<String> expectedScopes) {
         return getClaimOption(ClaimName.SCOPE)
                 .map(claimValue -> new CollectionClaimHandler(claimValue).determineMissingValues(expectedScopes))
@@ -229,6 +234,7 @@ public class AccessTokenContent extends BaseTokenContent {
      * @return an empty Set if the token provides all expected roles, otherwise a
      *         {@link TreeSet} containing all missing roles
      */
+    @NonNull
     public Set<String> determineMissingRoles(Collection<String> expectedRoles) {
         return getClaimOption(ClaimName.ROLES)
                 .map(claimValue -> new CollectionClaimHandler(claimValue).determineMissingValues(expectedRoles))
@@ -270,6 +276,7 @@ public class AccessTokenContent extends BaseTokenContent {
      * @return an empty Set if the token provides all expected groups, otherwise a
      *         {@link TreeSet} containing all missing groups
      */
+    @NonNull
     public Set<String> determineMissingGroups(Collection<String> expectedGroups) {
         return getClaimOption(ClaimName.GROUPS)
                 .map(claimValue -> new CollectionClaimHandler(claimValue).determineMissingValues(expectedGroups))

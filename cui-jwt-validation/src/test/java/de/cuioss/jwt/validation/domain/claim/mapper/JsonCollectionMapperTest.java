@@ -70,7 +70,7 @@ class JsonCollectionMapperTest {
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(1, result.getAsList().size(), "List should have exactly one element");
-        assertEquals(input, result.getAsList().get(0), "List element should match input string");
+        assertEquals(input, result.getAsList().getFirst(), "List element should match input string");
     }
 
     @Test
@@ -86,7 +86,7 @@ class JsonCollectionMapperTest {
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(1, result.getAsList().size(), "List should have exactly one element");
-        assertEquals(String.valueOf(input), result.getAsList().get(0),
+        assertEquals(String.valueOf(input), result.getAsList().getFirst(),
                 "List element should match string representation of input number");
     }
 
@@ -103,7 +103,7 @@ class JsonCollectionMapperTest {
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(1, result.getAsList().size(), "List should have exactly one element");
-        assertEquals(String.valueOf(input), result.getAsList().get(0),
+        assertEquals(String.valueOf(input), result.getAsList().getFirst(),
                 "List element should match string representation of input boolean");
     }
 
@@ -125,7 +125,7 @@ class JsonCollectionMapperTest {
             assertTrue(result.getAsList().isEmpty(), "List should be empty for null input");
         } else if (input.trim().isEmpty()) {
             assertEquals(1, result.getAsList().size(), "List should have one element for empty/whitespace input");
-            assertEquals(input, result.getAsList().get(0), "List element should match input string");
+            assertEquals(input, result.getAsList().getFirst(), "List element should match input string");
         }
     }
 
@@ -140,7 +140,7 @@ class JsonCollectionMapperTest {
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(1, result.getAsList().size(), "List should have exactly one element");
-        assertEquals(input, result.getAsList().get(0), "List element should match input string");
+        assertEquals(input, result.getAsList().getFirst(), "List element should match input string");
     }
 
     @Test
@@ -203,7 +203,7 @@ class JsonCollectionMapperTest {
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(4, result.getAsList().size(), "List should have 4 elements");
-        assertEquals("string-value", result.getAsList().get(0), "First element should be string-value");
+        assertEquals("string-value", result.getAsList().getFirst(), "First element should be string-value");
     }
 
     // Helper methods

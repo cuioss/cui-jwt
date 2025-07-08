@@ -36,7 +36,7 @@ The library's design enforces signature verification:
 
 **Implementation Details:**
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator.java:264-333] - Enforces ordered validation pipeline with mandatory signature validation
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:80-148] - Validates signatures using secure cryptographic operations with Bouncy Castle provider
+* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:80-148] - Validates signatures using secure cryptographic operations with standard JDK providers
 * No public API methods expose token decoding without signature verification
 
 ==== Test Coverage
@@ -60,7 +60,7 @@ The JWT specification allows tokens to specify the signing algorithm in their he
 The library explicitly rejects the "none" algorithm. For implementation details, see link:security-specifications.adoc#none-algorithm-attack[None Algorithm Attack] in the Security Specifications document.
 
 **Implementation Details:**
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/AlgorithmPreferences.java[AlgorithmPreferences.java:53] - "none" algorithm is explicitly listed in REJECTED_ALGORITHMS
+* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - "none" algorithm is explicitly listed in REJECTED_ALGORITHMS
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:229-241] - Signature validator rejects tokens with unsupported algorithms
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:110-132] - Header validator checks algorithm support before signature validation
 
@@ -82,13 +82,13 @@ When using HMAC-based algorithms like `HS256`, the integrity of the JWT depends 
 The library provides protection against weak keys. For implementation details, see link:security-specifications.adoc#trivial-secret-weak-hmac-keys[Trivial Secret] in the Security Specifications document.
 
 **Implementation Details:**
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/AlgorithmPreferences.java[AlgorithmPreferences.java:53] - HMAC algorithms (HS256, HS384, HS512) are explicitly rejected to prevent weak secret vulnerabilities
+* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms (HS256, HS384, HS512) are explicitly rejected to prevent weak secret vulnerabilities
 * Library exclusively supports asymmetric algorithms (RS*, ES*, PS*) eliminating shared secret vulnerabilities
 * No support for HMAC-based algorithms removes the risk of weak key attacks entirely
 
 ==== Test Coverage
 
-* link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/security/AlgorithmPreferencesTest.java[AlgorithmPreferencesTest] - Tests algorithm preferences
+* link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferencesTest.java[SignatureAlgorithmPreferencesTest] - Tests algorithm preferences
 * link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/security/KeyDisclosureVulnerabilityTest.java[KeyDisclosureVulnerabilityTest] - Tests protection against key disclosure
 
 === 4. Algorithm Confusion (RSA to HMAC)
@@ -105,7 +105,7 @@ This attack exploits the fact that the JWT header includes a user-controlled `al
 The library implements several protections against algorithm confusion attacks. For implementation details, see link:security-specifications.adoc#algorithm-confusion[Algorithm Confusion] in the Security Specifications document.
 
 **Implementation Details:**
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/AlgorithmPreferences.java[AlgorithmPreferences.java:53] - HMAC algorithms are explicitly rejected, preventing RSA-to-HMAC confusion attacks
+* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms are explicitly rejected, preventing RSA-to-HMAC confusion attacks
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:250-262] - Algorithm compatibility validation ensures token algorithm matches key type
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:140-148] - Strict algorithm-key matching prevents confusion attacks
 
@@ -208,9 +208,9 @@ In 2022, a critical vulnerability was discovered in the Java JDK's ECDSA signatu
 The library is protected against the "Psychic Signature" vulnerability. For implementation details, see link:security-specifications.adoc#psychic-signature[Psychic Signature] in the Security Specifications document.
 
 **Implementation Details:**
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java] - Uses Bouncy Castle cryptographic provider which is not affected by CVE-2022-21449
-* Bouncy Castle properly validates ECDSA signature components and rejects all-zero signatures
-* The library enforces use of Bouncy Castle provider for all cryptographic operations, avoiding vulnerable JDK implementations
+* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java] - Uses Java 21 standard JDK cryptographic providers which include fixes for CVE-2022-21449
+* Java 21 properly validates ECDSA signature components and rejects all-zero signatures
+* The library enforces use of standard JDK providers with Java 21, which includes comprehensive security fixes
 
 ==== Test Coverage
 

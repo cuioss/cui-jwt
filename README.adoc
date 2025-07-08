@@ -147,9 +147,9 @@ Here's a minimal example:
 ----
 // Create issuer configuration
 IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuer("https://your-issuer.com")
+        .issuerIdentifier("https://your-issuer.com")
         .httpJwksLoaderConfig(httpJwksLoaderConfig)
-        .build();
+        .build(); // Validation happens automatically
 
 // Create validator
 TokenValidator validator = new TokenValidator(issuerConfig);
@@ -167,14 +167,14 @@ AccessTokenContent accessToken = validator.createAccessToken(tokenString);
 ----
 // Configure multiple issuers
 IssuerConfig issuer1 = IssuerConfig.builder()
-        .issuer("https://issuer1.com")
+        .issuerIdentifier("https://issuer1.com")
         .httpJwksLoaderConfig(httpConfig1)
-        .build();
+        .build(); // Validation happens automatically
 
 IssuerConfig issuer2 = IssuerConfig.builder()
-        .issuer("https://issuer2.com")
+        .issuerIdentifier("https://issuer2.com")
         .jwksFilePath("/path/to/jwks.json")
-        .build();
+        .build(); // Validation happens automatically
 
 // Create validator supporting both issuers
 TokenValidator validator = new TokenValidator(issuer1, issuer2);

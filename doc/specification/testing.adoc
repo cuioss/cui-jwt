@@ -91,7 +91,6 @@ The following test classes implement these unit tests:
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/CustomClaimMapperTest.java[CustomClaimMapperTest.java] - Tests for custom claim mapping
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/ParserConfigTest.java[ParserConfigTest.java] - Tests for ParserConfig
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/DecodedJwtTest.java[DecodedJwtTest.java] - Tests for DecodedJwt
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/security/BouncyCastleProviderSingletonTest.java[BouncyCastleProviderSingletonTest.java] - Tests for BouncyCastleProviderSingleton
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactoryTest.java[JwksLoaderFactoryTest.java] - Tests for JwksLoaderFactory
 
 These tests cover:
@@ -155,9 +154,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-12.3[CUI-JWT-12.3: Integratio
 
 Integration tests have been implemented to verify compatibility with Keycloak as an identity provider (IDP) using TestContainers.
 
-The following test class implements integration tests with Keycloak:
-
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenKeycloakITTest.java[TokenKeycloakITTest.java] - Integration tests with Keycloak
+Integration tests are implemented in the Quarkus module at `cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/` which provides comprehensive end-to-end testing with Keycloak integration.
 
 These tests cover:
 

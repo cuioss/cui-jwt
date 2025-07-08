@@ -17,24 +17,60 @@ package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.domain.claim.ClaimName;
+// Claim handling classes
+import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+// Claim mappers
+import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.StringSplitterMapper;
+// Domain token classes
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.domain.token.BaseTokenContent;
+import de.cuioss.jwt.validation.domain.token.IdTokenContent;
+import de.cuioss.jwt.validation.domain.token.MinimalTokenContent;
+import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
+import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
+// JWKS classes
+import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
+import de.cuioss.jwt.validation.jwks.key.KeyInfo;
+import de.cuioss.jwt.validation.jwks.parser.JwksParser;
+import de.cuioss.jwt.validation.pipeline.DecodedJwt;
+// JWT validation pipeline classes
+import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
+import de.cuioss.jwt.validation.pipeline.TokenBuilder;
+import de.cuioss.jwt.validation.pipeline.TokenClaimValidator;
+import de.cuioss.jwt.validation.pipeline.TokenHeaderValidator;
+import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
+import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+// Security and algorithm classes
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
 import io.quarkus.devui.spi.JsonRPCProvidersBuildItem;
 import io.quarkus.devui.spi.page.CardPageBuildItem;
 import io.quarkus.devui.spi.page.Page;
+import lombok.NonNull;
 import org.jboss.jandex.DotName;
-import org.jboss.logging.Logger;
+
+import static de.cuioss.jwt.quarkus.deployment.CuiJwtQuarkusDeploymentLogMessages.INFO;
 
 /**
  * Processor for the CUI JWT Quarkus extension.
@@ -54,7 +90,7 @@ public class CuiJwtProcessor {
     /**
      * Logger for build-time processing.
      */
-    private static final Logger LOGGER = Logger.getLogger(CuiJwtProcessor.class);
+    private static final CuiLogger LOGGER = new CuiLogger(CuiJwtProcessor.class);
 
     /**
      * Register the CUI JWT feature.
@@ -62,8 +98,9 @@ public class CuiJwtProcessor {
      * @return A {@link FeatureBuildItem} for the CUI JWT feature
      */
     @BuildStep
+    @NonNull
     public FeatureBuildItem feature() {
-        LOGGER.infof("CUI JWT feature registered");
+        LOGGER.info(INFO.CUI_JWT_FEATURE_REGISTERED::format);
         return new FeatureBuildItem(FEATURE);
     }
 
@@ -74,14 +111,81 @@ public class CuiJwtProcessor {
      * @return A {@link ReflectiveClassBuildItem} for the JWT validation classes
      */
     @BuildStep
+    @NonNull
     public ReflectiveClassBuildItem registerJwtValidationClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
+                // Core validation components
                 TokenValidator.class,
                 IssuerConfig.class,
+                IssuerConfigResolver.class,
                 ParserConfig.class,
                 HttpJwksLoaderConfig.class,
                 SecurityEventCounter.class,
                 TokenValidatorProducer.class)
+                .methods(true)
+                .fields(true)
+                .constructors(true)
+                .build();
+    }
+
+    /**
+     * Register JWT validation pipeline classes for reflection.
+     * These are the performance-critical classes in the validation pipeline.
+     *
+     * @return A {@link ReflectiveClassBuildItem} for JWT validation pipeline classes
+     */
+    @BuildStep
+    @NonNull
+    public ReflectiveClassBuildItem registerJwtPipelineClassesForReflection() {
+        return ReflectiveClassBuildItem.builder(
+                // Critical validation pipeline classes (50-60% of processing time)
+                NonValidatingJwtParser.class,
+                TokenSignatureValidator.class,
+                TokenHeaderValidator.class,
+                TokenClaimValidator.class,
+                TokenBuilder.class,
+                DecodedJwt.class,
+                // JWKS loading classes (10-15% of processing time)
+                HttpJwksLoader.class,
+                JWKSKeyLoader.class,
+                KeyInfo.class,
+                JwksParser.class,
+                // Security and algorithm classes
+                SignatureAlgorithmPreferences.class,
+                JwkAlgorithmPreferences.class)
+                .methods(true)
+                .fields(true)
+                .constructors(true)
+                .build();
+    }
+
+    /**
+     * Register JWT domain and token classes for reflection.
+     * These classes are used for token content processing and claim mapping.
+     *
+     * @return A {@link ReflectiveClassBuildItem} for JWT domain classes
+     */
+    @BuildStep
+    @NonNull
+    public ReflectiveClassBuildItem registerJwtDomainClassesForReflection() {
+        return ReflectiveClassBuildItem.builder(
+                // Token content classes
+                AccessTokenContent.class,
+                IdTokenContent.class,
+                RefreshTokenContent.class,
+                TokenContent.class,
+                BaseTokenContent.class,
+                MinimalTokenContent.class,
+                // Claim handling classes  
+                ClaimValue.class,
+                ClaimName.class,
+                ClaimValueType.class,
+                // Claim mappers for performance optimization
+                IdentityMapper.class,
+                JsonCollectionMapper.class,
+                OffsetDateTimeMapper.class,
+                ScopeMapper.class,
+                StringSplitterMapper.class)
                 .methods(true)
                 .fields(true)
                 .constructors(true)
@@ -95,8 +199,20 @@ public class CuiJwtProcessor {
      * @return A {@link RuntimeInitializedClassBuildItem} for classes that need runtime initialization
      */
     @BuildStep
+    @NonNull
     public RuntimeInitializedClassBuildItem runtimeInitializedClasses() {
         return new RuntimeInitializedClassBuildItem(HttpJwksLoader.class.getName());
+    }
+
+    /**
+     * Register native image resources that JWT validation needs access to.
+     * This ensures configuration files and other resources are included in the native image.
+     */
+    @BuildStep
+    public void registerJwtValidationResources(BuildProducer<NativeImageResourceBuildItem> resourceProducer) {
+        // Include any JWT validation configuration files that might exist
+        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.jwt.validation.jwks.JwksLoader"));
+        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper"));
     }
 
 
@@ -106,6 +222,7 @@ public class CuiJwtProcessor {
      * @return A {@link AdditionalBeanBuildItem} for CDI beans that need explicit registration
      */
     @BuildStep
+    @NonNull
     public AdditionalBeanBuildItem additionalBeans() {
         return AdditionalBeanBuildItem.builder()
                 .addBeanClass(TokenValidatorProducer.class)
@@ -140,6 +257,7 @@ public class CuiJwtProcessor {
      * @return A {@link CardPageBuildItem} for the JWT DevUI card
      */
     @BuildStep(onlyIf = IsDevelopment.class)
+    @NonNull
     public CardPageBuildItem createJwtDevUICard() {
         CardPageBuildItem cardPageBuildItem = new CardPageBuildItem();
 
@@ -180,6 +298,7 @@ public class CuiJwtProcessor {
      * @return A {@link JsonRPCProvidersBuildItem} for JWT DevUI JSON-RPC methods
      */
     @BuildStep(onlyIf = IsDevelopment.class)
+    @NonNull
     public JsonRPCProvidersBuildItem createJwtDevUIJsonRPCService() {
         return new JsonRPCProvidersBuildItem("CuiJwtDevUI", CuiJwtDevUIJsonRPCService.class);
     }

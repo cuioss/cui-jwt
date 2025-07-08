@@ -20,8 +20,8 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
-import de.cuioss.jwt.validation.security.AlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.JwtTokenTamperingUtil;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
@@ -69,7 +69,7 @@ class OAuth2JWTBestPracticesComplianceTest {
 
         // Create issuer config with explicit audience validation
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer(TestTokenHolder.TEST_ISSUER)
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
                 .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                 .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                 .jwksContent(jwksContent)
@@ -269,11 +269,11 @@ class OAuth2JWTBestPracticesComplianceTest {
                     .maxTokenSize(customMaxSize)
                     .build();
             var factory = new TokenValidator(customConfig, IssuerConfig.builder()
-                    .issuer(TestTokenHolder.TEST_ISSUER)
+                    .issuerIdentifier("test-issuer")
                     .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                     .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
-                    .algorithmPreferences(new AlgorithmPreferences())
+                    .algorithmPreferences(new SignatureAlgorithmPreferences())
                     .build());
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> factory.createAccessToken(largeToken),

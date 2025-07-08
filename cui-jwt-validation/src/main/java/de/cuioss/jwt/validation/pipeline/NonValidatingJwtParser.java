@@ -63,9 +63,9 @@ import java.util.Base64;
  * // Access decoded JWT information using convenience methods
  * decodedJwt.ifPresent(jwt -> {
  *     // Access common JWT fields with convenience methods
- *     jwt.getAlg().ifPresent(alg -> LOGGER.info("Algorithm: %s", alg));
- *     jwt.getIssuer().ifPresent(issuer -> LOGGER.info("Issuer: %s", issuer));
- *     jwt.getKid().ifPresent(kid -> LOGGER.info("Key ID: %s", kid));
+ *     jwt.getAlg().ifPresent(alg -> LOGGER.debug("Algorithm: %s", alg));
+ *     jwt.getIssuer().ifPresent(issuer -> LOGGER.debug("Issuer: %s", issuer));
+ *     jwt.getKid().ifPresent(kid -> LOGGER.debug("Key ID: %s", kid));
  *     
  *     // Access the raw token
  *     String rawToken = jwt.getRawToken();
@@ -93,7 +93,6 @@ import java.util.Base64;
  *     .maxStringSize(256)   // 256 bytes max string size
  *     .maxArraySize(10)     // 10 elements max array size
  *     .maxDepth(5)          // 5 levels max JSON depth
- *     .logWarningsOnDecodeFailure(false)  // suppress warnings
  *     .build();
  *
  * NonValidatingJwtParser customParser = NonValidatingJwtParser.builder()
@@ -151,13 +150,16 @@ public class NonValidatingJwtParser {
      *   <li>Implements size checks to prevent overflow attacks</li>
      *   <li>Uses standard Java Base64 decoder</li>
      * </ul>
+     * <p>
+     * This method logs warnings when decoding fails. Use {@link #decode(String, boolean)}
+     * to control warning logging behavior.
      *
      * @param token the JWT token string to parse
      * @return the DecodedJwt if parsing is successful
      * @throws TokenValidationException if the token is invalid or cannot be parsed
      */
     public DecodedJwt decode(String token) {
-        return decode(token, config.isLogWarningsOnDecodeFailure());
+        return decode(token, true);
     }
 
     /**
@@ -199,7 +201,7 @@ public class NonValidatingJwtParser {
             }
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED,
-                    "Token size exceeds maximum allowed size of %d bytes".formatted(config.getMaxTokenSize())
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.format(config.getMaxTokenSize())
             );
         }
 
@@ -212,7 +214,7 @@ public class NonValidatingJwtParser {
             }
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.INVALID_JWT_FORMAT,
-                    "Invalid JWT format: expected 3 parts but found %d".formatted(parts.length)
+                    JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.format(parts.length)
             );
         }
 
@@ -278,7 +280,7 @@ public class NonValidatingJwtParser {
                 }
                 throw new TokenValidationException(
                         SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED,
-                        "Decoded part size exceeds maximum allowed size of %d bytes".formatted(config.getMaxPayloadSize())
+                        JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize())
                 );
             }
 

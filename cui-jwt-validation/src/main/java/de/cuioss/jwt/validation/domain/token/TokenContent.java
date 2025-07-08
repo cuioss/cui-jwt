@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.domain.token;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import lombok.NonNull;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -55,6 +56,7 @@ public interface TokenContent extends MinimalTokenContent {
      *
      * @return a map of claim names to claim objects
      */
+    @NonNull
     Map<String, ClaimValue> getClaims();
 
     /**
@@ -76,6 +78,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @throws IllegalStateException if the issuer claim is not present (should never happen
      *                               for a properly constructed validation)
      */
+    @NonNull
     default String getIssuer() {
         return getClaimOption(ClaimName.ISSUER)
                 .map(ClaimValue::getOriginalString)
@@ -90,6 +93,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @return the subject, or throws exception if it's not present
      * @throws IllegalStateException if the subject claim is not present
      */
+    @NonNull
     default String getSubject() {
         return getClaimOption(ClaimName.SUBJECT)
                 .map(ClaimValue::getOriginalString)
@@ -105,6 +109,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @throws IllegalStateException if the expiration claim is not present (should never happen
      *                               for a properly constructed validation)
      */
+    @NonNull
     default OffsetDateTime getExpirationTime() {
         return getClaimOption(ClaimName.EXPIRATION)
                 .map(ClaimValue::getDateTime)
@@ -120,6 +125,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @throws IllegalStateException if the issued at claim is not present (should never happen
      *                               for a properly constructed validation)
      */
+    @NonNull
     default OffsetDateTime getIssuedAtTime() {
         return getClaimOption(ClaimName.ISSUED_AT)
                 .map(ClaimValue::getDateTime)

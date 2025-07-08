@@ -29,7 +29,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Base64;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,33 +68,32 @@ class TokenSecurityPropertiesTest {
     void tokensShouldUseStrongCryptographicAlgorithms() {
         // Use the JwksLoader created in setUp
 
-        // Get all key infos
-        List<KeyInfo> keyInfos = jwksLoader.getAllKeyInfos();
-        assertFalse(keyInfos.isEmpty(), "JwksLoader should contain keys");
+        // Get the default key info to check algorithm strength
+        Optional<KeyInfo> keyInfoOpt = jwksLoader.getKeyInfo(InMemoryJWKSFactory.DEFAULT_KEY_ID);
+        assertTrue(keyInfoOpt.isPresent(), "JwksLoader should contain the default key");
 
-        // Check each key's algorithm to ensure it's strong
-        for (KeyInfo keyInfo : keyInfos) {
-            String algorithm = keyInfo.algorithm();
+        // Check the key's algorithm to ensure it's strong
+        KeyInfo keyInfo = keyInfoOpt.get();
+        String algorithm = keyInfo.algorithm();
 
-            // Verify that the algorithm is not a weak one
-            assertNotEquals("none", algorithm, "Algorithm should not be 'none'");
-            assertNotEquals("HS1", algorithm, "Algorithm should not be HS1");
-            assertNotEquals("HS256", algorithm, "Algorithm should not be HS256 (prefer RS256 or ES256)");
+        // Verify that the algorithm is not a weak one
+        assertNotEquals("none", algorithm, "Algorithm should not be 'none'");
+        assertNotEquals("HS1", algorithm, "Algorithm should not be HS1");
+        assertNotEquals("HS256", algorithm, "Algorithm should not be HS256 (prefer RS256 or ES256)");
 
-            // Verify that the algorithm is a strong one
-            assertTrue(
-                    "RS256".equals(algorithm) ||
-                            "RS384".equals(algorithm) ||
-                            "RS512".equals(algorithm) ||
-                            "ES256".equals(algorithm) ||
-                            "ES384".equals(algorithm) ||
-                            "ES512".equals(algorithm) ||
-                            "PS256".equals(algorithm) ||
-                            "PS384".equals(algorithm) ||
-                            "PS512".equals(algorithm),
-                    "Algorithm should be a strong one, but was: " + algorithm
-            );
-        }
+        // Verify that the algorithm is a strong one
+        assertTrue(
+                "RS256".equals(algorithm) ||
+                        "RS384".equals(algorithm) ||
+                        "RS512".equals(algorithm) ||
+                        "ES256".equals(algorithm) ||
+                        "ES384".equals(algorithm) ||
+                        "ES512".equals(algorithm) ||
+                        "PS256".equals(algorithm) ||
+                        "PS384".equals(algorithm) ||
+                        "PS512".equals(algorithm),
+                "Algorithm should be a strong one, but was: " + algorithm
+        );
     }
 
     @Test
@@ -134,17 +133,17 @@ class TokenSecurityPropertiesTest {
     void tokensShouldUseApprovedAlgorithms(String algorithm) {
         // Use the JwksLoader created in setUp
 
-        // Get all key infos
-        List<KeyInfo> keyInfos = jwksLoader.getAllKeyInfos();
+        // Get the default key info to check if it uses the specified algorithm
+        Optional<KeyInfo> keyInfoOpt = jwksLoader.getKeyInfo(InMemoryJWKSFactory.DEFAULT_KEY_ID);
+        assertTrue(keyInfoOpt.isPresent(), "JwksLoader should contain the default key");
 
-        // Check if any key uses the specified algorithm
-        boolean algorithmFound = keyInfos.stream()
-                .anyMatch(keyInfo -> keyInfo.algorithm().equals(algorithm));
+        // Check if the key uses the specified algorithm
+        boolean algorithmFound = keyInfoOpt.get().algorithm().equals(algorithm);
 
         // If the algorithm is not found, log a warning but don't fail the test
         // as the test environment might not have all algorithms configured
         if (!algorithmFound) {
-            LOGGER.warn("Algorithm " + algorithm + " not found in the JWKS");
+            LOGGER.warn("Algorithm " + algorithm + " not found in the default key");
         }
 
         // Verify that the algorithm is in the list of approved algorithms

@@ -239,11 +239,11 @@ void shouldRejectTokenWithMissingClaims() {
 
     // Create an IssuerConfig for validation
     IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuer(TestTokenHolder.TEST_ISSUER)
+        .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
         .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
         .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
         .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
-        .build();
+        .build(); // Validation happens automatically
 
     TokenValidator validator = new TokenValidator(issuerConfig);
 
@@ -255,14 +255,14 @@ void shouldRejectTokenWithMissingClaims() {
 }
 ----
 
-== Testing Code Using OIDC Discovery (`WellKnownHandler`)
+== Testing Code Using OIDC Discovery (`HttpWellKnownResolver`)
 _See link:../doc/specification/well-known.adoc[OIDC Discovery Specification Details]_
 
-When your application uses the `WellKnownHandler` to discover OIDC provider details, you'll want to test this integration without making actual network calls. The `de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher` utility class is provided for this purpose.
+When your application uses the `HttpWellKnownResolver` to discover OIDC provider details, you'll want to test this integration without making actual network calls. The `de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher` utility class is provided for this purpose.
 
 === Introducing `WellKnownDispatcher`
 
-`WellKnownDispatcher` implements the `ModuleDispatcherElement` interface from the `cui-test-mockwebserver-junit5` framework to simulate an OpenID Provider's `/.well-known/openid-configuration` endpoint and its associated JWKS (JSON Web Key Set) endpoint. This allows you to control the responses that `WellKnownHandler` receives during tests, enabling you to simulate various scenarios including:
+`WellKnownDispatcher` implements the `ModuleDispatcherElement` interface from the `cui-test-mockwebserver-junit5` framework to simulate an OpenID Provider's `/.well-known/openid-configuration` endpoint and its associated JWKS (JSON Web Key Set) endpoint. This allows you to control the responses that `HttpWellKnownResolver` receives during tests, enabling you to simulate various scenarios including:
 
 * Successful discovery of OIDC configuration.
 * Missing or malformed OIDC configuration documents.
@@ -270,7 +270,7 @@ When your application uses the `WellKnownHandler` to discover OIDC provider deta
 * Missing required fields like issuer or jwks_uri.
 * Invalid issuer values.
 
-By using `WellKnownDispatcher`, your tests for components relying on `WellKnownHandler` become isolated, reliable, and fast.
+By using `WellKnownDispatcher`, your tests for components relying on `HttpWellKnownResolver` become isolated, reliable, and fast.
 
 === Using `WellKnownDispatcher` with JUnit 5 Tests
 
@@ -278,7 +278,8 @@ Here's a typical setup for using `WellKnownDispatcher` in a JUnit 5 test class:
 
 [source,java]
 ----
-import de.cuioss.jwt.validation.well_known.WellKnownHandler;
+import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
 import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
@@ -321,28 +322,30 @@ class MyServiceUsingWellKnownTest {
                 .addPathSegment("/.well-known/openid-configuration")
                 .buildAsString()).toURL();
         
-        // Create WellKnownHandler instance using the mock server's URL
-        WellKnownHandler handler = WellKnownHandler.builder()
+        // Create HttpWellKnownResolver instance using the mock server's URL
+        ParserConfig parserConfig = ParserConfig.builder().build();
+        HttpWellKnownResolver resolver = HttpWellKnownResolver.builder()
             .url(wellKnownUrl)
+            .parserConfig(parserConfig)
             .build();
 
-        // Assertions for the handler
+        // Assertions for the resolver
         String baseUrl = uriBuilder.buildAsString();
-        assertEquals(baseUrl, handler.getIssuer().getUrl().toString());
-        assertEquals(baseUrl + "/oidc/jwks.json", handler.getJwksUri().getUrl().toString());
+        assertEquals(baseUrl, resolver.getIssuer().getUrl().toString());
+        assertEquals(baseUrl + "/oidc/jwks.json", resolver.getJwksUri().getUrl().toString());
         
         // Verify the dispatcher was called
         wellKnownDispatcher.assertCallsAnswered(1);
 
-        // Example: Configure HttpJwksLoaderConfig using the handler
+        // Example: Configure HttpJwksLoaderConfig using the resolver
         HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-            .wellKnown(handler)
+            .wellKnown(resolver)
             .build();
 
         // Assertions for the jwksConfig
-        assertEquals(handler.getJwksUri().getUrl().toString(), jwksConfig.getJwksUri().toString());
+        assertEquals(resolver.getJwksUri().getUrl().toString(), jwksConfig.getJwksUri().toString());
 
-        // ... your further test logic using the handler or jwksConfig ...
+        // ... your further test logic using the resolver or jwksConfig ...
     }
 
     @Test
@@ -355,8 +358,11 @@ class MyServiceUsingWellKnownTest {
                 .addPathSegment("/.well-known/openid-configuration")
                 .buildAsString()).toURL();
         
-        // Verify that WellKnownHandler throws an exception
-        var builder = WellKnownHandler.builder().url(wellKnownUrl);
+        // Verify that HttpWellKnownResolver throws an exception
+        ParserConfig parserConfig = ParserConfig.builder().build();
+        var builder = HttpWellKnownResolver.builder()
+            .url(wellKnownUrl)
+            .parserConfig(parserConfig);
         assertThrows(WellKnownDiscoveryException.class, builder::build);
         
         // Verify the dispatcher was called
@@ -373,8 +379,11 @@ class MyServiceUsingWellKnownTest {
                 .addPathSegment("/.well-known/openid-configuration")
                 .buildAsString()).toURL();
         
-        // Verify that WellKnownHandler throws an exception
-        var builder = WellKnownHandler.builder().url(wellKnownUrl);
+        // Verify that HttpWellKnownResolver throws an exception
+        ParserConfig parserConfig = ParserConfig.builder().build();
+        var builder = HttpWellKnownResolver.builder()
+            .url(wellKnownUrl)
+            .parserConfig(parserConfig);
         WellKnownDiscoveryException exception = assertThrows(
                 WellKnownDiscoveryException.class, builder::build);
                 

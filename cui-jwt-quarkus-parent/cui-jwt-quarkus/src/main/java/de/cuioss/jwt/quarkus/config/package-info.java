@@ -17,8 +17,8 @@
  * <h2>Configuration for CUI JWT Quarkus Extension</h2>
  * <p>
  * This package contains the configuration classes for the CUI JWT Quarkus extension.
- * The main configuration interface is {@link de.cuioss.jwt.quarkus.config.JwtValidationConfig},
- * which provides type-safe configuration properties for JWT validation.
+ * Configuration is accessed directly through MicroProfile Config to ensure compatibility
+ * with native images and avoid ConfigMapping fragility issues.
  * </p>
  * <p>
  * The configuration supports the multi-issuer approach of the library,

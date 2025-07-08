@@ -32,7 +32,7 @@ docker compose -f "$COMPOSE_FILE" up -d
 # Wait for Keycloak to be ready first
 echo "⏳ Waiting for Keycloak to be ready..."
 for i in {1..60}; do
-    if curl -s http://localhost:10080/health/ready > /dev/null 2>&1; then
+    if curl -k -s https://localhost:1090/health/ready > /dev/null 2>&1; then
         echo "✅ Keycloak is ready!"
         break
     fi
@@ -83,11 +83,11 @@ echo ""
 echo "📱 Application URLs:"
 echo "  🔍 Health Check:   https://localhost:10443/q/health"
 echo "  📊 Metrics:        https://localhost:10443/q/metrics"
-echo "  🔑 Keycloak:       http://localhost:11080/auth"
+echo "  🔑 Keycloak:       https://localhost:1443/auth"
 echo ""
 echo "🧪 Quick test commands:"
 echo "  curl -k https://localhost:10443/q/health/live"
-echo "  curl http://localhost:11080/auth/health/ready"
+echo "  curl -k https://localhost:1090/health/ready"
 echo ""
 echo "🛑 To stop: ./scripts/stop-integration-container.sh"
 echo "📋 To view logs: docker compose logs -f"

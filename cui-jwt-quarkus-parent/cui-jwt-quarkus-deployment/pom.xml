@@ -109,7 +109,7 @@
                         </path>
                     </annotationProcessorPaths>
                     <!-- Use release instead of source/target to properly handle modules -->
-                    <release>17</release>
+                    <release>21</release>
                 </configuration>
             </plugin>
             <plugin>

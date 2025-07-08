@@ -51,7 +51,8 @@ class TokenBuilderTest {
     void setUp() {
         // Create a simple IssuerConfig for testing
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer("https://test-issuer.com")
+                .issuerIdentifier("test-issuer")
+                .jwksContent("{\"keys\":[]}")
                 .build();
 
         tokenBuilder = new TokenBuilder(issuerConfig);

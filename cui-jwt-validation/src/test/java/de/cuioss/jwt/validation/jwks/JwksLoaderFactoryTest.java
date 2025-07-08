@@ -63,14 +63,29 @@ class JwksLoaderFactoryTest {
     void shouldCreateHttpLoader() {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .url("https://example.com/.well-known/jwks.json")
-                .refreshIntervalSeconds(60)
+                .jwksUrl("https://example.com/.well-known/jwks.json")
                 .build();
-        JwksLoader loader = JwksLoaderFactory.createHttpLoader(config, securityEventCounter);
+        JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
+        loader.initJWKSLoader(securityEventCounter);
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
         assertEquals(JwksType.HTTP, loader.getJwksType(), "Loader should have HTTP type");
-        assertEquals(LoaderStatus.ERROR, loader.getStatus(), "HTTP loader should have ERROR status when URL is unreachable");
+        assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "HTTP loader should have ERROR status when unable to load from invalid URL");
+    }
+
+    @Test
+    @DisplayName("Should create well-known discovery loader")
+    void shouldCreateWellKnownLoader() {
+
+        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+                .build();
+        JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
+        loader.initJWKSLoader(securityEventCounter);
+        assertNotNull(loader, "Loader should not be null");
+        assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
+        assertEquals(JwksType.WELL_KNOWN, loader.getJwksType(), "Loader should have WELL_KNOWN type");
+        assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "Well-known loader should have ERROR status when unable to load from invalid URL");
     }
 
     @Test
@@ -79,34 +94,39 @@ class JwksLoaderFactoryTest {
 
         Path jwksFile = tempDir.resolve("jwks.json");
         Files.writeString(jwksFile, jwksContent);
-        JwksLoader loader = JwksLoaderFactory.createFileLoader(jwksFile.toString(), securityEventCounter);
+        JwksLoader loader = JwksLoaderFactory.createFileLoader(jwksFile.toString());
+        loader.initJWKSLoader(securityEventCounter);
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
         assertEquals(JwksType.FILE, loader.getJwksType(), "Loader should have FILE type");
-        assertEquals(LoaderStatus.OK, loader.getStatus(), "Loader should have OK status for valid file");
+        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should have OK status for valid file");
     }
 
     @Test
-    @DisplayName("Should create file loader with fallback for non-existent file")
-    void shouldCreateFileLoaderWithFallbackForNonExistentFile() {
+    @DisplayName("Should fail fast when creating file loader for non-existent file")
+    void shouldFailFastForNonExistentFile() {
 
         String nonExistentFile = "non-existent-file.json";
-        JwksLoader loader = JwksLoaderFactory.createFileLoader(nonExistentFile, securityEventCounter);
-        assertNotNull(loader, "Loader should not be null");
-        assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
-        assertEquals(JwksType.FILE, loader.getJwksType(), "Loader should have FILE type");
-        assertEquals(LoaderStatus.ERROR, loader.getStatus(), "Loader should have ERROR status for non-existent file");
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> JwksLoaderFactory.createFileLoader(nonExistentFile),
+                "Should throw IllegalArgumentException for non-existent file");
+
+        assertTrue(exception.getMessage().contains("Cannot read JWKS file"),
+                "Exception message should indicate file read failure");
+        assertTrue(exception.getMessage().contains(nonExistentFile),
+                "Exception message should contain the file name");
     }
 
     @Test
     @DisplayName("Should create in-memory loader")
     void shouldCreateInMemoryLoader() {
 
-        JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(jwksContent, securityEventCounter);
+        JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(jwksContent);
+        loader.initJWKSLoader(securityEventCounter);
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
         assertEquals(JwksType.MEMORY, loader.getJwksType(), "Loader should have MEMORY type");
-        assertEquals(LoaderStatus.OK, loader.getStatus(), "Loader should have OK status for valid content");
+        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should have OK status for valid content");
     }
 
     @Test
@@ -114,15 +134,34 @@ class JwksLoaderFactoryTest {
     void shouldCreateInMemoryLoaderWithFallbackForInvalidContent() {
 
         String invalidContent = "invalid-json";
-        JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(invalidContent, securityEventCounter);
+        JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(invalidContent);
+        loader.initJWKSLoader(securityEventCounter);
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
         assertEquals(JwksType.MEMORY, loader.getJwksType(), "Loader should have MEMORY type");
-        assertEquals(LoaderStatus.ERROR, loader.getStatus(), "Loader should have ERROR status for invalid content");
+        assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "Loader should have ERROR status for invalid content");
 
         // The JWKSKeyLoader constructor now automatically increments the counter when it encounters invalid JSON content
 
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED),
                 "Should count JWKS_JSON_PARSE_FAILED event");
+    }
+
+    @Test
+    @DisplayName("Should return correct providesIssuerIdentifier for all JwksType values")
+    void shouldReturnCorrectProvidesIssuerIdentifierForAllJwksTypes() {
+        // Only WELL_KNOWN should provide issuer identifier
+        assertTrue(JwksType.WELL_KNOWN.providesIssuerIdentifier(),
+                "WELL_KNOWN should provide issuer identifier");
+
+        // All other types should not provide issuer identifier
+        assertFalse(JwksType.HTTP.providesIssuerIdentifier(),
+                "HTTP should not provide issuer identifier");
+        assertFalse(JwksType.FILE.providesIssuerIdentifier(),
+                "FILE should not provide issuer identifier");
+        assertFalse(JwksType.MEMORY.providesIssuerIdentifier(),
+                "MEMORY should not provide issuer identifier");
+        assertFalse(JwksType.NONE.providesIssuerIdentifier(),
+                "NONE should not provide issuer identifier");
     }
 }

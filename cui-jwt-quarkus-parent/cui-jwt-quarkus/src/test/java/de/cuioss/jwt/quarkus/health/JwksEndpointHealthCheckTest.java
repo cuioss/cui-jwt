@@ -24,8 +24,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.Map;
 
@@ -47,14 +45,12 @@ class JwksEndpointHealthCheckTest {
     }
 
     @Test
-    @DisplayName("Health check should return valid response with status")
-    void healthCheckBeanIsUpOrDown() {
+    @DisplayName("Health check should return UP status with valid configuration")
+    void healthCheckShouldReturnUpStatus() {
         HealthCheckResponse response = healthCheck.call();
         assertNotNull(response, "HealthCheckResponse should not be null");
-        assertNotNull(response.getStatus(), "Health check status should not be null");
-        assertTrue(response.getStatus() == HealthCheckResponse.Status.UP ||
-                response.getStatus() == HealthCheckResponse.Status.DOWN,
-                "Health check status should be either UP or DOWN");
+        assertEquals(HealthCheckResponse.Status.UP, response.getStatus(),
+                "Health check status should be UP with valid configuration");
     }
 
     @Test
@@ -65,60 +61,35 @@ class JwksEndpointHealthCheckTest {
                 "Health check should have correct name");
     }
 
-    /**
-     * Parameterized test for health check status and data validation.
-     * Tests both UP and DOWN status scenarios.
-     *
-     * @param status the health check status to test
-     */
-    @ParameterizedTest(name = "Health check should include correct data when status is {0}")
-    @EnumSource(HealthCheckResponse.Status.class)
-    @DisplayName("Health check should include correct data for different statuses")
-    void healthCheckDataForStatus(HealthCheckResponse.Status status) {
+    @Test
+    @DisplayName("Health check should include correct data for UP status")
+    void healthCheckDataForUpStatus() {
         HealthCheckResponse response = healthCheck.call();
 
-        // Skip if the current status doesn't match the test parameter
-        if (response.getStatus() != status) {
-            // Test is not applicable for this status
-            return;
-        }
-
-        // Common assertions for all statuses
+        // Verify response has data
         assertTrue(response.getData().isPresent(),
-                "Health check data should be present for status: " + status);
+                "Health check data should be present for UP status");
 
         Map<String, Object> data = response.getData().get();
 
-        // Status-specific assertions
-        if (status == HealthCheckResponse.Status.UP) {
-            // UP status should have endpoint count and issuer data
-            assertTrue(data.containsKey("checkedEndpoints"),
-                    "Health check data should contain checkedEndpoints count when UP");
+        // UP status should have endpoint count and issuer data
+        assertTrue(data.containsKey("checkedEndpoints"),
+                "Health check data should contain checkedEndpoints count when UP");
 
-            Object endpointCountValue = data.get("checkedEndpoints");
-            assertNotNull(endpointCountValue, "checkedEndpoints should not be null");
+        Object endpointCountValue = data.get("checkedEndpoints");
+        assertNotNull(endpointCountValue, "checkedEndpoints should not be null");
 
-            assertInstanceOf(Number.class, endpointCountValue,
-                    "checkedEndpoints should be a Number, but was: " + endpointCountValue.getClass().getSimpleName());
+        assertInstanceOf(Number.class, endpointCountValue,
+                "checkedEndpoints should be a Number, but was: " + endpointCountValue.getClass().getSimpleName());
 
-            int endpointCount = ((Number) endpointCountValue).intValue();
-            assertTrue(endpointCount > 0,
-                    "checkedEndpoints should be greater than 0 when UP, but was: " + endpointCount);
+        int endpointCount = ((Number) endpointCountValue).intValue();
+        assertTrue(endpointCount > 0,
+                "checkedEndpoints should be greater than 0 when UP, but was: " + endpointCount);
 
-            // Check for issuer-specific data
-            boolean hasIssuerData = data.keySet().stream()
-                    .anyMatch(key -> key.startsWith("issuer."));
-            assertTrue(hasIssuerData, "Should contain issuer-specific data when UP");
-        } else if (status == HealthCheckResponse.Status.DOWN) {
-            // DOWN status should have error information
-            boolean hasErrorInfo = data.containsKey("error") ||
-                    data.values().stream().anyMatch(value ->
-                            value instanceof String s && s.contains("DOWN"));
-
-            assertTrue(hasErrorInfo,
-                    "Health check should contain error information when DOWN. " +
-                            "Available keys: " + data.keySet() + ", values: " + data.values());
-        }
+        // Check for issuer-specific data
+        boolean hasIssuerData = data.keySet().stream()
+                .anyMatch(key -> key.startsWith("issuer."));
+        assertTrue(hasIssuerData, "Should contain issuer-specific data when UP");
     }
 
     @Test
@@ -126,29 +97,33 @@ class JwksEndpointHealthCheckTest {
     void issuerEndpointDetails() {
         HealthCheckResponse response = healthCheck.call();
 
-        if (response.getStatus() == HealthCheckResponse.Status.UP && response.getData().isPresent()) {
-            Map<String, Object> data = response.getData().get();
+        // With valid configuration, we expect UP status and data to be present
+        assertEquals(HealthCheckResponse.Status.UP, response.getStatus(),
+                "Health check status should be UP with valid configuration");
+        assertTrue(response.getData().isPresent(),
+                "Health check data should be present with valid configuration");
 
-            // Look for issuer-specific data patterns
-            data.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("issuer.") && entry.getKey().endsWith(".url"))
-                    .forEach(entry -> {
-                        String issuerPrefix = entry.getKey().substring(0, entry.getKey().lastIndexOf(".url"));
+        Map<String, Object> data = response.getData().get();
 
-                        // Check that each issuer has required fields
-                        assertTrue(data.containsKey(issuerPrefix + ".url"),
-                                "Should contain URL for " + issuerPrefix);
-                        assertTrue(data.containsKey(issuerPrefix + ".jwksType"),
-                                "Should contain jwksType for " + issuerPrefix);
-                        assertTrue(data.containsKey(issuerPrefix + ".status"),
-                                "Should contain status for " + issuerPrefix);
+        // Look for issuer-specific data patterns
+        data.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith("issuer.") && entry.getKey().endsWith(".url"))
+                .forEach(entry -> {
+                    String issuerPrefix = entry.getKey().substring(0, entry.getKey().lastIndexOf(".url"));
 
-                        // Verify status values
-                        Object statusValue = data.get(issuerPrefix + ".status");
-                        assertTrue("UP".equals(statusValue) || "DOWN".equals(statusValue),
-                                "Issuer status should be UP or DOWN");
-                    });
-        }
+                    // Check that each issuer has required fields
+                    assertTrue(data.containsKey(issuerPrefix + ".url"),
+                            "Should contain URL for " + issuerPrefix);
+                    assertTrue(data.containsKey(issuerPrefix + ".jwksType"),
+                            "Should contain jwksType for " + issuerPrefix);
+                    assertTrue(data.containsKey(issuerPrefix + ".status"),
+                            "Should contain status for " + issuerPrefix);
+
+                    // Verify status values
+                    Object statusValue = data.get(issuerPrefix + ".status");
+                    assertTrue("UP".equals(statusValue) || "DOWN".equals(statusValue),
+                            "Issuer status should be UP or DOWN");
+                });
     }
 
     @Test
@@ -171,25 +146,21 @@ class JwksEndpointHealthCheckTest {
     }
 
     @Test
-    @DisplayName("Health check should handle edge cases gracefully")
-    void healthCheckEdgeCases() {
+    @DisplayName("Health check should handle valid configuration gracefully")
+    void healthCheckValidConfiguration() {
         HealthCheckResponse response = healthCheck.call();
 
-        // Response should be valid regardless of JWKS endpoint status
+        // Response should be valid with proper configuration
         assertNotNull(response, "Response should not be null");
-        assertNotNull(response.getStatus(), "Health check status should not be null");
-        assertTrue(response.getStatus() == HealthCheckResponse.Status.UP ||
-                response.getStatus() == HealthCheckResponse.Status.DOWN,
-                "Health check status should be either UP or DOWN");
+        assertEquals(HealthCheckResponse.Status.UP, response.getStatus(),
+                "Health check status should be UP with valid configuration");
         assertEquals("jwks-endpoints", response.getName(),
                 "Health check should have correct name");
 
-        if (response.getData().isPresent()) {
-            Map<String, Object> data = response.getData().get();
-            // Should contain endpoint data or error information
-            assertTrue(data.containsKey("checkedEndpoints") || data.containsKey("error"),
-                    "Should contain either endpoint data or error information");
-        }
+        assertTrue(response.getData().isPresent(), "Data should be present");
+        Map<String, Object> data = response.getData().get();
+        assertTrue(data.containsKey("checkedEndpoints"),
+                "Should contain endpoint data for valid configuration");
     }
 
 }

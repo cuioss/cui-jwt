@@ -1,8 +1,9 @@
 = CUI JWT Quarkus Extension Documentation
-:toc:
+:toc: left
 :toclevels: 3
+:toc-title: Table of Contents
 :sectnums:
-:source-highlighter: highlightjs
+:source-highlighter: highlight.js
 
 == Overview
 
@@ -15,92 +16,57 @@ Complete documentation for the CUI JWT Quarkus extension - a comprehensive JWT v
 
 == Architecture & Implementation
 
-=== xref:quarkus-integration.adoc[Quarkus Integration]
+=== Core Extension Architecture
 
-Core extension architecture with deployment and runtime modules:
+The CUI JWT Quarkus extension provides comprehensive JWT validation capabilities through a modular architecture:
 
 * **Extension Architecture**: Build-time vs runtime components
 * **CDI Integration**: Automatic bean discovery and configuration
-* **Health Checks**: Readiness and liveness probes
-* **Metrics Integration**: Automatic Micrometer integration
+* **Native Image Support**: GraalVM native compilation optimization
 * **DevUI Components**: Development interface with JSON-RPC services
 
-=== xref:devui-implementation.adoc[DevUI Implementation]
+=== Integration Components
 
-Development UI components for JWT debugging and monitoring:
-
-* **Web Components**: Lit Element-based reactive components  
-* **JSON-RPC Services**: Backend data access and validation
-* **Real-time Monitoring**: Live status updates and health tracking
-* **Token Debugging**: Interactive JWT validation and claims inspection
+* **xref:integration/quarkus-integration.adoc[Quarkus Framework Integration]** - Core extension architecture
+* **xref:integration/health-checks.adoc[Health Checks]** - MicroProfile Health readiness and liveness probes
+* **xref:integration/metrics-integration.adoc[Metrics Integration]** - Micrometer metrics for monitoring
+* **xref:integration/https-integration-testing.adoc[HTTPS Integration Testing]** - TLS certificate management
 
 == Configuration & Usage
 
-=== xref:health-checks.adoc[Health Checks]
+=== Configuration Management
 
-MicroProfile Health integration for production monitoring:
+* **xref:configuration/testing-configuration.adoc[Testing Configuration]** - Test profile setup and token utilities
+* **xref:configuration/maven-build-configuration.adoc[Maven Build Configuration]** - Project build setup
+* **xref:configuration/native-image-configuration.adoc[Native Image Configuration]** - GraalVM compilation settings
 
-* **JWKS Endpoint Health** (`@Readiness`): Connectivity monitoring
-* **Token Validator Health** (`@Liveness`): Configuration validation
-* **Kubernetes Integration**: Probe configuration and best practices
-* **Performance Considerations**: Caching and timeout strategies
+=== Development Tools
 
-=== xref:metrics-integration.adoc[Metrics Integration]
+* **xref:development/devui-implementation.adoc[DevUI Implementation]** - Web components and JSON-RPC services
+* **xref:development/devui-testing.adoc[DevUI Testing]** - Development interface validation
+* **xref:development/quarkus-test-setup.adoc[Quarkus Test Framework Setup]** - Test framework configuration
 
-Micrometer metrics for security and performance monitoring:
+== Performance & Optimization
 
-* **JWT Validation Metrics**: Error counters by category and type
-* **Security Event Tracking**: Failed validation attempts and patterns
-* **Prometheus Integration**: Standard metrics format and alerting
-* **Grafana Dashboard**: Pre-configured monitoring visualizations
+=== Performance Analysis
 
-=== xref:native-image-support.adoc[Native Image Support]
-
-GraalVM native compilation configuration:
-
-* **Reflection Configuration**: Automatic class registration
-* **Runtime Initialization**: Network component setup
-* **Performance Metrics**: Build times and resource usage
-* **Testing Strategy**: Native integration test validation
-
-== Development & Testing
-
-=== xref:Testing%20Configuration.adoc[JWT Testing Guide]
-
-Application testing with JWT tokens and test profiles:
-
-* **Test Profile Setup**: Configuration overrides for testing
-* **Mock Token Creation**: `TestTokenHolder` and test utilities
-* **Multi-issuer Testing**: Complex configuration scenarios
-* **Validation Testing**: Valid and invalid token handling
-
-=== xref:quarkus-test-setup.adoc[Quarkus Test Framework Setup]
-
-Test framework configuration and dependencies:
-
-* **Framework Selection**: QuarkusUnitTest vs WeldJunit5 vs plain JUnit5
-* **Logging Configuration**: JBoss LogManager integration
-* **Dependency Management**: Required test dependencies
-
-=== xref:maven-build-configuration.adoc[Maven Build Configuration]
-
-Project build setup and compiler configuration:
-
-* **Java 17 Configuration**: Module path handling
-* **Surefire Plugin**: Test execution with proper logging
-* **Logging Setup**: Console output and level configuration
+* **xref:performance/jwt-validation-performance.adoc[JWT Validation Performance]** - Performance baselines and metrics
+* **xref:performance/native-optimization-guide.adoc[Native Optimization Guide]** - GraalVM build configuration
+* **xref:performance/jfr-profiling-guide.adoc[JFR Profiling Guide]** - Performance analysis tools
 
 == Integration Testing
 
-=== xref:../cui-jwt-quarkus-integration-tests/README.adoc[Integration Tests]
+=== Comprehensive Testing
 
-Comprehensive integration testing in containerized environments:
+The extension includes comprehensive integration testing in containerized environments:
 
 * **Native Container Testing**: Production-like validation
 * **HTTPS Configuration**: TLS certificate management
 * **Health & Metrics Validation**: End-to-end monitoring verification
 * **DevUI Testing**: Development interface validation
 * **Performance Benchmarking**: Native vs JVM comparisons
+
+For detailed examples, see xref:../cui-jwt-quarkus-integration-tests/README.adoc[Integration Tests].
 
 == Standards Compliance
 
@@ -113,6 +79,8 @@ This extension follows the **link:https://github.com/cuioss/cui-llm-rules/tree/m
 
 == Getting Started
 
+Basic setup steps:
+
 1. **Add the extension** to your Quarkus project
 2. **Configure JWT validation** with issuer and JWKS settings
 3. **Enable health checks** with `quarkus-smallrye-health`
@@ -121,7 +89,13 @@ This extension follows the **link:https://github.com/cuioss/cui-llm-rules/tree/m
 
 For detailed configuration examples, see the xref:../cui-jwt-quarkus-integration-tests/README.adoc[Integration Tests] documentation.
 
-== Support
+== Additional Resources
+
+=== Log Messages
+
+* **xref:LogMessages.adoc[Log Messages Reference]** - Complete logging reference for the extension
+
+=== Support
 
 * **Issues**: Report problems via project issue tracker
 * **Standards**: Follow link:https://github.com/cuioss/cui-llm-rules/tree/main/standards/cdi-quarkus/[CDI Quarkus Standards]

@@ -183,7 +183,6 @@ public void checkSystemHealth() {
 ----
 # Global parser settings
 cui.jwt.parser.audience=my-application
-cui.jwt.parser.leeway-seconds=30
 cui.jwt.parser.max-token-size-bytes=8192
 
 # Health check configuration

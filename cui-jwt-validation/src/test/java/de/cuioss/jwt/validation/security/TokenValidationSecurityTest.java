@@ -64,7 +64,7 @@ class TokenValidationSecurityTest {
     void setUp() {
         // Create issuer config with JWKS content
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer("Token-Test-testIssuer")
+                .issuerIdentifier("Token-Test-testIssuer")
                 .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
                 .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                 .build();

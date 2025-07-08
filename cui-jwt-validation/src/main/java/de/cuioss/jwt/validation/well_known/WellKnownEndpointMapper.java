@@ -15,8 +15,7 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages.DEBUG;
-import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.HttpStatusFamily;
@@ -53,23 +52,26 @@ class WellKnownEndpointMapper {
      * @param urlString The URL string to add
      * @param wellKnownUrl The well-known URL (used for error messages)
      * @param isRequired Whether this URL is required
+     * @return true if successful (or optional and missing), false on error
      */
-    void addHttpHandlerToMap(Map<String, HttpHandler> map, String key, String urlString, URL wellKnownUrl, boolean isRequired) {
+    boolean addHttpHandlerToMap(Map<String, HttpHandler> map, String key, String urlString, URL wellKnownUrl, boolean isRequired) {
         if (urlString == null) {
             if (isRequired) {
-                throw new WellKnownDiscoveryException("Required URL field '" + key + "' is missing in discovery document from " + wellKnownUrl);
+                LOGGER.error(JWTValidationLogMessages.ERROR.REQUIRED_URL_FIELD_MISSING.format(key, wellKnownUrl));
+                return false;
             }
-            LOGGER.debug(DEBUG.OPTIONAL_URL_FIELD_MISSING.format(key, wellKnownUrl));
-            return;
+            LOGGER.debug(JWTValidationLogMessages.DEBUG.OPTIONAL_URL_FIELD_MISSING.format(key, wellKnownUrl));
+            return true;
         }
         try {
             HttpHandler handler = baseHandler.asBuilder()
                     .uri(urlString)
                     .build();
             map.put(key, handler);
+            return true;
         } catch (IllegalArgumentException e) {
-            throw new WellKnownDiscoveryException(
-                    "Malformed URL for field '" + key + "': " + urlString + " from " + wellKnownUrl, e);
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.MALFORMED_URL_FIELD.format(key, urlString, wellKnownUrl, e.getMessage()));
+            return false;
         }
     }
 
@@ -83,9 +85,9 @@ class WellKnownEndpointMapper {
         if (handler != null) {
             HttpStatusFamily statusFamily = handler.pingHead();
             if (statusFamily != HttpStatusFamily.SUCCESS) {
-                LOGGER.warn(WARN.ACCESSIBILITY_CHECK_HTTP_ERROR.format(endpointName, handler.getUrl(), statusFamily));
+                LOGGER.warn(JWTValidationLogMessages.WARN.ACCESSIBILITY_CHECK_HTTP_ERROR.format(endpointName, handler.getUrl(), statusFamily));
             } else {
-                LOGGER.debug(DEBUG.ACCESSIBILITY_CHECK_SUCCESSFUL.format(endpointName, handler.getUrl(), statusFamily));
+                LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESSIBILITY_CHECK_SUCCESSFUL.format(endpointName, handler.getUrl(), statusFamily));
             }
         }
     }

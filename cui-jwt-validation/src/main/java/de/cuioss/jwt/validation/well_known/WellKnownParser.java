@@ -15,10 +15,10 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages.DEBUG;
-import de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
+import jakarta.json.JsonException;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonString;
@@ -56,15 +56,16 @@ class WellKnownParser {
      *
      * @param responseBody The JSON response string to parse
      * @param wellKnownUrl The well-known URL (used for error messages)
-     * @return The parsed JsonObject
-     * @throws WellKnownDiscoveryException If parsing fails
+     * @return Optional containing the parsed JsonObject or empty on error
      */
-    JsonObject parseJsonResponse(String responseBody, URL wellKnownUrl) {
+    Optional<JsonObject> parseJsonResponse(String responseBody, URL wellKnownUrl) {
         ParserConfig config = parserConfig != null ? parserConfig : ParserConfig.builder().build();
         try (JsonReader jsonReader = config.getJsonReaderFactory().createReader(new StringReader(responseBody))) {
-            return jsonReader.readObject();
-        } catch (Exception e) {
-            throw new WellKnownDiscoveryException("Failed to parse JSON from " + wellKnownUrl, e);
+            JsonObject result = jsonReader.readObject();
+            return Optional.of(result);
+        } catch (JsonException | IllegalStateException e) {
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, e.getMessage()));
+            return Optional.empty();
         }
     }
 
@@ -90,16 +91,17 @@ class WellKnownParser {
      *
      * @param issuerFromDocument The issuer from the discovery document
      * @param wellKnownUrl The well-known URL
-     * @throws WellKnownDiscoveryException if validation fails
+     * @return true if validation passes, false otherwise
      */
-    void validateIssuer(String issuerFromDocument, URL wellKnownUrl) {
-        LOGGER.debug(DEBUG.VALIDATING_ISSUER.format(issuerFromDocument, wellKnownUrl));
+    boolean validateIssuer(String issuerFromDocument, URL wellKnownUrl) {
+        LOGGER.debug(JWTValidationLogMessages.DEBUG.VALIDATING_ISSUER.format(issuerFromDocument, wellKnownUrl));
 
         URL issuerAsUrl;
         try {
             issuerAsUrl = URI.create(issuerFromDocument).toURL();
         } catch (MalformedURLException | IllegalArgumentException e) {
-            throw new WellKnownDiscoveryException("Issuer URL from discovery document is malformed: " + issuerFromDocument, e);
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.ISSUER_URL_MALFORMED.format(issuerFromDocument, e.getMessage()));
+            return false;
         }
 
         String expectedWellKnownPath = determineWellKnownPath(issuerAsUrl);
@@ -112,17 +114,17 @@ class WellKnownParser {
         boolean pathMatch = wellKnownUrl.getPath().equals(expectedWellKnownPath);
 
         if (!(schemeMatch && hostMatch && portMatch && pathMatch)) {
-            String errorMessage = ERROR.ISSUER_VALIDATION_FAILED.format(
+            LOGGER.error(JWTValidationLogMessages.ERROR.ISSUER_VALIDATION_FAILED.format(
                     issuerFromDocument, issuerAsUrl.getProtocol(), issuerAsUrl.getHost(),
                     (issuerAsUrl.getPort() != -1 ? ":" + issuerAsUrl.getPort() : ""),
                     (issuerAsUrl.getPath() == null ? "" : issuerAsUrl.getPath()),
                     wellKnownUrl.toString(),
                     expectedWellKnownPath,
-                    schemeMatch, hostMatch, portMatch, issuerPort, wellKnownPort, pathMatch, wellKnownUrl.getPath());
-            LOGGER.error(errorMessage);
-            throw new WellKnownDiscoveryException(errorMessage);
+                    schemeMatch, hostMatch, portMatch, issuerPort, wellKnownPort, pathMatch, wellKnownUrl.getPath()));
+            return false;
         }
-        LOGGER.debug(DEBUG.ISSUER_VALIDATION_SUCCESSFUL.format(issuerFromDocument));
+        LOGGER.debug(JWTValidationLogMessages.DEBUG.ISSUER_VALIDATION_SUCCESSFUL.format(issuerFromDocument));
+        return true;
     }
 
     private String determineWellKnownPath(URL issuerAsUrl) {

@@ -50,7 +50,7 @@ class PsychicSignatureAttackTest {
     void setUp() {
         // Create issuer config with JWKS content
         IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuer("Token-Test-testIssuer")
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
                 .expectedAudience("test-client")
                 .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                 .build();

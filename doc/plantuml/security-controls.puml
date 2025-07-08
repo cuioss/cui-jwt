@@ -15,7 +15,7 @@ package "Input Validation" as InputValidation {
 }
 
 package "Cryptographic Practices" as Crypto {
-  rectangle "Bouncy Castle (bcprov-jdk18on)" as BouncyCastle
+  rectangle "Standard JDK Providers" as JDKProviders
   rectangle "Secure Algorithms" as SecureAlgorithms
   rectangle "Insecure Algorithm Rejection" as AlgorithmRejection
   rectangle "Key Length Requirements" as KeyLength
@@ -79,7 +79,7 @@ end note
 
 note bottom of Crypto
   Implementation:
-  - Bouncy Castle for cryptographic operations
+  - Standard JDK providers for cryptographic operations
   - Support for RS256, RS384, RS512, ES256, ES384, ES512
   - Rejection of "none", HS256, HS384, HS512
   - RSA: 2048+ bits, EC: P-256+

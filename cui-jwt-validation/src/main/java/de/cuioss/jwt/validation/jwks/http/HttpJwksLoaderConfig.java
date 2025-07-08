@@ -16,7 +16,9 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
-import de.cuioss.jwt.validation.well_known.WellKnownHandler;
+import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
+import de.cuioss.jwt.validation.well_known.WellKnownConfig;
+import de.cuioss.jwt.validation.well_known.WellKnownResolver;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
@@ -36,18 +38,18 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * Configuration parameters for {@link HttpJwksLoader}.
  * <p>
- * This class encapsulates all configuration options for the HttpJwksLoader,
- * including JWKS endpoint URL, refresh interval, SSL context, cache size,
- * and adaptive caching parameters. The JWKS endpoint URL can be configured
- * directly or discovered via a {@link WellKnownHandler}.
+ * This class encapsulates configuration options for the HttpJwksLoader,
+ * including JWKS endpoint URL, refresh interval, SSL context, and
+ * background refresh parameters. The JWKS endpoint URL can be configured
+ * directly or discovered via a {@link WellKnownResolver}.
  * <p>
- * It provides validation for all parameters and default values where appropriate.
+ * Complex caching parameters (maxCacheSize, adaptiveWindowSize) have been
+ * removed for simplification while keeping essential refresh functionality.
  * <p>
  * For more detailed information about the HTTP-based JWKS loading, see the
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#_jwksloader">Technical Components Specification</a>
  *
  * @author Oliver Wolff
- * @author Your Name (for well-known integration)
  * @since 1.0
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -56,9 +58,6 @@ import java.util.concurrent.ScheduledExecutorService;
 public class HttpJwksLoaderConfig {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpJwksLoaderConfig.class);
-    private static final int DEFAULT_MAX_CACHE_SIZE = 100;
-    private static final int DEFAULT_BACKGROUND_REFRESH_PERCENTAGE = 80;
-    private static final int DEFAULT_ADAPTIVE_WINDOW_SIZE = 10;
 
     /**
      * A Default of 10 minutes (600 seconds).
@@ -75,41 +74,33 @@ public class HttpJwksLoaderConfig {
 
     /**
      * The HttpHandler used for HTTP requests.
+     * <p>
+     * This field is guaranteed to be non-null when {@code getJwksType() == JwksType.HTTP}.
+     * It will be null only when using WellKnownResolver (i.e., {@code getJwksType() == JwksType.WELL_KNOWN}).
+     * <p>
+     * The non-null contract for HTTP configurations is enforced by the {@link HttpJwksLoaderConfigBuilder#build()}
+     * method, which validates that the HttpHandler was successfully created before constructing the config.
      */
-    @NonNull
     @Getter
     @EqualsAndHashCode.Exclude
     private final HttpHandler httpHandler;
 
     /**
-     * The maximum number of entries in the cache.
-     * This is useful in multi-issuer environments to prevent memory issues.
+     * The WellKnownResolver used for well-known endpoint discovery.
+     * Will be null if using direct HttpHandler.
      */
     @Getter
-    private final int maxCacheSize;
+    @EqualsAndHashCode.Exclude
+    private final WellKnownResolver wellKnownResolver;
 
     /**
-     * The number of accesses to consider for adaptive caching.
-     * This controls how many accesses are considered when adjusting cache expiration.
-     */
-    @Getter
-    private final int adaptiveWindowSize;
-
-    /**
-     * The percentage of the refresh interval at which to perform background refresh.
-     * For example, if refreshIntervalSeconds is 60 and backgroundRefreshPercentage is 80,
-     * background refresh will occur at 48 seconds (80% of 60).
-     */
-    @Getter
-    private final int backgroundRefreshPercentage;
-
-    /**
-     * The ScheduledExecutorService for background refresh tasks.
-     * If null, a new one will be created.
+     * The ScheduledExecutorService used for background refresh operations.
+     * Can be null if no background refresh is needed.
      */
     @Getter
     @EqualsAndHashCode.Exclude
     private final ScheduledExecutorService scheduledExecutorService;
+
 
     /**
      * Creates a new builder for HttpJwksLoaderConfig.
@@ -125,15 +116,26 @@ public class HttpJwksLoaderConfig {
     }
 
     /**
+     * Enum to track which endpoint configuration method was used.
+     */
+    private enum EndpointSource {
+        JWKS_URI,
+        JWKS_URL,
+        WELL_KNOWN_URL,
+        WELL_KNOWN_URI
+    }
+
+    /**
      * Builder for creating HttpJwksLoaderConfig instances with validation.
      */
     public static class HttpJwksLoaderConfigBuilder {
-        private Integer maxCacheSize = DEFAULT_MAX_CACHE_SIZE;
-        private Integer adaptiveWindowSize = DEFAULT_ADAPTIVE_WINDOW_SIZE;
-        private Integer backgroundRefreshPercentage = DEFAULT_BACKGROUND_REFRESH_PERCENTAGE;
         private Integer refreshIntervalSeconds = DEFAULT_REFRESH_INTERVAL_IN_SECONDS;
-        private ScheduledExecutorService scheduledExecutorService;
         private final HttpHandler.HttpHandlerBuilder httpHandlerBuilder;
+        private ScheduledExecutorService scheduledExecutorService;
+        private WellKnownConfig wellKnownConfig;
+
+        // Track which endpoint configuration method was used to ensure mutual exclusivity
+        private EndpointSource endpointSource = null;
 
         /**
          * Constructor initializing the HttpHandlerBuilder.
@@ -143,65 +145,19 @@ public class HttpJwksLoaderConfig {
         }
 
         /**
-         * Sets the maximum cache size.
-         * <p>
-         * This is useful in multi-issuer environments to prevent memory issues.
-         * </p>
-         *
-         * @param maxCacheSize the maximum number of entries in the cache
-         * @return this builder instance
-         * @throws IllegalArgumentException if maxCacheSize is negative
-         */
-        public HttpJwksLoaderConfigBuilder maxCacheSize(int maxCacheSize) {
-            Preconditions.checkArgument(maxCacheSize > 0, "maxCacheSize must be positive");
-            this.maxCacheSize = maxCacheSize;
-            return this;
-        }
-
-        /**
-         * The number of accesses to consider for adaptive caching.
-         * This controls how many accesses are considered when adjusting cache expiration.
-         *
-         * @param adaptiveWindowSize the percentage of the refresh interval
-         * @return this builder instance
-         * @throws IllegalArgumentException if adaptiveWindowSize is not positive
-         */
-        public HttpJwksLoaderConfigBuilder adaptiveWindowSize(int adaptiveWindowSize) {
-            Preconditions.checkArgument(adaptiveWindowSize > 0, "adaptiveWindowSize must be positive");
-            this.adaptiveWindowSize = adaptiveWindowSize;
-            return this;
-        }
-
-        /**
-         * Sets the percentage of the refresh interval at which to perform background refresh.
-         * <p>
-         * For example, if refreshIntervalSeconds is 60 and backgroundRefreshPercentage is 80,
-         * background refresh will occur at 48 seconds (80% of 60).
-         * </p>
-         *
-         * @param backgroundRefreshPercentage the percentage of the refresh interval
-         * @return this builder instance
-         * @throws IllegalArgumentException if backgroundRefreshPercentage is not between 1 and 100
-         */
-        public HttpJwksLoaderConfigBuilder backgroundRefreshPercentage(int backgroundRefreshPercentage) {
-            Preconditions.checkArgument(backgroundRefreshPercentage > 0 && backgroundRefreshPercentage <= 100,
-                    "backgroundRefreshPercentage must be between 1 and 100");
-            this.backgroundRefreshPercentage = backgroundRefreshPercentage;
-            return this;
-        }
-
-        /**
          * Sets the JWKS URI directly.
          * <p>
-         * Note: If this method is called, it will override any URI set by
-         * {@link #url(String)} or {@link #wellKnown(WellKnownHandler)}.
-         * The last call among these methods determines the final JWKS URI.
+         * This method is mutually exclusive with {@link #jwksUrl(String)}, {@link #wellKnownUrl(String)}, and {@link #wellKnownUri(URI)}.
+         * Only one endpoint configuration method can be used per builder instance.
          * </p>
          *
          * @param jwksUri the URI of the JWKS endpoint. Must not be null.
          * @return this builder instance
+         * @throws IllegalArgumentException if another endpoint configuration method was already used
          */
-        public HttpJwksLoaderConfigBuilder uri(@NonNull URI jwksUri) {
+        public HttpJwksLoaderConfigBuilder jwksUri(@NonNull URI jwksUri) {
+            validateEndpointExclusivity(EndpointSource.JWKS_URI);
+            this.endpointSource = EndpointSource.JWKS_URI;
             httpHandlerBuilder.uri(jwksUri);
             return this;
         }
@@ -209,40 +165,68 @@ public class HttpJwksLoaderConfig {
         /**
          * Sets the JWKS URL as a string, which will be converted to a URI.
          * <p>
-         * Note: If this method is called, it will override any URI set by
-         * {@link #uri(URI)} or {@link #wellKnown(WellKnownHandler)}.
-         * The last call among these methods determines the final JWKS URI.
+         * This method is mutually exclusive with {@link #jwksUri(URI)}, {@link #wellKnownUrl(String)}, and {@link #wellKnownUri(URI)}.
+         * Only one endpoint configuration method can be used per builder instance.
          * </p>
          *
          * @param jwksUrl the URL string of the JWKS endpoint. Must not be null.
          * @return this builder instance
+         * @throws IllegalArgumentException if another endpoint configuration method was already used
          */
-        public HttpJwksLoaderConfigBuilder url(@NonNull String jwksUrl) {
+        public HttpJwksLoaderConfigBuilder jwksUrl(@NonNull String jwksUrl) {
+            validateEndpointExclusivity(EndpointSource.JWKS_URL);
+            this.endpointSource = EndpointSource.JWKS_URL;
             httpHandlerBuilder.url(jwksUrl);
             return this;
         }
 
         /**
-         * Configures the JWKS URI by extracting it from a {@link WellKnownHandler}.
+         * Configures the JWKS loading using well-known endpoint discovery from a URL string.
          * <p>
-         * This method will retrieve the {@code jwks_uri} from the provided
-         * {@code WellKnownHandler}. If the handler does not contain a {@code jwks_uri},
-         * an {@link IllegalArgumentException} will be thrown.
+         * This method creates a {@link WellKnownConfig} internally for dynamic JWKS URI resolution.
+         * The JWKS URI will be extracted at runtime from the well-known discovery document.
          * </p>
          * <p>
-         * Note: If this method is called, it will override any URI set by
-         * {@link #uri(URI)} or {@link #url(String)}.
-         * The last call among these methods determines the final JWKS URI.
+         * This method is mutually exclusive with {@link #jwksUri(URI)}, {@link #jwksUrl(String)}, and {@link #wellKnownUri(URI)}.
+         * Only one endpoint configuration method can be used per builder instance.
          * </p>
          *
-         * @param wellKnownHandler The {@link WellKnownHandler} instance from which to
-         *                         extract the JWKS URI. Must not be null.
+         * @param wellKnownUrl The well-known discovery endpoint URL string. Must not be null.
          * @return this builder instance
-         * @throws IllegalArgumentException if {@code wellKnownHandler} is null
+         * @throws IllegalArgumentException if another endpoint configuration method was already used
+         * @throws IllegalArgumentException if {@code wellKnownUrl} is null or invalid
          */
-        public HttpJwksLoaderConfigBuilder wellKnown(@NonNull WellKnownHandler wellKnownHandler) {
-            HttpHandler extractedJwksHandler = wellKnownHandler.getJwksUri();
-            httpHandlerBuilder.uri(extractedJwksHandler.getUri()).sslContext(extractedJwksHandler.getSslContext());
+        public HttpJwksLoaderConfigBuilder wellKnownUrl(@NonNull String wellKnownUrl) {
+            validateEndpointExclusivity(EndpointSource.WELL_KNOWN_URL);
+            this.endpointSource = EndpointSource.WELL_KNOWN_URL;
+            this.wellKnownConfig = WellKnownConfig.builder()
+                    .wellKnownUrl(wellKnownUrl)
+                    .build();
+            return this;
+        }
+
+        /**
+         * Configures the JWKS loading using well-known endpoint discovery from a URI.
+         * <p>
+         * This method creates a {@link WellKnownConfig} internally for dynamic JWKS URI resolution.
+         * The JWKS URI will be extracted at runtime from the well-known discovery document.
+         * </p>
+         * <p>
+         * This method is mutually exclusive with {@link #jwksUri(URI)}, {@link #jwksUrl(String)}, and {@link #wellKnownUrl(String)}.
+         * Only one endpoint configuration method can be used per builder instance.
+         * </p>
+         *
+         * @param wellKnownUri The well-known discovery endpoint URI. Must not be null.
+         * @return this builder instance
+         * @throws IllegalArgumentException if another endpoint configuration method was already used
+         * @throws IllegalArgumentException if {@code wellKnownUri} is null
+         */
+        public HttpJwksLoaderConfigBuilder wellKnownUri(@NonNull URI wellKnownUri) {
+            validateEndpointExclusivity(EndpointSource.WELL_KNOWN_URI);
+            this.endpointSource = EndpointSource.WELL_KNOWN_URI;
+            this.wellKnownConfig = WellKnownConfig.builder()
+                    .wellKnownUri(wellKnownUri)
+                    .build();
             return this;
         }
 
@@ -273,16 +257,6 @@ public class HttpJwksLoaderConfig {
             return this;
         }
 
-        /**
-         * Sets the ScheduledExecutorService for background refresh tasks.
-         *
-         * @param scheduledExecutorService the ScheduledExecutorService to use
-         * @return this builder instance
-         */
-        public HttpJwksLoaderConfigBuilder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
-            this.scheduledExecutorService = scheduledExecutorService;
-            return this;
-        }
 
         /**
          * Sets the SSL context to use for HTTPS connections.
@@ -325,32 +299,99 @@ public class HttpJwksLoaderConfig {
         }
 
         /**
+         * Sets the ScheduledExecutorService for background refresh operations.
+         *
+         * @param scheduledExecutorService the executor service to use
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+            this.scheduledExecutorService = scheduledExecutorService;
+            return this;
+        }
+
+        /**
+         * Validates that the proposed endpoint source doesn't conflict with an already configured one.
+         * <p>
+         * This validation ensures mutual exclusivity between direct JWKS endpoint configuration
+         * and well-known discovery configuration. When using well-known discovery, the issuer identifier
+         * is automatically provided by the discovery document and cannot be manually configured.
+         * </p>
+         *
+         * @param proposedSource the endpoint source that is being configured
+         * @throws IllegalArgumentException if another endpoint configuration method was already used
+         */
+        private void validateEndpointExclusivity(EndpointSource proposedSource) {
+            if (endpointSource != null && endpointSource != proposedSource) {
+                throw new IllegalArgumentException(
+                        ("Cannot use %s endpoint configuration when %s was already configured. " +
+                                "Methods jwksUri(), jwksUrl(), wellKnownUrl(), and wellKnownUri() are mutually exclusive. " +
+                                "When using well-known discovery, the issuer identifier is automatically provided by the discovery document.")
+                                .formatted(proposedSource.name().toLowerCase().replace("_", ""), endpointSource.name().toLowerCase().replace("_", "")));
+            }
+        }
+
+        /**
          * Builds a new HttpJwksLoaderConfig instance with the configured parameters.
          * Validates all parameters and applies default values where appropriate.
          *
          * @return a new HttpJwksLoaderConfig instance
          * @throws IllegalArgumentException if any parameter is invalid
+         * @throws IllegalArgumentException if no endpoint was configured
          */
         public HttpJwksLoaderConfig build() {
-            // Build the HttpHandler for the well-known URL
-            HttpHandler jwksHttpHandler;
-            try {
-                jwksHttpHandler = httpHandlerBuilder.build();
-            } catch (IllegalArgumentException | IllegalStateException e) {
-                LOGGER.warn(WARN.INVALID_JWKS_URI::format);
-                throw new IllegalArgumentException("Invalid URL", e);
+            // Ensure at least one endpoint configuration method was used
+            if (endpointSource == null) {
+                throw new IllegalArgumentException(
+                        "No JWKS endpoint configured. Must call one of: jwksUri(), jwksUrl(), wellKnownUrl(), or wellKnownUri()");
             }
-            if (scheduledExecutorService == null && refreshIntervalSeconds > 0) {
-                scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+            HttpHandler jwksHttpHandler = null;
+            WellKnownResolver configuredWellKnownResolver = null;
+
+            if (endpointSource == EndpointSource.WELL_KNOWN_URL || endpointSource == EndpointSource.WELL_KNOWN_URI) {
+                // Create WellKnownResolver from WellKnownConfig
+                configuredWellKnownResolver = createWellKnownResolver(this.wellKnownConfig);
+            } else {
+                // Build the HttpHandler for direct URL/URI configuration
+                try {
+                    jwksHttpHandler = httpHandlerBuilder.build();
+                    if (jwksHttpHandler == null) {
+                        throw new IllegalArgumentException("HttpHandler build() returned null - this indicates a programming error in the builder");
+                    }
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    LOGGER.warn(WARN.INVALID_JWKS_URI::format);
+                    throw new IllegalArgumentException("Invalid URL or HttpHandler configuration", e);
+                }
+            }
+
+            // Create default ScheduledExecutorService if not provided and refresh interval > 0
+            ScheduledExecutorService executor = this.scheduledExecutorService;
+            if (executor == null && refreshIntervalSeconds > 0) {
+                String hostName = jwksHttpHandler != null ? jwksHttpHandler.getUri().getHost() : "wellknown";
+                executor = Executors.newScheduledThreadPool(1, r -> {
+                    Thread t = new Thread(r, "jwks-refresh-" + hostName);
+                    t.setDaemon(true);
+                    return t;
+                });
             }
 
             return new HttpJwksLoaderConfig(
                     refreshIntervalSeconds,
                     jwksHttpHandler,
-                    maxCacheSize,
-                    adaptiveWindowSize,
-                    backgroundRefreshPercentage,
-                    scheduledExecutorService);
+                    configuredWellKnownResolver,
+                    executor);
+        }
+
+        /**
+         * Creates a WellKnownResolver from the given WellKnownConfig.
+         * Uses the WellKnownConfig which internally manages HttpHandler creation.
+         *
+         * @param config the WellKnownConfig to create the resolver from
+         * @return a configured WellKnownResolver instance
+         * @throws IllegalArgumentException if the configuration is invalid
+         */
+        private WellKnownResolver createWellKnownResolver(WellKnownConfig config) {
+            return new HttpWellKnownResolver(config);
         }
     }
 }

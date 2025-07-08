@@ -241,7 +241,7 @@ For performance benchmarking, two approaches for token generation were evaluated
      ** May not fully represent real-world token complexity
      ** Could miss validation issues that occur with real tokens
 
-2. *Live Tokens from Identity Providers* (`TokenKeycloakITTest` approach)
+2. *Live Tokens from Identity Providers* (Quarkus Integration Tests approach)
    * *Advantages*:
      ** Uses actual OIDC tokens from a real provider
      ** Tests against real-world token structures

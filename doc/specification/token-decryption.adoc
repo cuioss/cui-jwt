@@ -51,10 +51,20 @@ The `NonValidatingJwtParser` class needs to be extended to recognize and handle 
 
 A new `JweParser` interface and implementation should be created for decrypting JWE tokens:
 
-* Support required JWE encryption algorithms (A128CBC-HS256, A256CBC-HS512, etc.)
-* Support required key management algorithms (RSA-OAEP, ECDH-ES, etc.)
+* Support required JWE content encryption algorithms (A128CBC-HS256, A256CBC-HS512, A128GCM, A256GCM, etc.)
+* Support required key management algorithms:
+  ** RSA-OAEP (RSAES OAEP using default parameters - SHA-1)
+  ** RSA-OAEP-256 (RSAES OAEP using SHA-256 and MGF1 with SHA-256)
+  ** ECDH-ES (Elliptic Curve Diffie-Hellman Ephemeral Static)
+  ** Other algorithms as defined in RFC 7518
 * Implement content encryption key (CEK) decryption
 * Implement payload decryption and authentication
+
+NOTE: It's important to distinguish between:
+
+* **Key Management Algorithms** (e.g., RSA-OAEP): Used to encrypt/decrypt the Content Encryption Key (CEK)
+* **Content Encryption Algorithms** (e.g., A256GCM): Used to encrypt/decrypt the actual JWT payload
+* **Signature Algorithms** (e.g., RS256): Used for JWS tokens, not JWE tokens
 
 === Data Model Extensions
 
@@ -90,6 +100,27 @@ Implement key resolution for decryption:
 * Support "kid" header parameter for key identification
 * Support "alg" header parameter for algorithm selection
 * Support "enc" header parameter for content encryption algorithm
+
+==== RSA-OAEP Algorithm Support
+
+Based on analysis of Keycloak integration, RSA-OAEP is a standard encryption algorithm that needs to be supported:
+
+* **RSA-OAEP** is used for key encryption in JWE (JSON Web Encryption), not for signing
+* It is the default key encryption algorithm in Keycloak when using RSA public keys
+* RSA-OAEP (using SHA-1) and RSA-OAEP-256 (using SHA-256) are both defined in RFC 7518
+* These are distinct from signature algorithms (RS256, RS384, RS512) which are used for JWS
+
+Current limitations:
+
+* The `JwkAlgorithmPreferences` class only supports signature algorithms
+* When encountering RSA-OAEP keys in JWKS, the system logs a warning: "Invalid or unsupported algorithm: RSA-OAEP"
+* This is expected behavior since JWE decryption is not yet implemented
+
+Future implementation should:
+
+* Separate encryption algorithm preferences from signature algorithm preferences
+* Support both RSA-OAEP and RSA-OAEP-256 for key encryption
+* Follow RFC 7518 specifications for JWE key management algorithms
 
 === Security Considerations
 

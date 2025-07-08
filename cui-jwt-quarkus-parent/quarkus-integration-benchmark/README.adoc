@@ -104,8 +104,11 @@ Results are automatically:
 == Documentation
 
 === Performance Scoring
-* xref:performance-scoring.adoc[Integration Benchmark Performance Scoring] - Integration-specific implementation details
+* xref:doc/performance-scoring.adoc[Integration Benchmark Performance Scoring] - Integration-specific implementation details
 * xref:../../cui-jwt-benchmarking/doc/performance-scoring.adoc[JWT Performance Scoring System] - Complete methodology and scoring calculations
+
+=== Performance Analysis
+* xref:doc/performance-patterns.adoc[Performance Patterns & Anomaly Detection] - Expected behavior patterns, measurement quality standards, and optimization guidelines
 
 === Related Modules
 * xref:../../cui-jwt-benchmarking/README.adoc[JWT Micro-Benchmarking Module] - Library component performance testing
