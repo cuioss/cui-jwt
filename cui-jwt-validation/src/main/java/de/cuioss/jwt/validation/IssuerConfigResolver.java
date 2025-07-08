@@ -30,35 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Handles the resolution and caching of issuer configurations in a thread-safe manner.
- * This class encapsulates the issuer config management logic, reducing the cyclomatic
- * complexity of TokenValidator.
+ * Thread-safe resolver for issuer configurations with dual-cache optimization.
  * <p>
- * The resolver implements a dual-cache approach to eliminate race conditions:
- * <ol>
- *   <li><strong>Mutable cache:</strong> A ConcurrentHashMap used during initialization
- *       for thread-safe writes while configs are being resolved from the pending queue</li>
- *   <li><strong>Immutable cache:</strong> A read-only Map created after all configs are
- *       processed, providing optimal performance for the fast path</li>
- * </ol>
+ * Uses a mutable ConcurrentHashMap during initialization, then switches to an 
+ * immutable Map for lock-free reads after all configs are processed.
  * <p>
- * <strong>Performance Characteristics:</strong>
- * <ul>
- *   <li><strong>Fast path:</strong> Direct lookup in the appropriate cache (lock-free)</li>
- *   <li><strong>Initialization:</strong> Uses mutable cache with ConcurrentHashMap semantics</li>
- *   <li><strong>Post-optimization:</strong> Uses immutable cache with immediate rejection for unknown issuers</li>
- * </ul>
- * <p>
- * <strong>Thread Safety:</strong>
- * This class is thread-safe using a dual-cache approach with proper memory ordering:
- * <ul>
- *   <li><strong>Mutable cache:</strong> ConcurrentHashMap provides thread-safe operations during initialization</li>
- *   <li><strong>Immutable cache:</strong> Published via volatile write, ensuring safe publication without locks</li>
- *   <li><strong>State determination:</strong> Null check on immutable cache determines optimization state</li>
- *   <li><strong>No race conditions:</strong> Threads never attempt to modify the immutable cache</li>
- * </ul>
- * The volatile immutableCache field serves both as the optimized cache and the optimization
- * state indicator, eliminating the need for a separate boolean flag.
+ * The volatile immutableCache field serves as both cache and optimization state indicator.
  */
 @EqualsAndHashCode
 @ToString(of = {"mutableCache", "immutableCache", "pendingConfigs"})
@@ -108,18 +85,14 @@ public class IssuerConfigResolver {
 
         // Add enabled configurations to pending queue for lazy processing
         int enabledCount = 0;
-        for (IssuerConfig issuerConfig : issuerConfigs) {
-            // Only process enabled issuers (constructor filtering as per I1 requirements)
-            if (issuerConfig.isEnabled()) {
-                // Initialize the JwksLoader with the SecurityEventCounter
-                issuerConfig.initSecurityEventCounter(securityEventCounter);
-
-                // Add to pending queue for lazy health checking and caching
-                pendingConfigs.add(issuerConfig);
+        for (IssuerConfig config : issuerConfigs) {
+            if (config.isEnabled()) {
+                config.initSecurityEventCounter(securityEventCounter);
+                pendingConfigs.add(config);
                 enabledCount++;
                 LOGGER.debug("Added enabled issuer configuration to pending queue");
             } else {
-                LOGGER.info(JWTValidationLogMessages.INFO.ISSUER_CONFIG_SKIPPED.format(issuerConfig));
+                LOGGER.info(JWTValidationLogMessages.INFO.ISSUER_CONFIG_SKIPPED.format(config));
             }
         }
 
@@ -145,115 +118,69 @@ public class IssuerConfigResolver {
      */
     IssuerConfig resolveConfig(@NonNull String issuer) {
         // Fast path - check immutable cache first if available (lock-free)
-        Map<String, IssuerConfig> optimizedCache = immutableCache;
-        if (optimizedCache != null) {
-            // Use immutable cache for optimal performance
-            IssuerConfig cachedConfig = optimizedCache.get(issuer);
-            if (cachedConfig != null) {
+        Optional<IssuerConfig> cachedFromImmutable = tryGetFromImmutableCache(issuer);
+        if (cachedFromImmutable.isPresent()) {
+            return cachedFromImmutable.get();
+        }
+        
+        // Fallback to mutable cache during initialization
+        IssuerConfig cachedFromMutable = mutableCache.get(issuer);
+        if (cachedFromMutable != null) {
+            LOGGER.debug("Using cached issuer config from mutable cache for: %s", issuer);
+            return cachedFromMutable;
+        }
+
+        // Slow path - need to process pending configs
+        return slowPathResolution(issuer);
+    }
+
+    /**
+     * Attempts to retrieve configuration from the immutable cache.
+     * 
+     * @param issuer the issuer identifier to look up
+     * @return Optional with cached config if found, empty if cache not optimized or issuer not found
+     * @throws TokenValidationException if cache is optimized but issuer not found
+     */
+    private Optional<IssuerConfig> tryGetFromImmutableCache(String issuer) {
+        if (immutableCache != null) {
+            IssuerConfig cached = immutableCache.get(issuer);
+            if (cached != null) {
                 LOGGER.debug("Using cached issuer config from immutable cache for: %s", issuer);
-                return cachedConfig;
+                return Optional.of(cached);
             }
             // If optimized and not found, it doesn't exist
             handleIssuerNotFound(issuer);
         }
-        
-        // Fallback to mutable cache during initialization
-        IssuerConfig cachedConfig = mutableCache.get(issuer);
-        if (cachedConfig != null) {
-            LOGGER.debug("Using cached issuer config from mutable cache for: %s", issuer);
-            return cachedConfig;
-        }
-
-        // Slow path - need to process pending configs
-        return resolveFromPending(issuer);
+        return Optional.empty();
     }
 
-    /**
-     * Finds a matching issuer configuration in the pending queue.
-     * <p>
-     * This method searches the pending queue for a configuration that matches
-     * the given issuer identifier. It does not modify the queue or perform
-     * health checks.
-     *
-     * @param issuer the issuer identifier to match
-     * @return the matching configuration, or null if not found
-     */
-    private IssuerConfig findMatchingPendingConfig(String issuer) {
-        for (IssuerConfig config : pendingConfigs) {
-            // For configs with static issuer identifier
-            if (issuer.equals(config.issuerIdentifier)) {
-                return config;
-            }
-
-            // For configs with dynamic issuer identifier (from JwksLoader)
-            if (LoaderStatus.OK.equals(config.jwksLoader.isHealthy())) {
-                Optional<String> jwksLoaderIssuer = config.jwksLoader.getIssuerIdentifier();
-                if (jwksLoaderIssuer.isPresent() && issuer.equals(jwksLoaderIssuer.get())) {
-                    return config;
-                }
-            }
-        }
-        return null;
-    }
 
     /**
-     * Resolves configuration from pending queue using optimized processing.
-     * <p>
-     * This method implements the "slow path" for issuer resolution when the config
-     * is not found in the cache and the system is not yet optimized. It uses
-     * a non-blocking approach to minimize synchronization overhead.
+     * Handles slow path resolution when config not found in cache.
+     * Processes all pending configs synchronously for simplicity and correctness.
      *
      * @param issuer the issuer identifier to resolve
      * @return the resolved issuer configuration
      * @throws TokenValidationException if no healthy configuration is found
      */
-    private IssuerConfig resolveFromPending(@NonNull String issuer) {
-        // If still not found and not optimized, use optimized processing
+    private IssuerConfig slowPathResolution(@NonNull String issuer) {
+        // If not optimized yet, process all pending configs
         if (immutableCache == null) {
-            // First, try to find a matching config in the pending queue
-            IssuerConfig matchingConfig = findMatchingPendingConfig(issuer);
-
-            if (matchingConfig != null) {
-                // Process this specific config and add to cache if healthy
-                if (LoaderStatus.OK.equals(matchingConfig.isHealthy())) {
-                    // Use atomic operation to add to mutable cache if not present
-                    IssuerConfig existing = mutableCache.putIfAbsent(issuer, matchingConfig);
-                    if (existing != null) {
-                        // Another thread already added it
-                        LOGGER.debug("Another thread already cached issuer config for: %s", issuer);
-                        return existing;
-                    }
-
-                    // Remove from pending queue
-                    pendingConfigs.remove(matchingConfig);
-                    LOGGER.debug("Cached issuer config for: %s", issuer);
-
-                    // Check if we should optimize
-                    checkAndOptimize();
-
-                    return matchingConfig;
-                } else {
-                    LOGGER.warn(JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.format(issuer));
-                }
-            }
-
-            // If we couldn't find or process a matching config, try synchronized fallback
             synchronized (this) {
                 // Double-check after acquiring lock
-                var result = mutableCache.get(issuer);
+                IssuerConfig result = mutableCache.get(issuer);
                 if (result != null) {
-                    LOGGER.debug("Double-checked cached issuer config for: %s", issuer);
+                    LOGGER.debug("Found issuer config in mutable cache during synchronized check: %s", issuer);
                     return result;
                 }
 
-                // Process all remaining configs while we have the lock
-                // This is a fallback for when we couldn't find a matching config
+                // Process all pending configs in one go
                 processAllPendingConfigs();
 
-                // Try one more time
+                // Try again after processing
                 result = mutableCache.get(issuer);
                 if (result != null) {
-                    LOGGER.debug("Final try on cached issuer config for: %s", issuer);
+                    LOGGER.debug("Found issuer config after processing pending configs: %s", issuer);
                     return result;
                 }
             }
@@ -261,7 +188,7 @@ public class IssuerConfigResolver {
 
         // Not found
         handleIssuerNotFound(issuer);
-        throw new IllegalStateException("This line should not be reached");
+        throw new IllegalStateException("handleIssuerNotFound should have thrown an exception");
     }
 
     /**

@@ -43,6 +43,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class IssuerConfigResolverSynchronizationTest {
 
+    private static final int DEFAULT_THREAD_COUNT = 50;
+    private static final double CONVOY_VARIANCE_THRESHOLD = 3.0;
+    private static final double CONVOY_MAX_AVG_THRESHOLD = 10.0;
+    private static final double PERFORMANCE_THRESHOLD_MS = 1.0;
+
     private IssuerConfigResolver issuerConfigResolver;
     private String issuerIdentifier;
 
@@ -60,7 +65,7 @@ class IssuerConfigResolverSynchronizationTest {
     @Timeout(value = 20, unit = TimeUnit.SECONDS)
     @DisplayName("Detect synchronization bottlenecks and convoy effects")
     void detectsSynchronizationBottlenecks() throws InterruptedException {
-        int threadCount = 50; // Reduced from 200 to make convoy effect more observable
+        int threadCount = DEFAULT_THREAD_COUNT; // Reduced from 200 to make convoy effect more observable
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch endLatch = new CountDownLatch(threadCount);
@@ -145,16 +150,16 @@ class IssuerConfigResolverSynchronizationTest {
             // For the extreme case of 50 threads hitting the same uncached issuer simultaneously,
             // some variance is expected. A ratio < 3.0 indicates acceptable performance.
             // The old synchronized implementation had ratios > 5.0
-            assertTrue(varianceRatio < 3.0,
+            assertTrue(varianceRatio < CONVOY_VARIANCE_THRESHOLD,
                     "CONVOY EFFECT DETECTED: Variance ratio %.2f (stddev/avg) indicates synchronized block bottleneck in resolveConfig()".formatted(varianceRatio));
 
-            assertTrue(maxToAvgRatio < 10.0,
+            assertTrue(maxToAvgRatio < CONVOY_MAX_AVG_THRESHOLD,
                     "CONVOY EFFECT DETECTED: Maximum time is %.1fx average - threads are blocking each other".formatted(maxToAvgRatio));
         }
 
         // Performance should be excellent for issuer config resolution
-        assertTrue(avgTimeMs < 1.0,
-                "Performance degradation: %.2f ms average per resolution (expected < 1ms)".formatted(avgTimeMs));
+        assertTrue(avgTimeMs < PERFORMANCE_THRESHOLD_MS,
+                "Performance degradation: %.2f ms average per resolution (expected < %.1fms)".formatted(avgTimeMs, PERFORMANCE_THRESHOLD_MS));
     }
 
     @Test
