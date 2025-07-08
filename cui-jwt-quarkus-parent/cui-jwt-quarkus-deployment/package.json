@@ -65,7 +65,7 @@
     "license-checker": "^25.0.1",
     "lit": "^3.0.0",
     "postcss-lit": "^1.0.0",
-    "prettier": "^3.0.3",
+    "prettier": "^3.6.2",
     "del-cli": "^6.0.0",
     "specificity": "^1.0.0",
     "stylelint": "^16.10.0",
