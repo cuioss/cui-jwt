@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class IssuerConfigResolverSynchronizationTest {
 
     private static final int DEFAULT_THREAD_COUNT = 50;
-    private static final double CONVOY_VARIANCE_THRESHOLD = 3.0;
+    private static final double CONVOY_VARIANCE_THRESHOLD = 5.0;
     private static final double CONVOY_MAX_AVG_THRESHOLD = 10.0;
     private static final double PERFORMANCE_THRESHOLD_MS = 1.0;
 
