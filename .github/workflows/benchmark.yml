@@ -105,6 +105,9 @@ jobs:
           TIMESTAMP=$(TZ='Europe/Berlin' date +"%Y-%m-%d")
           TIMESTAMP_WITH_TIME=$(TZ='Europe/Berlin' date +"%Y-%m-%d %H:%M %Z")
 
+          # Create gh-pages directory
+          mkdir -p gh-pages
+
           # Create header for badge markdown
           echo "## Benchmark Results ($TIMESTAMP)" > gh-pages/badge-markdown.txt
 
