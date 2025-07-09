@@ -27,6 +27,7 @@ import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,8 +45,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * This producer extracts bearer tokens from the HTTP Authorization header using HttpServletRequestResolver,
  * validates them using the configured TokenValidator, and checks for required scopes, roles, and groups.
  * <p>
- * The producer provides both service methods that return {@link Optional}&lt;{@link AccessTokenContent}&gt; 
- * and CDI producer methods that return {@link AccessTokenContent} directly for injection.
+ * The producer provides both service methods that return {@link BearerTokenResult} with comprehensive
+ * validation information and CDI producer methods that return {@link AccessTokenContent} directly for injection.
  * <p>
  * CDI injection usage example:
  * <pre>{@code
@@ -69,12 +70,24 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * BearerTokenProducer tokenService;
  *
  * public void someMethod() {
- *     Optional<AccessTokenContent> token = tokenService.getAccessTokenContent();
- *     if (token.isPresent()) {
- *         AccessTokenContent content = token.get();
+ *     BearerTokenResult result = tokenService.getBearerTokenResult(
+ *         List.of("read"), List.of("user"), List.of("admin"));
+ *     
+ *     if (result.isSuccessful()) {
+ *         AccessTokenContent content = result.getAccessTokenContent().get();
  *         // Use validated token
  *     } else {
- *         // Handle missing or invalid token
+ *         // Handle validation failure with detailed status information
+ *         switch (result.getStatus()) {
+ *             case PARSING_ERROR:
+ *                 // Handle parsing errors
+ *                 break;
+ *             case CONSTRAINT_VIOLATION:
+ *                 // Handle missing scopes/roles/groups
+ *                 break;
+ *             default:
+ *                 // Handle other cases
+ *         }
  *     }
  * }
  * }</pre>
@@ -106,7 +119,7 @@ public class BearerTokenProducer {
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
     public Optional<AccessTokenContent> getAccessTokenContent() {
-        return getAccessTokenContentWithRequirements(new String[0], new String[0], new String[0]);
+        return getAccessTokenContentWithRequirements(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
 
     /**
@@ -118,12 +131,32 @@ public class BearerTokenProducer {
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
     public Optional<AccessTokenContent> getAccessTokenContentWithRequirements(
-            String[] requiredScopes, String[] requiredRoles, String[] requiredGroups) {
+            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
+        BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
+        return result.getAccessTokenContent();
+    }
+
+    /**
+     * Gets comprehensive bearer token validation result with detailed status information.
+     *
+     * @param requiredScopes Required scopes for the token
+     * @param requiredRoles Required roles for the token
+     * @param requiredGroups Required groups for the token
+     * @return BearerTokenResult containing detailed validation information
+     */
+    public BearerTokenResult getBearerTokenResult(
+            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
+
+        // Check if we can access the HTTP request
+        Optional<HttpServletRequest> httpServletRequest = servletObjectsResolver.resolveHttpServletRequest();
+        if (httpServletRequest.isEmpty()) {
+            return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
+        }
 
         String bearerToken = extractBearerToken();
         if (bearerToken == null) {
             LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
-            return Optional.empty();
+            return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
         }
 
         try {
@@ -131,15 +164,24 @@ public class BearerTokenProducer {
 
             if (validateRequirements(tokenContent, requiredScopes, requiredRoles, requiredGroups)) {
                 LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
-                return Optional.of(tokenContent);
+                return BearerTokenResult.success(tokenContent, requiredScopes, requiredRoles, requiredGroups);
             } else {
                 LOGGER.debug(BEARER_TOKEN_REQUIREMENTS_NOT_MET::format);
-                return Optional.empty();
+                return BearerTokenResult.constraintViolation(requiredScopes, requiredRoles, requiredGroups);
             }
         } catch (TokenValidationException e) {
             LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
-            return Optional.empty();
+            return BearerTokenResult.parsingError(e, requiredScopes, requiredRoles, requiredGroups);
         }
+    }
+
+    /**
+     * Gets comprehensive bearer token validation result for the current request without specific requirements.
+     *
+     * @return BearerTokenResult containing detailed validation information
+     */
+    public BearerTokenResult getBearerTokenResult() {
+        return getBearerTokenResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
 
     /**
@@ -171,28 +213,25 @@ public class BearerTokenProducer {
      * @return true if all requirements are met, false otherwise
      */
     private boolean validateRequirements(AccessTokenContent tokenContent,
-            String[] requiredScopes, String[] requiredRoles, String[] requiredGroups) {
+            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
 
-        if (requiredScopes.length > 0) {
-            List<String> requiredScopesList = Arrays.asList(requiredScopes);
-            if (!tokenContent.providesScopes(requiredScopesList)) {
-                LOGGER.debug(BEARER_TOKEN_MISSING_SCOPES.format(requiredScopesList, tokenContent.getScopes()));
+        if (!requiredScopes.isEmpty()) {
+            if (!tokenContent.providesScopes(requiredScopes)) {
+                LOGGER.debug(BEARER_TOKEN_MISSING_SCOPES.format(requiredScopes, tokenContent.getScopes()));
                 return false;
             }
         }
 
-        if (requiredRoles.length > 0) {
-            List<String> requiredRolesList = Arrays.asList(requiredRoles);
-            if (!tokenContent.providesRoles(requiredRolesList)) {
-                LOGGER.debug(BEARER_TOKEN_MISSING_ROLES.format(requiredRolesList, tokenContent.getRoles()));
+        if (!requiredRoles.isEmpty()) {
+            if (!tokenContent.providesRoles(requiredRoles)) {
+                LOGGER.debug(BEARER_TOKEN_MISSING_ROLES.format(requiredRoles, tokenContent.getRoles()));
                 return false;
             }
         }
 
-        if (requiredGroups.length > 0) {
-            List<String> requiredGroupsList = Arrays.asList(requiredGroups);
-            if (!tokenContent.providesGroups(requiredGroupsList)) {
-                LOGGER.debug(BEARER_TOKEN_MISSING_GROUPS.format(requiredGroupsList, tokenContent.getGroups()));
+        if (!requiredGroups.isEmpty()) {
+            if (!tokenContent.providesGroups(requiredGroups)) {
+                LOGGER.debug(BEARER_TOKEN_MISSING_GROUPS.format(requiredGroups, tokenContent.getGroups()));
                 return false;
             }
         }
@@ -237,13 +276,64 @@ public class BearerTokenProducer {
     public AccessTokenContent produceAccessTokenContent(InjectionPoint injectionPoint) {
         BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
 
-        String[] requiredScopes = annotation != null ? annotation.requiredScopes() : new String[0];
-        String[] requiredRoles = annotation != null ? annotation.requiredRoles() : new String[0];
-        String[] requiredGroups = annotation != null ? annotation.requiredGroups() : new String[0];
+        // Apply pre-1.0 rule: Use collection as early as possible
+        List<String> requiredScopes = annotation != null ? List.of(annotation.requiredScopes()) : Collections.emptyList();
+        List<String> requiredRoles = annotation != null ? List.of(annotation.requiredRoles()) : Collections.emptyList();
+        List<String> requiredGroups = annotation != null ? List.of(annotation.requiredGroups()) : Collections.emptyList();
 
-        Optional<AccessTokenContent> tokenContent = getAccessTokenContentWithRequirements(
-                requiredScopes, requiredRoles, requiredGroups);
+        BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
+        return result.getAccessTokenContent().orElse(null);
+    }
 
-        return tokenContent.orElse(null);
+    /**
+     * Produces the current request's BearerTokenResult as a CDI bean.
+     * <p>
+     * This producer method provides comprehensive bearer token validation information
+     * including detailed status, error information, and the validated token content.
+     * This method extracts the bearer token from the HTTP Authorization header
+     * and validates it using the configured TokenValidator.
+     * <p>
+     * The producer method is @Dependent scoped, which means it will be created fresh
+     * for each injection point. Unlike the AccessTokenContent producer, this method
+     * always returns a valid BearerTokenResult object containing detailed information
+     * about the validation outcome.
+     * <p>
+     * Usage example:
+     * <pre>{@code
+     * @Inject
+     * @BearerToken(requiredScopes = {"read", "write"})
+     * BearerTokenResult tokenResult;
+     * 
+     * public void someMethod() {
+     *     switch (tokenResult.getStatus()) {
+     *         case FULLY_VERIFIED:
+     *             AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+     *             // Use validated token
+     *             break;
+     *         case PARSING_ERROR:
+     *             // Handle parsing errors with detailed information
+     *             EventType eventType = tokenResult.getEventType().get();
+     *             String message = tokenResult.getMessage().get();
+     *             break;
+     *         default:
+     *             // Handle other validation failures
+     *     }
+     * }
+     * }</pre>
+     *
+     * @param injectionPoint the CDI injection point containing the BearerToken annotation
+     * @return the BearerTokenResult containing detailed validation information
+     */
+    @Produces
+    @BearerToken
+    public BearerTokenResult produceBearerTokenResult(InjectionPoint injectionPoint) {
+        BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
+
+        // Apply pre-1.0 rule: Use collection as early as possible
+        List<String> requiredScopes = annotation != null ? List.of(annotation.requiredScopes()) : Collections.emptyList();
+        List<String> requiredRoles = annotation != null ? List.of(annotation.requiredRoles()) : Collections.emptyList();
+        List<String> requiredGroups = annotation != null ? List.of(annotation.requiredGroups()) : Collections.emptyList();
+
+        return getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
     }
 }

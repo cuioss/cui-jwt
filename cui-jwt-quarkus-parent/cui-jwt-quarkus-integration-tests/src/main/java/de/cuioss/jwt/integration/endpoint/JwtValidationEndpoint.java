@@ -17,6 +17,7 @@ package de.cuioss.jwt.integration.endpoint;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
+import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
@@ -95,9 +96,9 @@ public class JwtValidationEndpoint {
     public Response validateToken(TokenRequest tokenRequest) {
         // First try to use the bearer token service if available
         try {
-            Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
-            if (bearerToken.isPresent()) {
-                AccessTokenContent token = bearerToken.get();
+            BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
+            if (bearerTokenResult.isSuccessful()) {
+                AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
                 LOGGER.info("Access token validation successful via BearerTokenProducer for subject: %s", token.getSubject());
                 return Response.ok(new ValidationResponse(true, "Access token is valid",
                         Map.of(
@@ -109,7 +110,7 @@ public class JwtValidationEndpoint {
                         )))
                         .build();
             } else {
-                LOGGER.info("BearerTokenProducer returned empty optional");
+                LOGGER.info("BearerTokenProducer validation failed with status: %s", bearerTokenResult.getStatus());
             }
         } catch (Exception e) {
             LOGGER.warn("BearerTokenProducer failed with exception: %s", e.getMessage());
@@ -213,9 +214,9 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-scopes")
     public Response testTokenWithScopes() {
-        Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
-        if (bearerToken.isPresent()) {
-            AccessTokenContent token = bearerToken.get();
+        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
+        if (bearerTokenResult.isSuccessful()) {
+            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasRequiredScope = token.providesScopes(List.of("read"));
             return Response.ok(new ValidationResponse(hasRequiredScope,
                     hasRequiredScope ? "Token has required scopes" : "Token does not have required scopes",
@@ -226,7 +227,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
                     .build();
         }
     }
@@ -239,9 +240,9 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-roles")
     public Response testTokenWithRoles() {
-        Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
-        if (bearerToken.isPresent()) {
-            AccessTokenContent token = bearerToken.get();
+        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
+        if (bearerTokenResult.isSuccessful()) {
+            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasRequiredRole = token.providesRoles(List.of("user"));
             return Response.ok(new ValidationResponse(hasRequiredRole,
                     hasRequiredRole ? "Token has required roles" : "Token does not have required roles",
@@ -252,7 +253,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
                     .build();
         }
     }
@@ -265,9 +266,9 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-groups")
     public Response testTokenWithGroups() {
-        Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
-        if (bearerToken.isPresent()) {
-            AccessTokenContent token = bearerToken.get();
+        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
+        if (bearerTokenResult.isSuccessful()) {
+            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasRequiredGroup = token.providesGroups(List.of("test-group"));
             return Response.ok(new ValidationResponse(hasRequiredGroup,
                     hasRequiredGroup ? "Token has required groups" : "Token does not have required groups",
@@ -278,7 +279,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
                     .build();
         }
     }
@@ -291,9 +292,9 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-all")
     public Response testTokenWithAll() {
-        Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
-        if (bearerToken.isPresent()) {
-            AccessTokenContent token = bearerToken.get();
+        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
+        if (bearerTokenResult.isSuccessful()) {
+            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasAllRequirements = token.providesScopes(List.of("read")) &&
                     token.providesRoles(List.of("user")) &&
                     token.providesGroups(List.of("test-group"));
@@ -308,7 +309,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
                     .build();
         }
     }
