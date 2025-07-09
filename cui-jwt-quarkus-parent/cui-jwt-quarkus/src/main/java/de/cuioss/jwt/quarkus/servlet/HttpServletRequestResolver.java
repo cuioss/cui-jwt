@@ -45,7 +45,6 @@ public interface HttpServletRequestResolver {
      * @return Optional containing HttpServletRequest from the current context, or empty if not available.
      *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
      */
-    @NonNull
     Optional<HttpServletRequest> resolveHttpServletRequest();
 
     /**
@@ -57,7 +56,6 @@ public interface HttpServletRequestResolver {
      * @return Optional containing Map of HTTP headers from the current context, or empty if not available.
      *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
      */
-    @NonNull
     default Optional<Map<String, List<String>>> resolveHeaderMap() {
         return resolveHttpServletRequest().map(this::createHeaderMapFromRequest);
     }

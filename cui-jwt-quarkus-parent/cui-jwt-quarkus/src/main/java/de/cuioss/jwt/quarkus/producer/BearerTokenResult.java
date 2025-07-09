@@ -171,7 +171,6 @@ public class BearerTokenResult implements Serializable {
      *
      * @return Optional containing the AccessTokenContent, or empty if validation failed
      */
-    @NonNull
     public Optional<AccessTokenContent> getAccessTokenContent() {
         return Optional.ofNullable(accessTokenContent);
     }
@@ -181,7 +180,6 @@ public class BearerTokenResult implements Serializable {
      *
      * @return Optional containing the EventType, or empty if no parsing error occurred
      */
-    @NonNull
     public Optional<EventType> getErrorEventType() {
         return Optional.ofNullable(errorEventType);
     }
@@ -191,7 +189,6 @@ public class BearerTokenResult implements Serializable {
      *
      * @return Optional containing the error message, or empty if no parsing error occurred
      */
-    @NonNull
     public Optional<String> getErrorMessage() {
         return Optional.ofNullable(errorMessage);
     }

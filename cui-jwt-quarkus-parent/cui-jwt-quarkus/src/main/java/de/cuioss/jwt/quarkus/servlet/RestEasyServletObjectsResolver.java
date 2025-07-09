@@ -58,7 +58,6 @@ public class RestEasyServletObjectsResolver implements HttpServletRequestResolve
      * @return Optional containing HttpServletRequest from RESTEasy context, or empty if not available.
      *         {@code Optional.isEmpty()} is the usual case when not in an active RESTEasy request.
      */
-    @NonNull
     @Override
     public Optional<HttpServletRequest> resolveHttpServletRequest() {
         ResteasyProviderFactory providerFactory = ResteasyProviderFactory.getInstance();

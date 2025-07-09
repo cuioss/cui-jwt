@@ -129,7 +129,6 @@ public class BearerTokenProducer {
      *
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
-    @NonNull
     public Optional<AccessTokenContent> getAccessTokenContent() {
         return getAccessTokenContentWithRequirements(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
@@ -142,7 +141,6 @@ public class BearerTokenProducer {
      * @param requiredGroups Required groups for the token
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
-    @NonNull
     public Optional<AccessTokenContent> getAccessTokenContentWithRequirements(
             List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
         BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
