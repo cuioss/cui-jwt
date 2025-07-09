@@ -72,7 +72,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertTrue(result.isSuccessful());
+            assertTrue(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(expected, result.getAccessTokenContent().get());
@@ -133,7 +133,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessful());
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
 
@@ -151,7 +151,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessful());
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
 
@@ -181,7 +181,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessful());
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertTrue(result.getErrorEventType().isPresent());
@@ -243,7 +243,7 @@ class BearerTokenProducerLogicTest {
             List<String> requiredScopes = List.of("read", "write");
             List<String> requiredRoles = List.of("admin");
             List<String> requiredGroups = List.of("developers");
-            
+
             AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
                     Map.of(
                             ClaimName.SCOPE, List.of("read", "write", "admin"),
@@ -255,8 +255,8 @@ class BearerTokenProducerLogicTest {
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-            
-            assertTrue(result.isSuccessful());
+
+            assertTrue(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(tokenContent, result.getAccessTokenContent().get());
@@ -273,7 +273,7 @@ class BearerTokenProducerLogicTest {
             List<String> requiredScopes = List.of("read", "write");
             List<String> requiredRoles = List.of("admin");
             List<String> requiredGroups = List.of("developers");
-            
+
             AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
                     Map.of(
                             ClaimName.SCOPE, List.of("read"),
@@ -285,8 +285,8 @@ class BearerTokenProducerLogicTest {
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-            
-            assertFalse(result.isSuccessful());
+
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -302,15 +302,15 @@ class BearerTokenProducerLogicTest {
             List<String> requiredScopes = List.of("read");
             List<String> requiredRoles = List.of("user");
             List<String> requiredGroups = List.of("developers");
-            
+
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(tokenContent);
             mockTokenValidator.setShouldFail(true);
             requestResolverMock.setBearerToken("invalid-token");
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-            
-            assertFalse(result.isSuccessful());
+
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -326,14 +326,14 @@ class BearerTokenProducerLogicTest {
             List<String> requiredScopes = List.of("read");
             List<String> requiredRoles = List.of("user");
             List<String> requiredGroups = List.of("developers");
-            
+
             requestResolverMock.clearHeaders();
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(tokenContent);
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-            
-            assertFalse(result.isSuccessful());
+
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -349,14 +349,14 @@ class BearerTokenProducerLogicTest {
             List<String> requiredScopes = List.of("read");
             List<String> requiredRoles = List.of("user");
             List<String> requiredGroups = List.of("developers");
-            
+
             requestResolverMock.setRequestContextAvailable(false);
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(tokenContent);
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-            
-            assertFalse(result.isSuccessful());
+
+            assertFalse(result.isSuccessfulAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -397,7 +397,7 @@ class BearerTokenProducerLogicTest {
 
                 // Test new BearerTokenResult method
                 BearerTokenResult result = underTest.getBearerTokenResult(List.of("read", "write"), Collections.emptyList(), Collections.emptyList());
-                assertFalse(result.isSuccessful());
+                assertFalse(result.isSuccessfulAuthorized());
                 assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
                 assertFalse(result.getAccessTokenContent().isPresent());
                 assertEquals(List.of("read", "write"), result.getRequiredScopes());

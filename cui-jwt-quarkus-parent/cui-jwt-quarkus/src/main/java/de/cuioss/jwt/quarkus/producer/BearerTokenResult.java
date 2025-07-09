@@ -1,12 +1,12 @@
 /**
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.producer;
 
+import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
@@ -24,7 +25,6 @@ import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,9 +96,9 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating successful validation
      */
     public static BearerTokenResult success(AccessTokenContent accessTokenContent,
-            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
+                                            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.FULLY_VERIFIED,
-                requiredScopes, requiredRoles, requiredGroups, accessTokenContent, null, null);
+            requiredScopes, requiredRoles, requiredGroups, accessTokenContent, null, null);
     }
 
 
@@ -112,9 +112,9 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating parsing error
      */
     public static BearerTokenResult parsingError(TokenValidationException exception,
-            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
+                                                 List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.PARSING_ERROR,
-                requiredScopes, requiredRoles, requiredGroups, null, exception.getEventType(), exception.getMessage());
+            requiredScopes, requiredRoles, requiredGroups, null, exception.getEventType(), exception.getMessage());
     }
 
 
@@ -127,9 +127,9 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating constraint violation
      */
     public static BearerTokenResult constraintViolation(List<String> requiredScopes,
-            List<String> requiredRoles, List<String> requiredGroups) {
+                                                        List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.CONSTRAINT_VIOLATION,
-                requiredScopes, requiredRoles, requiredGroups, null, null, null);
+            requiredScopes, requiredRoles, requiredGroups, null, null, null);
     }
 
 
@@ -142,9 +142,9 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating no token was given
      */
     public static BearerTokenResult noTokenGiven(List<String> requiredScopes,
-            List<String> requiredRoles, List<String> requiredGroups) {
+                                                 List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.NO_TOKEN_GIVEN,
-                requiredScopes, requiredRoles, requiredGroups, null, null, null);
+            requiredScopes, requiredRoles, requiredGroups, null, null, null);
     }
 
 
@@ -157,14 +157,14 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating request access failure
      */
     public static BearerTokenResult couldNotAccessRequest(List<String> requiredScopes,
-            List<String> requiredRoles, List<String> requiredGroups) {
+                                                          List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST,
-                requiredScopes, requiredRoles, requiredGroups, null, null, null);
+            requiredScopes, requiredRoles, requiredGroups, null, null, null);
     }
 
     private BearerTokenResult(BearerTokenStatus status, List<String> requiredScopes,
-            List<String> requiredRoles, List<String> requiredGroups, AccessTokenContent accessTokenContent,
-            EventType errorEventType, String errorMessage) {
+                              List<String> requiredRoles, List<String> requiredGroups, AccessTokenContent accessTokenContent,
+                              EventType errorEventType, String errorMessage) {
         this.status = status;
         this.requiredScopes = requiredScopes;
         this.requiredRoles = requiredRoles;
@@ -173,7 +173,6 @@ public class BearerTokenResult implements Serializable {
         this.errorEventType = errorEventType;
         this.errorMessage = errorMessage;
     }
-
 
 
     /**
@@ -204,11 +203,13 @@ public class BearerTokenResult implements Serializable {
     }
 
     /**
-     * Checks if the token validation was successful.
+     * Checks if the token validation was successful. and all configured claims like
+     * {@link BearerToken#requiredRoles()}, {@link BearerToken#requiredScopes()} and {@link BearerToken#requiredGroups()}
+     * are successfully verified.
      *
      * @return true if status is FULLY_VERIFIED, false otherwise
      */
-    public boolean isSuccessful() {
+    public boolean isSuccessfulAuthorized() {
         return status == BearerTokenStatus.FULLY_VERIFIED;
     }
 

@@ -53,7 +53,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * @Inject
  * @BearerToken(requiredScopes = {"read", "write"})
  * Instance<AccessTokenContent> tokenInstance;
- * 
+ *
  * public void someMethod() {
  *     if (tokenInstance.isResolvable()) {
  *         AccessTokenContent token = tokenInstance.get();
@@ -72,8 +72,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * public void someMethod() {
  *     BearerTokenResult result = tokenService.getBearerTokenResult(
  *         List.of("read"), List.of("user"), List.of("admin"));
- *     
- *     if (result.isSuccessful()) {
+ *
+ *     if (result.isSuccessfulAuthorized()) {
  *         AccessTokenContent content = result.getAccessTokenContent().get();
  *         // Use validated token
  *     } else {
@@ -248,8 +248,8 @@ public class BearerTokenProducer {
      * annotation.
      * <p>
      * The producer method is @Dependent scoped, which means it will be created fresh
-     * for each injection point. If validation fails or the token is missing, this method 
-     * returns null, which will cause CDI injection to fail. Consumers should use 
+     * for each injection point. If validation fails or the token is missing, this method
+     * returns null, which will cause CDI injection to fail. Consumers should use
      * {@link jakarta.enterprise.inject.Instance} to safely inject the token and check for availability.
      * <p>
      * Usage example:
@@ -257,7 +257,7 @@ public class BearerTokenProducer {
      * @Inject
      * @BearerToken(requiredScopes = {"read", "write"})
      * Instance<AccessTokenContent> tokenInstance;
-     * 
+     *
      * public void someMethod() {
      *     if (tokenInstance.isResolvable()) {
      *         AccessTokenContent token = tokenInstance.get();
@@ -303,7 +303,7 @@ public class BearerTokenProducer {
      * @Inject
      * @BearerToken(requiredScopes = {"read", "write"})
      * BearerTokenResult tokenResult;
-     * 
+     *
      * public void someMethod() {
      *     switch (tokenResult.getStatus()) {
      *         case FULLY_VERIFIED:
