@@ -15,9 +15,8 @@
  */
 package de.cuioss.jwt.integration;
 
-import org.junit.jupiter.api.*;
-
 import java.util.Map;
+import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
@@ -311,10 +310,10 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         @Test
         @Order(20)
         @DisplayName("Bearer token with scope requirements - test token scopes")
-        void testBearerTokenWithScopes() {
+        void bearerTokenWithScopes() {
             if (getTestRealm().isKeycloakHealthy()) {
                 TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
-                
+
                 given()
                         .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                         .when()
@@ -328,10 +327,10 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         @Test
         @Order(22)
         @DisplayName("Bearer token with role requirements - test token roles")
-        void testBearerTokenWithRoles() {
+        void bearerTokenWithRoles() {
             if (getTestRealm().isKeycloakHealthy()) {
                 TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
-                
+
                 given()
                         .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                         .when()
@@ -345,10 +344,10 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         @Test
         @Order(24)
         @DisplayName("Bearer token with group requirements - test token groups")
-        void testBearerTokenWithGroups() {
+        void bearerTokenWithGroups() {
             if (getTestRealm().isKeycloakHealthy()) {
                 TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
-                
+
                 given()
                         .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                         .when()
@@ -362,10 +361,10 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         @Test
         @Order(26)
         @DisplayName("Bearer token with all requirements - test token requirements")
-        void testBearerTokenWithAll() {
+        void bearerTokenWithAll() {
             if (getTestRealm().isKeycloakHealthy()) {
                 TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
-                
+
                 given()
                         .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                         .when()

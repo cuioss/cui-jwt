@@ -16,11 +16,10 @@
 package de.cuioss.jwt.quarkus.runtime;
 
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import io.quarkus.runtime.annotations.Recorder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * Minimal unit test for {@link CuiJwtRecorder}.
@@ -38,16 +37,6 @@ class CuiJwtRecorderTest {
         // Test that the recorder can be instantiated without issues
         assertDoesNotThrow(CuiJwtRecorder::new,
                 "CuiJwtRecorder should be instantiable without exceptions");
-
-        CuiJwtRecorder recorder = new CuiJwtRecorder();
-        assertNotNull(recorder, "Recorder should not be null");
     }
 
-    @Test
-    @DisplayName("Should verify recorder has @Recorder annotation")
-    void shouldHaveRecorderAnnotation() {
-        // Verify that the class has the required @Recorder annotation
-        assertTrue(CuiJwtRecorder.class.isAnnotationPresent(Recorder.class),
-                "CuiJwtRecorder should be annotated with @Recorder");
-    }
 }

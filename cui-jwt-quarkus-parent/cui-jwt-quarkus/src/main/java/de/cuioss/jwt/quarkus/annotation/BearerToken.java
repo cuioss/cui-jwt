@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.annotation;
 
-import jakarta.enterprise.util.Nonbinding;
 import jakarta.inject.Qualifier;
 
 import java.lang.annotation.ElementType;
@@ -23,18 +22,31 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+
+import jakarta.enterprise.util.Nonbinding;
+
 /**
  * CDI qualifier for injecting validated AccessTokenContent from HTTP Authorization header.
  * <p>
  * This annotation allows specifying required scopes, roles, and groups that the bearer token
  * must contain for successful injection. If any of the requirements are not met, or if the
- * token is invalid or missing, an empty Optional&lt;AccessTokenContent&gt; will be injected.
+ * token is invalid or missing, the CDI injection will fail. Use {@link jakarta.enterprise.inject.Instance}
+ * to safely handle cases where the token might not be available.
  * <p>
- * Example usage:
+ * Example usage with Instance:
  * <pre>{@code
  * @Inject
  * @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"})
- * private Optional<AccessTokenContent> accessToken;
+ * private Instance<AccessTokenContent> accessToken;
+ * 
+ * public void someMethod() {
+ *     if (accessToken.isResolvable()) {
+ *         AccessTokenContent token = accessToken.get();
+ *         // Use validated token
+ *     } else {
+ *         // Handle missing or invalid token
+ *     }
+ * }
  * }</pre>
  * <p>
  * The producer validates the bearer token by:
@@ -42,7 +54,7 @@ import java.lang.annotation.Target;
  *   <li>Extracting the token from the HTTP Authorization header</li>
  *   <li>Validating the JWT signature and claims using the configured TokenValidator</li>
  *   <li>Checking that all required scopes, roles, and groups are present</li>
- *   <li>Returning an empty Optional if any validation fails</li>
+ *   <li>Returning null if any validation fails, causing CDI injection to fail</li>
  * </ul>
  *
  * @author Oliver Wolff

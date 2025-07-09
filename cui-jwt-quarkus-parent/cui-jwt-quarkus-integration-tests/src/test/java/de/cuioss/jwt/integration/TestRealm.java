@@ -16,7 +16,6 @@
 package de.cuioss.jwt.integration;
 
 import io.restassured.response.Response;
-
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;

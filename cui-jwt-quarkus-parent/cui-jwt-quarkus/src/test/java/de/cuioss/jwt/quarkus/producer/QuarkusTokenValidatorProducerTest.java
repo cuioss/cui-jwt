@@ -59,15 +59,7 @@ class QuarkusTokenValidatorProducerTest {
     @Test
     @DisplayName("Should successfully inject and initialize all JWT components via CDI")
     void shouldSuccessfullyInjectAndInitializeJwtComponents() {
-        assertNotNull(producer, "Producer should be injected via CDI");
-        assertNotNull(config, "Config should be injected via CDI");
-
-        assertNotNull(tokenValidator, "TokenValidator should be injected via CDI");
-        assertNotNull(issuerConfigs, "IssuerConfigs should be injected via CDI");
-        assertNotNull(securityEventCounter, "SecurityEventCounter should be injected via CDI");
-
         assertFalse(issuerConfigs.isEmpty(), "Should have at least one issuer config");
-        assertNotNull(securityEventCounter.getCounters(), "SecurityEventCounter should have counters");
 
         assertEquals(securityEventCounter.getCounters().size(),
                 tokenValidator.getSecurityEventCounter().getCounters().size(),

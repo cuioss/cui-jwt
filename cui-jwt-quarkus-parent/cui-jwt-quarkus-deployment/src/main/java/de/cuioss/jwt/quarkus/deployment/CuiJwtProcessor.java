@@ -15,10 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
-import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
-import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
-import de.cuioss.jwt.quarkus.producer.HttpContextService;
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
+import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
@@ -141,9 +140,11 @@ public class CuiJwtProcessor {
     @NonNull
     public ReflectiveClassBuildItem registerBearerTokenClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
-                BearerTokenProducer.class,
-                HttpContextService.class,
-                BearerToken.class)
+                "de.cuioss.jwt.quarkus.producer.BearerTokenProducer",
+                "de.cuioss.jwt.quarkus.annotation.BearerToken",
+                "de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver",
+                "de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver",
+                "de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver")
                 .methods(true)
                 .fields(true)
                 .constructors(true)
@@ -198,7 +199,7 @@ public class CuiJwtProcessor {
                 TokenContent.class,
                 BaseTokenContent.class,
                 MinimalTokenContent.class,
-                // Claim handling classes  
+                // Claim handling classes
                 ClaimValue.class,
                 ClaimName.class,
                 ClaimValueType.class,
@@ -213,7 +214,6 @@ public class CuiJwtProcessor {
                 .constructors(true)
                 .build();
     }
-
 
 
     /**
@@ -250,7 +250,7 @@ public class CuiJwtProcessor {
         return AdditionalBeanBuildItem.builder()
                 .addBeanClass(TokenValidatorProducer.class)
                 .addBeanClass(BearerTokenProducer.class)
-                .addBeanClass(HttpContextService.class)
+                .addBeanClass("de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver")
                 .setUnremovable()
                 .build();
     }
@@ -272,13 +272,13 @@ public class CuiJwtProcessor {
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
                 DotName.createSimple(TokenValidatorProducer.class.getName())
         ));
-        
+
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
                 DotName.createSimple(BearerTokenProducer.class.getName())
         ));
-        
+
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
-                DotName.createSimple(HttpContextService.class.getName())
+                DotName.createSimple("de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver")
         ));
 
     }

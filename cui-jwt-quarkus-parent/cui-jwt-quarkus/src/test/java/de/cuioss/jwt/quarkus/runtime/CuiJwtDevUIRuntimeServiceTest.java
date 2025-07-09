@@ -64,14 +64,6 @@ class CuiJwtDevUIRuntimeServiceTest {
     List<IssuerConfig> issuerConfigs;
 
 
-    @Test
-    @DisplayName("Should inject service successfully")
-    void shouldInjectServiceSuccessfully() {
-        assertNotNull(service, "Service should be injected successfully");
-        assertNotNull(config, "Config should be injected successfully");
-        assertNotNull(tokenValidator, "TokenValidator instance should be injected successfully");
-    }
-
     @Nested
     @DisplayName("Validation Status Tests")
     class ValidationStatusTests {

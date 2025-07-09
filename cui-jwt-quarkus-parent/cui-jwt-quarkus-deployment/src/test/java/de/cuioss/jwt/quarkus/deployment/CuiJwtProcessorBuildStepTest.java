@@ -113,7 +113,7 @@ class CuiJwtProcessorBuildStepTest {
         // Act
         processor.registerUnremovableBeans(producer);
 
-        // Assert
-        assertEquals(2, unremovableBeans.size());
+        // Assert - We now have 3 unremovable beans: TokenValidator, TokenValidatorProducer, BearerTokenProducer
+        assertEquals(3, unremovableBeans.size());
     }
 }

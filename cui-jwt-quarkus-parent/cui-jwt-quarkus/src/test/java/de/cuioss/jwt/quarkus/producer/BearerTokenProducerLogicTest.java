@@ -1,0 +1,375 @@
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.jwt.quarkus.producer;
+
+import de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolverMock;
+import de.cuioss.jwt.validation.TokenType;
+import de.cuioss.jwt.validation.domain.claim.ClaimName;
+import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.test.TestTokenHolder;
+import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
+import de.cuioss.tools.string.Joiner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Unit tests for {@link BearerTokenProducer} business logic.
+ * Tests the essential token extraction logic.
+ *
+ * Note: These are basic compilation and null-safety tests.
+ * Full integration testing is done in QuarkusTest classes.
+ *
+ * @author Oliver Wolff
+ * @since 1.0
+ */
+@DisplayName("BearerTokenProducer Logic")
+class BearerTokenProducerLogicTest {
+
+    private BearerTokenProducer underTest;
+    private MockTokenValidator mockTokenValidator;
+    private HttpServletRequestResolverMock requestResolverMock;
+
+    @BeforeEach
+    void setup() {
+        requestResolverMock = new HttpServletRequestResolverMock();
+        mockTokenValidator = new MockTokenValidator();
+        underTest = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+    }
+
+    @Nested
+    @DisplayName("Basic Token Extraction")
+    class BasicTokenExtraction {
+
+        @Test
+        @DisplayName("should extract and validate token successfully")
+        void shouldHandleHappyCase() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1", "role2");
+            mockTokenValidator.setAccessTokenContent(expected);
+            requestResolverMock.setBearerToken(expected.getRawToken());
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+        }
+
+        @Test
+        @DisplayName("should handle token with multiple roles")
+        void shouldHandleTokenWithMultipleRoles() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "admin", "user", "viewer");
+            mockTokenValidator.setAccessTokenContent(expected);
+            requestResolverMock.setBearerToken(expected.getRawToken());
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+        }
+
+        @Test
+        @DisplayName("should handle token with scopes")
+        void shouldHandleTokenWithScopes() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.SCOPE, "read", "write", "admin");
+            mockTokenValidator.setAccessTokenContent(expected);
+            requestResolverMock.setBearerToken(expected.getRawToken());
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+        }
+
+        @Test
+        @DisplayName("should handle token with groups")
+        void shouldHandleTokenWithGroups() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.GROUPS, "developers", "admins");
+            mockTokenValidator.setAccessTokenContent(expected);
+            requestResolverMock.setBearerToken(expected.getRawToken());
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+        }
+    }
+
+    @Nested
+    @DisplayName("Error Scenarios")
+    class ErrorScenarios {
+
+        @Test
+        @DisplayName("should return empty when no request context available")
+        void shouldReturnEmptyWhenNoRequestContext() {
+            requestResolverMock.setRequestContextAvailable(false);
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            var resolved = underTest.getAccessTokenContent();
+            assertFalse(resolved.isPresent());
+        }
+
+        @Test
+        @DisplayName("should return empty when no authorization header present")
+        void shouldReturnEmptyWhenNoAuthorizationHeader() {
+            requestResolverMock.clearHeaders();
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            var resolved = underTest.getAccessTokenContent();
+            assertFalse(resolved.isPresent());
+        }
+
+        @Test
+        @DisplayName("should return empty when authorization header is not Bearer type")
+        void shouldReturnEmptyWhenAuthorizationHeaderIsNotBearer() {
+            requestResolverMock.setHeader("Authorization", "Basic dXNlcjpwYXNz");
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            var resolved = underTest.getAccessTokenContent();
+            assertFalse(resolved.isPresent());
+        }
+
+        @Test
+        @DisplayName("should return empty when token validation fails")
+        void shouldReturnEmptyWhenTokenValidationFails() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+            mockTokenValidator.setShouldFail(true);
+            requestResolverMock.setBearerToken("invalid-token");
+
+            var resolved = underTest.getAccessTokenContent();
+            assertFalse(resolved.isPresent());
+        }
+
+        @Test
+        @DisplayName("should handle null authorization header")
+        void shouldHandleNullAuthorizationHeader() {
+            requestResolverMock.setHeader("Authorization", null);
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            var resolved = underTest.getAccessTokenContent();
+            assertFalse(resolved.isPresent());
+        }
+    }
+
+    @Nested
+    @DisplayName("Edge Cases")
+    class EdgeCases {
+
+        @Test
+        @DisplayName("should handle empty bearer token")
+        void shouldHandleEmptyBearerToken() {
+            requestResolverMock.setHeader("Authorization", "Bearer ");
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+        }
+
+        @Test
+        @DisplayName("should handle bearer token with extra spaces")
+        void shouldHandleBearerTokenWithSpaces() {
+            requestResolverMock.setHeader("Authorization", "Bearer   token-with-spaces");
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+        }
+    }
+
+    @Nested
+    @DisplayName("Requirements Validation")
+    class RequirementsValidation {
+
+        @Nested
+        @DisplayName("Scope Requirements")
+        class ScopeRequirements {
+
+            @Test
+            @DisplayName("should validate when all required scopes are present")
+            void shouldValidateRequiredScopes() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.SCOPE, "read", "write");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[]{"read", "write"}, new String[0], new String[0]);
+                assertTrue(resolved.isPresent());
+                assertEquals(tokenContent, resolved.get());
+            }
+
+            @Test
+            @DisplayName("should reject when required scopes are missing")
+            void shouldRejectWhenRequiredScopesMissing() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.SCOPE, "read");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[]{"read", "write"}, new String[0], new String[0]);
+                assertFalse(resolved.isPresent());
+            }
+        }
+
+        @Nested
+        @DisplayName("Role Requirements")
+        class RoleRequirements {
+
+            @Test
+            @DisplayName("should validate when all required roles are present")
+            void shouldValidateRequiredRoles() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin", "user");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[0], new String[]{"admin"}, new String[0]);
+                assertTrue(resolved.isPresent());
+                assertEquals(tokenContent, resolved.get());
+            }
+
+            @Test
+            @DisplayName("should reject when required roles are missing")
+            void shouldRejectWhenRequiredRolesMissing() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[0], new String[]{"admin"}, new String[0]);
+                assertFalse(resolved.isPresent());
+            }
+        }
+
+        @Nested
+        @DisplayName("Group Requirements")
+        class GroupRequirements {
+
+            @Test
+            @DisplayName("should validate when all required groups are present")
+            void shouldValidateRequiredGroups() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.GROUPS, "developers", "testers");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[0], new String[0], new String[]{"developers"});
+                assertTrue(resolved.isPresent());
+                assertEquals(tokenContent, resolved.get());
+            }
+
+            @Test
+            @DisplayName("should reject when required groups are missing")
+            void shouldRejectWhenRequiredGroupsMissing() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.GROUPS, "testers");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[0], new String[0], new String[]{"developers"});
+                assertFalse(resolved.isPresent());
+            }
+        }
+
+        @Nested
+        @DisplayName("Combined Requirements")
+        class CombinedRequirements {
+
+            @Test
+            @DisplayName("should validate when all requirements are met")
+            void shouldValidateAllRequirementsTogether() {
+                AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
+                        Map.of(
+                                ClaimName.SCOPE, List.of("read", "write", "admin"),
+                                ClaimName.ROLES, List.of("admin", "user"),
+                                ClaimName.GROUPS, List.of("developers", "admins")
+                        )
+                );
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[]{"read", "write"},
+                        new String[]{"admin"},
+                        new String[]{"developers"});
+                assertTrue(resolved.isPresent());
+                assertEquals(tokenContent, resolved.get());
+            }
+
+            @Test
+            @DisplayName("should reject when any requirement fails")
+            void shouldRejectWhenAnyRequirementFails() {
+                AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
+                        Map.of(
+                                ClaimName.SCOPE, List.of("read", "write"),
+                                ClaimName.ROLES, List.of("user"),
+                                ClaimName.GROUPS, List.of("developers")
+                        )
+                );
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[]{"read", "write"},
+                        new String[]{"admin"},
+                        new String[]{"developers"});
+                assertFalse(resolved.isPresent());
+            }
+
+            @Test
+            @DisplayName("should handle empty requirements")
+            void shouldHandleEmptyRequirements() {
+                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
+                mockTokenValidator.setAccessTokenContent(tokenContent);
+                requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+                var resolved = underTest.getAccessTokenContentWithRequirements(
+                        new String[0], new String[0], new String[0]);
+                assertTrue(resolved.isPresent());
+                assertEquals(tokenContent, resolved.get());
+            }
+        }
+    }
+
+
+    private AccessTokenContent getAccessTokenWithClaims(ClaimName claimName, String... value) {
+        TestTokenHolder holder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN));
+        List<String> elements = Arrays.asList(value);
+        String concatenated = Joiner.on(",").join(elements);
+        holder.withClaim(claimName.getName(), ClaimValue.forList(concatenated, elements));
+        return holder.asAccessTokenContent();
+    }
+
+    private AccessTokenContent getAccessTokenWithMultipleClaims(Map<ClaimName, List<String>> claims) {
+        TestTokenHolder holder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN));
+        claims.forEach((claimName, values) -> {
+            String concatenated = Joiner.on(",").join(values);
+            holder.withClaim(claimName.getName(), ClaimValue.forList(concatenated, values));
+        });
+        return holder.asAccessTokenContent();
+    }
+}

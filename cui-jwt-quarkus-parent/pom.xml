@@ -26,7 +26,7 @@
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus</maven.jar.plugin.automatic.module.name>
         <!--
         Logging configuration:
-        - Use JBoss LogManager for tests (java.util.logging.manager=org.jboss.logmanager.LogManager)
+        - Use JBoss LogManager for tests (java.servlet.logging.manager=org.jboss.logmanager.LogManager)
         - Configure logging.properties in each module's test resources
         - Suppress JVM warnings with -XX:+IgnoreUnrecognizedVMOptions
         -->
