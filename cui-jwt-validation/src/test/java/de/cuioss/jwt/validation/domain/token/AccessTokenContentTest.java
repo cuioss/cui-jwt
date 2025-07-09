@@ -59,12 +59,17 @@ class AccessTokenContentTest implements ShouldHandleObjectContracts<AccessTokenC
     private AccessTokenContent createTokenWithClaim(ClaimName claimName, ClaimValue claimValue) {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(claimName.getName(), claimValue);
-        return new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TEST_EMAIL);
+        // Add email claim to match the original behavior
+        tokenHolder.withClaim(ClaimName.EMAIL.getName(), ClaimValue.forPlainString(TEST_EMAIL));
+        return tokenHolder.asAccessTokenContent();
     }
 
     private AccessTokenContent createTokenWithClaims(Map<String, ClaimValue> claims) {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-        return new AccessTokenContent(claims, tokenHolder.getRawToken(), TEST_EMAIL);
+        tokenHolder.withClaims(claims);
+        // Add email claim to match the original behavior
+        tokenHolder.withClaim(ClaimName.EMAIL.getName(), ClaimValue.forPlainString(TEST_EMAIL));
+        return tokenHolder.asAccessTokenContent();
     }
 
     static Stream<Arguments> claimTestData() {
@@ -412,6 +417,8 @@ class AccessTokenContentTest implements ShouldHandleObjectContracts<AccessTokenC
     @Override
     public AccessTokenContent getUnderTest() {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-        return new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TEST_EMAIL);
+        // Add email claim to match the original behavior
+        tokenHolder.withClaim(ClaimName.EMAIL.getName(), ClaimValue.forPlainString(TEST_EMAIL));
+        return tokenHolder.asAccessTokenContent();
     }
 }

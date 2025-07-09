@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
@@ -423,6 +424,29 @@ public class TestTokenHolder implements TokenContent {
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert TestTokenHolder to DecodedJwt", e);
         }
+    }
+
+    /**
+     * Converts this TestTokenHolder to an AccessTokenContent.
+     * <p>
+     * This method creates an AccessTokenContent instance from the current token content.
+     * It extracts the email from the claims and passes it to the AccessTokenContent constructor.
+     *
+     * @return an AccessTokenContent instance representing this token
+     * @throws IllegalStateException if the token type is not ACCESS_TOKEN
+     */
+    public AccessTokenContent asAccessTokenContent() {
+        if (tokenType != TokenType.ACCESS_TOKEN) {
+            throw new IllegalStateException("Cannot convert token of type " + tokenType + " to AccessTokenContent. Only ACCESS_TOKEN is supported.");
+        }
+
+        // Extract email from claims if present
+        String email = null;
+        if (claims.containsKey(ClaimName.EMAIL.getName())) {
+            email = claims.get(ClaimName.EMAIL.getName()).getOriginalString();
+        }
+
+        return new AccessTokenContent(claims, getRawToken(), email);
     }
 
     private Map<String, ClaimValue> generateClaims() {

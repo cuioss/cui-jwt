@@ -538,4 +538,120 @@ class TestTokenHolderTest {
             assertEquals(customAlgorithm.name(), jwt.getHeader().getAlgorithm());
         }
     }
+
+    @Nested
+    @DisplayName("AccessTokenContent Conversion Tests")
+    class AccessTokenContentConversionTests {
+
+        @Test
+        @DisplayName("asAccessTokenContent should convert ACCESS_TOKEN to AccessTokenContent")
+        void asAccessTokenContentShouldConvertAccessTokenToAccessTokenContent() {
+            var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.builder().build());
+            var accessTokenContent = tokenHolder.asAccessTokenContent();
+
+            assertNotNull(accessTokenContent, "AccessTokenContent should not be null");
+            assertEquals(TokenType.ACCESS_TOKEN, accessTokenContent.getTokenType(), "Token type should be ACCESS_TOKEN");
+            assertEquals(tokenHolder.getRawToken(), accessTokenContent.getRawToken(), "Raw token should match");
+
+            // Verify claims are accessible
+            assertNotNull(accessTokenContent.getScopes(), "Scopes should be accessible");
+            assertNotNull(accessTokenContent.getRoles(), "Roles should be accessible");
+            assertNotNull(accessTokenContent.getGroups(), "Groups should be accessible");
+            assertTrue(accessTokenContent.getAudience().isPresent(), "Audience should be present");
+        }
+
+        @Test
+        @DisplayName("asAccessTokenContent should extract email from claims")
+        void asAccessTokenContentShouldExtractEmailFromClaims() {
+            var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.builder().build());
+            String testEmail = "test@example.com";
+
+            // Add email claim
+            tokenHolder.withClaim(ClaimName.EMAIL.getName(), ClaimValue.forPlainString(testEmail));
+
+            var accessTokenContent = tokenHolder.asAccessTokenContent();
+            assertTrue(accessTokenContent.getEmail().isPresent(), "Email should be present");
+            assertEquals(testEmail, accessTokenContent.getEmail().get(), "Email should match expected value");
+        }
+
+        @Test
+        @DisplayName("asAccessTokenContent should handle missing email claim")
+        void asAccessTokenContentShouldHandleMissingEmailClaim() {
+            var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.builder().build());
+
+            // Remove email claim if present
+            tokenHolder.withoutClaim(ClaimName.EMAIL.getName());
+
+            var accessTokenContent = tokenHolder.asAccessTokenContent();
+            assertFalse(accessTokenContent.getEmail().isPresent(), "Email should not be present");
+        }
+
+        @Test
+        @DisplayName("asAccessTokenContent should throw IllegalStateException for ID_TOKEN")
+        void asAccessTokenContentShouldThrowIllegalStateExceptionForIdToken() {
+            var tokenHolder = new TestTokenHolder(TokenType.ID_TOKEN, ClaimControlParameter.builder().build());
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class,
+                    tokenHolder::asAccessTokenContent,
+                    "Should throw IllegalStateException for ID_TOKEN");
+
+            assertTrue(exception.getMessage().contains("ID_TOKEN"),
+                    "Exception message should mention ID_TOKEN");
+            assertTrue(exception.getMessage().contains("ACCESS_TOKEN"),
+                    "Exception message should mention ACCESS_TOKEN");
+        }
+
+        @Test
+        @DisplayName("asAccessTokenContent should throw IllegalStateException for REFRESH_TOKEN")
+        void asAccessTokenContentShouldThrowIllegalStateExceptionForRefreshToken() {
+            var tokenHolder = new TestTokenHolder(TokenType.REFRESH_TOKEN, ClaimControlParameter.builder().build());
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class,
+                    tokenHolder::asAccessTokenContent,
+                    "Should throw IllegalStateException for REFRESH_TOKEN");
+
+            assertTrue(exception.getMessage().contains("REFRESH_TOKEN"),
+                    "Exception message should mention REFRESH_TOKEN");
+            assertTrue(exception.getMessage().contains("ACCESS_TOKEN"),
+                    "Exception message should mention ACCESS_TOKEN");
+        }
+
+        @Test
+        @DisplayName("asAccessTokenContent should throw IllegalStateException for UNKNOWN token type")
+        void asAccessTokenContentShouldThrowIllegalStateExceptionForUnknownToken() {
+            var tokenHolder = new TestTokenHolder(TokenType.UNKNOWN, ClaimControlParameter.builder().build());
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class,
+                    tokenHolder::asAccessTokenContent,
+                    "Should throw IllegalStateException for UNKNOWN token type");
+
+            assertTrue(exception.getMessage().contains("UNKNOWN"),
+                    "Exception message should mention UNKNOWN");
+            assertTrue(exception.getMessage().contains("ACCESS_TOKEN"),
+                    "Exception message should mention ACCESS_TOKEN");
+        }
+
+        @Test
+        @DisplayName("asAccessTokenContent should preserve all claims")
+        void asAccessTokenContentShouldPreserveAllClaims() {
+            var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.builder().build());
+
+            // Add custom claims
+            tokenHolder.withClaim("custom-claim", ClaimValue.forPlainString("custom-value"));
+            tokenHolder.withClaim("another-claim", ClaimValue.forPlainString("another-value"));
+
+            var accessTokenContent = tokenHolder.asAccessTokenContent();
+
+            // Verify all claims are preserved
+            assertEquals(tokenHolder.getClaims().size(), accessTokenContent.getClaims().size(),
+                    "All claims should be preserved");
+
+            for (Map.Entry<String, ClaimValue> entry : tokenHolder.getClaims().entrySet()) {
+                assertTrue(accessTokenContent.getClaims().containsKey(entry.getKey()),
+                        "Claim " + entry.getKey() + " should be preserved");
+                assertEquals(entry.getValue(), accessTokenContent.getClaims().get(entry.getKey()),
+                        "Claim value for " + entry.getKey() + " should match");
+            }
+        }
+    }
 }
