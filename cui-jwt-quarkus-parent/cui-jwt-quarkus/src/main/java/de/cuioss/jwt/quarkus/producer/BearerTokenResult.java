@@ -19,9 +19,7 @@ import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -72,6 +70,7 @@ import java.util.Optional;
 @EqualsAndHashCode
 @ToString
 @Getter
+@RequiredArgsConstructor(access =  AccessLevel.PRIVATE)
 public class BearerTokenResult implements Serializable {
 
     @Serial
@@ -162,19 +161,6 @@ public class BearerTokenResult implements Serializable {
             requiredScopes, requiredRoles, requiredGroups, null, null, null);
     }
 
-    private BearerTokenResult(BearerTokenStatus status, List<String> requiredScopes,
-                              List<String> requiredRoles, List<String> requiredGroups, AccessTokenContent accessTokenContent,
-                              EventType errorEventType, String errorMessage) {
-        this.status = status;
-        this.requiredScopes = requiredScopes;
-        this.requiredRoles = requiredRoles;
-        this.requiredGroups = requiredGroups;
-        this.accessTokenContent = accessTokenContent;
-        this.errorEventType = errorEventType;
-        this.errorMessage = errorMessage;
-    }
-
-
     /**
      * Gets the validated AccessTokenContent if validation was successful.
      *
@@ -203,14 +189,25 @@ public class BearerTokenResult implements Serializable {
     }
 
     /**
-     * Checks if the token validation was unsuccessful, and all configured claims like
+     * Checks if the token validation was successful, and all configured claims like
      * {@link BearerToken#requiredRoles()}, {@link BearerToken#requiredScopes()} and {@link BearerToken#requiredGroups()}
      * are successfully verified.
      *
-     * @return true if status is not FULLY_VERIFIED, false otherwise
+     * @return true if status is FULLY_VERIFIED, false otherwise
      */
+    public boolean isSuccessfullyAuthorized() {
+        return status == BearerTokenStatus.FULLY_VERIFIED;
+    }
+
+    /**
+     * Checks if the token validation was unsuccessful.
+     * 
+     * @deprecated This method name is misleading. Use {@link #isSuccessfullyAuthorized()} instead.
+     * @return true if status is FULLY_VERIFIED, false otherwise
+     */
+    @Deprecated
     public boolean isNotSuccessfullyAuthorized() {
-        return status != BearerTokenStatus.FULLY_VERIFIED;
+        return status == BearerTokenStatus.FULLY_VERIFIED;
     }
 
 }

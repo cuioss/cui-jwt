@@ -23,6 +23,7 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import jakarta.annotation.PostConstruct;
+import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
 import java.util.List;
@@ -64,14 +65,17 @@ public class TokenValidatorProducer {
 
     @Produces
     @ApplicationScoped
+    @NonNull
     TokenValidator tokenValidator;
 
     @Produces
     @ApplicationScoped
+    @NonNull
     List<IssuerConfig> issuerConfigs;
 
     @Produces
     @ApplicationScoped
+    @NonNull
     SecurityEventCounter securityEventCounter;
 
     public TokenValidatorProducer(Config config) {

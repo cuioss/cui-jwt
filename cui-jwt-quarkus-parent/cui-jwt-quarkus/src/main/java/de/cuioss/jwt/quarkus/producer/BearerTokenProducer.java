@@ -24,6 +24,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.inject.Inject;
+import lombok.NonNull;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
@@ -52,14 +53,17 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * <pre>{@code
  * @Inject
  * @BearerToken(requiredScopes = {"read", "write"})
- * Instance<AccessTokenContent> tokenInstance;
+ * Instance<Optional<AccessTokenContent>> tokenInstance;
  *
  * public void someMethod() {
  *     if (tokenInstance.isResolvable()) {
- *         AccessTokenContent token = tokenInstance.get();
- *         // Use validated token
- *     } else {
- *         // Handle missing or invalid token
+ *         Optional<AccessTokenContent> tokenOpt = tokenInstance.get();
+ *         if (tokenOpt.isPresent()) {
+ *             AccessTokenContent token = tokenOpt.get();
+ *             // Use validated token
+ *         } else {
+ *             // Handle missing or invalid token
+ *         }
  *     }
  * }
  * }</pre>
@@ -118,6 +122,7 @@ public class BearerTokenProducer {
      *
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
+    @NonNull
     public Optional<AccessTokenContent> getAccessTokenContent() {
         return getAccessTokenContentWithRequirements(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
@@ -130,6 +135,7 @@ public class BearerTokenProducer {
      * @param requiredGroups Required groups for the token
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
+    @NonNull
     public Optional<AccessTokenContent> getAccessTokenContentWithRequirements(
             List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
         BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
@@ -144,6 +150,7 @@ public class BearerTokenProducer {
      * @param requiredGroups Required groups for the token
      * @return BearerTokenResult containing detailed validation information
      */
+    @NonNull
     public BearerTokenResult getBearerTokenResult(
             List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
 
@@ -180,6 +187,7 @@ public class BearerTokenProducer {
      *
      * @return BearerTokenResult containing detailed validation information
      */
+    @NonNull
     public BearerTokenResult getBearerTokenResult() {
         return getBearerTokenResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
@@ -249,31 +257,34 @@ public class BearerTokenProducer {
      * <p>
      * The producer method is @Dependent scoped, which means it will be created fresh
      * for each injection point. If validation fails or the token is missing, this method
-     * returns null, which will cause CDI injection to fail. Consumers should use
-     * {@link jakarta.enterprise.inject.Instance} to safely inject the token and check for availability.
+     * returns an empty Optional. Consumers should use {@link jakarta.enterprise.inject.Instance}
+     * to safely inject the token and check the Optional for availability.
      * <p>
      * Usage example:
      * <pre>{@code
      * @Inject
      * @BearerToken(requiredScopes = {"read", "write"})
-     * Instance<AccessTokenContent> tokenInstance;
+     * Instance<Optional<AccessTokenContent>> tokenInstance;
      *
      * public void someMethod() {
      *     if (tokenInstance.isResolvable()) {
-     *         AccessTokenContent token = tokenInstance.get();
-     *         // Use validated token
-     *     } else {
-     *         // Handle missing or invalid token
+     *         Optional<AccessTokenContent> tokenOpt = tokenInstance.get();
+     *         if (tokenOpt.isPresent()) {
+     *             AccessTokenContent token = tokenOpt.get();
+     *             // Use validated token
+     *         } else {
+     *             // Handle missing or invalid token
+     *         }
      *     }
      * }
      * }</pre>
      *
      * @param injectionPoint the CDI injection point containing the BearerToken annotation
-     * @return the validated AccessTokenContent or null if validation fails
+     * @return Optional containing the validated AccessTokenContent, or empty if validation fails
      */
     @Produces
     @BearerToken
-    public AccessTokenContent produceAccessTokenContent(InjectionPoint injectionPoint) {
+    public Optional<AccessTokenContent> produceAccessTokenContent(InjectionPoint injectionPoint) {
         BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
 
         // Apply pre-1.0 rule: Use collection as early as possible
@@ -282,7 +293,7 @@ public class BearerTokenProducer {
         List<String> requiredGroups = annotation != null ? List.of(annotation.requiredGroups()) : Collections.emptyList();
 
         BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-        return result.getAccessTokenContent().orElse(null);
+        return result.getAccessTokenContent();
     }
 
     /**
@@ -324,6 +335,7 @@ public class BearerTokenProducer {
      * @param injectionPoint the CDI injection point containing the BearerToken annotation
      * @return the BearerTokenResult containing detailed validation information
      */
+    @NonNull
     @Produces
     @BearerToken
     public BearerTokenResult produceBearerTokenResult(InjectionPoint injectionPoint) {
