@@ -47,22 +47,29 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * validates them using the configured TokenValidator, and checks for required scopes, roles, and groups.
  * <p>
  * The producer provides both service methods that return {@link BearerTokenResult} with comprehensive
- * validation information and CDI producer methods that return {@link AccessTokenContent} directly for injection.
+ * validation information and a CDI producer method that returns {@link BearerTokenResult} directly for injection.
  * <p>
  * CDI injection usage example:
  * <pre>{@code
  * @Inject
  * @BearerToken(requiredScopes = {"read", "write"})
- * Instance<Optional<AccessTokenContent>> tokenInstance;
+ * BearerTokenResult tokenResult;
  *
  * public void someMethod() {
- *     if (tokenInstance.isResolvable()) {
- *         Optional<AccessTokenContent> tokenOpt = tokenInstance.get();
- *         if (tokenOpt.isPresent()) {
- *             AccessTokenContent token = tokenOpt.get();
- *             // Use validated token
- *         } else {
- *             // Handle missing or invalid token
+ *     if (tokenResult.isSuccessfullyAuthorized()) {
+ *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *         // Use validated token
+ *     } else {
+ *         // Handle validation failure with detailed status information
+ *         switch (tokenResult.getStatus()) {
+ *             case PARSING_ERROR:
+ *                 // Handle parsing errors
+ *                 break;
+ *             case CONSTRAINT_VIOLATION:
+ *                 // Handle missing scopes/roles/groups
+ *                 break;
+ *             default:
+ *                 // Handle other cases
  *         }
  *     }
  * }
@@ -77,7 +84,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *     BearerTokenResult result = tokenService.getBearerTokenResult(
  *         List.of("read"), List.of("user"), List.of("admin"));
  *
- *     if (result.isNotSuccessfullyAuthorized()) {
+ *     if (result.isSuccessfullyAuthorized()) {
  *         AccessTokenContent content = result.getAccessTokenContent().get();
  *         // Use validated token
  *     } else {
@@ -247,54 +254,6 @@ public class BearerTokenProducer {
         return true;
     }
 
-    /**
-     * Produces the current request's AccessTokenContent as a CDI bean.
-     * <p>
-     * This producer method extracts the bearer token from the HTTP Authorization header
-     * and validates it using the configured TokenValidator. The validation includes
-     * checking for required scopes, roles, and groups specified in the {@link BearerToken}
-     * annotation.
-     * <p>
-     * The producer method is @Dependent scoped, which means it will be created fresh
-     * for each injection point. If validation fails or the token is missing, this method
-     * returns an empty Optional. Consumers should use {@link jakarta.enterprise.inject.Instance}
-     * to safely inject the token and check the Optional for availability.
-     * <p>
-     * Usage example:
-     * <pre>{@code
-     * @Inject
-     * @BearerToken(requiredScopes = {"read", "write"})
-     * Instance<Optional<AccessTokenContent>> tokenInstance;
-     *
-     * public void someMethod() {
-     *     if (tokenInstance.isResolvable()) {
-     *         Optional<AccessTokenContent> tokenOpt = tokenInstance.get();
-     *         if (tokenOpt.isPresent()) {
-     *             AccessTokenContent token = tokenOpt.get();
-     *             // Use validated token
-     *         } else {
-     *             // Handle missing or invalid token
-     *         }
-     *     }
-     * }
-     * }</pre>
-     *
-     * @param injectionPoint the CDI injection point containing the BearerToken annotation
-     * @return Optional containing the validated AccessTokenContent, or empty if validation fails
-     */
-    @Produces
-    @BearerToken
-    public Optional<AccessTokenContent> produceAccessTokenContent(InjectionPoint injectionPoint) {
-        BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
-
-        // Apply pre-1.0 rule: Use collection as early as possible
-        List<String> requiredScopes = annotation != null ? List.of(annotation.requiredScopes()) : Collections.emptyList();
-        List<String> requiredRoles = annotation != null ? List.of(annotation.requiredRoles()) : Collections.emptyList();
-        List<String> requiredGroups = annotation != null ? List.of(annotation.requiredGroups()) : Collections.emptyList();
-
-        BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-        return result.getAccessTokenContent();
-    }
 
     /**
      * Produces the current request's BearerTokenResult as a CDI bean.

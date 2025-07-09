@@ -20,6 +20,8 @@ import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.tools.string.Joiner;
@@ -72,7 +74,8 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertTrue(result.isNotSuccessfullyAuthorized());
+            assertTrue(result.isSuccessfullyAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(expected, result.getAccessTokenContent().get());
@@ -133,7 +136,8 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
 
@@ -151,7 +155,8 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
 
@@ -181,7 +186,8 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertTrue(result.getErrorEventType().isPresent());
@@ -256,7 +262,8 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertTrue(result.isNotSuccessfullyAuthorized());
+            assertTrue(result.isSuccessfullyAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(tokenContent, result.getAccessTokenContent().get());
@@ -286,7 +293,8 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -310,7 +318,8 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -333,7 +342,8 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -356,7 +366,8 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isNotSuccessfullyAuthorized());
+            assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -364,6 +375,113 @@ class BearerTokenProducerLogicTest {
             assertEquals(requiredGroups, result.getRequiredGroups());
             assertFalse(result.getErrorEventType().isPresent());
             assertFalse(result.getErrorMessage().isPresent());
+        }
+    }
+
+    @Nested
+    @DisplayName("Authorization Status Methods")
+    class AuthorizationStatusMethods {
+        
+        @Test
+        @DisplayName("should correctly identify successful authorization")
+        void shouldIdentifySuccessfulAuthorization() {
+            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin", "user");
+            mockTokenValidator.setAccessTokenContent(tokenContent);
+            requestResolverMock.setBearerToken(tokenContent.getRawToken());
+            
+            BearerTokenResult result = underTest.getBearerTokenResult();
+            
+            assertTrue(result.isSuccessfullyAuthorized(), "Should be successfully authorized");
+            assertFalse(result.isNotSuccessfullyAuthorized(), "Should not be unsuccessfully authorized");
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
+        }
+        
+        @Test
+        @DisplayName("should correctly identify unsuccessful authorization for each failure type")
+        void shouldIdentifyUnsuccessfulAuthorizationForEachFailureType() {
+            // Test NO_TOKEN_GIVEN
+            BearerTokenResult noTokenResult = BearerTokenResult.noTokenGiven(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+            );
+            assertFalse(noTokenResult.isSuccessfullyAuthorized(), "NO_TOKEN_GIVEN should not be successfully authorized");
+            assertTrue(noTokenResult.isNotSuccessfullyAuthorized(), "NO_TOKEN_GIVEN should be unsuccessfully authorized");
+            
+            // Test PARSING_ERROR
+            TokenValidationException exception = new TokenValidationException(
+                SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test error"
+            );
+            BearerTokenResult parsingErrorResult = BearerTokenResult.parsingError(
+                exception, Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+            );
+            assertFalse(parsingErrorResult.isSuccessfullyAuthorized(), "PARSING_ERROR should not be successfully authorized");
+            assertTrue(parsingErrorResult.isNotSuccessfullyAuthorized(), "PARSING_ERROR should be unsuccessfully authorized");
+            
+            // Test CONSTRAINT_VIOLATION
+            BearerTokenResult constraintViolationResult = BearerTokenResult.constraintViolation(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+            );
+            assertFalse(constraintViolationResult.isSuccessfullyAuthorized(), "CONSTRAINT_VIOLATION should not be successfully authorized");
+            assertTrue(constraintViolationResult.isNotSuccessfullyAuthorized(), "CONSTRAINT_VIOLATION should be unsuccessfully authorized");
+            
+            // Test COULD_NOT_ACCESS_REQUEST
+            BearerTokenResult couldNotAccessResult = BearerTokenResult.couldNotAccessRequest(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+            );
+            assertFalse(couldNotAccessResult.isSuccessfullyAuthorized(), "COULD_NOT_ACCESS_REQUEST should not be successfully authorized");
+            assertTrue(couldNotAccessResult.isNotSuccessfullyAuthorized(), "COULD_NOT_ACCESS_REQUEST should be unsuccessfully authorized");
+        }
+        
+        @Test
+        @DisplayName("should have consistent authorization status across all scenarios")
+        void shouldHaveConsistentAuthorizationStatus() {
+            // For each possible status, verify that isSuccessfullyAuthorized and isNotSuccessfullyAuthorized are opposites
+            for (BearerTokenStatus status : BearerTokenStatus.values()) {
+                BearerTokenResult result;
+                switch (status) {
+                    case FULLY_VERIFIED:
+                        AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
+                        result = BearerTokenResult.success(tokenContent, 
+                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                        break;
+                    case NO_TOKEN_GIVEN:
+                        result = BearerTokenResult.noTokenGiven(
+                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                        break;
+                    case PARSING_ERROR:
+                        TokenValidationException ex = new TokenValidationException(
+                            SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
+                        result = BearerTokenResult.parsingError(ex,
+                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                        break;
+                    case CONSTRAINT_VIOLATION:
+                        result = BearerTokenResult.constraintViolation(
+                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                        break;
+                    case COULD_NOT_ACCESS_REQUEST:
+                        result = BearerTokenResult.couldNotAccessRequest(
+                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown status: " + status);
+                }
+                
+                // Verify the methods are opposites
+                assertNotEquals(result.isSuccessfullyAuthorized(), result.isNotSuccessfullyAuthorized(),
+                    "Authorization methods should return opposite values for status: " + status);
+                
+                // Verify correct behavior based on status
+                if (status == BearerTokenStatus.FULLY_VERIFIED) {
+                    assertTrue(result.isSuccessfullyAuthorized(), 
+                        "FULLY_VERIFIED should be successfully authorized");
+                    assertFalse(result.isNotSuccessfullyAuthorized(), 
+                        "FULLY_VERIFIED should not be unsuccessfully authorized");
+                } else {
+                    assertFalse(result.isSuccessfullyAuthorized(), 
+                        status + " should not be successfully authorized");
+                    assertTrue(result.isNotSuccessfullyAuthorized(), 
+                        status + " should be unsuccessfully authorized");
+                }
+            }
         }
     }
 
@@ -397,7 +515,8 @@ class BearerTokenProducerLogicTest {
 
                 // Test new BearerTokenResult method
                 BearerTokenResult result = underTest.getBearerTokenResult(List.of("read", "write"), Collections.emptyList(), Collections.emptyList());
-                assertFalse(result.isNotSuccessfullyAuthorized());
+                assertFalse(result.isSuccessfullyAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
                 assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
                 assertFalse(result.getAccessTokenContent().isPresent());
                 assertEquals(List.of("read", "write"), result.getRequiredScopes());

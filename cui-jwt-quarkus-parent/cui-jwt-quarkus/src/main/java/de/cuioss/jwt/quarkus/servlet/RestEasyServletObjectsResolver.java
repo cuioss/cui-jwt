@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.servlet;
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import java.util.Optional;
@@ -57,6 +58,7 @@ public class RestEasyServletObjectsResolver implements HttpServletRequestResolve
      * @return Optional containing HttpServletRequest from RESTEasy context, or empty if not available.
      *         {@code Optional.isEmpty()} is the usual case when not in an active RESTEasy request.
      */
+    @NonNull
     @Override
     public Optional<HttpServletRequest> resolveHttpServletRequest() {
         ResteasyProviderFactory providerFactory = ResteasyProviderFactory.getInstance();

@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.servlet;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 
 import java.util.*;
 
@@ -44,6 +45,7 @@ public interface HttpServletRequestResolver {
      * @return Optional containing HttpServletRequest from the current context, or empty if not available.
      *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
      */
+    @NonNull
     Optional<HttpServletRequest> resolveHttpServletRequest();
 
     /**
@@ -55,6 +57,7 @@ public interface HttpServletRequestResolver {
      * @return Optional containing Map of HTTP headers from the current context, or empty if not available.
      *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
      */
+    @NonNull
     default Optional<Map<String, List<String>>> resolveHeaderMap() {
         return resolveHttpServletRequest().map(this::createHeaderMapFromRequest);
     }
@@ -67,6 +70,7 @@ public interface HttpServletRequestResolver {
      * @param request the HttpServletRequest to extract headers from
      * @return Map of HTTP headers
      */
+    @NonNull
     default Map<String, List<String>> createHeaderMapFromRequest(HttpServletRequest request) {
         Map<String, List<String>> headerMap = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();

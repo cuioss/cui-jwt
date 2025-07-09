@@ -94,6 +94,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating successful validation
      */
+    @NonNull
     public static BearerTokenResult success(AccessTokenContent accessTokenContent,
                                             List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.FULLY_VERIFIED,
@@ -110,6 +111,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating parsing error
      */
+    @NonNull
     public static BearerTokenResult parsingError(TokenValidationException exception,
                                                  List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.PARSING_ERROR,
@@ -125,6 +127,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating constraint violation
      */
+    @NonNull
     public static BearerTokenResult constraintViolation(List<String> requiredScopes,
                                                         List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.CONSTRAINT_VIOLATION,
@@ -140,6 +143,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating no token was given
      */
+    @NonNull
     public static BearerTokenResult noTokenGiven(List<String> requiredScopes,
                                                  List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.NO_TOKEN_GIVEN,
@@ -155,6 +159,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating request access failure
      */
+    @NonNull
     public static BearerTokenResult couldNotAccessRequest(List<String> requiredScopes,
                                                           List<String> requiredRoles, List<String> requiredGroups) {
         return new BearerTokenResult(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST,
@@ -166,6 +171,7 @@ public class BearerTokenResult implements Serializable {
      *
      * @return Optional containing the AccessTokenContent, or empty if validation failed
      */
+    @NonNull
     public Optional<AccessTokenContent> getAccessTokenContent() {
         return Optional.ofNullable(accessTokenContent);
     }
@@ -175,6 +181,7 @@ public class BearerTokenResult implements Serializable {
      *
      * @return Optional containing the EventType, or empty if no parsing error occurred
      */
+    @NonNull
     public Optional<EventType> getErrorEventType() {
         return Optional.ofNullable(errorEventType);
     }
@@ -184,6 +191,7 @@ public class BearerTokenResult implements Serializable {
      *
      * @return Optional containing the error message, or empty if no parsing error occurred
      */
+    @NonNull
     public Optional<String> getErrorMessage() {
         return Optional.ofNullable(errorMessage);
     }
@@ -201,13 +209,11 @@ public class BearerTokenResult implements Serializable {
 
     /**
      * Checks if the token validation was unsuccessful.
-     * 
-     * @deprecated This method name is misleading. Use {@link #isSuccessfullyAuthorized()} instead.
-     * @return true if status is FULLY_VERIFIED, false otherwise
+     *
+     * @return true if status is not FULLY_VERIFIED, false otherwise
      */
-    @Deprecated
     public boolean isNotSuccessfullyAuthorized() {
-        return status == BearerTokenStatus.FULLY_VERIFIED;
+        return status != BearerTokenStatus.FULLY_VERIFIED;
     }
 
 }

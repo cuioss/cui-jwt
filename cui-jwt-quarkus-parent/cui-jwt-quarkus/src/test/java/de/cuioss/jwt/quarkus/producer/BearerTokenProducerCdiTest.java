@@ -69,23 +69,23 @@ class BearerTokenProducerCdiTest {
 
     @Inject
     @BearerToken
-    Instance<AccessTokenContent> tokenWithoutRequirements;
+    BearerTokenResult tokenWithoutRequirements;
 
     @Inject
     @BearerToken(requiredScopes = {"read", "write"})
-    Instance<AccessTokenContent> tokenWithScopes;
+    BearerTokenResult tokenWithScopes;
 
     @Inject
     @BearerToken(requiredRoles = {"admin"})
-    Instance<AccessTokenContent> tokenWithRoles;
+    BearerTokenResult tokenWithRoles;
 
     @Inject
     @BearerToken(requiredGroups = {"managers"})
-    Instance<AccessTokenContent> tokenWithGroups;
+    BearerTokenResult tokenWithGroups;
 
     @Inject
     @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"}, requiredGroups = {"managers"})
-    Instance<AccessTokenContent> tokenWithAllRequirements;
+    BearerTokenResult tokenWithAllRequirements;
 
     @Inject
     TestConfiguration testConfiguration;
@@ -100,48 +100,46 @@ class BearerTokenProducerCdiTest {
     class NoTokenAvailable {
 
         @Test
-        @DisplayName("should not be resolvable when no request context")
-        void shouldNotBeResolvableWhenNoRequestContext() {
+        @DisplayName("should not be successfully authorized when no request context")
+        void shouldNotBeSuccessfullyAuthorizedWhenNoRequestContext() {
             testConfiguration.setRequestContextAvailable(false);
 
-            // For producer methods, isResolvable() returns true if the bean definition exists
-            // We need to check if get() returns null
-            assertTrue(tokenWithoutRequirements.isResolvable());
-            assertNull(tokenWithoutRequirements.get());
+            assertFalse(tokenWithoutRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, tokenWithoutRequirements.getStatus());
 
-            assertTrue(tokenWithScopes.isResolvable());
-            assertNull(tokenWithScopes.get());
+            assertFalse(tokenWithScopes.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, tokenWithScopes.getStatus());
 
-            assertTrue(tokenWithRoles.isResolvable());
-            assertNull(tokenWithRoles.get());
+            assertFalse(tokenWithRoles.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, tokenWithRoles.getStatus());
 
-            assertTrue(tokenWithGroups.isResolvable());
-            assertNull(tokenWithGroups.get());
+            assertFalse(tokenWithGroups.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, tokenWithGroups.getStatus());
 
-            assertTrue(tokenWithAllRequirements.isResolvable());
-            assertNull(tokenWithAllRequirements.get());
+            assertFalse(tokenWithAllRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, tokenWithAllRequirements.getStatus());
         }
 
         @Test
-        @DisplayName("should return null when token validation fails")
-        void shouldReturnNullWhenTokenValidationFails() {
+        @DisplayName("should return parsing error when token validation fails")
+        void shouldReturnParsingErrorWhenTokenValidationFails() {
             testConfiguration.setBearerToken("invalid.token")
                     .setShouldFail(true);
 
-            assertTrue(tokenWithoutRequirements.isResolvable());
-            assertNull(tokenWithoutRequirements.get());
+            assertFalse(tokenWithoutRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.PARSING_ERROR, tokenWithoutRequirements.getStatus());
 
-            assertTrue(tokenWithScopes.isResolvable());
-            assertNull(tokenWithScopes.get());
+            assertFalse(tokenWithScopes.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.PARSING_ERROR, tokenWithScopes.getStatus());
 
-            assertTrue(tokenWithRoles.isResolvable());
-            assertNull(tokenWithRoles.get());
+            assertFalse(tokenWithRoles.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.PARSING_ERROR, tokenWithRoles.getStatus());
 
-            assertTrue(tokenWithGroups.isResolvable());
-            assertNull(tokenWithGroups.get());
+            assertFalse(tokenWithGroups.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.PARSING_ERROR, tokenWithGroups.getStatus());
 
-            assertTrue(tokenWithAllRequirements.isResolvable());
-            assertNull(tokenWithAllRequirements.get());
+            assertFalse(tokenWithAllRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.PARSING_ERROR, tokenWithAllRequirements.getStatus());
         }
     }
 
@@ -150,58 +148,68 @@ class BearerTokenProducerCdiTest {
     class ValidToken {
 
         @Test
-        @DisplayName("should be resolvable when no requirements and token is valid")
-        void shouldBeResolvableWhenNoRequirementsAndTokenValid() {
+        @DisplayName("should be successfully authorized when no requirements and token is valid")
+        void shouldBeSuccessfullyAuthorizedWhenNoRequirementsAndTokenValid() {
             var tokenContent = createTokenWithClaims(ClaimName.SCOPE, "read", "write");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithoutRequirements.isResolvable());
-            assertEquals(tokenContent, tokenWithoutRequirements.get());
+            assertTrue(tokenWithoutRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, tokenWithoutRequirements.getStatus());
+            assertTrue(tokenWithoutRequirements.getAccessTokenContent().isPresent());
+            assertEquals(tokenContent, tokenWithoutRequirements.getAccessTokenContent().get());
         }
 
         @Test
-        @DisplayName("should be resolvable when all required scopes are present")
-        void shouldBeResolvableWhenAllRequiredScopesPresent() {
+        @DisplayName("should be successfully authorized when all required scopes are present")
+        void shouldBeSuccessfullyAuthorizedWhenAllRequiredScopesPresent() {
             var tokenContent = createTokenWithClaims(ClaimName.SCOPE, "read", "write", "admin");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithScopes.isResolvable());
-            assertEquals(tokenContent, tokenWithScopes.get());
+            assertTrue(tokenWithScopes.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, tokenWithScopes.getStatus());
+            assertTrue(tokenWithScopes.getAccessTokenContent().isPresent());
+            assertEquals(tokenContent, tokenWithScopes.getAccessTokenContent().get());
         }
 
         @Test
-        @DisplayName("should be resolvable when all required roles are present")
-        void shouldBeResolvableWhenAllRequiredRolesPresent() {
+        @DisplayName("should be successfully authorized when all required roles are present")
+        void shouldBeSuccessfullyAuthorizedWhenAllRequiredRolesPresent() {
             var tokenContent = createTokenWithClaims(ClaimName.ROLES, "admin", "user");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithRoles.isResolvable());
-            assertEquals(tokenContent, tokenWithRoles.get());
+            assertTrue(tokenWithRoles.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, tokenWithRoles.getStatus());
+            assertTrue(tokenWithRoles.getAccessTokenContent().isPresent());
+            assertEquals(tokenContent, tokenWithRoles.getAccessTokenContent().get());
         }
 
         @Test
-        @DisplayName("should be resolvable when all required groups are present")
-        void shouldBeResolvableWhenAllRequiredGroupsPresent() {
+        @DisplayName("should be successfully authorized when all required groups are present")
+        void shouldBeSuccessfullyAuthorizedWhenAllRequiredGroupsPresent() {
             var tokenContent = createTokenWithClaims(ClaimName.GROUPS, "managers", "employees");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithGroups.isResolvable());
-            assertEquals(tokenContent, tokenWithGroups.get());
+            assertTrue(tokenWithGroups.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, tokenWithGroups.getStatus());
+            assertTrue(tokenWithGroups.getAccessTokenContent().isPresent());
+            assertEquals(tokenContent, tokenWithGroups.getAccessTokenContent().get());
         }
 
         @Test
-        @DisplayName("should be resolvable when all requirements are met")
-        void shouldBeResolvableWhenAllRequirementsMet() {
+        @DisplayName("should be successfully authorized when all requirements are met")
+        void shouldBeSuccessfullyAuthorizedWhenAllRequirementsMet() {
             var tokenContent = createTokenWithMultipleClaims();
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithAllRequirements.isResolvable());
-            assertEquals(tokenContent, tokenWithAllRequirements.get());
+            assertTrue(tokenWithAllRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, tokenWithAllRequirements.getStatus());
+            assertTrue(tokenWithAllRequirements.getAccessTokenContent().isPresent());
+            assertEquals(tokenContent, tokenWithAllRequirements.getAccessTokenContent().get());
         }
     }
 
@@ -210,48 +218,52 @@ class BearerTokenProducerCdiTest {
     class RequirementsNotMet {
 
         @Test
-        @DisplayName("should return null when required scopes are missing")
-        void shouldReturnNullWhenRequiredScopesMissing() {
+        @DisplayName("should return constraint violation when required scopes are missing")
+        void shouldReturnConstraintViolationWhenRequiredScopesMissing() {
             var tokenContent = createTokenWithClaims(ClaimName.SCOPE, "read");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithScopes.isResolvable());
-            assertNull(tokenWithScopes.get());
+            assertFalse(tokenWithScopes.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, tokenWithScopes.getStatus());
+            assertFalse(tokenWithScopes.getAccessTokenContent().isPresent());
         }
 
         @Test
-        @DisplayName("should return null when required roles are missing")
-        void shouldReturnNullWhenRequiredRolesMissing() {
+        @DisplayName("should return constraint violation when required roles are missing")
+        void shouldReturnConstraintViolationWhenRequiredRolesMissing() {
             var tokenContent = createTokenWithClaims(ClaimName.ROLES, "user");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithRoles.isResolvable());
-            assertNull(tokenWithRoles.get());
+            assertFalse(tokenWithRoles.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, tokenWithRoles.getStatus());
+            assertFalse(tokenWithRoles.getAccessTokenContent().isPresent());
         }
 
         @Test
-        @DisplayName("should return null when required groups are missing")
-        void shouldReturnNullWhenRequiredGroupsMissing() {
+        @DisplayName("should return constraint violation when required groups are missing")
+        void shouldReturnConstraintViolationWhenRequiredGroupsMissing() {
             var tokenContent = createTokenWithClaims(ClaimName.GROUPS, "employees");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithGroups.isResolvable());
-            assertNull(tokenWithGroups.get());
+            assertFalse(tokenWithGroups.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, tokenWithGroups.getStatus());
+            assertFalse(tokenWithGroups.getAccessTokenContent().isPresent());
         }
 
         @Test
-        @DisplayName("should return null when any requirement is missing")
-        void shouldReturnNullWhenAnyRequirementMissing() {
+        @DisplayName("should return constraint violation when any requirement is missing")
+        void shouldReturnConstraintViolationWhenAnyRequirementMissing() {
             // Token has scopes and roles but missing groups
             var tokenContent = createTokenWithClaims(ClaimName.SCOPE, "read", "write");
             testConfiguration.setBearerToken(tokenContent.getRawToken())
                     .setAccessTokenContent(tokenContent);
 
-            assertTrue(tokenWithAllRequirements.isResolvable());
-            assertNull(tokenWithAllRequirements.get());
+            assertFalse(tokenWithAllRequirements.isSuccessfullyAuthorized());
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, tokenWithAllRequirements.getStatus());
+            assertFalse(tokenWithAllRequirements.getAccessTokenContent().isPresent());
         }
     }
 

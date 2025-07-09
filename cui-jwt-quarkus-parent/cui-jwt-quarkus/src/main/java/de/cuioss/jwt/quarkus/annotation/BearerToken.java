@@ -26,30 +26,38 @@ import java.lang.annotation.Target;
 import jakarta.enterprise.util.Nonbinding;
 
 /**
- * CDI qualifier for injecting validated AccessTokenContent from HTTP Authorization header.
+ * CDI qualifier for injecting BearerTokenResult with validated token information from HTTP Authorization header.
  * <p>
  * This annotation allows specifying required scopes, roles, and groups that the bearer token
- * must contain for successful injection. If any of the requirements are not met, or if the
- * token is invalid or missing, the producer returns null. Use {@link jakarta.enterprise.inject.Instance}
- * to safely handle cases where the token might not be available.
- * <p>
- * Note: {@code isResolvable()} checks if the bean definition exists (always true for producers),
- * while {@code get() == null} indicates actual validation failure or missing token.
+ * must contain for successful validation. The producer always returns a {@link BearerTokenResult}
+ * object containing the validation status, the validated token (if successful), and detailed
+ * error information (if validation failed).
  * <p>
  * Example usage in JAX-RS endpoint:
  * <pre>{@code
  * @Inject
  * @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"})
- * private Instance<AccessTokenContent> accessToken;
+ * private BearerTokenResult tokenResult;
  * 
  * @GET
  * public Response getData() {
- *     AccessTokenContent token = accessToken.get();
- *     if (token == null) {
- *         return Response.status(401).build(); // Unauthorized
+ *     if (tokenResult.isSuccessfullyAuthorized()) {
+ *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *         // Use validated token
+ *         return Response.ok(token.getSubject()).build();
+ *     } else {
+ *         // Handle different failure scenarios
+ *         switch (tokenResult.getStatus()) {
+ *             case NO_TOKEN_GIVEN:
+ *                 return Response.status(401).entity("Missing bearer token").build();
+ *             case PARSING_ERROR:
+ *                 return Response.status(401).entity("Invalid token format").build();
+ *             case CONSTRAINT_VIOLATION:
+ *                 return Response.status(403).entity("Insufficient permissions").build();
+ *             default:
+ *                 return Response.status(401).build();
+ *         }
  *     }
- *     // Use validated token
- *     return Response.ok(token.getSubject()).build();
  * }
  * }</pre>
  * <p>
@@ -58,7 +66,7 @@ import jakarta.enterprise.util.Nonbinding;
  *   <li>Extracting the token from the HTTP Authorization header</li>
  *   <li>Validating the JWT signature and claims using the configured TokenValidator</li>
  *   <li>Checking that all required scopes, roles, and groups are present</li>
- *   <li>Returning null if any validation fails</li>
+ *   <li>Returning a BearerTokenResult with detailed status information</li>
  * </ul>
  *
  * @author Oliver Wolff
