@@ -32,8 +32,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Provider;
 
 /**
  * REST endpoint for JWT validation operations.
@@ -43,7 +43,7 @@ import jakarta.enterprise.inject.Instance;
 @Path("/jwt")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@ApplicationScoped
+@RequestScoped
 @RegisterForReflection
 @RunOnVirtualThread
 public class JwtValidationEndpoint {
@@ -56,23 +56,23 @@ public class JwtValidationEndpoint {
     // CDI producer injection fields for testing @BearerToken annotation
     @Inject
     @BearerToken
-    Instance<AccessTokenContent> basicToken;
+    BearerTokenResult basicToken;
 
     @Inject
     @BearerToken(requiredScopes = {"read"})
-    Instance<AccessTokenContent> tokenWithScopes;
+    BearerTokenResult tokenWithScopes;
 
     @Inject
     @BearerToken(requiredRoles = {"user"})
-    Instance<AccessTokenContent> tokenWithRoles;
+    BearerTokenResult tokenWithRoles;
 
     @Inject
     @BearerToken(requiredGroups = {"test-group"})
-    Instance<AccessTokenContent> tokenWithGroups;
+    BearerTokenResult tokenWithGroups;
 
     @Inject
     @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"})
-    Instance<AccessTokenContent> tokenWithAll;
+    BearerTokenResult tokenWithAll;
 
     @Inject
     public JwtValidationEndpoint(TokenValidator tokenValidator, BearerTokenProducer bearerTokenProducer) {
@@ -96,7 +96,7 @@ public class JwtValidationEndpoint {
         // First try to use the bearer token service if available
         try {
             BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-            if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
+            if (bearerTokenResult.isSuccessfullyAuthorized()) {
                 AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
                 LOGGER.info("Access token validation successful via BearerTokenProducer for subject: %s", token.getSubject());
                 return Response.ok(new ValidationResponse(true, "Access token is valid",
@@ -213,9 +213,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-scopes")
     public Response testTokenWithScopes() {
-        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
-            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
+        if (tokenWithScopes.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithScopes.getAccessTokenContent().get();
             boolean hasRequiredScope = token.providesScopes(List.of("read"));
             return Response.ok(new ValidationResponse(hasRequiredScope,
                     hasRequiredScope ? "Token has required scopes" : "Token does not have required scopes",
@@ -226,8 +225,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
-                    .build();
+            return tokenWithScopes.errorResponse();
         }
     }
 
@@ -239,9 +237,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-roles")
     public Response testTokenWithRoles() {
-        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
-            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
+        if (tokenWithRoles.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithRoles.getAccessTokenContent().get();
             boolean hasRequiredRole = token.providesRoles(List.of("user"));
             return Response.ok(new ValidationResponse(hasRequiredRole,
                     hasRequiredRole ? "Token has required roles" : "Token does not have required roles",
@@ -252,8 +249,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
-                    .build();
+            return tokenWithRoles.errorResponse();
         }
     }
 
@@ -265,9 +261,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-groups")
     public Response testTokenWithGroups() {
-        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
-            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
+        if (tokenWithGroups.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithGroups.getAccessTokenContent().get();
             boolean hasRequiredGroup = token.providesGroups(List.of("test-group"));
             return Response.ok(new ValidationResponse(hasRequiredGroup,
                     hasRequiredGroup ? "Token has required groups" : "Token does not have required groups",
@@ -278,8 +273,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
-                    .build();
+            return tokenWithGroups.errorResponse();
         }
     }
 
@@ -291,9 +285,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-all")
     public Response testTokenWithAll() {
-        BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
-            AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
+        if (tokenWithAll.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithAll.getAccessTokenContent().get();
             boolean hasAllRequirements = token.providesScopes(List.of("read")) &&
                     token.providesRoles(List.of("user")) &&
                     token.providesGroups(List.of("test-group"));
@@ -308,8 +301,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "Token missing or invalid: " + bearerTokenResult.getStatus()))
-                    .build();
+            return tokenWithAll.errorResponse();
         }
     }
 
@@ -321,8 +313,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/cdi-producer/basic")
     public Response testCdiProducerBasic() {
-        AccessTokenContent token = basicToken.get();
-        if (token != null) {
+        if (basicToken.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = basicToken.getAccessTokenContent().get();
             return Response.ok(new ValidationResponse(true, "CDI producer injection successful",
                     Map.of(
                             "subject", token.getSubject(),
@@ -333,8 +325,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "CDI producer returned null"))
-                    .build();
+            return basicToken.errorResponse();
         }
     }
 
@@ -346,8 +337,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/cdi-producer/with-scopes")
     public Response testCdiProducerWithScopes() {
-        AccessTokenContent token = tokenWithScopes.get();
-        if (token != null) {
+        if (tokenWithScopes.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithScopes.getAccessTokenContent().get();
             return Response.ok(new ValidationResponse(true, "CDI producer with scopes successful",
                     Map.of(
                             "subject", token.getSubject(),
@@ -356,8 +347,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "CDI producer with scopes returned null"))
-                    .build();
+            return tokenWithScopes.errorResponse();
         }
     }
 
@@ -369,8 +359,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/cdi-producer/with-roles")
     public Response testCdiProducerWithRoles() {
-        AccessTokenContent token = tokenWithRoles.get();
-        if (token != null) {
+        if (tokenWithRoles.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithRoles.getAccessTokenContent().get();
             return Response.ok(new ValidationResponse(true, "CDI producer with roles successful",
                     Map.of(
                             "subject", token.getSubject(),
@@ -379,8 +369,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "CDI producer with roles returned null"))
-                    .build();
+            return tokenWithRoles.errorResponse();
         }
     }
 
@@ -392,8 +381,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/cdi-producer/with-groups")
     public Response testCdiProducerWithGroups() {
-        AccessTokenContent token = tokenWithGroups.get();
-        if (token != null) {
+        if (tokenWithGroups.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithGroups.getAccessTokenContent().get();
             return Response.ok(new ValidationResponse(true, "CDI producer with groups successful",
                     Map.of(
                             "subject", token.getSubject(),
@@ -402,8 +391,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "CDI producer with groups returned null"))
-                    .build();
+            return tokenWithGroups.errorResponse();
         }
     }
 
@@ -415,8 +403,8 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/cdi-producer/with-all")
     public Response testCdiProducerWithAll() {
-        AccessTokenContent token = tokenWithAll.get();
-        if (token != null) {
+        if (tokenWithAll.isSuccessfullyAuthorized()) {
+            AccessTokenContent token = tokenWithAll.getAccessTokenContent().get();
             return Response.ok(new ValidationResponse(true, "CDI producer with all requirements successful",
                     Map.of(
                             "subject", token.getSubject(),
@@ -429,8 +417,7 @@ public class JwtValidationEndpoint {
                     )))
                     .build();
         } else {
-            return Response.ok(new ValidationResponse(false, "CDI producer with all requirements returned null"))
-                    .build();
+            return tokenWithAll.errorResponse();
         }
     }
 

@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 
 
 import jakarta.enterprise.util.Nonbinding;
+import jakarta.inject.Provider;
 
 /**
  * CDI qualifier for injecting BearerTokenResult with validated token information from HTTP Authorization header.
@@ -35,27 +36,54 @@ import jakarta.enterprise.util.Nonbinding;
  * <p>
  * Example usage in JAX-RS endpoint:
  * <pre>{@code
- * @Inject
- * @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"})
- * private BearerTokenResult tokenResult;
+ * @RequestScoped
+ * @Path("/api")
+ * public class DataResource {
+ *     
+ *     @Inject
+ *     @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"})
+ *     BearerTokenResult tokenResult;
  * 
- * @GET
- * public Response getData() {
- *     if (tokenResult.isSuccessfullyAuthorized()) {
- *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
- *         // Use validated token
- *         return Response.ok(token.getSubject()).build();
- *     } else {
- *         // Handle different failure scenarios
- *         switch (tokenResult.getStatus()) {
- *             case NO_TOKEN_GIVEN:
- *                 return Response.status(401).entity("Missing bearer token").build();
- *             case PARSING_ERROR:
- *                 return Response.status(401).entity("Invalid token format").build();
- *             case CONSTRAINT_VIOLATION:
- *                 return Response.status(403).entity("Insufficient permissions").build();
- *             default:
- *                 return Response.status(401).build();
+ *     @GET
+ *     public Response getData() {
+ *         if (tokenResult.isSuccessfullyAuthorized()) {
+ *             AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *             // Use validated token
+ *             return Response.ok(token.getSubject()).build();
+ *         } else {
+ *             // Return appropriate OAuth-compliant error response
+ *             return tokenResult.errorResponse();
+ *         }
+ *     }
+ * }
+ * }</pre>
+ * <p>
+ * <strong>Constructor Injection (Recommended):</strong>
+ * <pre>{@code
+ * @RequestScoped
+ * public class SecureService {
+ *     private final BearerTokenResult tokenResult;
+ *     
+ *     @Inject
+ *     public SecureService(@BearerToken(requiredRoles = {"admin"}) BearerTokenResult tokenResult) {
+ *         this.tokenResult = tokenResult;
+ *     }
+ * }
+ * }</pre>
+ * <p>
+ * <strong>For Application-Scoped beans, use Provider:</strong>
+ * <pre>{@code
+ * @ApplicationScoped
+ * public class GlobalService {
+ *     
+ *     @Inject
+ *     @BearerToken(requiredGroups = {"managers"})
+ *     Provider<BearerTokenResult> tokenResultProvider;
+ *     
+ *     public void doSomething() {
+ *         BearerTokenResult result = tokenResultProvider.get();
+ *         if (result.isSuccessfullyAuthorized()) {
+ *             // Process with validated token
  *         }
  *     }
  * }

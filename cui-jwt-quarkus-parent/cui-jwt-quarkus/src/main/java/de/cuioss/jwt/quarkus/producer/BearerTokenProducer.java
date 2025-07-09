@@ -51,26 +51,39 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * <p>
  * CDI injection usage example:
  * <pre>{@code
- * @Inject
- * @BearerToken(requiredScopes = {"read", "write"})
- * BearerTokenResult tokenResult;
+ * @RequestScoped
+ * @Path("/api")
+ * public class MyResource {
+ *     
+ *     @Inject
+ *     @BearerToken(requiredScopes = {"read", "write"})
+ *     BearerTokenResult tokenResult;
  *
- * public void someMethod() {
- *     if (tokenResult.isSuccessfullyAuthorized()) {
- *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
- *         // Use validated token
- *     } else {
- *         // Handle validation failure with detailed status information
- *         switch (tokenResult.getStatus()) {
- *             case PARSING_ERROR:
- *                 // Handle parsing errors
- *                 break;
- *             case CONSTRAINT_VIOLATION:
- *                 // Handle missing scopes/roles/groups
- *                 break;
- *             default:
- *                 // Handle other cases
+ *     @GET
+ *     public Response getData() {
+ *         if (tokenResult.isSuccessfullyAuthorized()) {
+ *             AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *             // Use validated token
+ *             return Response.ok(token.getSubject()).build();
+ *         } else {
+ *             // Return appropriate error response
+ *             return tokenResult.errorResponse();
  *         }
+ *     }
+ * }
+ * }</pre>
+ * <p>
+ * <strong>Important:</strong> For Application-Scoped beans, use {@link jakarta.inject.Provider} since 
+ * BearerTokenResult is RequestScoped. The preferred way is for the containing class to be RequestScoped 
+ * as well, then you can use constructor injection:
+ * <pre>{@code
+ * @RequestScoped
+ * public class MyService {
+ *     private final BearerTokenResult tokenResult;
+ *     
+ *     @Inject
+ *     public MyService(@BearerToken(requiredRoles = {"admin"}) BearerTokenResult tokenResult) {
+ *         this.tokenResult = tokenResult;
  *     }
  * }
  * }</pre>

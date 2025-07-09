@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * @author Oliver Wolff
  * @since 1.0
  */
-public enum BearerTokenStatus implements BearerTokenResponseStrategy {
+public enum BearerTokenStatus {
 
     /**
      * The bearer token was successfully validated and all requirements were met.
@@ -47,11 +47,10 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      * </ul>
      */
     FULLY_VERIFIED {
-        @Override
         public Response createResponse(BearerTokenResult result) {
             return Response.ok()
-                .header("Cache-Control", "no-store, no-cache, must-revalidate")
-                .header("Pragma", "no-cache")
+                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                .header(HEADER_PRAGMA, PRAGMA_VALUE)
                 .build();
         }
     },
@@ -64,12 +63,11 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      * fails to provide the request object.
      */
     COULD_NOT_ACCESS_REQUEST {
-        @Override
         public Response createResponse(BearerTokenResult result) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .header("Cache-Control", "no-store, no-cache, must-revalidate")
-                .header("Pragma", "no-cache")
-                .entity("Internal server error: Unable to access request context")
+                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                .entity(ERROR_MSG_SERVER_ERROR)
                 .build();
         }
     },
@@ -85,12 +83,11 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      * </ul>
      */
     NO_TOKEN_GIVEN {
-        @Override
         public Response createResponse(BearerTokenResult result) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                .header("WWW-Authenticate", "Bearer realm=\"protected-resource\"")
-                .header("Cache-Control", "no-store, no-cache, must-revalidate")
-                .header("Pragma", "no-cache")
+                .header(HEADER_WWW_AUTHENTICATE, BEARER_REALM)
+                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                .header(HEADER_PRAGMA, PRAGMA_VALUE)
                 .build();
         }
     },
@@ -108,14 +105,13 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      * </ul>
      */
     PARSING_ERROR {
-        @Override
         public Response createResponse(BearerTokenResult result) {
-            String wwwAuthenticate = buildWwwAuthenticateHeader("invalid_token", 
-                result.getErrorMessage().orElse("The access token is invalid"));
+            String wwwAuthenticate = buildWwwAuthenticateHeader(ERROR_INVALID_TOKEN, 
+                result.getErrorMessage().orElse(ERROR_MSG_INVALID_TOKEN));
             return Response.status(Response.Status.UNAUTHORIZED)
-                .header("WWW-Authenticate", wwwAuthenticate)
-                .header("Cache-Control", "no-store, no-cache, must-revalidate")
-                .header("Pragma", "no-cache")
+                .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                .header(HEADER_PRAGMA, PRAGMA_VALUE)
                 .build();
         }
     },
@@ -132,34 +128,70 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      * </ul>
      */
     CONSTRAINT_VIOLATION {
-        @Override
         public Response createResponse(BearerTokenResult result) {
             // Check if it's a scope violation (401) or role/group violation (403)
             boolean hasScopeViolation = !result.getRequiredScopes().isEmpty();
             
             if (hasScopeViolation) {
                 // OAuth Step-Up Authentication Challenge for insufficient scope
-                String wwwAuthenticate = buildWwwAuthenticateHeaderWithScope("insufficient_scope", 
-                    "The request requires higher privileges than provided by the access token",
-                    result.getRequiredScopes());
+                String wwwAuthenticate = buildWwwAuthenticateHeaderWithScope(ERROR_INSUFFICIENT_SCOPE, 
+                    ERROR_MSG_HIGHER_PRIVILEGES, result.getRequiredScopes());
                 return Response.status(Response.Status.UNAUTHORIZED)
-                    .header("WWW-Authenticate", wwwAuthenticate)
-                    .header("Cache-Control", "no-store, no-cache, must-revalidate")
-                    .header("Pragma", "no-cache")
+                    .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
                     .build();
             } else {
                 // Role/group violation - 403 Forbidden with OAuth-style error structure
-                String wwwAuthenticate = buildWwwAuthenticateHeaderWithPrivileges("insufficient_privileges", 
-                    "The request requires higher privileges than provided by the access token",
-                    result.getRequiredRoles(), result.getRequiredGroups());
+                String wwwAuthenticate = buildWwwAuthenticateHeaderWithPrivileges(ERROR_INSUFFICIENT_PRIVILEGES, 
+                    ERROR_MSG_HIGHER_PRIVILEGES, result.getRequiredRoles(), result.getRequiredGroups());
                 return Response.status(Response.Status.FORBIDDEN)
-                    .header("WWW-Authenticate", wwwAuthenticate)
-                    .header("Cache-Control", "no-store, no-cache, must-revalidate")
-                    .header("Pragma", "no-cache")
+                    .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
                     .build();
             }
         }
     };
+
+    // HTTP Header Constants
+    private static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
+    private static final String HEADER_CACHE_CONTROL = "Cache-Control";
+    private static final String HEADER_PRAGMA = "Pragma";
+    
+    // Header Values
+    private static final String CACHE_CONTROL_VALUE = "no-store, no-cache, must-revalidate";
+    private static final String PRAGMA_VALUE = "no-cache";
+    
+    // OAuth Constants
+    private static final String BEARER_REALM = "Bearer realm=\"protected-resource\"";
+    private static final String BEARER_SCHEME = "Bearer";
+    private static final String REALM_PARAMETER = "realm=\"protected-resource\"";
+    
+    // OAuth Error Codes
+    private static final String ERROR_INVALID_TOKEN = "invalid_token";
+    private static final String ERROR_INSUFFICIENT_SCOPE = "insufficient_scope";
+    private static final String ERROR_INSUFFICIENT_PRIVILEGES = "insufficient_privileges";
+    
+    // OAuth Parameters
+    private static final String PARAM_ERROR = "error";
+    private static final String PARAM_ERROR_DESCRIPTION = "error_description";
+    private static final String PARAM_SCOPE = "scope";
+    private static final String PARAM_REQUIRED_ROLES = "required_roles";
+    private static final String PARAM_REQUIRED_GROUPS = "required_groups";
+    
+    // Error Messages
+    private static final String ERROR_MSG_INVALID_TOKEN = "The access token is invalid";
+    private static final String ERROR_MSG_HIGHER_PRIVILEGES = "The request requires higher privileges than provided by the access token";
+    private static final String ERROR_MSG_SERVER_ERROR = "Internal server error: Unable to access request context";
+
+    /**
+     * Creates an appropriate HTTP response for the given bearer token validation result.
+     *
+     * @param result The bearer token validation result containing status and context information
+     * @return Response object with appropriate HTTP status code, headers, and body
+     */
+    public abstract Response createResponse(BearerTokenResult result);
 
     /**
      * Builds a standard WWW-Authenticate header for Bearer token errors.
@@ -169,8 +201,9 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      * @return Formatted WWW-Authenticate header value
      */
     private static String buildWwwAuthenticateHeader(String error, String errorDescription) {
-        return String.format("Bearer realm=\"protected-resource\", error=\"%s\", error_description=\"%s\"",
-            escapeQuotes(error), escapeQuotes(errorDescription));
+        return String.format("%s %s, %s=\"%s\", %s=\"%s\"",
+            BEARER_SCHEME, REALM_PARAMETER, PARAM_ERROR, escapeQuotes(error), 
+            PARAM_ERROR_DESCRIPTION, escapeQuotes(errorDescription));
     }
 
     /**
@@ -184,15 +217,15 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
      */
     private static String buildWwwAuthenticateHeaderWithScope(String error, String errorDescription, List<String> requiredScopes) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Bearer realm=\"protected-resource\"");
-        sb.append(", error=\"").append(escapeQuotes(error)).append("\"");
-        sb.append(", error_description=\"").append(escapeQuotes(errorDescription)).append("\"");
+        sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
+        sb.append(", ").append(PARAM_ERROR).append("=\"").append(escapeQuotes(error)).append("\"");
+        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(escapeQuotes(errorDescription)).append("\"");
         
         if (!requiredScopes.isEmpty()) {
             String scopeValue = requiredScopes.stream()
                 .map(BearerTokenStatus::escapeQuotes)
                 .collect(Collectors.joining(" "));
-            sb.append(", scope=\"").append(scopeValue).append("\"");
+            sb.append(", ").append(PARAM_SCOPE).append("=\"").append(scopeValue).append("\"");
         }
         
         return sb.toString();
@@ -211,23 +244,23 @@ public enum BearerTokenStatus implements BearerTokenResponseStrategy {
     private static String buildWwwAuthenticateHeaderWithPrivileges(String error, String errorDescription, 
                                                            List<String> requiredRoles, List<String> requiredGroups) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Bearer realm=\"protected-resource\"");
-        sb.append(", error=\"").append(escapeQuotes(error)).append("\"");
-        sb.append(", error_description=\"").append(escapeQuotes(errorDescription)).append("\"");
+        sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
+        sb.append(", ").append(PARAM_ERROR).append("=\"").append(escapeQuotes(error)).append("\"");
+        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(escapeQuotes(errorDescription)).append("\"");
         
         // Add required roles and groups as custom parameters
         if (!requiredRoles.isEmpty()) {
             String rolesValue = requiredRoles.stream()
                 .map(BearerTokenStatus::escapeQuotes)
                 .collect(Collectors.joining(" "));
-            sb.append(", required_roles=\"").append(rolesValue).append("\"");
+            sb.append(", ").append(PARAM_REQUIRED_ROLES).append("=\"").append(rolesValue).append("\"");
         }
         
         if (!requiredGroups.isEmpty()) {
             String groupsValue = requiredGroups.stream()
                 .map(BearerTokenStatus::escapeQuotes)
                 .collect(Collectors.joining(" "));
-            sb.append(", required_groups=\"").append(groupsValue).append("\"");
+            sb.append(", ").append(PARAM_REQUIRED_GROUPS).append("=\"").append(groupsValue).append("\"");
         }
         
         return sb.toString();

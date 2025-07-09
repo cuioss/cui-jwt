@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableWeld
 @EnableTestLogger
 @DisplayName("BearerTokenProducer CDI Tests")
-@Disabled("CDI test causes conflicts with other tests - needs isolation")
+@Disabled("CDI test requires complex Weld setup for ServletObjectsResolver qualifiers")
 class BearerTokenProducerCdiTest {
 
     @WeldSetup
@@ -282,7 +282,7 @@ class BearerTokenProducerCdiTest {
         }
 
         @Produces
-        @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY)
+        @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY) 
         public HttpServletRequestResolver httpServletRequestResolver() {
             return requestResolverMock;
         }
