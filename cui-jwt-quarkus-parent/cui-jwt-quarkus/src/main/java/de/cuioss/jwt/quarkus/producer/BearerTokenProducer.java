@@ -73,7 +73,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *     BearerTokenResult result = tokenService.getBearerTokenResult(
  *         List.of("read"), List.of("user"), List.of("admin"));
  *
- *     if (result.isSuccessfulAuthorized()) {
+ *     if (result.isNotSuccessfullyAuthorized()) {
  *         AccessTokenContent content = result.getAccessTokenContent().get();
  *         // Use validated token
  *     } else {

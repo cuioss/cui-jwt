@@ -96,7 +96,7 @@ public class JwtValidationEndpoint {
         // First try to use the bearer token service if available
         try {
             BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-            if (bearerTokenResult.isSuccessfulAuthorized()) {
+            if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
                 AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
                 LOGGER.info("Access token validation successful via BearerTokenProducer for subject: %s", token.getSubject());
                 return Response.ok(new ValidationResponse(true, "Access token is valid",
@@ -214,7 +214,7 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/with-scopes")
     public Response testTokenWithScopes() {
         BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isSuccessfulAuthorized()) {
+        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
             AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasRequiredScope = token.providesScopes(List.of("read"));
             return Response.ok(new ValidationResponse(hasRequiredScope,
@@ -240,7 +240,7 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/with-roles")
     public Response testTokenWithRoles() {
         BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isSuccessfulAuthorized()) {
+        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
             AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasRequiredRole = token.providesRoles(List.of("user"));
             return Response.ok(new ValidationResponse(hasRequiredRole,
@@ -266,7 +266,7 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/with-groups")
     public Response testTokenWithGroups() {
         BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isSuccessfulAuthorized()) {
+        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
             AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasRequiredGroup = token.providesGroups(List.of("test-group"));
             return Response.ok(new ValidationResponse(hasRequiredGroup,
@@ -292,7 +292,7 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/with-all")
     public Response testTokenWithAll() {
         BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-        if (bearerTokenResult.isSuccessfulAuthorized()) {
+        if (bearerTokenResult.isNotSuccessfullyAuthorized()) {
             AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
             boolean hasAllRequirements = token.providesScopes(List.of("read")) &&
                     token.providesRoles(List.of("user")) &&

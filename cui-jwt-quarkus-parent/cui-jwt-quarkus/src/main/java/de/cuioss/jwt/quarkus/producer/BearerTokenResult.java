@@ -203,14 +203,14 @@ public class BearerTokenResult implements Serializable {
     }
 
     /**
-     * Checks if the token validation was successful. and all configured claims like
+     * Checks if the token validation was unsuccessful, and all configured claims like
      * {@link BearerToken#requiredRoles()}, {@link BearerToken#requiredScopes()} and {@link BearerToken#requiredGroups()}
      * are successfully verified.
      *
-     * @return true if status is FULLY_VERIFIED, false otherwise
+     * @return true if status is not FULLY_VERIFIED, false otherwise
      */
-    public boolean isSuccessfulAuthorized() {
-        return status == BearerTokenStatus.FULLY_VERIFIED;
+    public boolean isNotSuccessfullyAuthorized() {
+        return status != BearerTokenStatus.FULLY_VERIFIED;
     }
 
 }

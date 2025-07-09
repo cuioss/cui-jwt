@@ -72,7 +72,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertTrue(result.isSuccessfulAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(expected, result.getAccessTokenContent().get());
@@ -133,7 +133,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
 
@@ -151,7 +151,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
 
@@ -181,7 +181,7 @@ class BearerTokenProducerLogicTest {
 
             // Test new BearerTokenResult method
             BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertTrue(result.getErrorEventType().isPresent());
@@ -256,7 +256,7 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertTrue(result.isSuccessfulAuthorized());
+            assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(tokenContent, result.getAccessTokenContent().get());
@@ -286,7 +286,7 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -310,7 +310,7 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -333,7 +333,7 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -356,7 +356,7 @@ class BearerTokenProducerLogicTest {
 
             BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
 
-            assertFalse(result.isSuccessfulAuthorized());
+            assertFalse(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
             assertEquals(requiredScopes, result.getRequiredScopes());
@@ -397,7 +397,7 @@ class BearerTokenProducerLogicTest {
 
                 // Test new BearerTokenResult method
                 BearerTokenResult result = underTest.getBearerTokenResult(List.of("read", "write"), Collections.emptyList(), Collections.emptyList());
-                assertFalse(result.isSuccessfulAuthorized());
+                assertFalse(result.isNotSuccessfullyAuthorized());
                 assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
                 assertFalse(result.getAccessTokenContent().isPresent());
                 assertEquals(List.of("read", "write"), result.getRequiredScopes());
