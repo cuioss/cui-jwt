@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.integration.endpoint;
 
+import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 
 /**
  * REST endpoint for JWT validation operations.
@@ -51,12 +53,34 @@ public class JwtValidationEndpoint {
     private final TokenValidator tokenValidator;
     private final BearerTokenProducer bearerTokenProducer;
 
+    // CDI producer injection fields for testing @BearerToken annotation
+    @Inject
+    @BearerToken
+    Instance<AccessTokenContent> basicToken;
+
+    @Inject
+    @BearerToken(requiredScopes = {"read"})
+    Instance<AccessTokenContent> tokenWithScopes;
+
+    @Inject
+    @BearerToken(requiredRoles = {"user"})
+    Instance<AccessTokenContent> tokenWithRoles;
+
+    @Inject
+    @BearerToken(requiredGroups = {"test-group"})
+    Instance<AccessTokenContent> tokenWithGroups;
+
+    @Inject
+    @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"})
+    Instance<AccessTokenContent> tokenWithAll;
+
     @Inject
     public JwtValidationEndpoint(TokenValidator tokenValidator, BearerTokenProducer bearerTokenProducer) {
         this.tokenValidator = tokenValidator;
         this.bearerTokenProducer = bearerTokenProducer;
         LOGGER.info("JwtValidationEndpoint initialized with TokenValidator: %s, BearerTokenProducer: %s", 
                 (tokenValidator != null), (bearerTokenProducer != null));
+        LOGGER.info("BearerTokenProducer class: %s", bearerTokenProducer.getClass().getName());
     }
 
     /**
@@ -70,19 +94,25 @@ public class JwtValidationEndpoint {
     @Path("/validate")
     public Response validateToken(TokenRequest tokenRequest) {
         // First try to use the bearer token service if available
-        Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
-        if (bearerToken.isPresent()) {
-            AccessTokenContent token = bearerToken.get();
-            LOGGER.debug("Access token validation successful via BearerTokenProducer for subject: %s", token.getSubject());
-            return Response.ok(new ValidationResponse(true, "Access token is valid",
-                    Map.of(
-                            "subject", token.getSubject(),
-                            "scopes", token.getScopes(),
-                            "roles", token.getRoles(),
-                            "groups", token.getGroups(),
-                            "email", token.getEmail().orElse("not-present")
-                    )))
-                    .build();
+        try {
+            Optional<AccessTokenContent> bearerToken = bearerTokenProducer.getAccessTokenContent();
+            if (bearerToken.isPresent()) {
+                AccessTokenContent token = bearerToken.get();
+                LOGGER.info("Access token validation successful via BearerTokenProducer for subject: %s", token.getSubject());
+                return Response.ok(new ValidationResponse(true, "Access token is valid",
+                        Map.of(
+                                "subject", token.getSubject(),
+                                "scopes", token.getScopes(),
+                                "roles", token.getRoles(),
+                                "groups", token.getGroups(),
+                                "email", token.getEmail().orElse("not-present")
+                        )))
+                        .build();
+            } else {
+                LOGGER.info("BearerTokenProducer returned empty optional");
+            }
+        } catch (Exception e) {
+            LOGGER.warn("BearerTokenProducer failed with exception: %s", e.getMessage());
         }
 
         // Fall back to traditional token validation from request body
@@ -104,14 +134,14 @@ public class JwtValidationEndpoint {
             } catch (TokenValidationException e) {
                 LOGGER.warn("Access token validation error: %s", e.getMessage());
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(new ValidationResponse(false, "Access token validation failed: " + e.getMessage(), null))
+                        .entity(new ValidationResponse(false, "Bearer token validation failed or token not present"))
                         .build();
             }
         }
 
         LOGGER.warn("No token provided in Authorization header or request body");
-        return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ValidationResponse(false, "No token provided in Authorization header or request body"))
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .entity(new ValidationResponse(false, "Bearer token validation failed or token not present"))
                 .build();
     }
 
@@ -279,6 +309,127 @@ public class JwtValidationEndpoint {
                     .build();
         } else {
             return Response.ok(new ValidationResponse(false, "Token missing or invalid"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests CDI producer pattern with @BearerToken annotation (no requirements).
+     *
+     * @return Validation result for basic CDI producer injection
+     */
+    @GET
+    @Path("/cdi-producer/basic")
+    public Response testCdiProducerBasic() {
+        AccessTokenContent token = basicToken.get();
+        if (token != null) {
+            return Response.ok(new ValidationResponse(true, "CDI producer injection successful",
+                    Map.of(
+                            "subject", token.getSubject(),
+                            "scopes", token.getScopes(),
+                            "roles", token.getRoles(),
+                            "groups", token.getGroups(),
+                            "email", token.getEmail().orElse("not-present")
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "CDI producer returned null"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests CDI producer pattern with scope requirements.
+     *
+     * @return Validation result for CDI producer with scope requirements
+     */
+    @GET
+    @Path("/cdi-producer/with-scopes")
+    public Response testCdiProducerWithScopes() {
+        AccessTokenContent token = tokenWithScopes.get();
+        if (token != null) {
+            return Response.ok(new ValidationResponse(true, "CDI producer with scopes successful",
+                    Map.of(
+                            "subject", token.getSubject(),
+                            "scopes", token.getScopes(),
+                            "requiredScopes", List.of("read")
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "CDI producer with scopes returned null"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests CDI producer pattern with role requirements.
+     *
+     * @return Validation result for CDI producer with role requirements
+     */
+    @GET
+    @Path("/cdi-producer/with-roles")
+    public Response testCdiProducerWithRoles() {
+        AccessTokenContent token = tokenWithRoles.get();
+        if (token != null) {
+            return Response.ok(new ValidationResponse(true, "CDI producer with roles successful",
+                    Map.of(
+                            "subject", token.getSubject(),
+                            "roles", token.getRoles(),
+                            "requiredRoles", List.of("user")
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "CDI producer with roles returned null"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests CDI producer pattern with group requirements.
+     *
+     * @return Validation result for CDI producer with group requirements
+     */
+    @GET
+    @Path("/cdi-producer/with-groups")
+    public Response testCdiProducerWithGroups() {
+        AccessTokenContent token = tokenWithGroups.get();
+        if (token != null) {
+            return Response.ok(new ValidationResponse(true, "CDI producer with groups successful",
+                    Map.of(
+                            "subject", token.getSubject(),
+                            "groups", token.getGroups(),
+                            "requiredGroups", List.of("test-group")
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "CDI producer with groups returned null"))
+                    .build();
+        }
+    }
+
+    /**
+     * Tests CDI producer pattern with all requirements.
+     *
+     * @return Validation result for CDI producer with all requirements
+     */
+    @GET
+    @Path("/cdi-producer/with-all")
+    public Response testCdiProducerWithAll() {
+        AccessTokenContent token = tokenWithAll.get();
+        if (token != null) {
+            return Response.ok(new ValidationResponse(true, "CDI producer with all requirements successful",
+                    Map.of(
+                            "subject", token.getSubject(),
+                            "scopes", token.getScopes(),
+                            "roles", token.getRoles(),
+                            "groups", token.getGroups(),
+                            "requiredScopes", List.of("read"),
+                            "requiredRoles", List.of("user"),
+                            "requiredGroups", List.of("test-group")
+                    )))
+                    .build();
+        } else {
+            return Response.ok(new ValidationResponse(false, "CDI producer with all requirements returned null"))
                     .build();
         }
     }

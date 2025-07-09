@@ -30,22 +30,26 @@ import jakarta.enterprise.util.Nonbinding;
  * <p>
  * This annotation allows specifying required scopes, roles, and groups that the bearer token
  * must contain for successful injection. If any of the requirements are not met, or if the
- * token is invalid or missing, the CDI injection will fail. Use {@link jakarta.enterprise.inject.Instance}
+ * token is invalid or missing, the producer returns null. Use {@link jakarta.enterprise.inject.Instance}
  * to safely handle cases where the token might not be available.
  * <p>
- * Example usage with Instance:
+ * Note: {@code isResolvable()} checks if the bean definition exists (always true for producers),
+ * while {@code get() == null} indicates actual validation failure or missing token.
+ * <p>
+ * Example usage in JAX-RS endpoint:
  * <pre>{@code
  * @Inject
  * @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"})
  * private Instance<AccessTokenContent> accessToken;
  * 
- * public void someMethod() {
- *     if (accessToken.isResolvable()) {
- *         AccessTokenContent token = accessToken.get();
- *         // Use validated token
- *     } else {
- *         // Handle missing or invalid token
+ * @GET
+ * public Response getData() {
+ *     AccessTokenContent token = accessToken.get();
+ *     if (token == null) {
+ *         return Response.status(401).build(); // Unauthorized
  *     }
+ *     // Use validated token
+ *     return Response.ok(token.getSubject()).build();
  * }
  * }</pre>
  * <p>
@@ -54,7 +58,7 @@ import jakarta.enterprise.util.Nonbinding;
  *   <li>Extracting the token from the HTTP Authorization header</li>
  *   <li>Validating the JWT signature and claims using the configured TokenValidator</li>
  *   <li>Checking that all required scopes, roles, and groups are present</li>
- *   <li>Returning null if any validation fails, causing CDI injection to fail</li>
+ *   <li>Returning null if any validation fails</li>
  * </ul>
  *
  * @author Oliver Wolff
