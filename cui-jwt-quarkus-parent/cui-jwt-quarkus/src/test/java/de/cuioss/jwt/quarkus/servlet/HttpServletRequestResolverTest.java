@@ -220,13 +220,15 @@ class HttpServletRequestResolverTest {
                 }
             };
 
-            Map<String, List<String>> result = resolver.createHeaderMapFromRequest(mockRequest);
+            Optional<Map<String, List<String>>> result = resolver.createHeaderMapFromRequest(mockRequest);
 
-            assertEquals(4, result.size(), "Should have 4 different headers");
-            assertEquals(List.of("Bearer token123"), result.get("Authorization"));
-            assertEquals(List.of("application/json"), result.get("Content-Type"));
-            assertEquals(List.of("application/json", "application/xml"), result.get("Accept"));
-            assertEquals(List.of("custom-value"), result.get("X-Custom"));
+            assertTrue(result.isPresent(), "Should return header map when request is available");
+            Map<String, List<String>> headers = result.get();
+            assertEquals(4, headers.size(), "Should have 4 different headers");
+            assertEquals(List.of("Bearer token123"), headers.get("Authorization"));
+            assertEquals(List.of("application/json"), headers.get("Content-Type"));
+            assertEquals(List.of("application/json", "application/xml"), headers.get("Accept"));
+            assertEquals(List.of("custom-value"), headers.get("X-Custom"));
         }
 
         @Test
@@ -242,10 +244,11 @@ class HttpServletRequestResolverTest {
                 }
             };
 
-            Map<String, List<String>> result = resolver.createHeaderMapFromRequest(mockRequest);
+            Optional<Map<String, List<String>>> result = resolver.createHeaderMapFromRequest(mockRequest);
 
-            assertNotNull(result, "Should return non-null map");
-            assertTrue(result.isEmpty(), "Should return empty map when no headers");
+            assertTrue(result.isPresent(), "Should return header map even when no headers");
+            Map<String, List<String>> headers = result.get();
+            assertTrue(headers.isEmpty(), "Should return empty map when no headers");
         }
 
         @Test
@@ -263,13 +266,30 @@ class HttpServletRequestResolverTest {
                 }
             };
 
-            Map<String, List<String>> result = resolver.createHeaderMapFromRequest(mockRequest);
+            Optional<Map<String, List<String>>> result = resolver.createHeaderMapFromRequest(mockRequest);
 
+            assertTrue(result.isPresent(), "Should return header map when request is available");
+            Map<String, List<String>> headers = result.get();
             // Should maintain case sensitivity as per mock implementation
-            assertEquals(3, result.size(), "Should preserve different cased headers as separate entries");
-            assertTrue(result.containsKey("Content-Type"));
-            assertTrue(result.containsKey("content-type"));
-            assertTrue(result.containsKey("CONTENT-TYPE"));
+            assertEquals(3, headers.size(), "Should preserve different cased headers as separate entries");
+            assertTrue(headers.containsKey("Content-Type"));
+            assertTrue(headers.containsKey("content-type"));
+            assertTrue(headers.containsKey("CONTENT-TYPE"));
+        }
+
+        @Test
+        @DisplayName("should return empty Optional for null request")
+        void shouldReturnEmptyOptionalForNullRequest() {
+            HttpServletRequestResolver resolver = new HttpServletRequestResolver() {
+                @Override
+                public Optional<HttpServletRequest> resolveHttpServletRequest() {
+                    return Optional.empty();
+                }
+            };
+
+            Optional<Map<String, List<String>>> result = resolver.createHeaderMapFromRequest(null);
+
+            assertTrue(result.isEmpty(), "Should return empty Optional for null request");
         }
     }
 }

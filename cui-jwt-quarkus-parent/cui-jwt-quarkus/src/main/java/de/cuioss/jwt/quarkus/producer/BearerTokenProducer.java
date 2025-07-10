@@ -178,7 +178,7 @@ public class BearerTokenProducer {
             return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
         }
 
-        String bearerToken = extractBearerToken();
+        String bearerToken = extractBearerTokenFromRequest(httpServletRequest.get());
         if (bearerToken == null) {
             LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
             return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
@@ -221,7 +221,17 @@ public class BearerTokenProducer {
             return null;
         }
 
-        String authHeader = httpServletRequest.get().getHeader("Authorization");
+        return extractBearerTokenFromRequest(httpServletRequest.get());
+    }
+
+    /**
+     * Extracts the bearer token from the given HTTP request's Authorization header.
+     *
+     * @param request the HTTP servlet request
+     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
+     */
+    private String extractBearerTokenFromRequest(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             return null;
         }

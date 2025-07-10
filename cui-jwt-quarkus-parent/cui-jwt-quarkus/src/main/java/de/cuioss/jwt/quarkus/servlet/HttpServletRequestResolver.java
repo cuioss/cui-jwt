@@ -57,7 +57,7 @@ public interface HttpServletRequestResolver {
      *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
      */
     default Optional<Map<String, List<String>>> resolveHeaderMap() {
-        return resolveHttpServletRequest().map(this::createHeaderMapFromRequest);
+        return resolveHttpServletRequest().flatMap(this::createHeaderMapFromRequest);
     }
 
     /**
@@ -66,10 +66,14 @@ public interface HttpServletRequestResolver {
      * <p>This helper method is used by the default implementation of {@link #resolveHeaderMap()}.</p>
      *
      * @param request the HttpServletRequest to extract headers from
-     * @return Map of HTTP headers
+     * @return Optional containing Map of HTTP headers, or empty if headers cannot be extracted
      */
     @NonNull
-    default Map<String, List<String>> createHeaderMapFromRequest(HttpServletRequest request) {
+    default Optional<Map<String, List<String>>> createHeaderMapFromRequest(HttpServletRequest request) {
+        if (request == null) {
+            return Optional.empty();
+        }
+        
         Map<String, List<String>> headerMap = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();
 
@@ -85,6 +89,6 @@ public interface HttpServletRequestResolver {
             }
         }
 
-        return headerMap;
+        return Optional.of(headerMap);
     }
 }
