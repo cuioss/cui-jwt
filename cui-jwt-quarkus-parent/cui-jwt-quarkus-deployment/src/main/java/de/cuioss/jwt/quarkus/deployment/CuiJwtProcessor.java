@@ -106,26 +106,42 @@ public class CuiJwtProcessor {
 
 
     /**
-     * Register JWT validation classes for reflection.
-     * These are core library classes that need reflection for configuration and instantiation.
+     * Register JWT validation classes that need methods and constructors for reflection.
+     * These are core library classes instantiated directly and called via methods.
      *
-     * @return A {@link ReflectiveClassBuildItem} for the JWT validation classes
+     * @return A {@link ReflectiveClassBuildItem} for the JWT validation classes with constructors
      */
     @BuildStep
     @NonNull
-    public ReflectiveClassBuildItem registerJwtValidationClassesForReflection() {
+    public ReflectiveClassBuildItem registerJwtValidationConstructorClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
-                // Core validation components - need full reflection for configuration
-                TokenValidator.class,
-                IssuerConfig.class,
-                IssuerConfigResolver.class,
-                ParserConfig.class,
-                HttpJwksLoaderConfig.class,
-                SecurityEventCounter.class)
-                // TokenValidatorProducer removed - it's in cui-jwt-quarkus module with @RegisterForReflection
-                .methods(true)  // Methods needed for configuration and method calls
-                .fields(true)   // Fields needed for configuration binding
+                // Classes that need methods + constructors for instantiation
+                TokenValidator.class,        // Public constructors, API methods
+                IssuerConfigResolver.class,  // Package constructor, internal methods
+                SecurityEventCounter.class)  // Default constructor, counter methods
+                .methods(true)    // Methods needed for API calls and getters
+                .fields(false)    // No direct field access needed
                 .constructors(true) // Constructors needed for instantiation
+                .build();
+    }
+
+    /**
+     * Register JWT configuration classes that only need methods for reflection.
+     * These classes are created via builder pattern and accessed via getters.
+     *
+     * @return A {@link ReflectiveClassBuildItem} for the JWT configuration classes
+     */
+    @BuildStep
+    @NonNull
+    public ReflectiveClassBuildItem registerJwtConfigurationClassesForReflection() {
+        return ReflectiveClassBuildItem.builder(
+                // Configuration classes created via builder pattern
+                IssuerConfig.class,         // Builder pattern, getter methods
+                ParserConfig.class,         // Builder pattern, configuration getters
+                HttpJwksLoaderConfig.class) // Builder pattern, configuration getters
+                .methods(true)    // Methods needed for getter access
+                .fields(false)    // No direct field access needed
+                .constructors(false) // Created via builder, no constructor reflection needed
                 .build();
     }
 
@@ -166,14 +182,14 @@ public class CuiJwtProcessor {
     }
 
     /**
-     * Register JWT domain and token classes for reflection.
-     * These classes are used for token content processing and claim mapping.
+     * Register JWT token content classes for reflection.
+     * These classes need full reflection for getter/setter access and field binding.
      *
-     * @return A {@link ReflectiveClassBuildItem} for JWT domain classes
+     * @return A {@link ReflectiveClassBuildItem} for JWT token content classes
      */
     @BuildStep
     @NonNull
-    public ReflectiveClassBuildItem registerJwtDomainClassesForReflection() {
+    public ReflectiveClassBuildItem registerJwtTokenContentClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Token content classes - need full reflection for getter/setter access
                 AccessTokenContent.class,
@@ -185,16 +201,32 @@ public class CuiJwtProcessor {
                 // Claim handling classes - need full reflection for enum handling
                 ClaimValue.class,
                 ClaimName.class,
-                ClaimValueType.class,
+                ClaimValueType.class)
+                .methods(true)  // Methods needed for getters/setters on token content
+                .fields(true)   // Fields needed for direct field access in token content
+                .constructors(true) // Constructors needed for instantiation
+                .build();
+    }
+
+    /**
+     * Register JWT claim mapper classes for reflection.
+     * These classes only need constructors for instantiation - no method/field access.
+     *
+     * @return A {@link ReflectiveClassBuildItem} for JWT claim mapper classes
+     */
+    @BuildStep
+    @NonNull
+    public ReflectiveClassBuildItem registerJwtClaimMapperClassesForReflection() {
+        return ReflectiveClassBuildItem.builder(
                 // Claim mappers - only need constructors for instantiation
                 IdentityMapper.class,
                 JsonCollectionMapper.class,
                 OffsetDateTimeMapper.class,
                 ScopeMapper.class,
                 StringSplitterMapper.class)
-                .methods(true)  // Methods needed for getters/setters on token content
-                .fields(true)   // Fields needed for direct field access in token content
-                .constructors(true) // Constructors needed for instantiation
+                .methods(false)  // Methods not needed - mappers are called via interface
+                .fields(false)   // Fields not needed - no field access
+                .constructors(true) // Only constructors needed for instantiation
                 .build();
     }
 
