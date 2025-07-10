@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import jakarta.ws.rs.core.Response;
+
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -49,9 +50,9 @@ public enum BearerTokenStatus {
     FULLY_VERIFIED {
         public Response createResponse(BearerTokenResult result) {
             return Response.ok()
-                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
-                .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                .build();
+                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                    .build();
         }
     },
 
@@ -65,10 +66,10 @@ public enum BearerTokenStatus {
     COULD_NOT_ACCESS_REQUEST {
         public Response createResponse(BearerTokenResult result) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
-                .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                .entity(ERROR_MSG_SERVER_ERROR)
-                .build();
+                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                    .entity(ERROR_MSG_SERVER_ERROR)
+                    .build();
         }
     },
 
@@ -85,10 +86,10 @@ public enum BearerTokenStatus {
     NO_TOKEN_GIVEN {
         public Response createResponse(BearerTokenResult result) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                .header(HEADER_WWW_AUTHENTICATE, BEARER_REALM)
-                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
-                .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                .build();
+                    .header(HEADER_WWW_AUTHENTICATE, BEARER_REALM)
+                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                    .build();
         }
     },
 
@@ -106,13 +107,12 @@ public enum BearerTokenStatus {
      */
     PARSING_ERROR {
         public Response createResponse(BearerTokenResult result) {
-            String wwwAuthenticate = buildWwwAuthenticateHeader(ERROR_INVALID_TOKEN, 
-                ERROR_MSG_INVALID_TOKEN);
+            String wwwAuthenticate = buildInvalidTokenHeader();
             return Response.status(Response.Status.UNAUTHORIZED)
-                .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
-                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
-                .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                .build();
+                    .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                    .build();
         }
     },
 
@@ -131,25 +131,23 @@ public enum BearerTokenStatus {
         public Response createResponse(BearerTokenResult result) {
             // Check if it's a scope violation (401) or role/group violation (403)
             boolean hasScopeViolation = !result.getMissingScopes().isEmpty();
-            
+
             if (hasScopeViolation) {
                 // OAuth Step-Up Authentication Challenge for insufficient scope
-                String wwwAuthenticate = buildWwwAuthenticateHeaderWithScope(ERROR_INSUFFICIENT_SCOPE, 
-                    ERROR_MSG_HIGHER_PRIVILEGES, result.getMissingScopes());
+                String wwwAuthenticate = buildInsufficientScopeHeader(result.getMissingScopes());
                 return Response.status(Response.Status.UNAUTHORIZED)
-                    .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
-                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
-                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                    .build();
+                        .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                        .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                        .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                        .build();
             } else {
                 // Role/group violation - 403 Forbidden with OAuth-style error structure
-                String wwwAuthenticate = buildWwwAuthenticateHeaderWithPrivileges(ERROR_INSUFFICIENT_PRIVILEGES, 
-                    ERROR_MSG_HIGHER_PRIVILEGES, result.getMissingRoles(), result.getMissingGroups());
+                String wwwAuthenticate = buildInsufficientPrivilegesHeader(result.getMissingRoles(), result.getMissingGroups());
                 return Response.status(Response.Status.FORBIDDEN)
-                    .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
-                    .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
-                    .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                    .build();
+                        .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                        .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                        .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                        .build();
             }
         }
     };
@@ -158,28 +156,28 @@ public enum BearerTokenStatus {
     private static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
     private static final String HEADER_CACHE_CONTROL = "Cache-Control";
     private static final String HEADER_PRAGMA = "Pragma";
-    
+
     // Header Values
     private static final String CACHE_CONTROL_VALUE = "no-store, no-cache, must-revalidate";
     private static final String PRAGMA_VALUE = "no-cache";
-    
+
     // OAuth Constants
     private static final String BEARER_REALM = "Bearer realm=\"protected-resource\"";
     private static final String BEARER_SCHEME = "Bearer";
     private static final String REALM_PARAMETER = "realm=\"protected-resource\"";
-    
+
     // OAuth Error Codes
     private static final String ERROR_INVALID_TOKEN = "invalid_token";
     private static final String ERROR_INSUFFICIENT_SCOPE = "insufficient_scope";
     private static final String ERROR_INSUFFICIENT_PRIVILEGES = "insufficient_privileges";
-    
+
     // OAuth Parameters
     private static final String PARAM_ERROR = "error";
     private static final String PARAM_ERROR_DESCRIPTION = "error_description";
     private static final String PARAM_SCOPE = "scope";
     private static final String PARAM_REQUIRED_ROLES = "required_roles";
     private static final String PARAM_REQUIRED_GROUPS = "required_groups";
-    
+
     // Error Messages
     private static final String ERROR_MSG_INVALID_TOKEN = "The access token is invalid";
     private static final String ERROR_MSG_HIGHER_PRIVILEGES = "The request requires higher privileges than provided by the access token";
@@ -194,75 +192,68 @@ public enum BearerTokenStatus {
     public abstract Response createResponse(BearerTokenResult result);
 
     /**
-     * Builds a standard WWW-Authenticate header for Bearer token errors.
+     * Builds a WWW-Authenticate header for invalid token errors.
      *
-     * @param error The OAuth error code
-     * @param errorDescription The human-readable error description
-     * @return Formatted WWW-Authenticate header value
+     * @return Formatted WWW-Authenticate header value for invalid tokens
      */
-    private static String buildWwwAuthenticateHeader(String error, String errorDescription) {
-        return String.format("%s %s, %s=\"%s\", %s=\"%s\"",
-            BEARER_SCHEME, REALM_PARAMETER, PARAM_ERROR, escapeQuotes(error), 
-            PARAM_ERROR_DESCRIPTION, escapeQuotes(errorDescription));
+    private static String buildInvalidTokenHeader() {
+        return "%s %s, %s=\"%s\", %s=\"%s\"".formatted(
+                BEARER_SCHEME, REALM_PARAMETER, PARAM_ERROR, ERROR_INVALID_TOKEN,
+                PARAM_ERROR_DESCRIPTION, ERROR_MSG_INVALID_TOKEN);
     }
 
     /**
-     * Builds a WWW-Authenticate header for scope-related constraint violations.
+     * Builds a WWW-Authenticate header for insufficient scope errors.
      * Follows OAuth Step-Up Authentication Challenge specification.
      *
-     * @param error The OAuth error code
-     * @param errorDescription The human-readable error description
      * @param missingScopes The collection of missing scopes
-     * @return Formatted WWW-Authenticate header value
+     * @return Formatted WWW-Authenticate header value for insufficient scope
      */
-    private static String buildWwwAuthenticateHeaderWithScope(String error, String errorDescription, Collection<String> missingScopes) {
+    private static String buildInsufficientScopeHeader(Collection<String> missingScopes) {
         StringBuilder sb = new StringBuilder();
         sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
-        sb.append(", ").append(PARAM_ERROR).append("=\"").append(escapeQuotes(error)).append("\"");
-        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(escapeQuotes(errorDescription)).append("\"");
-        
+        sb.append(", ").append(PARAM_ERROR).append("=\"").append(ERROR_INSUFFICIENT_SCOPE).append("\"");
+        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(ERROR_MSG_HIGHER_PRIVILEGES).append("\"");
+
         if (!missingScopes.isEmpty()) {
             String scopeValue = missingScopes.stream()
-                .map(BearerTokenStatus::escapeQuotes)
-                .collect(Collectors.joining(" "));
+                    .map(BearerTokenStatus::escapeQuotes)
+                    .collect(Collectors.joining(" "));
             sb.append(", ").append(PARAM_SCOPE).append("=\"").append(scopeValue).append("\"");
         }
-        
+
         return sb.toString();
     }
 
     /**
-     * Builds a WWW-Authenticate header for role/group-related constraint violations.
+     * Builds a WWW-Authenticate header for insufficient privileges errors.
      * Uses OAuth-style error structure adapted for role/group privileges.
      *
-     * @param error The OAuth error code
-     * @param errorDescription The human-readable error description
      * @param missingRoles The collection of missing roles
      * @param missingGroups The collection of missing groups
-     * @return Formatted WWW-Authenticate header value
+     * @return Formatted WWW-Authenticate header value for insufficient privileges
      */
-    private static String buildWwwAuthenticateHeaderWithPrivileges(String error, String errorDescription, 
-                                                           Collection<String> missingRoles, Collection<String> missingGroups) {
+    private static String buildInsufficientPrivilegesHeader(Collection<String> missingRoles, Collection<String> missingGroups) {
         StringBuilder sb = new StringBuilder();
         sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
-        sb.append(", ").append(PARAM_ERROR).append("=\"").append(escapeQuotes(error)).append("\"");
-        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(escapeQuotes(errorDescription)).append("\"");
-        
+        sb.append(", ").append(PARAM_ERROR).append("=\"").append(ERROR_INSUFFICIENT_PRIVILEGES).append("\"");
+        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(ERROR_MSG_HIGHER_PRIVILEGES).append("\"");
+
         // Add missing roles and groups as custom parameters
         if (!missingRoles.isEmpty()) {
             String rolesValue = missingRoles.stream()
-                .map(BearerTokenStatus::escapeQuotes)
-                .collect(Collectors.joining(" "));
+                    .map(BearerTokenStatus::escapeQuotes)
+                    .collect(Collectors.joining(" "));
             sb.append(", ").append(PARAM_REQUIRED_ROLES).append("=\"").append(rolesValue).append("\"");
         }
-        
+
         if (!missingGroups.isEmpty()) {
             String groupsValue = missingGroups.stream()
-                .map(BearerTokenStatus::escapeQuotes)
-                .collect(Collectors.joining(" "));
+                    .map(BearerTokenStatus::escapeQuotes)
+                    .collect(Collectors.joining(" "));
             sb.append(", ").append(PARAM_REQUIRED_GROUPS).append("=\"").append(groupsValue).append("\"");
         }
-        
+
         return sb.toString();
     }
 
