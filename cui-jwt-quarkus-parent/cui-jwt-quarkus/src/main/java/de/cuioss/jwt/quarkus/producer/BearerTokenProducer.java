@@ -30,6 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -172,16 +173,17 @@ public class BearerTokenProducer {
     public BearerTokenResult getBearerTokenResult(
             List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
 
-        // Check if we can access the HTTP request
-        Optional<HttpServletRequest> httpServletRequest = servletObjectsResolver.resolveHttpServletRequest();
-        if (httpServletRequest.isEmpty()) {
-            return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
-        }
-
-        String bearerToken = extractBearerTokenFromRequest(httpServletRequest.get());
+        String bearerToken = extractBearerTokenFromHeaderMap();
         if (bearerToken == null) {
-            LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
-            return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
+            // extractBearerTokenFromHeaderMap returns null for both "no headers accessible" and "no token given"
+            // We need to check if we can access headers to distinguish between these cases
+            Optional<Map<String, List<String>>> headerMap = servletObjectsResolver.resolveHeaderMap();
+            if (headerMap.isEmpty()) {
+                return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
+            } else {
+                LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
+                return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
+            }
         }
 
         try {
@@ -211,6 +213,20 @@ public class BearerTokenProducer {
     }
 
     /**
+     * Extracts the bearer token from the HTTP Authorization header using header map resolution.
+     *
+     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
+     */
+    private String extractBearerTokenFromHeaderMap() {
+        Optional<Map<String, List<String>>> headerMap = servletObjectsResolver.resolveHeaderMap();
+        if (headerMap.isEmpty()) {
+            return null;
+        }
+
+        return extractBearerTokenFromHeaders(headerMap.get());
+    }
+
+    /**
      * Extracts the bearer token from the HTTP Authorization header.
      *
      * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
@@ -232,6 +248,26 @@ public class BearerTokenProducer {
      */
     private String extractBearerTokenFromRequest(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+            return null;
+        }
+
+        return authHeader.substring(BEARER_PREFIX.length());
+    }
+
+    /**
+     * Extracts the bearer token from the given header map's Authorization header.
+     *
+     * @param headers the HTTP headers map
+     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
+     */
+    private String extractBearerTokenFromHeaders(Map<String, List<String>> headers) {
+        List<String> authHeaders = headers.get("Authorization");
+        if (authHeaders == null || authHeaders.isEmpty()) {
+            return null;
+        }
+
+        String authHeader = authHeaders.get(0); // Use first Authorization header
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             return null;
         }
