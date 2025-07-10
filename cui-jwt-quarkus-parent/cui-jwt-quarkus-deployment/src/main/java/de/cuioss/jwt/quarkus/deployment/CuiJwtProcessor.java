@@ -15,9 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
-import de.cuioss.jwt.quarkus.annotation.BearerToken;
-import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
-import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
+// Removed imports for cui-jwt-quarkus classes - they now use @RegisterForReflection
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
@@ -109,6 +107,7 @@ public class CuiJwtProcessor {
 
     /**
      * Register JWT validation classes for reflection.
+     * These are core library classes that need reflection for configuration and instantiation.
      *
      * @return A {@link ReflectiveClassBuildItem} for the JWT validation classes
      */
@@ -116,40 +115,24 @@ public class CuiJwtProcessor {
     @NonNull
     public ReflectiveClassBuildItem registerJwtValidationClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
-                // Core validation components
+                // Core validation components - need full reflection for configuration
                 TokenValidator.class,
                 IssuerConfig.class,
                 IssuerConfigResolver.class,
                 ParserConfig.class,
                 HttpJwksLoaderConfig.class,
-                SecurityEventCounter.class,
-                TokenValidatorProducer.class)
-                .methods(true)
-                .fields(true)
-                .constructors(true)
+                SecurityEventCounter.class)
+                // TokenValidatorProducer removed - it's in cui-jwt-quarkus module with @RegisterForReflection
+                .methods(true)  // Methods needed for configuration and method calls
+                .fields(true)   // Fields needed for configuration binding
+                .constructors(true) // Constructors needed for instantiation
                 .build();
     }
 
-    /**
-     * Register Bearer Token classes for reflection.
-     * Separated to handle runtime-only classes that aren't available at deployment time.
-     *
-     * @return A {@link ReflectiveClassBuildItem} for Bearer Token classes
-     */
-    @BuildStep
-    @NonNull
-    public ReflectiveClassBuildItem registerBearerTokenClassesForReflection() {
-        return ReflectiveClassBuildItem.builder(
-                "de.cuioss.jwt.quarkus.producer.BearerTokenProducer",
-                "de.cuioss.jwt.quarkus.annotation.BearerToken",
-                "de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver",
-                "de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver",
-                "de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver")
-                .methods(true)
-                .fields(true)
-                .constructors(true)
-                .build();
-    }
+    // REMOVED: registerBearerTokenClassesForReflection BuildStep
+    // All de.cuioss.jwt.quarkus classes now use @RegisterForReflection annotation directly
+    // This follows the standard: application-level classes use annotations,
+    // infrastructure/library classes use deployment processor
 
     /**
      * Register JWT validation pipeline classes for reflection.
@@ -161,14 +144,14 @@ public class CuiJwtProcessor {
     @NonNull
     public ReflectiveClassBuildItem registerJwtPipelineClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
-                // Critical validation pipeline classes (50-60% of processing time)
+                // Critical validation pipeline classes
                 NonValidatingJwtParser.class,
                 TokenSignatureValidator.class,
                 TokenHeaderValidator.class,
                 TokenClaimValidator.class,
                 TokenBuilder.class,
                 DecodedJwt.class,
-                // JWKS loading classes (10-15% of processing time)
+                // JWKS loading classes
                 HttpJwksLoader.class,
                 JWKSKeyLoader.class,
                 KeyInfo.class,
@@ -176,9 +159,9 @@ public class CuiJwtProcessor {
                 // Security and algorithm classes
                 SignatureAlgorithmPreferences.class,
                 JwkAlgorithmPreferences.class)
-                .methods(true)
-                .fields(true)
-                .constructors(true)
+                .methods(false)  // Methods not needed - these are instantiated and called directly
+                .fields(false)   // Fields not needed - no direct field access
+                .constructors(true) // Only constructors needed for instantiation
                 .build();
     }
 
@@ -192,26 +175,26 @@ public class CuiJwtProcessor {
     @NonNull
     public ReflectiveClassBuildItem registerJwtDomainClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
-                // Token content classes
+                // Token content classes - need full reflection for getter/setter access
                 AccessTokenContent.class,
                 IdTokenContent.class,
                 RefreshTokenContent.class,
                 TokenContent.class,
                 BaseTokenContent.class,
                 MinimalTokenContent.class,
-                // Claim handling classes
+                // Claim handling classes - need full reflection for enum handling
                 ClaimValue.class,
                 ClaimName.class,
                 ClaimValueType.class,
-                // Claim mappers for performance optimization
+                // Claim mappers - only need constructors for instantiation
                 IdentityMapper.class,
                 JsonCollectionMapper.class,
                 OffsetDateTimeMapper.class,
                 ScopeMapper.class,
                 StringSplitterMapper.class)
-                .methods(true)
-                .fields(true)
-                .constructors(true)
+                .methods(true)  // Methods needed for getters/setters on token content
+                .fields(true)   // Fields needed for direct field access in token content
+                .constructors(true) // Constructors needed for instantiation
                 .build();
     }
 
@@ -241,6 +224,8 @@ public class CuiJwtProcessor {
 
     /**
      * Register additional CDI beans for JWT validation.
+     * Note: cui-jwt-quarkus module classes now have @ApplicationScoped annotations
+     * and are auto-discovered by CDI scanning.
      *
      * @return A {@link AdditionalBeanBuildItem} for CDI beans that need explicit registration
      */
@@ -248,39 +233,24 @@ public class CuiJwtProcessor {
     @NonNull
     public AdditionalBeanBuildItem additionalBeans() {
         return AdditionalBeanBuildItem.builder()
-                .addBeanClass(TokenValidatorProducer.class)
-                .addBeanClass(BearerTokenProducer.class)
-                .addBeanClass("de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver")
+                // No library classes need explicit registration - they should be provided via producers
                 .setUnremovable()
                 .build();
     }
 
     /**
-     * Register TokenValidator as an unremovable bean to ensure it's available for injection.
+     * Register core JWT validation beans as unremovable to ensure they're available for injection.
      * This is critical for native image compilation where CDI discovery can be limited.
+     * Note: cui-jwt-quarkus module beans are marked unremovable via their producers.
      *
      * @param unremovableBeans producer for unremovable bean build items
      */
     @BuildStep
     public void registerUnremovableBeans(BuildProducer<UnremovableBeanBuildItem> unremovableBeans) {
-        // Ensure TokenValidator is never removed from the CDI container
+        // Ensure core library beans are never removed from the CDI container
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
                 DotName.createSimple(TokenValidator.class.getName())
         ));
-
-        // Ensure the producers are never removed
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
-                DotName.createSimple(TokenValidatorProducer.class.getName())
-        ));
-
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
-                DotName.createSimple(BearerTokenProducer.class.getName())
-        ));
-
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
-                DotName.createSimple("de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver")
-        ));
-
     }
 
 

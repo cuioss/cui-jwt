@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.producer;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Collection;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
  * @author Oliver Wolff
  * @since 1.0
  */
+@RegisterForReflection
 public enum BearerTokenStatus {
 
     /**

@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -48,6 +49,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
  */
 @ApplicationScoped
 @Readiness // Marks this as a readiness check
+@RegisterForReflection
 public class JwksEndpointHealthCheck implements HealthCheck {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwksEndpointHealthCheck.class);

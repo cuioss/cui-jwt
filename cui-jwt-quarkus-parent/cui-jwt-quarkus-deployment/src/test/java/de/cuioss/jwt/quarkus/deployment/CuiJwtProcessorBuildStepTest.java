@@ -61,22 +61,14 @@ class CuiJwtProcessorBuildStepTest {
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.ParserConfig"));
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig"));
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.security.SecurityEventCounter"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.producer.TokenValidatorProducer"));
+        // TokenValidatorProducer is no longer registered here - it has @RegisterForReflection annotation
+        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.producer.TokenValidatorProducer"));
     }
 
-    @Test
-    void shouldRegisterBearerTokenClassesForReflection() {
-        // Act
-        ReflectiveClassBuildItem reflectiveItem = processor.registerBearerTokenClassesForReflection();
-
-        // Assert
-        assertNotNull(reflectiveItem);
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.producer.BearerTokenProducer"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.annotation.BearerToken"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver"));
-    }
+    // REMOVED: registerBearerTokenClassesForReflection test
+    // All cui-jwt-quarkus classes now use @RegisterForReflection annotation directly
+    // This follows the standard: application-level classes use annotations,
+    // infrastructure/library classes use deployment processor
 
     @Test
     void shouldRegisterRuntimeInitializedClasses() {
@@ -95,9 +87,8 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(beanItem);
-        assertTrue(beanItem.getBeanClasses().contains("de.cuioss.jwt.quarkus.producer.TokenValidatorProducer"));
-        assertTrue(beanItem.getBeanClasses().contains("de.cuioss.jwt.quarkus.producer.BearerTokenProducer"));
-        assertTrue(beanItem.getBeanClasses().contains("de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver"));
+        // No library classes are registered explicitly now - they are provided via producers
+        // cui-jwt-quarkus classes are now auto-discovered via @ApplicationScoped annotations
     }
 
     @Test
@@ -129,7 +120,7 @@ class CuiJwtProcessorBuildStepTest {
         // Act
         processor.registerUnremovableBeans(producer);
 
-        // Assert - We now have 4 unremovable beans: TokenValidator, TokenValidatorProducer, BearerTokenProducer, RestEasyServletObjectsResolver
-        assertEquals(4, unremovableBeans.size());
+        // Assert - We now have 1 core library unremovable bean: TokenValidator
+        assertEquals(1, unremovableBeans.size());
     }
 }

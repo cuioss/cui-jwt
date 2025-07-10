@@ -19,6 +19,7 @@ import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.ws.rs.core.Response;
 import lombok.Builder;
 import lombok.NonNull;
@@ -68,6 +69,7 @@ import java.util.Set;
  */
 @Value
 @Builder
+@RegisterForReflection
 @SuppressWarnings("java:S1948") // owolff: All implementations are Serializable
 public class BearerTokenResult implements Serializable {
 
