@@ -141,40 +141,6 @@ class BearerTokenResultTest {
     @DisplayName("Builder Helper Methods")
     class BuilderHelperMethods {
 
-        @Test
-        @DisplayName("withAccessTokenContent() should configure builder with missing attributes")
-        void withAccessTokenContentShouldConfigureBuilder() {
-            var tokenContent = createTestToken();
-            var expectedScopes = Set.of("read", "write", "admin");
-            var expectedRoles = Set.of("user", "admin");
-            var expectedGroups = Set.of("group1", "group2");
-
-            var result = BearerTokenResult.withAccessTokenContent(tokenContent, expectedScopes, expectedRoles, expectedGroups)
-                .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
-                .build();
-
-            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
-            assertTrue(result.getAccessTokenContent().isPresent());
-            assertEquals(tokenContent, result.getAccessTokenContent().get());
-            assertFalse(result.getMissingScopes().isEmpty());
-            assertFalse(result.getMissingRoles().isEmpty());
-            assertFalse(result.getMissingGroups().isEmpty());
-        }
-
-        @Test
-        @DisplayName("withAccessTokenContent() with null token should handle gracefully")
-        void withAccessTokenContentWithNullShouldHandleGracefully() {
-            var expectedScopes = Set.of("read");
-            var expectedRoles = Set.of("user");
-            var expectedGroups = Set.of("group");
-
-            var result = BearerTokenResult.withAccessTokenContent(null, expectedScopes, expectedRoles, expectedGroups)
-                .status(BearerTokenStatus.PARSING_ERROR)
-                .build();
-
-            assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
-        }
 
         @Test
         @DisplayName("fromException() should configure builder with exception details")

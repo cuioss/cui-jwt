@@ -199,15 +199,14 @@ class BearerTokenProducerLogicTest {
     class EdgeCases {
 
         @Test
-        @DisplayName("should handle empty bearer token")
-        void shouldHandleEmptyBearerToken() {
+        @DisplayName("should handle empty bearer token as no token given")
+        void shouldHandleEmptyBearerTokenAsNoTokenGiven() {
             requestResolverMock.setHeader("Authorization", "Bearer ");
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
 
             var resolved = underTest.getAccessTokenContent();
-            assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
+            assertFalse(resolved.isPresent());
         }
 
         @Test
