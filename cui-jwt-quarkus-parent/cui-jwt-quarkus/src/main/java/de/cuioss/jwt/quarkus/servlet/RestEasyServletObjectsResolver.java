@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.servlet;
 
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
@@ -48,7 +47,6 @@ import jakarta.enterprise.context.ApplicationScoped;
  */
 @ApplicationScoped
 @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY)
-@RegisterForReflection(methods = false, fields = false)
 public class RestEasyServletObjectsResolver implements HttpServletRequestResolver {
 
     private static final CuiLogger LOGGER = new CuiLogger(RestEasyServletObjectsResolver.class);

@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.servlet;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 
@@ -36,7 +35,6 @@ import java.util.*;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RegisterForReflection(methods = false, fields = false)
 public interface HttpServletRequestResolver {
 
     /**

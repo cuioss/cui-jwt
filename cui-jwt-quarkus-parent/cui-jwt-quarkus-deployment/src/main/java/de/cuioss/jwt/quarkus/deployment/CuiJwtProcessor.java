@@ -260,7 +260,15 @@ public class CuiJwtProcessor {
     @NonNull
     public AdditionalBeanBuildItem additionalBeans() {
         return AdditionalBeanBuildItem.builder()
-                // No library classes need explicit registration - they should be provided via producers
+                // Explicitly register the CDI producer classes to ensure they're discovered
+                .addBeanClasses(
+                        de.cuioss.jwt.quarkus.producer.TokenValidatorProducer.class,
+                        de.cuioss.jwt.quarkus.producer.BearerTokenProducer.class,
+                        de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
+                        de.cuioss.jwt.quarkus.config.ParserConfigResolver.class,
+                        de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver.class,
+                        de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver.class
+                )
                 .setUnremovable()
                 .build();
     }
