@@ -145,11 +145,6 @@ public class CuiJwtProcessor {
                 .build();
     }
 
-    // REMOVED: registerBearerTokenClassesForReflection BuildStep
-    // All de.cuioss.jwt.quarkus classes now use @RegisterForReflection annotation directly
-    // This follows the standard: application-level classes use annotations,
-    // infrastructure/library classes use deployment processor
-
     /**
      * Register JWT validation pipeline classes for reflection.
      * These are the performance-critical classes in the validation pipeline.
