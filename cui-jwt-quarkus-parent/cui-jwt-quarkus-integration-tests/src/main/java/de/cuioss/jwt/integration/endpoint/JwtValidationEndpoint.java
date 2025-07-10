@@ -29,7 +29,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 import jakarta.enterprise.context.RequestScoped;
@@ -85,7 +85,7 @@ public class JwtValidationEndpoint {
 
     /**
      * Validates a JWT access token - primary endpoint for integration testing and benchmarking.
-     * Can use either direct TokenValidator or BearerTokenProducer based on request.
+     * Uses BearerTokenProducer's public getAccessTokenContent() method for Bearer header validation.
      *
      * @param tokenRequest Request containing the access token (optional if using Bearer header)
      * @return Validation result
@@ -95,9 +95,9 @@ public class JwtValidationEndpoint {
     public Response validateToken(TokenRequest tokenRequest) {
         // First try to use the bearer token service if available
         try {
-            BearerTokenResult bearerTokenResult = bearerTokenProducer.getBearerTokenResult();
-            if (bearerTokenResult.isSuccessfullyAuthorized()) {
-                AccessTokenContent token = bearerTokenResult.getAccessTokenContent().get();
+            var accessTokenOpt = bearerTokenProducer.getAccessTokenContent();
+            if (accessTokenOpt.isPresent()) {
+                AccessTokenContent token = accessTokenOpt.get();
                 LOGGER.info("Access token validation successful via BearerTokenProducer for subject: %s", token.getSubject());
                 return Response.ok(new ValidationResponse(true, "Access token is valid",
                         Map.of(
@@ -109,7 +109,7 @@ public class JwtValidationEndpoint {
                         )))
                         .build();
             } else {
-                LOGGER.info("BearerTokenProducer validation failed with status: %s", bearerTokenResult.getStatus());
+                LOGGER.info("BearerTokenProducer validation failed - no valid token found");
             }
         } catch (Exception e) {
             LOGGER.warn("BearerTokenProducer failed with exception: %s", e.getMessage());
@@ -215,7 +215,7 @@ public class JwtValidationEndpoint {
     public Response testTokenWithScopes() {
         if (tokenWithScopes.isSuccessfullyAuthorized()) {
             AccessTokenContent token = tokenWithScopes.getAccessTokenContent().get();
-            boolean hasRequiredScope = token.providesScopes(List.of("read"));
+            boolean hasRequiredScope = token.providesScopes(Set.of("read"));
             return Response.ok(new ValidationResponse(hasRequiredScope,
                     hasRequiredScope ? "Token has required scopes" : "Token does not have required scopes",
                     Map.of(
@@ -239,7 +239,7 @@ public class JwtValidationEndpoint {
     public Response testTokenWithRoles() {
         if (tokenWithRoles.isSuccessfullyAuthorized()) {
             AccessTokenContent token = tokenWithRoles.getAccessTokenContent().get();
-            boolean hasRequiredRole = token.providesRoles(List.of("user"));
+            boolean hasRequiredRole = token.providesRoles(Set.of("user"));
             return Response.ok(new ValidationResponse(hasRequiredRole,
                     hasRequiredRole ? "Token has required roles" : "Token does not have required roles",
                     Map.of(
@@ -263,7 +263,7 @@ public class JwtValidationEndpoint {
     public Response testTokenWithGroups() {
         if (tokenWithGroups.isSuccessfullyAuthorized()) {
             AccessTokenContent token = tokenWithGroups.getAccessTokenContent().get();
-            boolean hasRequiredGroup = token.providesGroups(List.of("test-group"));
+            boolean hasRequiredGroup = token.providesGroups(Set.of("test-group"));
             return Response.ok(new ValidationResponse(hasRequiredGroup,
                     hasRequiredGroup ? "Token has required groups" : "Token does not have required groups",
                     Map.of(
@@ -287,9 +287,9 @@ public class JwtValidationEndpoint {
     public Response testTokenWithAll() {
         if (tokenWithAll.isSuccessfullyAuthorized()) {
             AccessTokenContent token = tokenWithAll.getAccessTokenContent().get();
-            boolean hasAllRequirements = token.providesScopes(List.of("read")) &&
-                    token.providesRoles(List.of("user")) &&
-                    token.providesGroups(List.of("test-group"));
+            boolean hasAllRequirements = token.providesScopes(Set.of("read")) &&
+                    token.providesRoles(Set.of("user")) &&
+                    token.providesGroups(Set.of("test-group"));
             return Response.ok(new ValidationResponse(hasAllRequirements,
                     hasAllRequirements ? "Token meets all requirements" : "Token does not meet all requirements",
                     Map.of(
@@ -343,7 +343,7 @@ public class JwtValidationEndpoint {
                     Map.of(
                             "subject", token.getSubject(),
                             "scopes", token.getScopes(),
-                            "requiredScopes", List.of("read")
+                            "requiredScopes", Set.of("read")
                     )))
                     .build();
         } else {
@@ -365,7 +365,7 @@ public class JwtValidationEndpoint {
                     Map.of(
                             "subject", token.getSubject(),
                             "roles", token.getRoles(),
-                            "requiredRoles", List.of("user")
+                            "requiredRoles", Set.of("user")
                     )))
                     .build();
         } else {
@@ -387,7 +387,7 @@ public class JwtValidationEndpoint {
                     Map.of(
                             "subject", token.getSubject(),
                             "groups", token.getGroups(),
-                            "requiredGroups", List.of("test-group")
+                            "requiredGroups", Set.of("test-group")
                     )))
                     .build();
         } else {
@@ -411,9 +411,9 @@ public class JwtValidationEndpoint {
                             "scopes", token.getScopes(),
                             "roles", token.getRoles(),
                             "groups", token.getGroups(),
-                            "requiredScopes", List.of("read"),
-                            "requiredRoles", List.of("user"),
-                            "requiredGroups", List.of("test-group")
+                            "requiredScopes", Set.of("read"),
+                            "requiredRoles", Set.of("user"),
+                            "requiredGroups", Set.of("test-group")
                     )))
                     .build();
         } else {

@@ -88,30 +88,19 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * }
  * }</pre>
  * <p>
- * Direct service usage example:
+ * For direct service usage, use the CDI producer method with annotations:
  * <pre>{@code
  * @Inject
- * BearerTokenProducer tokenService;
+ * @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"})
+ * BearerTokenResult tokenResult;
  *
  * public void someMethod() {
- *     BearerTokenResult result = tokenService.getBearerTokenResult(
- *         List.of("read"), List.of("user"), List.of("admin"));
- *
- *     if (result.isSuccessfullyAuthorized()) {
- *         AccessTokenContent content = result.getAccessTokenContent().get();
+ *     if (tokenResult.isSuccessfullyAuthorized()) {
+ *         AccessTokenContent content = tokenResult.getAccessTokenContent().get();
  *         // Use validated token
  *     } else {
  *         // Handle validation failure with detailed status information
- *         switch (result.getStatus()) {
- *             case PARSING_ERROR:
- *                 // Handle parsing errors
- *                 break;
- *             case CONSTRAINT_VIOLATION:
- *                 // Handle missing scopes/roles/groups
- *                 break;
- *             default:
- *                 // Handle other cases
- *         }
+ *         return tokenResult.errorResponse();
  *     }
  * }
  * }</pre>
@@ -143,7 +132,7 @@ public class BearerTokenProducer {
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
     public Optional<AccessTokenContent> getAccessTokenContent() {
-        return getAccessTokenContentWithRequirements(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        return getAccessTokenContentWithRequirements(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
     }
 
     /**
@@ -154,8 +143,8 @@ public class BearerTokenProducer {
      * @param requiredGroups Required groups for the token
      * @return Optional containing validated AccessTokenContent, or empty if validation fails
      */
-    public Optional<AccessTokenContent> getAccessTokenContentWithRequirements(
-            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
+    private Optional<AccessTokenContent> getAccessTokenContentWithRequirements(
+            Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
         BearerTokenResult result = getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
         return result.getAccessTokenContent();
     }
@@ -169,8 +158,8 @@ public class BearerTokenProducer {
      * @return BearerTokenResult containing detailed validation information
      */
     @NonNull
-    public BearerTokenResult getBearerTokenResult(
-            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
+    private BearerTokenResult getBearerTokenResult(
+            Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
         String bearerToken = extractBearerTokenFromHeaderMap();
         if (bearerToken == null) {
@@ -195,9 +184,8 @@ public class BearerTokenProducer {
 
             if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
                 LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
-                return BearerTokenResult.builder()
+                return BearerTokenResult.withAccessTokenContent(tokenContent, requiredScopes, requiredRoles, requiredGroups)
                     .status(BearerTokenStatus.FULLY_VERIFIED)
-                    .accessTokenContent(tokenContent, requiredScopes, requiredRoles, requiredGroups)
                     .build();
             } else {
                 LOGGER.debug(BEARER_TOKEN_REQUIREMENTS_NOT_MET::format);
@@ -210,24 +198,13 @@ public class BearerTokenProducer {
             }
         } catch (TokenValidationException e) {
             LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
-            return BearerTokenResult.builder()
+            return BearerTokenResult.fromException(e)
                 .status(BearerTokenStatus.PARSING_ERROR)
-                .error(e)
                 .missingScopes(Set.copyOf(requiredScopes))
                 .missingRoles(Set.copyOf(requiredRoles))
                 .missingGroups(Set.copyOf(requiredGroups))
                 .build();
         }
-    }
-
-    /**
-     * Gets comprehensive bearer token validation result for the current request without specific requirements.
-     *
-     * @return BearerTokenResult containing detailed validation information
-     */
-    @NonNull
-    public BearerTokenResult getBearerTokenResult() {
-        return getBearerTokenResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     }
 
     /**
@@ -308,9 +285,9 @@ public class BearerTokenProducer {
         BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
 
         // Apply pre-1.0 rule: Use collection as early as possible
-        List<String> requiredScopes = annotation != null ? List.of(annotation.requiredScopes()) : Collections.emptyList();
-        List<String> requiredRoles = annotation != null ? List.of(annotation.requiredRoles()) : Collections.emptyList();
-        List<String> requiredGroups = annotation != null ? List.of(annotation.requiredGroups()) : Collections.emptyList();
+        Set<String> requiredScopes = annotation != null ? Set.of(annotation.requiredScopes()) : Collections.emptySet();
+        Set<String> requiredRoles = annotation != null ? Set.of(annotation.requiredRoles()) : Collections.emptySet();
+        Set<String> requiredGroups = annotation != null ? Set.of(annotation.requiredGroups()) : Collections.emptySet();
 
         return getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
     }

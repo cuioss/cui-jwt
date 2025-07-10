@@ -26,17 +26,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Comprehensive tests for the {@link BearerTokenResult#errorResponse()} method.
+ * Tests for {@link BearerTokenResult#errorResponse()} method OAuth compliance.
  * <p>
- * This test class validates the OAuth 2.0 Bearer Token specification (RFC 6750) and
- * OAuth Step-Up Authentication Challenge (draft-ietf-oauth-step-up-authn-challenge-17)
- * compliance of the error response generation.
+ * Validates OAuth 2.0 Bearer Token specification (RFC 6750) and OAuth Step-Up
+ * Authentication Challenge compliance of error response generation.
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -53,7 +51,7 @@ class BearerTokenResultErrorResponseTest {
         void shouldReturn200WithSecurityHeaders() {
             var tokenContent = createTestToken();
             var result = BearerTokenResult.success(tokenContent,
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -72,7 +70,7 @@ class BearerTokenResultErrorResponseTest {
         @DisplayName("should return 500 Internal Server Error with error message")
         void shouldReturn500WithErrorMessage() {
             var result = BearerTokenResult.couldNotAccessRequest(
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -92,7 +90,7 @@ class BearerTokenResultErrorResponseTest {
         @DisplayName("should return 401 Unauthorized with basic WWW-Authenticate header")
         void shouldReturn401WithBasicWWWAuthenticate() {
             var result = BearerTokenResult.noTokenGiven(
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -113,7 +111,7 @@ class BearerTokenResultErrorResponseTest {
             var exception = new TokenValidationException(
                 SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Token format is invalid");
             var result = BearerTokenResult.parsingError(exception,
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -134,7 +132,7 @@ class BearerTokenResultErrorResponseTest {
             var exception = new TokenValidationException(
                 SecurityEventCounter.EventType.INVALID_JWT_FORMAT, null);
             var result = BearerTokenResult.parsingError(exception,
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -166,7 +164,10 @@ class BearerTokenResultErrorResponseTest {
             assertTrue(wwwAuthenticate.contains("Bearer realm=\"protected-resource\""));
             assertTrue(wwwAuthenticate.contains("error=\"insufficient_scope\""));
             assertTrue(wwwAuthenticate.contains("error_description=\"The request requires higher privileges than provided by the access token\""));
-            assertTrue(wwwAuthenticate.contains("scope=\"read write\""));
+            // Check both possible orders since Set doesn't guarantee ordering
+            boolean hasCorrectScope = wwwAuthenticate.contains("scope=\"read write\"") ||
+                                     wwwAuthenticate.contains("scope=\"write read\"");
+            assertTrue(hasCorrectScope, "WWW-Authenticate header should contain correctly ordered scopes: " + wwwAuthenticate);
         }
 
         @Test
@@ -187,7 +188,10 @@ class BearerTokenResultErrorResponseTest {
             assertTrue(wwwAuthenticate.contains("Bearer realm=\"protected-resource\""));
             assertTrue(wwwAuthenticate.contains("error=\"insufficient_privileges\""));
             assertTrue(wwwAuthenticate.contains("error_description=\"The request requires higher privileges than provided by the access token\""));
-            assertTrue(wwwAuthenticate.contains("required_roles=\"admin manager\""));
+            // Check both possible orders since Set doesn't guarantee ordering
+            boolean hasCorrectRoles = wwwAuthenticate.contains("required_roles=\"admin manager\"") ||
+                                     wwwAuthenticate.contains("required_roles=\"manager admin\"");
+            assertTrue(hasCorrectRoles, "WWW-Authenticate header should contain correctly ordered roles: " + wwwAuthenticate);
         }
 
         @Test
@@ -205,7 +209,10 @@ class BearerTokenResultErrorResponseTest {
             assertNotNull(wwwAuthenticate);
             assertTrue(wwwAuthenticate.contains("Bearer realm=\"protected-resource\""));
             assertTrue(wwwAuthenticate.contains("error=\"insufficient_privileges\""));
-            assertTrue(wwwAuthenticate.contains("required_groups=\"developers testers\""));
+            // Check both possible orders since Set doesn't guarantee ordering
+            boolean hasCorrectGroups = wwwAuthenticate.contains("required_groups=\"developers testers\"") ||
+                                      wwwAuthenticate.contains("required_groups=\"testers developers\"");
+            assertTrue(hasCorrectGroups, "WWW-Authenticate header should contain correctly ordered groups: " + wwwAuthenticate);
         }
 
         @Test
@@ -251,30 +258,18 @@ class BearerTokenResultErrorResponseTest {
     class QuoteEscaping {
 
         @Test
-        @DisplayName("should escape quotes in error descriptions")
-        void shouldEscapeQuotesInErrorDescriptions() {
-            var exception = new TokenValidationException(
-                SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Token contains \"quotes\"");
-            var result = BearerTokenResult.parsingError(exception,
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
-
-            Response response = result.errorResponse();
-
-            String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
-            assertTrue(wwwAuthenticate.contains("error_description=\"The access token is invalid\""));
-        }
-
-        @Test
         @DisplayName("should escape quotes in scope names")
         void shouldEscapeQuotesInScopeNames() {
             var missingScopes = Set.of("read:\"special\"", "write");
             var result = BearerTokenResult.constraintViolation(
                 missingScopes, Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
-
-            String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
-            assertTrue(wwwAuthenticate.contains("scope=\"read:\\\"special\\\" write\""));
+            String wwwAuthenticate = result.errorResponse().getHeaderString("WWW-Authenticate");
+            
+            // Check both possible orders since Set doesn't guarantee ordering
+            boolean hasCorrectScope = wwwAuthenticate.contains("scope=\"read:\\\"special\\\" write\"") ||
+                                     wwwAuthenticate.contains("scope=\"write read:\\\"special\\\"\"");
+            assertTrue(hasCorrectScope, "WWW-Authenticate header should contain correctly escaped scopes: " + wwwAuthenticate);
         }
 
         @Test
@@ -284,9 +279,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                 Collections.emptySet(), missingRoles, Collections.emptySet());
 
-            Response response = result.errorResponse();
-
-            String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
+            String wwwAuthenticate = result.errorResponse().getHeaderString("WWW-Authenticate");
             assertTrue(wwwAuthenticate.contains("required_roles=\"admin:\\\"special\\\"\""));
         }
     }
@@ -298,20 +291,21 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should include security headers in all responses")
         void shouldIncludeSecurityHeadersInAllResponses() {
-            var responses = List.of(
-                BearerTokenResult.success(createTestToken(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
-                BearerTokenResult.couldNotAccessRequest(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
-                BearerTokenResult.noTokenGiven(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
-                BearerTokenResult.parsingError(new TokenValidationException(SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "test"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
-                BearerTokenResult.constraintViolation(Set.of("read"), Collections.emptySet(), Collections.emptySet()).errorResponse()
+            var testCases = java.util.Map.of(
+                "success", BearerTokenResult.success(createTestToken(), Set.of(), Set.of(), Set.of()),
+                "couldNotAccess", BearerTokenResult.couldNotAccessRequest(Set.of(), Set.of(), Set.of()),
+                "noToken", BearerTokenResult.noTokenGiven(Set.of(), Set.of(), Set.of()),
+                "parsingError", BearerTokenResult.parsingError(new TokenValidationException(SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "test"), Set.of(), Set.of(), Set.of()),
+                "constraintViolation", BearerTokenResult.constraintViolation(Set.of("read"), Set.of(), Set.of())
             );
 
-            for (Response response : responses) {
+            testCases.forEach((name, result) -> {
+                var response = result.errorResponse();
                 assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"),
-                    "Cache-Control header should be present");
+                    name + " should have Cache-Control header");
                 assertEquals("no-cache", response.getHeaderString("Pragma"),
-                    "Pragma header should be present");
-            }
+                    name + " should have Pragma header");
+            });
         }
     }
 

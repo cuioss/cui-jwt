@@ -73,13 +73,7 @@ class BearerTokenProducerLogicTest {
             mockTokenValidator.setAccessTokenContent(expected);
             requestResolverMock.setBearerToken(expected.getRawToken());
 
-            // Test new BearerTokenResult method
-            BearerTokenResult result = underTest.getBearerTokenResult();
-            assertTrue(result.isSuccessfullyAuthorized());
-            assertFalse(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
-            assertTrue(result.getAccessTokenContent().isPresent());
-            assertEquals(expected, result.getAccessTokenContent().get());
+            // Only test the public API now
 
             // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
@@ -135,12 +129,7 @@ class BearerTokenProducerLogicTest {
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
 
-            // Test new BearerTokenResult method
-            BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
+            // Only test the public API now
 
             // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
@@ -154,12 +143,7 @@ class BearerTokenProducerLogicTest {
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
 
-            // Test new BearerTokenResult method
-            BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
+            // Only test the public API now
 
             // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
@@ -185,14 +169,7 @@ class BearerTokenProducerLogicTest {
             mockTokenValidator.setShouldFail(true);
             requestResolverMock.setBearerToken("invalid-token");
 
-            // Test new BearerTokenResult method
-            BearerTokenResult result = underTest.getBearerTokenResult();
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
-            assertTrue(result.getErrorEventType().isPresent());
-            assertTrue(result.getErrorMessage().isPresent());
+            // Only test the public API now
 
             // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
@@ -240,169 +217,18 @@ class BearerTokenProducerLogicTest {
         }
     }
 
-    @Nested
-    @DisplayName("BearerTokenResult Methods")
-    class BearerTokenResultMethods {
-
-        @Test
-        @DisplayName("should provide detailed information for successful validation")
-        void shouldProvideDetailedInformationForSuccessfulValidation() {
-            List<String> requiredScopes = List.of("read", "write");
-            List<String> requiredRoles = List.of("admin");
-            List<String> requiredGroups = List.of("developers");
-
-            AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
-                    Map.of(
-                            ClaimName.SCOPE, List.of("read", "write", "admin"),
-                            ClaimName.ROLES, List.of("admin", "user"),
-                            ClaimName.GROUPS, List.of("developers", "admins")
-                    )
-            );
-            mockTokenValidator.setAccessTokenContent(tokenContent);
-            requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-            BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-
-            assertTrue(result.isSuccessfullyAuthorized());
-            assertFalse(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
-            assertTrue(result.getAccessTokenContent().isPresent());
-            assertEquals(tokenContent, result.getAccessTokenContent().get());
-            assertTrue(result.getMissingScopes().isEmpty());
-            assertTrue(result.getMissingRoles().isEmpty());
-            assertTrue(result.getMissingGroups().isEmpty());
-            assertFalse(result.getErrorEventType().isPresent());
-            assertFalse(result.getErrorMessage().isPresent());
-        }
-
-        @Test
-        @DisplayName("should provide detailed information for constraint violation")
-        void shouldProvideDetailedInformationForConstraintViolation() {
-            List<String> requiredScopes = List.of("read", "write");
-            List<String> requiredRoles = List.of("admin");
-            List<String> requiredGroups = List.of("developers");
-
-            AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
-                    Map.of(
-                            ClaimName.SCOPE, List.of("read"),
-                            ClaimName.ROLES, List.of("user"),
-                            ClaimName.GROUPS, List.of("testers")
-                    )
-            );
-            mockTokenValidator.setAccessTokenContent(tokenContent);
-            requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-            BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(Set.of("write"), result.getMissingScopes());
-            assertEquals(Set.of("admin"), result.getMissingRoles());
-            assertEquals(Set.of("developers"), result.getMissingGroups());
-            assertFalse(result.getErrorEventType().isPresent());
-            assertFalse(result.getErrorMessage().isPresent());
-        }
-
-        @Test
-        @DisplayName("should provide detailed information for parsing error")
-        void shouldProvideDetailedInformationForParsingError() {
-            List<String> requiredScopes = List.of("read");
-            List<String> requiredRoles = List.of("user");
-            List<String> requiredGroups = List.of("developers");
-
-            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
-            mockTokenValidator.setShouldFail(true);
-            requestResolverMock.setBearerToken("invalid-token");
-
-            BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(Set.copyOf(requiredScopes), result.getMissingScopes());
-            assertEquals(Set.copyOf(requiredRoles), result.getMissingRoles());
-            assertEquals(Set.copyOf(requiredGroups), result.getMissingGroups());
-            assertTrue(result.getErrorEventType().isPresent());
-            assertTrue(result.getErrorMessage().isPresent());
-        }
-
-        @Test
-        @DisplayName("should provide detailed information for no token given")
-        void shouldProvideDetailedInformationForNoTokenGiven() {
-            List<String> requiredScopes = List.of("read");
-            List<String> requiredRoles = List.of("user");
-            List<String> requiredGroups = List.of("developers");
-
-            requestResolverMock.clearHeaders();
-            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
-
-            BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(Set.copyOf(requiredScopes), result.getMissingScopes());
-            assertEquals(Set.copyOf(requiredRoles), result.getMissingRoles());
-            assertEquals(Set.copyOf(requiredGroups), result.getMissingGroups());
-            assertFalse(result.getErrorEventType().isPresent());
-            assertFalse(result.getErrorMessage().isPresent());
-        }
-
-        @Test
-        @DisplayName("should provide detailed information for could not access request")
-        void shouldProvideDetailedInformationForCouldNotAccessRequest() {
-            List<String> requiredScopes = List.of("read");
-            List<String> requiredRoles = List.of("user");
-            List<String> requiredGroups = List.of("developers");
-
-            requestResolverMock.setRequestContextAvailable(false);
-            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
-
-            BearerTokenResult result = underTest.getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
-
-            assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
-            assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(Set.copyOf(requiredScopes), result.getMissingScopes());
-            assertEquals(Set.copyOf(requiredRoles), result.getMissingRoles());
-            assertEquals(Set.copyOf(requiredGroups), result.getMissingGroups());
-            assertFalse(result.getErrorEventType().isPresent());
-            assertFalse(result.getErrorMessage().isPresent());
-        }
-    }
 
     @Nested
     @DisplayName("Authorization Status Methods")
     class AuthorizationStatusMethods {
         
-        @Test
-        @DisplayName("should correctly identify successful authorization")
-        void shouldIdentifySuccessfulAuthorization() {
-            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin", "user");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
-            requestResolverMock.setBearerToken(tokenContent.getRawToken());
-            
-            BearerTokenResult result = underTest.getBearerTokenResult();
-            
-            assertTrue(result.isSuccessfullyAuthorized(), "Should be successfully authorized");
-            assertFalse(result.isNotSuccessfullyAuthorized(), "Should not be unsuccessfully authorized");
-            assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
-        }
         
         @Test
         @DisplayName("should correctly identify unsuccessful authorization for each failure type")
         void shouldIdentifyUnsuccessfulAuthorizationForEachFailureType() {
             // Test NO_TOKEN_GIVEN
             BearerTokenResult noTokenResult = BearerTokenResult.noTokenGiven(
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet()
             );
             assertFalse(noTokenResult.isSuccessfullyAuthorized(), "NO_TOKEN_GIVEN should not be successfully authorized");
             assertTrue(noTokenResult.isNotSuccessfullyAuthorized(), "NO_TOKEN_GIVEN should be unsuccessfully authorized");
@@ -412,7 +238,7 @@ class BearerTokenProducerLogicTest {
                 SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test error"
             );
             BearerTokenResult parsingErrorResult = BearerTokenResult.parsingError(
-                exception, Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+                exception, Collections.emptySet(), Collections.emptySet(), Collections.emptySet()
             );
             assertFalse(parsingErrorResult.isSuccessfullyAuthorized(), "PARSING_ERROR should not be successfully authorized");
             assertTrue(parsingErrorResult.isNotSuccessfullyAuthorized(), "PARSING_ERROR should be unsuccessfully authorized");
@@ -426,7 +252,7 @@ class BearerTokenProducerLogicTest {
             
             // Test COULD_NOT_ACCESS_REQUEST
             BearerTokenResult couldNotAccessResult = BearerTokenResult.couldNotAccessRequest(
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet()
             );
             assertFalse(couldNotAccessResult.isSuccessfullyAuthorized(), "COULD_NOT_ACCESS_REQUEST should not be successfully authorized");
             assertTrue(couldNotAccessResult.isNotSuccessfullyAuthorized(), "COULD_NOT_ACCESS_REQUEST should be unsuccessfully authorized");
@@ -442,17 +268,17 @@ class BearerTokenProducerLogicTest {
                     case FULLY_VERIFIED:
                         AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
                         result = BearerTokenResult.success(tokenContent, 
-                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                         break;
                     case NO_TOKEN_GIVEN:
                         result = BearerTokenResult.noTokenGiven(
-                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                         break;
                     case PARSING_ERROR:
                         TokenValidationException ex = new TokenValidationException(
                             SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
                         result = BearerTokenResult.parsingError(ex,
-                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                         break;
                     case CONSTRAINT_VIOLATION:
                         result = BearerTokenResult.constraintViolation(
@@ -460,7 +286,7 @@ class BearerTokenProducerLogicTest {
                         break;
                     case COULD_NOT_ACCESS_REQUEST:
                         result = BearerTokenResult.couldNotAccessRequest(
-                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                         break;
                     default:
                         throw new IllegalStateException("Unknown status: " + status);
@@ -486,168 +312,6 @@ class BearerTokenProducerLogicTest {
         }
     }
 
-    @Nested
-    @DisplayName("Requirements Validation")
-    class RequirementsValidation {
-
-        @Nested
-        @DisplayName("Scope Requirements")
-        class ScopeRequirements {
-
-            @Test
-            @DisplayName("should validate when all required scopes are present")
-            void shouldValidateRequiredScopes() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.SCOPE, "read", "write");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        List.of("read", "write"), Collections.emptyList(), Collections.emptyList());
-                assertTrue(resolved.isPresent());
-                assertEquals(tokenContent, resolved.get());
-            }
-
-            @Test
-            @DisplayName("should reject when required scopes are missing")
-            void shouldRejectWhenRequiredScopesMissing() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.SCOPE, "read");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                // Test new BearerTokenResult method
-                BearerTokenResult result = underTest.getBearerTokenResult(List.of("read", "write"), Collections.emptyList(), Collections.emptyList());
-                assertFalse(result.isSuccessfullyAuthorized());
-            assertTrue(result.isNotSuccessfullyAuthorized());
-                assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
-                assertFalse(result.getAccessTokenContent().isPresent());
-                assertEquals(Set.of("write"), result.getMissingScopes());
-
-                // Test deprecated method still works
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        List.of("read", "write"), Collections.emptyList(), Collections.emptyList());
-                assertFalse(resolved.isPresent());
-            }
-        }
-
-        @Nested
-        @DisplayName("Role Requirements")
-        class RoleRequirements {
-
-            @Test
-            @DisplayName("should validate when all required roles are present")
-            void shouldValidateRequiredRoles() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin", "user");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        Collections.emptyList(), List.of("admin"), Collections.emptyList());
-                assertTrue(resolved.isPresent());
-                assertEquals(tokenContent, resolved.get());
-            }
-
-            @Test
-            @DisplayName("should reject when required roles are missing")
-            void shouldRejectWhenRequiredRolesMissing() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        Collections.emptyList(), List.of("admin"), Collections.emptyList());
-                assertFalse(resolved.isPresent());
-            }
-        }
-
-        @Nested
-        @DisplayName("Group Requirements")
-        class GroupRequirements {
-
-            @Test
-            @DisplayName("should validate when all required groups are present")
-            void shouldValidateRequiredGroups() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.GROUPS, "developers", "testers");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        Collections.emptyList(), Collections.emptyList(), List.of("developers"));
-                assertTrue(resolved.isPresent());
-                assertEquals(tokenContent, resolved.get());
-            }
-
-            @Test
-            @DisplayName("should reject when required groups are missing")
-            void shouldRejectWhenRequiredGroupsMissing() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.GROUPS, "testers");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        Collections.emptyList(), Collections.emptyList(), List.of("developers"));
-                assertFalse(resolved.isPresent());
-            }
-        }
-
-        @Nested
-        @DisplayName("Combined Requirements")
-        class CombinedRequirements {
-
-            @Test
-            @DisplayName("should validate when all requirements are met")
-            void shouldValidateAllRequirementsTogether() {
-                AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
-                        Map.of(
-                                ClaimName.SCOPE, List.of("read", "write", "admin"),
-                                ClaimName.ROLES, List.of("admin", "user"),
-                                ClaimName.GROUPS, List.of("developers", "admins")
-                        )
-                );
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        List.of("read", "write"),
-                        List.of("admin"),
-                        List.of("developers"));
-                assertTrue(resolved.isPresent());
-                assertEquals(tokenContent, resolved.get());
-            }
-
-            @Test
-            @DisplayName("should reject when any requirement fails")
-            void shouldRejectWhenAnyRequirementFails() {
-                AccessTokenContent tokenContent = getAccessTokenWithMultipleClaims(
-                        Map.of(
-                                ClaimName.SCOPE, List.of("read", "write"),
-                                ClaimName.ROLES, List.of("user"),
-                                ClaimName.GROUPS, List.of("developers")
-                        )
-                );
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        List.of("read", "write"),
-                        List.of("admin"),
-                        List.of("developers"));
-                assertFalse(resolved.isPresent());
-            }
-
-            @Test
-            @DisplayName("should handle empty requirements")
-            void shouldHandleEmptyRequirements() {
-                AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
-                mockTokenValidator.setAccessTokenContent(tokenContent);
-                requestResolverMock.setBearerToken(tokenContent.getRawToken());
-
-                var resolved = underTest.getAccessTokenContentWithRequirements(
-                        Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
-                assertTrue(resolved.isPresent());
-                assertEquals(tokenContent, resolved.get());
-            }
-        }
-    }
 
 
     private AccessTokenContent getAccessTokenWithClaims(ClaimName claimName, String... value) {

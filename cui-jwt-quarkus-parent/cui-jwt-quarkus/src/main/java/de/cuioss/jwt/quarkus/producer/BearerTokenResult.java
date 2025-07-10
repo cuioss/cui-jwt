@@ -24,7 +24,6 @@ import lombok.*;
 import jakarta.ws.rs.core.Response;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,51 +43,51 @@ import java.util.Set;
  *   <li>Error details from TokenValidationException if parsing failed</li>
  * </ul>
  * <p>
- * Usage example:
+ * Usage example with CDI injection:
  * <pre>{@code
- * BearerTokenResult result = bearerTokenProducer.getBearerTokenResult(
- *     List.of("read"), List.of("user"), List.of("admin"));
+ * @Inject
+ * @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"})
+ * BearerTokenResult tokenResult;
  *
- * switch (result.getStatus()) {
- *     case FULLY_VERIFIED:
- *         AccessTokenContent token = result.getAccessTokenContent().get();
+ * public Response handleRequest() {
+ *     if (tokenResult.isSuccessfullyAuthorized()) {
+ *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
  *         // Use validated token
- *         break;
- *     case PARSING_ERROR:
- *         EventType eventType = result.getErrorEventType().get();
- *         String message = result.getErrorMessage().get();
- *         // Handle parsing error
- *         break;
- *     case CONSTRAINT_VIOLATION:
- *         Set<String> missingScopes = result.getMissingScopes();
- *         Set<String> missingRoles = result.getMissingRoles();
- *         Set<String> missingGroups = result.getMissingGroups();
- *         // Handle missing scopes/roles/groups
- *         break;
- *     default:
- *         // Handle other cases
+ *         return Response.ok().build();
+ *     } else {
+ *         // Return appropriate error response
+ *         return tokenResult.errorResponse();
+ *     }
  * }
  * }</pre>
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-@EqualsAndHashCode
-@ToString
-@Getter
-@RequiredArgsConstructor(access =  AccessLevel.PRIVATE)
+@Value
+@Builder
 public class BearerTokenResult implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final BearerTokenStatus status;
-    private final Set<String> missingScopes;
-    private final Set<String> missingRoles;
-    private final Set<String> missingGroups;
-    private final AccessTokenContent accessTokenContent;
-    private final EventType errorEventType;
-    private final String errorMessage;
+    @NonNull
+    BearerTokenStatus status;
+    
+    @Builder.Default
+    Set<String> missingScopes = Set.of();
+    
+    @Builder.Default
+    Set<String> missingRoles = Set.of();
+    
+    @Builder.Default
+    Set<String> missingGroups = Set.of();
+    
+    AccessTokenContent accessTokenContent;
+    
+    EventType errorEventType;
+    
+    String errorMessage;
 
 
     /**
@@ -102,10 +101,9 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult success(AccessTokenContent accessTokenContent,
-                                            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
-        return builder()
+                                            Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
+        return withAccessTokenContent(accessTokenContent, requiredScopes, requiredRoles, requiredGroups)
             .status(BearerTokenStatus.FULLY_VERIFIED)
-            .accessTokenContent(accessTokenContent, requiredScopes, requiredRoles, requiredGroups)
             .build();
     }
 
@@ -121,13 +119,12 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult parsingError(TokenValidationException exception,
-                                                 List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
-        return builder()
+                                                 Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
+        return fromException(exception)
             .status(BearerTokenStatus.PARSING_ERROR)
-            .error(exception)
-            .missingScopes(Set.copyOf(requiredScopes))
-            .missingRoles(Set.copyOf(requiredRoles))
-            .missingGroups(Set.copyOf(requiredGroups))
+            .missingScopes(requiredScopes)
+            .missingRoles(requiredRoles)
+            .missingGroups(requiredGroups)
             .build();
     }
 
@@ -161,13 +158,13 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating no token was given
      */
     @NonNull
-    public static BearerTokenResult noTokenGiven(List<String> requiredScopes,
-                                                 List<String> requiredRoles, List<String> requiredGroups) {
+    public static BearerTokenResult noTokenGiven(Set<String> requiredScopes,
+                                                 Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()
             .status(BearerTokenStatus.NO_TOKEN_GIVEN)
-            .missingScopes(Set.copyOf(requiredScopes))
-            .missingRoles(Set.copyOf(requiredRoles))
-            .missingGroups(Set.copyOf(requiredGroups))
+            .missingScopes(requiredScopes)
+            .missingRoles(requiredRoles)
+            .missingGroups(requiredGroups)
             .build();
     }
 
@@ -181,13 +178,13 @@ public class BearerTokenResult implements Serializable {
      * @return a BearerTokenResult indicating request access failure
      */
     @NonNull
-    public static BearerTokenResult couldNotAccessRequest(List<String> requiredScopes,
-                                                          List<String> requiredRoles, List<String> requiredGroups) {
+    public static BearerTokenResult couldNotAccessRequest(Set<String> requiredScopes,
+                                                          Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()
             .status(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST)
-            .missingScopes(Set.copyOf(requiredScopes))
-            .missingRoles(Set.copyOf(requiredRoles))
-            .missingGroups(Set.copyOf(requiredGroups))
+            .missingScopes(requiredScopes)
+            .missingRoles(requiredRoles)
+            .missingGroups(requiredGroups)
             .build();
     }
 
@@ -292,168 +289,40 @@ public class BearerTokenResult implements Serializable {
     }
 
     /**
-     * Creates a new Builder instance for constructing BearerTokenResult objects.
+     * Creates a BearerTokenResult with validated access token content and automatically determined missing attributes.
      *
-     * @return a new Builder instance
+     * @param accessTokenContent the validated access token content
+     * @param expectedScopes the expected scopes to check against
+     * @param expectedRoles the expected roles to check against
+     * @param expectedGroups the expected groups to check against
+     * @return builder instance configured with missing attributes
      */
-    public static Builder builder() {
-        return new Builder();
+    public static BearerTokenResultBuilder withAccessTokenContent(AccessTokenContent accessTokenContent,
+                                                                  Set<String> expectedScopes,
+                                                                  Set<String> expectedRoles,
+                                                                  Set<String> expectedGroups) {
+        var builder = builder().accessTokenContent(accessTokenContent);
+        if (accessTokenContent != null) {
+            builder.missingScopes(accessTokenContent.determineMissingScopes(expectedScopes))
+                   .missingRoles(accessTokenContent.determineMissingRoles(expectedRoles))
+                   .missingGroups(accessTokenContent.determineMissingGroups(expectedGroups));
+        }
+        return builder;
     }
 
     /**
-     * Builder class for constructing BearerTokenResult instances.
-     * <p>
-     * This builder provides a fluent API for creating BearerTokenResult objects
-     * with different validation outcomes. It automatically determines missing
-     * scopes, roles, and groups when a successful token validation result is created.
-     * <p>
-     * Usage example:
-     * <pre>{@code
-     * BearerTokenResult result = BearerTokenResult.builder()
-     *     .status(BearerTokenStatus.FULLY_VERIFIED)
-     *     .accessTokenContent(tokenContent)
-     *     .expectedScopes(List.of("read", "write"))
-     *     .expectedRoles(List.of("user"))
-     *     .build();
-     * }</pre>
+     * Creates a BearerTokenResult from a TokenValidationException.
+     *
+     * @param exception the TokenValidationException
+     * @return builder instance configured with error details
      */
-    public static class Builder {
-        private BearerTokenStatus status;
-        private Set<String> missingScopes = Set.of();
-        private Set<String> missingRoles = Set.of();
-        private Set<String> missingGroups = Set.of();
-        private AccessTokenContent accessTokenContent;
-        private EventType errorEventType;
-        private String errorMessage;
-
-        private Builder() {}
-
-        /**
-         * Sets the validation status.
-         *
-         * @param status the validation status
-         * @return this builder instance
-         */
-        public Builder status(BearerTokenStatus status) {
-            this.status = status;
-            return this;
+    public static BearerTokenResultBuilder fromException(TokenValidationException exception) {
+        var builder = builder();
+        if (exception != null) {
+            builder.errorEventType(exception.getEventType())
+                   .errorMessage(exception.getMessage());
         }
-
-        /**
-         * Sets the missing scopes.
-         *
-         * @param missingScopes the set of missing scopes
-         * @return this builder instance
-         */
-        public Builder missingScopes(Set<String> missingScopes) {
-            this.missingScopes = missingScopes != null ? missingScopes : Set.of();
-            return this;
-        }
-
-        /**
-         * Sets the missing roles.
-         *
-         * @param missingRoles the set of missing roles
-         * @return this builder instance
-         */
-        public Builder missingRoles(Set<String> missingRoles) {
-            this.missingRoles = missingRoles != null ? missingRoles : Set.of();
-            return this;
-        }
-
-        /**
-         * Sets the missing groups.
-         *
-         * @param missingGroups the set of missing groups
-         * @return this builder instance
-         */
-        public Builder missingGroups(Set<String> missingGroups) {
-            this.missingGroups = missingGroups != null ? missingGroups : Set.of();
-            return this;
-        }
-
-        /**
-         * Sets the validated access token content and automatically determines missing scopes/roles/groups.
-         *
-         * @param accessTokenContent the validated access token content
-         * @param expectedScopes the expected scopes to check against
-         * @param expectedRoles the expected roles to check against
-         * @param expectedGroups the expected groups to check against
-         * @return this builder instance
-         */
-        public Builder accessTokenContent(AccessTokenContent accessTokenContent, 
-                                        List<String> expectedScopes, 
-                                        List<String> expectedRoles, 
-                                        List<String> expectedGroups) {
-            this.accessTokenContent = accessTokenContent;
-            if (accessTokenContent != null) {
-                this.missingScopes = accessTokenContent.determineMissingScopes(expectedScopes);
-                this.missingRoles = accessTokenContent.determineMissingRoles(expectedRoles);
-                this.missingGroups = accessTokenContent.determineMissingGroups(expectedGroups);
-            }
-            return this;
-        }
-
-        /**
-         * Sets the access token content without determining missing attributes.
-         *
-         * @param accessTokenContent the validated access token content
-         * @return this builder instance
-         */
-        public Builder accessTokenContent(AccessTokenContent accessTokenContent) {
-            this.accessTokenContent = accessTokenContent;
-            return this;
-        }
-
-        /**
-         * Sets the error event type from a TokenValidationException.
-         *
-         * @param errorEventType the error event type
-         * @return this builder instance
-         */
-        public Builder errorEventType(EventType errorEventType) {
-            this.errorEventType = errorEventType;
-            return this;
-        }
-
-        /**
-         * Sets the error message from a TokenValidationException.
-         *
-         * @param errorMessage the error message
-         * @return this builder instance
-         */
-        public Builder errorMessage(String errorMessage) {
-            this.errorMessage = errorMessage;
-            return this;
-        }
-
-        /**
-         * Sets error details from a TokenValidationException.
-         *
-         * @param exception the TokenValidationException
-         * @return this builder instance
-         */
-        public Builder error(TokenValidationException exception) {
-            if (exception != null) {
-                this.errorEventType = exception.getEventType();
-                this.errorMessage = exception.getMessage();
-            }
-            return this;
-        }
-
-        /**
-         * Builds the BearerTokenResult instance.
-         *
-         * @return a new BearerTokenResult instance
-         * @throws IllegalStateException if required fields are not set
-         */
-        public BearerTokenResult build() {
-            if (status == null) {
-                throw new IllegalStateException("Status must be set");
-            }
-            return new BearerTokenResult(status, missingScopes, missingRoles, missingGroups, 
-                                       accessTokenContent, errorEventType, errorMessage);
-        }
+        return builder;
     }
 
 }
