@@ -16,7 +16,7 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 /**
@@ -130,12 +130,12 @@ public enum BearerTokenStatus {
     CONSTRAINT_VIOLATION {
         public Response createResponse(BearerTokenResult result) {
             // Check if it's a scope violation (401) or role/group violation (403)
-            boolean hasScopeViolation = !result.getRequiredScopes().isEmpty();
+            boolean hasScopeViolation = !result.getMissingScopes().isEmpty();
             
             if (hasScopeViolation) {
                 // OAuth Step-Up Authentication Challenge for insufficient scope
                 String wwwAuthenticate = buildWwwAuthenticateHeaderWithScope(ERROR_INSUFFICIENT_SCOPE, 
-                    ERROR_MSG_HIGHER_PRIVILEGES, result.getRequiredScopes());
+                    ERROR_MSG_HIGHER_PRIVILEGES, result.getMissingScopes());
                 return Response.status(Response.Status.UNAUTHORIZED)
                     .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
@@ -144,7 +144,7 @@ public enum BearerTokenStatus {
             } else {
                 // Role/group violation - 403 Forbidden with OAuth-style error structure
                 String wwwAuthenticate = buildWwwAuthenticateHeaderWithPrivileges(ERROR_INSUFFICIENT_PRIVILEGES, 
-                    ERROR_MSG_HIGHER_PRIVILEGES, result.getRequiredRoles(), result.getRequiredGroups());
+                    ERROR_MSG_HIGHER_PRIVILEGES, result.getMissingRoles(), result.getMissingGroups());
                 return Response.status(Response.Status.FORBIDDEN)
                     .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
@@ -212,17 +212,17 @@ public enum BearerTokenStatus {
      *
      * @param error The OAuth error code
      * @param errorDescription The human-readable error description
-     * @param requiredScopes The list of required scopes
+     * @param missingScopes The collection of missing scopes
      * @return Formatted WWW-Authenticate header value
      */
-    private static String buildWwwAuthenticateHeaderWithScope(String error, String errorDescription, List<String> requiredScopes) {
+    private static String buildWwwAuthenticateHeaderWithScope(String error, String errorDescription, Collection<String> missingScopes) {
         StringBuilder sb = new StringBuilder();
         sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
         sb.append(", ").append(PARAM_ERROR).append("=\"").append(escapeQuotes(error)).append("\"");
         sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(escapeQuotes(errorDescription)).append("\"");
         
-        if (!requiredScopes.isEmpty()) {
-            String scopeValue = requiredScopes.stream()
+        if (!missingScopes.isEmpty()) {
+            String scopeValue = missingScopes.stream()
                 .map(BearerTokenStatus::escapeQuotes)
                 .collect(Collectors.joining(" "));
             sb.append(", ").append(PARAM_SCOPE).append("=\"").append(scopeValue).append("\"");
@@ -237,27 +237,27 @@ public enum BearerTokenStatus {
      *
      * @param error The OAuth error code
      * @param errorDescription The human-readable error description
-     * @param requiredRoles The list of required roles
-     * @param requiredGroups The list of required groups
+     * @param missingRoles The collection of missing roles
+     * @param missingGroups The collection of missing groups
      * @return Formatted WWW-Authenticate header value
      */
     private static String buildWwwAuthenticateHeaderWithPrivileges(String error, String errorDescription, 
-                                                           List<String> requiredRoles, List<String> requiredGroups) {
+                                                           Collection<String> missingRoles, Collection<String> missingGroups) {
         StringBuilder sb = new StringBuilder();
         sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
         sb.append(", ").append(PARAM_ERROR).append("=\"").append(escapeQuotes(error)).append("\"");
         sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(escapeQuotes(errorDescription)).append("\"");
         
-        // Add required roles and groups as custom parameters
-        if (!requiredRoles.isEmpty()) {
-            String rolesValue = requiredRoles.stream()
+        // Add missing roles and groups as custom parameters
+        if (!missingRoles.isEmpty()) {
+            String rolesValue = missingRoles.stream()
                 .map(BearerTokenStatus::escapeQuotes)
                 .collect(Collectors.joining(" "));
             sb.append(", ").append(PARAM_REQUIRED_ROLES).append("=\"").append(rolesValue).append("\"");
         }
         
-        if (!requiredGroups.isEmpty()) {
-            String groupsValue = requiredGroups.stream()
+        if (!missingGroups.isEmpty()) {
+            String groupsValue = missingGroups.stream()
                 .map(BearerTokenStatus::escapeQuotes)
                 .collect(Collectors.joining(" "));
             sb.append(", ").append(PARAM_REQUIRED_GROUPS).append("=\"").append(groupsValue).append("\"");

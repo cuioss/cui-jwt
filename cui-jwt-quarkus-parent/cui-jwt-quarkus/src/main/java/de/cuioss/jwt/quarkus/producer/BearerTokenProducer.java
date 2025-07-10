@@ -25,13 +25,12 @@ import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.inject.Inject;
 import lombok.NonNull;
-import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -55,7 +54,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * @RequestScoped
  * @Path("/api")
  * public class MyResource {
- *     
+ *
  *     @Inject
  *     @BearerToken(requiredScopes = {"read", "write"})
  *     BearerTokenResult tokenResult;
@@ -74,14 +73,14 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * }
  * }</pre>
  * <p>
- * <strong>Important:</strong> For Application-Scoped beans, use {@link jakarta.inject.Provider} since 
- * BearerTokenResult is RequestScoped. The preferred way is for the containing class to be RequestScoped 
+ * <strong>Important:</strong> For Application-Scoped beans, use {@link jakarta.inject.Provider} since
+ * BearerTokenResult is RequestScoped. The preferred way is for the containing class to be RequestScoped
  * as well, then you can use constructor injection:
  * <pre>{@code
  * @RequestScoped
  * public class MyService {
  *     private final BearerTokenResult tokenResult;
- *     
+ *
  *     @Inject
  *     public MyService(@BearerToken(requiredRoles = {"admin"}) BearerTokenResult tokenResult) {
  *         this.tokenResult = tokenResult;
@@ -189,16 +188,35 @@ public class BearerTokenProducer {
         try {
             AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);
 
-            if (validateRequirements(tokenContent, requiredScopes, requiredRoles, requiredGroups)) {
+            // Determine missing scopes, roles, and groups
+            Set<String> missingScopes = tokenContent.determineMissingScopes(requiredScopes);
+            Set<String> missingRoles = tokenContent.determineMissingRoles(requiredRoles);
+            Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
+
+            if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
                 LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
-                return BearerTokenResult.success(tokenContent, requiredScopes, requiredRoles, requiredGroups);
+                return BearerTokenResult.builder()
+                    .status(BearerTokenStatus.FULLY_VERIFIED)
+                    .accessTokenContent(tokenContent, requiredScopes, requiredRoles, requiredGroups)
+                    .build();
             } else {
                 LOGGER.debug(BEARER_TOKEN_REQUIREMENTS_NOT_MET::format);
-                return BearerTokenResult.constraintViolation(requiredScopes, requiredRoles, requiredGroups);
+                return BearerTokenResult.builder()
+                    .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
+                    .missingScopes(missingScopes)
+                    .missingRoles(missingRoles)
+                    .missingGroups(missingGroups)
+                    .build();
             }
         } catch (TokenValidationException e) {
             LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
-            return BearerTokenResult.parsingError(e, requiredScopes, requiredRoles, requiredGroups);
+            return BearerTokenResult.builder()
+                .status(BearerTokenStatus.PARSING_ERROR)
+                .error(e)
+                .missingScopes(Set.copyOf(requiredScopes))
+                .missingRoles(Set.copyOf(requiredRoles))
+                .missingGroups(Set.copyOf(requiredGroups))
+                .build();
         }
     }
 
@@ -219,40 +237,7 @@ public class BearerTokenProducer {
      */
     private String extractBearerTokenFromHeaderMap() {
         Optional<Map<String, List<String>>> headerMap = servletObjectsResolver.resolveHeaderMap();
-        if (headerMap.isEmpty()) {
-            return null;
-        }
-
-        return extractBearerTokenFromHeaders(headerMap.get());
-    }
-
-    /**
-     * Extracts the bearer token from the HTTP Authorization header.
-     *
-     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
-     */
-    private String extractBearerToken() {
-        Optional<HttpServletRequest> httpServletRequest = servletObjectsResolver.resolveHttpServletRequest();
-        if (httpServletRequest.isEmpty()) {
-            return null;
-        }
-
-        return extractBearerTokenFromRequest(httpServletRequest.get());
-    }
-
-    /**
-     * Extracts the bearer token from the given HTTP request's Authorization header.
-     *
-     * @param request the HTTP servlet request
-     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
-     */
-    private String extractBearerTokenFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            return null;
-        }
-
-        return authHeader.substring(BEARER_PREFIX.length());
+        return headerMap.map(this::extractBearerTokenFromHeaders).orElse(null);
     }
 
     /**
@@ -267,7 +252,7 @@ public class BearerTokenProducer {
             return null;
         }
 
-        String authHeader = authHeaders.get(0); // Use first Authorization header
+        String authHeader = authHeaders.getFirst(); // Use first Authorization header
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             return null;
         }
@@ -275,41 +260,6 @@ public class BearerTokenProducer {
         return authHeader.substring(BEARER_PREFIX.length());
     }
 
-    /**
-     * Validates that the token content meets all specified requirements.
-     *
-     * @param tokenContent the validated token content
-     * @param requiredScopes Required scopes for the token
-     * @param requiredRoles Required roles for the token
-     * @param requiredGroups Required groups for the token
-     * @return true if all requirements are met, false otherwise
-     */
-    private boolean validateRequirements(AccessTokenContent tokenContent,
-            List<String> requiredScopes, List<String> requiredRoles, List<String> requiredGroups) {
-
-        if (!requiredScopes.isEmpty()) {
-            if (!tokenContent.providesScopes(requiredScopes)) {
-                LOGGER.debug(BEARER_TOKEN_MISSING_SCOPES.format(requiredScopes, tokenContent.getScopes()));
-                return false;
-            }
-        }
-
-        if (!requiredRoles.isEmpty()) {
-            if (!tokenContent.providesRoles(requiredRoles)) {
-                LOGGER.debug(BEARER_TOKEN_MISSING_ROLES.format(requiredRoles, tokenContent.getRoles()));
-                return false;
-            }
-        }
-
-        if (!requiredGroups.isEmpty()) {
-            if (!tokenContent.providesGroups(requiredGroups)) {
-                LOGGER.debug(BEARER_TOKEN_MISSING_GROUPS.format(requiredGroups, tokenContent.getGroups()));
-                return false;
-            }
-        }
-
-        return true;
-    }
 
 
     /**

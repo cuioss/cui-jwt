@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -150,9 +151,9 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should return 401 Unauthorized for scope violation with insufficient_scope error")
         void shouldReturn401ForScopeViolation() {
-            var requiredScopes = List.of("read", "write");
+            var missingScopes = Set.of("read", "write");
             var result = BearerTokenResult.constraintViolation(
-                requiredScopes, Collections.emptyList(), Collections.emptyList());
+                missingScopes, Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -171,9 +172,9 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should return 403 Forbidden for role violation with insufficient_privileges error")
         void shouldReturn403ForRoleViolation() {
-            var requiredRoles = List.of("admin", "manager");
+            var missingRoles = Set.of("admin", "manager");
             var result = BearerTokenResult.constraintViolation(
-                Collections.emptyList(), requiredRoles, Collections.emptyList());
+                Collections.emptySet(), missingRoles, Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -192,9 +193,9 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should return 403 Forbidden for group violation with insufficient_privileges error")
         void shouldReturn403ForGroupViolation() {
-            var requiredGroups = List.of("developers", "testers");
+            var missingGroups = Set.of("developers", "testers");
             var result = BearerTokenResult.constraintViolation(
-                Collections.emptyList(), Collections.emptyList(), requiredGroups);
+                Collections.emptySet(), Collections.emptySet(), missingGroups);
 
             Response response = result.errorResponse();
 
@@ -210,10 +211,10 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should return 403 Forbidden for combined role and group violation")
         void shouldReturn403ForCombinedRoleGroupViolation() {
-            var requiredRoles = List.of("admin");
-            var requiredGroups = List.of("developers");
+            var missingRoles = Set.of("admin");
+            var missingGroups = Set.of("developers");
             var result = BearerTokenResult.constraintViolation(
-                Collections.emptyList(), requiredRoles, requiredGroups);
+                Collections.emptySet(), missingRoles, missingGroups);
 
             Response response = result.errorResponse();
 
@@ -228,11 +229,11 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should prioritize scope violation over role/group violation")
         void shouldPrioritizeScopeViolation() {
-            var requiredScopes = List.of("read");
-            var requiredRoles = List.of("admin");
-            var requiredGroups = List.of("developers");
+            var missingScopes = Set.of("read");
+            var missingRoles = Set.of("admin");
+            var missingGroups = Set.of("developers");
             var result = BearerTokenResult.constraintViolation(
-                requiredScopes, requiredRoles, requiredGroups);
+                missingScopes, missingRoles, missingGroups);
 
             Response response = result.errorResponse();
 
@@ -266,9 +267,9 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should escape quotes in scope names")
         void shouldEscapeQuotesInScopeNames() {
-            var requiredScopes = List.of("read:\"special\"", "write");
+            var missingScopes = Set.of("read:\"special\"", "write");
             var result = BearerTokenResult.constraintViolation(
-                requiredScopes, Collections.emptyList(), Collections.emptyList());
+                missingScopes, Collections.emptySet(), Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -279,9 +280,9 @@ class BearerTokenResultErrorResponseTest {
         @Test
         @DisplayName("should escape quotes in role names")
         void shouldEscapeQuotesInRoleNames() {
-            var requiredRoles = List.of("admin:\"special\"");
+            var missingRoles = Set.of("admin:\"special\"");
             var result = BearerTokenResult.constraintViolation(
-                Collections.emptyList(), requiredRoles, Collections.emptyList());
+                Collections.emptySet(), missingRoles, Collections.emptySet());
 
             Response response = result.errorResponse();
 
@@ -302,7 +303,7 @@ class BearerTokenResultErrorResponseTest {
                 BearerTokenResult.couldNotAccessRequest(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
                 BearerTokenResult.noTokenGiven(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
                 BearerTokenResult.parsingError(new TokenValidationException(SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "test"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).errorResponse(),
-                BearerTokenResult.constraintViolation(List.of("read"), Collections.emptyList(), Collections.emptyList()).errorResponse()
+                BearerTokenResult.constraintViolation(Set.of("read"), Collections.emptySet(), Collections.emptySet()).errorResponse()
             );
 
             for (Response response : responses) {

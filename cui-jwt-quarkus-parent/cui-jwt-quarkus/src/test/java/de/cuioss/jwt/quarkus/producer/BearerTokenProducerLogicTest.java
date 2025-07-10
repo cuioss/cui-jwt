@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -267,9 +268,9 @@ class BearerTokenProducerLogicTest {
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
             assertEquals(tokenContent, result.getAccessTokenContent().get());
-            assertEquals(requiredScopes, result.getRequiredScopes());
-            assertEquals(requiredRoles, result.getRequiredRoles());
-            assertEquals(requiredGroups, result.getRequiredGroups());
+            assertTrue(result.getMissingScopes().isEmpty());
+            assertTrue(result.getMissingRoles().isEmpty());
+            assertTrue(result.getMissingGroups().isEmpty());
             assertFalse(result.getErrorEventType().isPresent());
             assertFalse(result.getErrorMessage().isPresent());
         }
@@ -297,9 +298,9 @@ class BearerTokenProducerLogicTest {
             assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(requiredScopes, result.getRequiredScopes());
-            assertEquals(requiredRoles, result.getRequiredRoles());
-            assertEquals(requiredGroups, result.getRequiredGroups());
+            assertEquals(Set.of("write"), result.getMissingScopes());
+            assertEquals(Set.of("admin"), result.getMissingRoles());
+            assertEquals(Set.of("developers"), result.getMissingGroups());
             assertFalse(result.getErrorEventType().isPresent());
             assertFalse(result.getErrorMessage().isPresent());
         }
@@ -322,9 +323,9 @@ class BearerTokenProducerLogicTest {
             assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(requiredScopes, result.getRequiredScopes());
-            assertEquals(requiredRoles, result.getRequiredRoles());
-            assertEquals(requiredGroups, result.getRequiredGroups());
+            assertEquals(Set.copyOf(requiredScopes), result.getMissingScopes());
+            assertEquals(Set.copyOf(requiredRoles), result.getMissingRoles());
+            assertEquals(Set.copyOf(requiredGroups), result.getMissingGroups());
             assertTrue(result.getErrorEventType().isPresent());
             assertTrue(result.getErrorMessage().isPresent());
         }
@@ -346,9 +347,9 @@ class BearerTokenProducerLogicTest {
             assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(requiredScopes, result.getRequiredScopes());
-            assertEquals(requiredRoles, result.getRequiredRoles());
-            assertEquals(requiredGroups, result.getRequiredGroups());
+            assertEquals(Set.copyOf(requiredScopes), result.getMissingScopes());
+            assertEquals(Set.copyOf(requiredRoles), result.getMissingRoles());
+            assertEquals(Set.copyOf(requiredGroups), result.getMissingGroups());
             assertFalse(result.getErrorEventType().isPresent());
             assertFalse(result.getErrorMessage().isPresent());
         }
@@ -370,9 +371,9 @@ class BearerTokenProducerLogicTest {
             assertTrue(result.isNotSuccessfullyAuthorized());
             assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
             assertFalse(result.getAccessTokenContent().isPresent());
-            assertEquals(requiredScopes, result.getRequiredScopes());
-            assertEquals(requiredRoles, result.getRequiredRoles());
-            assertEquals(requiredGroups, result.getRequiredGroups());
+            assertEquals(Set.copyOf(requiredScopes), result.getMissingScopes());
+            assertEquals(Set.copyOf(requiredRoles), result.getMissingRoles());
+            assertEquals(Set.copyOf(requiredGroups), result.getMissingGroups());
             assertFalse(result.getErrorEventType().isPresent());
             assertFalse(result.getErrorMessage().isPresent());
         }
@@ -418,7 +419,7 @@ class BearerTokenProducerLogicTest {
             
             // Test CONSTRAINT_VIOLATION
             BearerTokenResult constraintViolationResult = BearerTokenResult.constraintViolation(
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList()
+                Collections.emptySet(), Collections.emptySet(), Collections.emptySet()
             );
             assertFalse(constraintViolationResult.isSuccessfullyAuthorized(), "CONSTRAINT_VIOLATION should not be successfully authorized");
             assertTrue(constraintViolationResult.isNotSuccessfullyAuthorized(), "CONSTRAINT_VIOLATION should be unsuccessfully authorized");
@@ -455,7 +456,7 @@ class BearerTokenProducerLogicTest {
                         break;
                     case CONSTRAINT_VIOLATION:
                         result = BearerTokenResult.constraintViolation(
-                            Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                         break;
                     case COULD_NOT_ACCESS_REQUEST:
                         result = BearerTokenResult.couldNotAccessRequest(
@@ -519,7 +520,7 @@ class BearerTokenProducerLogicTest {
             assertTrue(result.isNotSuccessfullyAuthorized());
                 assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
                 assertFalse(result.getAccessTokenContent().isPresent());
-                assertEquals(List.of("read", "write"), result.getRequiredScopes());
+                assertEquals(Set.of("write"), result.getMissingScopes());
 
                 // Test deprecated method still works
                 var resolved = underTest.getAccessTokenContentWithRequirements(
