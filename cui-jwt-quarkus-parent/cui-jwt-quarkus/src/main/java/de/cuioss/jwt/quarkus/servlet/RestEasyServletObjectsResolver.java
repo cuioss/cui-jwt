@@ -18,7 +18,6 @@ package de.cuioss.jwt.quarkus.servlet;
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.NonNull;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
 import java.util.Optional;

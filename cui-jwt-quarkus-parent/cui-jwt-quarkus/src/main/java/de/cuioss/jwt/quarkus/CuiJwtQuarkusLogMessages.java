@@ -190,7 +190,7 @@ public final class CuiJwtQuarkusLogMessages {
      */
     @UtilityClass
     public static final class ERROR {
-        
+
         // Infrastructure Errors (200-210)
         
         public static final LogRecord BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED = LogRecordModel.builder()

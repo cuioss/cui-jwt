@@ -24,7 +24,6 @@ import java.lang.annotation.Target;
 
 
 import jakarta.enterprise.util.Nonbinding;
-import jakarta.inject.Provider;
 
 /**
  * CDI qualifier for injecting BearerTokenResult with validated token information from HTTP Authorization header.

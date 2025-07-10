@@ -148,8 +148,8 @@ class BearerTokenResultTest {
             var exception = new TokenValidationException(EventType.INVALID_JWT_FORMAT, "Bad signature");
 
             var result = BearerTokenResult.fromException(exception)
-                .status(BearerTokenStatus.PARSING_ERROR)
-                .build();
+                    .status(BearerTokenStatus.PARSING_ERROR)
+                    .build();
 
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertTrue(result.getErrorEventType().isPresent());
@@ -162,8 +162,8 @@ class BearerTokenResultTest {
         @DisplayName("fromException() with null should handle gracefully")
         void fromExceptionWithNullShouldHandleGracefully() {
             var result = BearerTokenResult.fromException(null)
-                .status(BearerTokenStatus.PARSING_ERROR)
-                .build();
+                    .status(BearerTokenStatus.PARSING_ERROR)
+                    .build();
 
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getErrorEventType().isPresent());
@@ -201,7 +201,7 @@ class BearerTokenResultTest {
             for (BearerTokenStatus status : BearerTokenStatus.values()) {
                 var result = createResultWithStatus(status);
                 assertNotEquals(result.isSuccessfullyAuthorized(), result.isNotSuccessfullyAuthorized(),
-                    "Methods should return opposite values for status: " + status);
+                        "Methods should return opposite values for status: " + status);
             }
         }
     }
@@ -219,12 +219,12 @@ class BearerTokenResultTest {
             var missingGroups = Set.of("managers");
 
             var result = BearerTokenResult.builder()
-                .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
-                .accessTokenContent(tokenContent)
-                .missingScopes(missingScopes)
-                .missingRoles(missingRoles)
-                .missingGroups(missingGroups)
-                .build();
+                    .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
+                    .accessTokenContent(tokenContent)
+                    .missingScopes(missingScopes)
+                    .missingRoles(missingRoles)
+                    .missingGroups(missingGroups)
+                    .build();
 
             assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
             assertTrue(result.getAccessTokenContent().isPresent());
@@ -238,8 +238,8 @@ class BearerTokenResultTest {
         @DisplayName("builder() should use default empty sets for missing attributes")
         void builderShouldUseDefaultEmptySets() {
             var result = BearerTokenResult.builder()
-                .status(BearerTokenStatus.FULLY_VERIFIED)
-                .build();
+                    .status(BearerTokenStatus.FULLY_VERIFIED)
+                    .build();
 
             assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
             assertTrue(result.getMissingScopes().isEmpty());
@@ -251,10 +251,10 @@ class BearerTokenResultTest {
         @DisplayName("builder() should allow setting error details individually")
         void builderShouldAllowSettingErrorDetailsIndividually() {
             var result = BearerTokenResult.builder()
-                .status(BearerTokenStatus.PARSING_ERROR)
-                .errorEventType(EventType.INVALID_JWT_FORMAT)
-                .errorMessage("Custom error message")
-                .build();
+                    .status(BearerTokenStatus.PARSING_ERROR)
+                    .errorEventType(EventType.INVALID_JWT_FORMAT)
+                    .errorMessage("Custom error message")
+                    .build();
 
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertTrue(result.getErrorEventType().isPresent());
@@ -330,7 +330,7 @@ class BearerTokenResultTest {
 
     private AccessTokenContent createTestToken() {
         var holder = new TestTokenHolder(TokenType.ACCESS_TOKEN,
-            ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN));
+                ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN));
         return holder.asAccessTokenContent();
     }
 
@@ -339,7 +339,7 @@ class BearerTokenResultTest {
             case FULLY_VERIFIED -> BearerTokenResult.success(createTestToken(), Set.of(), Set.of(), Set.of());
             case NO_TOKEN_GIVEN -> BearerTokenResult.noTokenGiven(Set.of(), Set.of(), Set.of());
             case PARSING_ERROR -> BearerTokenResult.parsingError(
-                new TokenValidationException(EventType.INVALID_JWT_FORMAT, "test"), Set.of(), Set.of(), Set.of());
+                    new TokenValidationException(EventType.INVALID_JWT_FORMAT, "test"), Set.of(), Set.of(), Set.of());
             case CONSTRAINT_VIOLATION -> BearerTokenResult.constraintViolation(Set.of(), Set.of(), Set.of());
             case COULD_NOT_ACCESS_REQUEST -> BearerTokenResult.couldNotAccessRequest(Set.of(), Set.of(), Set.of());
         };

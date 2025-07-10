@@ -26,20 +26,16 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR.*;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO.BEARER_TOKEN_VALIDATION_SUCCESS;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR.*;
 
 /**
  * CDI producer for extracting and validating bearer tokens from HTTP Authorization headers.
@@ -154,7 +150,7 @@ public class BearerTokenProducer {
             LOGGER.error(BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED::format);
             return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
         }
-        
+
         String bearerToken = tokenResult.get();
         if (bearerToken.isEmpty()) {
             // Empty string indicates missing token or "Bearer " - don't call validator, outcome is clear
@@ -173,27 +169,27 @@ public class BearerTokenProducer {
             if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
                 LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
                 return BearerTokenResult.builder()
-                    .status(BearerTokenStatus.FULLY_VERIFIED)
-                    .accessTokenContent(tokenContent)
-                    .build();
+                        .status(BearerTokenStatus.FULLY_VERIFIED)
+                        .accessTokenContent(tokenContent)
+                        .build();
             } else {
                 LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED.format(missingScopes, missingRoles, missingGroups));
                 return BearerTokenResult.builder()
-                    .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
-                    .missingScopes(missingScopes)
-                    .missingRoles(missingRoles)
-                    .missingGroups(missingGroups)
-                    .build();
+                        .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
+                        .missingScopes(missingScopes)
+                        .missingRoles(missingRoles)
+                        .missingGroups(missingGroups)
+                        .build();
             }
         } catch (TokenValidationException e) {
             // No need to use logger.warn, because precise logging already took place in the library
             LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
             return BearerTokenResult.fromException(e)
-                .status(BearerTokenStatus.PARSING_ERROR)
-                .missingScopes(requiredScopes)
-                .missingRoles(requiredRoles)
-                .missingGroups(requiredGroups)
-                .build();
+                    .status(BearerTokenStatus.PARSING_ERROR)
+                    .missingScopes(requiredScopes)
+                    .missingRoles(requiredRoles)
+                    .missingGroups(requiredGroups)
+                    .build();
         }
     }
 
@@ -230,8 +226,6 @@ public class BearerTokenProducer {
         String token = authHeader.substring(BEARER_PREFIX.length());
         return Optional.of(token);
     }
-
-
 
 
     /**

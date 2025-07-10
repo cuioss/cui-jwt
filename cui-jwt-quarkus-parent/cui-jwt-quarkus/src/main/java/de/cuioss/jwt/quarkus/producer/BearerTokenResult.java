@@ -1,12 +1,12 @@
 /**
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -114,19 +114,19 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult success(AccessTokenContent accessTokenContent,
-                                            Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
+            Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
         // For success case, calculate missing values (should all be empty)
         Set<String> missingScopes = accessTokenContent != null ? accessTokenContent.determineMissingScopes(requiredScopes) : Set.of();
         Set<String> missingRoles = accessTokenContent != null ? accessTokenContent.determineMissingRoles(requiredRoles) : Set.of();
         Set<String> missingGroups = accessTokenContent != null ? accessTokenContent.determineMissingGroups(requiredGroups) : Set.of();
-        
+
         return builder()
-            .status(BearerTokenStatus.FULLY_VERIFIED)
-            .accessTokenContent(accessTokenContent)
-            .missingScopes(missingScopes)
-            .missingRoles(missingRoles)
-            .missingGroups(missingGroups)
-            .build();
+                .status(BearerTokenStatus.FULLY_VERIFIED)
+                .accessTokenContent(accessTokenContent)
+                .missingScopes(missingScopes)
+                .missingRoles(missingRoles)
+                .missingGroups(missingGroups)
+                .build();
     }
 
 
@@ -141,13 +141,13 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult parsingError(TokenValidationException exception,
-                                                 Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
+            Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
         return fromException(exception)
-            .status(BearerTokenStatus.PARSING_ERROR)
-            .missingScopes(requiredScopes)
-            .missingRoles(requiredRoles)
-            .missingGroups(requiredGroups)
-            .build();
+                .status(BearerTokenStatus.PARSING_ERROR)
+                .missingScopes(requiredScopes)
+                .missingRoles(requiredRoles)
+                .missingGroups(requiredGroups)
+                .build();
     }
 
 
@@ -161,13 +161,13 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult constraintViolation(Set<String> missingScopes,
-                                                        Set<String> missingRoles, Set<String> missingGroups) {
+            Set<String> missingRoles, Set<String> missingGroups) {
         return builder()
-            .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
-            .missingScopes(missingScopes)
-            .missingRoles(missingRoles)
-            .missingGroups(missingGroups)
-            .build();
+                .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
+                .missingScopes(missingScopes)
+                .missingRoles(missingRoles)
+                .missingGroups(missingGroups)
+                .build();
     }
 
 
@@ -181,13 +181,13 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult noTokenGiven(Set<String> requiredScopes,
-                                                 Set<String> requiredRoles, Set<String> requiredGroups) {
+            Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()
-            .status(BearerTokenStatus.NO_TOKEN_GIVEN)
-            .missingScopes(requiredScopes)
-            .missingRoles(requiredRoles)
-            .missingGroups(requiredGroups)
-            .build();
+                .status(BearerTokenStatus.NO_TOKEN_GIVEN)
+                .missingScopes(requiredScopes)
+                .missingRoles(requiredRoles)
+                .missingGroups(requiredGroups)
+                .build();
     }
 
 
@@ -201,13 +201,13 @@ public class BearerTokenResult implements Serializable {
      */
     @NonNull
     public static BearerTokenResult couldNotAccessRequest(Set<String> requiredScopes,
-                                                          Set<String> requiredRoles, Set<String> requiredGroups) {
+            Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()
-            .status(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST)
-            .missingScopes(requiredScopes)
-            .missingRoles(requiredRoles)
-            .missingGroups(requiredGroups)
-            .build();
+                .status(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST)
+                .missingScopes(requiredScopes)
+                .missingRoles(requiredRoles)
+                .missingGroups(requiredGroups)
+                .build();
     }
 
     /**
@@ -294,7 +294,7 @@ public class BearerTokenResult implements Serializable {
         var builder = builder();
         if (exception != null) {
             builder.errorEventType(exception.getEventType())
-                .errorMessage(exception.getMessage());
+                    .errorMessage(exception.getMessage());
         }
         return builder;
     }

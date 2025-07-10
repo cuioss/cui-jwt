@@ -44,7 +44,6 @@ import java.util.List;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Alternative;
-import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -282,7 +281,7 @@ class BearerTokenProducerCdiTest {
         }
 
         @Produces
-        @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY) 
+        @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY)
         public HttpServletRequestResolver httpServletRequestResolver() {
             return requestResolverMock;
         }

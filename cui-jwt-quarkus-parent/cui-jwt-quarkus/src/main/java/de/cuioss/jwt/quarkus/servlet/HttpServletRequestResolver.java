@@ -73,7 +73,7 @@ public interface HttpServletRequestResolver {
         if (request == null) {
             return Optional.empty();
         }
-        
+
         Map<String, List<String>> headerMap = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();
 
