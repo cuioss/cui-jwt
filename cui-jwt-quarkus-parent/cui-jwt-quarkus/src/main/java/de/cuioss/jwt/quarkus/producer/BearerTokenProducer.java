@@ -39,6 +39,7 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO.BEARER_TOKEN_VALIDATION_SUCCESS;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR.*;
 
 /**
  * CDI producer for extracting and validating bearer tokens from HTTP Authorization headers.
@@ -161,18 +162,21 @@ public class BearerTokenProducer {
     private BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
-        String bearerToken = extractBearerTokenFromHeaderMap();
-        if (bearerToken == null) {
-            // extractBearerTokenFromHeaderMap returns null for both "no headers accessible" and "no token given"
-            // We need to check if we can access headers to distinguish between these cases
-            Optional<Map<String, List<String>>> headerMap = servletObjectsResolver.resolveHeaderMap();
-            if (headerMap.isEmpty()) {
-                return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
-            } else {
-                LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
-                return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
-            }
+        String bearerToken;
+        try {
+            bearerToken = extractBearerTokenFromHeaderMap();
+        } catch (IllegalStateException e) {
+            // Infrastructure error - could not access headers
+            LOGGER.error(BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED::format);
+            return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
         }
+        
+        if (bearerToken == null) {
+            // No valid Bearer token found in Authorization header
+            LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
+            return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
+        }
+        // Note: bearerToken can be empty string for "Bearer " - this should be passed to validator
 
         try {
             AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);
@@ -188,7 +192,7 @@ public class BearerTokenProducer {
                     .status(BearerTokenStatus.FULLY_VERIFIED)
                     .build();
             } else {
-                LOGGER.debug(BEARER_TOKEN_REQUIREMENTS_NOT_MET::format);
+                LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED.format(missingScopes, missingRoles, missingGroups));
                 return BearerTokenResult.builder()
                     .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
                     .missingScopes(missingScopes)
@@ -210,11 +214,16 @@ public class BearerTokenProducer {
     /**
      * Extracts the bearer token from the HTTP Authorization header using header map resolution.
      *
-     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid
+     * @return the bearer token string without the "Bearer " prefix, or null if not present/invalid,
+     *         throws IllegalStateException if headers cannot be accessed (infrastructure error)
      */
     private String extractBearerTokenFromHeaderMap() {
         Optional<Map<String, List<String>>> headerMap = servletObjectsResolver.resolveHeaderMap();
-        return headerMap.map(this::extractBearerTokenFromHeaders).orElse(null);
+        if (headerMap.isEmpty()) {
+            throw new IllegalStateException("Cannot access header map"); // Infrastructure error
+        }
+        
+        return extractBearerTokenFromHeaders(headerMap.get());
     }
 
     /**

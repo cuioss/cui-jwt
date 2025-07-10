@@ -177,14 +177,26 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(127)
                 .build();
+
+        public static final LogRecord BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED = LogRecordModel.builder()
+                .template("Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s")
+                .prefix(PREFIX)
+                .identifier(128)
+                .build();
     }
 
     /**
      * ERROR level log messages (200-299).
-     * Currently no ERROR level messages are used in the runtime module.
      */
     @UtilityClass
     public static final class ERROR {
-        // Reserved for future ERROR level messages
+        
+        // Infrastructure Errors (200-210)
+        
+        public static final LogRecord BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED = LogRecordModel.builder()
+                .template("Failed to access HTTP header map for bearer token extraction")
+                .prefix(PREFIX)
+                .identifier(200)
+                .build();
     }
 }

@@ -19,9 +19,11 @@ import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
-import lombok.*;
-
 import jakarta.ws.rs.core.Response;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.Value;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Optional;
@@ -31,7 +33,7 @@ import java.util.Set;
  * Result object containing comprehensive information about bearer token validation.
  * <p>
  * This class provides detailed information about the outcome of bearer token processing,
- * including the validation status, the validated token content (if successful), 
+ * including the validation status, the validated token content (if successful),
  * missing scopes/roles/groups (if constraint violations occurred), and
  * error details (if validation failed).
  * <p>
@@ -66,6 +68,7 @@ import java.util.Set;
  */
 @Value
 @Builder
+@SuppressWarnings("java:S1948") // owolff: All implementations are Serializable
 public class BearerTokenResult implements Serializable {
 
     @Serial
@@ -73,20 +76,30 @@ public class BearerTokenResult implements Serializable {
 
     @NonNull
     BearerTokenStatus status;
-    
+
+    /**
+     * Gets the scopes that are missing from the token.
+     */
     @Builder.Default
     Set<String> missingScopes = Set.of();
-    
+
+    /**
+     * Gets the roles that are missing from the token.
+     */
     @Builder.Default
     Set<String> missingRoles = Set.of();
-    
+
+    /**
+     * -- GETTER --
+     * Gets the groups that are missing from the token.
+     */
     @Builder.Default
     Set<String> missingGroups = Set.of();
-    
+
     AccessTokenContent accessTokenContent;
-    
+
     EventType errorEventType;
-    
+
     String errorMessage;
 
 
@@ -94,9 +107,9 @@ public class BearerTokenResult implements Serializable {
      * Creates a BearerTokenResult for successful token validation.
      *
      * @param accessTokenContent the validated access token content
-     * @param requiredScopes the scopes that were required for validation
-     * @param requiredRoles the roles that were required for validation
-     * @param requiredGroups the groups that were required for validation
+     * @param requiredScopes     the scopes that were required for validation
+     * @param requiredRoles      the roles that were required for validation
+     * @param requiredGroups     the groups that were required for validation
      * @return a BearerTokenResult indicating successful validation
      */
     @NonNull
@@ -111,9 +124,9 @@ public class BearerTokenResult implements Serializable {
     /**
      * Creates a BearerTokenResult for failed token validation due to parsing error.
      *
-     * @param exception the TokenValidationException that occurred during parsing
+     * @param exception      the TokenValidationException that occurred during parsing
      * @param requiredScopes the scopes that were required for validation
-     * @param requiredRoles the roles that were required for validation
+     * @param requiredRoles  the roles that were required for validation
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating parsing error
      */
@@ -133,7 +146,7 @@ public class BearerTokenResult implements Serializable {
      * Creates a BearerTokenResult for failed token validation due to constraint violations.
      *
      * @param missingScopes the scopes that are missing from the token
-     * @param missingRoles the roles that are missing from the token
+     * @param missingRoles  the roles that are missing from the token
      * @param missingGroups the groups that are missing from the token
      * @return a BearerTokenResult indicating constraint violation
      */
@@ -153,7 +166,7 @@ public class BearerTokenResult implements Serializable {
      * Creates a BearerTokenResult for cases where no token was provided.
      *
      * @param requiredScopes the scopes that were required for validation
-     * @param requiredRoles the roles that were required for validation
+     * @param requiredRoles  the roles that were required for validation
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating no token was given
      */
@@ -173,7 +186,7 @@ public class BearerTokenResult implements Serializable {
      * Creates a BearerTokenResult for cases where the request could not be accessed.
      *
      * @param requiredScopes the scopes that were required for validation
-     * @param requiredRoles the roles that were required for validation
+     * @param requiredRoles  the roles that were required for validation
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating request access failure
      */
@@ -195,33 +208,6 @@ public class BearerTokenResult implements Serializable {
      */
     public Optional<AccessTokenContent> getAccessTokenContent() {
         return Optional.ofNullable(accessTokenContent);
-    }
-
-    /**
-     * Gets the scopes that are missing from the token.
-     *
-     * @return Set of missing scope names, empty if no scopes are missing
-     */
-    public Set<String> getMissingScopes() {
-        return missingScopes;
-    }
-
-    /**
-     * Gets the roles that are missing from the token.
-     *
-     * @return Set of missing role names, empty if no roles are missing
-     */
-    public Set<String> getMissingRoles() {
-        return missingRoles;
-    }
-
-    /**
-     * Gets the groups that are missing from the token.
-     *
-     * @return Set of missing group names, empty if no groups are missing
-     */
-    public Set<String> getMissingGroups() {
-        return missingGroups;
     }
 
     /**
@@ -292,9 +278,9 @@ public class BearerTokenResult implements Serializable {
      * Creates a BearerTokenResult with validated access token content and automatically determined missing attributes.
      *
      * @param accessTokenContent the validated access token content
-     * @param expectedScopes the expected scopes to check against
-     * @param expectedRoles the expected roles to check against
-     * @param expectedGroups the expected groups to check against
+     * @param expectedScopes     the expected scopes to check against
+     * @param expectedRoles      the expected roles to check against
+     * @param expectedGroups     the expected groups to check against
      * @return builder instance configured with missing attributes
      */
     public static BearerTokenResultBuilder withAccessTokenContent(AccessTokenContent accessTokenContent,
@@ -304,8 +290,8 @@ public class BearerTokenResult implements Serializable {
         var builder = builder().accessTokenContent(accessTokenContent);
         if (accessTokenContent != null) {
             builder.missingScopes(accessTokenContent.determineMissingScopes(expectedScopes))
-                   .missingRoles(accessTokenContent.determineMissingRoles(expectedRoles))
-                   .missingGroups(accessTokenContent.determineMissingGroups(expectedGroups));
+                .missingRoles(accessTokenContent.determineMissingRoles(expectedRoles))
+                .missingGroups(accessTokenContent.determineMissingGroups(expectedGroups));
         }
         return builder;
     }
@@ -320,7 +306,7 @@ public class BearerTokenResult implements Serializable {
         var builder = builder();
         if (exception != null) {
             builder.errorEventType(exception.getEventType())
-                   .errorMessage(exception.getMessage());
+                .errorMessage(exception.getMessage());
         }
         return builder;
     }
