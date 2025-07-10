@@ -106,7 +106,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * @since 1.0
  */
 @ApplicationScoped
-@RegisterForReflection
+@RegisterForReflection(methods = false, fields = false)
 public class BearerTokenProducer {
 
     static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);

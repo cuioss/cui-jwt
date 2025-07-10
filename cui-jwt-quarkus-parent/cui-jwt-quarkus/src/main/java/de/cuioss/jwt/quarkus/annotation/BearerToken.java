@@ -103,7 +103,7 @@ import jakarta.enterprise.util.Nonbinding;
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE})
-@RegisterForReflection
+@RegisterForReflection(methods = false, fields = false)
 public @interface BearerToken {
 
     /**

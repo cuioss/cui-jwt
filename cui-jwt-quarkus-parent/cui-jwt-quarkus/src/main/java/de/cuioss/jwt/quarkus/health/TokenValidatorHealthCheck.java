@@ -37,8 +37,9 @@ import jakarta.enterprise.context.ApplicationScoped;
  * </p>
  */
 @ApplicationScoped
-@Liveness // Marks this as a liveness check
-@RegisterForReflection
+@Liveness
+// Marks this as a liveness check
+@RegisterForReflection(methods = false, fields = false)
 public class TokenValidatorHealthCheck implements HealthCheck {
 
     private static final String HEALTHCHECK_NAME = "jwt-validator";

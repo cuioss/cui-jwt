@@ -58,7 +58,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * @since 1.0
  */
 @ApplicationScoped
-@RegisterForReflection
+@RegisterForReflection(methods = false, fields = false)
 public class TokenValidatorProducer {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorProducer.class);

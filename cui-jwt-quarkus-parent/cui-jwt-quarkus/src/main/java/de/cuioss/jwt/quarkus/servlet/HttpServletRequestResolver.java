@@ -36,7 +36,7 @@ import java.util.*;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RegisterForReflection
+@RegisterForReflection(methods = false, fields = false)
 public interface HttpServletRequestResolver {
 
     /**

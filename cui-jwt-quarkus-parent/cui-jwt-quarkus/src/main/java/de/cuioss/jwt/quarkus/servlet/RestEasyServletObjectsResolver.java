@@ -48,7 +48,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  */
 @ApplicationScoped
 @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY)
-@RegisterForReflection
+@RegisterForReflection(methods = false, fields = false)
 public class RestEasyServletObjectsResolver implements HttpServletRequestResolver {
 
     private static final CuiLogger LOGGER = new CuiLogger(RestEasyServletObjectsResolver.class);

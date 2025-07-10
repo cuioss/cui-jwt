@@ -48,8 +48,9 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
  * </p>
  */
 @ApplicationScoped
-@Readiness // Marks this as a readiness check
-@RegisterForReflection
+@Readiness
+// Marks this as a readiness check
+@RegisterForReflection(methods = false, fields = false)
 public class JwksEndpointHealthCheck implements HealthCheck {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwksEndpointHealthCheck.class);

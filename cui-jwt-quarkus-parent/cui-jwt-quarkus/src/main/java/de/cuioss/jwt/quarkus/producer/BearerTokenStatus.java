@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RegisterForReflection
+@RegisterForReflection(methods = false, fields = false)
 public enum BearerTokenStatus {
 
     /**
