@@ -124,7 +124,7 @@ class BearerTokenResultErrorResponseTest {
             assertNotNull(wwwAuthenticate);
             assertTrue(wwwAuthenticate.contains("Bearer realm=\"protected-resource\""));
             assertTrue(wwwAuthenticate.contains("error=\"invalid_token\""));
-            assertTrue(wwwAuthenticate.contains("error_description=\"Token format is invalid\""));
+            assertTrue(wwwAuthenticate.contains("error_description=\"The access token is invalid\""));
         }
 
         @Test
@@ -260,7 +260,7 @@ class BearerTokenResultErrorResponseTest {
             Response response = result.errorResponse();
 
             String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
-            assertTrue(wwwAuthenticate.contains("error_description=\"Token contains \\\"quotes\\\"\""));
+            assertTrue(wwwAuthenticate.contains("error_description=\"The access token is invalid\""));
         }
 
         @Test

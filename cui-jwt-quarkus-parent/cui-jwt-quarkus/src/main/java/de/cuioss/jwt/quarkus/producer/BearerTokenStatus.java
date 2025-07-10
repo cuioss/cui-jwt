@@ -107,7 +107,7 @@ public enum BearerTokenStatus {
     PARSING_ERROR {
         public Response createResponse(BearerTokenResult result) {
             String wwwAuthenticate = buildWwwAuthenticateHeader(ERROR_INVALID_TOKEN, 
-                result.getErrorMessage().orElse(ERROR_MSG_INVALID_TOKEN));
+                ERROR_MSG_INVALID_TOKEN);
             return Response.status(Response.Status.UNAUTHORIZED)
                 .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                 .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
