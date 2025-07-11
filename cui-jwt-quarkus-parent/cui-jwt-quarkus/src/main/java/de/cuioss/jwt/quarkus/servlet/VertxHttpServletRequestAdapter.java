@@ -54,13 +54,13 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Remote and local address/port information</li>
  *   <li>Locale parsing from Accept-Language header</li>
  *   <li>Request attributes (in-memory storage)</li>
+ *   <li>Cookies (converted from Vert.x to Jakarta servlet format)</li>
  * </ul>
  *
  * <p><strong>Unsupported Operations (with alternatives):</strong></p>
  * <ul>
  *   <li>Session management - use Quarkus session management</li>
  *   <li>Authentication - use Quarkus Security</li>
- *   <li>Cookies - use RoutingContext for cookie handling</li>
  *   <li>Multipart - use RoutingContext with BodyHandler</li>
  *   <li>Input streams - use Vertx async request handling</li>
  * </ul>
@@ -107,8 +107,38 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public Cookie[] getCookies() {
-        throw new UnsupportedOperationException(
-            "Cookie access not supported in minimal Vertx adapter - use RoutingContext for cookie handling");
+        Set<io.vertx.core.http.Cookie> vertxCookies = vertxRequest.cookies();
+        if (vertxCookies == null || vertxCookies.isEmpty()) {
+            return null;
+        }
+        
+        return vertxCookies.stream()
+            .map(this::convertVertxCookieToServletCookie)
+            .toArray(Cookie[]::new);
+    }
+    
+    /**
+     * Converts a Vert.x Cookie to a Jakarta Servlet Cookie.
+     * 
+     * @param vertxCookie the Vert.x cookie to convert
+     * @return the equivalent Jakarta servlet cookie
+     */
+    private Cookie convertVertxCookieToServletCookie(io.vertx.core.http.Cookie vertxCookie) {
+        Cookie servletCookie = new Cookie(vertxCookie.getName(), vertxCookie.getValue());
+        
+        if (vertxCookie.getDomain() != null) {
+            servletCookie.setDomain(vertxCookie.getDomain());
+        }
+        
+        if (vertxCookie.getPath() != null) {
+            servletCookie.setPath(vertxCookie.getPath());
+        }
+        
+        servletCookie.setMaxAge((int) vertxCookie.getMaxAge());
+        servletCookie.setSecure(vertxCookie.isSecure());
+        servletCookie.setHttpOnly(vertxCookie.isHttpOnly());
+        
+        return servletCookie;
     }
 
     @Override
