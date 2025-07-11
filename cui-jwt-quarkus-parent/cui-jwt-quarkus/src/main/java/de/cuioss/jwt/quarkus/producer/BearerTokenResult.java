@@ -144,7 +144,12 @@ public class BearerTokenResult implements Serializable {
     @NonNull
     public static BearerTokenResult parsingError(TokenValidationException exception,
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
-        return fromException(exception)
+        var builder = builder();
+        if (exception != null) {
+            builder.errorEventType(exception.getEventType())
+                    .errorMessage(exception.getMessage());
+        }
+        return builder
                 .status(BearerTokenStatus.PARSING_ERROR)
                 .missingScopes(requiredScopes)
                 .missingRoles(requiredRoles)
@@ -285,20 +290,5 @@ public class BearerTokenResult implements Serializable {
         return status.createResponse(this);
     }
 
-
-    /**
-     * Creates a BearerTokenResult from a TokenValidationException.
-     *
-     * @param exception the TokenValidationException
-     * @return builder instance configured with error details
-     */
-    public static BearerTokenResultBuilder fromException(TokenValidationException exception) {
-        var builder = builder();
-        if (exception != null) {
-            builder.errorEventType(exception.getEventType())
-                    .errorMessage(exception.getMessage());
-        }
-        return builder;
-    }
 
 }

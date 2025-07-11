@@ -79,7 +79,7 @@ class BearerTokenResultErrorResponseTest {
             assertEquals(500, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
             assertEquals("no-cache", response.getHeaderString("Pragma"));
-            assertEquals("Internal server error: Unable to access request context", response.getEntity());
+            assertEquals("ErrorEntity[valid=false, message=Internal server error: Unable to access request context]", response.getEntity().toString());
             assertNull(response.getHeaderString("WWW-Authenticate"));
         }
     }

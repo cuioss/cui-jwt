@@ -147,10 +147,6 @@ public class JwksEndpointHealthCheck implements HealthCheck {
         static EndpointResult fromIssuerConfig(String issuer, IssuerConfig issuerConfig) {
             try {
                 JwksLoader jwksLoader = issuerConfig.getJwksLoader();
-                if (jwksLoader == null) {
-                    LOGGER.warn(WARN.ERROR_CHECKING_JWKS_LOADER.format(issuer, "JwksLoader is null"));
-                    return new EndpointResult(issuer, JwksType.NONE.toString(), LoaderStatus.ERROR);
-                }
 
                 LoaderStatus status = jwksLoader.isHealthy();
                 LOGGER.debug("JWKS loader status for issuer %s: %s", issuer, status);

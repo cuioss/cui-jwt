@@ -19,7 +19,6 @@ import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import io.restassured.RestAssured;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,22 +30,15 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive test for verifying CDI scoping behavior of VertxServletObjectsResolver.
- * 
+ *
  * <p>This test verifies that:</p>
  * <ul>
  *   <li>Instance&lt;HttpServerRequest&gt; correctly resolves per-request instances</li>
@@ -54,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>No cross-request contamination occurs</li>
  *   <li>Request context isolation is maintained</li>
  * </ul>
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */
@@ -94,10 +86,10 @@ class VertxServletObjectsResolverScopingTest {
         // Verify that each request got different data
         assertTrue(firstResponse.contains("request-1"), "First request should contain its own ID");
         assertTrue(firstResponse.contains("data-1"), "First request should contain its own data");
-        
+
         assertTrue(secondResponse.contains("request-2"), "Second request should contain its own ID");
         assertTrue(secondResponse.contains("data-2"), "Second request should contain its own data");
-        
+
         assertNotEquals(firstResponse, secondResponse, "Each request should get different responses");
     }
 
@@ -109,18 +101,16 @@ class VertxServletObjectsResolverScopingTest {
         final CountDownLatch completeLatch = new CountDownLatch(numberOfRequests);
         final ExecutorService executor = Executors.newFixedThreadPool(numberOfRequests);
         final Set<String> responses = ConcurrentHashMap.newKeySet();
-        final List<Future<String>> futures = new ArrayList<>();
-
         try {
             // Submit concurrent requests
             for (int i = 0; i < numberOfRequests; i++) {
                 final String requestId = "concurrent-request-" + i;
                 final String testData = "concurrent-data-" + i;
-                
-                Future<String> future = executor.submit(() -> {
+
+                executor.submit(() -> {
                     try {
                         startLatch.await(); // Wait for all threads to be ready
-                        
+
                         String response = given()
                                 .header("X-Request-ID", requestId)
                                 .header("X-Test-Data", testData)
@@ -130,39 +120,37 @@ class VertxServletObjectsResolverScopingTest {
                                 .statusCode(200)
                                 .extract()
                                 .asString();
-                        
+
                         responses.add(response);
                         return response;
                     } finally {
                         completeLatch.countDown();
                     }
                 });
-                
-                futures.add(future);
             }
 
             // Start all requests simultaneously
             startLatch.countDown();
-            
+
             // Wait for all requests to complete
-            assertTrue(completeLatch.await(30, TimeUnit.SECONDS), 
-                "All concurrent requests should complete within 30 seconds");
+            assertTrue(completeLatch.await(30, TimeUnit.SECONDS),
+                    "All concurrent requests should complete within 30 seconds");
 
             // Verify each request got its own data
-            assertEquals(numberOfRequests, responses.size(), 
-                "Should have received " + numberOfRequests + " unique responses");
+            assertEquals(numberOfRequests, responses.size(),
+                    "Should have received " + numberOfRequests + " unique responses");
 
             // Verify each response contains its own request-specific data
             for (int i = 0; i < numberOfRequests; i++) {
                 final String expectedRequestId = "concurrent-request-" + i;
                 final String expectedTestData = "concurrent-data-" + i;
-                
+
                 boolean foundMatchingResponse = responses.stream()
-                    .anyMatch(response -> 
-                        response.contains(expectedRequestId) && response.contains(expectedTestData));
-                
-                assertTrue(foundMatchingResponse, 
-                    "Should find response containing " + expectedRequestId + " and " + expectedTestData);
+                        .anyMatch(response ->
+                                response.contains(expectedRequestId) && response.contains(expectedTestData));
+
+                assertTrue(foundMatchingResponse,
+                        "Should find response containing " + expectedRequestId + " and " + expectedTestData);
             }
 
             // Verify no cross-contamination (no response should contain data from other requests)
@@ -170,7 +158,7 @@ class VertxServletObjectsResolverScopingTest {
                 String[] lines = response.split("\n");
                 String requestIdLine = null;
                 String testDataLine = null;
-                
+
                 for (String line : lines) {
                     if (line.startsWith("X-Request-ID:")) {
                         requestIdLine = line;
@@ -178,18 +166,18 @@ class VertxServletObjectsResolverScopingTest {
                         testDataLine = line;
                     }
                 }
-                
+
                 assertNotNull(requestIdLine, "Response should contain X-Request-ID");
                 assertNotNull(testDataLine, "Response should contain X-Test-Data");
-                
+
                 // Extract the request number from both headers and verify they match
                 String requestIdNumber = requestIdLine.replaceAll(".*concurrent-request-(\\d+).*", "$1");
                 String testDataNumber = testDataLine.replaceAll(".*concurrent-data-(\\d+).*", "$1");
-                
-                assertEquals(requestIdNumber, testDataNumber, 
-                    "Request ID and test data should belong to the same request: " + response);
+
+                assertEquals(requestIdNumber, testDataNumber,
+                        "Request ID and test data should belong to the same request: " + response);
             }
-            
+
         } finally {
             executor.shutdown();
         }
@@ -215,8 +203,8 @@ class VertxServletObjectsResolverScopingTest {
                 .extract()
                 .asString();
 
-        assertEquals(firstResolverInfo, secondResolverInfo, 
-            "ApplicationScoped resolver should be the same instance across requests");
+        assertEquals(firstResolverInfo, secondResolverInfo,
+                "ApplicationScoped resolver should be the same instance across requests");
     }
 
     /**
@@ -237,7 +225,7 @@ class VertxServletObjectsResolverScopingTest {
         public Response getRequestInfo() {
             try {
                 HttpServletRequest request = resolver.resolveHttpServletRequest();
-                
+
                 StringBuilder info = new StringBuilder();
                 info.append("Request Method: ").append(request.getMethod()).append("\n");
                 info.append("Request URI: ").append(request.getRequestURI()).append("\n");
@@ -246,12 +234,12 @@ class VertxServletObjectsResolverScopingTest {
                 info.append("HttpServletRequest Instance: ").append(request.hashCode()).append("\n");
                 info.append("Thread: ").append(Thread.currentThread().getName()).append("\n");
                 info.append("Timestamp: ").append(System.currentTimeMillis()).append("\n");
-                
+
                 return Response.ok(info.toString()).build();
             } catch (Exception e) {
                 return Response.status(500)
-                    .entity("Error resolving request: " + e.getMessage())
-                    .build();
+                        .entity("Error resolving request: " + e.getMessage())
+                        .build();
             }
         }
 
@@ -263,7 +251,7 @@ class VertxServletObjectsResolverScopingTest {
             info.append("Resolver Instance: ").append(resolver.hashCode()).append("\n");
             info.append("Resolver Class: ").append(resolver.getClass().getName()).append("\n");
             info.append("Thread: ").append(Thread.currentThread().getName()).append("\n");
-            
+
             return Response.ok(info.toString()).build();
         }
     }

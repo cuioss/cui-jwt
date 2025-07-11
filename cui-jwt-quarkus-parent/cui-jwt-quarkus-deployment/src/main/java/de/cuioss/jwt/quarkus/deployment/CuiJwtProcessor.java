@@ -16,6 +16,10 @@
 package de.cuioss.jwt.quarkus.deployment;
 
 // Removed imports for cui-jwt-quarkus classes - they now use @RegisterForReflection
+import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
+import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
+import de.cuioss.jwt.quarkus.servlet.VertxServletObjectsResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
@@ -262,11 +266,11 @@ public class CuiJwtProcessor {
         return AdditionalBeanBuildItem.builder()
                 // Explicitly register the CDI producer classes to ensure they're discovered
                 .addBeanClasses(
-                        de.cuioss.jwt.quarkus.producer.TokenValidatorProducer.class,
-                        de.cuioss.jwt.quarkus.producer.BearerTokenProducer.class,
+                        TokenValidatorProducer.class,
+                        BearerTokenProducer.class,
                         de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
-                        de.cuioss.jwt.quarkus.config.ParserConfigResolver.class,
-                        de.cuioss.jwt.quarkus.servlet.VertxServletObjectsResolver.class
+                        ParserConfigResolver.class,
+                        VertxServletObjectsResolver.class
                 )
                 .setUnremovable()
                 .build();

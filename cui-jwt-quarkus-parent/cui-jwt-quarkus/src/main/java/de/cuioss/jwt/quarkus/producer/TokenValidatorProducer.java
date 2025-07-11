@@ -78,6 +78,7 @@ public class TokenValidatorProducer {
     @NonNull
     SecurityEventCounter securityEventCounter;
 
+    @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
         this.config = config;
     }

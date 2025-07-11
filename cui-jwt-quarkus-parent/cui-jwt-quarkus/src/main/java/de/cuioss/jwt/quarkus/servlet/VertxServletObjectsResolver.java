@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.servlet;
 
-import de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages;
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -82,19 +81,19 @@ public class VertxServletObjectsResolver implements HttpServletRequestResolver {
     @Override
     public HttpServletRequest resolveHttpServletRequest() throws IllegalStateException {
         LOGGER.debug("Attempting to resolve HttpServletRequest from Vertx context");
-        
+
         if (vertxRequestInstance.isUnsatisfied()) {
             LOGGER.error(ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.format());
             throw new IllegalStateException("Vertx HttpServerRequest bean is not available in CDI context");
         }
-        
+
         HttpServerRequest vertxRequest = vertxRequestInstance.get();
-        
+
         if (vertxRequest == null) {
             LOGGER.error(ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.format());
             throw new IllegalStateException("Vertx HttpServerRequest is null - no active request context available");
         }
-        
+
         LOGGER.debug("Successfully resolved Vertx HttpServerRequest: %s", vertxRequest.getClass().getName());
         return new VertxHttpServletRequestAdapter(vertxRequest);
     }

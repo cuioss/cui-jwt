@@ -1,12 +1,12 @@
 /**
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,20 +16,21 @@
 package de.cuioss.jwt.quarkus.servlet;
 
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import jakarta.servlet.*;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpUpgradeHandler;
-import jakarta.servlet.http.Part;
+import jakarta.servlet.http.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -115,35 +116,35 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     public Cookie[] getCookies() {
         Set<io.vertx.core.http.Cookie> vertxCookies = vertxRequest.cookies();
         if (vertxCookies == null || vertxCookies.isEmpty()) {
-            return null;
+            return new Cookie[0];
         }
-        
+
         return vertxCookies.stream()
             .map(this::convertVertxCookieToServletCookie)
             .toArray(Cookie[]::new);
     }
-    
+
     /**
      * Converts a Vert.x Cookie to a Jakarta Servlet Cookie.
-     * 
+     *
      * @param vertxCookie the Vert.x cookie to convert
      * @return the equivalent Jakarta servlet cookie
      */
     private Cookie convertVertxCookieToServletCookie(io.vertx.core.http.Cookie vertxCookie) {
         Cookie servletCookie = new Cookie(vertxCookie.getName(), vertxCookie.getValue());
-        
+
         if (vertxCookie.getDomain() != null) {
             servletCookie.setDomain(vertxCookie.getDomain());
         }
-        
+
         if (vertxCookie.getPath() != null) {
             servletCookie.setPath(vertxCookie.getPath());
         }
-        
+
         servletCookie.setMaxAge((int) vertxCookie.getMaxAge());
         servletCookie.setSecure(vertxCookie.isSecure());
         servletCookie.setHttpOnly(vertxCookie.isHttpOnly());
-        
+
         return servletCookie;
     }
 
@@ -340,7 +341,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
             int semicolonIndex = charset.indexOf(';');
             return semicolonIndex > 0 ? charset.substring(0, semicolonIndex).trim() : charset.trim();
         }
-        return "UTF-8"; // Default
+        return StandardCharsets.UTF_8.name(); // Default
     }
 
     @Override
@@ -349,8 +350,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         // Since Vert.x handles encoding differently, we'll validate but not store
         if (env != null) {
             try {
-                java.nio.charset.Charset.forName(env);
-            } catch (java.nio.charset.UnsupportedCharsetException e) {
+                Charset.forName(env);
+            } catch (UnsupportedCharsetException e) {
                 throw new UnsupportedEncodingException("Unsupported encoding: " + env);
             }
         }
@@ -404,11 +405,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
             for (String pair : pairs) {
                 String[] keyValue = pair.split("=", 2);
                 if (keyValue.length == 2 && keyValue[0].equals(name)) {
-                    try {
-                        return java.net.URLDecoder.decode(keyValue[1], "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        return keyValue[1];
-                    }
+                    return URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
                 }
             }
         }
@@ -440,11 +437,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
             for (String pair : pairs) {
                 String[] keyValue = pair.split("=", 2);
                 if (keyValue.length == 2 && keyValue[0].equals(name)) {
-                    try {
-                        values.add(java.net.URLDecoder.decode(keyValue[1], "UTF-8"));
-                    } catch (UnsupportedEncodingException e) {
-                        values.add(keyValue[1]);
-                    }
+                    values.add(URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8));
                 }
             }
         }
@@ -462,11 +455,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
                 if (keyValue.length >= 1) {
                     String key = keyValue[0];
                     String value = keyValue.length == 2 ? keyValue[1] : "";
-                    try {
-                        value = java.net.URLDecoder.decode(value, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        // Use original value if decoding fails
-                    }
+                    value = URLDecoder.decode(value, StandardCharsets.UTF_8);
                     paramMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
                 }
             }
@@ -483,7 +472,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public String getProtocol() {
         // Return HTTP version from Vert.x request
-        io.vertx.core.http.HttpVersion version = vertxRequest.version();
+        HttpVersion version = vertxRequest.version();
         return version != null ? version.name().replace('_', '/') : "HTTP/1.1";
     }
 
@@ -494,36 +483,27 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getServerName() {
-        String host = vertxRequest.host();
-        if (host != null) {
-            // Remove port if present
-            int colonIndex = host.indexOf(':');
-            return colonIndex > 0 ? host.substring(0, colonIndex) : host;
+        HostAndPort authority = vertxRequest.authority();
+        if (authority != null) {
+            return authority.host();
         }
         return "localhost";
     }
 
     @Override
     public int getServerPort() {
-        // First try to get port from Host header
-        String host = vertxRequest.host();
-        if (host != null) {
-            int colonIndex = host.indexOf(':');
-            if (colonIndex > 0) {
-                try {
-                    return Integer.parseInt(host.substring(colonIndex + 1));
-                } catch (NumberFormatException e) {
-                    // Fall through to local address
-                }
-            }
+        // First try to get port from authority
+        HostAndPort authority = vertxRequest.authority();
+        if (authority != null && authority.port() != -1) {
+            return authority.port();
         }
-        
+
         // Fall back to local address
         SocketAddress localAddress = vertxRequest.localAddress();
         if (localAddress != null) {
             return localAddress.port();
         }
-        
+
         // Default ports based on scheme
         return "https".equals(vertxRequest.scheme()) ? 443 : 80;
     }
@@ -542,8 +522,11 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getRemoteHost() {
-        SocketAddress remoteAddress = vertxRequest.remoteAddress();
-        return remoteAddress != null ? remoteAddress.host() : "unknown";
+        // Note: This returns the IP address rather than performing reverse DNS lookup
+        // for performance reasons. In high-performance scenarios, reverse DNS lookups
+        // can cause significant latency. If hostname resolution is required, it should
+        // be done asynchronously outside of the request handling path.
+        return getRemoteAddr();
     }
 
     @Override
@@ -687,8 +670,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     public String getRequestId() {
         // Generate a simple request ID based on connection info and timestamp
         // This provides basic tracing capability without full OpenTracing integration
-        return String.format("vertx-req-%d-%s", 
-            System.currentTimeMillis(), 
+        return "vertx-req-%d-%s".formatted(
+            System.currentTimeMillis(),
             Integer.toHexString(vertxRequest.hashCode()));
     }
 

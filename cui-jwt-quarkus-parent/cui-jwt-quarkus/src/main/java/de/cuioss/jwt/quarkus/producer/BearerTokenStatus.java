@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Collection;
@@ -52,6 +53,7 @@ public enum BearerTokenStatus {
     FULLY_VERIFIED {
         public Response createResponse(BearerTokenResult result) {
             return Response.ok()
+                    .type(MediaType.APPLICATION_JSON)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                     .header(HEADER_PRAGMA, PRAGMA_VALUE)
                     .build();
@@ -68,9 +70,10 @@ public enum BearerTokenStatus {
     COULD_NOT_ACCESS_REQUEST {
         public Response createResponse(BearerTokenResult result) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                     .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                    .entity(ERROR_MSG_SERVER_ERROR)
+                    .entity(createErrorEntity(ERROR_MSG_SERVER_ERROR))
                     .build();
         }
     },
@@ -88,9 +91,11 @@ public enum BearerTokenStatus {
     NO_TOKEN_GIVEN {
         public Response createResponse(BearerTokenResult result) {
             return Response.status(Response.Status.UNAUTHORIZED)
+                    .type(MediaType.APPLICATION_JSON)
                     .header(HEADER_WWW_AUTHENTICATE, BEARER_REALM)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                     .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                    .entity(createErrorEntity("Bearer token validation failed or token not present"))
                     .build();
         }
     },
@@ -111,9 +116,11 @@ public enum BearerTokenStatus {
         public Response createResponse(BearerTokenResult result) {
             String wwwAuthenticate = buildInvalidTokenHeader();
             return Response.status(Response.Status.UNAUTHORIZED)
+                    .type(MediaType.APPLICATION_JSON)
                     .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                     .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                    .entity(createErrorEntity("Bearer token validation failed or token not present"))
                     .build();
         }
     },
@@ -138,17 +145,21 @@ public enum BearerTokenStatus {
                 // OAuth Step-Up Authentication Challenge for insufficient scope
                 String wwwAuthenticate = buildInsufficientScopeHeader(result.getMissingScopes());
                 return Response.status(Response.Status.UNAUTHORIZED)
+                        .type(MediaType.APPLICATION_JSON)
                         .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                         .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                         .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                        .entity(createErrorEntity("Bearer token validation failed or token not present"))
                         .build();
             } else {
                 // Role/group violation - 403 Forbidden with OAuth-style error structure
                 String wwwAuthenticate = buildInsufficientPrivilegesHeader(result.getMissingRoles(), result.getMissingGroups());
                 return Response.status(Response.Status.FORBIDDEN)
+                        .type(MediaType.APPLICATION_JSON)
                         .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                         .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                         .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                        .entity(createErrorEntity("Bearer token validation failed or token not present"))
                         .build();
             }
         }
@@ -267,5 +278,24 @@ public enum BearerTokenStatus {
      */
     private static String escapeQuotes(String input) {
         return input == null ? "" : input.replace("\"", "\\\"");
+    }
+
+    /**
+     * Creates a standardized error entity for JSON responses.
+     * This ensures consistent error response format across all status types.
+     *
+     * @param message The error message
+     * @return A formatted error entity with consistent structure
+     */
+    private static ErrorEntity createErrorEntity(String message) {
+        return new ErrorEntity(false, message);
+    }
+
+    /**
+     * Simple error entity for JSON responses.
+     * Provides a consistent structure for error responses.
+     */
+    @RegisterForReflection
+    public record ErrorEntity(boolean valid, String message) {
     }
 }

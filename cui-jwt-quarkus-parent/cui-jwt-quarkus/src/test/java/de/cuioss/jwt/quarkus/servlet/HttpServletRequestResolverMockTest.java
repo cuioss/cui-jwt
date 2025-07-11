@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link HttpServletRequestResolverMock}.
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */
@@ -194,8 +194,8 @@ class HttpServletRequestResolverMockTest {
     void shouldSupportStaticFactoryMethodForNoRequestContext() {
         HttpServletRequestResolverMock noContextMock = HttpServletRequestResolverMock.withoutRequestContext();
 
-        assertThrows(IllegalStateException.class, () -> noContextMock.resolveHttpServletRequest());
-        assertThrows(IllegalStateException.class, () -> noContextMock.resolveHeaderMap());
+        assertThrows(IllegalStateException.class, noContextMock::resolveHttpServletRequest);
+        assertThrows(IllegalStateException.class, noContextMock::resolveHeaderMap);
         assertFalse(noContextMock.isRequestContextAvailable());
     }
 

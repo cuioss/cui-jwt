@@ -125,17 +125,14 @@ class BearerTokenProducerLogicTest {
     class ErrorScenarios {
 
         @Test
-        @DisplayName("should return empty when no request context available")
-        void shouldReturnEmptyWhenNoRequestContext() {
+        @DisplayName("should throw IllegalStateException when no request context available")
+        void shouldThrowIllegalStateExceptionWhenNoRequestContext() {
             requestResolverMock.setRequestContextAvailable(false);
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
 
-            // Only test the public API now
-
-            // Test deprecated method still works
-            var resolved = underTest.getAccessTokenContent();
-            assertFalse(resolved.isPresent());
+            // IllegalStateException should now bubble up
+            assertThrows(IllegalStateException.class, () -> underTest.getAccessTokenContent());
         }
 
         @Test
@@ -195,14 +192,14 @@ class BearerTokenProducerLogicTest {
     class EdgeCases {
 
         @Test
-        @DisplayName("should handle empty bearer token as no token given")
-        void shouldHandleEmptyBearerTokenAsNoTokenGiven() {
+        @DisplayName("should handle empty bearer token as token given")
+        void shouldHandleEmptyBearerTokenAsTokenGiven() {
             requestResolverMock.setHeader("Authorization", "Bearer ");
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
 
             var resolved = underTest.getAccessTokenContent();
-            assertFalse(resolved.isPresent());
+            assertTrue(resolved.isPresent());
         }
 
         @Test
@@ -342,8 +339,8 @@ class BearerTokenProducerLogicTest {
         }
 
         @Test
-        @DisplayName("should log ERROR when header map access fails")
-        void shouldLogErrorWhenHeaderMapAccessFails() {
+        @DisplayName("should throw IllegalStateException when header map access fails")
+        void shouldThrowIllegalStateExceptionWhenHeaderMapAccessFails() {
             // Setup mock to fail header map access
             requestResolverMock.setRequestContextAvailable(false);
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
@@ -351,14 +348,10 @@ class BearerTokenProducerLogicTest {
 
             // Use the CDI producer
             BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
-            var result = producer.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of("admin"), Set.of("managers")));
-
-            // Verify we got a could not access request result
-            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
-
-            // Verify the specific ERROR log message was logged
-            LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR, BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED.format());
+            
+            // IllegalStateException should now bubble up
+            assertThrows(IllegalStateException.class, () -> producer.produceBearerTokenResult(new MockInjectionPoint(
+                    Set.of("read"), Set.of("admin"), Set.of("managers"))));
         }
 
         @Test
@@ -419,8 +412,8 @@ class BearerTokenProducerLogicTest {
     class PerformanceOptimizations {
 
         @Test
-        @DisplayName("should not call resolveHeaderMap twice for infrastructure errors")
-        void shouldNotCallResolveHeaderMapTwiceForInfrastructureErrors() {
+        @DisplayName("should throw IllegalStateException for infrastructure errors")
+        void shouldThrowIllegalStateExceptionForInfrastructureErrors() {
             // Setup mock to track calls
             HttpServletRequestResolverMock trackingMock = new HttpServletRequestResolverMock();
             trackingMock.setRequestContextAvailable(false);
@@ -428,26 +421,19 @@ class BearerTokenProducerLogicTest {
             // Create producer with tracking mock
             BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, trackingMock);
 
-            // Call the method
-            var result = producer.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of("admin"), Set.of("managers")));
-
-            // Verify we got the expected result
-            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result.getStatus());
-
-            // The mock should have been called only once (no way to track calls in current mock,
-            // but this test documents the expected behavior)
+            // IllegalStateException should now bubble up
+            assertThrows(IllegalStateException.class, () -> producer.produceBearerTokenResult(new MockInjectionPoint(
+                    Set.of("read"), Set.of("admin"), Set.of("managers"))));
         }
 
         @Test
         @DisplayName("should properly distinguish between infrastructure errors and missing tokens")
         void shouldProperlyDistinguishBetweenInfrastructureErrorsAndMissingTokens() {
-            // Test infrastructure error case
+            // Test infrastructure error case - should throw IllegalStateException
             requestResolverMock.setRequestContextAvailable(false);
             BearerTokenProducer producer1 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
-            var result1 = producer1.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of(), Set.of()));
-            assertEquals(BearerTokenStatus.COULD_NOT_ACCESS_REQUEST, result1.getStatus());
+            assertThrows(IllegalStateException.class, () -> producer1.produceBearerTokenResult(new MockInjectionPoint(
+                    Set.of("read"), Set.of(), Set.of())));
 
             // Test missing token case
             requestResolverMock.setRequestContextAvailable(true);

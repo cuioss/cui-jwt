@@ -143,13 +143,11 @@ class BearerTokenResultTest {
 
 
         @Test
-        @DisplayName("fromException() should configure builder with exception details")
-        void fromExceptionShouldConfigureBuilder() {
+        @DisplayName("parsingError() should configure result with exception details")
+        void parsingErrorShouldConfigureBuilder() {
             var exception = new TokenValidationException(EventType.INVALID_JWT_FORMAT, "Bad signature");
 
-            var result = BearerTokenResult.fromException(exception)
-                    .status(BearerTokenStatus.PARSING_ERROR)
-                    .build();
+            var result = BearerTokenResult.parsingError(exception, Set.of(), Set.of(), Set.of());
 
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertTrue(result.getErrorEventType().isPresent());
@@ -159,11 +157,9 @@ class BearerTokenResultTest {
         }
 
         @Test
-        @DisplayName("fromException() with null should handle gracefully")
-        void fromExceptionWithNullShouldHandleGracefully() {
-            var result = BearerTokenResult.fromException(null)
-                    .status(BearerTokenStatus.PARSING_ERROR)
-                    .build();
+        @DisplayName("parsingError() with null should handle gracefully")
+        void parsingErrorWithNullShouldHandleGracefully() {
+            var result = BearerTokenResult.parsingError(null, Set.of(), Set.of(), Set.of());
 
             assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
             assertFalse(result.getErrorEventType().isPresent());

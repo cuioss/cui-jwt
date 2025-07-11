@@ -108,6 +108,17 @@ public class TestRealm {
      * @return TokenResponse containing access, ID, and refresh tokens
      */
     public TokenResponse obtainValidToken() {
+        return obtainValidTokenWithScopes("openid profile email");
+    }
+
+    /**
+     * Obtains a valid token from the realm with specific scopes.
+     * This method allows requesting tokens with custom scopes for testing different scenarios.
+     *
+     * @param scopes the scopes to request (e.g., "openid profile email read")
+     * @return TokenResponse containing access, ID, and refresh tokens
+     */
+    public TokenResponse obtainValidTokenWithScopes(String scopes) {
         Response tokenResponse = given()
                 .baseUri(KEYCLOAK_BASE_URL)
                 .contentType("application/x-www-form-urlencoded")
@@ -116,12 +127,12 @@ public class TestRealm {
                 .formParam("username", username)
                 .formParam("password", password)
                 .formParam("grant_type", "password")
-                .formParam("scope", "openid profile email")
+                .formParam("scope", scopes)
                 .when()
                 .post(TOKEN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
         assertEquals(200, tokenResponse.statusCode(),
-                "Should be able to obtain tokens from " + realmIdentifier + " realm. Response: " + tokenResponse.body().asString());
+                "Should be able to obtain tokens from " + realmIdentifier + " realm with scopes: " + scopes + ". Response: " + tokenResponse.body().asString());
 
         Map<String, Object> tokenData = tokenResponse.jsonPath().getMap("");
 
@@ -135,6 +146,16 @@ public class TestRealm {
         validateToken(refreshToken, "Refresh token");
 
         return new TokenResponse(accessToken, idToken, refreshToken);
+    }
+
+    /**
+     * Obtains a valid token with all required scopes for bearer token tests.
+     * This includes the "read" scope which is required by the BearerToken annotations.
+     *
+     * @return TokenResponse containing access, ID, and refresh tokens with all required scopes
+     */
+    public TokenResponse obtainValidTokenWithAllScopes() {
+        return obtainValidTokenWithScopes("openid profile email read");
     }
 
     /**

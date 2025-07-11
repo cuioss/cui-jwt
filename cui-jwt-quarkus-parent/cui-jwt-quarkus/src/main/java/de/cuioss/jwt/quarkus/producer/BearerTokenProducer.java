@@ -142,27 +142,27 @@ public class BearerTokenProducer {
     private BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
+        LOGGER.debug("Validating bearer token with required scopes: %s, roles: %s, groups: %s",
+                requiredScopes, requiredRoles, requiredGroups);
+
         Optional<String> tokenResult = extractBearerTokenFromHeaderMap();
         if (tokenResult.isEmpty()) {
-            // Infrastructure error - could not access headers
-            LOGGER.error(BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED::format);
-            return BearerTokenResult.couldNotAccessRequest(requiredScopes, requiredRoles, requiredGroups);
-        }
-
-        String bearerToken = tokenResult.get();
-        if (bearerToken.isEmpty()) {
-            // Empty string indicates missing token or "Bearer " - don't call validator, outcome is clear
+            // No token found or missing token - don't call validator, outcome is clear
             LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
             return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
         }
 
+        String bearerToken = tokenResult.get();
+
         try {
+            LOGGER.trace("Validating bearer token: %s", bearerToken);
             AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);
 
             // Determine missing scopes, roles, and groups
             Set<String> missingScopes = tokenContent.determineMissingScopes(requiredScopes);
             Set<String> missingRoles = tokenContent.determineMissingRoles(requiredRoles);
             Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
+
 
             if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
                 LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
@@ -182,12 +182,7 @@ public class BearerTokenProducer {
         } catch (TokenValidationException e) {
             // No need to use logger.warn, because precise logging already took place in the library
             LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
-            return BearerTokenResult.fromException(e)
-                    .status(BearerTokenStatus.PARSING_ERROR)
-                    .missingScopes(requiredScopes)
-                    .missingRoles(requiredRoles)
-                    .missingGroups(requiredGroups)
-                    .build();
+            return BearerTokenResult.parsingError(e, requiredScopes, requiredRoles, requiredGroups);
         }
     }
 
@@ -195,35 +190,35 @@ public class BearerTokenProducer {
     /**
      * Extracts the bearer token from the HTTP Authorization header using header map resolution.
      * <p>
-     * Three-state return model:
+     * Two-state return model:
      * <ul>
-     *   <li>Optional.empty() - Infrastructure error (cannot access headers)</li>
-     *   <li>Optional.of("") - No token found or missing token</li>
-     *   <li>Optional.of(token) - Token found (including empty string for "Bearer ")</li>
+     *   <li>Optional.empty() - No token found, missing token, or infrastructure error</li>
+     *   <li>Optional.of(token) - Token found (may be empty string for "Bearer ")</li>
      * </ul>
      *
-     * @return Optional containing the bearer token, empty string for missing tokens, or empty Optional for infrastructure errors
+     * @return Optional containing the bearer token, or empty Optional if no token found
+     * @throws IllegalStateException if header map cannot be accessed due to infrastructure issues
      */
     private Optional<String> extractBearerTokenFromHeaderMap() {
-        try {
-            Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
+        Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
+        LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
 
-            List<String> authHeaders = headerMap.get("Authorization");
-            if (authHeaders == null || authHeaders.isEmpty()) {
-                return Optional.of(""); // No Authorization header - missing token
-            }
-
-            String authHeader = authHeaders.getFirst();
-            if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-                return Optional.of(""); // Not a Bearer token - missing token
-            }
-
-            // Bearer token found - extract the token part (may be empty string for "Bearer ")
-            String token = authHeader.substring(BEARER_PREFIX.length());
-            return Optional.of(token);
-        } catch (IllegalStateException e) {
-            return Optional.empty(); // Infrastructure error
+        List<String> authHeaders = headerMap.get("Authorization");
+        if (authHeaders == null || authHeaders.isEmpty()) {
+            LOGGER.debug("Authorization header not found in headerMap");
+            return Optional.empty(); // No Authorization header - missing token
         }
+
+        String authHeader = authHeaders.getFirst();
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+            LOGGER.trace("Authorization header does not start with 'Bearer ': %s", authHeader);
+            return Optional.empty(); // Not a Bearer token - missing token
+        }
+
+        // Bearer token found - extract the token part (may be empty string for "Bearer ")
+        String token = authHeader.substring(BEARER_PREFIX.length());
+        LOGGER.trace("Extracted bearer token from headerMap: %s", token);
+        return Optional.of(token);
     }
 
 
