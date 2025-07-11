@@ -48,13 +48,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><strong>Supported Operations:</strong></p>
  * <ul>
  *   <li>HTTP headers (complete support)</li>
- *   <li>Request URI, URL, method, scheme</li>
+ *   <li>Request URI, URL, method, scheme, protocol version</li>
  *   <li>Query parameters (parsed from query string)</li>
  *   <li>Content length and type</li>
- *   <li>Remote and local address/port information</li>
+ *   <li>Remote and local address/port information (null-safe)</li>
+ *   <li>Server name and port (extracted from Host header or local address)</li>
  *   <li>Locale parsing from Accept-Language header</li>
  *   <li>Request attributes (in-memory storage)</li>
  *   <li>Cookies (converted from Vert.x to Jakarta servlet format)</li>
+ *   <li>Request ID generation (basic tracing support)</li>
+ *   <li>Path information (servlet path, context path)</li>
+ *   <li>Character encoding validation</li>
  * </ul>
  *
  * <p><strong>Unsupported Operations (with alternatives):</strong></p>
@@ -63,6 +67,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Authentication - use Quarkus Security</li>
  *   <li>Multipart - use RoutingContext with BodyHandler</li>
  *   <li>Input streams - use Vertx async request handling</li>
+ *   <li>Request dispatching - use JAX-RS routing</li>
+ *   <li>Async servlet context - use Vertx async patterns</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -175,8 +181,10 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getPathInfo() {
-        throw new UnsupportedOperationException(
-            "Path info not available in Vertx context - use JAX-RS @PathParam instead");
+        // Path info is typically the extra path information beyond the servlet path
+        // In Vert.x, we can extract this from the full path if we know the context
+        // For now, return null as it's not clearly defined without servlet context
+        return null;
     }
 
     @Override
@@ -187,14 +195,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getContextPath() {
-        // Try to extract context path from URI if possible
-        String uri = vertxRequest.uri();
-        if (uri != null && uri.startsWith("/")) {
-            int secondSlash = uri.indexOf('/', 1);
-            if (secondSlash > 0) {
-                return uri.substring(0, secondSlash);
-            }
-        }
+        // In Vert.x, there's no direct equivalent to servlet context path
+        // Return empty string as the default since we're not in a servlet container
         return "";
     }
 
@@ -240,12 +242,9 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public String getServletPath() {
         // Return the path portion of the URI, excluding query parameters
-        String uri = vertxRequest.uri();
-        if (uri != null) {
-            int queryIndex = uri.indexOf('?');
-            return queryIndex > 0 ? uri.substring(0, queryIndex) : uri;
-        }
-        return "/";
+        // In Vert.x, this is essentially the request path
+        String path = vertxRequest.path();
+        return path != null ? path : "/";
     }
 
     @Override
@@ -346,8 +345,17 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public void setCharacterEncoding(String env) throws UnsupportedEncodingException {
-        throw new UnsupportedOperationException(
-            "Character encoding modification not supported in Vertx adapter");
+        // Character encoding should be set before reading request body
+        // Since Vert.x handles encoding differently, we'll validate but not store
+        if (env != null) {
+            try {
+                java.nio.charset.Charset.forName(env);
+            } catch (java.nio.charset.UnsupportedCharsetException e) {
+                throw new UnsupportedEncodingException("Unsupported encoding: " + env);
+            }
+        }
+        // Note: This doesn't actually change the encoding for the request body
+        // as that's handled by Vert.x's async body handling
     }
 
     @Override
@@ -474,8 +482,9 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getProtocol() {
-        // Return HTTP version if available
-        return "HTTP/1.1"; // Default - could be enhanced to detect actual version
+        // Return HTTP version from Vert.x request
+        io.vertx.core.http.HttpVersion version = vertxRequest.version();
+        return version != null ? version.name().replace('_', '/') : "HTTP/1.1";
     }
 
     @Override
@@ -485,13 +494,38 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getServerName() {
-        return vertxRequest.host();
+        String host = vertxRequest.host();
+        if (host != null) {
+            // Remove port if present
+            int colonIndex = host.indexOf(':');
+            return colonIndex > 0 ? host.substring(0, colonIndex) : host;
+        }
+        return "localhost";
     }
 
     @Override
     public int getServerPort() {
+        // First try to get port from Host header
+        String host = vertxRequest.host();
+        if (host != null) {
+            int colonIndex = host.indexOf(':');
+            if (colonIndex > 0) {
+                try {
+                    return Integer.parseInt(host.substring(colonIndex + 1));
+                } catch (NumberFormatException e) {
+                    // Fall through to local address
+                }
+            }
+        }
+        
+        // Fall back to local address
         SocketAddress localAddress = vertxRequest.localAddress();
-        return localAddress != null ? localAddress.port() : -1;
+        if (localAddress != null) {
+            return localAddress.port();
+        }
+        
+        // Default ports based on scheme
+        return "https".equals(vertxRequest.scheme()) ? 443 : 80;
     }
 
     @Override
@@ -502,12 +536,14 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getRemoteAddr() {
-        return vertxRequest.remoteAddress().host();
+        SocketAddress remoteAddress = vertxRequest.remoteAddress();
+        return remoteAddress != null ? remoteAddress.host() : "unknown";
     }
 
     @Override
     public String getRemoteHost() {
-        return vertxRequest.remoteAddress().host();
+        SocketAddress remoteAddress = vertxRequest.remoteAddress();
+        return remoteAddress != null ? remoteAddress.host() : "unknown";
     }
 
     @Override
@@ -586,22 +622,26 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public int getRemotePort() {
-        return vertxRequest.remoteAddress().port();
+        SocketAddress remoteAddress = vertxRequest.remoteAddress();
+        return remoteAddress != null ? remoteAddress.port() : -1;
     }
 
     @Override
     public String getLocalName() {
-        return vertxRequest.localAddress().host();
+        SocketAddress localAddress = vertxRequest.localAddress();
+        return localAddress != null ? localAddress.host() : "localhost";
     }
 
     @Override
     public String getLocalAddr() {
-        return vertxRequest.localAddress().host();
+        SocketAddress localAddress = vertxRequest.localAddress();
+        return localAddress != null ? localAddress.host() : "127.0.0.1";
     }
 
     @Override
     public int getLocalPort() {
-        return vertxRequest.localAddress().port();
+        SocketAddress localAddress = vertxRequest.localAddress();
+        return localAddress != null ? localAddress.port() : -1;
     }
 
     @Override
@@ -645,15 +685,17 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getRequestId() {
-        // Could be enhanced to return actual request ID if available from Vertx
-        throw new UnsupportedOperationException(
-            "Request ID not available in minimal Vertx adapter");
+        // Generate a simple request ID based on connection info and timestamp
+        // This provides basic tracing capability without full OpenTracing integration
+        return String.format("vertx-req-%d-%s", 
+            System.currentTimeMillis(), 
+            Integer.toHexString(vertxRequest.hashCode()));
     }
 
     @Override
     public String getProtocolRequestId() {
-        throw new UnsupportedOperationException(
-            "Protocol request ID not available in Vertx adapter");
+        // Return the same as request ID since Vert.x doesn't distinguish these
+        return getRequestId();
     }
 
     @Override
