@@ -30,8 +30,10 @@ import java.util.*;
  * <p>The {@link #resolveHeaderMap()} method provides a default implementation that
  * extracts headers from the resolved HttpServletRequest.</p>
  *
- * <p><strong>Context Dependency:</strong> Implementations must throw {@link IllegalStateException}
- * when not in an appropriate request context (e.g., outside REST requests).</p>
+ * <p><strong>Context Dependency:</strong> When not in an appropriate request context (e.g., outside REST requests),
+ * the CDI system will throw {@link jakarta.enterprise.inject.IllegalProductException} because the underlying
+ * {@code @RequestScoped} HttpServerRequest producer cannot provide a valid instance. This is wrapped behavior -
+ * implementations may throw {@link IllegalStateException} which gets wrapped by CDI.</p>
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -44,8 +46,9 @@ public interface HttpServletRequestResolver {
      * <p>This is the primary method that implementations must provide.</p>
      *
      * @return HttpServletRequest from the current context
-     * @throws IllegalStateException if not in an active request context or if the infrastructure
-     *                               is not available to resolve the request
+     * @throws jakarta.enterprise.inject.IllegalProductException if not in an active request context 
+     *                               (CDI wraps underlying exceptions when @RequestScoped producer fails)
+     * @throws IllegalStateException if the infrastructure is not available to resolve the request
      */
     @NonNull
     HttpServletRequest resolveHttpServletRequest() throws IllegalStateException;
@@ -57,8 +60,9 @@ public interface HttpServletRequestResolver {
      * resolved by {@link #resolveHttpServletRequest()}.</p>
      *
      * @return Map of HTTP headers from the current context
-     * @throws IllegalStateException if not in an active request context or if the infrastructure
-     *                               is not available to resolve headers
+     * @throws jakarta.enterprise.inject.IllegalProductException if not in an active request context 
+     *                               (CDI wraps underlying exceptions when @RequestScoped producer fails)
+     * @throws IllegalStateException if the infrastructure is not available to resolve headers
      */
     @NonNull
     default Map<String, List<String>> resolveHeaderMap() throws IllegalStateException {

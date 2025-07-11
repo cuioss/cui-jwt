@@ -51,7 +51,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR;
  * the usual case outside of active REST requests.</p>
  *
  * <p><strong>Usage:</strong> This resolver should only be used within active Quarkus JAX-RS request contexts.
- * Outside of REST requests, resolveHttpServletRequest will throw {@link IllegalStateException}.</p>
+ * Outside of REST requests, CDI will throw {@link jakarta.enterprise.inject.IllegalProductException} 
+ * because the underlying {@code @RequestScoped} HttpServerRequest producer cannot provide a valid instance.</p>
  *
  * <p><strong>CDI Usage:</strong></p>
  * <pre>{@code
@@ -87,8 +88,9 @@ public class VertxServletObjectsResolver implements HttpServletRequestResolver {
      * The adapter provides access to headers, request parameters, and other HTTP request information.</p>
      *
      * @return HttpServletRequest adapter from Vertx context
-     * @throws IllegalStateException if not in an active request context or if the infrastructure
-     *                               is not available to resolve the request
+     * @throws jakarta.enterprise.inject.IllegalProductException if not in an active request context 
+     *                               (CDI wraps underlying exceptions when @RequestScoped producer fails)
+     * @throws IllegalStateException if CDI context is available but HttpServerRequest is null
      */
     @NonNull
     @Override

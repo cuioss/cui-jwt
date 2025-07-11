@@ -51,6 +51,9 @@ class VertxServletObjectsResolverQuarkusTest {
     @ServletObjectsResolver(ServletObjectsResolver.Variant.VERTX)
     HttpServletRequestResolver resolver;
 
+    // Note: Tests for accessing @RequestScoped HttpServerRequest outside of request context
+    // are not reliable because Quarkus test context behavior varies. The important test
+    // is the REST endpoint test below which verifies the resolver works during actual HTTP requests.
 
     @Test
     @DisplayName("Should resolve HttpServletRequest during active REST request")

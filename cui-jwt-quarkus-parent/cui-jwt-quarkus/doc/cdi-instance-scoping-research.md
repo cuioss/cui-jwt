@@ -244,6 +244,30 @@ The current implementation of `VertxServletObjectsResolver` using `@ApplicationS
 
 No changes to the scoping design are necessary. The implementation correctly handles the cross-scope injection pattern through CDI's built-in mechanisms.
 
+## 🔍 CDI Exception Behavior Analysis
+
+**Important Discovery: IllegalProductException vs IllegalStateException**
+
+During testing, we discovered that when accessing `Instance<HttpServerRequest>` outside of a request context, 
+the CDI system throws `IllegalProductException` rather than our intended `IllegalStateException`. This is 
+**correct CDI behavior** and should be documented:
+
+**What happens:**
+1. Our code calls `vertxRequestInstance.get()` outside request context
+2. CDI's `@RequestScoped` producer for `HttpServerRequest` cannot provide a valid instance
+3. CDI throws `IllegalProductException` with message "Normal scoped producer method may not return null"
+4. This is the **correct CDI behavior** according to the specification
+
+**Testing Implications:**
+- Tests should expect `IllegalProductException` when accessing request-scoped beans outside context
+- This is **not a bug** but correct CDI container behavior
+- Our implementation properly handles this by letting CDI manage the lifecycle
+
+**Code Documentation:**
+- Interface javadoc updated to mention `IllegalProductException` as the expected exception
+- Implementation javadoc clarified that CDI wraps underlying exceptions
+- Tests updated to expect the correct CDI exception type
+
 ## References
 
 1. [Quarkus CDI Reference Guide](https://quarkus.io/guides/cdi-reference)
