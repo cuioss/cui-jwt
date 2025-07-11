@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.health;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 import org.eclipse.microprofile.health.HealthCheck;
@@ -24,9 +25,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 
 import java.util.List;
-
-
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Health check for JWT validation configuration.

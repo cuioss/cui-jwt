@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.json.JsonException;
 import lombok.NonNull;
@@ -26,9 +27,6 @@ import lombok.NonNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Runtime JSON-RPC service for CUI JWT DevUI.

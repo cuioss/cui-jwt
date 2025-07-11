@@ -111,8 +111,8 @@ public class JwtValidationEndpoint {
             } else {
                 LOGGER.info("BearerTokenProducer validation failed - no valid token found");
             }
-        } catch (Exception e) {
-            LOGGER.warn("BearerTokenProducer failed with exception: %s", e.getMessage());
+        } catch (TokenValidationException e) {
+            LOGGER.warn("BearerTokenProducer failed with token validation exception: %s", e.getMessage());
         }
 
         // Fall back to traditional token validation from request body

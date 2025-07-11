@@ -16,15 +16,13 @@
 package de.cuioss.jwt.quarkus.annotation;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.util.Nonbinding;
 import jakarta.inject.Qualifier;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
-import jakarta.enterprise.util.Nonbinding;
 
 /**
  * CDI qualifier for injecting BearerTokenResult with validated token information from HTTP Authorization header.

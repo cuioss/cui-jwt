@@ -22,15 +22,14 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 
 import java.util.*;
-
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
-import jakarta.enterprise.inject.spi.InjectionPoint;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR.*;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO.BEARER_TOKEN_VALIDATION_SUCCESS;
@@ -105,6 +104,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * @since 1.0
  */
 @ApplicationScoped
+@RegisterForReflection(methods = true, fields = false)
 public class BearerTokenProducer {
 
     static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);
@@ -115,7 +115,7 @@ public class BearerTokenProducer {
 
     @Inject
     public BearerTokenProducer(TokenValidator tokenValidator,
-            @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY) HttpServletRequestResolver servletObjectsResolver) {
+            @ServletObjectsResolver(ServletObjectsResolver.Variant.VERTX) HttpServletRequestResolver servletObjectsResolver) {
         this.tokenValidator = tokenValidator;
         this.servletObjectsResolver = servletObjectsResolver;
     }
@@ -205,24 +205,25 @@ public class BearerTokenProducer {
      * @return Optional containing the bearer token, empty string for missing tokens, or empty Optional for infrastructure errors
      */
     private Optional<String> extractBearerTokenFromHeaderMap() {
-        Optional<Map<String, List<String>>> headerMap = servletObjectsResolver.resolveHeaderMap();
-        if (headerMap.isEmpty()) {
+        try {
+            Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
+
+            List<String> authHeaders = headerMap.get("Authorization");
+            if (authHeaders == null || authHeaders.isEmpty()) {
+                return Optional.of(""); // No Authorization header - missing token
+            }
+
+            String authHeader = authHeaders.getFirst();
+            if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+                return Optional.of(""); // Not a Bearer token - missing token
+            }
+
+            // Bearer token found - extract the token part (may be empty string for "Bearer ")
+            String token = authHeader.substring(BEARER_PREFIX.length());
+            return Optional.of(token);
+        } catch (IllegalStateException e) {
             return Optional.empty(); // Infrastructure error
         }
-
-        List<String> authHeaders = headerMap.get().get("Authorization");
-        if (authHeaders == null || authHeaders.isEmpty()) {
-            return Optional.of(""); // No Authorization header - missing token
-        }
-
-        String authHeader = authHeaders.getFirst();
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            return Optional.of(""); // Not a Bearer token - missing token
-        }
-
-        // Bearer token found - extract the token part (may be empty string for "Bearer ")
-        String token = authHeader.substring(BEARER_PREFIX.length());
-        return Optional.of(token);
     }
 
 

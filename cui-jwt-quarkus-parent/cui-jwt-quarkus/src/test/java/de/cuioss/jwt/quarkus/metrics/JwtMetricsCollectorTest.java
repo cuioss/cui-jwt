@@ -25,15 +25,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Objects;
-
-
-import jakarta.enterprise.event.Event;
 
 import static org.junit.jupiter.api.Assertions.*;
 

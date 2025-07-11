@@ -16,8 +16,7 @@
 package de.cuioss.jwt.quarkus.servlet;
 
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.Optional;
+import lombok.NonNull;
 
 /**
  * Mock implementation of {@link HttpServletRequestResolver} for testing purposes.
@@ -27,7 +26,7 @@ import java.util.Optional;
  * during testing.</p>
  * 
  * <p>The mock can be configured to either return a mock HttpServletRequest or to simulate
- * the absence of a request context by returning empty Optional values.</p>
+ * the absence of a request context by throwing IllegalStateException.</p>
  * 
  * <p>Usage example:</p>
  * <pre>{@code
@@ -39,12 +38,12 @@ import java.util.Optional;
  *     .setRequestURI("/api/test");
  * 
  * // Use in tests
- * Optional<HttpServletRequest> request = mock.resolveHttpServletRequest();
- * Optional<Map<String, List<String>>> headers = mock.resolveHeaderMap();
+ * HttpServletRequest request = mock.resolveHttpServletRequest();
+ * Map<String, List<String>> headers = mock.resolveHeaderMap();
  * 
  * // Simulate absence of request context
  * mock.setRequestContextAvailable(false);
- * assertTrue(mock.resolveHttpServletRequest().isEmpty());
+ * assertThrows(IllegalStateException.class, () -> mock.resolveHttpServletRequest());
  * }</pre>
  *
  * @author Oliver Wolff
@@ -72,9 +71,13 @@ public class HttpServletRequestResolverMock implements HttpServletRequestResolve
         this.httpServletRequestMock = httpServletRequestMock;
     }
 
+    @NonNull
     @Override
-    public Optional<HttpServletRequest> resolveHttpServletRequest() {
-        return requestContextAvailable ? Optional.of(httpServletRequestMock) : Optional.empty();
+    public HttpServletRequest resolveHttpServletRequest() throws IllegalStateException {
+        if (!requestContextAvailable) {
+            throw new IllegalStateException("Request context not available - mock configured to simulate absent context");
+        }
+        return httpServletRequestMock;
     }
 
     // Configuration methods
@@ -219,7 +222,7 @@ public class HttpServletRequestResolverMock implements HttpServletRequestResolve
     /**
      * Creates a mock configured for a scenario without request context.
      * 
-     * @return a configured mock that returns empty Optional values
+     * @return a configured mock that throws IllegalStateException
      */
     public static HttpServletRequestResolverMock withoutRequestContext() {
         return new HttpServletRequestResolverMock()

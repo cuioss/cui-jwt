@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -33,9 +34,6 @@ import org.eclipse.microprofile.health.Readiness;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-
-import jakarta.enterprise.context.ApplicationScoped;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
 

@@ -23,13 +23,14 @@ import java.util.*;
 /**
  * Interface for resolving HTTP servlet objects within request contexts.
  *
- * <p>The primary method is {@link #resolveHttpServletRequest()} which returns an
- * {@link Optional} containing the current HttpServletRequest or empty if not available.</p>
+ * <p>The primary method is {@link #resolveHttpServletRequest()} which returns the
+ * current HttpServletRequest. If no request context is available, implementations
+ * must throw {@link IllegalStateException}.</p>
  *
  * <p>The {@link #resolveHeaderMap()} method provides a default implementation that
  * extracts headers from the resolved HttpServletRequest.</p>
  *
- * <p><strong>Context Dependency:</strong> Implementations should return {@code Optional.empty()}
+ * <p><strong>Context Dependency:</strong> Implementations must throw {@link IllegalStateException}
  * when not in an appropriate request context (e.g., outside REST requests).</p>
  *
  * @author Oliver Wolff
@@ -42,10 +43,12 @@ public interface HttpServletRequestResolver {
      *
      * <p>This is the primary method that implementations must provide.</p>
      *
-     * @return Optional containing HttpServletRequest from the current context, or empty if not available.
-     *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
+     * @return HttpServletRequest from the current context
+     * @throws IllegalStateException if not in an active request context or if the infrastructure
+     *                               is not available to resolve the request
      */
-    Optional<HttpServletRequest> resolveHttpServletRequest();
+    @NonNull
+    HttpServletRequest resolveHttpServletRequest() throws IllegalStateException;
 
     /**
      * Resolves HTTP headers from the current request context as a Map.
@@ -53,11 +56,13 @@ public interface HttpServletRequestResolver {
      * <p>This default implementation extracts headers from the HttpServletRequest
      * resolved by {@link #resolveHttpServletRequest()}.</p>
      *
-     * @return Optional containing Map of HTTP headers from the current context, or empty if not available.
-     *         {@code Optional.isEmpty()} is the usual case when not in an active request context.
+     * @return Map of HTTP headers from the current context
+     * @throws IllegalStateException if not in an active request context or if the infrastructure
+     *                               is not available to resolve headers
      */
-    default Optional<Map<String, List<String>>> resolveHeaderMap() {
-        return resolveHttpServletRequest().flatMap(this::createHeaderMapFromRequest);
+    @NonNull
+    default Map<String, List<String>> resolveHeaderMap() throws IllegalStateException {
+        return createHeaderMapFromRequest(resolveHttpServletRequest());
     }
 
     /**
@@ -65,14 +70,13 @@ public interface HttpServletRequestResolver {
      *
      * <p>This helper method is used by the default implementation of {@link #resolveHeaderMap()}.</p>
      *
-     * @param request the HttpServletRequest to extract headers from
-     * @return Optional containing Map of HTTP headers, or empty if headers cannot be extracted
+     * @param request the HttpServletRequest to extract headers from (must not be null)
+     * @return Map of HTTP headers extracted from the request
+     * @throws IllegalStateException if headers cannot be extracted from the request
      */
     @NonNull
-    default Optional<Map<String, List<String>>> createHeaderMapFromRequest(HttpServletRequest request) {
-        if (request == null) {
-            return Optional.empty();
-        }
+    default Map<String, List<String>> createHeaderMapFromRequest(@NonNull HttpServletRequest request)
+            throws IllegalStateException {
 
         Map<String, List<String>> headerMap = new HashMap<>();
         Enumeration<String> headerNames = request.getHeaderNames();
@@ -89,6 +93,6 @@ public interface HttpServletRequestResolver {
             }
         }
 
-        return Optional.of(headerMap);
+        return headerMap;
     }
 }

@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * <p>Usage example:</p>
  * <pre>{@code
  * @Inject
- * @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY)
+ * @ServletObjectsResolver(ServletObjectsResolver.Variant.VERTX)
  * HttpServletRequestResolver resolver;
  * }</pre>
  * 
@@ -50,16 +50,16 @@ public @interface ServletObjectsResolver {
      * 
      * @return the resolver variant
      */
-    Variant value() default Variant.RESTEASY;
+    Variant value() default Variant.VERTX;
 
     /**
      * Enum defining the different variants of servlet objects resolvers.
      */
     enum Variant {
         /**
-         * RESTEasy-based resolver that uses ResteasyProviderFactory to access servlet objects.
-         * This is the default variant.
+         * Vertx-based resolver that uses Quarkus Vertx HttpServerRequest to access servlet objects.
+         * This is the only variant and works reliably in Quarkus environments.
          */
-        RESTEASY
+        VERTX
     }
 }

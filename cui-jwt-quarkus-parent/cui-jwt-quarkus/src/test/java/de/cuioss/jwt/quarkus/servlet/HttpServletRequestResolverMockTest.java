@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,21 +47,18 @@ class HttpServletRequestResolverMockTest {
     @DisplayName("Should return HttpServletRequest when context is available")
     void shouldReturnHttpServletRequestWhenContextAvailable() {
         // Default behavior - context available
-        Optional<HttpServletRequest> request = mock.resolveHttpServletRequest();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
 
-        assertTrue(request.isPresent());
-        assertNotNull(request.get());
-        assertInstanceOf(HttpServletRequestMock.class, request.get());
+        assertNotNull(request);
+        assertInstanceOf(HttpServletRequestMock.class, request);
     }
 
     @Test
-    @DisplayName("Should return empty Optional when context is not available")
-    void shouldReturnEmptyOptionalWhenContextNotAvailable() {
+    @DisplayName("Should throw IllegalStateException when context is not available")
+    void shouldThrowIllegalStateExceptionWhenContextNotAvailable() {
         mock.setRequestContextAvailable(false);
 
-        Optional<HttpServletRequest> request = mock.resolveHttpServletRequest();
-
-        assertTrue(request.isEmpty());
+        assertThrows(IllegalStateException.class, () -> mock.resolveHttpServletRequest());
     }
 
     @Test
@@ -72,10 +68,10 @@ class HttpServletRequestResolverMockTest {
         mock.addHeader("X-Custom", "value1");
         mock.addHeader("X-Custom", "value2");
 
-        Optional<Map<String, List<String>>> headerMap = mock.resolveHeaderMap();
+        Map<String, List<String>> headerMap = mock.resolveHeaderMap();
 
-        assertTrue(headerMap.isPresent());
-        Map<String, List<String>> headers = headerMap.get();
+        assertNotNull(headerMap);
+        Map<String, List<String>> headers = headerMap;
 
         assertEquals("Bearer token123", headers.get("Authorization").getFirst());
         assertEquals(2, headers.get("X-Custom").size());
@@ -84,14 +80,12 @@ class HttpServletRequestResolverMockTest {
     }
 
     @Test
-    @DisplayName("Should return empty Optional for header map when context is not available")
-    void shouldReturnEmptyOptionalForHeaderMapWhenContextNotAvailable() {
+    @DisplayName("Should throw IllegalStateException for header map when context is not available")
+    void shouldThrowIllegalStateExceptionForHeaderMapWhenContextNotAvailable() {
         mock.setHeader("Authorization", "Bearer token123");
         mock.setRequestContextAvailable(false);
 
-        Optional<Map<String, List<String>>> headerMap = mock.resolveHeaderMap();
-
-        assertTrue(headerMap.isEmpty());
+        assertThrows(IllegalStateException.class, () -> mock.resolveHeaderMap());
     }
 
     @Test
@@ -102,7 +96,7 @@ class HttpServletRequestResolverMockTest {
                 .addHeader("X-Custom", "value2")
                 .setHeader("Content-Type", "application/json");
 
-        HttpServletRequest request = mock.resolveHttpServletRequest().get();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
 
         assertEquals("Bearer token123", request.getHeader("Authorization"));
         assertEquals("application/json", request.getHeader("Content-Type"));
@@ -120,7 +114,7 @@ class HttpServletRequestResolverMockTest {
     void shouldSupportBearerTokenConvenienceMethod() {
         mock.setBearerToken("mytoken123");
 
-        HttpServletRequest request = mock.resolveHttpServletRequest().get();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
 
         assertEquals("Bearer mytoken123", request.getHeader("Authorization"));
     }
@@ -132,7 +126,7 @@ class HttpServletRequestResolverMockTest {
                 .setRequestURI("/api/users")
                 .setContextPath("/myapp");
 
-        HttpServletRequest request = mock.resolveHttpServletRequest().get();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
 
         assertEquals("POST", request.getMethod());
         assertEquals("/api/users", request.getRequestURI());
@@ -166,7 +160,7 @@ class HttpServletRequestResolverMockTest {
         // Changes to underlying mock should be reflected
         underlyingMock.setHeader("Direct", "access");
 
-        HttpServletRequest request = mock.resolveHttpServletRequest().get();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
         assertEquals("access", request.getHeader("Direct"));
     }
 
@@ -178,7 +172,7 @@ class HttpServletRequestResolverMockTest {
 
         HttpServletRequestResolverMock resolverMock = new HttpServletRequestResolverMock(customMock);
 
-        HttpServletRequest request = resolverMock.resolveHttpServletRequest().get();
+        HttpServletRequest request = resolverMock.resolveHttpServletRequest();
         assertEquals("value", request.getHeader("Custom"));
         assertSame(customMock, resolverMock.getHttpServletRequestMock());
     }
@@ -188,7 +182,7 @@ class HttpServletRequestResolverMockTest {
     void shouldSupportStaticFactoryMethodForBearerToken() {
         HttpServletRequestResolverMock bearerMock = HttpServletRequestResolverMock.withBearerToken("token123");
 
-        HttpServletRequest request = bearerMock.resolveHttpServletRequest().get();
+        HttpServletRequest request = bearerMock.resolveHttpServletRequest();
 
         assertEquals("Bearer token123", request.getHeader("Authorization"));
         assertEquals("GET", request.getMethod());
@@ -200,8 +194,8 @@ class HttpServletRequestResolverMockTest {
     void shouldSupportStaticFactoryMethodForNoRequestContext() {
         HttpServletRequestResolverMock noContextMock = HttpServletRequestResolverMock.withoutRequestContext();
 
-        assertTrue(noContextMock.resolveHttpServletRequest().isEmpty());
-        assertTrue(noContextMock.resolveHeaderMap().isEmpty());
+        assertThrows(IllegalStateException.class, () -> noContextMock.resolveHttpServletRequest());
+        assertThrows(IllegalStateException.class, () -> noContextMock.resolveHeaderMap());
         assertFalse(noContextMock.isRequestContextAvailable());
     }
 
@@ -210,7 +204,7 @@ class HttpServletRequestResolverMockTest {
     void shouldSupportStaticFactoryMethodForRequest() {
         HttpServletRequestResolverMock requestMock = HttpServletRequestResolverMock.withRequest("POST", "/api/data");
 
-        HttpServletRequest request = requestMock.resolveHttpServletRequest().get();
+        HttpServletRequest request = requestMock.resolveHttpServletRequest();
 
         assertEquals("POST", request.getMethod());
         assertEquals("/api/data", request.getRequestURI());
@@ -230,7 +224,7 @@ class HttpServletRequestResolverMockTest {
 
         mock.reset();
 
-        HttpServletRequest request = mock.resolveHttpServletRequest().get();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
 
         // Should be reset to defaults
         assertEquals("GET", request.getMethod());
@@ -248,7 +242,7 @@ class HttpServletRequestResolverMockTest {
                 .setHeader("Header2", "value2")
                 .setHeader("Header3", "value3");
 
-        HttpServletRequest request = mock.resolveHttpServletRequest().get();
+        HttpServletRequest request = mock.resolveHttpServletRequest();
         assertNotNull(request.getHeader("Header1"));
         assertNotNull(request.getHeader("Header2"));
         assertNotNull(request.getHeader("Header3"));
@@ -268,14 +262,14 @@ class HttpServletRequestResolverMockTest {
     void shouldMaintainStateConsistency() {
         mock.setRequestContextAvailable(true);
         assertTrue(mock.isRequestContextAvailable());
-        assertTrue(mock.resolveHttpServletRequest().isPresent());
+        assertDoesNotThrow(() -> mock.resolveHttpServletRequest());
 
         mock.setRequestContextAvailable(false);
         assertFalse(mock.isRequestContextAvailable());
-        assertTrue(mock.resolveHttpServletRequest().isEmpty());
+        assertThrows(IllegalStateException.class, () -> mock.resolveHttpServletRequest());
 
         mock.setRequestContextAvailable(true);
         assertTrue(mock.isRequestContextAvailable());
-        assertTrue(mock.resolveHttpServletRequest().isPresent());
+        assertDoesNotThrow(() -> mock.resolveHttpServletRequest());
     }
 }

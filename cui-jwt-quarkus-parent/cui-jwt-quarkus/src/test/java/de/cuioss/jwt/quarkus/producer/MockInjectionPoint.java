@@ -16,16 +16,14 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
 import java.lang.reflect.Type;
 import java.util.Set;
-
-
-import jakarta.enterprise.inject.spi.Annotated;
-import jakarta.enterprise.inject.spi.Bean;
-import jakarta.enterprise.inject.spi.InjectionPoint;
 
 /**
  * Mock InjectionPoint for testing BearerTokenProducer CDI producer method.

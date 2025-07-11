@@ -13,15 +13,16 @@ echo "Root directory: ${ROOT_DIR}"
 
 cd "${PROJECT_DIR}"
 
-# Check for native executable
-RUNNER_FILE=$(find target/ -name "*-runner" -type f | head -n 1)
+# Check build mode - Docker build vs Maven build
+RUNNER_FILE=$(find target/ -name "*-runner" -type f 2>/dev/null | head -n 1)
 if [[ -n "$RUNNER_FILE" ]]; then
-    echo "📦 Using native image from target directory: $RUNNER_FILE"
+    echo "📦 Using Maven-built native image from target directory: $RUNNER_FILE"
     COMPOSE_FILE="docker-compose.yml"
-    MODE="native"
+    MODE="native (Maven-built)"
 else
-    echo "❌ Native executable not found in target directory"
-    echo "Make sure to run Maven build with integration-tests profile: ./mvnw clean package -Pintegration-tests"
+    echo "❌ No pre-built native executable found in target directory"
+    echo "The integration-tests profile should have built the native executable during the package phase"
+    echo "This script is called from the integration-tests profile which builds the native executable first"
     exit 1
 fi
 

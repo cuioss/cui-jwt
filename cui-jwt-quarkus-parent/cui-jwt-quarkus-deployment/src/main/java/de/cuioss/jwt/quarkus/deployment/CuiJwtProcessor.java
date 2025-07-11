@@ -266,8 +266,7 @@ public class CuiJwtProcessor {
                         de.cuioss.jwt.quarkus.producer.BearerTokenProducer.class,
                         de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
                         de.cuioss.jwt.quarkus.config.ParserConfigResolver.class,
-                        de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver.class,
-                        de.cuioss.jwt.quarkus.servlet.RestEasyServletObjectsResolver.class
+                        de.cuioss.jwt.quarkus.servlet.VertxServletObjectsResolver.class
                 )
                 .setUnremovable()
                 .build();

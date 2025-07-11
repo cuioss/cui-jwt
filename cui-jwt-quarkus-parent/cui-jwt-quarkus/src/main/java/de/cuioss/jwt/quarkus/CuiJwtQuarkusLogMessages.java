@@ -198,5 +198,11 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(200)
                 .build();
+
+        public static final LogRecord VERTX_REQUEST_CONTEXT_UNAVAILABLE = LogRecordModel.builder()
+                .template("Vertx HttpServerRequest context is unavailable - no active request context found")
+                .prefix(PREFIX)
+                .identifier(201)
+                .build();
     }
 }

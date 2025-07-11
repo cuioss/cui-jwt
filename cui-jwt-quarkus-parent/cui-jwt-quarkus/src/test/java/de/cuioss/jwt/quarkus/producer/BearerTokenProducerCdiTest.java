@@ -28,6 +28,9 @@ import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.string.Joiner;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import org.jboss.weld.junit5.EnableWeld;
 import org.jboss.weld.junit5.WeldInitiator;
@@ -40,11 +43,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
-
-
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.enterprise.inject.Produces;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -281,7 +279,7 @@ class BearerTokenProducerCdiTest {
         }
 
         @Produces
-        @ServletObjectsResolver(ServletObjectsResolver.Variant.RESTEASY)
+        @ServletObjectsResolver(ServletObjectsResolver.Variant.VERTX)
         public HttpServletRequestResolver httpServletRequestResolver() {
             return requestResolverMock;
         }

@@ -37,12 +37,9 @@ services:
     build:
       context: .
       dockerfile: src/main/docker/Dockerfile.native
-      # Build optimization settings
+      # Simple copy-based build - no compilation in Docker
       cache_from:
         - quay.io/quarkus/quarkus-distroless-image:2.0
-      platforms:
-        - linux/amd64
-        - linux/arm64
 
     ports:
       - "10443:8443"  # External test port for integration tests
