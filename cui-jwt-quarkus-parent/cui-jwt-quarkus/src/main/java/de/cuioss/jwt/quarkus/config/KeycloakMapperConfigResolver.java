@@ -20,15 +20,15 @@ import lombok.NonNull;
 import lombok.Value;
 import org.eclipse.microprofile.config.Config;
 
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.KEYCLOAK.MAPPERS.DEFAULT_GROUPS_ENABLED;
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.KEYCLOAK.MAPPERS.DEFAULT_ROLES_ENABLED;
+import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_GROUPS_ENABLED;
+import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_ROLES_ENABLED;
 
 /**
- * Configuration resolver for Keycloak mapper settings.
+ * Configuration resolver for Keycloak mapper settings per issuer.
  * <p>
  * This class handles the resolution of Keycloak-specific mapper configuration
  * properties that control the activation of default claim mappers for compatibility
- * with Keycloak's standard token structure.
+ * with Keycloak's standard token structure on a per-issuer basis.
  * </p>
  * <p>
  * The resolver provides configuration for:
@@ -54,15 +54,19 @@ public class KeycloakMapperConfigResolver {
     }
 
     /**
-     * Resolves Keycloak mapper configuration from properties.
+     * Resolves Keycloak mapper configuration from properties for a specific issuer.
      *
-     * @return the resolved KeycloakMapperConfig
+     * @param issuerName the name of the issuer configuration
+     * @return the resolved KeycloakMapperConfig for this issuer
      */
-    public KeycloakMapperConfig resolve() {
-        boolean defaultRolesEnabled = config.getOptionalValue(DEFAULT_ROLES_ENABLED, Boolean.class)
+    public KeycloakMapperConfig resolve(String issuerName) {
+        String rolesKey = KEYCLOAK_DEFAULT_ROLES_ENABLED.formatted(issuerName);
+        String groupsKey = KEYCLOAK_DEFAULT_GROUPS_ENABLED.formatted(issuerName);
+        
+        boolean defaultRolesEnabled = config.getOptionalValue(rolesKey, Boolean.class)
                 .orElse(false);
 
-        boolean defaultGroupsEnabled = config.getOptionalValue(DEFAULT_GROUPS_ENABLED, Boolean.class)
+        boolean defaultGroupsEnabled = config.getOptionalValue(groupsKey, Boolean.class)
                 .orElse(false);
 
         return KeycloakMapperConfig.builder()
@@ -72,20 +76,20 @@ public class KeycloakMapperConfigResolver {
     }
 
     /**
-     * Configuration holder for Keycloak mapper settings.
+     * Configuration holder for Keycloak mapper settings per issuer.
      */
     @Value
     @Builder
     public static class KeycloakMapperConfig {
 
         /**
-         * Whether the default roles mapper is enabled.
+         * Whether the default roles mapper is enabled for this issuer.
          * When true, enables mapping from {@code realm_access.roles} to {@code roles}.
          */
         boolean defaultRolesEnabled;
 
         /**
-         * Whether the default groups mapper is enabled.
+         * Whether the default groups mapper is enabled for this issuer.
          * When true, enables processing of Keycloak's standard {@code groups} claim.
          */
         boolean defaultGroupsEnabled;

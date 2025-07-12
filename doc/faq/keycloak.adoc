@@ -106,9 +106,9 @@ Use built-in mappers instead of custom protocol mappers (CUI JWT v1.0+):
 
 [source,properties]
 ----
-# Enable Keycloak default mappers
-cui.jwt.keycloak.mappers.default-roles.enabled=true
-cui.jwt.keycloak.mappers.default-groups.enabled=true
+# Enable Keycloak default mappers per issuer
+cui.jwt.issuers.my-keycloak.keycloak.mappers.default-roles.enabled=true
+cui.jwt.issuers.my-keycloak.keycloak.mappers.default-groups.enabled=true
 ----
 
 This automatically maps:
@@ -116,9 +116,10 @@ This automatically maps:
 - Standard `groups` claim processing
 
 Benefits:
+- Per-issuer configuration flexibility
 - No Keycloak realm modification needed
 - Works with standard Keycloak token structure
-- Simplified deployment
+- Different issuers can use different mapper strategies
 
 *Common Errors:*
 |===

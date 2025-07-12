@@ -16,6 +16,8 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
@@ -173,6 +175,9 @@ public class IssuerConfigResolver {
 
         // Configure JWKS source (mutually exclusive)
         configureJwksSource(builder, issuerName);
+        
+        // Configure Keycloak mappers if enabled
+        configureKeycloakMappers(builder, issuerName);
 
         // Let the builder validate and create the instance
         return builder.build();
@@ -346,5 +351,27 @@ public class IssuerConfigResolver {
 
         // Let the builder validate and create the instance
         return builder.build();
+    }
+    
+    /**
+     * Configures Keycloak default mappers if enabled for this issuer.
+     * <p>
+     * Adds Keycloak-specific claim mappers based on per-issuer configuration.
+     * This allows different issuers to have different Keycloak mapper settings.
+     * </p>
+     */
+    private void configureKeycloakMappers(IssuerConfig.IssuerConfigBuilder builder, String issuerName) {
+        KeycloakMapperConfigResolver keycloakResolver = new KeycloakMapperConfigResolver(config);
+        KeycloakMapperConfigResolver.KeycloakMapperConfig keycloakConfig = keycloakResolver.resolve(issuerName);
+        
+        if (keycloakConfig.isDefaultRolesEnabled()) {
+            builder.claimMapper("roles", new KeycloakDefaultRolesMapper());
+            LOGGER.debug("Added Keycloak default roles mapper for issuer: %s", issuerName);
+        }
+        
+        if (keycloakConfig.isDefaultGroupsEnabled()) {
+            builder.claimMapper("groups", new KeycloakDefaultGroupsMapper());
+            LOGGER.debug("Added Keycloak default groups mapper for issuer: %s", issuerName);
+        }
     }
 }

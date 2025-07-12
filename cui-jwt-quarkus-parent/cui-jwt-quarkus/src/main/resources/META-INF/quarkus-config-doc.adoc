@@ -140,40 +140,42 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 
 == Keycloak Integration
 
-The extension provides optional default claim mappers for seamless integration with Keycloak's standard token structure. These mappers are disabled by default to maintain backward compatibility.
+The extension provides optional default claim mappers for seamless integration with Keycloak's standard token structure. These mappers are configured per-issuer and are disabled by default to maintain backward compatibility.
 
 [cols="2,1,5"]
 |===
 |Property |Type |Description
 
-|cui.jwt.keycloak.mappers.default-roles.enabled
+|cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-roles.enabled
 |boolean (default: false)
-|Enables the default roles mapper that transforms Keycloak's `realm_access.roles` claim to the standard `roles` claim. This allows applications to work with Keycloak tokens without requiring custom protocol mappers.
+|Enables the default roles mapper for this issuer that transforms Keycloak's `realm_access.roles` claim to the standard `roles` claim. This allows applications to work with Keycloak tokens without requiring custom protocol mappers.
 
-|cui.jwt.keycloak.mappers.default-groups.enabled
+|cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-groups.enabled
 |boolean (default: false)
-|Enables the default groups mapper that processes Keycloak's standard `groups` claim. This provides consistent group membership handling for Keycloak tokens.
+|Enables the default groups mapper for this issuer that processes Keycloak's standard `groups` claim. This provides consistent group membership handling for Keycloak tokens.
 |===
 
 === Configuration Example
 
 [source,properties]
 ----
-# Enable Keycloak default mappers
-cui.jwt.keycloak.mappers.default-roles.enabled=true
-cui.jwt.keycloak.mappers.default-groups.enabled=true
-
-# Standard issuer configuration
+# Standard issuer configuration with Keycloak default mappers
 cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
 cui.jwt.issuers.keycloak.well-known-url=https://keycloak.example.com/realms/master/.well-known/openid-configuration
+
+# Enable Keycloak default mappers for this issuer
+cui.jwt.issuers.keycloak.keycloak.mappers.default-roles.enabled=true
+cui.jwt.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
 ----
 
 === Benefits
 
+* **Per-Issuer Configuration**: Each issuer can have different Keycloak mapper settings
 * **Zero Configuration**: Works with Keycloak's default token structure without custom protocol mappers
 * **Backward Compatibility**: Disabled by default, existing configurations remain unchanged
 * **Simplified Integration**: Reduces Keycloak realm configuration complexity
 * **Standards Compliance**: Maintains compatibility with standard JWT claim names
+* **Flexible Deployment**: Mix Keycloak and non-Keycloak issuers with appropriate configurations
 
 == Health Check Configuration
 
@@ -237,10 +239,10 @@ For quick reference, here are all the default values in one place:
 |cui.jwt.health.jwks.cache-seconds
 |30
 
-|cui.jwt.keycloak.mappers.default-roles.enabled
+|cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-roles.enabled
 |false
 
-|cui.jwt.keycloak.mappers.default-groups.enabled
+|cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-groups.enabled
 |false
 |===
 

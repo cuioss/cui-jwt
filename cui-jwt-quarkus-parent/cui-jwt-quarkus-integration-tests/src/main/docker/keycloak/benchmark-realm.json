@@ -150,19 +150,6 @@
             "jsonType.label": "String",
             "multivalued": "true"
           }
-        },
-        {
-          "name": "roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "user.attribute": "foo",
-            "access.token.claim": "true",
-            "claim.name": "roles",
-            "jsonType.label": "String",
-            "multivalued": "true"
-          }
         }
       ]
     },
