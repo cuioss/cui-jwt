@@ -54,15 +54,28 @@ public interface HttpServletRequestResolver {
     HttpServletRequest resolveHttpServletRequest() throws IllegalStateException;
 
     /**
-     * Resolves HTTP headers from the current request context as a Map.
+     * Resolves HTTP headers from the current request context as a Map with normalized header names.
      *
      * <p>This default implementation extracts headers from the HttpServletRequest
-     * resolved by {@link #resolveHttpServletRequest()}.</p>
+     * resolved by {@link #resolveHttpServletRequest()}. Header field names are normalized
+     * to lowercase for RFC compliance and consistent processing.</p>
      *
-     * @return Map of HTTP headers from the current context
+     * <p><strong>Header Name Normalization:</strong> According to RFC 7230 Section 3.2 (HTTP/1.1),
+     * header field names are case-insensitive. RFC 9113 Section 8.1.2 (HTTP/2) requires header
+     * field names to be converted to lowercase prior to encoding. This implementation normalizes
+     * all header names to lowercase using {@link java.util.Locale#ROOT} to ensure consistent,
+     * locale-independent processing regardless of the underlying HTTP protocol version.</p>
+     *
+     * <p><strong>Protocol Compatibility:</strong> This normalization approach supports both
+     * HTTP/1.1 and HTTP/2 protocols, eliminating the need for case-insensitive header lookups
+     * in consuming code while maintaining full RFC compliance.</p>
+     *
+     * @return Map of HTTP headers with lowercase header names from the current context
      * @throws jakarta.enterprise.inject.IllegalProductException if not in an active request context 
      *                               (CDI wraps underlying exceptions when @RequestScoped producer fails)
      * @throws IllegalStateException if the infrastructure is not available to resolve headers
+     * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230 Section 3.2: Header Fields</a>
+     * @see <a href="https://tools.ietf.org/html/rfc9113#section-8.1.2">RFC 9113 Section 8.1.2: HTTP Header Fields</a>
      */
     @NonNull
     default Map<String, List<String>> resolveHeaderMap() throws IllegalStateException {
@@ -70,12 +83,17 @@ public interface HttpServletRequestResolver {
     }
 
     /**
-     * Creates a header map from the given HttpServletRequest.
+     * Creates a header map from the given HttpServletRequest with normalized header names.
      *
-     * <p>This helper method is used by the default implementation of {@link #resolveHeaderMap()}.</p>
+     * <p>This helper method is used by the default implementation of {@link #resolveHeaderMap()}.
+     * Header field names are normalized to lowercase for RFC compliance and consistent processing.</p>
+     *
+     * <p><strong>Implementation Notes:</strong> Header names are converted to lowercase using
+     * {@link java.util.Locale#ROOT} to ensure locale-independent normalization. This approach
+     * follows RFC 9113 requirements for HTTP/2 while maintaining compatibility with HTTP/1.1.</p>
      *
      * @param request the HttpServletRequest to extract headers from (must not be null)
-     * @return Map of HTTP headers extracted from the request
+     * @return Map of HTTP headers with normalized lowercase header names
      * @throws IllegalStateException if headers cannot be extracted from the request
      */
     @NonNull
@@ -93,7 +111,9 @@ public interface HttpServletRequestResolver {
                 while (values.hasMoreElements()) {
                     headerValues.add(values.nextElement());
                 }
-                headerMap.put(headerName, headerValues);
+                // Normalize header name to lowercase per RFC 9113 (HTTP/2) and RFC 7230 (HTTP/1.1)
+                // Use ROOT locale to ensure consistent, locale-independent conversion
+                headerMap.put(headerName.toLowerCase(Locale.ROOT), headerValues);
             }
         }
 

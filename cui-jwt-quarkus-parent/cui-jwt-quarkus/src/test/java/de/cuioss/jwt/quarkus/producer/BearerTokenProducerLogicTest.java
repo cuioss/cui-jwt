@@ -213,6 +213,48 @@ class BearerTokenProducerLogicTest {
             assertTrue(resolved.isPresent());
             assertEquals(expected, resolved.get());
         }
+
+        @Test
+        @DisplayName("should handle Authorization header in various cases with normalized keys")
+        void shouldHandleAuthorizationHeaderInVariousCasesWithNormalizedKeys() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            // Test various cases - all should work due to header normalization in HttpServletRequestResolver
+            String[] headerCases = {"Authorization", "AUTHORIZATION", "authorization", "AuThOrIzAtIoN"};
+            
+            for (String headerCase : headerCases) {
+                requestResolverMock.clearHeaders();
+                requestResolverMock.setHeader(headerCase, "Bearer " + expected.getRawToken());
+
+                var resolved = underTest.getAccessTokenContent();
+                assertTrue(resolved.isPresent(), 
+                    "Should find authorization header regardless of case: " + headerCase);
+                assertEquals(expected, resolved.get());
+            }
+        }
+
+        @Test
+        @DisplayName("should use direct lowercase lookup for authorization header")
+        void shouldUseDirectLowercaseLookupForAuthorizationHeader() {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+            
+            // Set Authorization header in mixed case
+            requestResolverMock.setHeader("Authorization", "Bearer " + expected.getRawToken());
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent());
+            assertEquals(expected, resolved.get());
+
+            // Verify that the header normalization happens at HttpServletRequestResolver level
+            // by checking that the header map contains lowercase keys
+            var headerMap = requestResolverMock.resolveHeaderMap();
+            assertTrue(headerMap.containsKey("authorization"), 
+                "Header map should contain lowercase 'authorization' key");
+            assertFalse(headerMap.containsKey("Authorization"), 
+                "Header map should not contain mixed-case 'Authorization' key");
+        }
     }
 
 

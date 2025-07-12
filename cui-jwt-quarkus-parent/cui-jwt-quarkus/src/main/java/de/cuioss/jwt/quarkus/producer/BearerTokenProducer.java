@@ -202,15 +202,9 @@ public class BearerTokenProducer {
         Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
         LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
 
-        // HTTP headers are case-insensitive per RFC 7230. Look for Authorization header
-        // in a case-insensitive manner to support both HTTP/1.1 and HTTP/2
-        List<String> authHeaders = null;
-        for (Map.Entry<String, List<String>> entry : headerMap.entrySet()) {
-            if ("Authorization".equalsIgnoreCase(entry.getKey())) {
-                authHeaders = entry.getValue();
-                break;
-            }
-        }
+        // Header names are normalized to lowercase by HttpServletRequestResolver per RFC 9113 (HTTP/2)
+        // and RFC 7230 (HTTP/1.1). Direct lookup with lowercase key is sufficient.
+        List<String> authHeaders = headerMap.get("authorization");
 
         if (authHeaders == null || authHeaders.isEmpty()) {
             LOGGER.debug("Authorization header not found in headerMap");
