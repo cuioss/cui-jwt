@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +39,7 @@ class JwtValidationEndpointTokenRequestIT extends BaseIntegrationTest {
     @Test
     @Order(1)
     @DisplayName("TokenRequest record should be properly deserialized from JSON")
-    void testTokenRequestDeserialization() {
+    void tokenRequestDeserialization() {
         // Test that TokenRequest record works correctly with JSON deserialization
         given()
             .contentType(CONTENT_TYPE_JSON)
@@ -55,7 +55,7 @@ class JwtValidationEndpointTokenRequestIT extends BaseIntegrationTest {
     @Test
     @Order(2)
     @DisplayName("TokenRequest.isEmpty() should work correctly with token trimming")
-    void testTokenRequestIsEmptyWithTokenTrimming() {
+    void tokenRequestIsEmptyWithTokenTrimming() {
         // Test that tokens with surrounding whitespace are handled correctly
         given()
             .contentType(CONTENT_TYPE_JSON)

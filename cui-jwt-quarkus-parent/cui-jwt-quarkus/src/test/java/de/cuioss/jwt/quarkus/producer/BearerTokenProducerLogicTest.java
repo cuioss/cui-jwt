@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,10 +32,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.*;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR.BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -83,34 +86,16 @@ class BearerTokenProducerLogicTest {
             assertEquals(expected, resolved.get());
         }
 
-        @Test
-        @DisplayName("should handle token with multiple roles")
-        void shouldHandleTokenWithMultipleRoles() {
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "admin", "user", "viewer");
-            mockTokenValidator.setAccessTokenContent(expected);
-            requestResolverMock.setBearerToken(expected.getRawToken());
-
-            var resolved = underTest.getAccessTokenContent();
-            assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
-        }
-
-        @Test
-        @DisplayName("should handle token with scopes")
-        void shouldHandleTokenWithScopes() {
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.SCOPE, "read", "write", "admin");
-            mockTokenValidator.setAccessTokenContent(expected);
-            requestResolverMock.setBearerToken(expected.getRawToken());
-
-            var resolved = underTest.getAccessTokenContent();
-            assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
-        }
-
-        @Test
-        @DisplayName("should handle token with groups")
-        void shouldHandleTokenWithGroups() {
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.GROUPS, "developers", "admins");
+        @ParameterizedTest
+        @CsvSource({
+                "ROLES, 'admin,user,viewer'",
+                "SCOPE, 'read,write,admin'",
+                "GROUPS, 'developers,admins'"
+        })
+        @DisplayName("should handle token with different claim types")
+        void shouldHandleTokenWithDifferentClaimTypes(ClaimName claimName, String claimValues) {
+            String[] values = claimValues.split(",");
+            AccessTokenContent expected = getAccessTokenWithClaims(claimName, values);
             mockTokenValidator.setAccessTokenContent(expected);
             requestResolverMock.setBearerToken(expected.getRawToken());
 
@@ -191,47 +176,38 @@ class BearerTokenProducerLogicTest {
     @DisplayName("Edge Cases")
     class EdgeCases {
 
-        @Test
-        @DisplayName("should handle empty bearer token as token given")
-        void shouldHandleEmptyBearerTokenAsTokenGiven() {
-            requestResolverMock.setHeader("Authorization", "Bearer ");
+        @ParameterizedTest
+        @CsvSource({
+                "'Bearer ', true, 'should handle empty bearer token as token given'",
+                "'Bearer   token-with-spaces', true, 'should handle bearer token with extra spaces'"
+        })
+        @DisplayName("should handle Bearer token edge cases")
+        void shouldHandleBearerTokenEdgeCases(String authorizationHeader, boolean shouldBePresent, String description) {
+            requestResolverMock.setHeader("Authorization", authorizationHeader);
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
 
             var resolved = underTest.getAccessTokenContent();
-            assertTrue(resolved.isPresent());
-        }
-
-        @Test
-        @DisplayName("should handle bearer token with extra spaces")
-        void shouldHandleBearerTokenWithSpaces() {
-            requestResolverMock.setHeader("Authorization", "Bearer   token-with-spaces");
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
-
-            var resolved = underTest.getAccessTokenContent();
-            assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
-        }
-
-        @Test
-        @DisplayName("should handle Authorization header in various cases with normalized keys")
-        void shouldHandleAuthorizationHeaderInVariousCasesWithNormalizedKeys() {
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
-
-            // Test various cases - all should work due to header normalization in HttpServletRequestResolver
-            String[] headerCases = {"Authorization", "AUTHORIZATION", "authorization", "AuThOrIzAtIoN"};
-            
-            for (String headerCase : headerCases) {
-                requestResolverMock.clearHeaders();
-                requestResolverMock.setHeader(headerCase, "Bearer " + expected.getRawToken());
-
-                var resolved = underTest.getAccessTokenContent();
-                assertTrue(resolved.isPresent(), 
-                    "Should find authorization header regardless of case: " + headerCase);
+            assertEquals(shouldBePresent, resolved.isPresent(), description);
+            if (shouldBePresent && !"Bearer".equals(authorizationHeader.trim())) {
                 assertEquals(expected, resolved.get());
             }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"Authorization", "AUTHORIZATION", "authorization", "AuThOrIzAtIoN"})
+        @DisplayName("should handle Authorization header in various cases with normalized keys")
+        void shouldHandleAuthorizationHeaderInVariousCasesWithNormalizedKeys(String headerCase) {
+            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            mockTokenValidator.setAccessTokenContent(expected);
+
+            requestResolverMock.clearHeaders();
+            requestResolverMock.setHeader(headerCase, "Bearer " + expected.getRawToken());
+
+            var resolved = underTest.getAccessTokenContent();
+            assertTrue(resolved.isPresent(),
+                    "Should find authorization header regardless of case: " + headerCase);
+            assertEquals(expected, resolved.get());
         }
 
         @Test
@@ -239,7 +215,7 @@ class BearerTokenProducerLogicTest {
         void shouldUseDirectLowercaseLookupForAuthorizationHeader() {
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
             mockTokenValidator.setAccessTokenContent(expected);
-            
+
             // Set Authorization header in mixed case
             requestResolverMock.setHeader("Authorization", "Bearer " + expected.getRawToken());
 
@@ -250,10 +226,10 @@ class BearerTokenProducerLogicTest {
             // Verify that the header normalization happens at HttpServletRequestResolver level
             // by checking that the header map contains lowercase keys
             var headerMap = requestResolverMock.resolveHeaderMap();
-            assertTrue(headerMap.containsKey("authorization"), 
-                "Header map should contain lowercase 'authorization' key");
-            assertFalse(headerMap.containsKey("Authorization"), 
-                "Header map should not contain mixed-case 'Authorization' key");
+            assertTrue(headerMap.containsKey("authorization"),
+                    "Header map should contain lowercase 'authorization' key");
+            assertFalse(headerMap.containsKey("Authorization"),
+                    "Header map should not contain mixed-case 'Authorization' key");
         }
     }
 
@@ -298,56 +274,54 @@ class BearerTokenProducerLogicTest {
             assertTrue(couldNotAccessResult.isNotSuccessfullyAuthorized(), "COULD_NOT_ACCESS_REQUEST should be unsuccessfully authorized");
         }
 
-        @Test
+        @ParameterizedTest
+        @EnumSource(BearerTokenStatus.class)
         @DisplayName("should have consistent authorization status across all scenarios")
-        void shouldHaveConsistentAuthorizationStatus() {
-            // For each possible status, verify that isSuccessfullyAuthorized and isNotSuccessfullyAuthorized are opposites
-            for (BearerTokenStatus status : BearerTokenStatus.values()) {
-                BearerTokenResult result;
-                switch (status) {
-                    case FULLY_VERIFIED:
-                        AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
-                        result = BearerTokenResult.success(tokenContent,
-                                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                        break;
-                    case NO_TOKEN_GIVEN:
-                        result = BearerTokenResult.noTokenGiven(
-                                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                        break;
-                    case PARSING_ERROR:
-                        TokenValidationException ex = new TokenValidationException(
-                                SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
-                        result = BearerTokenResult.parsingError(ex,
-                                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                        break;
-                    case CONSTRAINT_VIOLATION:
-                        result = BearerTokenResult.constraintViolation(
-                                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                        break;
-                    case COULD_NOT_ACCESS_REQUEST:
-                        result = BearerTokenResult.couldNotAccessRequest(
-                                Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                        break;
-                    default:
-                        throw new IllegalStateException("Unknown status: " + status);
-                }
+        void shouldHaveConsistentAuthorizationStatus(BearerTokenStatus status) {
+            BearerTokenResult result;
+            switch (status) {
+                case FULLY_VERIFIED:
+                    AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
+                    result = BearerTokenResult.success(tokenContent,
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                    break;
+                case NO_TOKEN_GIVEN:
+                    result = BearerTokenResult.noTokenGiven(
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                    break;
+                case PARSING_ERROR:
+                    TokenValidationException ex = new TokenValidationException(
+                            SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
+                    result = BearerTokenResult.parsingError(ex,
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                    break;
+                case CONSTRAINT_VIOLATION:
+                    result = BearerTokenResult.constraintViolation(
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                    break;
+                case COULD_NOT_ACCESS_REQUEST:
+                    result = BearerTokenResult.couldNotAccessRequest(
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown status: " + status);
+            }
 
-                // Verify the methods are opposites
-                assertNotEquals(result.isSuccessfullyAuthorized(), result.isNotSuccessfullyAuthorized(),
-                        "Authorization methods should return opposite values for status: " + status);
+            // Verify the methods are opposites
+            assertNotEquals(result.isSuccessfullyAuthorized(), result.isNotSuccessfullyAuthorized(),
+                    "Authorization methods should return opposite values for status: " + status);
 
-                // Verify correct behavior based on status
-                if (status == BearerTokenStatus.FULLY_VERIFIED) {
-                    assertTrue(result.isSuccessfullyAuthorized(),
-                            "FULLY_VERIFIED should be successfully authorized");
-                    assertFalse(result.isNotSuccessfullyAuthorized(),
-                            "FULLY_VERIFIED should not be unsuccessfully authorized");
-                } else {
-                    assertFalse(result.isSuccessfullyAuthorized(),
-                            status + " should not be successfully authorized");
-                    assertTrue(result.isNotSuccessfullyAuthorized(),
-                            status + " should be unsuccessfully authorized");
-                }
+            // Verify correct behavior based on status
+            if (status == BearerTokenStatus.FULLY_VERIFIED) {
+                assertTrue(result.isSuccessfullyAuthorized(),
+                        "FULLY_VERIFIED should be successfully authorized");
+                assertFalse(result.isNotSuccessfullyAuthorized(),
+                        "FULLY_VERIFIED should not be unsuccessfully authorized");
+            } else {
+                assertFalse(result.isSuccessfullyAuthorized(),
+                        status + " should not be successfully authorized");
+                assertTrue(result.isNotSuccessfullyAuthorized(),
+                        status + " should be unsuccessfully authorized");
             }
         }
     }
@@ -390,10 +364,10 @@ class BearerTokenProducerLogicTest {
 
             // Use the CDI producer
             BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
-            
+            MockInjectionPoint injectionPoint = new MockInjectionPoint(Set.of("read"), Set.of("admin"), Set.of("managers"));
+
             // IllegalStateException should now bubble up
-            assertThrows(IllegalStateException.class, () -> producer.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of("admin"), Set.of("managers"))));
+            assertThrows(IllegalStateException.class, () -> producer.produceBearerTokenResult(injectionPoint));
         }
 
         @Test
@@ -462,10 +436,10 @@ class BearerTokenProducerLogicTest {
 
             // Create producer with tracking mock
             BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, trackingMock);
+            MockInjectionPoint injectionPoint = new MockInjectionPoint(Set.of("read"), Set.of("admin"), Set.of("managers"));
 
             // IllegalStateException should now bubble up
-            assertThrows(IllegalStateException.class, () -> producer.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of("admin"), Set.of("managers"))));
+            assertThrows(IllegalStateException.class, () -> producer.produceBearerTokenResult(injectionPoint));
         }
 
         @Test
@@ -474,15 +448,15 @@ class BearerTokenProducerLogicTest {
             // Test infrastructure error case - should throw IllegalStateException
             requestResolverMock.setRequestContextAvailable(false);
             BearerTokenProducer producer1 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
-            assertThrows(IllegalStateException.class, () -> producer1.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of(), Set.of())));
+            MockInjectionPoint injectionPoint1 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
+            assertThrows(IllegalStateException.class, () -> producer1.produceBearerTokenResult(injectionPoint1));
 
             // Test missing token case
             requestResolverMock.setRequestContextAvailable(true);
             requestResolverMock.clearHeaders(); // No Authorization header
             BearerTokenProducer producer2 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
-            var result2 = producer2.produceBearerTokenResult(new MockInjectionPoint(
-                    Set.of("read"), Set.of(), Set.of()));
+            MockInjectionPoint injectionPoint2 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
+            var result2 = producer2.produceBearerTokenResult(injectionPoint2);
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result2.getStatus());
         }
     }

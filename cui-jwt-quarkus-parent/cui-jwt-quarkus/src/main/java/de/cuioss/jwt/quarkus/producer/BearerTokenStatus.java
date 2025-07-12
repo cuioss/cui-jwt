@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -95,7 +95,7 @@ public enum BearerTokenStatus {
                     .header(HEADER_WWW_AUTHENTICATE, BEARER_REALM)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                     .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                    .entity(createErrorEntity("Bearer token validation failed or token not present"))
+                    .entity(createErrorEntity(TOKEN_NOT_PRESENT))
                     .build();
         }
     },
@@ -120,7 +120,7 @@ public enum BearerTokenStatus {
                     .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                     .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                     .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                    .entity(createErrorEntity("Bearer token validation failed or token not present"))
+                    .entity(createErrorEntity(TOKEN_NOT_PRESENT))
                     .build();
         }
     },
@@ -149,7 +149,7 @@ public enum BearerTokenStatus {
                         .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                         .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                         .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                        .entity(createErrorEntity("Bearer token validation failed or token not present"))
+                        .entity(createErrorEntity(TOKEN_NOT_PRESENT))
                         .build();
             } else {
                 // Role/group violation - 403 Forbidden with OAuth-style error structure
@@ -159,12 +159,13 @@ public enum BearerTokenStatus {
                         .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
                         .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
                         .header(HEADER_PRAGMA, PRAGMA_VALUE)
-                        .entity(createErrorEntity("Bearer token validation failed or token not present"))
+                        .entity(createErrorEntity(TOKEN_NOT_PRESENT))
                         .build();
             }
         }
     };
 
+    public static final String TOKEN_NOT_PRESENT = "Bearer token validation failed or token not present";
     // HTTP Header Constants
     private static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
     private static final String HEADER_CACHE_CONTROL = "Cache-Control";

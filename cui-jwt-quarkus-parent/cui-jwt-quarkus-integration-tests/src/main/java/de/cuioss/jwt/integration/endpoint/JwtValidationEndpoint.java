@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,8 +86,8 @@ public class JwtValidationEndpoint {
         }
         // Return consistent JSON format for authorization header tests
         return Response.status(Response.Status.UNAUTHORIZED)
-                .entity(new ValidationResponse(false, "Bearer token validation failed or token not present"))
-                .build();
+            .entity(new ValidationResponse(false, "Bearer token validation failed or token not present"))
+            .build();
     }
 
     /**
@@ -102,8 +102,8 @@ public class JwtValidationEndpoint {
     public Response validateExplicitToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ValidationResponse(false, "Missing or empty access token in request body"))
-                    .build();
+                .entity(new ValidationResponse(false, "Missing or empty access token in request body"))
+                .build();
         }
 
         try {
@@ -112,8 +112,8 @@ public class JwtValidationEndpoint {
         } catch (TokenValidationException e) {
             LOGGER.warn("Explicit token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(new ValidationResponse(false, "Token validation failed: " + e.getMessage()))
-                    .build();
+                .entity(new ValidationResponse(false, "Token validation failed: " + e.getMessage()))
+                .build();
         }
     }
 
@@ -125,8 +125,8 @@ public class JwtValidationEndpoint {
     public Response validateIdToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ValidationResponse(false, "Missing or empty ID token in request body"))
-                    .build();
+                .entity(new ValidationResponse(false, "Missing or empty ID token in request body"))
+                .build();
         }
 
         try {
@@ -135,8 +135,8 @@ public class JwtValidationEndpoint {
         } catch (TokenValidationException e) {
             LOGGER.warn("ID token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(new ValidationResponse(false, "ID token validation failed: " + e.getMessage()))
-                    .build();
+                .entity(new ValidationResponse(false, "ID token validation failed: " + e.getMessage()))
+                .build();
         }
     }
 
@@ -148,8 +148,8 @@ public class JwtValidationEndpoint {
     public Response validateRefreshToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ValidationResponse(false, "Missing or empty refresh token in request body"))
-                    .build();
+                .entity(new ValidationResponse(false, "Missing or empty refresh token in request body"))
+                .build();
         }
 
         try {
@@ -158,8 +158,8 @@ public class JwtValidationEndpoint {
         } catch (TokenValidationException e) {
             LOGGER.warn("Refresh token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(new ValidationResponse(false, "Refresh token validation failed: " + e.getMessage()))
-                    .build();
+                .entity(new ValidationResponse(false, "Refresh token validation failed: " + e.getMessage()))
+                .build();
         }
     }
 
@@ -231,18 +231,18 @@ public class JwtValidationEndpoint {
      */
     private ValidationResponse createTokenResponse(AccessTokenContent token, String message) {
         return new ValidationResponse(true, message, Map.of(
-                "subject", token.getSubject(),
-                "scopes", token.getScopes(),
-                "roles", token.getRoles(),
-                "groups", token.getGroups(),
-                "email", token.getEmail().orElse("not-present")
+            "subject", token.getSubject(),
+            "scopes", token.getScopes(),
+            "roles", token.getRoles(),
+            "groups", token.getGroups(),
+            "email", token.getEmail().orElse("not-present")
         ));
     }
 
 
     // Request and Response DTOs
     public record TokenRequest(String token) {
-        
+
         /**
          * Checks if the token request is missing or empty.
          * 

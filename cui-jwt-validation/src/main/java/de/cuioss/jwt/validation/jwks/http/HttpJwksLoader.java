@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.INFO;
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 

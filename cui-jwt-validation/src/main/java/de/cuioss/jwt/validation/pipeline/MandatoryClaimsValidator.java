@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -62,54 +63,88 @@ public class MandatoryClaimsValidator {
 
         LOGGER.debug("%s, verifying mandatory claims: %s", tokenContent.getTokenType(), mandatoryNames);
 
+        SortedSet<String> missingClaims = collectMissingClaims(tokenContent, mandatoryNames);
+
+        if (missingClaims.isEmpty()) {
+            LOGGER.debug("All mandatory claims are present and set as expected");
+            return;
+        }
+
+        handleMissingClaims(tokenContent, missingClaims);
+    }
+
+    private SortedSet<String> collectMissingClaims(TokenContent tokenContent, Set<String> mandatoryNames) {
         SortedSet<String> missingClaims = new TreeSet<>();
 
         for (var claimName : mandatoryNames) {
-            if (!tokenContent.getClaims().containsKey(claimName)) {
+            if (isClaimMissing(tokenContent, claimName)) {
                 missingClaims.add(claimName);
-            } else {
-                ClaimValue claimValue = tokenContent.getClaims().get(claimName);
-                if (!claimValue.isPresent()) {
-                    var claimNameEnum = ClaimName.fromString(claimName);
-                    if (claimNameEnum.isPresent()) {
-                        LOGGER.debug("Claim %s is present but not set as expected: %s. Specification: %s",
-                                claimName, claimValue, claimNameEnum.get().getSpec());
-                    } else {
-                        LOGGER.debug("Claim %s is present but not set as expected: %s", claimName, claimValue);
-                    }
-                    missingClaims.add(claimName);
-                }
             }
         }
 
-        if (!missingClaims.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format(missingClaims));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
+        return missingClaims;
+    }
 
-            // Build enhanced error message with claim specifications
-            StringBuilder errorMessage = new StringBuilder("Missing mandatory claims: ").append(missingClaims);
-            StringBuilder claimSpecs = new StringBuilder();
+    private boolean isClaimMissing(TokenContent tokenContent, String claimName) {
+        if (!tokenContent.getClaims().containsKey(claimName)) {
+            return true;
+        }
 
-            for (String missingClaim : missingClaims) {
-                var claimNameEnum = ClaimName.fromString(missingClaim);
-                if (claimNameEnum.isPresent()) {
-                    claimSpecs.append("\n- ").append(missingClaim).append(": ").append(claimNameEnum.get().getSpec());
-                }
-            }
+        ClaimValue claimValue = tokenContent.getClaims().get(claimName);
+        if (!claimValue.isPresent()) {
+            logMissingClaimValue(claimName, claimValue);
+            return true;
+        }
 
-            if (claimSpecs.length() > 0) {
-                errorMessage.append("\n\nClaim specifications:").append(claimSpecs);
-            }
+        return false;
+    }
 
-            errorMessage.append("\n\nAvailable claims: ").append(tokenContent.getClaims().keySet())
-                    .append(". Please ensure the token includes all required claims.");
-
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    errorMessage.toString()
-            );
+    private void logMissingClaimValue(String claimName, ClaimValue claimValue) {
+        var claimNameEnum = ClaimName.fromString(claimName);
+        if (claimNameEnum.isPresent()) {
+            LOGGER.debug("Claim %s is present but not set as expected: %s. Specification: %s",
+                    claimName, claimValue, claimNameEnum.get().getSpec());
         } else {
-            LOGGER.debug("All mandatory claims are present and set as expected");
+            LOGGER.debug("Claim %s is present but not set as expected: %s", claimName, claimValue);
         }
+    }
+
+    private void handleMissingClaims(TokenContent tokenContent, SortedSet<String> missingClaims) {
+        LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format(missingClaims));
+        securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
+
+        String errorMessage = buildErrorMessage(tokenContent, missingClaims);
+
+        throw new TokenValidationException(
+                SecurityEventCounter.EventType.MISSING_CLAIM,
+                errorMessage
+        );
+    }
+
+    private String buildErrorMessage(TokenContent tokenContent, SortedSet<String> missingClaims) {
+        StringBuilder errorMessage = new StringBuilder("Missing mandatory claims: ").append(missingClaims);
+
+        String claimSpecs = buildClaimSpecifications(missingClaims);
+        if (!claimSpecs.isEmpty()) {
+            errorMessage.append("\n\nClaim specifications:").append(claimSpecs);
+        }
+
+        errorMessage.append("\n\nAvailable claims: ").append(tokenContent.getClaims().keySet())
+                .append(". Please ensure the token includes all required claims.");
+
+        return errorMessage.toString();
+    }
+
+    private String buildClaimSpecifications(SortedSet<String> missingClaims) {
+        StringBuilder claimSpecs = new StringBuilder();
+
+        for (String missingClaim : missingClaims) {
+            var claimNameEnum = ClaimName.fromString(missingClaim);
+            claimNameEnum.ifPresent(claimName ->
+                    claimSpecs.append("\n- ").append(missingClaim).append(": ").append(claimName.getSpec())
+            );
+        }
+
+        return claimSpecs.toString();
     }
 }

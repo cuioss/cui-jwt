@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -130,6 +130,7 @@ public class ErrorLoadBenchmark {
      * @return A token string that has the probability of being invalid
      * according to the errorPercentage parameter
      */
+    @SuppressWarnings("java:S2245") // owolff: ok for test purposes
     private String selectToken() {
         // If errorPercentage is 0, always return valid token
         if (errorPercentage == 0) {

@@ -1,12 +1,12 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,9 +16,11 @@
 package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
-import org.junit.jupiter.api.*;
 
 import java.util.Map;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -162,62 +164,25 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     class BearerTokenProducerTests {
 
-        @Test
-        @Order(20)
-        @DisplayName("Bearer token with scope requirements - test token scopes")
-        void bearerTokenWithScopes() {
+        @ParameterizedTest
+        @ValueSource(strings = {
+            "/jwt/bearer-token/with-scopes",
+            "/jwt/bearer-token/with-roles",
+            "/jwt/bearer-token/with-groups",
+            "/jwt/bearer-token/with-all"
+        })
+        @DisplayName("Bearer token endpoint validation with different requirement types")
+        void bearerTokenEndpointValidation(String endpoint) {
             TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
-            LOGGER.info("bearerTokenWithScopes:" + tokenResponse.accessToken());
+
+            if (endpoint.contains("scopes")) {
+                LOGGER.info("bearerTokenWithScopes:" + tokenResponse.accessToken());
+            }
 
             given()
                 .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                 .when()
-                .get("/jwt/bearer-token/with-scopes")
-                .then()
-                .statusCode(200);
-            // Just verify the endpoint responds - content validation depends on actual token
-        }
-
-        @Test
-        @Order(22)
-        @DisplayName("Bearer token with role requirements - test token roles")
-        void bearerTokenWithRoles() {
-            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
-
-            given()
-                .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
-                .when()
-                .get("/jwt/bearer-token/with-roles")
-                .then()
-                .statusCode(200);
-            // Just verify the endpoint responds - content validation depends on actual token
-        }
-
-        @Test
-        @Order(24)
-        @DisplayName("Bearer token with group requirements - test token groups")
-        void bearerTokenWithGroups() {
-            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
-
-            given()
-                .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
-                .when()
-                .get("/jwt/bearer-token/with-groups")
-                .then()
-                .statusCode(200);
-            // Just verify the endpoint responds - content validation depends on actual token
-        }
-
-        @Test
-        @Order(26)
-        @DisplayName("Bearer token with all requirements - test token requirements")
-        void bearerTokenWithAll() {
-            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
-
-            given()
-                .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
-                .when()
-                .get("/jwt/bearer-token/with-all")
+                .get(endpoint)
                 .then()
                 .statusCode(200);
             // Just verify the endpoint responds - content validation depends on actual token

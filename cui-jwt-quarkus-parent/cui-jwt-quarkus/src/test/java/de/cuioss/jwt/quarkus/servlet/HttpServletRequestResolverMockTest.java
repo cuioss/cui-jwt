@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -324,7 +324,7 @@ class HttpServletRequestResolverMockTest {
         List<String> authValues = headerMap.get("authorization");
         assertNotNull(authValues);
         assertFalse(authValues.isEmpty());
-        assertEquals("Bearer token1", authValues.get(0));
+        assertEquals("Bearer token1", authValues.getFirst());
     }
 
     @Test
@@ -337,7 +337,7 @@ class HttpServletRequestResolverMockTest {
 
         assertTrue(headerMap.containsKey("valid-header"));
         assertEquals("value1", headerMap.get("valid-header").getFirst());
-        
+
         // Empty header name should be normalized to empty string
         if (headerMap.containsKey("")) {
             assertEquals("empty-name-value", headerMap.get("").getFirst());
@@ -357,7 +357,7 @@ class HttpServletRequestResolverMockTest {
         assertNotNull(values);
         assertEquals(3, values.size());
         // Order should be preserved
-        assertEquals("first", values.get(0));
+        assertEquals("first", values.getFirst());
         assertEquals("second", values.get(1));
         assertEquals("third", values.get(2));
     }

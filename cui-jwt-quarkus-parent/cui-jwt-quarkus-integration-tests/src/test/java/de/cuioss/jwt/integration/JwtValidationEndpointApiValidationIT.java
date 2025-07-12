@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -401,7 +401,7 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
     @Test
     @Order(100)
     @DisplayName("TokenRequest.isEmpty() consistency test across all endpoints")
-    void testTokenRequestIsEmptyConsistency() {
+    void tokenRequestIsEmptyConsistency() {
         // Test that all endpoints consistently use TokenRequest.isEmpty() logic
         String[] endpoints = {
             JWT_VALIDATE_EXPLICIT_PATH,

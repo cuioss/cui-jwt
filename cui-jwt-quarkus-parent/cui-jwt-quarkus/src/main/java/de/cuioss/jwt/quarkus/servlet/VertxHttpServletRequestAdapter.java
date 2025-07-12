@@ -1,12 +1,12 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -109,7 +109,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public String getAuthType() {
         throw new UnsupportedOperationException(
-            "Authentication type not available in Vertx context - use Quarkus Security instead");
+                "Authentication type not available in Vertx context - use Quarkus Security instead");
     }
 
     @Override
@@ -120,8 +120,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         }
 
         return vertxCookies.stream()
-            .map(this::convertVertxCookieToServletCookie)
-            .toArray(Cookie[]::new);
+                .map(this::convertVertxCookieToServletCookie)
+                .toArray(Cookie[]::new);
     }
 
     /**
@@ -191,7 +191,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public String getPathTranslated() {
         throw new UnsupportedOperationException(
-            "Path translation not supported in Vertx adapter");
+                "Path translation not supported in Vertx adapter");
     }
 
     @Override
@@ -209,25 +209,25 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public String getRemoteUser() {
         throw new UnsupportedOperationException(
-            "Remote user not available in Vertx context - use Quarkus Security Context instead");
+                "Remote user not available in Vertx context - use Quarkus Security Context instead");
     }
 
     @Override
     public boolean isUserInRole(String role) {
         throw new UnsupportedOperationException(
-            "Role checking not available in Vertx context - use Quarkus Security Context instead");
+                "Role checking not available in Vertx context - use Quarkus Security Context instead");
     }
 
     @Override
     public Principal getUserPrincipal() {
         throw new UnsupportedOperationException(
-            "User principal not available in Vertx context - use Quarkus Security Context instead");
+                "User principal not available in Vertx context - use Quarkus Security Context instead");
     }
 
     @Override
     public String getRequestedSessionId() {
         throw new UnsupportedOperationException(
-            "Session ID not available in Vertx context - use Quarkus session management instead");
+                "Session ID not available in Vertx context - use Quarkus session management instead");
     }
 
     @Override
@@ -251,73 +251,73 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public HttpSession getSession(boolean create) {
         throw new UnsupportedOperationException(
-            "HttpSession not supported in Vertx context - use Quarkus session management instead");
+                "HttpSession not supported in Vertx context - use Quarkus session management instead");
     }
 
     @Override
     public HttpSession getSession() {
         throw new UnsupportedOperationException(
-            "HttpSession not supported in Vertx context - use Quarkus session management instead");
+                "HttpSession not supported in Vertx context - use Quarkus session management instead");
     }
 
     @Override
     public String changeSessionId() {
         throw new UnsupportedOperationException(
-            "Session management not supported in Vertx context - use Quarkus session management instead");
+                "Session management not supported in Vertx context - use Quarkus session management instead");
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
         throw new UnsupportedOperationException(
-            "Session validation not supported in Vertx context - use Quarkus session management instead");
+                "Session validation not supported in Vertx context - use Quarkus session management instead");
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
         throw new UnsupportedOperationException(
-            "Session tracking not supported in Vertx context - use Quarkus session management instead");
+                "Session tracking not supported in Vertx context - use Quarkus session management instead");
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
         throw new UnsupportedOperationException(
-            "Session tracking not supported in Vertx context - use Quarkus session management instead");
+                "Session tracking not supported in Vertx context - use Quarkus session management instead");
     }
 
     @Override
     public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
         throw new UnsupportedOperationException(
-            "Authentication not supported in Vertx adapter - use Quarkus Security instead");
+                "Authentication not supported in Vertx adapter - use Quarkus Security instead");
     }
 
     @Override
     public void login(String username, String password) throws ServletException {
         throw new UnsupportedOperationException(
-            "Login not supported in Vertx adapter - use Quarkus Security instead");
+                "Login not supported in Vertx adapter - use Quarkus Security instead");
     }
 
     @Override
     public void logout() throws ServletException {
         throw new UnsupportedOperationException(
-            "Logout not supported in Vertx adapter - use Quarkus Security instead");
+                "Logout not supported in Vertx adapter - use Quarkus Security instead");
     }
 
     @Override
     public Collection<Part> getParts() throws IOException, ServletException {
         throw new UnsupportedOperationException(
-            "Multipart access not supported in minimal Vertx adapter - use RoutingContext with BodyHandler");
+                "Multipart access not supported in minimal Vertx adapter - use RoutingContext with BodyHandler");
     }
 
     @Override
     public Part getPart(String name) throws IOException, ServletException {
         throw new UnsupportedOperationException(
-            "Multipart access not supported in minimal Vertx adapter - use RoutingContext with BodyHandler");
+                "Multipart access not supported in minimal Vertx adapter - use RoutingContext with BodyHandler");
     }
 
     @Override
     public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
         throw new UnsupportedOperationException(
-            "Protocol upgrade not supported in Vertx adapter");
+                "Protocol upgrade not supported in Vertx adapter");
     }
 
     // ServletRequest methods
@@ -393,7 +393,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public ServletInputStream getInputStream() throws IOException {
         throw new UnsupportedOperationException(
-            "Direct stream access not supported - use Vertx async request handling");
+                "Direct stream access not supported - use Vertx async request handling");
     }
 
     @Override
@@ -511,7 +511,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public BufferedReader getReader() throws IOException {
         throw new UnsupportedOperationException(
-            "Character stream access not supported - use Vertx async request handling");
+                "Character stream access not supported - use Vertx async request handling");
     }
 
     @Override
@@ -600,7 +600,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
         throw new UnsupportedOperationException(
-            "Request dispatching not supported in Vertx context - use JAX-RS routing instead");
+                "Request dispatching not supported in Vertx context - use JAX-RS routing instead");
     }
 
     @Override
@@ -630,19 +630,19 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public ServletContext getServletContext() {
         throw new UnsupportedOperationException(
-            "Servlet context not available in Vertx adapter - use CDI application context instead");
+                "Servlet context not available in Vertx adapter - use CDI application context instead");
     }
 
     @Override
     public AsyncContext startAsync() throws IllegalStateException {
         throw new UnsupportedOperationException(
-            "Servlet async not supported - use Vertx async patterns or reactive streams");
+                "Servlet async not supported - use Vertx async patterns or reactive streams");
     }
 
     @Override
     public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
         throw new UnsupportedOperationException(
-            "Servlet async not supported - use Vertx async patterns or reactive streams");
+                "Servlet async not supported - use Vertx async patterns or reactive streams");
     }
 
     @Override
@@ -658,7 +658,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public AsyncContext getAsyncContext() {
         throw new UnsupportedOperationException(
-            "Servlet async not supported - use Vertx async patterns or reactive streams");
+                "Servlet async not supported - use Vertx async patterns or reactive streams");
     }
 
     @Override
@@ -671,8 +671,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         // Generate a simple request ID based on connection info and timestamp
         // This provides basic tracing capability without full OpenTracing integration
         return "vertx-req-%d-%s".formatted(
-            System.currentTimeMillis(),
-            Integer.toHexString(vertxRequest.hashCode()));
+                System.currentTimeMillis(),
+                Integer.toHexString(vertxRequest.hashCode()));
     }
 
     @Override
@@ -684,6 +684,6 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public ServletConnection getServletConnection() {
         throw new UnsupportedOperationException(
-            "Servlet connection not available in Vertx adapter");
+                "Servlet connection not available in Vertx adapter");
     }
 }
