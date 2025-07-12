@@ -70,7 +70,13 @@ public class MandatoryClaimsValidator {
             } else {
                 ClaimValue claimValue = tokenContent.getClaims().get(claimName);
                 if (!claimValue.isPresent()) {
-                    LOGGER.debug("Claim %s is present but not set as expected: %s", claimName, claimValue);
+                    var claimNameEnum = ClaimName.fromString(claimName);
+                    if (claimNameEnum.isPresent()) {
+                        LOGGER.debug("Claim %s is present but not set as expected: %s. Specification: %s",
+                                claimName, claimValue, claimNameEnum.get().getSpec());
+                    } else {
+                        LOGGER.debug("Claim %s is present but not set as expected: %s", claimName, claimValue);
+                    }
                     missingClaims.add(claimName);
                 }
             }
@@ -79,9 +85,28 @@ public class MandatoryClaimsValidator {
         if (!missingClaims.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format(missingClaims));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
+
+            // Build enhanced error message with claim specifications
+            StringBuilder errorMessage = new StringBuilder("Missing mandatory claims: ").append(missingClaims);
+            StringBuilder claimSpecs = new StringBuilder();
+
+            for (String missingClaim : missingClaims) {
+                var claimNameEnum = ClaimName.fromString(missingClaim);
+                if (claimNameEnum.isPresent()) {
+                    claimSpecs.append("\n- ").append(missingClaim).append(": ").append(claimNameEnum.get().getSpec());
+                }
+            }
+
+            if (claimSpecs.length() > 0) {
+                errorMessage.append("\n\nClaim specifications:").append(claimSpecs);
+            }
+
+            errorMessage.append("\n\nAvailable claims: ").append(tokenContent.getClaims().keySet())
+                    .append(". Please ensure the token includes all required claims.");
+
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing mandatory claims: " + missingClaims + ". Available claims: " + tokenContent.getClaims().keySet() + ". Please ensure the token includes all required claims."
+                    errorMessage.toString()
             );
         } else {
             LOGGER.debug("All mandatory claims are present and set as expected");
