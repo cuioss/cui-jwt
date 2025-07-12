@@ -31,7 +31,6 @@ import lombok.NonNull;
 
 import java.util.*;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR.*;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO.BEARER_TOKEN_VALIDATION_SUCCESS;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
 
@@ -203,7 +202,16 @@ public class BearerTokenProducer {
         Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
         LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
 
-        List<String> authHeaders = headerMap.get("Authorization");
+        // HTTP headers are case-insensitive per RFC 7230. Look for Authorization header
+        // in a case-insensitive manner to support both HTTP/1.1 and HTTP/2
+        List<String> authHeaders = null;
+        for (Map.Entry<String, List<String>> entry : headerMap.entrySet()) {
+            if ("Authorization".equalsIgnoreCase(entry.getKey())) {
+                authHeaders = entry.getValue();
+                break;
+            }
+        }
+
         if (authHeaders == null || authHeaders.isEmpty()) {
             LOGGER.debug("Authorization header not found in headerMap");
             return Optional.empty(); // No Authorization header - missing token

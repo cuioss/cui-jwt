@@ -1,0 +1,371 @@
+= Keycloak Integration FAQ
+:toc:
+:toclevels: 3
+:sectlinks:
+:sectanchors:
+
+This document addresses common issues and solutions when integrating the CUI JWT library with Keycloak.
+
+== Missing Mandatory Claims
+
+=== Problem: Missing 'sub' (Subject) Claim
+
+*Error Message:*
+----
+CUI_JWT_QUARKUS-124: Bearer token validation failed: Missing mandatory claims: [sub]
+----
+
+*Root Cause:*
+By default, Keycloak access tokens do not include the `sub` (subject) claim, which is mandatory according to RFC 7519 for ACCESS_TOKEN and ID_TOKEN types. The CUI JWT validation library enforces this requirement for security compliance.
+
+*Technical Details:*
+- RFC 7519 Section 4.1.2 defines `sub` as an optional claim in general JWT usage
+- However, for ACCESS_TOKEN and ID_TOKEN types, the `sub` claim becomes mandatory
+- The `sub` claim identifies the principal that is the subject of the JWT
+- Keycloak by default only includes user information in ID tokens, not access tokens
+
+=== Solution: Configure Subject Protocol Mapper
+
+To resolve this issue, add a subject protocol mapper to your Keycloak realm configuration:
+
+==== Option 1: Realm Configuration File (Recommended for Development/Testing)
+
+Add the following protocol mapper to your realm JSON configuration:
+
+[source,json]
+----
+{
+  "protocolMappers": [
+    {
+      "name": "subject",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-property-mapper",
+      "consentRequired": false,
+      "config": {
+        "userinfo.token.claim": "false",
+        "user.attribute": "id",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "claim.name": "sub",
+        "jsonType.label": "String"
+      }
+    }
+  ]
+}
+----
+
+*Configuration Explanation:*
+- `user.attribute: "id"`: Maps the Keycloak user ID to the claim
+- `access.token.claim: "true"`: Includes the claim in access tokens
+- `id.token.claim: "true"`: Includes the claim in ID tokens
+- `claim.name: "sub"`: Sets the claim name to `sub`
+- `userinfo.token.claim: "false"`: Excludes from userinfo endpoint (not needed)
+
+==== Option 2: Keycloak Admin Console (Recommended for Production)
+
+1. Navigate to your realm in the Keycloak Admin Console
+2. Go to *Client Scopes* → *roles* → *Mappers*
+3. Click *Create*
+4. Configure the mapper:
+   - *Name*: `subject`
+   - *Mapper Type*: `User Property`
+   - *Property*: `id`
+   - *Token Claim Name*: `sub`
+   - *Claim JSON Type*: `String`
+   - *Add to ID token*: `ON`
+   - *Add to access token*: `ON`
+   - *Add to userinfo*: `OFF`
+
+==== Option 3: Client-Specific Configuration
+
+If you only need the `sub` claim for specific clients:
+
+1. Navigate to *Clients* → *[Your Client]* → *Mappers*
+2. Create the same mapper configuration as above
+3. This approach provides more granular control per client
+
+=== Verification
+
+After implementing the solution, verify that access tokens now contain the `sub` claim:
+
+1. Obtain an access token from Keycloak
+2. Decode the JWT (using tools like jwt.io)
+3. Verify the payload contains: `"sub": "user-id-value"`
+
+Example expected token payload:
+[source,json]
+----
+{
+  "exp": 1641234567,
+  "iat": 1641230967,
+  "jti": "token-id",
+  "iss": "https://your-keycloak/auth/realms/your-realm",
+  "aud": "your-client",
+  "sub": "12345678-abcd-1234-efgh-123456789012",
+  "typ": "Bearer",
+  "azp": "your-client",
+  "scope": "openid profile email"
+}
+----
+
+== Groups and Roles Claims Configuration
+
+=== Problem: Missing Groups and Roles in Access Tokens
+
+*Symptoms:*
+- Authorization fails when checking for specific roles or groups
+- `BearerTokenStatus.CONSTRAINT_VIOLATION` errors for missing roles/groups
+- Empty or missing `groups` and `roles` claims in access tokens
+
+*Root Cause:*
+Similar to the subject claim issue, Keycloak doesn't automatically include user groups and roles in access tokens. These claims need to be explicitly configured through protocol mappers.
+
+=== Solution: Configure Groups and Roles Protocol Mappers
+
+The CUI JWT library expects groups and roles to be available in access tokens for authorization decisions. Configure the following protocol mappers:
+
+==== Groups Mapper Configuration
+
+Add this groups mapper to include user group memberships:
+
+[source,json]
+----
+{
+  "name": "groups",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-group-membership-mapper",
+  "consentRequired": false,
+  "config": {
+    "full.path": "false",
+    "id.token.claim": "true",
+    "access.token.claim": "true",
+    "claim.name": "groups",
+    "userinfo.token.claim": "true"
+  }
+}
+----
+
+*Configuration Details:*
+- `full.path: "false"`: Only include group name, not full path (e.g., "test-group" instead of "/test-group")
+- `access.token.claim: "true"`: Include groups in access tokens
+- `claim.name: "groups"`: Set claim name to `groups` (expected by CUI JWT library)
+
+==== Roles Mapper Configuration
+
+Add this roles mapper to include realm roles:
+
+[source,json]
+----
+{
+  "name": "roles",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-realm-role-mapper",
+  "consentRequired": false,
+  "config": {
+    "user.attribute": "foo",
+    "access.token.claim": "true",
+    "claim.name": "roles",
+    "jsonType.label": "String",
+    "multivalued": "true"
+  }
+}
+----
+
+*Configuration Details:*
+- `multivalued: "true"`: Roles are returned as an array
+- `access.token.claim: "true"`: Include roles in access tokens
+- `claim.name: "roles"`: Set claim name to `roles` (expected by CUI JWT library)
+
+==== Realm Access Roles (Optional)
+
+For compatibility with standard Keycloak token format, you may also want to include:
+
+[source,json]
+----
+{
+  "name": "realm roles",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-realm-role-mapper",
+  "consentRequired": false,
+  "config": {
+    "user.attribute": "foo",
+    "access.token.claim": "true",
+    "claim.name": "realm_access.roles",
+    "jsonType.label": "String",
+    "multivalued": "true"
+  }
+}
+----
+
+=== Complete Realm Configuration Example
+
+Here's a complete example showing users, groups, and roles configuration:
+
+[source,json]
+----
+{
+  "users": [
+    {
+      "username": "test-user",
+      "enabled": true,
+      "realmRoles": ["user"],           // Assign realm roles
+      "groups": ["/test-group"]         // Assign to groups
+    }
+  ],
+  "groups": [
+    {
+      "name": "test-group",
+      "path": "/test-group",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": []
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Standard user role"
+      }
+    ]
+  }
+}
+----
+
+=== Expected Token Claims
+
+After proper configuration, your access tokens should contain:
+
+[source,json]
+----
+{
+  "sub": "user-id",
+  "groups": ["test-group"],
+  "roles": ["user"],
+  "realm_access": {
+    "roles": ["user"]
+  },
+  // ... other claims
+}
+----
+
+=== Usage in CUI JWT Library
+
+The configured claims work with the library's authorization annotations:
+
+[source,java]
+----
+@Inject
+@BearerToken(
+    requiredRoles = {"user"},           // Checks 'roles' claim
+    requiredGroups = {"test-group"}     // Checks 'groups' claim
+)
+BearerTokenResult tokenResult;
+----
+
+== HTTP/2 Header Case Sensitivity
+
+=== Problem: Authorization Header Not Found
+
+*Symptoms:*
+- Authorization header sometimes not detected
+- Inconsistent behavior between HTTP/1.1 and HTTP/2
+- Bearer token extraction fails intermittently
+
+*Root Cause:*
+HTTP/2 normalizes all header names to lowercase as per RFC 7540 Section 8.1.2, while HTTP/1.1 headers are case-insensitive but often sent in mixed case. The original implementation used case-sensitive header lookup.
+
+=== Solution: Case-Insensitive Header Lookup
+
+The CUI JWT library has been updated to handle headers in a case-insensitive manner:
+
+[source,java]
+----
+// Before (case-sensitive, problematic)
+List<String> authHeaders = headerMap.get("Authorization");
+
+// After (case-insensitive, compatible)
+List<String> authHeaders = null;
+for (Map.Entry<String, List<String>> entry : headerMap.entrySet()) {
+    if ("Authorization".equalsIgnoreCase(entry.getKey())) {
+        authHeaders = entry.getValue();
+        break;
+    }
+}
+----
+
+*Benefits:*
+- Compatible with both HTTP/1.1 and HTTP/2
+- Handles various header case formats: `Authorization`, `authorization`, `AUTHORIZATION`
+- Follows RFC 7230 Section 3.2 (case-insensitive header names)
+
+== Best Practices
+
+=== Keycloak Configuration
+
+1. **Always include subject claims** in access tokens for RFC compliance
+2. **Use client scopes** for reusable mapper configurations
+3. **Test token content** in development environments before production deployment
+4. **Monitor token sizes** when adding claims to avoid performance issues
+
+=== Integration Testing
+
+1. **Test with both HTTP/1.1 and HTTP/2** to ensure header compatibility
+2. **Verify token claims** match your application's requirements
+3. **Test case variations** of Authorization headers
+4. **Validate token expiration** handling in integration tests
+
+=== Production Considerations
+
+1. **Document required claims** for your Keycloak administrators
+2. **Monitor token validation metrics** for debugging authentication issues
+3. **Use structured logging** to track JWT validation failures
+4. **Implement proper error handling** for missing or invalid claims
+
+== Troubleshooting
+
+=== Debug Token Content
+
+Use this command to decode and inspect JWT tokens:
+[source,bash]
+----
+echo "your-jwt-token" | cut -d. -f2 | base64 -d | jq .
+----
+
+=== Enable Debug Logging
+
+Add to your application configuration:
+[source,properties]
+----
+quarkus.log.category."de.cuioss.jwt".level=DEBUG
+----
+
+=== Common Validation Errors
+
+|===
+|Error |Cause |Solution
+
+|Missing mandatory claims: [sub]
+|Keycloak not configured to include subject
+|Add subject protocol mapper
+
+|Bearer token missing or invalid
+|Authorization header not found
+|Check HTTP client header case
+
+|Token validation failed: Invalid issuer
+|Keycloak issuer URL mismatch
+|Verify issuer configuration
+
+|Token expired
+|Clock skew or expired tokens
+|Check time synchronization and token TTL
+|===
+
+== References
+
+- https://tools.ietf.org/html/rfc7519[RFC 7519: JSON Web Token (JWT)]
+- https://tools.ietf.org/html/rfc7540#section-8.1.2[RFC 7540: HTTP/2 Header Compression]
+- https://tools.ietf.org/html/rfc7230#section-3.2[RFC 7230: HTTP/1.1 Message Syntax]
+- https://www.keycloak.org/docs/latest/server_admin/index.html#_protocol-mappers[Keycloak Protocol Mappers Documentation]
