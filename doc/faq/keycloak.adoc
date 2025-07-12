@@ -14,9 +14,27 @@ Common issues and solutions when integrating the CUI JWT library with Keycloak.
 
 *Cause:* Keycloak access tokens don't include the `sub` claim by default, which is mandatory for ACCESS_TOKEN and ID_TOKEN types per RFC 7519.
 
-=== Solution: Add Subject Protocol Mapper
+=== Solution 1: Configure claimSubOptional (Recommended)
 
-Configure a subject mapper in your Keycloak realm:
+The simplest solution is to configure the CUI JWT library to make the `sub` claim optional for Keycloak issuers:
+
+[source,properties]
+----
+# Make subject claim optional for Keycloak issuer
+cui.jwt.issuers.keycloak.claim-sub-optional=true
+----
+
+*Benefits:*
+- No Keycloak realm configuration changes needed
+- Works immediately with default Keycloak token structure
+- Maintains RFC compliance warnings for awareness
+- Per-issuer configuration allows mixed environments
+
+*Warning:* This relaxes RFC 7519 compliance. The library will log a warning when this setting is enabled.
+
+=== Solution 2: Add Subject Protocol Mapper
+
+Alternatively, configure a subject mapper in your Keycloak realm:
 
 [source,json]
 ----
@@ -126,7 +144,7 @@ Benefits:
 |Error |Solution
 
 |Missing mandatory claims: [sub]
-|Add subject protocol mapper
+|Configure `claim-sub-optional=true` or add subject protocol mapper
 
 |Bearer token missing or invalid
 |Check Authorization header presence

@@ -118,7 +118,7 @@ class KeycloakMapperConfigResolverTest {
         assertFalse(result.isDefaultRolesEnabled());
         assertFalse(result.isDefaultGroupsEnabled());
     }
-    
+
     @Test
     @DisplayName("Resolve configuration for different issuers")
     void shouldResolveDifferentIssuers() {
@@ -136,12 +136,12 @@ class KeycloakMapperConfigResolverTest {
         assertNotNull(result1);
         assertTrue(result1.isDefaultRolesEnabled());
         assertFalse(result1.isDefaultGroupsEnabled());
-        
+
         // issuer2 has groups enabled
         assertNotNull(result2);
         assertFalse(result2.isDefaultRolesEnabled());
         assertTrue(result2.isDefaultGroupsEnabled());
-        
+
         // issuer3 has nothing enabled
         assertNotNull(result3);
         assertFalse(result3.isDefaultRolesEnabled());

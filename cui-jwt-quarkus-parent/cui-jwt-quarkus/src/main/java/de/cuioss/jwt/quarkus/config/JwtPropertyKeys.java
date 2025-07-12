@@ -183,6 +183,28 @@ public final class JwtPropertyKeys {
          */
         public static final String ALGORITHM_PREFERENCES = BASE + "algorithm-preferences";
 
+        /**
+         * Whether the "sub" (subject) claim is optional for this issuer.
+         * Template: "cui.jwt.issuers.%s.claim-sub-optional"
+         * <p>
+         * When set to {@code true}, the mandatory claims validator will not require the "sub" claim
+         * to be present in tokens from this issuer. This provides a workaround for identity providers
+         * that don't include the subject claim in access tokens by default.
+         * </p>
+         * <p>
+         * <strong>Warning:</strong> Setting this to {@code true} relaxes RFC 7519 compliance.
+         * According to RFC 7519 Section 4.1.2, the "sub" claim is required for ACCESS_TOKEN and ID_TOKEN types.
+         * Use this option only when necessary and ensure appropriate alternative validation mechanisms.
+         * </p>
+         * <p>
+         * Default value is {@code false} (subject claim is mandatory, RFC compliant).
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig#isClaimSubOptional()
+         * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
+         */
+        public static final String CLAIM_SUB_OPTIONAL = BASE + "claim-sub-optional";
+
         // === JWKS Source Configuration (Mutually Exclusive) ===
 
         /**

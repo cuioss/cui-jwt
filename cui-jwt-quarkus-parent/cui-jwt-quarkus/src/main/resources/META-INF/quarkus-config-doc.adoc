@@ -91,6 +91,10 @@ The extension supports multiple issuers, each with its own configuration. Replac
 |cui.jwt.issuers.<issuer-name>.enabled
 |boolean (default: true)
 |Whether this issuer configuration is enabled.
+
+|cui.jwt.issuers.<issuer-name>.claim-sub-optional
+|boolean (default: false)
+|Whether the "sub" (subject) claim is optional for this issuer. When set to `true`, the mandatory claims validator will not require the "sub" claim to be present in tokens from this issuer. This provides a workaround for identity providers that don't include the subject claim in access tokens by default. *Warning:* Setting this to `true` relaxes RFC 7519 compliance.
 |===
 
 
@@ -220,6 +224,9 @@ For quick reference, here are all the default values in one place:
 
 |cui.jwt.issuers.<issuer-name>.enabled
 |true
+
+|cui.jwt.issuers.<issuer-name>.claim-sub-optional
+|false
 
 |cui.jwt.issuers.<issuer-name>.jwks.http.refresh-interval-seconds
 |300

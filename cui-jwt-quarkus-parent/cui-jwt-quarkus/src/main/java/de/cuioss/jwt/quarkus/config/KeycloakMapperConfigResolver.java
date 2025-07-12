@@ -62,7 +62,7 @@ public class KeycloakMapperConfigResolver {
     public KeycloakMapperConfig resolve(String issuerName) {
         String rolesKey = KEYCLOAK_DEFAULT_ROLES_ENABLED.formatted(issuerName);
         String groupsKey = KEYCLOAK_DEFAULT_GROUPS_ENABLED.formatted(issuerName);
-        
+
         boolean defaultRolesEnabled = config.getOptionalValue(rolesKey, Boolean.class)
                 .orElse(false);
 

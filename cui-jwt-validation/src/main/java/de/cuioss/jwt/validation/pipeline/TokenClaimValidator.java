@@ -83,23 +83,12 @@ public class TokenClaimValidator {
      * @param securityEventCounter the counter for security events
      */
     public TokenClaimValidator(@NonNull IssuerConfig issuerConfig, @NonNull SecurityEventCounter securityEventCounter) {
-        this(issuerConfig.getExpectedAudience(), issuerConfig.getExpectedClientId(), securityEventCounter);
-    }
-
-    /**
-     * Constructs a TokenClaimValidator with the specified expected audience and client ID.
-     *
-     * @param expectedAudience the expected audience values
-     * @param expectedClientId the expected client ID values
-     * @param securityEventCounter the counter for security events
-     */
-    public TokenClaimValidator(Set<String> expectedAudience, Set<String> expectedClientId, @NonNull SecurityEventCounter securityEventCounter) {
-        this.expectedAudience = expectedAudience;
-        this.expectedClientId = expectedClientId;
+        this.expectedAudience = issuerConfig.getExpectedAudience();
+        this.expectedClientId = issuerConfig.getExpectedClientId();
 
         this.audienceValidator = new AudienceValidator(expectedAudience, securityEventCounter);
         this.expirationValidator = new ExpirationValidator(securityEventCounter);
-        this.mandatoryClaimsValidator = new MandatoryClaimsValidator(securityEventCounter);
+        this.mandatoryClaimsValidator = new MandatoryClaimsValidator(issuerConfig, securityEventCounter);
         this.authorizedPartyValidator = new AuthorizedPartyValidator(expectedClientId, securityEventCounter);
 
         if (MoreCollections.isEmpty(expectedAudience)) {
@@ -112,6 +101,7 @@ public class TokenClaimValidator {
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_RECOMMENDED_ELEMENT);
         }
     }
+
 
     /**
      * Validates a token against expected values for issuer, audience, and client ID.

@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
@@ -37,7 +38,9 @@ import java.util.stream.Collectors;
  * The mandatory claims are defined by the {@link de.cuioss.jwt.validation.TokenType} and vary between
  * access tokens, ID tokens, and refresh tokens.
  * <p>
- * The validator checks both claim presence and claim value validity.
+ * The validator checks both claim presence and claim value validity. For certain claims like "sub" (subject),
+ * the validation can be configured per-issuer to accommodate identity providers that don't include the
+ * subject claim in access tokens by default.
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -46,6 +49,9 @@ import java.util.stream.Collectors;
 public class MandatoryClaimsValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(MandatoryClaimsValidator.class);
+
+    @NonNull
+    private final IssuerConfig issuerConfig;
 
     @NonNull
     private final SecurityEventCounter securityEventCounter;
@@ -77,12 +83,34 @@ public class MandatoryClaimsValidator {
         SortedSet<String> missingClaims = new TreeSet<>();
 
         for (var claimName : mandatoryNames) {
+            // Check if this claim should be skipped based on issuer configuration
+            if (shouldSkipClaimValidation(claimName)) {
+                LOGGER.debug("Skipping validation for claim '%s' due to issuer configuration (claimSubOptional=true)", claimName);
+                continue;
+            }
+
             if (isClaimMissing(tokenContent, claimName)) {
                 missingClaims.add(claimName);
             }
         }
 
         return missingClaims;
+    }
+
+    /**
+     * Determines if validation for a specific claim should be skipped based on issuer configuration.
+     * <p>
+     * Currently supports making the "sub" (subject) claim optional when claimSubOptional is enabled.
+     * This provides a workaround for identity providers that don't include the subject claim in
+     * access tokens by default.
+     * </p>
+     *
+     * @param claimName the name of the claim to check
+     * @return {@code true} if validation should be skipped, {@code false} otherwise
+     */
+    private boolean shouldSkipClaimValidation(String claimName) {
+        // Skip validation for "sub" claim if issuer configuration allows it
+        return ClaimName.SUBJECT.getName().equals(claimName) && issuerConfig.isClaimSubOptional();
     }
 
     private boolean isClaimMissing(TokenContent tokenContent, String claimName) {

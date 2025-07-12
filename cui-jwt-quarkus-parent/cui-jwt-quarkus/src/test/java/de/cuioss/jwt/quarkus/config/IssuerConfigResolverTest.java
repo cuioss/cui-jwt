@@ -339,6 +339,42 @@ class IssuerConfigResolverTest {
             assertEquals("ES256", preferredAlgorithms.get(1), "Second should be ES256");
             assertEquals("PS256", preferredAlgorithms.get(2), "Third should be PS256");
         }
+
+        @ParameterizedTest
+        @DisplayName("should configure claimSubOptional flag")
+        @CsvSource({
+                "true, true",
+                "false, false"
+        })
+        void shouldConfigureClaimSubOptional(String claimSubOptionalValue, boolean expectedClaimSubOptional) {
+            TestConfig config = new TestConfig(Map.of(
+                    JwtPropertyKeys.ISSUERS.CLAIM_SUB_OPTIONAL.formatted(TEST_ISSUER), claimSubOptionalValue,
+                    JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
+            ));
+            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
+
+            List<IssuerConfig> result = resolver.resolveIssuerConfigs();
+
+            assertEquals(1, result.size());
+            IssuerConfig issuer = result.getFirst();
+            assertEquals(expectedClaimSubOptional, issuer.isClaimSubOptional(),
+                    "Should configure claimSubOptional to " + expectedClaimSubOptional);
+        }
+
+        @Test
+        @DisplayName("should default claimSubOptional to false when not specified")
+        void shouldDefaultClaimSubOptionalToFalse() {
+            TestConfig config = new TestConfig(Map.of(
+                    JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
+            ));
+            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
+
+            List<IssuerConfig> result = resolver.resolveIssuerConfigs();
+
+            assertEquals(1, result.size());
+            IssuerConfig issuer = result.getFirst();
+            assertFalse(issuer.isClaimSubOptional(), "Should default claimSubOptional to false");
+        }
     }
 
     @Nested
@@ -389,6 +425,20 @@ class IssuerConfigResolverTest {
 
             assertLogMessagePresentContaining(TestLogLevel.DEBUG, "Skipping disabled issuer: " + ANOTHER_ISSUER);
             assertLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVED_ISSUER_CONFIGURATION.format(TEST_ISSUER));
+        }
+
+        @Test
+        @DisplayName("should log claimSubOptional configuration")
+        void shouldLogClaimSubOptionalConfiguration() {
+            TestConfig config = new TestConfig(Map.of(
+                    JwtPropertyKeys.ISSUERS.CLAIM_SUB_OPTIONAL.formatted(TEST_ISSUER), "true",
+                    JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
+            ));
+            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
+
+            resolver.resolveIssuerConfigs();
+
+            assertLogMessagePresentContaining(TestLogLevel.DEBUG, "Set claim subject optional for " + TEST_ISSUER + ": true");
         }
     }
 }

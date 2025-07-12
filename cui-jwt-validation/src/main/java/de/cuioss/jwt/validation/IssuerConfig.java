@@ -23,6 +23,7 @@ import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.base.Preconditions;
+import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -80,6 +81,8 @@ import java.util.*;
 @ToString
 public class IssuerConfig implements HealthStatusProvider {
 
+    private static final CuiLogger LOGGER = new CuiLogger(IssuerConfig.class);
+
     /**
      * Whether this issuer configuration is enabled.
      * <p>
@@ -119,6 +122,26 @@ public class IssuerConfig implements HealthStatusProvider {
      */
     Set<String> expectedClientId;
 
+    /**
+     * Whether the "sub" (subject) claim is optional for this issuer.
+     * <p>
+     * When set to {@code true}, the mandatory claims validator will not require the "sub" claim
+     * to be present in tokens from this issuer. This provides a workaround for identity providers
+     * that don't include the subject claim in access tokens by default.
+     * </p>
+     * <p>
+     * <strong>Warning:</strong> Setting this to {@code true} relaxes RFC 7519 compliance.
+     * According to RFC 7519 Section 4.1.2, the "sub" claim is required for ACCESS_TOKEN and ID_TOKEN types.
+     * Use this option only when necessary and ensure appropriate alternative validation mechanisms.
+     * </p>
+     * <p>
+     * Default value is {@code false} (subject claim is mandatory, RFC compliant).
+     * </p>
+     *
+     * @see de.cuioss.jwt.validation.domain.claim.ClaimName#SUBJECT
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
+     */
+    boolean claimSubOptional;
 
     SignatureAlgorithmPreferences algorithmPreferences;
 
@@ -268,6 +291,7 @@ public class IssuerConfig implements HealthStatusProvider {
         private String issuerIdentifier;
         private Set<String> expectedAudience;
         private Set<String> expectedClientId;
+        private boolean claimSubOptional = false;
         private SignatureAlgorithmPreferences algorithmPreferences = new SignatureAlgorithmPreferences();
         private Map<String, ClaimMapper> claimMappers;
         private JwksLoader jwksLoader;
@@ -404,6 +428,32 @@ public class IssuerConfig implements HealthStatusProvider {
          */
         public IssuerConfigBuilder expectedClientId(Set<String> expectedClientId) {
             this.expectedClientId = expectedClientId;
+            return this;
+        }
+
+        /**
+         * Sets whether the "sub" (subject) claim is optional for this issuer.
+         * <p>
+         * When set to {@code true}, the mandatory claims validator will not require the "sub" claim
+         * to be present in tokens from this issuer. This provides a workaround for identity providers
+         * that don't include the subject claim in access tokens by default.
+         * </p>
+         * <p>
+         * <strong>Warning:</strong> Setting this to {@code true} relaxes RFC 7519 compliance.
+         * According to RFC 7519 Section 4.1.2, the "sub" claim is required for ACCESS_TOKEN and ID_TOKEN types.
+         * Use this option only when necessary and ensure appropriate alternative validation mechanisms.
+         * </p>
+         * <p>
+         * Default value is {@code false} (subject claim is mandatory, RFC compliant).
+         * </p>
+         *
+         * @param claimSubOptional {@code true} to make the subject claim optional, {@code false} to require it (RFC compliant)
+         * @return this builder instance for method chaining
+         * @see de.cuioss.jwt.validation.domain.claim.ClaimName#SUBJECT
+         * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
+         */
+        public IssuerConfigBuilder claimSubOptional(boolean claimSubOptional) {
+            this.claimSubOptional = claimSubOptional;
             return this;
         }
 
@@ -684,8 +734,16 @@ public class IssuerConfig implements HealthStatusProvider {
                 createJwksLoaderIfNeeded();
             }
 
+            // Warn about RFC compliance when subject claim is made optional
+            if (claimSubOptional) {
+                LOGGER.warn("IssuerConfig for issuer '%s' has claimSubOptional=true. " +
+                        "This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. " +
+                        "Use this setting only when necessary and ensure appropriate alternative validation mechanisms.",
+                        issuerIdentifier != null ? issuerIdentifier : "unknown");
+            }
+
             return new IssuerConfig(enabled, issuerIdentifier, expectedAudience, expectedClientId,
-                    algorithmPreferences, claimMappers, jwksLoader);
+                    claimSubOptional, algorithmPreferences, claimMappers, jwksLoader);
         }
 
         private void validateConfiguration() {
@@ -731,12 +789,13 @@ public class IssuerConfig implements HealthStatusProvider {
      * This is called only by the builder after validation.
      */
     private IssuerConfig(boolean enabled, String issuerIdentifier, Set<String> expectedAudience,
-            Set<String> expectedClientId, SignatureAlgorithmPreferences algorithmPreferences,
+            Set<String> expectedClientId, boolean claimSubOptional, SignatureAlgorithmPreferences algorithmPreferences,
             Map<String, ClaimMapper> claimMappers, JwksLoader jwksLoader) {
         this.enabled = enabled;
         this.issuerIdentifier = issuerIdentifier;
         this.expectedAudience = expectedAudience != null ? expectedAudience : Set.of();
         this.expectedClientId = expectedClientId != null ? expectedClientId : Set.of();
+        this.claimSubOptional = claimSubOptional;
         this.algorithmPreferences = algorithmPreferences != null ? algorithmPreferences : new SignatureAlgorithmPreferences();
         this.claimMappers = claimMappers != null ? claimMappers : Map.of();
         this.jwksLoader = jwksLoader;

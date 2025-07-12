@@ -172,10 +172,11 @@ public class IssuerConfigResolver {
         configureAudience(builder, issuerName);
         configureClientId(builder, issuerName);
         configureAlgorithmPreferences(builder, issuerName);
+        configureClaimSubOptional(builder, issuerName);
 
         // Configure JWKS source (mutually exclusive)
         configureJwksSource(builder, issuerName);
-        
+
         // Configure Keycloak mappers if enabled
         configureKeycloakMappers(builder, issuerName);
 
@@ -255,6 +256,21 @@ public class IssuerConfigResolver {
 
             builder.algorithmPreferences(preferences);
             LOGGER.debug("Set algorithm preferences for %s: %s", issuerName, algorithms);
+        }
+    }
+
+    /**
+     * Configures claim subject optional flag from properties.
+     */
+    private void configureClaimSubOptional(IssuerConfig.IssuerConfigBuilder builder, String issuerName) {
+        Optional<Boolean> claimSubOptional = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.CLAIM_SUB_OPTIONAL.formatted(issuerName),
+                Boolean.class
+        );
+
+        if (claimSubOptional.isPresent()) {
+            builder.claimSubOptional(claimSubOptional.get());
+            LOGGER.debug("Set claim subject optional for %s: %s", issuerName, claimSubOptional.get());
         }
     }
 
@@ -352,7 +368,7 @@ public class IssuerConfigResolver {
         // Let the builder validate and create the instance
         return builder.build();
     }
-    
+
     /**
      * Configures Keycloak default mappers if enabled for this issuer.
      * <p>
@@ -363,12 +379,12 @@ public class IssuerConfigResolver {
     private void configureKeycloakMappers(IssuerConfig.IssuerConfigBuilder builder, String issuerName) {
         KeycloakMapperConfigResolver keycloakResolver = new KeycloakMapperConfigResolver(config);
         KeycloakMapperConfigResolver.KeycloakMapperConfig keycloakConfig = keycloakResolver.resolve(issuerName);
-        
+
         if (keycloakConfig.isDefaultRolesEnabled()) {
             builder.claimMapper("roles", new KeycloakDefaultRolesMapper());
             LOGGER.debug("Added Keycloak default roles mapper for issuer: %s", issuerName);
         }
-        
+
         if (keycloakConfig.isDefaultGroupsEnabled()) {
             builder.claimMapper("groups", new KeycloakDefaultGroupsMapper());
             LOGGER.debug("Added Keycloak default groups mapper for issuer: %s", issuerName);
