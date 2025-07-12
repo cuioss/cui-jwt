@@ -31,6 +31,8 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 // Claim mappers
 import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.StringSplitterMapper;
@@ -220,6 +222,8 @@ public class CuiJwtProcessor {
                 // Claim mappers - only need constructors for instantiation
                 IdentityMapper.class,
                 JsonCollectionMapper.class,
+                KeycloakDefaultGroupsMapper.class,
+                KeycloakDefaultRolesMapper.class,
                 OffsetDateTimeMapper.class,
                 ScopeMapper.class,
                 StringSplitterMapper.class)

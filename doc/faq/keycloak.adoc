@@ -300,14 +300,135 @@ for (Map.Entry<String, List<String>> entry : headerMap.entrySet()) {
 - Handles various header case formats: `Authorization`, `authorization`, `AUTHORIZATION`
 - Follows RFC 7230 Section 3.2 (case-insensitive header names)
 
+== Alternative Solution: CUI JWT Default Mappers
+
+=== Overview
+
+Starting with CUI JWT library version 1.0, you can use built-in Keycloak default mappers instead of configuring custom protocol mappers in Keycloak. This approach simplifies deployment and eliminates the need for realm-specific protocol mapper configuration.
+
+=== Problem Solution
+
+The CUI JWT library now includes two configurable claim mappers specifically designed for Keycloak's default token structure:
+
+1. **Default Roles Mapper**: Maps `realm_access.roles` to the expected `roles` claim
+2. **Default Groups Mapper**: Processes Keycloak's standard `groups` claim format
+
+=== Configuration
+
+Enable the default mappers in your application configuration:
+
+[source,properties]
+----
+# Enable Keycloak default roles mapper
+cui.jwt.keycloak.mappers.default-roles.enabled=true
+
+# Enable Keycloak default groups mapper  
+cui.jwt.keycloak.mappers.default-groups.enabled=true
+----
+
+=== Keycloak Realm Configuration (Simplified)
+
+With default mappers enabled, you only need Keycloak's standard configuration:
+
+[source,json]
+----
+{
+  "protocolMappers": [
+    {
+      "name": "subject",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-property-mapper",
+      "consentRequired": false,
+      "config": {
+        "userinfo.token.claim": "false",
+        "user.attribute": "id",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "claim.name": "sub",
+        "jsonType.label": "String"
+      }
+    },
+    {
+      "name": "groups",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-group-membership-mapper",
+      "consentRequired": false,
+      "config": {
+        "full.path": "false",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "claim.name": "groups",
+        "userinfo.token.claim": "true"
+      }
+    },
+    {
+      "name": "realm roles",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-realm-role-mapper",
+      "consentRequired": false,
+      "config": {
+        "user.attribute": "foo",
+        "access.token.claim": "true",
+        "claim.name": "realm_access.roles",
+        "jsonType.label": "String",
+        "multivalued": "true"
+      }
+    }
+  ]
+}
+----
+
+=== Expected Token Structure
+
+With this configuration, Keycloak will produce tokens with the standard structure:
+
+[source,json]
+----
+{
+  "sub": "user-id",
+  "groups": ["test-group"],
+  "realm_access": {
+    "roles": ["user"]
+  },
+  // ... other claims
+}
+----
+
+The CUI JWT library's default mappers will automatically:
+- Extract roles from `realm_access.roles` and make them available as `roles`
+- Process the `groups` claim as-is for authorization decisions
+
+=== Benefits of Default Mappers
+
+1. **Simplified Deployment**: No need to modify Keycloak realm configurations
+2. **Consistent Behavior**: Works with Keycloak's out-of-the-box token structure
+3. **Easier Maintenance**: Reduces realm-specific protocol mapper complexity
+4. **Better Portability**: Applications work with standard Keycloak installations
+
+=== Migration from Custom Protocol Mappers
+
+If you currently use custom protocol mappers, you can migrate to default mappers:
+
+1. Remove the custom `roles` protocol mapper from your realm
+2. Ensure the standard `realm_access.roles` mapper is configured
+3. Enable `cui.jwt.keycloak.mappers.default-roles.enabled=true`
+4. Test that role-based authorization continues to work
+
+=== Limitations
+
+- Default mappers only work with realm roles (not client roles)
+- Groups mapper expects Keycloak's standard groups claim format
+- Both mappers are applied to all configured issuers when enabled
+
 == Best Practices
 
 === Keycloak Configuration
 
 1. **Always include subject claims** in access tokens for RFC compliance
 2. **Use client scopes** for reusable mapper configurations
-3. **Test token content** in development environments before production deployment
-4. **Monitor token sizes** when adding claims to avoid performance issues
+3. **Consider default mappers** for simplified Keycloak integration
+4. **Test token content** in development environments before production deployment
+5. **Monitor token sizes** when adding claims to avoid performance issues
 
 === Integration Testing
 

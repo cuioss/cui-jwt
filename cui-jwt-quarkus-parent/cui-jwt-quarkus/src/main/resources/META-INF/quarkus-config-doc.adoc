@@ -138,6 +138,43 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 |Whether to use HTTP proxy settings from the system properties.
 |===
 
+== Keycloak Integration
+
+The extension provides optional default claim mappers for seamless integration with Keycloak's standard token structure. These mappers are disabled by default to maintain backward compatibility.
+
+[cols="2,1,5"]
+|===
+|Property |Type |Description
+
+|cui.jwt.keycloak.mappers.default-roles.enabled
+|boolean (default: false)
+|Enables the default roles mapper that transforms Keycloak's `realm_access.roles` claim to the standard `roles` claim. This allows applications to work with Keycloak tokens without requiring custom protocol mappers.
+
+|cui.jwt.keycloak.mappers.default-groups.enabled
+|boolean (default: false)
+|Enables the default groups mapper that processes Keycloak's standard `groups` claim. This provides consistent group membership handling for Keycloak tokens.
+|===
+
+=== Configuration Example
+
+[source,properties]
+----
+# Enable Keycloak default mappers
+cui.jwt.keycloak.mappers.default-roles.enabled=true
+cui.jwt.keycloak.mappers.default-groups.enabled=true
+
+# Standard issuer configuration
+cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
+cui.jwt.issuers.keycloak.well-known-url=https://keycloak.example.com/realms/master/.well-known/openid-configuration
+----
+
+=== Benefits
+
+* **Zero Configuration**: Works with Keycloak's default token structure without custom protocol mappers
+* **Backward Compatibility**: Disabled by default, existing configurations remain unchanged
+* **Simplified Integration**: Reduces Keycloak realm configuration complexity
+* **Standards Compliance**: Maintains compatibility with standard JWT claim names
+
 == Health Check Configuration
 
 The extension provides MicroProfile Health checks for JWT validation components. These health checks are automatically enabled when the `quarkus-smallrye-health` extension is present.
@@ -199,6 +236,12 @@ For quick reference, here are all the default values in one place:
 
 |cui.jwt.health.jwks.cache-seconds
 |30
+
+|cui.jwt.keycloak.mappers.default-roles.enabled
+|false
+
+|cui.jwt.keycloak.mappers.default-groups.enabled
+|false
 |===
 
 == Example Configuration
