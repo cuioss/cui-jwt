@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * CDI qualifier for injecting BearerTokenResult with validated token information from HTTP Authorization header.
  * <p>
  * This annotation allows specifying required scopes, roles, and groups that the bearer token
- * must contain for successful validation. The producer always returns a {@link BearerTokenResult}
+ * must contain for successful validation. The producer always returns a {@link de.cuioss.jwt.quarkus.producer.BearerTokenResult}
  * object containing the validation status, the validated token (if successful), and detailed
  * error information (if validation failed).
  * <p>
@@ -37,11 +37,11 @@ import java.lang.annotation.Target;
  * @RequestScoped
  * @Path("/api")
  * public class DataResource {
- *     
+ *
  *     @Inject
  *     @BearerToken(requiredScopes = {"read", "write"}, requiredRoles = {"admin"})
  *     BearerTokenResult tokenResult;
- * 
+ *
  *     @GET
  *     public Response getData() {
  *         if (tokenResult.isSuccessfullyAuthorized()) {
@@ -61,7 +61,7 @@ import java.lang.annotation.Target;
  * @RequestScoped
  * public class SecureService {
  *     private final BearerTokenResult tokenResult;
- *     
+ *
  *     @Inject
  *     public SecureService(@BearerToken(requiredRoles = {"admin"}) BearerTokenResult tokenResult) {
  *         this.tokenResult = tokenResult;
@@ -73,11 +73,11 @@ import java.lang.annotation.Target;
  * <pre>{@code
  * @ApplicationScoped
  * public class GlobalService {
- *     
+ *
  *     @Inject
  *     @BearerToken(requiredGroups = {"managers"})
  *     Provider<BearerTokenResult> tokenResultProvider;
- *     
+ *
  *     public void doSomething() {
  *         BearerTokenResult result = tokenResultProvider.get();
  *         if (result.isSuccessfullyAuthorized()) {
