@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.equalTo;
  */
 @DisplayName("JWT Validation Endpoint - API Validation Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
+class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
 
     private static final String CONTENT_TYPE_JSON = "application/json";
     private static final String TOKEN_FIELD_NAME = "token";
@@ -405,20 +405,20 @@ public class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         // Test that all endpoints consistently use TokenRequest.isEmpty() logic
         String[] endpoints = {
             JWT_VALIDATE_EXPLICIT_PATH,
-            JWT_VALIDATE_ID_TOKEN_PATH, 
+            JWT_VALIDATE_ID_TOKEN_PATH,
             JWT_VALIDATE_REFRESH_TOKEN_PATH
         };
-        
+
         String[] expectedMessages = {
             "Missing or empty access token in request body",
             "Missing or empty ID token in request body",
             "Missing or empty refresh token in request body"
         };
-        
+
         for (int i = 0; i < endpoints.length; i++) {
             String endpoint = endpoints[i];
             String expectedMessage = expectedMessages[i];
-            
+
             // Test with empty string
             given()
                 .contentType(CONTENT_TYPE_JSON)
@@ -429,7 +429,7 @@ public class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
                 .statusCode(400)
                 .body(VALID, equalTo(false))
                 .body(MESSAGE, equalTo(expectedMessage));
-                
+
             // Test with whitespace
             given()
                 .contentType(CONTENT_TYPE_JSON)
