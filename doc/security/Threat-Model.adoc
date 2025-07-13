@@ -3,6 +3,7 @@
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 == Overview
 _See Requirement xref:../Requirements.adoc#CUI-JWT-8[CUI-JWT-8: Security Requirements] and Specification xref:../Specification.adoc[Specification] and xref:security-specifications.adoc[Security Specification]_

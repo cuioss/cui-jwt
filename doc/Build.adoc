@@ -3,8 +3,18 @@
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 This document provides information about building and developing the cui-jwt-validation library.
+
+=== Document Navigation
+
+* xref:../README.adoc[README] - Project overview and introduction
+* xref:../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:Requirements.adoc[Requirements] - Functional and non-functional requirements
+* xref:Specification.adoc[Specification] - Technical specifications
+* xref:LogMessages.adoc[Log Messages] - Reference for all log messages
+* xref:security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations
 
 == Updating the Maven Wrapper
 
@@ -65,7 +75,14 @@ If the builds are reproducible, there should be no differences reported by `diff
 == PlantUML Diagrams
 
 This project uses PlantUML for creating diagrams in the documentation.
-To ensure compatibility with GitHub's rendering capabilities, we follow these practices:
+To ensure compatibility with GitHub's rendering capabilities, we follow these practices.
+
+For examples of how these diagrams are used in the project, see:
+
+* xref:../README.adoc[README] - Architecture Overview section
+* xref:Requirements.adoc[Requirements] - Token Structure section
+* xref:Specification.adoc[Specification] - Architecture section
+* xref:specification/technical-components.adoc[Technical Components] - Component diagrams
 
 === PlantUML File Structure
 
