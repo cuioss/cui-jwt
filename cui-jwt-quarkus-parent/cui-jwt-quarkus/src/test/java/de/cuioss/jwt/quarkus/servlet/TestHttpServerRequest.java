@@ -26,7 +26,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLSession;
-import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Set;
 
@@ -179,13 +178,9 @@ public class TestHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public X509Certificate[] peerCertificateChain() {
-        return new X509Certificate[0];
+    public javax.security.cert.X509Certificate[] peerCertificateChain() {
+        return new javax.security.cert.X509Certificate[0];
     }
-
-    // This method is not implemented because it has an incompatible return type
-    // with the HttpServerRequest interface. The interface expects a different type
-    // of X509Certificate. Concrete subclasses must implement this method.
 
     @Override
     public String absoluteURI() {
