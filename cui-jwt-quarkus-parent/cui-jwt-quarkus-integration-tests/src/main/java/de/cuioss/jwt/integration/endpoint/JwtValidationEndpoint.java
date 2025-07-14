@@ -27,6 +27,7 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.enterprise.context.RequestScoped;
@@ -77,12 +78,19 @@ public class JwtValidationEndpoint {
     @POST
     @Path("/validate")
     public Response validateToken() {
+        LOGGER.debug("validateToken called - checking basicToken authorization");
         if (basicToken.isSuccessfullyAuthorized()) {
             var tokenOpt = basicToken.getAccessTokenContent();
             if (tokenOpt.isPresent()) {
                 AccessTokenContent token = tokenOpt.get();
+                LOGGER.debug("Access token validated successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
+                    token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
                 return Response.ok(createTokenResponse(token, "Access token is valid")).build();
+            } else {
+                LOGGER.debug("BasicToken authorized but no AccessTokenContent present");
             }
+        } else {
+            LOGGER.debug("BasicToken authorization failed");
         }
         // Return consistent JSON format for authorization header tests
         return Response.status(Response.Status.UNAUTHORIZED)
@@ -108,6 +116,8 @@ public class JwtValidationEndpoint {
 
         try {
             AccessTokenContent token = tokenValidator.createAccessToken(tokenRequest.token().trim());
+            LOGGER.debug("Explicit token validated successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
+                token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
             return Response.ok(createTokenResponse(token, "Access token is valid")).build();
         } catch (TokenValidationException e) {
             LOGGER.warn("Explicit token validation failed: %s", e.getMessage());
@@ -215,12 +225,19 @@ public class JwtValidationEndpoint {
      * Processes a BearerTokenResult and returns appropriate response.
      */
     private Response processBearerTokenResult(BearerTokenResult tokenResult, String description) {
+        LOGGER.debug("processBearerTokenResult called for: %s", description);
         if (tokenResult.isSuccessfullyAuthorized()) {
             var tokenOpt = tokenResult.getAccessTokenContent();
             if (tokenOpt.isPresent()) {
                 AccessTokenContent token = tokenOpt.get();
+                LOGGER.debug("Bearer token authorized successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
+                    token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
                 return Response.ok(createTokenResponse(token, description + " is valid")).build();
+            } else {
+                LOGGER.debug("Bearer token authorized but no AccessTokenContent present for: %s", description);
             }
+        } else {
+            LOGGER.debug("Bearer token authorization failed for: %s", description);
         }
         // Use the improved BearerTokenStatus.createResponse() method
         return tokenResult.errorResponse();
@@ -230,13 +247,15 @@ public class JwtValidationEndpoint {
      * Creates a standardized token response.
      */
     private ValidationResponse createTokenResponse(AccessTokenContent token, String message) {
-        return new ValidationResponse(true, message, Map.of(
-            "subject", token.getSubject(),
-            "scopes", token.getScopes(),
-            "roles", token.getRoles(),
-            "groups", token.getGroups(),
-            "email", token.getEmail().orElse("not-present")
-        ));
+        // Use HashMap to handle Optional values from getSubject() and getEmail()
+        var data = new HashMap<String, Object>();
+        data.put("subject", token.getSubject().orElse("not-present"));
+        data.put("scopes", token.getScopes());
+        data.put("roles", token.getRoles());
+        data.put("groups", token.getGroups());
+        data.put("email", token.getEmail().orElse("not-present"));
+
+        return new ValidationResponse(true, message, data);
     }
 
 
@@ -245,7 +264,7 @@ public class JwtValidationEndpoint {
 
         /**
          * Checks if the token request is missing or empty.
-         * 
+         *
          * @return true if the token is null or empty, false otherwise
          */
         public boolean isEmpty() {

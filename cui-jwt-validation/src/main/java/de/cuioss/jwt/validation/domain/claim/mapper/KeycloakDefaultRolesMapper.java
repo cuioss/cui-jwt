@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.tools.logging.CuiLogger;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -57,29 +58,39 @@ import java.util.Optional;
  */
 public class KeycloakDefaultRolesMapper implements ClaimMapper {
 
+    private static final CuiLogger LOGGER = new CuiLogger(KeycloakDefaultRolesMapper.class);
     private static final String REALM_ACCESS_CLAIM = "realm_access";
     private static final String ROLES_CLAIM = "roles";
 
     @Override
     public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+        LOGGER.debug("KeycloakDefaultRolesMapper.map called for claim: %s", claimName);
+        LOGGER.debug("Input JSON: %s", jsonObject.toString());
+
         Optional<JsonValue> realmAccessValue = ClaimMapperUtils.getJsonValue(jsonObject, REALM_ACCESS_CLAIM);
         if (realmAccessValue.isEmpty()) {
+            LOGGER.debug("No realm_access claim found in token");
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
         JsonValue realmAccess = realmAccessValue.get();
         if (realmAccess.getValueType() != JsonValue.ValueType.OBJECT) {
+            LOGGER.debug("realm_access claim is not an object: %s", realmAccess.getValueType());
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
         JsonObject realmAccessObject = realmAccess.asJsonObject();
+        LOGGER.debug("realm_access object: %s", realmAccessObject.toString());
+
         Optional<JsonValue> rolesValue = ClaimMapperUtils.getJsonValue(realmAccessObject, ROLES_CLAIM);
         if (rolesValue.isEmpty()) {
+            LOGGER.debug("No roles claim found in realm_access");
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
         JsonValue roles = rolesValue.get();
         if (roles.getValueType() != JsonValue.ValueType.ARRAY) {
+            LOGGER.debug("roles claim is not an array: %s", roles.getValueType());
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
@@ -87,6 +98,7 @@ public class KeycloakDefaultRolesMapper implements ClaimMapper {
         String originalValue = rolesArray.toString();
         List<String> rolesList = ClaimMapperUtils.extractStringsFromJsonArray(rolesArray);
 
+        LOGGER.debug("Successfully mapped roles: %s", rolesList);
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(rolesList));
     }
 }

@@ -57,8 +57,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *     public Response getData() {
  *         if (tokenResult.isSuccessfullyAuthorized()) {
  *             AccessTokenContent token = tokenResult.getAccessTokenContent().get();
- *             // Use validated token
- *             return Response.ok(token.getSubject()).build();
+ *             // Use validated token - getSubject() returns Optional<String>
+ *             return Response.ok(token.getSubject().orElse("unknown")).build();
  *         } else {
  *             // Return appropriate error response
  *             return tokenResult.errorResponse();

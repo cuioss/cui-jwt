@@ -35,6 +35,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   <li>CUI-JWT-2.2: JWT Structure</li>
  *   <li>CUI-JWT-2.3: Standard JWT Claims</li>
  * </ul>
- * 
+ *
  * @author Oliver Wolff
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519">RFC 7519 - JSON Web Token (JWT)</a>
  */
@@ -80,7 +81,10 @@ class RFC7519JWTComplianceTest {
             AccessTokenContent result = new TokenValidator(tokenHolder.getIssuerConfig()).createAccessToken(token);
 
             assertNotNull(result, "Token should be parsed successfully");
-            assertNotNull(result.getSubject());
+
+            // Subject claim is mandatory per RFC 7519
+            Optional<String> subject = result.getSubject();
+            assertTrue(subject.isPresent(), "Subject must be present according to RFC 7519");
         }
 
         @ParameterizedTest
@@ -291,7 +295,11 @@ class RFC7519JWTComplianceTest {
 
             // Verify that standard claims are accessible
             assertNotNull(result.getIssuer());
-            assertNotNull(result.getSubject());
+
+            // Subject claim is mandatory per RFC 7519
+            Optional<String> subject = result.getSubject();
+            assertTrue(subject.isPresent(), "Subject must be present according to RFC 7519");
+
             assertNotNull(result.getExpirationTime());
             assertNotNull(result.getIssuedAtTime());
         }

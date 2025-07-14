@@ -85,22 +85,22 @@ class TokenContentTest {
     }
 
     @Test
-    @DisplayName("Should get subject from mandatory claim")
-    void shouldGetSubjectFromMandatoryClaim() {
+    @DisplayName("Should get subject when claim is present")
+    void shouldGetSubjectWhenClaimIsPresent() {
         TestTokenContent token = createTestToken();
 
-        String subject = token.getSubject();
-        assertEquals("test-subject", subject);
+        Optional<String> subject = token.getSubject();
+        assertTrue(subject.isPresent());
+        assertEquals("test-subject", subject.get());
     }
 
     @Test
-    @DisplayName("Should throw exception when subject claim is missing")
-    void shouldThrowExceptionWhenSubjectClaimIsMissing() {
+    @DisplayName("Should return empty Optional when subject claim is missing")
+    void shouldReturnEmptyOptionalWhenSubjectClaimIsMissing() {
         TestTokenContent token = createTokenWithoutSubject();
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                token::getSubject);
-        assertTrue(exception.getMessage().contains("Subject claim not presentin token"));
+        Optional<String> subject = token.getSubject();
+        assertFalse(subject.isPresent());
     }
 
     @Test

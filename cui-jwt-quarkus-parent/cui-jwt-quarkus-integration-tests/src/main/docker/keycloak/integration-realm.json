@@ -139,14 +139,14 @@
           }
         },
         {
-          "name": "realm roles",
+          "name": "roles",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-realm-role-mapper",
           "consentRequired": false,
           "config": {
             "user.attribute": "foo",
             "access.token.claim": "true",
-            "claim.name": "realm_access.roles",
+            "claim.name": "roles",
             "jsonType.label": "String",
             "multivalued": "true"
           }

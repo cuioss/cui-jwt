@@ -33,6 +33,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,7 +95,12 @@ class OpenIDConnectComplianceTest {
 
             String token = tokenHolder.getRawToken();
             IdTokenContent result = new TokenValidator(tokenHolder.getIssuerConfig()).createIdToken(token);
-            assertEquals(subject, result.getSubject());
+
+            // Since we explicitly set the subject claim, it should always be present
+            // regardless of claimSubOptional configuration
+            Optional<String> resultSubject = result.getSubject();
+            assertTrue(resultSubject.isPresent(), "Subject should be present when explicitly set");
+            assertEquals(subject, resultSubject.get());
         }
 
         @Test

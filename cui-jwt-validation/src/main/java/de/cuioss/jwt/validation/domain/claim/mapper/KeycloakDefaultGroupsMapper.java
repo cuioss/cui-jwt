@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.tools.logging.CuiLogger;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -59,17 +60,23 @@ import java.util.Optional;
  */
 public class KeycloakDefaultGroupsMapper implements ClaimMapper {
 
+    private static final CuiLogger LOGGER = new CuiLogger(KeycloakDefaultGroupsMapper.class);
     private static final String GROUPS_CLAIM = "groups";
 
     @Override
     public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+        LOGGER.debug("KeycloakDefaultGroupsMapper.map called for claim: %s", claimName);
+        LOGGER.debug("Input JSON: %s", jsonObject.toString());
+
         Optional<JsonValue> groupsValue = ClaimMapperUtils.getJsonValue(jsonObject, GROUPS_CLAIM);
         if (groupsValue.isEmpty()) {
+            LOGGER.debug("No groups claim found in token");
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
         JsonValue groups = groupsValue.get();
         if (groups.getValueType() != JsonValue.ValueType.ARRAY) {
+            LOGGER.debug("groups claim is not an array: %s", groups.getValueType());
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
@@ -77,6 +84,7 @@ public class KeycloakDefaultGroupsMapper implements ClaimMapper {
         String originalValue = groupsArray.toString();
         List<String> groupsList = ClaimMapperUtils.extractStringsFromJsonArray(groupsArray);
 
+        LOGGER.debug("Successfully mapped groups: %s", groupsList);
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(groupsList));
     }
 }

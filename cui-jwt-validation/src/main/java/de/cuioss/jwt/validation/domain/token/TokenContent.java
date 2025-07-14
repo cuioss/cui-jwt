@@ -88,16 +88,25 @@ public interface TokenContent extends MinimalTokenContent {
     /**
      * Gets the subject claim value.
      * <p>
-     * Since 'sub' is a mandatory claim for most validation types, this method will never return null.
+     * The 'sub' (subject) claim is required by RFC 7519 specification, but this implementation
+     * allows it to be optional when {@link de.cuioss.jwt.validation.IssuerConfig#claimSubOptional}
+     * is set to {@code true}. This provides compatibility with token issuers like Keycloak
+     * that may not include the subject claim in certain token types (e.g., access tokens).
+     * <p>
+     * <strong>Specification compliance:</strong>
+     * <ul>
+     *   <li>RFC 7519 requires the 'sub' claim to be present</li>
+     *   <li>When {@code claimSubOptional=false} (default), this method returns a present Optional for RFC compliance</li>
+     *   <li>When {@code claimSubOptional=true}, this method may return an empty Optional if the claim is missing</li>
+     * </ul>
      *
-     * @return the subject, or throws exception if it's not present
-     * @throws IllegalStateException if the subject claim is not present
+     * @return an Optional containing the subject if present, or empty if not present and configured as optional
+     * @see de.cuioss.jwt.validation.IssuerConfig#claimSubOptional
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
      */
-    @NonNull
-    default String getSubject() {
+    default Optional<String> getSubject() {
         return getClaimOption(ClaimName.SUBJECT)
-                .map(ClaimValue::getOriginalString)
-                .orElseThrow(() -> new IllegalStateException("Subject claim not presentin token"));
+                .map(ClaimValue::getOriginalString);
     }
 
     /**

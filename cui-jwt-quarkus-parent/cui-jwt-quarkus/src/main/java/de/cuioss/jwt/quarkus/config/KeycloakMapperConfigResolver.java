@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
+import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
@@ -42,6 +43,7 @@ import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFA
  */
 public class KeycloakMapperConfigResolver {
 
+    private static final CuiLogger LOGGER = new CuiLogger(KeycloakMapperConfigResolver.class);
     private final Config config;
 
     /**
@@ -63,11 +65,18 @@ public class KeycloakMapperConfigResolver {
         String rolesKey = KEYCLOAK_DEFAULT_ROLES_ENABLED.formatted(issuerName);
         String groupsKey = KEYCLOAK_DEFAULT_GROUPS_ENABLED.formatted(issuerName);
 
+        LOGGER.debug("Resolving Keycloak mapper config for issuer: %s", issuerName);
+        LOGGER.debug("Looking for roles mapper config at key: %s", rolesKey);
+        LOGGER.debug("Looking for groups mapper config at key: %s", groupsKey);
+
         boolean defaultRolesEnabled = config.getOptionalValue(rolesKey, Boolean.class)
                 .orElse(false);
 
         boolean defaultGroupsEnabled = config.getOptionalValue(groupsKey, Boolean.class)
                 .orElse(false);
+
+        LOGGER.debug("Resolved roles mapper enabled: %s for issuer: %s", defaultRolesEnabled, issuerName);
+        LOGGER.debug("Resolved groups mapper enabled: %s for issuer: %s", defaultGroupsEnabled, issuerName);
 
         return KeycloakMapperConfig.builder()
                 .defaultRolesEnabled(defaultRolesEnabled)
