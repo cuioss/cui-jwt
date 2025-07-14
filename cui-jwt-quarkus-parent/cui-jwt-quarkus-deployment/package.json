@@ -68,7 +68,7 @@
     "prettier": "^3.6.2",
     "del-cli": "^6.0.0",
     "specificity": "^1.0.0",
-    "stylelint": "^16.10.0",
+    "stylelint": "^16.21.1",
     "stylelint-config-standard": "^36.0.1",
     "stylelint-declaration-strict-value": "^1.10.6",
     "stylelint-order": "^6.0.3",
