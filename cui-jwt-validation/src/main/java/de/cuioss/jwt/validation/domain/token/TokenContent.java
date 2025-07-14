@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.domain.token;
 
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import lombok.NonNull;
@@ -89,7 +90,7 @@ public interface TokenContent extends MinimalTokenContent {
      * Gets the subject claim value.
      * <p>
      * The 'sub' (subject) claim is required by RFC 7519 specification, but this implementation
-     * allows it to be optional when {@link de.cuioss.jwt.validation.IssuerConfig#claimSubOptional}
+     * allows it to be optional when {@link IssuerConfig#isClaimSubOptional()}
      * is set to {@code true}. This provides compatibility with token issuers like Keycloak
      * that may not include the subject claim in certain token types (e.g., access tokens).
      * <p>
@@ -101,7 +102,7 @@ public interface TokenContent extends MinimalTokenContent {
      * </ul>
      *
      * @return an Optional containing the subject if present, or empty if not present and configured as optional
-     * @see de.cuioss.jwt.validation.IssuerConfig#claimSubOptional
+     * @see IssuerConfig#isClaimSubOptional()
      * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
      */
     default Optional<String> getSubject() {

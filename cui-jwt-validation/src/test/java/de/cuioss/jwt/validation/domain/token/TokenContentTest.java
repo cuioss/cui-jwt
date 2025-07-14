@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit test for {@link TokenContent} interface.
  * <p>
  * Tests the interface contract using concrete implementations.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableGeneratorController
@@ -189,7 +190,7 @@ class TokenContentTest {
         }
 
         @Override
-        public Map<String, ClaimValue> getClaims() {
+        public @NonNull Map<String, ClaimValue> getClaims() {
             return claims;
         }
 
