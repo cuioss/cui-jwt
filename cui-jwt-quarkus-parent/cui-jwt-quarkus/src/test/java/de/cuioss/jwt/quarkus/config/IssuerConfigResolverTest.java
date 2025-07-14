@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests IssuerConfigResolver functionality.
  */
+@DisplayName("IssuerConfigResolver")
 @EnableTestLogger
 class IssuerConfigResolverTest {
 
@@ -43,15 +45,18 @@ class IssuerConfigResolverTest {
     private static final String ANOTHER_ISSUER = "another";
 
     @Nested
+    @DisplayName("Constructor Validation")
     class ConstructorValidation {
 
         @Test
+        @DisplayName("should require non-null config")
         void shouldRequireNonNullConfig() {
             assertThrows(NullPointerException.class, () -> new IssuerConfigResolver(null),
                     "Should reject null config");
         }
 
         @Test
+        @DisplayName("should accept valid config")
         void shouldAcceptValidConfig() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.ENABLED.formatted(TEST_ISSUER), "true",
@@ -60,20 +65,14 @@ class IssuerConfigResolverTest {
 
             assertDoesNotThrow(() -> new IssuerConfigResolver(config),
                     "Should accept valid config");
-
-            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
-            assertNotNull(resolver, "Resolver should be created successfully");
         }
 
         @Test
+        @DisplayName("should accept empty config but fail on resolution")
         void shouldAcceptEmptyConfig() {
             TestConfig emptyConfig = new TestConfig(Map.of());
 
-            assertDoesNotThrow(() -> new IssuerConfigResolver(emptyConfig),
-                    "Should accept empty config without throwing during construction");
-
             IssuerConfigResolver resolver = new IssuerConfigResolver(emptyConfig);
-            assertNotNull(resolver, "Resolver should be created successfully with empty config");
 
             // Note: The resolver will throw when trying to resolve configs, but construction should succeed
             assertThrows(IllegalStateException.class, resolver::resolveIssuerConfigs,
@@ -82,9 +81,11 @@ class IssuerConfigResolverTest {
     }
 
     @Nested
+    @DisplayName("Issuer Discovery")
     class IssuerDiscovery {
 
         @Test
+        @DisplayName("should throw when no issuers configured")
         void shouldThrowWhenNoIssuersConfigured() {
             TestConfig config = new TestConfig(Map.of());
             IssuerConfigResolver resolver = new IssuerConfigResolver(config);
@@ -96,6 +97,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should throw when no issuers enabled")
         void shouldThrowWhenNoIssuersEnabled() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.ENABLED.formatted(TEST_ISSUER), "false"
@@ -109,6 +111,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should discover issuer from properties")
         void shouldDiscoverIssuerFromProperties() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.ENABLED.formatted(TEST_ISSUER), "true",
@@ -123,6 +126,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should discover multiple issuers")
         void shouldDiscoverMultipleIssuers() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.ENABLED.formatted(TEST_ISSUER), "true",
@@ -140,9 +144,11 @@ class IssuerConfigResolverTest {
     }
 
     @Nested
+    @DisplayName("Enabled Property Handling")
     class EnabledProperty {
 
         @Test
+        @DisplayName("should skip disabled issuers")
         void shouldSkipDisabledIssuers() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.ENABLED.formatted(TEST_ISSUER), "true",
@@ -159,6 +165,7 @@ class IssuerConfigResolverTest {
         }
 
         @ParameterizedTest
+        @DisplayName("should respect enabled property value")
         @CsvSource({
                 "true, true",
                 "false, false"
@@ -180,6 +187,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should default to enabled when not specified")
         void shouldDefaultToEnabledWhenNotSpecified() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
@@ -194,9 +202,11 @@ class IssuerConfigResolverTest {
     }
 
     @Nested
+    @DisplayName("JWKS Source Configuration")
     class JwksSourceConfiguration {
 
         @Test
+        @DisplayName("should configure HTTP JWKS URL with timeouts")
         void shouldConfigureHttpJwksUrl() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks",
@@ -213,6 +223,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should configure well-known URL with refresh interval")
         void shouldConfigureWellKnownUrl() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.WELL_KNOWN_URL.formatted(TEST_ISSUER), "https://example.com/.well-known/openid_configuration",
@@ -228,6 +239,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should reject mutually exclusive JWKS sources")
         void shouldRejectMutuallyExclusiveJwksSources() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks",
@@ -246,9 +258,11 @@ class IssuerConfigResolverTest {
     }
 
     @Nested
+    @DisplayName("Property Configuration")
     class PropertyConfiguration {
 
         @Test
+        @DisplayName("should configure issuer identifier")
         void shouldConfigureIssuerIdentifier() {
             String issuerIdentifier = "https://example.com";
             TestConfig config = new TestConfig(Map.of(
@@ -264,6 +278,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should configure expected audiences from comma-separated list")
         void shouldConfigureAudiences() {
             String audiences = "client1,client2,client3";
             TestConfig config = new TestConfig(Map.of(
@@ -283,6 +298,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should configure expected client IDs from comma-separated list")
         void shouldConfigureClientIds() {
             String clientIds = "id1, id2 , id3";
             TestConfig config = new TestConfig(Map.of(
@@ -302,6 +318,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should configure algorithm preferences from comma-separated list")
         void shouldConfigureAlgorithmPreferences() {
             String algorithms = "RS256,ES256,PS256";
             TestConfig config = new TestConfig(Map.of(
@@ -322,12 +339,50 @@ class IssuerConfigResolverTest {
             assertEquals("ES256", preferredAlgorithms.get(1), "Second should be ES256");
             assertEquals("PS256", preferredAlgorithms.get(2), "Third should be PS256");
         }
+
+        @ParameterizedTest
+        @DisplayName("should configure claimSubOptional flag")
+        @CsvSource({
+                "true, true",
+                "false, false"
+        })
+        void shouldConfigureClaimSubOptional(String claimSubOptionalValue, boolean expectedClaimSubOptional) {
+            TestConfig config = new TestConfig(Map.of(
+                    JwtPropertyKeys.ISSUERS.CLAIM_SUB_OPTIONAL.formatted(TEST_ISSUER), claimSubOptionalValue,
+                    JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
+            ));
+            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
+
+            List<IssuerConfig> result = resolver.resolveIssuerConfigs();
+
+            assertEquals(1, result.size());
+            IssuerConfig issuer = result.getFirst();
+            assertEquals(expectedClaimSubOptional, issuer.isClaimSubOptional(),
+                    "Should configure claimSubOptional to " + expectedClaimSubOptional);
+        }
+
+        @Test
+        @DisplayName("should default claimSubOptional to false when not specified")
+        void shouldDefaultClaimSubOptionalToFalse() {
+            TestConfig config = new TestConfig(Map.of(
+                    JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
+            ));
+            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
+
+            List<IssuerConfig> result = resolver.resolveIssuerConfigs();
+
+            assertEquals(1, result.size());
+            IssuerConfig issuer = result.getFirst();
+            assertFalse(issuer.isClaimSubOptional(), "Should default claimSubOptional to false");
+        }
     }
 
     @Nested
+    @DisplayName("Logging Validation")
     class LoggingValidation {
 
         @Test
+        @DisplayName("should log discovery and resolution process")
         void shouldLogDiscoveryAndResolution() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
@@ -343,6 +398,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should log JWKS source configuration")
         void shouldLogJwksSourceConfiguration() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
@@ -355,6 +411,7 @@ class IssuerConfigResolverTest {
         }
 
         @Test
+        @DisplayName("should log when skipping disabled issuers")
         void shouldLogDisabledIssuerSkipping() {
             TestConfig config = new TestConfig(Map.of(
                     JwtPropertyKeys.ISSUERS.ENABLED.formatted(TEST_ISSUER), "true",
@@ -368,6 +425,20 @@ class IssuerConfigResolverTest {
 
             assertLogMessagePresentContaining(TestLogLevel.DEBUG, "Skipping disabled issuer: " + ANOTHER_ISSUER);
             assertLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVED_ISSUER_CONFIGURATION.format(TEST_ISSUER));
+        }
+
+        @Test
+        @DisplayName("should log claimSubOptional configuration")
+        void shouldLogClaimSubOptionalConfiguration() {
+            TestConfig config = new TestConfig(Map.of(
+                    JwtPropertyKeys.ISSUERS.CLAIM_SUB_OPTIONAL.formatted(TEST_ISSUER), "true",
+                    JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(TEST_ISSUER), "https://example.com/jwks"
+            ));
+            IssuerConfigResolver resolver = new IssuerConfigResolver(config);
+
+            resolver.resolveIssuerConfigs();
+
+            assertLogMessagePresentContaining(TestLogLevel.DEBUG, "Set claim subject optional for " + TEST_ISSUER + ": true");
         }
     }
 }

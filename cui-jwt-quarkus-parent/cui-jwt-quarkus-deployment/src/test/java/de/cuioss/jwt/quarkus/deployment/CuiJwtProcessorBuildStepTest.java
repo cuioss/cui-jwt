@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,19 +50,64 @@ class CuiJwtProcessorBuildStepTest {
     }
 
     @Test
-    void shouldRegisterJwtValidationClassesForReflection() {
+    void shouldRegisterJwtValidationConstructorClassesForReflection() {
         // Act
-        ReflectiveClassBuildItem reflectiveItem = processor.registerJwtValidationClassesForReflection();
+        ReflectiveClassBuildItem reflectiveItem = processor.registerJwtValidationConstructorClassesForReflection();
 
         // Assert
         assertNotNull(reflectiveItem);
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.TokenValidator"));
+        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.IssuerConfigResolver"));
+        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.security.SecurityEventCounter"));
+        // These classes are now in the configuration group
+        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.IssuerConfig"));
+        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.ParserConfig"));
+    }
+
+    @Test
+    void shouldRegisterJwtConfigurationClassesForReflection() {
+        // Act
+        ReflectiveClassBuildItem reflectiveItem = processor.registerJwtConfigurationClassesForReflection();
+
+        // Assert
+        assertNotNull(reflectiveItem);
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.IssuerConfig"));
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.ParserConfig"));
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.security.SecurityEventCounter"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.quarkus.producer.TokenValidatorProducer"));
+        // These classes are in the constructor group
+        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.TokenValidator"));
     }
+
+    @Test
+    void shouldRegisterJwtTokenContentClassesForReflection() {
+        // Act
+        ReflectiveClassBuildItem reflectiveItem = processor.registerJwtTokenContentClassesForReflection();
+
+        // Assert
+        assertNotNull(reflectiveItem);
+        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.domain.token.AccessTokenContent"));
+        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.domain.claim.ClaimValue"));
+        // Claim mappers are in separate group
+        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper"));
+    }
+
+    @Test
+    void shouldRegisterJwtClaimMapperClassesForReflection() {
+        // Act
+        ReflectiveClassBuildItem reflectiveItem = processor.registerJwtClaimMapperClassesForReflection();
+
+        // Assert
+        assertNotNull(reflectiveItem);
+        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper"));
+        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper"));
+        // Token content classes are in separate group
+        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.domain.token.AccessTokenContent"));
+    }
+
+    // REMOVED: registerBearerTokenClassesForReflection test
+    // All cui-jwt-quarkus classes now use @RegisterForReflection annotation directly
+    // This follows the standard: application-level classes use annotations,
+    // infrastructure/library classes use deployment processor
 
     @Test
     void shouldRegisterRuntimeInitializedClasses() {
@@ -81,7 +126,8 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(beanItem);
-        assertTrue(beanItem.getBeanClasses().contains("de.cuioss.jwt.quarkus.producer.TokenValidatorProducer"));
+        // No library classes are registered explicitly now - they are provided via producers
+        // cui-jwt-quarkus classes are now auto-discovered via @ApplicationScoped annotations
     }
 
     @Test
@@ -113,7 +159,7 @@ class CuiJwtProcessorBuildStepTest {
         // Act
         processor.registerUnremovableBeans(producer);
 
-        // Assert
-        assertEquals(2, unremovableBeans.size());
+        // Assert - We now have 1 core library unremovable bean: TokenValidator
+        assertEquals(1, unremovableBeans.size());
     }
 }

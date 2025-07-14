@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,72 +32,72 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     @Test
     void shouldExposeMetricsEndpoint() {
         given()
-                .when()
-                .get("/q/metrics")
-                .then()
-                .statusCode(200)
-                .contentType(containsString("text"));
+            .when()
+            .get("/q/metrics")
+            .then()
+            .statusCode(200)
+            .contentType(containsString("text"));
     }
 
     @Test
     void shouldIncludeBasicMetrics() {
         String metricsResponse = given()
-                .when()
-                .get("/q/metrics")
-                .then()
-                .statusCode(200)
-                .extract()
-                .body()
-                .asString();
+            .when()
+            .get("/q/metrics")
+            .then()
+            .statusCode(200)
+            .extract()
+            .body()
+            .asString();
 
         // Verify basic metrics are present
         assertTrue(
-                metricsResponse.contains("jvm_") || metricsResponse.contains("http_"),
-                "Should include basic JVM or HTTP metrics"
+            metricsResponse.contains("jvm_") || metricsResponse.contains("http_"),
+            "Should include basic JVM or HTTP metrics"
         );
     }
 
     @Test
     void shouldIncludeSystemMetrics() {
         given()
-                .when()
-                .get("/q/metrics")
-                .then()
-                .statusCode(200)
-                .body(containsString("jvm_memory_used_bytes"))
-                .body(containsString("process_cpu_usage"));
+            .when()
+            .get("/q/metrics")
+            .then()
+            .statusCode(200)
+            .body(containsString("jvm_memory_used_bytes"))
+            .body(containsString("process_cpu_usage"));
     }
 
     @Test
     void shouldIncludeHttpMetrics() {
         given()
-                .when()
-                .get("/q/metrics")
-                .then()
-                .statusCode(200)
-                .body(containsString("http_server"));
+            .when()
+            .get("/q/metrics")
+            .then()
+            .statusCode(200)
+            .body(containsString("http_server"));
     }
 
     @Test
     void shouldProvideMetricsInPrometheusFormat() {
         String metricsResponse = given()
-                .when()
-                .get("/q/metrics")
-                .then()
-                .statusCode(200)
-                .extract()
-                .body()
-                .asString();
+            .when()
+            .get("/q/metrics")
+            .then()
+            .statusCode(200)
+            .extract()
+            .body()
+            .asString();
 
         // Verify Prometheus format
         assertTrue(
-                metricsResponse.contains("# HELP"),
-                "Should include Prometheus HELP comments"
+            metricsResponse.contains("# HELP"),
+            "Should include Prometheus HELP comments"
         );
 
         assertTrue(
-                metricsResponse.contains("# TYPE"),
-                "Should include Prometheus TYPE comments"
+            metricsResponse.contains("# TYPE"),
+            "Should include Prometheus TYPE comments"
         );
     }
 }

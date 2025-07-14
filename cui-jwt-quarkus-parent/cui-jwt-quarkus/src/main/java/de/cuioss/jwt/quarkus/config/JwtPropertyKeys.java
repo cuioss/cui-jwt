@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -183,6 +183,28 @@ public final class JwtPropertyKeys {
          */
         public static final String ALGORITHM_PREFERENCES = BASE + "algorithm-preferences";
 
+        /**
+         * Whether the "sub" (subject) claim is optional for this issuer.
+         * Template: "cui.jwt.issuers.%s.claim-sub-optional"
+         * <p>
+         * When set to {@code true}, the mandatory claims validator will not require the "sub" claim
+         * to be present in tokens from this issuer. This provides a workaround for identity providers
+         * that don't include the subject claim in access tokens by default.
+         * </p>
+         * <p>
+         * <strong>Warning:</strong> Setting this to {@code true} relaxes RFC 7519 compliance.
+         * According to RFC 7519 Section 4.1.2, the "sub" claim is required for ACCESS_TOKEN and ID_TOKEN types.
+         * Use this option only when necessary and ensure appropriate alternative validation mechanisms.
+         * </p>
+         * <p>
+         * Default value is {@code false} (subject claim is mandatory, RFC compliant).
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.IssuerConfig#isClaimSubOptional()
+         * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
+         */
+        public static final String CLAIM_SUB_OPTIONAL = BASE + "claim-sub-optional";
+
         // === JWKS Source Configuration (Mutually Exclusive) ===
 
         /**
@@ -303,6 +325,58 @@ public final class JwtPropertyKeys {
          * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
          */
         public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
+
+        // === Keycloak Configuration ===
+
+        /**
+         * Base template for Keycloak configurations.
+         */
+        public static final String KEYCLOAK_BASE = BASE + "keycloak.";
+
+        /**
+         * Base template for Keycloak mapper configurations.
+         */
+        public static final String KEYCLOAK_MAPPERS_BASE = KEYCLOAK_BASE + "mappers.";
+
+        /**
+         * Enable Keycloak default roles mapper for realm_access.roles claim.
+         * Template: "cui.jwt.issuers.%s.keycloak.mappers.default-roles.enabled"
+         * <p>
+         * When enabled, this mapper extracts roles from Keycloak's standard
+         * {@code realm_access.roles} claim and maps them to the expected
+         * {@code roles} claim format used by the CUI JWT library.
+         * </p>
+         * <p>
+         * This eliminates the need for custom protocol mappers in Keycloak
+         * to expose realm roles in the expected format.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper
+         */
+        public static final String KEYCLOAK_DEFAULT_ROLES_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-roles.enabled";
+
+        /**
+         * Enable Keycloak default groups mapper for groups claim.
+         * Template: "cui.jwt.issuers.%s.keycloak.mappers.default-groups.enabled"
+         * <p>
+         * When enabled, this mapper processes Keycloak's standard {@code groups}
+         * claim and ensures they are properly formatted for the CUI JWT library's
+         * authorization mechanisms.
+         * </p>
+         * <p>
+         * This provides compatibility with Keycloak's default group membership
+         * mapper without requiring additional configuration.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper
+         */
+        public static final String KEYCLOAK_DEFAULT_GROUPS_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-groups.enabled";
     }
 
     /**
@@ -368,4 +442,5 @@ public final class JwtPropertyKeys {
          */
         public static final String JWKS_CACHE_SIZE = JWKS_BASE + ".cache.size";
     }
+
 }

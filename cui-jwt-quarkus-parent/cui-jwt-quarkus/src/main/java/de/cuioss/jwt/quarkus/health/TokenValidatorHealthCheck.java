@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
 package de.cuioss.jwt.quarkus.health;
 
 import de.cuioss.jwt.validation.IssuerConfig;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 import org.eclipse.microprofile.health.HealthCheck;
@@ -23,9 +25,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
 
 import java.util.List;
-
-
-import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Health check for JWT validation configuration.
@@ -36,7 +35,9 @@ import jakarta.enterprise.context.ApplicationScoped;
  * </p>
  */
 @ApplicationScoped
-@Liveness // Marks this as a liveness check
+@Liveness
+// Marks this as a liveness check
+@RegisterForReflection(methods = false, fields = false)
 public class TokenValidatorHealthCheck implements HealthCheck {
 
     private static final String HEALTHCHECK_NAME = "jwt-validator";

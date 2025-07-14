@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -102,6 +102,14 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(22)
                 .build();
+
+        // Bearer Token Messages (031-040)
+        
+        public static final LogRecord BEARER_TOKEN_VALIDATION_SUCCESS = LogRecordModel.builder()
+                .template("Bearer token validation successful")
+                .prefix(PREFIX)
+                .identifier(31)
+                .build();
     }
 
     /**
@@ -125,14 +133,76 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(111)
                 .build();
+
+        // Bearer Token Warnings (121-130)
+        
+        public static final LogRecord BEARER_TOKEN_ANNOTATION_MISSING = LogRecordModel.builder()
+                .template("BearerToken annotation missing at injection point")
+                .prefix(PREFIX)
+                .identifier(121)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_MISSING_OR_INVALID = LogRecordModel.builder()
+                .template("Bearer token missing or invalid in Authorization header")
+                .prefix(PREFIX)
+                .identifier(122)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_REQUIREMENTS_NOT_MET = LogRecordModel.builder()
+                .template("Bearer token does not meet required scopes, roles, or groups")
+                .prefix(PREFIX)
+                .identifier(123)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_VALIDATION_FAILED = LogRecordModel.builder()
+                .template("Bearer token validation failed: %s")
+                .prefix(PREFIX)
+                .identifier(124)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_MISSING_SCOPES = LogRecordModel.builder()
+                .template("Bearer token missing required scopes. Required: %s, Found: %s")
+                .prefix(PREFIX)
+                .identifier(125)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_MISSING_ROLES = LogRecordModel.builder()
+                .template("Bearer token missing required roles. Required: %s, Found: %s")
+                .prefix(PREFIX)
+                .identifier(126)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_MISSING_GROUPS = LogRecordModel.builder()
+                .template("Bearer token missing required groups. Required: %s, Found: %s")
+                .prefix(PREFIX)
+                .identifier(127)
+                .build();
+
+        public static final LogRecord BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED = LogRecordModel.builder()
+                .template("Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s")
+                .prefix(PREFIX)
+                .identifier(128)
+                .build();
     }
 
     /**
      * ERROR level log messages (200-299).
-     * Currently no ERROR level messages are used in the runtime module.
      */
     @UtilityClass
     public static final class ERROR {
-        // Reserved for future ERROR level messages
+
+        // Infrastructure Errors (200-210)
+        
+        public static final LogRecord BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED = LogRecordModel.builder()
+                .template("Failed to access HTTP header map for bearer token extraction")
+                .prefix(PREFIX)
+                .identifier(200)
+                .build();
+
+        public static final LogRecord VERTX_REQUEST_CONTEXT_UNAVAILABLE = LogRecordModel.builder()
+                .template("Vertx HttpServerRequest context is unavailable - no active request context found")
+                .prefix(PREFIX)
+                .identifier(201)
+                .build();
     }
 }

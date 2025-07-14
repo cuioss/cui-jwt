@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
@@ -47,11 +48,19 @@ class MandatoryClaimsValidatorTest {
 
     private SecurityEventCounter securityEventCounter;
     private MandatoryClaimsValidator validator;
+    private IssuerConfig defaultIssuerConfig;
 
     @BeforeEach
     void setup() {
         securityEventCounter = new SecurityEventCounter();
-        validator = new MandatoryClaimsValidator(securityEventCounter);
+
+        // Create a default IssuerConfig for testing (claimSubOptional = false by default)
+        defaultIssuerConfig = IssuerConfig.builder()
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .build();
+
+        validator = new MandatoryClaimsValidator(defaultIssuerConfig, securityEventCounter);
     }
 
     @Test
@@ -181,5 +190,98 @@ class MandatoryClaimsValidatorTest {
                 () -> validator.validateMandatoryClaims(token));
         assertTrue(exception.getMessage().contains("Available claims:"));
         assertTrue(exception.getMessage().contains("Please ensure the token includes all required claims"));
+    }
+
+    @Test
+    @DisplayName("Should skip subject claim validation when claimSubOptional is true")
+    void shouldSkipSubjectClaimValidationWhenClaimSubOptionalIsTrue() {
+        // Create IssuerConfig with claimSubOptional=true
+        IssuerConfig issuerConfigWithOptionalSub = IssuerConfig.builder()
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .claimSubOptional(true)
+                .build();
+
+        MandatoryClaimsValidator validatorWithOptionalSub = new MandatoryClaimsValidator(issuerConfigWithOptionalSub, securityEventCounter);
+
+        // Create token without subject claim
+        TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
+        Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
+        claims.remove(ClaimName.SUBJECT.getName());
+        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
+
+        // Should pass validation even without subject claim
+        assertDoesNotThrow(() -> validatorWithOptionalSub.validateMandatoryClaims(token));
+        assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+    }
+
+    @Test
+    @DisplayName("Should still validate other mandatory claims when claimSubOptional is true")
+    void shouldStillValidateOtherMandatoryClaimsWhenClaimSubOptionalIsTrue() {
+        // Create IssuerConfig with claimSubOptional=true
+        IssuerConfig issuerConfigWithOptionalSub = IssuerConfig.builder()
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .claimSubOptional(true)
+                .build();
+
+        MandatoryClaimsValidator validatorWithOptionalSub = new MandatoryClaimsValidator(issuerConfigWithOptionalSub, securityEventCounter);
+
+        // Create token without subject claim AND expiration claim
+        TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
+        Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
+        claims.remove(ClaimName.SUBJECT.getName());
+        claims.remove(ClaimName.EXPIRATION.getName()); // Remove non-optional claim
+        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
+
+        // Should fail validation due to missing expiration claim (even though subject is optional)
+        TokenValidationException exception = assertThrows(TokenValidationException.class,
+                () -> validatorWithOptionalSub.validateMandatoryClaims(token));
+        assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType());
+        assertTrue(exception.getMessage().contains("Missing mandatory claims"));
+        assertTrue(exception.getMessage().contains(ClaimName.EXPIRATION.getName()));
+        assertFalse(exception.getMessage().contains(ClaimName.SUBJECT.getName())); // Subject should not be in missing claims
+        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+    }
+
+    @Test
+    @DisplayName("Should enforce subject claim validation when claimSubOptional is false (default)")
+    void shouldEnforceSubjectClaimValidationWhenClaimSubOptionalIsFalse() {
+        // Use default validator (claimSubOptional=false)
+        TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
+        Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
+        claims.remove(ClaimName.SUBJECT.getName());
+        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
+
+        // Should fail validation due to missing subject claim
+        TokenValidationException exception = assertThrows(TokenValidationException.class,
+                () -> validator.validateMandatoryClaims(token));
+        assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType());
+        assertTrue(exception.getMessage().contains("Missing mandatory claims"));
+        assertTrue(exception.getMessage().contains(ClaimName.SUBJECT.getName()));
+        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+    }
+
+    @Test
+    @DisplayName("Should not affect ID token validation when claimSubOptional is true")
+    void shouldNotAffectIdTokenValidationWhenClaimSubOptionalIsTrue() {
+        // Create IssuerConfig with claimSubOptional=true
+        IssuerConfig issuerConfigWithOptionalSub = IssuerConfig.builder()
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .claimSubOptional(true)
+                .build();
+
+        MandatoryClaimsValidator validatorWithOptionalSub = new MandatoryClaimsValidator(issuerConfigWithOptionalSub, securityEventCounter);
+
+        // Create ID token without subject claim
+        TestTokenHolder tokenHolder = TestTokenGenerators.idTokens().next();
+        Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
+        claims.remove(ClaimName.SUBJECT.getName());
+        IdTokenContent token = new IdTokenContent(claims, tokenHolder.getRawToken());
+
+        // Should pass validation for ID tokens as well when claimSubOptional is true
+        assertDoesNotThrow(() -> validatorWithOptionalSub.validateMandatoryClaims(token));
+        assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
     }
 }

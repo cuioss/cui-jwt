@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -245,47 +245,66 @@ public class TokenRepository {
     private void loadValidTokens() {
         LOGGER.info("🔄 Loading %s valid tokens from %s realm(s)...", tokenPoolSize, realmConfigs.size());
 
-        // Distribute tokens evenly across realms
-        int tokensPerRealm = tokenPoolSize / realmConfigs.size();
-        int remainingTokens = tokenPoolSize % realmConfigs.size();
+        var tokenDistribution = calculateTokenDistribution();
 
         for (int realmIndex = 0; realmIndex < realmConfigs.size(); realmIndex++) {
             RealmConfig realmConfig = realmConfigs.get(realmIndex);
+            int tokensForThisRealm = tokenDistribution.get(realmIndex);
 
-            // Calculate tokens for this realm (distribute remainder evenly)
-            int tokensForThisRealm = tokensPerRealm + (realmIndex < remainingTokens ? 1 : 0);
-
-            LOGGER.info("🌍 Loading %s tokens from realm: %s", tokensForThisRealm, realmConfig.getEffectiveDisplayName());
-
-            for (int i = 0; i < tokensForThisRealm; i++) {
-                try {
-                    Map<String, String> tokens = fetchAllTokensFromKeycloak(realmConfig);
-
-                    String accessToken = tokens.get(ACCESS_TOKEN);
-                    String idToken = tokens.get(ID_TOKEN);
-                    String refreshToken = tokens.get(REFRESH_TOKEN);
-
-                    if (accessToken != null && !accessToken.isEmpty()) {
-                        validTokens.add(accessToken);
-                    }
-                    if (idToken != null && !idToken.isEmpty()) {
-                        validIdTokens.add(idToken);
-                    }
-                    if (refreshToken != null && !refreshToken.isEmpty()) {
-                        validRefreshTokens.add(refreshToken);
-                    }
-
-                    if ((i + 1) % 10 == 0) {
-                        LOGGER.debug("Loaded %s token sets from %s...", i + 1, realmConfig.getRealmName());
-                    }
-                } catch (TokenFetchException e) {
-                    LOGGER.warn("Error loading valid token #%s from %s: %s", i + 1, realmConfig.getRealmName(), e.getMessage());
-                }
-            }
+            loadTokensFromRealm(realmConfig, tokensForThisRealm);
         }
 
         LOGGER.info("✅ Loaded %s valid tokens across %s realms", validTokens.size(), realmConfigs.size());
         logRealmDistribution();
+    }
+
+    private List<Integer> calculateTokenDistribution() {
+        int tokensPerRealm = tokenPoolSize / realmConfigs.size();
+        int remainingTokens = tokenPoolSize % realmConfigs.size();
+
+        List<Integer> distribution = new ArrayList<>();
+        for (int i = 0; i < realmConfigs.size(); i++) {
+            int tokensForRealm = tokensPerRealm + (i < remainingTokens ? 1 : 0);
+            distribution.add(tokensForRealm);
+        }
+        return distribution;
+    }
+
+    private void loadTokensFromRealm(RealmConfig realmConfig, int tokenCount) {
+        LOGGER.info("🌍 Loading %s tokens from realm: %s", tokenCount, realmConfig.getEffectiveDisplayName());
+
+        for (int i = 0; i < tokenCount; i++) {
+            loadSingleTokenSet(realmConfig, i);
+            logProgressIfNeeded(i, realmConfig);
+        }
+    }
+
+    private void loadSingleTokenSet(RealmConfig realmConfig, int tokenIndex) {
+        try {
+            Map<String, String> tokens = fetchAllTokensFromKeycloak(realmConfig);
+            storeTokensFromResponse(tokens);
+        } catch (TokenFetchException e) {
+            LOGGER.warn("Error loading valid token #%s from %s: %s",
+                    tokenIndex + 1, realmConfig.getRealmName(), e.getMessage());
+        }
+    }
+
+    private void storeTokensFromResponse(Map<String, String> tokens) {
+        storeTokenIfValid(tokens.get(ACCESS_TOKEN), validTokens);
+        storeTokenIfValid(tokens.get(ID_TOKEN), validIdTokens);
+        storeTokenIfValid(tokens.get(REFRESH_TOKEN), validRefreshTokens);
+    }
+
+    private void storeTokenIfValid(String token, List<String> targetList) {
+        if (token != null && !token.isEmpty()) {
+            targetList.add(token);
+        }
+    }
+
+    private void logProgressIfNeeded(int currentIndex, RealmConfig realmConfig) {
+        if ((currentIndex + 1) % 10 == 0) {
+            LOGGER.debug("Loaded %s token sets from %s...", currentIndex + 1, realmConfig.getRealmName());
+        }
     }
 
     private void loadExpiredTokens() {

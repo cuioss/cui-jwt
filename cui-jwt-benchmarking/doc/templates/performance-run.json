@@ -8,8 +8,8 @@
       "unit": "ops/s"
     },
     "averageTime": {
-      "value": ${AVERAGE_TIME_MS},
-      "unit": "ms"
+      "value": ${AVERAGE_TIME_SEC},
+      "unit": "s"
     },
     "errorResilience": {
       "value": ${ERROR_RESILIENCE_VALUE},

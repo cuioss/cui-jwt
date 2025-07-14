@@ -52,6 +52,14 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 |CUI_JWT_QUARKUS-022 |METRICS |JwtMetricsCollector initialized with %s event types |Logs successful JWT metrics collector initialization
 |===
 
+==== Bearer Token Messages (031-040)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-031 |BEARER_TOKEN |Bearer token validation successful |Logs successful bearer token validation in CDI producer
+|===
+
 === WARN Level (100-199)
 
 ==== Health Check Warnings (100-110)
@@ -68,6 +76,20 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 |===
 |ID |Component |Message |Description
 |CUI_JWT_QUARKUS-111 |METRICS |SecurityEventCounter not available, metrics will not be collected |Warns about unavailable SecurityEventCounter affecting metrics collection
+|===
+
+==== Bearer Token Warnings (121-130)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-121 |BEARER_TOKEN |BearerToken annotation missing at injection point |Warns about missing BearerToken annotation at CDI injection point
+|CUI_JWT_QUARKUS-122 |BEARER_TOKEN |Bearer token missing or invalid in Authorization header |Warns about missing or invalid Authorization header
+|CUI_JWT_QUARKUS-123 |BEARER_TOKEN |Bearer token does not meet required scopes, roles, or groups |Warns about bearer token not meeting annotation requirements
+|CUI_JWT_QUARKUS-124 |BEARER_TOKEN |Bearer token validation failed: %s |Warns about bearer token validation failure with error details
+|CUI_JWT_QUARKUS-125 |BEARER_TOKEN |Bearer token missing required scopes. Required: %s, Found: %s |Warns about missing required scopes with comparison
+|CUI_JWT_QUARKUS-126 |BEARER_TOKEN |Bearer token missing required roles. Required: %s, Found: %s |Warns about missing required roles with comparison
+|CUI_JWT_QUARKUS-127 |BEARER_TOKEN |Bearer token missing required groups. Required: %s, Found: %s |Warns about missing required groups with comparison
 |===
 
 === ERROR Level (200-299)

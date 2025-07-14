@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +16,8 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
@@ -170,9 +172,13 @@ public class IssuerConfigResolver {
         configureAudience(builder, issuerName);
         configureClientId(builder, issuerName);
         configureAlgorithmPreferences(builder, issuerName);
+        configureClaimSubOptional(builder, issuerName);
 
         // Configure JWKS source (mutually exclusive)
         configureJwksSource(builder, issuerName);
+
+        // Configure Keycloak mappers if enabled
+        configureKeycloakMappers(builder, issuerName);
 
         // Let the builder validate and create the instance
         return builder.build();
@@ -250,6 +256,21 @@ public class IssuerConfigResolver {
 
             builder.algorithmPreferences(preferences);
             LOGGER.debug("Set algorithm preferences for %s: %s", issuerName, algorithms);
+        }
+    }
+
+    /**
+     * Configures claim subject optional flag from properties.
+     */
+    private void configureClaimSubOptional(IssuerConfig.IssuerConfigBuilder builder, String issuerName) {
+        Optional<Boolean> claimSubOptional = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.CLAIM_SUB_OPTIONAL.formatted(issuerName),
+                Boolean.class
+        );
+
+        if (claimSubOptional.isPresent()) {
+            builder.claimSubOptional(claimSubOptional.get());
+            LOGGER.debug("Set claim subject optional for %s: %s", issuerName, claimSubOptional.get());
         }
     }
 
@@ -346,5 +367,27 @@ public class IssuerConfigResolver {
 
         // Let the builder validate and create the instance
         return builder.build();
+    }
+
+    /**
+     * Configures Keycloak default mappers if enabled for this issuer.
+     * <p>
+     * Adds Keycloak-specific claim mappers based on per-issuer configuration.
+     * This allows different issuers to have different Keycloak mapper settings.
+     * </p>
+     */
+    private void configureKeycloakMappers(IssuerConfig.IssuerConfigBuilder builder, String issuerName) {
+        KeycloakMapperConfigResolver keycloakResolver = new KeycloakMapperConfigResolver(config);
+        KeycloakMapperConfigResolver.KeycloakMapperConfig keycloakConfig = keycloakResolver.resolve(issuerName);
+
+        if (keycloakConfig.isDefaultRolesEnabled()) {
+            builder.claimMapper("roles", new KeycloakDefaultRolesMapper());
+            LOGGER.debug("Added Keycloak default roles mapper for issuer: %s", issuerName);
+        }
+
+        if (keycloakConfig.isDefaultGroupsEnabled()) {
+            builder.claimMapper("groups", new KeycloakDefaultGroupsMapper());
+            LOGGER.debug("Added Keycloak default groups mapper for issuer: %s", issuerName);
+        }
     }
 }

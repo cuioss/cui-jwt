@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit test for {@link TokenContent} interface.
  * <p>
  * Tests the interface contract using concrete implementations.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableGeneratorController
@@ -85,22 +86,22 @@ class TokenContentTest {
     }
 
     @Test
-    @DisplayName("Should get subject from mandatory claim")
-    void shouldGetSubjectFromMandatoryClaim() {
+    @DisplayName("Should get subject when claim is present")
+    void shouldGetSubjectWhenClaimIsPresent() {
         TestTokenContent token = createTestToken();
 
-        String subject = token.getSubject();
-        assertEquals("test-subject", subject);
+        Optional<String> subject = token.getSubject();
+        assertTrue(subject.isPresent());
+        assertEquals("test-subject", subject.get());
     }
 
     @Test
-    @DisplayName("Should throw exception when subject claim is missing")
-    void shouldThrowExceptionWhenSubjectClaimIsMissing() {
+    @DisplayName("Should return empty Optional when subject claim is missing")
+    void shouldReturnEmptyOptionalWhenSubjectClaimIsMissing() {
         TestTokenContent token = createTokenWithoutSubject();
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                token::getSubject);
-        assertTrue(exception.getMessage().contains("Subject claim not presentin token"));
+        Optional<String> subject = token.getSubject();
+        assertFalse(subject.isPresent());
     }
 
     @Test
@@ -189,7 +190,7 @@ class TokenContentTest {
         }
 
         @Override
-        public Map<String, ClaimValue> getClaims() {
+        public @NonNull Map<String, ClaimValue> getClaims() {
             return claims;
         }
 

@@ -1,0 +1,225 @@
+= Keycloak Integration FAQ
+:toc:
+:toclevels: 3
+:sectlinks:
+:sectanchors:
+:source-highlighter: highlight.js
+
+Common issues and solutions when integrating the CUI JWT library with Keycloak.
+
+== Document Navigation
+
+* xref:../../README.adoc[README] - Project overview and introduction
+* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
+* xref:../Specification.adoc[Specification] - Technical specifications
+* xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
+* xref:../security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations
+* xref:../Build.adoc[Building and Development] - Information for contributors
+
+== Missing Mandatory Claims
+
+=== Problem: Missing 'sub' Claim
+
+*Error:* `CUI_JWT_QUARKUS-124: Bearer token validation failed: Missing mandatory claims: [sub]`
+
+*Cause:* Keycloak access tokens don't include the `sub` claim by default, which is mandatory for ACCESS_TOKEN and ID_TOKEN types per RFC 7519.
+
+=== Solution 1: Configure claimSubOptional (Recommended)
+
+The simplest solution is to configure the CUI JWT library to make the `sub` claim optional for Keycloak issuers:
+
+[source,properties]
+----
+# Make subject claim optional for Keycloak issuer
+cui.jwt.issuers.keycloak.claim-sub-optional=true
+----
+
+*Benefits:*
+- No Keycloak realm configuration changes needed
+- Works immediately with default Keycloak token structure
+- Maintains RFC compliance warnings for awareness
+- Per-issuer configuration allows mixed environments
+
+*Warning:* This relaxes RFC 7519 compliance. The library will log a warning when this setting is enabled.
+
+=== Solution 2: Add Subject Protocol Mapper
+
+Alternatively, configure a subject mapper in your Keycloak realm:
+
+[source,json]
+----
+{
+  "protocolMappers": [
+    {
+      "name": "subject",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-property-mapper",
+      "consentRequired": false,
+      "config": {
+        "userinfo.token.claim": "false",
+        "user.attribute": "id",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "claim.name": "sub",
+        "jsonType.label": "String"
+      }
+    }
+  ]
+}
+----
+
+*Via Admin Console:*
+1. Go to *Client Scopes* → *roles* → *Mappers*
+2. Create a new *User Property* mapper
+3. Set Property to `id` and Token Claim Name to `sub`
+4. Enable for both ID and access tokens
+
+== Groups and Roles Configuration
+
+=== Problem: Missing Authorization Claims
+
+Access tokens lack `groups` and `roles` claims needed for authorization.
+
+=== Solution: Configure Protocol Mappers
+
+*Groups Mapper:*
+[source,json]
+----
+{
+  "name": "groups",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-group-membership-mapper",
+  "consentRequired": false,
+  "config": {
+    "full.path": "false",
+    "id.token.claim": "true",
+    "access.token.claim": "true",
+    "claim.name": "groups",
+    "userinfo.token.claim": "true"
+  }
+}
+----
+
+*Roles Mapper:*
+[source,json]
+----
+{
+  "name": "roles",
+  "protocol": "openid-connect",
+  "protocolMapper": "oidc-usermodel-realm-role-mapper",
+  "consentRequired": false,
+  "config": {
+    "user.attribute": "foo",
+    "access.token.claim": "true",
+    "claim.name": "roles",
+    "jsonType.label": "String",
+    "multivalued": "true"
+  }
+}
+----
+
+Expected token structure after configuration:
+[source,json]
+----
+{
+  "sub": "user-id",
+  "groups": ["test-group"],
+  "roles": ["user"]
+}
+----
+
+=== Important: Group Path Configuration
+
+*Problem:* BearerToken validation fails for groups with `CONSTRAINT_VIOLATION` even though user is in the group.
+
+*Cause:* Keycloak includes groups with hierarchical paths (e.g., `"/test-group"`) by default, but applications expect simple group names (e.g., `"test-group"`).
+
+*Solution:* Always set `"full.path": "false"` in your group membership mapper:
+
+[source,json]
+----
+{
+  "name": "groups",
+  "protocol": "openid-connect", 
+  "protocolMapper": "oidc-group-membership-mapper",
+  "config": {
+    "full.path": "false",  // ← Critical: Removes leading slash
+    "access.token.claim": "true",
+    "claim.name": "groups"
+  }
+}
+----
+
+**Token comparison:**
+[source,json]
+----
+// With "full.path": "true" (default) - WRONG
+{
+  "groups": ["/test-group", "/admin-group"]
+}
+
+// With "full.path": "false" - CORRECT  
+{
+  "groups": ["test-group", "admin-group"]
+}
+----
+
+**Why this matters:**
+- `@BearerToken(requiredGroups = {"test-group"})` expects `"test-group"`
+- But Keycloak's default produces `"/test-group"` with leading slash
+- This causes authorization failures even for valid group memberships
+
+**Common symptoms:**
+- BearerToken validation fails with `CONSTRAINT_VIOLATION` status
+- Error: `Bearer token requirements not met - missing groups: [test-group]`
+- Tests pass for roles but fail for groups
+- User is definitely assigned to the group in Keycloak admin console
+
+**Resolution verified:**
+Adding the group membership mapper with `"full.path": "false"` to your Keycloak realm configuration resolves this issue completely. The integration tests confirm that tokens now contain group names without leading slashes, making them compatible with `@BearerToken` annotations.
+
+== Alternative: CUI JWT Default Mappers
+
+Use built-in mappers instead of custom protocol mappers (CUI JWT v1.0+):
+
+[source,properties]
+----
+# Enable Keycloak default mappers per issuer
+cui.jwt.issuers.my-keycloak.keycloak.mappers.default-roles.enabled=true
+cui.jwt.issuers.my-keycloak.keycloak.mappers.default-groups.enabled=true
+----
+
+This automatically maps:
+- `realm_access.roles` → `roles`
+- Standard `groups` claim processing
+
+Benefits:
+- Per-issuer configuration flexibility
+- No Keycloak realm modification needed
+- Works with standard Keycloak token structure
+- Different issuers can use different mapper strategies
+
+*Common Errors:*
+|===
+|Error |Solution
+
+|Missing mandatory claims: [sub]
+|Configure `claim-sub-optional=true` or add subject protocol mapper
+
+|Bearer token missing or invalid
+|Check Authorization header presence
+
+|Invalid issuer
+|Verify issuer URL configuration
+
+|Token expired
+|Check time sync and token TTL
+|===
+
+== References
+
+- https://tools.ietf.org/html/rfc7519[RFC 7519: JSON Web Token (JWT)]
+- https://tools.ietf.org/html/rfc7540#section-8.1.2[RFC 7540: HTTP/2 Header Compression]
+- https://tools.ietf.org/html/rfc7230#section-3.2[RFC 7230: HTTP/1.1 Message Syntax]
+- https://www.keycloak.org/docs/latest/server_admin/index.html#_protocol-mappers[Keycloak Protocol Mappers Documentation]

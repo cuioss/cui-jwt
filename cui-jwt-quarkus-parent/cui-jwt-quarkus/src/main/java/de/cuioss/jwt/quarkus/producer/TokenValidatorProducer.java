@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,14 +22,14 @@ import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
 import java.util.List;
-
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
 
@@ -56,6 +56,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * @since 1.0
  */
 @ApplicationScoped
+@RegisterForReflection(fields = true, methods = false)
 public class TokenValidatorProducer {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorProducer.class);
@@ -64,16 +65,20 @@ public class TokenValidatorProducer {
 
     @Produces
     @ApplicationScoped
+    @NonNull
     TokenValidator tokenValidator;
 
     @Produces
     @ApplicationScoped
+    @NonNull
     List<IssuerConfig> issuerConfigs;
 
     @Produces
     @ApplicationScoped
+    @NonNull
     SecurityEventCounter securityEventCounter;
 
+    @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
         this.config = config;
     }
@@ -90,6 +95,7 @@ public class TokenValidatorProducer {
         LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS::format);
 
         // Resolve issuer configurations using the dedicated resolver
+        // (Keycloak mappers are now configured per-issuer in IssuerConfigResolver)
         IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(config);
         issuerConfigs = issuerConfigResolver.resolveIssuerConfigs();
 
@@ -105,5 +111,6 @@ public class TokenValidatorProducer {
 
         LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
     }
+
 
 }

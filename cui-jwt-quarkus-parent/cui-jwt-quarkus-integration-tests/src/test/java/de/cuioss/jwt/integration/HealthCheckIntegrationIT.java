@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,42 +36,42 @@ class HealthCheckIntegrationIT extends BaseIntegrationTest {
         // - Issuer information
         // - Other application health checks
         given()
-                .when()
-                .get("/q/health")
-                .then()
-                .statusCode(200)
-                .contentType("application/json")
-                .body("status", equalTo("UP"));
+            .when()
+            .get("/q/health")
+            .then()
+            .statusCode(200)
+            .contentType("application/json")
+            .body("status", equalTo("UP"));
     }
 
     @Test
     void shouldProvideReadinessCheck() {
         given()
-                .when()
-                .get("/q/health/ready")
-                .then()
-                .statusCode(200)
-                .body("status", equalTo("UP"));
+            .when()
+            .get("/q/health/ready")
+            .then()
+            .statusCode(200)
+            .body("status", equalTo("UP"));
     }
 
     @Test
     void shouldProvideLivenessCheck() {
         given()
-                .when()
-                .get("/q/health/live")
-                .then()
-                .statusCode(200)
-                .body("status", equalTo("UP"));
+            .when()
+            .get("/q/health/live")
+            .then()
+            .statusCode(200)
+            .body("status", equalTo("UP"));
     }
 
     @Test
     void shouldProvideStartupCheck() {
         given()
-                .when()
-                .get("/q/health/started")
-                .then()
-                .statusCode(200)
-                .body("status", equalTo("UP"));
+            .when()
+            .get("/q/health/started")
+            .then()
+            .statusCode(200)
+            .body("status", equalTo("UP"));
     }
 
 }

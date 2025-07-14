@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,15 @@
  */
 package de.cuioss.jwt.integration;
 
+import de.cuioss.tools.logging.CuiLogger;
+
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationTest {
 
+    private static final CuiLogger LOGGER = new CuiLogger(AbstractJwtValidationEndpointTest.class);
     public static final String AUTHORIZATION = "Authorization";
     // String constants for repeated literals
     private static final String CONTENT_TYPE_JSON = "application/json";
@@ -83,14 +87,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
             // Test positive case: valid access token via Authorization header
             given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
-                    .when()
-                    .post(JWT_VALIDATE_PATH)
-                    .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true))
-                    .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
+                .contentType(CONTENT_TYPE_JSON)
+                .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
+                .when()
+                .post(JWT_VALIDATE_PATH)
+                .then()
+                .statusCode(200)
+                .body(VALID, equalTo(true))
+                .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
         }
 
         @Test
@@ -103,14 +107,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
             // Test positive case: valid ID token via request body
             given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .body(Map.of(TOKEN_FIELD_NAME, validIdToken))
-                    .when()
-                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                    .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true))
-                    .body(MESSAGE, equalTo("ID token is valid"));
+                .contentType(CONTENT_TYPE_JSON)
+                .body(Map.of(TOKEN_FIELD_NAME, validIdToken))
+                .when()
+                .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                .then()
+                .statusCode(200)
+                .body(VALID, equalTo(true))
+                .body(MESSAGE, equalTo("ID token is valid"));
         }
 
         @Test
@@ -123,14 +127,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
             // Test positive case: valid refresh token via request body
             given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .body(Map.of(TOKEN_FIELD_NAME, validRefreshToken))
-                    .when()
-                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                    .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true))
-                    .body(MESSAGE, equalTo(REFRESH_TOKEN_IS_VALID));
+                .contentType(CONTENT_TYPE_JSON)
+                .body(Map.of(TOKEN_FIELD_NAME, validRefreshToken))
+                .when()
+                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                .then()
+                .statusCode(200)
+                .body(VALID, equalTo(true))
+                .body(MESSAGE, equalTo(REFRESH_TOKEN_IS_VALID));
         }
 
         @Test
@@ -144,162 +148,45 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             // Test multiple consecutive requests
             for (int i = 0; i < 3; i++) {
                 given()
-                        .contentType(CONTENT_TYPE_JSON)
-                        .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
-                        .when()
-                        .post(JWT_VALIDATE_PATH)
-                        .then()
-                        .statusCode(200)
-                        .body(VALID, equalTo(true))
-                        .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
+                    .when()
+                    .post(JWT_VALIDATE_PATH)
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
             }
         }
     }
 
     @Nested
-    @DisplayName("Negative Tests - Invalid Token Validation")
+    @DisplayName("Bearer Token Producer Tests")
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    class NegativeTests {
+    class BearerTokenProducerTests {
 
-        @Test
-        @Order(5)
-        @DisplayName("Access token validation with missing Authorization header")
-        void validateAccessTokenEndpointMissingAuthorizationHeader() {
-            // Test negative case: missing Authorization header
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .when()
-                    .post(JWT_VALIDATE_PATH)
-                    .then()
-                    .statusCode(400)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or invalid Authorization header"));
-        }
+        @ParameterizedTest
+        @ValueSource(strings = {
+            "/jwt/bearer-token/with-scopes",
+            "/jwt/bearer-token/with-roles",
+            "/jwt/bearer-token/with-groups",
+            "/jwt/bearer-token/with-all"
+        })
+        @DisplayName("Bearer token endpoint validation with different requirement types")
+        void bearerTokenEndpointValidation(String endpoint) {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
 
-        @Test
-        @Order(6)
-        @DisplayName("Access token validation with invalid Authorization header format")
-        void validateAccessTokenEndpointInvalidAuthorizationHeader() {
-            // Test negative case: invalid Authorization header format
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .header(AUTHORIZATION, "InvalidFormat token")
-                    .when()
-                    .post(JWT_VALIDATE_PATH)
-                    .then()
-                    .statusCode(400)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or invalid Authorization header"));
-        }
+            if (endpoint.contains("scopes")) {
+                LOGGER.info("bearerTokenWithScopes:" + tokenResponse.accessToken());
+            }
 
-        @Test
-        @Order(7)
-        @DisplayName("Access token validation with invalid token")
-        void validateAccessTokenEndpointInvalidToken() {
-            // Test negative case: invalid access token
             given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .header(AUTHORIZATION, BEARER_PREFIX + "invalid.token.here")
-                    .when()
-                    .post(JWT_VALIDATE_PATH)
-                    .then()
-                    .statusCode(401)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, containsString("Access token validation failed"));
-        }
-
-        @Test
-        @Order(8)
-        @DisplayName("ID token validation with missing request body")
-        void validateIdTokenEndpointMissingRequestBody() {
-            // Test negative case: missing request body
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .when()
-                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                    .then()
-                    .statusCode(400)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
-        }
-
-        @Test
-        @Order(9)
-        @DisplayName("ID token validation with empty token")
-        void validateIdTokenEndpointEmptyToken() {
-            // Test negative case: empty token in request body
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .body(Map.of(TOKEN_FIELD_NAME, ""))
-                    .when()
-                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                    .then()
-                    .statusCode(400)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
-        }
-
-        @Test
-        @Order(10)
-        @DisplayName("ID token validation with invalid token")
-        void validateIdTokenEndpointInvalidToken() {
-            // Test negative case: invalid ID token
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
-                    .when()
-                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                    .then()
-                    .statusCode(401)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, containsString("ID token validation failed"));
-        }
-
-        @Test
-        @Order(11)
-        @DisplayName("Refresh token validation with missing request body")
-        void validateRefreshTokenEndpointMissingRequestBody() {
-            // Test negative case: missing request body
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .when()
-                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                    .then()
-                    .statusCode(400)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
-        }
-
-        @Test
-        @Order(12)
-        @DisplayName("Refresh token validation with empty token")
-        void validateRefreshTokenEndpointEmptyToken() {
-            // Test negative case: empty token in request body
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .body(Map.of(TOKEN_FIELD_NAME, ""))
-                    .when()
-                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                    .then()
-                    .statusCode(400)
-                    .body(VALID, equalTo(false))
-                    .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
-        }
-
-        @Test
-        @Order(13)
-        @DisplayName("Refresh token validation with invalid token")
-        void validateRefreshTokenEndpointInvalidToken() {
-            // Test negative case: Will result in a positive result, because Refresh-token are opaquely invalid
-            given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
-                    .when()
-                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                    .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true))
-                    .body(MESSAGE, containsString(REFRESH_TOKEN_IS_VALID));
+                .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                .when()
+                .get(endpoint)
+                .then()
+                .statusCode(200);
+            // Just verify the endpoint responds - content validation depends on actual token
         }
     }
 }

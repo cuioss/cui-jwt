@@ -42,11 +42,11 @@ class MyIntegrationTest extends BaseIntegrationTest {
 
 [source,bash]
 ----
-# JVM tests
-../../mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
-
 # Native tests (5-10 minutes) -am=also make -> build all modules that are required
-../../mvnw clean verify -Pintegration-tests,native -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
+../../mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
+
+# JVM tests only
+../../mvnw clean test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 # Manual testing
 ./scripts/start-integration-container.sh

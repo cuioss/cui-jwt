@@ -48,11 +48,11 @@
         <!-- Quarkus Extensions for REST and Health -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest</artifactId>
+            <artifactId>quarkus-resteasy</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-jackson</artifactId>
+            <artifactId>quarkus-resteasy-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -125,7 +125,7 @@
     </build>
 
     <profiles>
-        <!-- Profile for running integration tests with native image -->
+        <!-- Profile for running integration tests with Maven-built native image -->
         <profile>
             <id>integration-tests</id>
             <properties>

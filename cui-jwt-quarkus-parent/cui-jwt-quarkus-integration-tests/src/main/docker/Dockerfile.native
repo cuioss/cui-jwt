@@ -1,13 +1,5 @@
-# Multi-stage build for Quarkus native container
-# Stage 1: Use pre-built native executable from Maven
-FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 AS builder
-
-# Copy the Maven project
-COPY pom.xml /project/
-COPY src /project/src/
-COPY target/cui-jwt-quarkus-integration-tests-*-runner /project/application
-
-# Stage 2: Create the application container
+# Simple deployment container for pre-built native executable
+# Expects native executable to be built by Maven before Docker build
 FROM quay.io/quarkus/quarkus-distroless-image:2.0
 
 # Security metadata and labels
@@ -20,8 +12,8 @@ LABEL security.distroless="true"
 
 WORKDIR /app
 
-# Copy the native executable from the builder stage with restrictive permissions
-COPY --from=builder --chmod=0755 --chown=root:root /project/application /app/application
+# Copy the pre-built native executable with restrictive permissions
+COPY --chmod=0755 --chown=root:root target/*-runner /app/application
 
 # Copy health check script with restrictive permissions (root ownership)
 COPY --chmod=0755 --chown=root:root src/main/docker/health-check.sh /app/health-check.sh

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -164,7 +164,7 @@ class InMemoryKeyHandlingTest {
                 .parseSignedClaims(token);
 
         assertNotNull(jws, "JWS should not be null");
-        assertEquals(tokenHolder.getSubject(), jws.getPayload().getSubject(), "Subject should match");
+        assertEquals(tokenHolder.getSubject().orElse(null), jws.getPayload().getSubject(), "Subject should match");
         assertEquals(tokenHolder.getIssuer(), jws.getPayload().getIssuer(), "Issuer should match");
     }
 
@@ -185,7 +185,7 @@ class InMemoryKeyHandlingTest {
                 .parseSignedClaims(token);
 
         assertNotNull(jws, "JWS should not be null");
-        assertEquals(tokenHolder.getSubject(), jws.getPayload().getSubject(), "Subject should match");
+        assertEquals(tokenHolder.getSubject().orElse(null), jws.getPayload().getSubject(), "Subject should match");
         assertEquals(tokenHolder.getIssuer(), jws.getPayload().getIssuer(), "Issuer should match");
     }
 

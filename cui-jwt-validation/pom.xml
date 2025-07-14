@@ -145,7 +145,6 @@
                         </goals>
                         <configuration>
                             <classifier>generators</classifier>
-                            <finalName>${project.build.finalName}</finalName>
                             <includes>
                                 <include>de/cuioss/jwt/validation/test/**</include>
                             </includes>

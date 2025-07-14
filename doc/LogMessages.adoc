@@ -1,8 +1,9 @@
 = Log Messages for JWT Token Module
-:toc: left
+:toc:
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 == Overview
 

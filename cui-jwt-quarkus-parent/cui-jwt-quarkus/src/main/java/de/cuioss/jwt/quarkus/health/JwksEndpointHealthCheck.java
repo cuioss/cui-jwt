@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,8 @@ import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -33,9 +35,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-
-import jakarta.enterprise.context.ApplicationScoped;
-
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
 
 /**
@@ -47,7 +46,9 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
  * </p>
  */
 @ApplicationScoped
-@Readiness // Marks this as a readiness check
+@Readiness
+// Marks this as a readiness check
+@RegisterForReflection(methods = false, fields = false)
 public class JwksEndpointHealthCheck implements HealthCheck {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwksEndpointHealthCheck.class);
@@ -151,7 +152,7 @@ public class JwksEndpointHealthCheck implements HealthCheck {
                 LOGGER.debug("JWKS loader status for issuer %s: %s", issuer, status);
 
                 return new EndpointResult(issuer, jwksLoader.getJwksType().toString(), status);
-            } catch (IllegalStateException | IllegalArgumentException | NullPointerException e) {
+            } catch (IllegalStateException | IllegalArgumentException e) {
                 LOGGER.warn(e, WARN.ERROR_CHECKING_JWKS_LOADER.format(issuer, e.getMessage()));
                 return new EndpointResult(issuer, JwksType.NONE.toString(), LoaderStatus.ERROR);
             }

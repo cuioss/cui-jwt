@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,11 +79,11 @@ public class TestRealm {
      */
     public static TestRealm createIntegrationRealm() {
         return new TestRealm(
-                INTEGRATION_REALM_ID,
-                INTEGRATION_CLIENT_ID,
-                INTEGRATION_CLIENT_SECRET,
-                INTEGRATION_USERNAME,
-                INTEGRATION_PASSWORD
+            INTEGRATION_REALM_ID,
+            INTEGRATION_CLIENT_ID,
+            INTEGRATION_CLIENT_SECRET,
+            INTEGRATION_USERNAME,
+            INTEGRATION_PASSWORD
         );
     }
 
@@ -94,11 +94,11 @@ public class TestRealm {
      */
     public static TestRealm createBenchmarkRealm() {
         return new TestRealm(
-                BENCHMARK_REALM_ID,
-                BENCHMARK_CLIENT_ID,
-                BENCHMARK_CLIENT_SECRET,
-                BENCHMARK_USERNAME,
-                BENCHMARK_PASSWORD
+            BENCHMARK_REALM_ID,
+            BENCHMARK_CLIENT_ID,
+            BENCHMARK_CLIENT_SECRET,
+            BENCHMARK_USERNAME,
+            BENCHMARK_PASSWORD
         );
     }
 
@@ -109,20 +109,31 @@ public class TestRealm {
      * @return TokenResponse containing access, ID, and refresh tokens
      */
     public TokenResponse obtainValidToken() {
+        return obtainValidTokenWithScopes("openid profile email");
+    }
+
+    /**
+     * Obtains a valid token from the realm with specific scopes.
+     * This method allows requesting tokens with custom scopes for testing different scenarios.
+     *
+     * @param scopes the scopes to request (e.g., "openid profile email read")
+     * @return TokenResponse containing access, ID, and refresh tokens
+     */
+    public TokenResponse obtainValidTokenWithScopes(String scopes) {
         Response tokenResponse = given()
-                .baseUri(KEYCLOAK_BASE_URL)
-                .contentType("application/x-www-form-urlencoded")
-                .formParam("client_id", clientId)
-                .formParam("client_secret", clientSecret)
-                .formParam("username", username)
-                .formParam("password", password)
-                .formParam("grant_type", "password")
-                .formParam("scope", "openid profile email")
-                .when()
-                .post(TOKEN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+            .baseUri(KEYCLOAK_BASE_URL)
+            .contentType("application/x-www-form-urlencoded")
+            .formParam("client_id", clientId)
+            .formParam("client_secret", clientSecret)
+            .formParam("username", username)
+            .formParam("password", password)
+            .formParam("grant_type", "password")
+            .formParam("scope", scopes)
+            .when()
+            .post(TOKEN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
         assertEquals(200, tokenResponse.statusCode(),
-                "Should be able to obtain tokens from " + realmIdentifier + " realm. Response: " + tokenResponse.body().asString());
+            "Should be able to obtain tokens from " + realmIdentifier + " realm with scopes: " + scopes + ". Response: " + tokenResponse.body().asString());
 
         Map<String, Object> tokenData = tokenResponse.jsonPath().getMap("");
 
@@ -139,6 +150,16 @@ public class TestRealm {
     }
 
     /**
+     * Obtains a valid token with all required scopes for bearer token tests.
+     * This includes the "read" scope which is required by the BearerToken annotations.
+     *
+     * @return TokenResponse containing access, ID, and refresh tokens with all required scopes
+     */
+    public TokenResponse obtainValidTokenWithAllScopes() {
+        return obtainValidTokenWithScopes("openid profile email read");
+    }
+
+    /**
      * Checks if the well-known endpoint is healthy/available.
      *
      * @return true if the endpoint is healthy, false otherwise
@@ -146,13 +167,13 @@ public class TestRealm {
     public boolean isWellKnownEndpointHealthy() {
         try {
             Response response = given()
-                    .baseUri(KEYCLOAK_BASE_URL)
-                    .when()
-                    .get(WELL_KNOWN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+                .baseUri(KEYCLOAK_BASE_URL)
+                .when()
+                .get(WELL_KNOWN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
             return response.statusCode() == 200 &&
-                    response.body().asString().contains("\"issuer\"") &&
-                    response.body().asString().contains("\"jwks_uri\"");
+                response.body().asString().contains("\"issuer\"") &&
+                response.body().asString().contains("\"jwks_uri\"");
         } catch (Exception e) {
             return false;
         }
@@ -166,9 +187,9 @@ public class TestRealm {
     public boolean isJwksEndpointHealthy() {
         try {
             Response response = given()
-                    .baseUri(KEYCLOAK_BASE_URL)
-                    .when()
-                    .get(CERTS_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+                .baseUri(KEYCLOAK_BASE_URL)
+                .when()
+                .get(CERTS_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
             return response.statusCode() == 200 && response.body().asString().contains("\"keys\"");
         } catch (Exception e) {
@@ -184,9 +205,9 @@ public class TestRealm {
     public boolean isKeycloakHealthy() {
         try {
             Response response = given()
-                    .baseUri(KEYCLOAK_MANAGEMENT_URL)
-                    .when()
-                    .get("/health/ready");
+                .baseUri(KEYCLOAK_MANAGEMENT_URL)
+                .when()
+                .get("/health/ready");
 
             return response.statusCode() == 200;
         } catch (Exception e) {

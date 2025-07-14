@@ -35,11 +35,12 @@ AVG_INTEGRATION_THROUGHPUT=$(jq -r '
   end
 ' "$INTEGRATION_RESULT")
 
-# Calculate average integration latency (milliseconds)
+# Calculate average integration latency (seconds)
 AVG_INTEGRATION_LATENCY=$(jq -r '
   [.[] | select(.benchmark and (.mode == "avgt" or .primaryMetric.scoreUnit == "ms/op"))] |
   if length > 0 then
-    (map(.primaryMetric.score) | add / length | . * 100 | round / 100)
+    # Convert milliseconds to seconds
+    (map(.primaryMetric.score) | add / length | . / 1000 | . * 1000000 | round / 1000000)
   else
     0
   end
@@ -51,8 +52,8 @@ INTEGRATION_SCORE=$(echo "$AVG_INTEGRATION_THROUGHPUT $AVG_INTEGRATION_LATENCY" 
   latency = $2
   if (throughput > 0 && latency > 0) {
     # Score = (throughput * 0.57) + (latency_inverted * 0.40) + (error_resilience * 0.03)
-    # Using latency in milliseconds, convert to operations per second equivalent
-    latency_inverted = 1000 / latency
+    # Using latency in seconds, convert to operations per second equivalent
+    latency_inverted = 1 / latency
     # Error resilience assumed as 0 for integration tests (no error injection)
     error_resilience = 0
     score = (throughput * 0.57) + (latency_inverted * 0.40) + (error_resilience * 0.03)
@@ -67,7 +68,7 @@ INTEGRATION_SCORE=$(echo "$AVG_INTEGRATION_THROUGHPUT $AVG_INTEGRATION_LATENCY" 
 echo "Integration Metrics:"
 echo "  Total Benchmarks: $TOTAL_BENCHMARKS"
 echo "  Avg Throughput: $AVG_INTEGRATION_THROUGHPUT ops/s"
-echo "  Avg Latency: $AVG_INTEGRATION_LATENCY ms"
+echo "  Avg Latency: $AVG_INTEGRATION_LATENCY s"
 echo "  Integration Score: $INTEGRATION_SCORE"
 
 # Create integration performance badge
@@ -112,11 +113,11 @@ EOF
 
 # Create integration latency badge
 LATENCY_COLOR="red"
-if (( $(echo "$AVG_INTEGRATION_LATENCY <= 10" | bc -l) )); then
+if (( $(echo "$AVG_INTEGRATION_LATENCY <= 0.01" | bc -l) )); then
     LATENCY_COLOR="green"
-elif (( $(echo "$AVG_INTEGRATION_LATENCY <= 25" | bc -l) )); then
+elif (( $(echo "$AVG_INTEGRATION_LATENCY <= 0.025" | bc -l) )); then
     LATENCY_COLOR="yellow"
-elif (( $(echo "$AVG_INTEGRATION_LATENCY <= 50" | bc -l) )); then
+elif (( $(echo "$AVG_INTEGRATION_LATENCY <= 0.05" | bc -l) )); then
     LATENCY_COLOR="orange"
 fi
 
@@ -124,7 +125,7 @@ cat > "$OUTPUT_DIR/integration/badges/latency-badge.json" << EOF
 {
   "schemaVersion": 1,
   "label": "Integration Latency",
-  "message": "$AVG_INTEGRATION_LATENCY ms",
+  "message": "$AVG_INTEGRATION_LATENCY s",
   "color": "$LATENCY_COLOR"
 }
 EOF

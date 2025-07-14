@@ -85,9 +85,195 @@ Basic setup steps:
 2. **Configure JWT validation** with issuer and JWKS settings
 3. **Enable health checks** with `quarkus-smallrye-health`
 4. **Add metrics monitoring** with `quarkus-micrometer`
-5. **Test your setup** using the provided test utilities
+5. **Use BearerToken CDI injection** for simplified token handling
+6. **Test your setup** using the provided test utilities
 
 For detailed configuration examples, see the xref:../cui-jwt-quarkus-integration-tests/README.adoc[Integration Tests] documentation.
+
+=== BearerToken CDI Injection
+
+The extension provides convenient CDI injection for validated bearer tokens with two approaches:
+
+==== CDI Producer Injection (Recommended for simple usage)
+
+[source,java]
+----
+@Inject
+@BearerToken
+private Instance<AccessTokenContent> accessToken;
+
+@Inject
+@BearerToken(requiredScopes = {"read", "write"})
+private Instance<AccessTokenContent> tokenWithScopes;
+
+@Inject
+@BearerToken(requiredRoles = {"admin"})
+private Instance<AccessTokenContent> tokenWithRoles;
+
+@Inject
+@BearerToken(requiredGroups = {"managers"})
+private Instance<AccessTokenContent> tokenWithGroups;
+
+@Inject
+@BearerToken(
+    requiredScopes = {"read"}, 
+    requiredRoles = {"user"}, 
+    requiredGroups = {"employees"}
+)
+private Instance<AccessTokenContent> tokenWithAllRequirements;
+----
+
+==== BearerTokenResult Injection (Recommended for detailed validation info)
+
+[source,java]
+----
+@Inject
+@BearerToken
+private BearerTokenResult tokenResult;
+
+@Inject
+@BearerToken(requiredScopes = {"read", "write"})
+private BearerTokenResult tokenResultWithScopes;
+
+@Inject
+@BearerToken(requiredRoles = {"admin"})
+private BearerTokenResult tokenResultWithRoles;
+
+@Inject
+@BearerToken(requiredGroups = {"managers"})
+private BearerTokenResult tokenResultWithGroups;
+
+@Inject
+@BearerToken(
+    requiredScopes = {"read"}, 
+    requiredRoles = {"user"}, 
+    requiredGroups = {"employees"}
+)
+private BearerTokenResult tokenResultWithAllRequirements;
+----
+
+==== Usage in JAX-RS Endpoints
+
+===== Simple CDI Producer Usage
+
+[source,java]
+----
+@Path("/api")
+@ApplicationScoped
+public class MyEndpoint {
+
+    @Inject
+    @BearerToken(requiredScopes = {"read"})
+    private Instance<AccessTokenContent> readToken;
+
+    @GET
+    @Path("/data")
+    public Response getData() {
+        if (readToken.isResolvable() && readToken.get() != null) {
+            AccessTokenContent token = readToken.get();
+            // Token is valid and has "read" scope
+            return Response.ok("Data for user: " + token.getSubject()).build();
+        } else {
+            // Token missing, invalid, or lacks required scope
+            return Response.status(401).entity("Unauthorized").build();
+        }
+    }
+}
+----
+
+===== Detailed BearerTokenResult Usage
+
+[source,java]
+----
+@Path("/api")
+@ApplicationScoped
+public class MyEndpoint {
+
+    @Inject
+    @BearerToken(requiredScopes = {"read"})
+    private BearerTokenResult tokenResult;
+
+    @GET
+    @Path("/data")
+    public Response getData() {
+        switch (tokenResult.getStatus()) {
+            case FULLY_VERIFIED:
+                AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+                return Response.ok("Data for user: " + token.getSubject()).build();
+            
+            case PARSING_ERROR:
+                // Handle parsing errors with detailed information
+                EventType eventType = tokenResult.getErrorEventType().get();
+                String message = tokenResult.getErrorMessage().get();
+                return Response.status(401)
+                    .entity("Token parsing failed: " + message)
+                    .build();
+            
+            case CONSTRAINT_VIOLATION:
+                // Handle missing scopes/roles/groups
+                return Response.status(403)
+                    .entity("Insufficient permissions")
+                    .build();
+            
+            case NO_TOKEN_GIVEN:
+                return Response.status(401)
+                    .entity("No token provided")
+                    .build();
+            
+            case COULD_NOT_ACCESS_REQUEST:
+                return Response.status(500)
+                    .entity("Request context unavailable")
+                    .build();
+            
+            default:
+                return Response.status(500)
+                    .entity("Unknown validation error")
+                    .build();
+        }
+    }
+}
+----
+
+===== Direct Service Usage
+
+[source,java]
+----
+@Path("/api")
+@ApplicationScoped
+public class MyEndpoint {
+
+    @Inject
+    private BearerTokenProducer tokenProducer;
+
+    @GET
+    @Path("/data")
+    public Response getData() {
+        BearerTokenResult result = tokenProducer.getBearerTokenResult(
+            List.of("read"), 
+            List.of("user"), 
+            List.of("employees")
+        );
+        
+        if (result.isSuccessful()) {
+            AccessTokenContent token = result.getAccessTokenContent().get();
+            return Response.ok("Data for user: " + token.getSubject()).build();
+        } else {
+            return Response.status(401)
+                .entity("Token validation failed: " + result.getStatus())
+                .build();
+        }
+    }
+}
+----
+
+The `@BearerToken` annotation automatically:
+
+* Extracts tokens from the `Authorization` header
+* Validates JWT signatures and claims
+* Checks scope, role, and group requirements
+* Returns `null` for invalid or missing tokens (CDI producer)
+* Provides detailed validation information via `BearerTokenResult`
+* Provides request-scoped token instances
 
 == Additional Resources
 
