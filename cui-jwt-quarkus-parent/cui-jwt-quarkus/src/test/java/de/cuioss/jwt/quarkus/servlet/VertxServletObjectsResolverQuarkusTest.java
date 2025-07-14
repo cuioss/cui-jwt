@@ -21,15 +21,20 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
@@ -37,14 +42,18 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Quarkus integration tests for {@link VertxServletObjectsResolver}.
+ * Quarkus integration tests for {@link VertxServletObjectsResolver} and {@link VertxHttpServletRequestAdapter}.
+ *
+ * <p>These tests verify the functionality of the VertxHttpServletRequestAdapter in a real Quarkus environment
+ * with actual HTTP requests. This complements the unit tests in {@link VertxHttpServletRequestAdapterUnsupportedOperationsTest}
+ * which focus on the UnsupportedOperationException cases.</p>
  *
  * @author Oliver Wolff
  * @since 1.0
  */
 @QuarkusTest
 @TestProfile(JwtTestProfile.class)
-@DisplayName("VertxServletObjectsResolver Quarkus Integration Tests")
+@DisplayName("VertxServletObjectsResolver and VertxHttpServletRequestAdapter Integration Tests")
 class VertxServletObjectsResolverQuarkusTest {
 
     @Inject
@@ -77,6 +86,105 @@ class VertxServletObjectsResolverQuarkusTest {
                 "HeaderMap should be available during active REST request");
         assertTrue(response.contains("HeaderCount: "),
                 "Header count should be reported");
+        assertTrue(response.contains("AuthHeader: Bearer vertx-test-token"),
+                "Authorization header should be correctly retrieved");
+    }
+
+    @Test
+    @DisplayName("Should correctly handle request parameters")
+    void shouldHandleRequestParameters() {
+        // Make HTTP request with query parameters
+        String response = given()
+                .queryParam("param1", "value1")
+                .queryParam("param2", "value2")
+                .queryParam("param2", "value3") // Multiple values for same parameter
+                .when()
+                .get("/test/parameters")
+                .then()
+                .statusCode(200)
+                .contentType("text/plain")
+                .extract()
+                .asString();
+
+        // Verify parameter handling
+        assertTrue(response.contains("param1=value1"),
+                "Single parameter should be correctly retrieved");
+        assertTrue(response.contains("param2=[value2, value3]"),
+                "Multiple values for same parameter should be correctly retrieved");
+        assertTrue(response.contains("parameterNames: param1,param2"),
+                "Parameter names should be correctly enumerated");
+    }
+
+    @Test
+    @DisplayName("Should correctly handle request URI and URL")
+    void shouldHandleRequestUriAndUrl() {
+        // Make HTTP request to test URI/URL handling
+        String response = given()
+                .when()
+                .get("/test/uri-url/segment1/segment2")
+                .then()
+                .statusCode(200)
+                .contentType("text/plain")
+                .extract()
+                .asString();
+
+        // Verify URI/URL handling
+        assertTrue(response.contains("URI: /test/uri-url/segment1/segment2"),
+                "Request URI should be correctly retrieved");
+        assertTrue(response.contains("URL: http"),
+                "Request URL should be correctly retrieved and contain scheme");
+        assertTrue(response.contains("ServletPath: /test/uri-url/segment1/segment2"),
+                "Servlet path should be correctly retrieved");
+        assertTrue(response.contains("Method: GET"),
+                "Request method should be correctly retrieved");
+        assertTrue(response.contains("Protocol: HTTP"),
+                "Protocol should be correctly retrieved");
+    }
+
+    @Test
+    @DisplayName("Should correctly handle cookies")
+    void shouldHandleCookies() {
+        // Make HTTP request with cookies
+        String response = given()
+                .cookie("testCookie1", "cookieValue1")
+                .cookie("testCookie2", "cookieValue2")
+                .when()
+                .get("/test/cookies")
+                .then()
+                .statusCode(200)
+                .contentType("text/plain")
+                .extract()
+                .asString();
+
+        // Verify cookie handling
+        assertTrue(response.contains("Cookie count: 2"),
+                "Cookie count should be correctly reported");
+        assertTrue(response.contains("testCookie1=cookieValue1"),
+                "First cookie should be correctly retrieved");
+        assertTrue(response.contains("testCookie2=cookieValue2"),
+                "Second cookie should be correctly retrieved");
+    }
+
+    @Test
+    @DisplayName("Should correctly handle request attributes")
+    void shouldHandleRequestAttributes() {
+        // Make HTTP request to test attributes
+        String response = given()
+                .when()
+                .get("/test/attributes")
+                .then()
+                .statusCode(200)
+                .contentType("text/plain")
+                .extract()
+                .asString();
+
+        // Verify attribute handling
+        assertTrue(response.contains("Attribute1: value1"),
+                "First attribute should be correctly set and retrieved");
+        assertTrue(response.contains("Attribute2: value2"),
+                "Second attribute should be correctly set and retrieved");
+        assertTrue(response.contains("Attribute names: attr1,attr2"),
+                "Attribute names should be correctly enumerated");
     }
 
     /**
@@ -115,6 +223,129 @@ class VertxServletObjectsResolverQuarkusTest {
             }
 
             return Response.ok(result).build();
+        }
+
+        @GET
+        @Path("/parameters")
+        @Produces(MediaType.TEXT_PLAIN)
+        public Response testParameters() {
+            try {
+                HttpServletRequest request = resolver.resolveHttpServletRequest();
+
+                StringBuilder result = new StringBuilder();
+
+                // Test single parameter
+                result.append("param1=").append(request.getParameter("param1")).append("\n");
+
+                // Test multiple values for same parameter
+                String[] param2Values = request.getParameterValues("param2");
+                result.append("param2=").append(Arrays.toString(param2Values)).append("\n");
+
+                // Test parameter names enumeration
+                Enumeration<String> paramNames = request.getParameterNames();
+                List<String> namesList = Collections.list(paramNames);
+                result.append("parameterNames: ").append(String.join(",", namesList)).append("\n");
+
+                // Test parameter map
+                Map<String, String[]> paramMap = request.getParameterMap();
+                result.append("parameterMap size: ").append(paramMap.size()).append("\n");
+
+                return Response.ok(result.toString()).build();
+            } catch (Exception e) {
+                return Response.serverError().entity("Error: " + e.getMessage()).build();
+            }
+        }
+
+        @GET
+        @Path("/uri-url/{segment1}/{segment2}")
+        @Produces(MediaType.TEXT_PLAIN)
+        public Response testUriAndUrl(@PathParam("segment1") String segment1, @PathParam("segment2") String segment2) {
+            try {
+                HttpServletRequest request = resolver.resolveHttpServletRequest();
+
+                StringBuilder result = new StringBuilder();
+
+                // Test URI
+                result.append("URI: ").append(request.getRequestURI()).append("\n");
+
+                // Test URL
+                result.append("URL: ").append(request.getRequestURL()).append("\n");
+
+                // Test servlet path
+                result.append("ServletPath: ").append(request.getServletPath()).append("\n");
+
+                // Test method
+                result.append("Method: ").append(request.getMethod()).append("\n");
+
+                // Test protocol
+                result.append("Protocol: ").append(request.getProtocol()).append("\n");
+
+                // Test scheme
+                result.append("Scheme: ").append(request.getScheme()).append("\n");
+
+                // Test server name and port
+                result.append("ServerName: ").append(request.getServerName()).append("\n");
+                result.append("ServerPort: ").append(request.getServerPort()).append("\n");
+
+                return Response.ok(result.toString()).build();
+            } catch (Exception e) {
+                return Response.serverError().entity("Error: " + e.getMessage()).build();
+            }
+        }
+
+        @GET
+        @Path("/cookies")
+        @Produces(MediaType.TEXT_PLAIN)
+        public Response testCookies() {
+            try {
+                HttpServletRequest request = resolver.resolveHttpServletRequest();
+
+                StringBuilder result = new StringBuilder();
+
+                // Test cookies
+                Cookie[] cookies = request.getCookies();
+                result.append("Cookie count: ").append(cookies != null ? cookies.length : 0).append("\n");
+
+                if (cookies != null) {
+                    for (Cookie cookie : cookies) {
+                        result.append(cookie.getName()).append("=").append(cookie.getValue()).append("\n");
+                    }
+                }
+
+                return Response.ok(result.toString()).build();
+            } catch (Exception e) {
+                return Response.serverError().entity("Error: " + e.getMessage()).build();
+            }
+        }
+
+        @GET
+        @Path("/attributes")
+        @Produces(MediaType.TEXT_PLAIN)
+        public Response testAttributes() {
+            try {
+                HttpServletRequest request = resolver.resolveHttpServletRequest();
+
+                // Set attributes
+                request.setAttribute("attr1", "value1");
+                request.setAttribute("attr2", "value2");
+
+                StringBuilder result = new StringBuilder();
+
+                // Test attribute retrieval
+                result.append("Attribute1: ").append(request.getAttribute("attr1")).append("\n");
+                result.append("Attribute2: ").append(request.getAttribute("attr2")).append("\n");
+
+                // Test attribute names enumeration
+                Enumeration<String> attrNames = request.getAttributeNames();
+                List<String> namesList = Collections.list(attrNames);
+                // Sort the names to ensure consistent order for testing
+                Collections.sort(namesList);
+                result.append("Attribute names: ").append(String.join(",", namesList)).append("\n");
+
+                return Response.ok(result.toString()).build();
+            } catch (Exception e) {
+                return Response.serverError().entity("Error: " + e.getMessage()).build();
+            }
         }
     }
 }

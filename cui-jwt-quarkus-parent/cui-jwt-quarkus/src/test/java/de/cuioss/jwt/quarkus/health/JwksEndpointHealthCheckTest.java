@@ -16,17 +16,29 @@
 package de.cuioss.jwt.quarkus.health;
 
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
+import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.jwks.JwksLoader;
+import de.cuioss.jwt.validation.jwks.JwksType;
+import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.jwt.validation.jwks.key.KeyInfo;
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
+import lombok.NonNull;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
@@ -163,4 +175,259 @@ class JwksEndpointHealthCheckTest {
                 "Should contain endpoint data for valid configuration");
     }
 
+    @Test
+    @DisplayName("Health check should handle empty issuer configs")
+    void healthCheckEmptyIssuerConfigs() {
+        // Create a health check with empty issuer configs
+        JwksEndpointHealthCheck emptyHealthCheck = new JwksEndpointHealthCheck(
+                Collections.emptyList(), 30);
+
+        // Call the health check
+        HealthCheckResponse response = emptyHealthCheck.call();
+
+        // Verify response
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HealthCheckResponse.Status.DOWN, response.getStatus(),
+                "Health check status should be DOWN with empty issuer configs");
+        assertEquals("jwks-endpoints", response.getName(),
+                "Health check should have correct name");
+
+        assertTrue(response.getData().isPresent(), "Data should be present");
+        Map<String, Object> data = response.getData().get();
+        assertTrue(data.containsKey("error"),
+                "Should contain error data for empty issuer configs");
+        assertEquals("No issuer configurations found", data.get("error"),
+                "Error message should indicate no issuer configs");
+    }
+
+    @Test
+    @DisplayName("Health check should handle error in JwksLoader")
+    void healthCheckJwksLoaderError() {
+        // Create a mock IssuerConfig with a JwksLoader that throws an exception
+        IssuerConfig errorIssuerConfig = IssuerConfig.builder()
+                .issuerIdentifier("error-issuer")
+                .jwksLoader(new ErrorJwksLoader())
+                .build();
+
+        // Create a health check with the error issuer config
+        JwksEndpointHealthCheck errorHealthCheck = new JwksEndpointHealthCheck(
+                List.of(errorIssuerConfig), 30);
+
+        // Call the health check
+        HealthCheckResponse response = errorHealthCheck.call();
+
+        // Verify response
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HealthCheckResponse.Status.DOWN, response.getStatus(),
+                "Health check status should be DOWN with error in JwksLoader");
+        assertEquals("jwks-endpoints", response.getName(),
+                "Health check should have correct name");
+
+        assertTrue(response.getData().isPresent(), "Data should be present");
+        Map<String, Object> data = response.getData().get();
+        assertTrue(data.containsKey("checkedEndpoints"),
+                "Should contain endpoint count");
+        assertEquals(1, ((Number) data.get("checkedEndpoints")).intValue(),
+                "Should have checked 1 endpoint");
+
+        // Check for issuer-specific data
+        assertTrue(data.containsKey("issuer.0.url"),
+                "Should contain URL for issuer.0");
+        assertEquals("error-issuer", data.get("issuer.0.url"),
+                "URL should match issuer identifier");
+        assertTrue(data.containsKey("issuer.0.jwksType"),
+                "Should contain jwksType for issuer.0");
+        assertEquals("none", data.get("issuer.0.jwksType"),
+                "jwksType should be 'none'");
+        assertTrue(data.containsKey("issuer.0.status"),
+                "Should contain status for issuer.0");
+        assertEquals("DOWN", data.get("issuer.0.status"),
+                "Status should be DOWN");
+    }
+
+    @Test
+    @DisplayName("Health check should handle mixed healthy and unhealthy endpoints")
+    void healthCheckMixedEndpoints() {
+        // Create a healthy issuer config
+        IssuerConfig healthyIssuerConfig = IssuerConfig.builder()
+                .issuerIdentifier("healthy-issuer")
+                .jwksLoader(new HealthyJwksLoader())
+                .build();
+
+        // Create an unhealthy issuer config
+        IssuerConfig unhealthyIssuerConfig = IssuerConfig.builder()
+                .issuerIdentifier("unhealthy-issuer")
+                .jwksLoader(new UnhealthyJwksLoader())
+                .build();
+
+        // Create a health check with both issuer configs
+        JwksEndpointHealthCheck mixedHealthCheck = new JwksEndpointHealthCheck(
+                List.of(healthyIssuerConfig, unhealthyIssuerConfig), 30);
+
+        // Call the health check
+        HealthCheckResponse response = mixedHealthCheck.call();
+
+        // Verify response
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HealthCheckResponse.Status.DOWN, response.getStatus(),
+                "Health check status should be DOWN with mixed endpoints");
+        assertEquals("jwks-endpoints", response.getName(),
+                "Health check should have correct name");
+
+        assertTrue(response.getData().isPresent(), "Data should be present");
+        Map<String, Object> data = response.getData().get();
+        assertTrue(data.containsKey("checkedEndpoints"),
+                "Should contain endpoint count");
+        assertEquals(2, ((Number) data.get("checkedEndpoints")).intValue(),
+                "Should have checked 2 endpoints");
+
+        // Check for healthy issuer data
+        assertTrue(data.containsKey("issuer.0.url"),
+                "Should contain URL for issuer.0");
+        assertEquals("healthy-issuer", data.get("issuer.0.url"),
+                "URL should match healthy issuer identifier");
+        assertTrue(data.containsKey("issuer.0.jwksType"),
+                "Should contain jwksType for issuer.0");
+        assertEquals("memory", data.get("issuer.0.jwksType"),
+                "jwksType should be 'memory'");
+        assertTrue(data.containsKey("issuer.0.status"),
+                "Should contain status for issuer.0");
+        assertEquals("UP", data.get("issuer.0.status"),
+                "Status should be UP");
+
+        // Check for unhealthy issuer data
+        assertTrue(data.containsKey("issuer.1.url"),
+                "Should contain URL for issuer.1");
+        assertEquals("unhealthy-issuer", data.get("issuer.1.url"),
+                "URL should match unhealthy issuer identifier");
+        assertTrue(data.containsKey("issuer.1.jwksType"),
+                "Should contain jwksType for issuer.1");
+        assertEquals("memory", data.get("issuer.1.jwksType"),
+                "jwksType should be 'memory'");
+        assertTrue(data.containsKey("issuer.1.status"),
+                "Should contain status for issuer.1");
+        assertEquals("DOWN", data.get("issuer.1.status"),
+                "Status should be DOWN");
+    }
+
+    @Test
+    @DisplayName("Health check should handle cache expiration")
+    void healthCheckCacheExpiration() {
+        // Create a health check with a very short cache timeout (1 millisecond)
+        JwksEndpointHealthCheck shortCacheHealthCheck = new JwksEndpointHealthCheck(
+                List.of(IssuerConfig.builder()
+                        .issuerIdentifier("cache-test-issuer")
+                        .jwksLoader(new HealthyJwksLoader())
+                        .build()),
+                1);
+
+        // First call should create a new response
+        HealthCheckResponse response1 = shortCacheHealthCheck.call();
+        assertNotNull(response1, "First response should not be null");
+
+        // Wait for cache to expire using Awaitility
+        await().atLeast(10, TimeUnit.MILLISECONDS);
+
+        // Second call should create a new response after cache expiration
+        HealthCheckResponse response2 = shortCacheHealthCheck.call();
+        assertNotNull(response2, "Second response should not be null");
+
+        // Both responses should have the same status and data structure
+        assertEquals(response1.getStatus(), response2.getStatus(),
+                "Both responses should have the same status");
+        assertEquals(response1.getName(), response2.getName(),
+                "Both responses should have the same name");
+    }
+
+    // Mock JwksLoader implementations for testing
+
+    /**
+     * JwksLoader that throws an exception when getJwksType() is called.
+     */
+    private static class ErrorJwksLoader implements JwksLoader {
+        @Override
+        public Optional<KeyInfo> getKeyInfo(String kid) {
+            return Optional.empty();
+        }
+
+        @Override
+        public JwksType getJwksType() {
+            throw new IllegalStateException("Simulated error in JwksLoader");
+        }
+
+        @Override
+        public Optional<String> getIssuerIdentifier() {
+            return Optional.empty();
+        }
+
+        @Override
+        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+            // Do nothing
+        }
+
+        @Override
+        public LoaderStatus isHealthy() {
+            return LoaderStatus.ERROR;
+        }
+    }
+
+    /**
+     * JwksLoader that always returns a healthy status.
+     */
+    private static class HealthyJwksLoader implements JwksLoader {
+        @Override
+        public Optional<KeyInfo> getKeyInfo(String kid) {
+            return Optional.empty();
+        }
+
+        @Override
+        public JwksType getJwksType() {
+            return JwksType.MEMORY;
+        }
+
+        @Override
+        public Optional<String> getIssuerIdentifier() {
+            return Optional.empty();
+        }
+
+        @Override
+        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+            // Do nothing
+        }
+
+        @Override
+        public LoaderStatus isHealthy() {
+            return LoaderStatus.OK;
+        }
+    }
+
+    /**
+     * JwksLoader that always returns an unhealthy status.
+     */
+    private static class UnhealthyJwksLoader implements JwksLoader {
+        @Override
+        public Optional<KeyInfo> getKeyInfo(String kid) {
+            return Optional.empty();
+        }
+
+        @Override
+        public JwksType getJwksType() {
+            return JwksType.MEMORY;
+        }
+
+        @Override
+        public Optional<String> getIssuerIdentifier() {
+            return Optional.empty();
+        }
+
+        @Override
+        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+            // Do nothing
+        }
+
+        @Override
+        public LoaderStatus isHealthy() {
+            return LoaderStatus.ERROR;
+        }
+    }
 }
