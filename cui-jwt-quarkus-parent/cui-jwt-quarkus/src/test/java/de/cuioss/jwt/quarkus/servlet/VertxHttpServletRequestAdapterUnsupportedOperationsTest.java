@@ -37,12 +37,12 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "getAuthType", "getRemoteUser", "isUserInRole", "getUserPrincipal",
-            "getRequestedSessionId", "getSession", "changeSessionId",
+            "getRequestedSessionId", "getSession", "getSessionWithBoolean", "changeSessionId",
             "isRequestedSessionIdValid", "isRequestedSessionIdFromCookie",
             "isRequestedSessionIdFromURL", "authenticate", "login", "logout",
             "getParts", "getPart", "upgrade", "getInputStream", "getReader",
-            "getRequestDispatcher", "getServletContext", "startAsync",
-            "getAsyncContext", "getServletConnection"
+            "getRequestDispatcher", "getServletContext", "startAsync", "startAsyncWithParams",
+            "getAsyncContext", "getServletConnection", "getPathTranslated"
     })
     @DisplayName("Should throw UnsupportedOperationException for unsupported methods")
     @SuppressWarnings("java:S5961")
@@ -72,6 +72,9 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
                 break;
             case "getSession":
                 exception = assertThrows(UnsupportedOperationException.class, adapter::getSession);
+                break;
+            case "getSessionWithBoolean":
+                exception = assertThrows(UnsupportedOperationException.class, () -> adapter.getSession(true));
                 break;
             case "changeSessionId":
                 exception = assertThrows(UnsupportedOperationException.class, adapter::changeSessionId);
@@ -118,11 +121,17 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
             case "startAsync":
                 exception = assertThrows(UnsupportedOperationException.class, adapter::startAsync);
                 break;
+            case "startAsyncWithParams":
+                exception = assertThrows(UnsupportedOperationException.class, () -> adapter.startAsync(null, null));
+                break;
             case "getAsyncContext":
                 exception = assertThrows(UnsupportedOperationException.class, adapter::getAsyncContext);
                 break;
             case "getServletConnection":
                 exception = assertThrows(UnsupportedOperationException.class, adapter::getServletConnection);
+                break;
+            case "getPathTranslated":
+                exception = assertThrows(UnsupportedOperationException.class, adapter::getPathTranslated);
                 break;
             default:
                 fail("Unknown method: " + methodName);
@@ -139,4 +148,14 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
     }
 
 
+    @org.junit.jupiter.api.Test
+    @DisplayName("getContextPath should return empty string")
+    void getContextPathShouldReturnEmptyString() {
+        TestHttpServerRequest testRequest = new TestHttpServerRequest();
+        VertxHttpServletRequestAdapter adapter = new VertxHttpServletRequestAdapter(testRequest);
+
+        String contextPath = adapter.getContextPath();
+
+        assertEquals("", contextPath, "Context path should be an empty string");
+    }
 }

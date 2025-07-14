@@ -187,6 +187,34 @@ class VertxServletObjectsResolverQuarkusTest {
                 "Attribute names should be correctly enumerated");
     }
 
+    @Test
+    @DisplayName("Should correctly handle content-related methods")
+    void shouldHandleContentRelatedMethods() {
+        // Make HTTP request with content-related headers
+        String response = given()
+                .header("Content-Type", "application/json; charset=UTF-8")
+                .header("Content-Length", "256")
+                .when()
+                .get("/test/content-info")
+                .then()
+                .statusCode(200)
+                .contentType("text/plain")
+                .extract()
+                .asString();
+
+        // Verify content-related methods
+        assertTrue(response.contains("CharacterEncoding: UTF-8"),
+                "Character encoding should be correctly extracted from Content-Type header");
+        assertTrue(response.contains("ContentType: application/json; charset=UTF-8"),
+                "Content type should be correctly retrieved");
+        assertTrue(response.contains("ContentLength: 256"),
+                "Content length should be correctly retrieved as int");
+        assertTrue(response.contains("ContentLengthLong: 256"),
+                "Content length should be correctly retrieved as long");
+        assertTrue(response.contains("SetCharacterEncoding: ISO-8859-1"),
+                "Setting character encoding should be validated");
+    }
+
     /**
      * Test endpoint that uses the Vertx servlet resolver during HTTP request.
      * This is a proper JAX-RS resource with @RequestScoped to ensure it's in the right context.
@@ -341,6 +369,44 @@ class VertxServletObjectsResolverQuarkusTest {
                 // Sort the names to ensure consistent order for testing
                 Collections.sort(namesList);
                 result.append("Attribute names: ").append(String.join(",", namesList)).append("\n");
+
+                return Response.ok(result.toString()).build();
+            } catch (Exception e) {
+                return Response.serverError().entity("Error: " + e.getMessage()).build();
+            }
+        }
+
+        @GET
+        @Path("/content-info")
+        @Produces(MediaType.TEXT_PLAIN)
+        public Response testContentInfo() {
+            try {
+                HttpServletRequest request = resolver.resolveHttpServletRequest();
+                StringBuilder result = new StringBuilder();
+
+                // Test getContentType
+                String contentType = request.getContentType();
+                result.append("ContentType: ").append(contentType).append("\n");
+
+                // Test getCharacterEncoding
+                String characterEncoding = request.getCharacterEncoding();
+                result.append("CharacterEncoding: ").append(characterEncoding).append("\n");
+
+                // Test getContentLength
+                int contentLength = request.getContentLength();
+                result.append("ContentLength: ").append(contentLength).append("\n");
+
+                // Test getContentLengthLong
+                long contentLengthLong = request.getContentLengthLong();
+                result.append("ContentLengthLong: ").append(contentLengthLong).append("\n");
+
+                // Test setCharacterEncoding
+                try {
+                    request.setCharacterEncoding("ISO-8859-1");
+                    result.append("SetCharacterEncoding: ISO-8859-1\n");
+                } catch (Exception e) {
+                    result.append("SetCharacterEncoding Error: ").append(e.getMessage()).append("\n");
+                }
 
                 return Response.ok(result.toString()).build();
             } catch (Exception e) {
