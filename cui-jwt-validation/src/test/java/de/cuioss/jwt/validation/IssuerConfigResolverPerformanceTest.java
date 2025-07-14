@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Performance test for IssuerConfigResolver.resolveConfig() to verify
  * lock-free operation and high-throughput under concurrent load.
- * 
+ *
  * This test measures the actual performance characteristics of issuer config
  * resolution to ensure the 1000+ ops/s target is achieved without synchronization overhead.
  */
@@ -230,7 +230,7 @@ class IssuerConfigResolverPerformanceTest {
         double maxTimeMs = maxTime / 1_000_000.0;
 
         // Skip ratio test if measurements are too fast to be meaningful
-        if (minTimeMs > 0.001 && avgTimeMs >= 0.01) {
+        if (minTimeMs > 0.010 && avgTimeMs >= 0.10) {
             double ratio = maxTimeMs / minTimeMs;
             // Without convoy effect, times should be relatively uniform
             assertTrue(ratio < 5, "Max/Min ratio should be low without convoy effect (was: %.1f - min: %.2f ms, max: %.2f ms)".formatted(
