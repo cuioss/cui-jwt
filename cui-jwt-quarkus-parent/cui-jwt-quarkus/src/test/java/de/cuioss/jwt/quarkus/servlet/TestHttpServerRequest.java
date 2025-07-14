@@ -42,7 +42,7 @@ import java.util.Set;
  * @author Oliver Wolff
  * @since 1.0
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal"})
 public class TestHttpServerRequest implements HttpServerRequest {
     @Override
     public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {

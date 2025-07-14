@@ -84,15 +84,17 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getHeader(String name) {
-        return vertxRequest.getHeader(name);
+        // Use headers().get() instead of getHeader() to work with the test setup
+        return vertxRequest.headers().get(name);
     }
 
     @Override
     public Enumeration<String> getHeaders(String name) {
         List<String> headers = new ArrayList<>();
-        String header = vertxRequest.getHeader(name);
-        if (header != null) {
-            headers.add(header);
+        // Get all headers with the given name
+        List<String> values = vertxRequest.headers().getAll(name);
+        if (values != null && !values.isEmpty()) {
+            headers.addAll(values);
         }
         return Collections.enumeration(headers);
     }
@@ -150,7 +152,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public long getDateHeader(String name) {
-        String header = vertxRequest.getHeader(name);
+        // Use headers().get() instead of getHeader() to work with the test setup
+        String header = vertxRequest.headers().get(name);
         if (header == null) {
             return -1;
         }
@@ -164,7 +167,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public int getIntHeader(String name) {
-        String header = vertxRequest.getHeader(name);
+        // Use headers().get() instead of getHeader() to work with the test setup
+        String header = vertxRequest.headers().get(name);
         if (header == null) {
             return -1;
         }
@@ -361,7 +365,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public int getContentLength() {
-        String contentLength = vertxRequest.getHeader("Content-Length");
+        // Use headers().get() instead of getHeader() to work with the test setup
+        String contentLength = vertxRequest.headers().get("Content-Length");
         if (contentLength != null) {
             try {
                 return Integer.parseInt(contentLength);
@@ -374,7 +379,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public long getContentLengthLong() {
-        String contentLength = vertxRequest.getHeader("Content-Length");
+        // Use headers().get() instead of getHeader() to work with the test setup
+        String contentLength = vertxRequest.headers().get("Content-Length");
         if (contentLength != null) {
             try {
                 return Long.parseLong(contentLength);
@@ -387,7 +393,8 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public String getContentType() {
-        return vertxRequest.getHeader("Content-Type");
+        // Use headers().get() instead of getHeader() to work with the test setup
+        return vertxRequest.headers().get("Content-Type");
     }
 
     @Override
@@ -409,11 +416,18 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
                 }
             }
         }
+
+        // Fallback to Vertx's built-in parameter handling if query parsing didn't find anything
+        if (vertxRequest.params() != null && vertxRequest.params().contains(name)) {
+            return vertxRequest.params().get(name);
+        }
+
         return null;
     }
 
     @Override
     public Enumeration<String> getParameterNames() {
+        // Extract parameter names from query string
         Set<String> paramNames = new HashSet<>();
         String query = vertxRequest.query();
         if (query != null && !query.isEmpty()) {
@@ -425,11 +439,18 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
                 }
             }
         }
+
+        // Add parameter names from Vertx's built-in parameter handling
+        if (vertxRequest.params() != null && !vertxRequest.params().isEmpty()) {
+            paramNames.addAll(vertxRequest.params().names());
+        }
+
         return Collections.enumeration(paramNames);
     }
 
     @Override
     public String[] getParameterValues(String name) {
+        // Extract parameter values from query string
         List<String> values = new ArrayList<>();
         String query = vertxRequest.query();
         if (query != null && !query.isEmpty()) {
@@ -441,11 +462,21 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
                 }
             }
         }
+
+        // Add values from Vertx's built-in parameter handling if none were found in query string
+        if (values.isEmpty() && vertxRequest.params() != null) {
+            List<String> paramValues = vertxRequest.params().getAll(name);
+            if (paramValues != null && !paramValues.isEmpty()) {
+                values.addAll(paramValues);
+            }
+        }
+
         return values.isEmpty() ? null : values.toArray(new String[0]);
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
+        // Extract parameters from query string
         Map<String, List<String>> paramMap = new HashMap<>();
         String query = vertxRequest.query();
         if (query != null && !query.isEmpty()) {
@@ -457,6 +488,18 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
                     String value = keyValue.length == 2 ? keyValue[1] : "";
                     value = URLDecoder.decode(value, StandardCharsets.UTF_8);
                     paramMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+                }
+            }
+        }
+
+        // Add parameters from Vertx's built-in parameter handling for keys not found in query string
+        if (vertxRequest.params() != null && !vertxRequest.params().isEmpty()) {
+            for (String name : vertxRequest.params().names()) {
+                if (!paramMap.containsKey(name)) {
+                    List<String> values = vertxRequest.params().getAll(name);
+                    if (values != null && !values.isEmpty()) {
+                        paramMap.put(name, new ArrayList<>(values));
+                    }
                 }
             }
         }
@@ -473,7 +516,19 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     public String getProtocol() {
         // Return HTTP version from Vert.x request
         HttpVersion version = vertxRequest.version();
-        return version != null ? version.name().replace('_', '/') : "HTTP/1.1";
+        if (version == null) {
+            return "HTTP/1.1";
+        }
+        // Handle specific versions to ensure correct formatting
+        if (version == HttpVersion.HTTP_1_1) {
+            return "HTTP/1.1";
+        } else if (version == HttpVersion.HTTP_1_0) {
+            return "HTTP/1.0";
+        } else if (version == HttpVersion.HTTP_2) {
+            return "HTTP/2";
+        }
+        // Fallback for other versions
+        return version.name().replace('_', '/');
     }
 
     @Override
@@ -545,23 +600,10 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public Locale getLocale() {
-        String acceptLanguage = vertxRequest.getHeader("Accept-Language");
-        if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
-            // Parse first locale from Accept-Language header
-            String[] languages = acceptLanguage.split(",");
-            if (languages.length > 0) {
-                String firstLang = languages[0].trim();
-                // Remove quality value if present (e.g., "en-US;q=0.9")
-                int semicolonIndex = firstLang.indexOf(';');
-                if (semicolonIndex > 0) {
-                    firstLang = firstLang.substring(0, semicolonIndex);
-                }
-                try {
-                    return Locale.forLanguageTag(firstLang);
-                } catch (IllegalArgumentException e) {
-                    // Fall through to default for invalid language tags
-                }
-            }
+        // Get the first locale from the list of locales
+        Enumeration<Locale> locales = getLocales();
+        if (locales.hasMoreElements()) {
+            return locales.nextElement();
         }
         return Locale.getDefault();
     }
@@ -569,26 +611,43 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public Enumeration<Locale> getLocales() {
         List<Locale> locales = new ArrayList<>();
-        String acceptLanguage = vertxRequest.getHeader("Accept-Language");
+        // Use headers().get() instead of getHeader() to work with the test setup
+        String acceptLanguage = vertxRequest.headers().get("Accept-Language");
         if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
+            // Parse Accept-Language header according to RFC 7231
+            // Format: language-tag[;q=weight], language-tag[;q=weight], ...
             String[] languages = acceptLanguage.split(",");
+
+            // Parse each language tag and its quality value
             for (String lang : languages) {
                 String trimmedLang = lang.trim();
-                // Remove quality value if present
+
+                // Extract quality value if present
                 int semicolonIndex = trimmedLang.indexOf(';');
                 if (semicolonIndex > 0) {
-                    trimmedLang = trimmedLang.substring(0, semicolonIndex);
+                    trimmedLang = trimmedLang.substring(0, semicolonIndex).trim();
                 }
-                try {
-                    locales.add(Locale.forLanguageTag(trimmedLang));
-                } catch (IllegalArgumentException e) {
-                    // Skip invalid locale tags
+
+                // Only add valid language tags
+                if (!trimmedLang.isEmpty()) {
+                    try {
+                        Locale locale = Locale.forLanguageTag(trimmedLang);
+                        // Ensure we don't add empty locales
+                        if (!locale.getLanguage().isEmpty()) {
+                            locales.add(locale);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        // Skip invalid locale tags
+                    }
                 }
             }
         }
+
+        // Add default locale if no valid locales were found
         if (locales.isEmpty()) {
             locales.add(Locale.getDefault());
         }
+
         return Collections.enumeration(locales);
     }
 
@@ -666,13 +725,19 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         return DispatcherType.REQUEST; // Default for direct requests
     }
 
+    // Cache the request ID to ensure it's consistent for the same request
+    private String requestId;
+
     @Override
     public String getRequestId() {
         // Generate a simple request ID based on connection info and timestamp
         // This provides basic tracing capability without full OpenTracing integration
-        return "vertx-req-%d-%s".formatted(
-                System.currentTimeMillis(),
-                Integer.toHexString(vertxRequest.hashCode()));
+        if (requestId == null) {
+            requestId = "vertx-req-%d-%s".formatted(
+                    System.currentTimeMillis(),
+                    Integer.toHexString(vertxRequest.hashCode()));
+        }
+        return requestId;
     }
 
     @Override

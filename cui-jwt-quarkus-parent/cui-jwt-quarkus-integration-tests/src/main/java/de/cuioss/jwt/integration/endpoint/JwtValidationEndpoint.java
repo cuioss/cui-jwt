@@ -27,6 +27,8 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -275,7 +277,7 @@ public class JwtValidationEndpoint {
     public record ValidationResponse(boolean valid, String message, Map<String, Object> data) {
         // Convenience constructor for backwards compatibility
         public ValidationResponse(boolean valid, String message) {
-            this(valid, message, null);
+            this(valid, message, Collections.emptyMap());
         }
     }
 }
