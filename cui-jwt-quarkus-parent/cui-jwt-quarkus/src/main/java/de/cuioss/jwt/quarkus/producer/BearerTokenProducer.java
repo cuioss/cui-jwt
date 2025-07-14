@@ -269,7 +269,6 @@ public class BearerTokenProducer {
     public BearerTokenResult produceBearerTokenResult(InjectionPoint injectionPoint) {
         BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
 
-        // Apply pre-1.0 rule: Use collection as early as possible
         Set<String> requiredScopes = annotation != null ? Set.of(annotation.requiredScopes()) : Collections.emptySet();
         Set<String> requiredRoles = annotation != null ? Set.of(annotation.requiredRoles()) : Collections.emptySet();
         Set<String> requiredGroups = annotation != null ? Set.of(annotation.requiredGroups()) : Collections.emptySet();

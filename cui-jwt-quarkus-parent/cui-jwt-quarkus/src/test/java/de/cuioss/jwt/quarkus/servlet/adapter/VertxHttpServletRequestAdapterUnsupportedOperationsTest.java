@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.servlet.adapter;
 import de.cuioss.jwt.quarkus.servlet.TestHttpServerRequest;
 import de.cuioss.jwt.quarkus.servlet.VertxHttpServletRequestAdapter;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -150,7 +151,7 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
     }
 
 
-    @org.junit.jupiter.api.Test
+    @Test
     @DisplayName("getContextPath should return empty string")
     void getContextPathShouldReturnEmptyString() {
         TestHttpServerRequest testRequest = new TestHttpServerRequest();

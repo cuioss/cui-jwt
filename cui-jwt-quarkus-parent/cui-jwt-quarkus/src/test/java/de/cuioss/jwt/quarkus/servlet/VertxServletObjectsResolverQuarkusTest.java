@@ -32,11 +32,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Quarkus integration tests for {@link VertxServletObjectsResolver} and {@link VertxHttpServletRequestAdapter}.
  *
  * <p>These tests verify the functionality of the VertxHttpServletRequestAdapter in a real Quarkus environment
- * with actual HTTP requests. This complements the unit tests in {@link VertxHttpServletRequestAdapterUnsupportedOperationsTest}
+ * with actual HTTP requests. This complements the unit tests in VertxHttpServletRequestAdapterUnsupportedOperationsTest
  * which focus on the UnsupportedOperationException cases.</p>
  *
  * @author Oliver Wolff
@@ -55,10 +51,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestProfile(JwtTestProfile.class)
 @DisplayName("VertxServletObjectsResolver and VertxHttpServletRequestAdapter Integration Tests")
 class VertxServletObjectsResolverQuarkusTest {
-
-    @Inject
-    @ServletObjectsResolver(ServletObjectsResolver.Variant.VERTX)
-    HttpServletRequestResolver resolver;
 
     // Note: Tests for accessing @RequestScoped HttpServerRequest outside of request context
     // are not reliable because Quarkus test context behavior varies. The important test

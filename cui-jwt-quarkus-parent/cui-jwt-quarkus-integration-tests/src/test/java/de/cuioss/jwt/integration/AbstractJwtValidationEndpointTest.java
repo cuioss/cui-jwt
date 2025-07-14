@@ -17,10 +17,11 @@ package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
 
-import java.util.Map;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;

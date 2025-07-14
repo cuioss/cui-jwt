@@ -15,8 +15,9 @@
  */
 package de.cuioss.jwt.integration;
 
-import java.util.Map;
 import org.junit.jupiter.api.*;
+
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;

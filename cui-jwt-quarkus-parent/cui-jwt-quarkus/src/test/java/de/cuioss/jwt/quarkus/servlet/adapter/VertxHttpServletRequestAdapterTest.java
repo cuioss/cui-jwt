@@ -21,6 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
+import jakarta.servlet.DispatcherType;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -119,7 +120,7 @@ class VertxHttpServletRequestAdapterTest {
             while (acceptHeaders.hasMoreElements()) {
                 headerValues.add(acceptHeaders.nextElement());
             }
-            
+
             assertEquals(2, headerValues.size());
             assertTrue(headerValues.contains("application/json"));
             assertTrue(headerValues.contains("text/plain"));
@@ -193,6 +194,7 @@ class VertxHttpServletRequestAdapterTest {
 
         @Test
         @DisplayName("getCookies should return array of cookies")
+        @SuppressWarnings("java:S5961")
         void getCookiesShouldReturnArrayOfCookies() {
             // Setup
             Cookie sessionCookie = EasyMock.createMock(Cookie.class);
@@ -558,7 +560,7 @@ class VertxHttpServletRequestAdapterTest {
         @Test
         @DisplayName("getDispatcherType should return REQUEST")
         void getDispatcherTypeShouldReturnRequest() {
-            assertEquals(jakarta.servlet.DispatcherType.REQUEST, adapter.getDispatcherType());
+            assertEquals(DispatcherType.REQUEST, adapter.getDispatcherType());
         }
 
         @Test
@@ -636,7 +638,7 @@ class VertxHttpServletRequestAdapterTest {
             List<Locale> localeList = Collections.list(locales);
 
             assertEquals(4, localeList.size());
-            assertEquals("en-US", localeList.get(0).toLanguageTag());
+            assertEquals("en-US", localeList.getFirst().toLanguageTag());
             assertEquals("en", localeList.get(1).toLanguageTag());
             assertEquals("fr", localeList.get(2).toLanguageTag());
             assertEquals("de", localeList.get(3).toLanguageTag());
@@ -647,7 +649,7 @@ class VertxHttpServletRequestAdapterTest {
             localeList = Collections.list(locales);
 
             assertEquals(1, localeList.size());
-            assertEquals(Locale.getDefault(), localeList.get(0));
+            assertEquals(Locale.getDefault(), localeList.getFirst());
         }
     }
 }

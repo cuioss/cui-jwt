@@ -25,9 +25,8 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Set;
 
@@ -180,7 +179,7 @@ public class TestHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+    public X509Certificate[] peerCertificateChain() {
         return new X509Certificate[0];
     }
 
