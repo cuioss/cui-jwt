@@ -161,13 +161,14 @@
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                             <maven.home>${maven.home}</maven.home>
+                            <quarkus.test.arg-line>@{argLine}</quarkus.test.arg-line>
                         </systemPropertyVariables>
                         <useModulePath>false</useModulePath>
                         <useFile>false</useFile>
                         <trimStackTrace>false</trimStackTrace>
                         <enableAssertions>true</enableAssertions>
                         <!-- JaCoCo-compatible argLine (will be empty if JaCoCo not active) -->
-                        <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                        <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         <!-- Stability configurations -->
                         <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
@@ -183,12 +184,13 @@
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                             <maven.home>${maven.home}</maven.home>
+                            <quarkus.test.arg-line>@{argLine}</quarkus.test.arg-line>
                         </systemPropertyVariables>
                         <useModulePath>false</useModulePath>
                         <useFile>false</useFile>
                         <trimStackTrace>false</trimStackTrace>
                         <enableAssertions>true</enableAssertions>
-                        <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                        <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         <!-- Fix for class loading issues -->
                         <useSystemClassLoader>false</useSystemClassLoader>
                         <reuseForks>false</reuseForks>
@@ -315,7 +317,13 @@
                 </plugins>
             </build>
             <properties>
-                <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+                <!-- Multiple XML report paths for Sonar to pick up coverage from all modules -->
+                <sonar.coverage.jacoco.xmlReportPaths>
+                    ${project.build.directory}/site/jacoco/jacoco.xml,
+                    cui-jwt-quarkus/target/site/jacoco/jacoco.xml,
+                    cui-jwt-quarkus-deployment/target/site/jacoco/jacoco.xml,
+                    ../target/site/jacoco/jacoco.xml
+                </sonar.coverage.jacoco.xmlReportPaths>
             </properties>
         </profile>
     </profiles>
