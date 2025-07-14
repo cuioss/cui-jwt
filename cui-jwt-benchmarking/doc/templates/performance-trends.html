@@ -104,7 +104,7 @@
   <div class="container">
     <h1>JWT Validation Performance Trends</h1>
     <p class="subtitle">Performance metrics and trends over the last 10 benchmark runs</p>
-    
+
     <div id="loading" class="loading">
       <p>Loading performance data...</p>
     </div>
@@ -129,7 +129,7 @@
         </div>
         <div class="metric-card">
           <div class="metric-value" id="current-latency">--</div>
-          <div class="metric-label">Average Latency (ms)</div>
+          <div class="metric-label">Average Latency (s)</div>
           <div class="trend-indicator" id="latency-trend">--</div>
         </div>
         <div class="metric-card">
@@ -181,13 +181,13 @@
 
     function calculateTrend(values) {
       if (values.length < 2) return { slope: 0, direction: 'stable' };
-      
+
       const n = values.length;
       const sumX = values.reduce((sum, _, i) => sum + i, 0);
       const sumY = values.reduce((sum, val) => sum + val, 0);
       const sumXY = values.reduce((sum, val, i) => sum + (i * val), 0);
       const sumXX = values.reduce((sum, _, i) => sum + (i * i), 0);
-      
+
       const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
       let percentChange;
       if (values[0] === 0) {
@@ -199,12 +199,12 @@
       } else {
         percentChange = ((values[n-1] - values[0]) / values[0]) * 100;
       }
-      
+
       let direction = 'stable';
       if (Math.abs(percentChange) > 2) {
         direction = percentChange > 0 ? 'up' : 'down';
       }
-      
+
       return { slope, direction, percentChange };
     }
 
@@ -214,7 +214,7 @@
       const className = isLatency ? 
         (trend.direction === 'down' ? 'trend-up' : trend.direction === 'up' ? 'trend-down' : 'trend-stable') :
         (trend.direction === 'up' ? 'trend-up' : trend.direction === 'down' ? 'trend-down' : 'trend-stable');
-      
+
       // Handle Infinity values to align with calculate-trend-badge.sh approach
       let percentageDisplay;
       if (!isFinite(trend.percentChange)) {
@@ -222,7 +222,7 @@
       } else {
         percentageDisplay = Math.abs(trend.percentChange).toFixed(1);
       }
-      
+
       return {
         html: `<span class="${className}">${arrow} ${percentageDisplay}%</span>`,
         className
@@ -238,7 +238,7 @@
       }
 
       const latest = runs[runs.length - 1];
-      
+
       // Calculate trends
       const scores = runs.map(r => r.performance.score);
       const throughputs = runs.map(r => r.performance.throughput.value);
@@ -265,7 +265,7 @@
       // Create charts
       createChart('scoreChart', 'Performance Score', runs, r => r.performance.score, '#007bff');
       createChart('throughputChart', 'Throughput (ops/s)', runs, r => r.performance.throughput.value, '#28a745');
-      createChart('latencyChart', 'Average Latency (ms)', runs, r => r.performance.averageTime.value, '#ffc107');
+      createChart('latencyChart', 'Average Latency (s)', runs, r => r.performance.averageTime.value, '#ffc107');
 
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';

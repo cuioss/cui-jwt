@@ -71,9 +71,6 @@ class CuiJwtProcessorTest {
 
         CuiJwtProcessor processor = new CuiJwtProcessor();
         assertNotNull(processor, "Processor should not be null");
-
-        // The actual build step methods are tested indirectly through the Quarkus test framework
-        // by verifying that the configuration is properly available and the extension works
     }
 
 }

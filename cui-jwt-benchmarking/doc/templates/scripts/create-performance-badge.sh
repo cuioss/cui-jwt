@@ -42,7 +42,7 @@ if [ "$throughput_score" != "0" ] && [ "$throughput_score" != "null" ] && [ "$av
     echo "Warning: Unknown throughput unit: $throughput_unit"
     throughput_ops_per_sec="0"
   fi
-  
+
   # Convert avg time to microseconds if needed
   if [[ "$avg_time_unit" == "us/op" ]]; then
     avg_time_microseconds=$(echo "$avg_time_score" | awk '{printf "%.1f", $1}')
@@ -56,7 +56,7 @@ if [ "$throughput_score" != "0" ] && [ "$throughput_score" != "null" ] && [ "$av
     echo "Warning: Unknown avg time unit: $avg_time_unit"
     avg_time_microseconds="0"
   fi
-  
+
   # Convert error resilience to ops/sec if needed
   if [ "$error_resilience_score" != "0" ] && [ "$error_resilience_score" != "null" ]; then
     if [[ "$error_resilience_unit" == "ops/s" ]]; then
@@ -74,13 +74,13 @@ if [ "$throughput_score" != "0" ] && [ "$throughput_score" != "null" ] && [ "$av
   else
     error_resilience_ops_per_sec="0"
   fi
-  
+
   echo "Debug: Converted - Throughput: ${throughput_ops_per_sec} ops/s, AvgTime: ${avg_time_microseconds} μs, ErrorResilience: ${error_resilience_ops_per_sec} ops/s"
-  
+
   if [ "$throughput_ops_per_sec" != "0" ] && [ "$avg_time_microseconds" != "0" ]; then
     # Calculate latency component
     latency_ops_per_sec=$(if [ "$(echo "$avg_time_microseconds == 0" | bc -l)" -eq 1 ]; then echo "0"; else echo "scale=2; 1000000 / $avg_time_microseconds"; fi | bc -l)
-    
+
     # Calculate comprehensive weighted performance score with error resilience
     if [ "$error_resilience_ops_per_sec" != "0" ]; then
       # Enhanced formula: (throughput * 0.57) + (latency * 0.40) + (error_resilience * 0.03)
@@ -91,21 +91,32 @@ if [ "$throughput_score" != "0" ] && [ "$throughput_score" != "null" ] && [ "$av
       performance_score=$(echo "scale=2; ($throughput_ops_per_sec * 0.6) + ($latency_ops_per_sec * 0.4)" | bc -l)
       echo "Debug: Using original scoring (no error resilience data)"
     fi
-    
+
     formatted_score=$(printf "%.0f" $performance_score)
-    throughput_k=$(echo "scale=1; $throughput_ops_per_sec / 1000" | bc -l)
-    avg_time_ms=$(echo "scale=3; $avg_time_microseconds / 1000" | bc -l)
-    formatted_avg_time_ms=$(printf "%.2f" $avg_time_ms)
-    
-    # Create badge with performance score (using ms instead of μs)
-    echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"${formatted_score} (${throughput_k}k ops/s, ${formatted_avg_time_ms}ms)\",\"color\":\"brightgreen\"}" > "$OUTPUT_DIR/performance-badge.json"
-    
-    echo "Created performance badge: Score=$formatted_score (Throughput=${throughput_k}k ops/s, AvgTime=${formatted_avg_time_ms}ms)"
-    
+
+    # Format throughput with k for thousands
+    if [ $(echo "$throughput_ops_per_sec >= 1000" | bc -l) -eq 1 ]; then
+      throughput_k=$(echo "scale=1; $throughput_ops_per_sec / 1000" | bc -l)
+      throughput_display="${throughput_k}k"
+    else
+      throughput_display=$(printf "%.0f" $throughput_ops_per_sec)
+    fi
+
+    # Convert microseconds to seconds for display
+    avg_time_sec=$(echo "scale=6; $avg_time_microseconds / 1000000" | bc -l)
+    # Remove trailing zeros
+    formatted_avg_time_sec=$(echo $avg_time_sec | sed 's/0*$//' | sed 's/\.$//')
+
+    # Create badge with performance score (normalized to seconds)
+    echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"${formatted_score} (${throughput_display} ops/s, ${formatted_avg_time_sec}s)\",\"color\":\"brightgreen\"}" > "$OUTPUT_DIR/performance-badge.json"
+
+    echo "Created performance badge: Score=$formatted_score (Throughput=${throughput_display} ops/s, AvgTime=${formatted_avg_time_sec}s)"
+
     # Export metrics for use by other scripts
     echo "PERFORMANCE_SCORE=$formatted_score"
     echo "THROUGHPUT_OPS_PER_SEC=$throughput_ops_per_sec"
-    echo "AVERAGE_TIME_MS=$formatted_avg_time_ms"
+    echo "THROUGHPUT_DISPLAY=$throughput_display"
+    echo "AVERAGE_TIME_SEC=$formatted_avg_time_sec"
     echo "ERROR_RESILIENCE_OPS_PER_SEC=$error_resilience_ops_per_sec"
     echo "AVG_TIME_MICROS=$avg_time_microseconds"
   else

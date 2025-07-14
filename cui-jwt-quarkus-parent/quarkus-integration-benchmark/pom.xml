@@ -31,7 +31,7 @@
         <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>2</jmh.forks>
-        <jmh.threads>MAX</jmh.threads>
+        <jmh.threads>200</jmh.threads>
         <jmh.time>3s</jmh.time>
         <jmh.warmupTime>3s</jmh.warmupTime>
 

@@ -26,7 +26,7 @@ CURRENT_RUN=$(cat <<EOF
   "performance": {
     "score": $CURRENT_SCORE,
     "throughput": {"value": $CURRENT_THROUGHPUT, "unit": "ops/s"},
-    "averageTime": {"value": $CURRENT_LATENCY, "unit": "ms"},
+    "averageTime": {"value": $CURRENT_LATENCY, "unit": "s"},
     "errorResilience": {"value": $CURRENT_RESILIENCE, "unit": "ops/s"}
   }
 }
