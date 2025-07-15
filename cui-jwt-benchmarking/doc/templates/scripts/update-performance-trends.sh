@@ -43,8 +43,8 @@ else
   jq --argjson newrun "$CURRENT_RUN" '.runs += [$newrun] | .runs = (.runs | sort_by(.timestamp) | .[-10:])' "$TRACKING_FILE" > "$TRACKING_FILE.tmp" && mv "$TRACKING_FILE.tmp" "$TRACKING_FILE"
 fi
 
-# Calculate trends and create trend badge
-bash "$TEMPLATES_DIR/scripts/calculate-trend-badge.sh" "$TRACKING_FILE" "$OUTPUT_DIR/badges"
+# Calculate trends and create trend badge using unified script
+bash "$TEMPLATES_DIR/scripts/create-unified-trend-badge.sh" micro "$TRACKING_FILE" "$OUTPUT_DIR/badges"
 
 # Copy performance trends template
 cp "$TEMPLATES_DIR/performance-trends.html" "$OUTPUT_DIR/trends.html"

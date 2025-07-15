@@ -102,21 +102,21 @@ if [ "$throughput_score" != "0" ] && [ "$throughput_score" != "null" ] && [ "$av
       throughput_display=$(printf "%.0f" $throughput_ops_per_sec)
     fi
 
-    # Convert microseconds to seconds for display
-    avg_time_sec=$(echo "scale=6; $avg_time_microseconds / 1000000" | bc -l)
+    # Convert microseconds to milliseconds for display
+    avg_time_ms=$(echo "scale=3; $avg_time_microseconds / 1000" | bc -l)
     # Remove trailing zeros
-    formatted_avg_time_sec=$(echo $avg_time_sec | sed 's/0*$//' | sed 's/\.$//')
+    formatted_avg_time_ms=$(echo $avg_time_ms | sed 's/0*$//' | sed 's/\.$//')
 
-    # Create badge with performance score (normalized to seconds)
-    echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"${formatted_score} (${throughput_display} ops/s, ${formatted_avg_time_sec}s)\",\"color\":\"brightgreen\"}" > "$OUTPUT_DIR/performance-badge.json"
+    # Create badge with performance score (normalized to milliseconds)
+    echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"${formatted_score} (${throughput_display} ops/s, ${formatted_avg_time_ms}ms)\",\"color\":\"brightgreen\"}" > "$OUTPUT_DIR/performance-badge.json"
 
-    echo "Created performance badge: Score=$formatted_score (Throughput=${throughput_display} ops/s, AvgTime=${formatted_avg_time_sec}s)"
+    echo "Created performance badge: Score=$formatted_score (Throughput=${throughput_display} ops/s, AvgTime=${formatted_avg_time_ms}ms)"
 
     # Export metrics for use by other scripts
     echo "PERFORMANCE_SCORE=$formatted_score"
     echo "THROUGHPUT_OPS_PER_SEC=$throughput_ops_per_sec"
     echo "THROUGHPUT_DISPLAY=$throughput_display"
-    echo "AVERAGE_TIME_SEC=$formatted_avg_time_sec"
+    echo "AVERAGE_TIME_MS=$formatted_avg_time_ms"
     echo "ERROR_RESILIENCE_OPS_PER_SEC=$error_resilience_ops_per_sec"
     echo "AVG_TIME_MICROS=$avg_time_microseconds"
   else

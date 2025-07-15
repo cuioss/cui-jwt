@@ -120,8 +120,8 @@ jobs:
             # Prepare GitHub Pages structure using script for micro benchmarks
             bash cui-jwt-benchmarking/doc/templates/scripts/prepare-github-pages.sh benchmark-results cui-jwt-benchmarking/doc/templates gh-pages
 
-            # Create performance badge using script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/create-performance-badge.sh gh-pages/jmh-result.json gh-pages/badges
+            # Create performance badge using unified script for micro benchmarks
+            bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-performance-badge.sh micro gh-pages/jmh-result.json gh-pages/badges
 
             # Create simple badges using script for micro benchmarks
             bash cui-jwt-benchmarking/doc/templates/scripts/create-simple-badge.sh gh-pages/jmh-result.json gh-pages/badges "$TIMESTAMP" "$TIMESTAMP_WITH_TIME"
@@ -164,7 +164,10 @@ jobs:
             # Copy integration template
             cp cui-jwt-benchmarking/doc/templates/integration-index.html gh-pages/integration/index.html
 
-            # Process integration results using dedicated script
+            # Create integration performance badge using unified script
+            bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-performance-badge.sh integration benchmark-results/integration-benchmark-result.json gh-pages/integration/badges "$COMMIT_HASH"
+            
+            # Process integration results using dedicated script for additional metrics
             INTEGRATION_OUTPUT=$(bash cui-jwt-benchmarking/doc/templates/scripts/process-integration-results.sh benchmark-results/integration-benchmark-result.json gh-pages "$COMMIT_HASH" 2>&1)
             echo "$INTEGRATION_OUTPUT"
 
@@ -204,8 +207,8 @@ jobs:
               # Update integration tracking file
               jq --argjson newrun "$INTEGRATION_RUN" '.runs += [$newrun] | .runs = (.runs | sort_by(.timestamp) | .[-10:])' "$INTEGRATION_TRACKING_FILE" > "$INTEGRATION_TRACKING_FILE.tmp" && mv "$INTEGRATION_TRACKING_FILE.tmp" "$INTEGRATION_TRACKING_FILE"
 
-              # Create integration trend badge
-              bash cui-jwt-benchmarking/doc/templates/scripts/calculate-trend-badge.sh "$INTEGRATION_TRACKING_FILE" "gh-pages/integration/badges"
+              # Create integration trend badge using unified script
+              bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-trend-badge.sh integration "$INTEGRATION_TRACKING_FILE" "gh-pages/integration/badges"
 
               # Copy performance trends template for integration
               cp cui-jwt-benchmarking/doc/templates/performance-trends.html gh-pages/integration/trends.html

@@ -141,7 +141,7 @@ cat > "$OUTPUT_DIR/integration/badges/latency-badge.json" << EOF
 {
   "schemaVersion": 1,
   "label": "Latency",
-  "message": "$AVG_INTEGRATION_LATENCY s",
+  "message": "${FORMATTED_LATENCY_MS}ms",
   "color": "$LATENCY_COLOR"
 }
 EOF
