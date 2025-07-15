@@ -167,7 +167,6 @@
                     <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                     <systemPropertyVariables>
                         <quarkus.jacoco.reuse-data-file>true</quarkus.jacoco.reuse-data-file>
-                        <quarkus.test.arg-line>@{argLine}</quarkus.test.arg-line>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -175,10 +174,18 @@
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                     <systemPropertyVariables>
-                        <quarkus.test.arg-line>@{argLine}</quarkus.test.arg-line>
+                        <!-- Inherit parent properties but override problematic ones -->
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                        <maven.home>${maven.home}</maven.home>
+                        <!-- Override parent's quarkus.test.arg-line to avoid @{argLine} placeholder issues in native tests -->
+                        <quarkus.test.arg-line>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</quarkus.test.arg-line>
                     </systemPropertyVariables>
+                    <useModulePath>false</useModulePath>
+                    <useFile>false</useFile>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
             <!-- JaCoCo Plugin for test coverage -->

@@ -57,6 +57,13 @@ public class MockInjectionPoint implements InjectionPoint {
         };
     }
 
+    /**
+     * Constructor for testing null annotation case
+     */
+    public MockInjectionPoint(BearerToken annotation) {
+        this.bearerTokenAnnotation = annotation;
+    }
+
     @Override
     public Type getType() {
         return BearerTokenResult.class;
@@ -92,7 +99,7 @@ public class MockInjectionPoint implements InjectionPoint {
 
             @Override
             public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
-                if (annotationType == BearerToken.class) {
+                if (annotationType == BearerToken.class && bearerTokenAnnotation != null) {
                     return annotationType.cast(bearerTokenAnnotation);
                 }
                 return null;

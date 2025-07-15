@@ -278,34 +278,26 @@ class BearerTokenProducerLogicTest {
         @EnumSource(BearerTokenStatus.class)
         @DisplayName("should have consistent authorization status across all scenarios")
         void shouldHaveConsistentAuthorizationStatus(BearerTokenStatus status) {
-            BearerTokenResult result;
-            switch (status) {
-                case FULLY_VERIFIED:
+            BearerTokenResult result = switch (status) {
+                case FULLY_VERIFIED -> {
                     AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
-                    result = BearerTokenResult.success(tokenContent,
-                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                    break;
-                case NO_TOKEN_GIVEN:
-                    result = BearerTokenResult.noTokenGiven(
-                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                    break;
-                case PARSING_ERROR:
+                    yield BearerTokenResult.success(tokenContent,
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                }
+                case NO_TOKEN_GIVEN -> BearerTokenResult.noTokenGiven(
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                case PARSING_ERROR -> {
                     TokenValidationException ex = new TokenValidationException(
-                            SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
-                    result = BearerTokenResult.parsingError(ex,
-                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                    break;
-                case CONSTRAINT_VIOLATION:
-                    result = BearerTokenResult.constraintViolation(
-                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                    break;
-                case COULD_NOT_ACCESS_REQUEST:
-                    result = BearerTokenResult.couldNotAccessRequest(
-                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown status: " + status);
-            }
+                        SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
+                    yield BearerTokenResult.parsingError(ex,
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                }
+                case CONSTRAINT_VIOLATION -> BearerTokenResult.constraintViolation(
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                case COULD_NOT_ACCESS_REQUEST -> BearerTokenResult.couldNotAccessRequest(
+                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                default -> throw new IllegalStateException("Unknown status: " + status);
+            };
 
             // Verify the methods are opposites
             assertNotEquals(result.isSuccessfullyAuthorized(), result.isNotSuccessfullyAuthorized(),
@@ -458,6 +450,116 @@ class BearerTokenProducerLogicTest {
             MockInjectionPoint injectionPoint2 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
             var result2 = producer2.produceBearerTokenResult(injectionPoint2);
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result2.getStatus());
+        }
+    }
+
+    @Nested
+    @DisplayName("Branch Coverage Tests")
+    class BranchCoverageTests {
+
+        @Test
+        @DisplayName("should handle null annotation in produceBearerTokenResult")
+        void shouldHandleNullAnnotationInProduceBearerTokenResult() {
+            // Create a mock injection point with null annotation
+            MockInjectionPoint injectionPoint = new MockInjectionPoint(null);
+
+            // Setup token content
+            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
+            mockTokenValidator.setAccessTokenContent(tokenContent);
+            requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+            // Should handle null annotation gracefully
+            var result = underTest.produceBearerTokenResult(injectionPoint);
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
+            assertTrue(result.getAccessTokenContent().isPresent());
+        }
+
+        @Test
+        @DisplayName("should handle empty authorization header list")
+        void shouldHandleEmptyAuthorizationHeaderList() {
+            // Create empty list for authorization header by manipulating the mock directly
+            requestResolverMock.clearHeaders();
+            // Add empty authorization header list - this requires direct access to headers map
+            requestResolverMock.getHttpServletRequestMock().getHeaders().put("authorization", new ArrayList<>());
+
+            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
+            mockTokenValidator.setAccessTokenContent(tokenContent);
+
+            // Should return empty result for empty authorization header list
+            var result = underTest.getAccessTokenContent();
+            assertFalse(result.isPresent());
+        }
+
+        @Test
+        @DisplayName("should handle constraint violation with mixed empty/non-empty missing requirements")
+        void shouldHandleMixedConstraintViolations() {
+            // Setup token with only some claims
+            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
+            mockTokenValidator.setAccessTokenContent(tokenContent);
+            requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+            // Test case 1: Only missing scopes (roles and groups empty)
+            MockInjectionPoint injectionPoint1 = new MockInjectionPoint(
+                    Set.of("admin"), Set.of(), Set.of());
+            var result1 = underTest.produceBearerTokenResult(injectionPoint1);
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result1.getStatus());
+            assertEquals(Set.of("admin"), result1.getMissingScopes());
+            assertTrue(result1.getMissingRoles().isEmpty());
+            assertTrue(result1.getMissingGroups().isEmpty());
+
+            // Test case 2: Only missing roles (scopes and groups empty)
+            MockInjectionPoint injectionPoint2 = new MockInjectionPoint(
+                    Set.of(), Set.of("admin"), Set.of());
+            var result2 = underTest.produceBearerTokenResult(injectionPoint2);
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result2.getStatus());
+            assertTrue(result2.getMissingScopes().isEmpty());
+            assertEquals(Set.of("admin"), result2.getMissingRoles());
+            assertTrue(result2.getMissingGroups().isEmpty());
+
+            // Test case 3: Only missing groups (scopes and roles empty)
+            MockInjectionPoint injectionPoint3 = new MockInjectionPoint(
+                    Set.of(), Set.of(), Set.of("admin"));
+            var result3 = underTest.produceBearerTokenResult(injectionPoint3);
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result3.getStatus());
+            assertTrue(result3.getMissingScopes().isEmpty());
+            assertTrue(result3.getMissingRoles().isEmpty());
+            assertEquals(Set.of("admin"), result3.getMissingGroups());
+        }
+
+        @Test
+        @DisplayName("should handle constraint violation where only one type is empty")
+        void shouldHandleConstraintViolationWithSingleEmptyType() {
+            // Setup token with no claims
+            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "none");
+            mockTokenValidator.setAccessTokenContent(tokenContent);
+            requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+            // Test: scopes empty, but roles and groups not empty
+            MockInjectionPoint injectionPoint = new MockInjectionPoint(
+                    Set.of(), Set.of("admin"), Set.of("managers"));
+            var result = underTest.produceBearerTokenResult(injectionPoint);
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
+            assertTrue(result.getMissingScopes().isEmpty());
+            assertEquals(Set.of("admin"), result.getMissingRoles());
+            assertEquals(Set.of("managers"), result.getMissingGroups());
+        }
+
+        @Test
+        @DisplayName("should handle constraint violation where only two types are empty")
+        void shouldHandleConstraintViolationWithTwoEmptyTypes() {
+            // Setup token with no claims
+            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "none");
+            mockTokenValidator.setAccessTokenContent(tokenContent);
+            requestResolverMock.setBearerToken(tokenContent.getRawToken());
+
+            // Test: scopes and roles empty, but groups not empty
+            MockInjectionPoint injectionPoint = new MockInjectionPoint(
+                    Set.of(), Set.of(), Set.of("managers"));
+            var result = underTest.produceBearerTokenResult(injectionPoint);
+            assertEquals(BearerTokenStatus.CONSTRAINT_VIOLATION, result.getStatus());
+            assertTrue(result.getMissingScopes().isEmpty());
+            assertTrue(result.getMissingRoles().isEmpty());
+            assertEquals(Set.of("managers"), result.getMissingGroups());
         }
     }
 
