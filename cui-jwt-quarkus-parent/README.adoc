@@ -40,6 +40,75 @@ xref:cui-jwt-quarkus/src/main/resources/META-INF/quarkus-config-doc.adoc[Quarkus
 
 The extension provides the following CDI beans:
 
+==== BearerTokenResult Injection (Recommended)
+
+The extension provides a convenient way to inject validated token results directly into your components:
+
+[source,java]
+----
+// Basic usage
+@Inject
+@BearerToken
+private BearerTokenResult tokenResult;
+
+// With required scopes
+@Inject
+@BearerToken(requiredScopes = {"read"})
+private BearerTokenResult tokenWithScopes;
+
+// With required roles
+@Inject
+@BearerToken(requiredRoles = {"user"})
+private BearerTokenResult tokenWithRoles;
+
+// With required groups
+@Inject
+@BearerToken(requiredGroups = {"test-group"})
+private BearerTokenResult tokenWithGroups;
+
+// With multiple requirements
+@Inject
+@BearerToken(
+    requiredScopes = {"read"}, 
+    requiredRoles = {"user"}, 
+    requiredGroups = {"test-group"}
+)
+private BearerTokenResult tokenWithAllRequirements;
+----
+
+Example usage in JAX-RS endpoints:
+
+[source,java]
+----
+// Example with BearerTokenResult injection
+@Path("/api/instance")
+@RequestScoped
+public class InstanceEndpoint {
+
+    @Inject
+    @BearerToken(requiredScopes = {"read"})
+    private BearerTokenResult tokenResult;
+
+    @GET
+    @Path("/data")
+    public Response getData() {
+        if (tokenResult.isSuccessfullyAuthorized()) {
+            var tokenOpt = tokenResult.getAccessTokenContent();
+            if (tokenOpt.isPresent()) {
+                AccessTokenContent token = tokenOpt.get();
+                // Token is valid and has required scopes
+                return Response.ok("Data for user: " + token.getSubject().orElse("none")).build();
+            }
+        }
+        // Token missing, invalid, or lacks required scope
+        return tokenResult.errorResponse();
+    }
+}
+
+----
+
+For more examples and detailed usage, see the xref:doc/README.adoc[Token Injection Documentation].
+
 ==== TokenValidator
 
 The `TokenValidator` is provided as an ApplicationScoped bean and can be directly injected into your application:
@@ -88,7 +157,7 @@ Each metric includes relevant tags for filtering:
 * `result` - The validation result (failure)
 * `category` - The category of event (structure, signature, semantic)
 
-For more details, see the xref:doc/metrics-integration.adoc[Metrics Integration Documentation].
+For more details, see the xref:doc/integration/metrics-integration.adoc[Metrics Integration Documentation].
 
 Example Prometheus query to check for signature verification failures:
 
@@ -133,27 +202,26 @@ A pre-configured Grafana dashboard is available at xref:doc/jwt-metrics-grafana-
 
 Information on setting up tests can be found here:
 
-xref:doc/quarkus-test-setup.adoc[Quarkus Test Setup]
+xref:doc/development/quarkus-test-setup.adoc[Quarkus Test Setup]
 
 === Native Image Support
 
 The extension supports GraalVM Native Image compilation. More information can be found here:
 
-xref:doc/native-image-support.adoc[Native Image Support]
+xref:doc/configuration/native-image-configuration.adoc[Native Image Support]
 
 === Health Checks
 
 The extension provides MicroProfile Health checks for JWT validation components. For detailed information see:
 
-xref:doc/health-checks.adoc[Health Checks Documentation]
+xref:doc/integration/health-checks.adoc[Health Checks Documentation]
 
 === Modules
 
 The project consists of the following modules:
 
-* `cui-jwt-quarkus-deployment` - Contains the Quarkus deployment code for the extension
-* `cui-jwt-quarkus` - Contains the runtime code for the extension
-* `cui-jwt-quarkus-integration-tests` - Provides integration tests
-* `doc` - Contains additional documentation
-
-
+* xref:cui-jwt-quarkus-deployment/README.adoc[cui-jwt-quarkus-deployment] - Contains the Quarkus deployment code for the extension
+* xref:cui-jwt-quarkus/README.adoc[cui-jwt-quarkus] - Contains the runtime code for the extension
+* xref:cui-jwt-quarkus-integration-tests/README.adoc[cui-jwt-quarkus-integration-tests] - Provides integration tests
+* xref:doc/README.adoc[doc] - Contains additional documentation
+* xref:quarkus-integration-benchmark/README.adoc[quarkus-integration-benchmark] - Performance benchmarking for the extension
