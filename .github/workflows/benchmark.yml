@@ -219,8 +219,8 @@ jobs:
           else
             echo "Warning: integration-benchmark-result.json not found"
             mkdir -p gh-pages/integration/badges
-            echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"No Data\",\"color\":\"red\"}" > "gh-pages/integration/badges/performance-badge.json"
-            echo "{\"schemaVersion\":1,\"label\":\"Integration Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/integration/badges/trend-badge.json"
+            echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"No Data\",\"color\":\"red\"}" > "gh-pages/integration/badges/performance-badge.json"
+            echo "{\"schemaVersion\":1,\"label\":\"Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/integration/badges/trend-badge.json"
           fi
 
       - name: Deploy to cuioss.github.io

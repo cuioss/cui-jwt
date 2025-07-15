@@ -73,7 +73,23 @@ echo "  Integration Score: $INTEGRATION_SCORE"
 
 # Create integration performance badge
 BADGE_COLOR="red"
-BADGE_MESSAGE="$INTEGRATION_SCORE"
+
+# Format throughput with k for thousands
+if (( $(echo "$AVG_INTEGRATION_THROUGHPUT >= 1000" | bc -l) )); then
+    THROUGHPUT_K=$(echo "scale=1; $AVG_INTEGRATION_THROUGHPUT / 1000" | bc -l)
+    THROUGHPUT_DISPLAY="${THROUGHPUT_K}k"
+else
+    THROUGHPUT_DISPLAY=$(printf "%.0f" $AVG_INTEGRATION_THROUGHPUT)
+fi
+
+# Convert latency from seconds to milliseconds for display
+AVG_LATENCY_MS=$(echo "scale=2; $AVG_INTEGRATION_LATENCY * 1000" | bc -l)
+# Remove trailing zeros
+FORMATTED_LATENCY_MS=$(echo $AVG_LATENCY_MS | sed 's/0*$//' | sed 's/\.$//')
+
+# Format the badge message
+FORMATTED_SCORE=$(printf "%.0f" $INTEGRATION_SCORE)
+BADGE_MESSAGE="${FORMATTED_SCORE} (${THROUGHPUT_DISPLAY} ops/s, ${FORMATTED_LATENCY_MS}ms)"
 
 if (( $(echo "$INTEGRATION_SCORE >= 50" | bc -l) )); then
     BADGE_COLOR="green"
@@ -86,7 +102,7 @@ fi
 cat > "$OUTPUT_DIR/integration/badges/performance-badge.json" << EOF
 {
   "schemaVersion": 1,
-  "label": "Integration Performance",
+  "label": "Performance Score",
   "message": "$BADGE_MESSAGE",
   "color": "$BADGE_COLOR"
 }
@@ -105,7 +121,7 @@ fi
 cat > "$OUTPUT_DIR/integration/badges/throughput-badge.json" << EOF
 {
   "schemaVersion": 1,
-  "label": "Integration Throughput",
+  "label": "Throughput",
   "message": "$AVG_INTEGRATION_THROUGHPUT ops/s",
   "color": "$THROUGHPUT_COLOR"
 }
@@ -124,11 +140,21 @@ fi
 cat > "$OUTPUT_DIR/integration/badges/latency-badge.json" << EOF
 {
   "schemaVersion": 1,
-  "label": "Integration Latency",
+  "label": "Latency",
   "message": "$AVG_INTEGRATION_LATENCY s",
   "color": "$LATENCY_COLOR"
 }
 EOF
+
+# Extract custom data from the first benchmark if available
+CUSTOM_DATA=$(jq -r '
+  .[0].customData // {} | 
+  if length > 0 then
+    .
+  else
+    {}
+  end
+' "$INTEGRATION_RESULT")
 
 # Create detailed integration metrics file
 cat > "$OUTPUT_DIR/integration/metrics.json" << EOF
@@ -140,7 +166,8 @@ cat > "$OUTPUT_DIR/integration/metrics.json" << EOF
     "throughputBenchmarks": $THROUGHPUT_BENCHMARKS,
     "avgThroughput": $AVG_INTEGRATION_THROUGHPUT,
     "avgLatency": $AVG_INTEGRATION_LATENCY,
-    "performanceScore": $INTEGRATION_SCORE
+    "performanceScore": $INTEGRATION_SCORE,
+    "customData": $CUSTOM_DATA
   }
 }
 EOF
