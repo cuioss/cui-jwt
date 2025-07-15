@@ -121,7 +121,7 @@ class TokenContentTest {
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 token::getExpirationTime);
-        assertTrue(exception.getMessage().contains("ExpirationTime claim not presentin token"));
+        assertTrue(exception.getMessage().contains("ExpirationTime claim not present in token"));
     }
 
     @Test
@@ -141,7 +141,7 @@ class TokenContentTest {
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 token::getIssuedAtTime);
-        assertTrue(exception.getMessage().contains("issued at time claim claim not presentin token"));
+        assertTrue(exception.getMessage().contains("issued at time claim not present in token"));
     }
 
     @Test

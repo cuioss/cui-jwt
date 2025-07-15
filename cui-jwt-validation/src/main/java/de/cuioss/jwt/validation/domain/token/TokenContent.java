@@ -90,8 +90,8 @@ public interface TokenContent extends MinimalTokenContent {
      * Gets the subject claim value.
      * <p>
      * The 'sub' (subject) claim is required by RFC 7519 specification, but this implementation
-     * allows it to be optional when {@link IssuerConfig#isClaimSubOptional()}
-     * is set to {@code true}. This provides compatibility with token issuers like Keycloak
+     * allows it to be optional when the issuer configuration has claimSubOptional
+     * set to {@code true}. This provides compatibility with token issuers like Keycloak
      * that may not include the subject claim in certain token types (e.g., access tokens).
      * <p>
      * <strong>Specification compliance:</strong>
@@ -102,7 +102,7 @@ public interface TokenContent extends MinimalTokenContent {
      * </ul>
      *
      * @return an Optional containing the subject if present, or empty if not present and configured as optional
-     * @see IssuerConfig#isClaimSubOptional()
+     * @see IssuerConfig.IssuerConfigBuilder#claimSubOptional(boolean)
      * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
      */
     default Optional<String> getSubject() {
@@ -123,7 +123,7 @@ public interface TokenContent extends MinimalTokenContent {
     default OffsetDateTime getExpirationTime() {
         return getClaimOption(ClaimName.EXPIRATION)
                 .map(ClaimValue::getDateTime)
-                .orElseThrow(() -> new IllegalStateException("ExpirationTime claim not presentin token"));
+                .orElseThrow(() -> new IllegalStateException("ExpirationTime claim not present in token"));
     }
 
     /**
@@ -139,7 +139,7 @@ public interface TokenContent extends MinimalTokenContent {
     default OffsetDateTime getIssuedAtTime() {
         return getClaimOption(ClaimName.ISSUED_AT)
                 .map(ClaimValue::getDateTime)
-                .orElseThrow(() -> new IllegalStateException("issued at time claim claim not presentin token"));
+                .orElseThrow(() -> new IllegalStateException("issued at time claim not present in token"));
     }
 
     /**
@@ -147,7 +147,7 @@ public interface TokenContent extends MinimalTokenContent {
      * <p>
      * Since 'nbf' is optional, this method may return an empty Optional.
      *
-     * @return the 'not before time''
+     * @return the 'not before time'
      */
     default Optional<OffsetDateTime> getNotBefore() {
         return getClaimOption(ClaimName.NOT_BEFORE)
