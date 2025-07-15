@@ -139,7 +139,7 @@
                 <executions>
                     <execution>
                         <id>test-jar</id>
-                        <phase>prepare-package</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
@@ -151,6 +151,7 @@
                             <excludes>
                                 <exclude>de/cuioss/jwt/validation/test/**/*Test.class</exclude>
                             </excludes>
+                            <skip>false</skip>
                         </configuration>
                     </execution>
                 </executions>
