@@ -104,8 +104,8 @@ if [ "$throughput_score" != "0" ] && [ "$throughput_score" != "null" ] && [ "$av
 
     # Convert microseconds to milliseconds for display
     avg_time_ms=$(echo "scale=3; $avg_time_microseconds / 1000" | bc -l)
-    # Remove trailing zeros
-    formatted_avg_time_ms=$(echo $avg_time_ms | sed 's/0*$//' | sed 's/\.$//')
+    # Round to whole number for milliseconds
+    formatted_avg_time_ms=$(printf "%.0f" "$avg_time_ms")
 
     # Create badge with performance score (normalized to milliseconds)
     echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"${formatted_score} (${throughput_display} ops/s, ${formatted_avg_time_ms}ms)\",\"color\":\"brightgreen\"}" > "$OUTPUT_DIR/performance-badge.json"

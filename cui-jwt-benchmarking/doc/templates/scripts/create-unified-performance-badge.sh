@@ -140,7 +140,7 @@ process_micro_benchmarks() {
     # Format for display
     local formatted_score=$(printf "%.0f" "$performance_score")
     local throughput_display=$(format_throughput_display "$throughput_ops_per_sec")
-    local formatted_avg_time_ms=$(echo "$avg_time_ms" | sed 's/0*$//' | sed 's/\.$//')
+    local formatted_avg_time_ms=$(printf "%.0f" "$avg_time_ms")
     
     # Create performance badge
     create_badge "Performance Score" "${formatted_score} (${throughput_display} ops/s, ${formatted_avg_time_ms}ms)" "brightgreen" "performance-badge.json"
@@ -178,7 +178,7 @@ process_integration_benchmarks() {
     # Format for display
     local formatted_score=$(printf "%.0f" "$integration_score")
     local throughput_display=$(format_throughput_display "$avg_throughput")
-    local formatted_latency_ms=$(echo "$avg_latency_ms" | sed 's/0*$//' | sed 's/\.$//')
+    local formatted_latency_ms=$(printf "%.0f" "$avg_latency_ms")
     
     # Determine badge color
     local badge_color="red"

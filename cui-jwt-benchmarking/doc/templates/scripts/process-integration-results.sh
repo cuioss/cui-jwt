@@ -84,8 +84,8 @@ fi
 
 # Convert latency from seconds to milliseconds for display
 AVG_LATENCY_MS=$(echo "scale=2; $AVG_INTEGRATION_LATENCY * 1000" | bc -l)
-# Remove trailing zeros
-FORMATTED_LATENCY_MS=$(echo $AVG_LATENCY_MS | sed 's/0*$//' | sed 's/\.$//')
+# Round to whole number for milliseconds
+FORMATTED_LATENCY_MS=$(printf "%.0f" "$AVG_LATENCY_MS")
 
 # Format the badge message
 FORMATTED_SCORE=$(printf "%.0f" $INTEGRATION_SCORE)
