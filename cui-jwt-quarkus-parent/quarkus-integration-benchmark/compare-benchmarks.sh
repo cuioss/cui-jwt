@@ -18,7 +18,7 @@ echo "  Error rate: $ERROR_RATE%"
 echo ""
 
 # Ensure Quarkus container is running
-if ! curl -s -f http://localhost:10443/q/health/live >/dev/null 2>&1; then
+if ! curl -k -s -f https://localhost:10443/q/health/live >/dev/null 2>&1; then
     echo "❌ Quarkus container not running on port 10443"
     echo "   Please start the integration test environment first"
     exit 1

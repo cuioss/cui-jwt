@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configuration
 WRK_IMAGE="cui-jwt-wrk:latest"
-QUARKUS_URL="http://host.docker.internal:10443"
+QUARKUS_URL="https://host.docker.internal:10443"
 RESULTS_DIR="./target/wrk-results"
 THREADS=${1:-200}
 CONNECTIONS=${2:-200}

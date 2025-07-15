@@ -2,7 +2,28 @@
 -- This script performs HTTP POST requests to JWT validation endpoint
 -- with proper JWT tokens for realistic integration testing
 
-local json = require "json"
+-- Simple JSON encoder (since json module is not available in Alpine wrk)
+local function json_encode(obj)
+    if type(obj) == "table" then
+        local parts = {}
+        for k, v in pairs(obj) do
+            if type(k) == "string" then
+                k = '"' .. k .. '"'
+            end
+            if type(v) == "string" then
+                v = '"' .. v .. '"'
+            elseif type(v) == "table" then
+                v = json_encode(v)
+            end
+            table.insert(parts, k .. ":" .. v)
+        end
+        return "{" .. table.concat(parts, ",") .. "}"
+    elseif type(obj) == "string" then
+        return '"' .. obj .. '"'
+    else
+        return tostring(obj)
+    end
+end
 
 -- TokenRepository - Efficient token management to avoid slow token retrieval
 local TokenRepository = {}
@@ -139,7 +160,7 @@ function setup(thread)
         error_rate = tonumber(env_error_rate) or 0
     end
     
-    print("Thread " .. thread.id .. " initialized with " .. error_rate .. "% error rate")
+    print("Thread initialized with " .. error_rate .. "% error rate")
 end
 
 -- Generate request with rotating JWT tokens from TokenRepository
@@ -150,7 +171,7 @@ function request()
     local token = token_repository:getTokenByErrorRate(error_rate)
     
     -- Create request body with token
-    local body = json.encode({
+    local body = json_encode({
         token = token
     })
     
@@ -173,7 +194,7 @@ end
 -- Handle response
 function response(status, headers, body)
     if status ~= 200 then
-        print("Error response: " .. status .. " - " .. body)
+        print("Error response: " .. status .. " - " .. (body or ""))
     end
 end
 
@@ -223,7 +244,7 @@ function done(summary, latency, requests)
     -- Write results to file for badge generation
     local file = io.open("/tmp/wrk-results.json", "w")
     if file then
-        file:write(json.encode(results))
+        file:write(json_encode(results))
         file:close()
         print("\nResults written to /tmp/wrk-results.json")
     end
