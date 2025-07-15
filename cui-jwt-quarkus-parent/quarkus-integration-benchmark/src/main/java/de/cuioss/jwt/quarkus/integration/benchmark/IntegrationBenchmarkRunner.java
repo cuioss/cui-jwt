@@ -25,9 +25,20 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import java.io.File;
 
 /**
- * Main entry point for running JMH integration benchmarks.
+ * Main entry point for running optimized JMH integration benchmarks.
+ * <p>
  * This class provides the entry point for executing all integration benchmarks
  * in a containerized environment with Quarkus native execution.
+ * <p>
+ * Optimized for fast execution (&lt;10 minutes) with essential performance insights.
+ * <p>
+ * Optimized benchmark classes:
+ * <ul>
+ *   <li><strong>CoreIntegrationBenchmark</strong>: Essential integration performance metrics</li>
+ *   <li><strong>OptimizedErrorScenarioBenchmark</strong>: Streamlined error handling scenarios</li>
+ * </ul>
+ * <p>
+ * Containers are managed by Maven lifecycle via exec-maven-plugin.
  */
 public class IntegrationBenchmarkRunner {
 

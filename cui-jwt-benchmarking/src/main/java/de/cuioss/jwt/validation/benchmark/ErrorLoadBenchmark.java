@@ -33,90 +33,117 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Benchmark that measures system performance under high rates of validation errors.
- * This benchmark simulates scenarios with varying percentages of invalid tokens
- * and measures the impact on overall system throughput.
+ * Optimized benchmark for measuring error scenario performance with reduced execution time.
+ * <p>
+ * This benchmark focuses on the most critical error scenarios:
+ * <ul>
+ *   <li><strong>Basic Error Scenarios</strong>: Expired, malformed, invalid signature</li>
+ *   <li><strong>Mixed Error Load</strong>: Baseline (0% errors) and balanced (50% errors)</li>
+ * </ul>
+ * <p>
+ * Optimizations applied:
+ * <ul>
+ *   <li>Reduced token count from 100 to 20 per category</li>
+ *   <li>Reduced error percentages from 5 to 2 variants (0%, 50%)</li>
+ *   <li>Streamlined error types to 3 essential categories</li>
+ *   <li>Shared token generation setup</li>
+ * </ul>
+ * <p>
+ * This benchmark replaces the functionality of FailureScenarioBenchmark and ErrorLoadBenchmark
+ * with faster execution while maintaining essential error handling performance insights.
+ *
+ * @author Oliver Wolff
+ * @since 1.0
  */
 @State(Scope.Benchmark)
-@BenchmarkMode({Mode.Throughput, Mode.AverageTime})
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class ErrorLoadBenchmark {
 
-    public static final String TEST_SUBJECT = "test-subject-";
     private TokenValidator tokenValidator;
+    private String validAccessToken;
+    private String expiredToken;
+    private String malformedToken;
+    private String invalidSignatureToken;
+
+    // Optimized token pools for mixed error testing
     private List<String> validTokens;
     private List<String> invalidTokens;
 
-    @Param({"0", "10", "50", "90", "100"})
+    // Reduced error percentage variants: baseline (0%) and balanced (50%)
+    @Param({"0", "50"})
     private int errorPercentage;
 
-    // Number of tokens to generate for each category
-    private static final int TOKEN_COUNT = 100;
+    // Reduced token count for faster setup
+    private static final int TOKEN_COUNT = 20;
 
-    @Setup
+    @Setup(Level.Trial)
     public void setup() {
-        // Create a base token holder using TestTokenGenerators
+        // Create base token holder and validator
         TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
-
-        // Get the issuer config from the token holder
         IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
-
-        // Create a token validator with the issuer config
         tokenValidator = new TokenValidator(issuerConfig);
 
-        // Generate Token Lists
+        // Generate primary tokens for basic error scenarios
+        validAccessToken = baseTokenHolder.getRawToken();
+
+        // Generate expired token
+        ClaimControlParameter expiredParams = ClaimControlParameter.builder()
+                .expiredToken(true)
+                .build();
+        expiredToken = new TestTokenHolder(baseTokenHolder.getTokenType(), expiredParams).getRawToken();
+
+        // Generate malformed token
+        malformedToken = "invalid.jwt.token";
+
+        // Generate invalid signature token
+        TestTokenHolder invalidSignatureHolder = baseTokenHolder.regenerateClaims()
+                .withKeyId("invalid-key-id");
+        invalidSignatureToken = invalidSignatureHolder.getRawToken();
+
+        // Generate token pools for mixed error testing
+        setupTokenPools(baseTokenHolder);
+    }
+
+    /**
+     * Sets up token pools for mixed error testing with optimized token count.
+     */
+    private void setupTokenPools(TestTokenHolder baseTokenHolder) {
         validTokens = new ArrayList<>(TOKEN_COUNT);
         invalidTokens = new ArrayList<>(TOKEN_COUNT);
 
         // Generate valid tokens
         for (int i = 0; i < TOKEN_COUNT; i++) {
-            // Create a new token holder for each valid token
             TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-            // Add a unique subject to each token
-            tokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
+            tokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
             validTokens.add(tokenHolder.getRawToken());
         }
 
-        // Generate different types of invalid tokens
+        // Generate invalid tokens (3 types distributed evenly)
         for (int i = 0; i < TOKEN_COUNT; i++) {
-            // Distribute invalid tokens across different error types
-            int errorType = i % 5;
             String invalidToken;
+            int errorType = i % 3;
 
             switch (errorType) {
                 case 0: // Expired token
                     ClaimControlParameter expiredParams = ClaimControlParameter.builder()
                             .expiredToken(true)
                             .build();
-                    TestTokenHolder expiredTokenHolder = new TestTokenHolder(baseTokenHolder.getTokenType(), expiredParams);
-                    expiredTokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
-                    invalidToken = expiredTokenHolder.getRawToken();
+                    TestTokenHolder expiredHolder = new TestTokenHolder(baseTokenHolder.getTokenType(), expiredParams);
+                    expiredHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                    invalidToken = expiredHolder.getRawToken();
                     break;
 
-                case 1: // Wrong issuer
-                    TestTokenHolder wrongIssuerTokenHolder = baseTokenHolder.regenerateClaims()
-                            .withClaim(ClaimName.ISSUER.getName(), ClaimValue.forPlainString("rogue-issuer-" + i))
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
-                    invalidToken = wrongIssuerTokenHolder.getRawToken();
-                    break;
-
-                case 2: // Wrong audience
-                    TestTokenHolder wrongAudienceTokenHolder = baseTokenHolder.regenerateClaims()
-                            .withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forList("rogue-audience-" + i, List.of("rogue-audience-" + i)))
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
-                    invalidToken = wrongAudienceTokenHolder.getRawToken();
-                    break;
-
-                case 3: // Invalid signature
-                    TestTokenHolder invalidSignatureTokenHolder = baseTokenHolder.regenerateClaims()
+                case 1: // Invalid signature
+                    TestTokenHolder invalidSigHolder = baseTokenHolder.regenerateClaims()
                             .withKeyId("invalid-key-id-" + i)
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT + i));
-                    invalidToken = invalidSignatureTokenHolder.getRawToken();
+                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                    invalidToken = invalidSigHolder.getRawToken();
                     break;
 
-                case 4: // Malformed token
+                case 2: // Malformed token
                 default:
-                    invalidToken = "this.is.not.a.valid.jwt-" + i;
+                    invalidToken = "malformed.token." + i;
                     break;
             }
 
@@ -125,41 +152,64 @@ public class ErrorLoadBenchmark {
     }
 
     /**
-     * Selects a token based on the configured error percentage.
-     *
-     * @return A token string that has the probability of being invalid
-     * according to the errorPercentage parameter
+     * Benchmarks validation of valid tokens (baseline performance).
      */
-    @SuppressWarnings("java:S2245") // owolff: ok for test purposes
-    private String selectToken() {
-        // If errorPercentage is 0, always return valid token
-        if (errorPercentage == 0) {
-            int index = ThreadLocalRandom.current().nextInt(validTokens.size());
-            return validTokens.get(index);
-        }
-
-        // If errorPercentage is 100, always return invalid token
-        if (errorPercentage == 100) {
-            int index = ThreadLocalRandom.current().nextInt(invalidTokens.size());
-            return invalidTokens.get(index);
-        }
-
-        // Otherwise, select based on probability
-        int randomValue = ThreadLocalRandom.current().nextInt(100);
-        if (randomValue < errorPercentage) {
-            // Return an invalid token
-            int index = ThreadLocalRandom.current().nextInt(invalidTokens.size());
-            return invalidTokens.get(index);
-        } else {
-            // Return a valid token
-            int index = ThreadLocalRandom.current().nextInt(validTokens.size());
-            return validTokens.get(index);
+    @Benchmark
+    public AccessTokenContent validateValidToken() {
+        try {
+            return tokenValidator.createAccessToken(validAccessToken);
+        } catch (TokenValidationException e) {
+            throw new RuntimeException("Unexpected validation failure for valid token", e);
         }
     }
 
+    /**
+     * Benchmarks validation of expired tokens.
+     */
+    @Benchmark
+    public Object validateExpiredToken() {
+        try {
+            return tokenValidator.createAccessToken(expiredToken);
+        } catch (TokenValidationException e) {
+            return e; // Expected failure
+        }
+    }
+
+    /**
+     * Benchmarks validation of malformed tokens.
+     */
+    @Benchmark
+    public Object validateMalformedToken() {
+        try {
+            return tokenValidator.createAccessToken(malformedToken);
+        } catch (TokenValidationException e) {
+            return e; // Expected failure
+        }
+    }
+
+    /**
+     * Benchmarks validation of tokens with invalid signatures.
+     */
+    @Benchmark
+    public Object validateInvalidSignatureToken() {
+        try {
+            return tokenValidator.createAccessToken(invalidSignatureToken);
+        } catch (TokenValidationException e) {
+            return e; // Expected failure
+        }
+    }
+
+    /**
+     * Benchmarks mixed error load scenarios with optimized error percentages.
+     * <p>
+     * Tests two scenarios:
+     * <ul>
+     *   <li><strong>0% errors</strong>: Baseline performance with only valid tokens</li>
+     *   <li><strong>50% errors</strong>: Balanced mix of valid and invalid tokens</li>
+     * </ul>
+     */
     @Benchmark
     public Object validateMixedTokens(Blackhole blackhole) {
-        // Select token based on current iteration and errorPercentage
         String token = selectToken();
         try {
             AccessTokenContent result = tokenValidator.createAccessToken(token);
@@ -168,6 +218,28 @@ public class ErrorLoadBenchmark {
         } catch (TokenValidationException e) {
             blackhole.consume(e);
             return e;
+        }
+    }
+
+    /**
+     * Selects a token based on the configured error percentage.
+     */
+    @SuppressWarnings("java:S2245") // Random usage is acceptable for benchmarks
+    private String selectToken() {
+        if (errorPercentage == 0) {
+            // Always return valid token for baseline measurement
+            int index = ThreadLocalRandom.current().nextInt(validTokens.size());
+            return validTokens.get(index);
+        }
+
+        // 50% error scenario - balanced mix
+        int randomValue = ThreadLocalRandom.current().nextInt(100);
+        if (randomValue < errorPercentage) {
+            int index = ThreadLocalRandom.current().nextInt(invalidTokens.size());
+            return invalidTokens.get(index);
+        } else {
+            int index = ThreadLocalRandom.current().nextInt(validTokens.size());
+            return validTokens.get(index);
         }
     }
 }

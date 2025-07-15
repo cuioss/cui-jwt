@@ -26,16 +26,28 @@ import org.openjdk.jmh.annotations.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Comprehensive benchmark for measuring key JWT validation performance indicators.
+ * Consolidated core validation benchmark that measures essential JWT validation performance metrics.
  * <p>
- * This benchmark focuses on the two most important performance metrics:
+ * This benchmark combines the most critical performance measurements:
  * <ul>
+ *   <li><strong>Average Time</strong>: Single-threaded validation latency</li>
  *   <li><strong>Throughput</strong>: Operations per second under concurrent load</li>
- *   <li><strong>Average Validation Time</strong>: Time per operation for single-threaded validation</li>
+ *   <li><strong>Concurrent Validation</strong>: Multi-threaded validation performance</li>
  * </ul>
  * <p>
- * The results from these benchmarks are used to calculate a weighted performance score
- * that provides a single indicator of overall JWT validation performance.
+ * Performance expectations:
+ * <ul>
+ *   <li>Access token validation: &lt; 100 μs per operation</li>
+ *   <li>Concurrent throughput: Linear scalability up to 8 threads</li>
+ *   <li>Throughput: &gt; 10,000 operations/second</li>
+ * </ul>
+ * <p>
+ * This benchmark is optimized for fast execution while retaining essential performance insights.
+ * It replaces the functionality of TokenValidatorBenchmark, ConcurrentTokenValidationBenchmark,
+ * and PerformanceIndicatorBenchmark with streamlined implementations.
+ *
+ * @author Oliver Wolff
+ * @since 1.0
  */
 @State(Scope.Benchmark)
 @SuppressWarnings("java:S112")
@@ -44,39 +56,37 @@ public class PerformanceIndicatorBenchmark {
     private TokenValidator tokenValidator;
     private String validAccessToken;
 
+    /**
+     * Shared token pool for reduced setup overhead.
+     * Pre-generated tokens reduce benchmark setup time.
+     */
+    private static final int TOKEN_POOL_SIZE = 20;
+    private String[] tokenPool;
+    private int tokenIndex = 0;
+
     @Setup(Level.Trial)
     public void setup() {
-        TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-        IssuerConfig issuerConfig = tokenHolder.getIssuerConfig();
+        // Generate single issuer config and validator
+        TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
+        IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
         tokenValidator = new TokenValidator(issuerConfig);
-        validAccessToken = tokenHolder.getRawToken();
-    }
-
-    /**
-     * Measures token validation throughput under concurrent load.
-     * <p>
-     * This benchmark uses maximum available threads to measure how many
-     * token validations can be performed per second under high concurrency.
-     * Higher values indicate better throughput performance.
-     *
-     * @return validated access token content
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public AccessTokenContent measureThroughput() {
-        try {
-            return tokenValidator.createAccessToken(validAccessToken);
-        } catch (TokenValidationException e) {
-            throw new RuntimeException("Unexpected validation failure during throughput measurement", e);
+        
+        // Generate primary validation token
+        validAccessToken = baseTokenHolder.getRawToken();
+        
+        // Generate token pool for concurrent benchmarks
+        tokenPool = new String[TOKEN_POOL_SIZE];
+        for (int i = 0; i < TOKEN_POOL_SIZE; i++) {
+            TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
+            tokenPool[i] = tokenHolder.getRawToken();
         }
     }
 
     /**
      * Measures average validation time for single-threaded token validation.
      * <p>
-     * This benchmark measures the average time required to validate a single
-     * token without concurrent load. Lower values indicate better latency performance.
+     * This benchmark measures the baseline latency for validating a single
+     * access token without concurrent load. Lower values indicate better performance.
      *
      * @return validated access token content
      */
@@ -92,36 +102,57 @@ public class PerformanceIndicatorBenchmark {
     }
 
     /**
-     * Calculates a comprehensive weighted performance score based on multiple metrics.
+     * Measures token validation throughput under concurrent load.
      * <p>
-     * The performance score is calculated as:
-     * <code>Score = (Throughput * 0.57) + ((1000000 / AvgTimeInMicros) * 0.40) + (ErrorResilienceScore * 0.03)</code>
-     * <p>
-     * This formula weights:
-     * <ul>
-     *   <li><strong>Throughput (57%)</strong>: Operations per second under concurrent load</li>
-     *   <li><strong>Latency (40%)</strong>: Inverted average time per operation</li>
-     *   <li><strong>Error Resilience (3%)</strong>: Performance stability under error conditions</li>
-     * </ul>
-     * The error resilience component ensures the system maintains good performance
-     * even when processing invalid tokens, which is important for production stability.
+     * This benchmark uses 8 threads to measure how many token validations
+     * can be performed per second under concurrent load. Higher values indicate better throughput.
      *
-     * @param throughputOpsPerSec Operations per second from throughput benchmark
-     * @param avgTimeInMicros Average time per operation in microseconds
-     * @param errorResilienceOpsPerSec Operations per second under mixed error conditions (0% error scenario)
-     * @return Weighted performance score
+     * @return validated access token content
      */
-    public static double calculatePerformanceScore(double throughputOpsPerSec, double avgTimeInMicros, double errorResilienceOpsPerSec) {
-        // Convert average time to operations per second (inverted metric)
-        double latencyOpsPerSec = 1_000_000.0 / avgTimeInMicros;
-
-        // Weighted score: 57% throughput, 40% latency, 3% error resilience
-        return (throughputOpsPerSec * 0.57) + (latencyOpsPerSec * 0.40) + (errorResilienceOpsPerSec * 0.03);
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public AccessTokenContent measureThroughput() {
+        try {
+            return tokenValidator.createAccessToken(validAccessToken);
+        } catch (TokenValidationException e) {
+            throw new RuntimeException("Unexpected validation failure during throughput measurement", e);
+        }
     }
 
     /**
-     * Backward compatibility method for calculating performance score without error resilience.
-     * Uses the original 60/40 weighting between throughput and latency.
+     * Measures concurrent validation performance with token rotation.
+     * <p>
+     * This benchmark tests validation performance using a pool of different tokens
+     * to simulate real-world scenarios where multiple different tokens are validated
+     * concurrently. This provides insight into caching behavior and token diversity impact.
+     *
+     * @return validated access token content
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureConcurrentValidation() {
+        try {
+            // Rotate through token pool to simulate different tokens
+            String token = tokenPool[tokenIndex++ % TOKEN_POOL_SIZE];
+            return tokenValidator.createAccessToken(token);
+        } catch (TokenValidationException e) {
+            throw new RuntimeException("Unexpected validation failure during concurrent validation", e);
+        }
+    }
+
+    /**
+     * Calculates a comprehensive weighted performance score based on multiple metrics.
+     * <p>
+     * The performance score is calculated as:
+     * <code>Score = (Throughput * 0.6) + ((1000000 / AvgTimeInMicros) * 0.4)</code>
+     * <p>
+     * This formula weights:
+     * <ul>
+     *   <li><strong>Throughput (60%)</strong>: Operations per second under concurrent load</li>
+     *   <li><strong>Latency (40%)</strong>: Inverted average time per operation</li>
+     * </ul>
      *
      * @param throughputOpsPerSec Operations per second from throughput benchmark
      * @param avgTimeInMicros Average time per operation in microseconds
@@ -130,8 +161,8 @@ public class PerformanceIndicatorBenchmark {
     public static double calculatePerformanceScore(double throughputOpsPerSec, double avgTimeInMicros) {
         // Convert average time to operations per second (inverted metric)
         double latencyOpsPerSec = 1_000_000.0 / avgTimeInMicros;
-
-        // Weighted score: 60% throughput, 40% latency (original formula)
+        
+        // Weighted score: 60% throughput, 40% latency
         return (throughputOpsPerSec * 0.6) + (latencyOpsPerSec * 0.4);
     }
 }

@@ -24,10 +24,17 @@ import org.openjdk.jmh.runner.options.TimeValue;
 import java.io.File;
 
 /**
- * Main class for running all benchmarks.
+ * Main class for running optimized benchmarks.
  * <p>
  * This class collects and runs all benchmark classes in the package.
- * It configures JMH with standard settings and produces a combined JSON report.
+ * It configures JMH with optimized settings for fast execution (&lt;10 minutes)
+ * and produces a combined JSON report.
+ * <p>
+ * Optimized benchmark classes:
+ * <ul>
+ *   <li><strong>PerformanceIndicatorBenchmark</strong>: Essential validation performance metrics</li>
+ *   <li><strong>ErrorLoadBenchmark</strong>: Streamlined error handling scenarios</li>
+ * </ul>
  */
 public class BenchmarkRunner {
 

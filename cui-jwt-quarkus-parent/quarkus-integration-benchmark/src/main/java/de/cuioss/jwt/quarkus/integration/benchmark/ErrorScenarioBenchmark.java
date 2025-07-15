@@ -29,31 +29,50 @@ import java.util.concurrent.TimeUnit;
 import static de.cuioss.jwt.quarkus.integration.benchmark.BenchmarkConstants.*;
 
 /**
- * Error load benchmark for integration testing with various error rates.
- * This benchmark measures how efficiently the system handles different 
- * percentages of invalid/expired tokens in the request stream.
- * 
- * Matches the structure of ErrorLoadBenchmark from the micro-benchmark module
- * to ensure compatible scoring metrics.
- * 
+ * Optimized error scenario benchmark for integration testing with reduced execution time.
+ * <p>
+ * This benchmark focuses on the most critical error scenarios in a containerized environment:
+ * <ul>
+ *   <li><strong>Basic Error Types</strong>: Invalid, expired, and malformed tokens</li>
+ *   <li><strong>Mixed Error Load</strong>: Baseline (0% errors) and balanced (50% errors)</li>
+ *   <li><strong>Missing Headers</strong>: Request validation edge cases</li>
+ * </ul>
+ * <p>
+ * Optimizations applied:
+ * <ul>
+ *   <li>Reduced error percentages from 5 to 2 variants (0%, 50%)</li>
+ *   <li>Streamlined error types to 3 essential categories</li>
+ *   <li>Efficient token management with caching</li>
+ *   <li>Single setup for all error scenarios</li>
+ * </ul>
+ * <p>
+ * This benchmark replaces the functionality of the original ErrorLoadBenchmark
+ * with faster execution while maintaining essential error handling performance insights.
+ * <p>
  * Containers are managed by Maven lifecycle via exec-maven-plugin.
+ *
+ * @author Oliver Wolff
+ * @since 1.0
  */
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
-public class ErrorLoadBenchmark {
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+public class ErrorScenarioBenchmark {
 
-    private static final CuiLogger LOGGER = new CuiLogger(ErrorLoadBenchmark.class);
+    private static final CuiLogger LOGGER = new CuiLogger(ErrorScenarioBenchmark.class);
 
     private TokenRepositoryManager tokenManager;
+
+    // Reduced error percentage variants: baseline (0%) and balanced (50%)
+    @Param({"0", "50"})
+    private int errorPercentage;
 
     @Setup(Level.Trial)
     @SuppressWarnings("java:S2696") // Static field update is safe in JMH @Setup context
     public void setupEnvironment() throws TokenFetchException {
-        LOGGER.info("🚀 Setting up error load benchmark...");
+        LOGGER.info("🚀 Setting up optimized error scenario benchmark...");
 
         // Container is already started by Maven exec-maven-plugin
-        // Configure REST Assured to use the running application
         String baseUrl = BenchmarkConfiguration.getApplicationUrl();
 
         RestAssured.baseURI = baseUrl;
@@ -63,26 +82,20 @@ public class ErrorLoadBenchmark {
         tokenManager = TokenRepositoryManager.getInstance();
         tokenManager.initialize();
 
-        LOGGER.info("✅ Error load benchmark ready");
+        LOGGER.info("✅ Optimized error scenario benchmark ready");
     }
 
     @TearDown(Level.Trial)
     public void teardownEnvironment() {
-        // Container will be stopped by Maven exec-maven-plugin
-        LOGGER.info("🛑 Error load benchmark completed");
+        LOGGER.info("🛑 Optimized error scenario benchmark completed");
     }
 
     /**
-     * Benchmark with parameterized error rates.
-     * This is used for error resilience scoring and testing various error conditions.
-     * Must match the benchmark name pattern for performance score extraction.
+     * Benchmarks validation of valid tokens (baseline performance).
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void validateMixedTokens(Blackhole bh) {
-        // Default to 0% error rate for baseline resilience measurement
-        String token = tokenManager.getTokenByErrorRate(0);
+    public void validateValidToken(Blackhole bh) {
+        String token = tokenManager.getValidToken();
         Response response = RestAssured.given()
                 .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
                 .when()
@@ -91,14 +104,11 @@ public class ErrorLoadBenchmark {
     }
 
     /**
-     * Benchmark with 10% error rate.
-     * Tests system resilience under light error conditions.
+     * Benchmarks validation of invalid tokens.
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void validateMixedTokens10PercentError(Blackhole bh) {
-        String token = tokenManager.getTokenByErrorRate(10);
+    public void validateInvalidToken(Blackhole bh) {
+        String token = tokenManager.getInvalidToken();
         Response response = RestAssured.given()
                 .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
                 .when()
@@ -107,14 +117,11 @@ public class ErrorLoadBenchmark {
     }
 
     /**
-     * Benchmark with 50% error rate.
-     * Tests system resilience under moderate error conditions.
+     * Benchmarks validation of expired tokens.
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void validateMixedTokens50PercentError(Blackhole bh) {
-        String token = tokenManager.getTokenByErrorRate(50);
+    public void validateExpiredToken(Blackhole bh) {
+        String token = tokenManager.getExpiredToken();
         Response response = RestAssured.given()
                 .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
                 .when()
@@ -123,30 +130,28 @@ public class ErrorLoadBenchmark {
     }
 
     /**
-     * Benchmark with 90% error rate.
-     * Tests system resilience under heavy error conditions.
+     * Benchmarks missing authorization header handling.
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void validateMixedTokens90PercentError(Blackhole bh) {
-        String token = tokenManager.getTokenByErrorRate(90);
+    public void validateMissingAuthHeader(Blackhole bh) {
         Response response = RestAssured.given()
-                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
                 .when()
                 .post(JWT_VALIDATE_PATH);
         bh.consume(response);
     }
 
     /**
-     * Benchmark with 100% error rate.
-     * Tests system resilience under complete error conditions.
+     * Benchmarks mixed error load scenarios with optimized error percentages.
+     * <p>
+     * Tests two scenarios:
+     * <ul>
+     *   <li><strong>0% errors</strong>: Baseline performance with only valid tokens</li>
+     *   <li><strong>50% errors</strong>: Balanced mix of valid and invalid tokens</li>
+     * </ul>
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void validateMixedTokens100PercentError(Blackhole bh) {
-        String token = tokenManager.getTokenByErrorRate(100);
+    public void validateMixedErrorLoad(Blackhole bh) {
+        String token = tokenManager.getTokenByErrorRate(errorPercentage);
         Response response = RestAssured.given()
                 .header(AUTHORIZATION_HEADER, BEARER_PREFIX + token)
                 .when()

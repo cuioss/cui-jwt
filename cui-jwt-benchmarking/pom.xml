@@ -21,15 +21,15 @@
         <sonar.skip>true</sonar.skip>
         <version.mockwebserver3>5.0.0-alpha.12</version.mockwebserver3>
 
-        <!-- JMH Configuration Properties - Optimized for measurement precision -->
+        <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/micro-benchmark-result</jmh.result.filePrefix>
         <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
-        <jmh.forks>2</jmh.forks>
-        <jmh.threads>200</jmh.threads>
-        <jmh.time>2s</jmh.time>
-        <jmh.warmupTime>2s</jmh.warmupTime>
+        <jmh.forks>1</jmh.forks>
+        <jmh.threads>50</jmh.threads>
+        <jmh.time>4s</jmh.time>
+        <jmh.warmupTime>1s</jmh.warmupTime>
     </properties>
 
     <dependencyManagement>

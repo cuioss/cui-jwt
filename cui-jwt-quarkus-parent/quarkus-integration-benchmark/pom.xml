@@ -19,21 +19,18 @@
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.integration.benchmark</maven.jar.plugin.automatic.module.name>
         <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
-
-
         <!-- HTTPS configuration for testing (reuse integration tests ports) -->
         <test.https.port>10443</test.https.port>
         <test.keycloak.port>1443</test.keycloak.port>
-
-        <!-- JMH Configuration Properties - Optimized for measurement precision -->
+        <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>3</jmh.iterations>
+        <jmh.iterations>2</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
-        <jmh.forks>2</jmh.forks>
-        <jmh.threads>200</jmh.threads>
-        <jmh.time>3s</jmh.time>
-        <jmh.warmupTime>3s</jmh.warmupTime>
+        <jmh.forks>1</jmh.forks>
+        <jmh.threads>8</jmh.threads>
+        <jmh.time>2s</jmh.time>
+        <jmh.warmupTime>2s</jmh.warmupTime>
 
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
