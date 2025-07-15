@@ -12,12 +12,14 @@ RESULTS_DIR="./target/wrk-results"
 THREADS=${1:-200}
 CONNECTIONS=${2:-200}
 DURATION=${3:-30s}
+ERROR_RATE=${4:-0}
 
 echo "🚀 Starting Docker-based wrk benchmark..."
 echo "  Target: $QUARKUS_URL"
 echo "  Threads: $THREADS"
 echo "  Connections: $CONNECTIONS"
 echo "  Duration: $DURATION"
+echo "  Error rate: $ERROR_RATE%"
 
 # Create results directory
 mkdir -p "$RESULTS_DIR"
@@ -33,6 +35,7 @@ echo "🏃 Running wrk benchmark..."
 docker run --rm \
     --network host \
     -v "$PWD/$RESULTS_DIR:/tmp" \
+    -e WRK_ERROR_RATE="$ERROR_RATE" \
     "$WRK_IMAGE" \
     wrk \
     -t "$THREADS" \

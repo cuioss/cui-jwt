@@ -90,12 +90,19 @@
 - **362x overhead** (1,814ms vs 5ms) is due to HTTP client + network + container infrastructure
 - **Badge scripts correctly format values** - Throughput rounded to whole numbers, latency in milliseconds
 
-=== Priority 2: Tool Replacement (Docker-Based)
-- [ ] **Create Docker-based wrk container** - Use containerized wrk to avoid local installation
-- [ ] **Replace JMH with wrk for integration testing** - JMH is fundamentally unsuitable for HTTP benchmarking
-- [ ] **Create wrk Lua scripts** - Implement JWT token generation and validation scripts
+=== Priority 2: Tool Replacement (Docker-Based) 🚧 **IN PROGRESS**
+- [x] **Create Docker-based wrk container** - ✅ **COMPLETED** - Dockerfile with Alpine + wrk + dependencies
+- [x] **Replace JMH with wrk for integration testing** - ✅ **COMPLETED** - Docker-based wrk solution implemented
+- [x] **Create wrk Lua scripts** - ✅ **COMPLETED** - jwt-validation.lua with rotating JWT tokens and JSON output
 - [ ] **Establish baseline measurements** - Get accurate HTTP latency measurements using Docker wrk
 - [ ] **Compare results with corrected JMH data** - Validate measurement accuracy
+
+**Implementation Details:**
+- **Docker Container**: `cui-jwt-wrk:latest` with wrk + Alpine Linux
+- **Lua Script**: `jwt-validation.lua` - JWT token rotation, JSON results output
+- **Integration**: `run-wrk-benchmark.sh` - Docker-based execution script
+- **Compatibility**: `process-wrk-results.sh` - Converts wrk output to JMH format
+- **Comparison**: `compare-benchmarks.sh` - Side-by-side JMH vs wrk analysis
 
 === Priority 3: Infrastructure Optimization
 - [ ] **Implement host networking for containers** - Eliminate Docker bridge networking overhead

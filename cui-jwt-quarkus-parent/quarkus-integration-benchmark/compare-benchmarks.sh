@@ -8,11 +8,13 @@ set -euo pipefail
 BENCHMARK_TYPE="${1:-both}"  # jmh, wrk, or both
 THREADS="${2:-200}"
 DURATION="${3:-30s}"
+ERROR_RATE="${4:-0}"
 
 echo "🏆 JWT Integration Benchmark Comparison"
 echo "  Type: $BENCHMARK_TYPE"
 echo "  Threads: $THREADS"
 echo "  Duration: $DURATION"
+echo "  Error rate: $ERROR_RATE%"
 echo ""
 
 # Ensure Quarkus container is running
@@ -45,7 +47,7 @@ if [ "$BENCHMARK_TYPE" = "wrk" ] || [ "$BENCHMARK_TYPE" = "both" ]; then
     echo "🚀 Running wrk Integration Benchmark..."
     
     # Run Docker-based wrk benchmark
-    ./docker/wrk/run-wrk-benchmark.sh "$THREADS" "$THREADS" "$DURATION"
+    ./docker/wrk/run-wrk-benchmark.sh "$THREADS" "$THREADS" "$DURATION" "$ERROR_RATE"
     
     # Process wrk results to JMH format
     ./docker/wrk/process-wrk-results.sh
