@@ -122,7 +122,7 @@ cat > "$OUTPUT_DIR/integration/badges/throughput-badge.json" << EOF
 {
   "schemaVersion": 1,
   "label": "Throughput",
-  "message": "$AVG_INTEGRATION_THROUGHPUT ops/s",
+  "message": "$THROUGHPUT_DISPLAY ops/s",
   "color": "$THROUGHPUT_COLOR"
 }
 EOF
