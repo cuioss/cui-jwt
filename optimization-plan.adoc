@@ -5,6 +5,75 @@
 :sectnums:
 :source-highlighter: highlight.js
 
+== Dismissed Items (Do Not Revisit)
+
+=== Items Already Ruled Out
+
+==== 1. JWT Token Caching Implementation
+**Status:** ❌ DISMISSED  
+**Reason:** No caching by design - See micro-benchmark results showing 5ms processing time  
+**User Decision:** "Implement JWT token caching" -> No caching by design -> See micro-benchmark -> Not necessary
+
+==== 2. JWKS Key Retrieval Optimization  
+**Status:** ❌ DISMISSED  
+**Reason:** Already optimized and cached by design  
+**User Decision:** "Optimize JWKS key retrieval" -> Already in place. Only to be addressed if we find a bottleneck here
+
+==== 3. Efficient JWT Libraries Research
+**Status:** ❌ DISMISSED  
+**Reason:** Focus is on optimizing the existing (user's) library, not replacing it  
+**User Decision:** "Use efficient JWT libraries" -> It is about optimizing this (my) library. Don't mock about
+
+==== 4. Keycloak Container Performance Issues
+**Status:** ❌ DISMISSED  
+**Reason:** Not a problem due to efficient JWKS keystore caching by design  
+**User Decision:** "Keycloak container: Should be not a problem: We cache the jwks keystore by design"
+
+==== 5. Container-to-Container Communication Optimization
+**Status:** ❌ DISMISSED  
+**Reason:** Not an issue because Keycloak calls are efficiently cached  
+**User Decision:** "Container-to-container communication: Multiple network hops" -> No issue, because we efficiently cache the keycloak calls
+
+==== 6. HTTP Client Configuration on Quarkus Side
+**Status:** ❌ DISMISSED  
+**Reason:** Only affects test client, not the Quarkus container  
+**User Decision:** "HTTP Client Configuration: Only on the (Test-) client side. Not on the quarkus container -> Therefore no '3.1.3. 1.3 HTTP Client Configuration'"
+
+==== 7. Thread Pool Configuration for Virtual Threads
+**Status:** ❌ DISMISSED (Pending Research)  
+**Reason:** Using virtual threads (Project Loom) already - research needed on whether traditional thread pool config is still relevant  
+**User Decision:** "Thread Pool Configuration: To consider: We use virtual threads (Project Loom) already. Research whether this is needed at all / is the correct configuration therefore"
+
+==== 8. Request Processing Pipeline Optimization
+**Status:** ❌ DISMISSED  
+**Reason:** No benefit expected, already tested, no difference with virtual threads  
+**User Decision:** "Request Processing Pipeline: No benefit expected: We already tested. No difference to virtual threads"
+
+==== 9. Regression Testing Implementation
+**Status:** ❌ DISMISSED  
+**Reason:** Already in place  
+**User Decision:** "Regression Testing: Already in place"
+
+==== 10. Reactive vs Blocking I/O Model
+**Status:** ❌ DISMISSED  
+**Reason:** Already tested, no issues found  
+**User Decision:** "Reactive vs blocking: Incorrect I/O model usage": No this is already tested: remove"
+
+==== 11. Test Client Optimization (RestAssured)
+**Status:** ❌ POSTPONED  
+**Reason:** Depends on new test framework selection, may not be necessary with wrk  
+**User Decision:** "Test Client Optimization (Test-Side Only): Postpone it: Depending on the new test-framework this may not be necessary anymore"
+
+==== 12. 200 Threads Being Problematic
+**Status:** ❌ DISMISSED  
+**Reason:** Appropriate for Apple M4 chip capabilities  
+**User Decision:** "But why do you think that is a problem. for the computer-chip, Apple M4 this should be doable"
+
+==== 13. Time Estimations and Impact Percentages
+**Status:** ❌ DISMISSED  
+**Reason:** User requested removal of all time/duration/estimation elements  
+**User Decision:** "remove all time / duration / estimation elements"
+
 == Action Items
 
 === Priority 1: Verify Benchmark Calculations
