@@ -28,7 +28,7 @@
         <jmh.iterations>2</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>1</jmh.forks>
-        <jmh.threads>8</jmh.threads>
+        <jmh.threads>200</jmh.threads>
         <jmh.time>2s</jmh.time>
         <jmh.warmupTime>2s</jmh.warmupTime>
 
