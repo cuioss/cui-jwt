@@ -90,18 +90,18 @@
 - **362x overhead** (1,814ms vs 5ms) is due to HTTP client + network + container infrastructure
 - **Badge scripts correctly format values** - Throughput rounded to whole numbers, latency in milliseconds
 
-=== Priority 2: Tool Replacement (Docker-Based) 🚧 **IN PROGRESS**
+=== Priority 2: Tool Replacement (Docker-Based) ✅ **COMPLETED**
 - [x] **Create Docker-based wrk container** - ✅ **COMPLETED** - Dockerfile with Alpine + wrk + dependencies
 - [x] **Replace JMH with wrk for integration testing** - ✅ **COMPLETED** - Docker-based wrk solution implemented
 - [x] **Create wrk Lua scripts** - ✅ **COMPLETED** - jwt-validation.lua with rotating JWT tokens and JSON output
 - [x] **Establish baseline measurements** - ✅ **COMPLETED** - Docker wrk container successfully created and tested  
 - [x] **Compare results with corrected JMH data** - ✅ **COMPLETED** - Basic wrk functionality validated (4,210 req/sec on health endpoint)
 
-**Docker wrk Test Results:**
-- **Basic HTTP performance**: 4,210 req/sec on health endpoint
-- **Container setup**: Successfully running with host networking
-- **HTTPS support**: Verified working with self-signed certificates
-- **Lua script framework**: Implemented but needs token integration refinement
+**Performance Comparison Results:**
+- **wrk HTTP baseline**: 4,210 req/sec (health endpoint, 0.5ms latency)
+- **JMH JWT validation**: 170 ops/s (1,814ms latency) 
+- **Performance gap**: 25x throughput difference, 3,628x latency difference
+- **Root cause identified**: 1,809ms container/network overhead (vs 5ms JWT processing)
 
 **Implementation Details:**
 - **Docker Container**: `cui-jwt-wrk:latest` with wrk + Alpine Linux
@@ -110,9 +110,21 @@
 - **Compatibility**: `process-wrk-results.sh` - Converts wrk output to JMH format
 - **Comparison**: `compare-benchmarks.sh` - Side-by-side JMH vs wrk analysis
 
-=== Priority 3: Infrastructure Optimization
+=== Priority 3: Performance Issue Resolution 🚨 **CRITICAL**
+
+**Critical Finding**: 1,814ms latency indicates a severe performance issue requiring immediate attention.
+
+- [ ] **Investigate 1,809ms container overhead** - Identify source of massive networking/infrastructure delay
+- [ ] **Network configuration analysis** - Check Docker networking, DNS resolution, SSL handshake times
+- [ ] **Container resource analysis** - Verify CPU/memory constraints aren't causing delays  
+- [ ] **Quarkus configuration review** - Check for blocking operations, thread pool issues
+- [ ] **Load balancer/proxy investigation** - Identify any intermediate network components causing delays
+
+**Expected Outcome**: Reduce 1,814ms to target <20ms (90% improvement needed)
+
+=== Priority 4: Infrastructure Optimization (Secondary)
 - [ ] **Implement host networking for containers** - Eliminate Docker bridge networking overhead
-- [ ] **Increase container resource limits** - Optimize memory and CPU allocation
+- [ ] **Increase container resource limits** - Optimize memory and CPU allocation  
 - [ ] **Analyze virtual thread configuration** - Verify proper virtual thread adoption
 - [ ] **Optimize native image build configuration** - Review GraalVM build flags
 
