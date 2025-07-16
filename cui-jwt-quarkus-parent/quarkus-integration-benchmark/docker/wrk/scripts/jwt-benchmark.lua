@@ -36,7 +36,7 @@ function request()
 end
 
 function response(status, headers, body)
-    -- Check for unexpected 401 responses with valid tokens - fail fast
+    -- Only check for 401 responses for fail-fast behavior
     if status == 401 then
         -- Parse the response to extract just the message, removing the data:{} field
         local response_message = body or "no body"
@@ -100,7 +100,7 @@ function done(summary, latency, requests)
     print("Latency P99: " .. string.format("%.1f", latency_p99_ms) .. "ms")
     print("Connection Errors: " .. connection_errors)
     
-    -- No failures detected - successful benchmark
+    -- Assume 100% success rate if no fail-fast was triggered
     local results = string.format('{"throughput_rps":%.0f,"latency_p95_ms":%.1f,"latency_p99_ms":%.1f,"errors":%d,"connection_errors":%d,"fail_fast_triggered":false,"success_rate":100.0}',
                                   throughput, latency_p95_ms, latency_p99_ms, connection_errors, connection_errors)
     

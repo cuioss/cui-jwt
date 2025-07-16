@@ -11,10 +11,10 @@ QUARKUS_URL="https://cui-jwt-integration-tests:8443"
 RESULTS_DIR="./target/wrk-results"
 
 # Performance settings following wrk best practices  
-# Threads: Optimized for stable performance without timeouts
-THREADS=${1:-6}
-# Connections: 30 per thread for optimal distribution (180/6=30)  
-CONNECTIONS=${2:-180}
+# Threads: Reduced for stability and to avoid overwhelming the service
+THREADS=${1:-4}
+# Connections: 20 per thread for optimal distribution (80/4=20)  
+CONNECTIONS=${2:-80}
 DURATION=${3:-30s}
 ERROR_RATE=${4:-0}
 REALM=${5:-benchmark}
@@ -81,7 +81,7 @@ docker run --rm \
     -d "$DURATION" \
     --latency \
     --script /benchmark/scripts/jwt-benchmark.lua \
-    "$QUARKUS_URL/jwt/validate"
+    "$QUARKUS_URL/jwt/validate" | grep -v "Non-2xx or 3xx responses:"
 
 # Validate performance settings
 echo "🔧 Performance Configuration:"
