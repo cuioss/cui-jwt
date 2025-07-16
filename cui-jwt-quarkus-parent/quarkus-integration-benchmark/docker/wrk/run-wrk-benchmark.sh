@@ -80,7 +80,7 @@ docker run --rm \
     -c "$CONNECTIONS" \
     -d "$DURATION" \
     --latency \
-    --script /benchmark/scripts/jwt-working.lua \
+    --script /benchmark/scripts/jwt-benchmark.lua \
     "$QUARKUS_URL/jwt/validate"
 
 # Validate performance settings

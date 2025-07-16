@@ -34,7 +34,26 @@ The module is configured to:
 ./mvnw clean package -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 # Run integration benchmarks locally
-./mvnw clean verify -pl /cui-jwt-quarkus-parent/quarkus-integration-benchmark -Dskip.benchmark=false
+./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Dskip.benchmark=false -DskipTests
+----
+
+=== Direct wrk Usage
+[source,bash]
+----
+# Navigate to benchmark directory
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
+
+# Basic benchmark run
+./docker/wrk/run-wrk-benchmark.sh
+
+# Custom configuration (threads, connections, duration, error_rate)
+./docker/wrk/run-wrk-benchmark.sh 12 240 60s 5
+
+# Health check baseline
+./docker/wrk/run-health-benchmark.sh
+
+# JFR profiling with performance testing
+./docker/wrk/run-wrk-with-jfr.sh
 ----
 
 === CI/CD Execution
@@ -42,25 +61,45 @@ Integration benchmarks are executed automatically via GitHub Actions workflow al
 
 == Architecture
 
-The benchmarks run in a containerized environment similar to `cui-jwt-quarkus-integration-tests` but with JMH performance measurement capabilities.
+The benchmarks run in a containerized environment using **wrk** for HTTP load testing, providing realistic performance measurement of the JWT validation endpoints.
 
 === Container Setup
-* Quarkus native application
-* Keycloak container (issuer1)
-* Memory-based issuer
-* Shared container network
+* Quarkus native application (target under test)
+* Keycloak container for realistic token issuing
+* Docker-based wrk benchmarking container
+* Shared container network for internal communication
+
+=== Components
+* **Docker Container**: `cui-jwt-wrk:latest` with Alpine Linux + wrk + dependencies
+* **Shell Scripts**: `run-wrk-benchmark.sh` and `run-health-benchmark.sh` for orchestration
+* **Lua Scripts**: `jwt-benchmark.lua` and `health-check.lua` for load testing logic
+* **Token Management**: Real JWT tokens from Keycloak with fail-fast validation
 
 === Performance Metrics
 
-Uses the **identical weighted scoring formula** as the xref:../../cui-jwt-benchmarking/doc/performance-scoring.adoc[micro-benchmark module]:
+The benchmarks measure HTTP-level performance using **wrk** with the following key metrics:
 
-**`Performance Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience × 0.03)`**
+* **Throughput**: Requests per second (RPS) under concurrent load
+* **Latency Distribution**: P50, P90, P95, P99 percentiles in milliseconds
+* **Error Rates**: Connection errors, timeouts, and HTTP error responses
+* **Health Check Baseline**: System latency without JWT validation overhead
 
-Metrics measured:
-* **Throughput (57% weight)**: HTTP requests per second under maximum concurrent load
-* **Latency (40% weight)**: Average HTTP response time (converted to ops/sec via inversion)
-* **Error Resilience (3% weight)**: Baseline throughput with 0% error rate
-* **Performance Score**: Weighted composite metric comparable to micro-benchmarks
+=== wrk Configuration Optimizations
+
+==== Thread Configuration
+* **Threads**: 6 (optimized for container environments)
+* **Connections**: 180 (30x threads for HTTP/1.1 keep-alive efficiency)
+* **Duration**: 30 seconds for stable measurements
+
+==== Network Configuration
+* **Docker Network**: Uses container-to-container communication
+* **HTTPS**: Full TLS support for production-like testing
+* **Keep-alive**: HTTP/1.1 connection reuse for realistic performance
+
+==== Token Management
+* **Real Tokens**: Keycloak-issued JWT tokens with proper expiration
+* **Fail-fast**: Immediate benchmark termination on first authentication error
+* **Multi-realm Support**: Configurable token sources for different test scenarios
 
 === Benchmark Comparison
 
@@ -95,11 +134,70 @@ Metrics measured:
 
 == Results
 
+=== Performance Results Format
+
 Results are automatically:
-* Collected in JSON format
-* Uploaded as GitHub artifacts
+* Collected in JSON format with detailed latency distributions
+* Uploaded as GitHub artifacts for historical analysis
 * Processed for GitHub Pages visualization
 * Displayed as README badges alongside micro-benchmark results
+
+=== JSON Output Format
+[source,json]
+----
+{
+    "timestamp": "2025-07-16T15:38:36Z",
+    "benchmark_type": "jwt_validation",
+    "token_mode": "real",
+    "error_rate": 0,
+    "requests": 15630,
+    "duration_ms": 30099,
+    "throughput_rps": 519.27,
+    "latency": {
+        "p50": 313.5,
+        "p90": 701.7,
+        "p95": 821.5,
+        "p99": 1104.2,
+        "max": 1834.4
+    },
+    "errors": {
+        "connect": 0,
+        "read": 0,
+        "write": 0,
+        "timeout": 0,
+        "total": 0
+    },
+    "performance_stats": {
+        "success_rate": 100.00
+    }
+}
+----
+
+=== Troubleshooting
+
+==== Common Issues
+* **No results file**: Check Docker container logs for Lua script errors
+* **Low throughput**: Verify Quarkus container is running and accessible
+* **Connection errors**: Ensure proper container networking configuration
+* **Token errors**: Validate JWT token format and expiration
+
+==== Performance Debugging
+[source,bash]
+----
+# Test container connectivity
+curl -k https://localhost:10443/jwt/validate
+
+# Check container logs
+docker compose logs cui-jwt-integration-tests
+
+# Validate JWT tokens
+cat target/tokens/benchmark/access_token.txt | head -c 50
+
+# Manual wrk test
+docker run --rm --network cui-jwt-quarkus-integration-tests_jwt-integration \
+  cui-jwt-wrk:latest wrk -t6 -c180 -d10s --latency \
+  https://cui-jwt-integration-tests:8443/q/health/live
+----
 
 == Documentation
 
