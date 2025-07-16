@@ -1,30 +1,33 @@
--- Simple JWT Validation Benchmark Script for wrk
+-- Simple JWT Validation Benchmark Script for wrk - REAL TOKENS ONLY
 -- Optimized for reliability and performance
 
 local path = "/jwt/validate"
 local request_count = 0
 
--- Load real tokens if available
-local access_token = os.getenv("ACCESS_TOKEN") or ""
-local use_real_tokens = access_token ~= ""
+-- Load real tokens - NO FALLBACK TO MOCK
+local access_token = os.getenv("ACCESS_TOKEN")
 
--- Mock token for testing
-local mock_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.mock-token"
+-- Fail immediately if no real token is provided
+if not access_token or access_token == "" then
+    print("❌ FATAL: No real ACCESS_TOKEN provided")
+    print("   This script requires a real JWT token from Keycloak")
+    print("   Please set ACCESS_TOKEN environment variable")
+    os.exit(1)
+end
 
 function init(args)
-    if use_real_tokens then
-        print("✅ Using real JWT token: " .. string.sub(access_token, 1, 20) .. "...")
-    else
-        print("🧪 Using mock JWT token for testing")
-    end
+    print("✅ Using real JWT token: " .. string.sub(access_token, 1, 20) .. "...")
 end
 
 function request()
     request_count = request_count + 1
     
-    local token = use_real_tokens and access_token or mock_token
+    local token = access_token
     local body = '{"token":"' .. token .. '"}'
-    local headers = "Content-Type: application/json\r\nAuthorization: Bearer " .. token .. "\r\n"
+    local headers = {
+        ["Content-Type"] = "application/json",
+        ["Authorization"] = "Bearer " .. token
+    }
     
     return wrk.format("POST", path, headers, body)
 end

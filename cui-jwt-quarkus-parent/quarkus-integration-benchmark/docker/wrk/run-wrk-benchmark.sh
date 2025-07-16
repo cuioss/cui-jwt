@@ -59,7 +59,7 @@ docker run --rm \
     -c "$CONNECTIONS" \
     -d "$DURATION" \
     --latency \
-    --script /benchmark/scripts/jwt-minimal.lua \
+    --script /benchmark/scripts/jwt-working.lua \
     "$QUARKUS_URL/jwt/validate"
 
 # Validate performance settings
@@ -76,17 +76,14 @@ if [ -f "$RESULTS_DIR/wrk-results.json" ]; then
     # Display summary with proper formatting
     echo ""
     echo "=== Performance Summary ==="
-    if command -v jq >/dev/null 2>&1; then
+    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/wrk-results.json" ]; then
         jq -r '
             "Throughput: " + (.throughput_rps | floor | tostring) + " req/sec",
-            "Latency P95: " + (.latency.p95 | floor | tostring) + "ms", 
-            "Latency P99: " + (.latency.p99 | floor | tostring) + "ms",
-            "Total Requests: " + (.requests | tostring),
-            "Success Rate: " + (.performance_stats.success_rate | floor | tostring) + "%"
-        ' "$RESULTS_DIR/wrk-results.json"
+            "Latency P95: " + (.latency_p95_ms | floor | tostring) + "ms", 
+            "Errors: " + (.errors | tostring)
+        ' "$RESULTS_DIR/wrk-results.json" 2>/dev/null || echo "Results file format issue - raw output above"
     else
-        echo "📄 Raw results (jq not available):"
-        cat "$RESULTS_DIR/wrk-results.json"
+        echo "📄 Results processing skipped (file empty or jq unavailable)"
     fi
 else
     echo "❌ No results file generated - check Docker logs for errors"

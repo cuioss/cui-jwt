@@ -22,15 +22,13 @@
         <!-- HTTPS configuration for testing (reuse integration tests ports) -->
         <test.https.port>10443</test.https.port>
         <test.keycloak.port>1443</test.keycloak.port>
-        <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
-        <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>target/benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
-        <jmh.iterations>2</jmh.iterations>
-        <jmh.warmupIterations>1</jmh.warmupIterations>
-        <jmh.forks>1</jmh.forks>
-        <jmh.threads>200</jmh.threads>
-        <jmh.time>2s</jmh.time>
-        <jmh.warmupTime>2s</jmh.warmupTime>
+        
+        <!-- wrk Configuration Properties - Real tokens only -->
+        <wrk.threads>10</wrk.threads>
+        <wrk.connections>200</wrk.connections>
+        <wrk.duration>30s</wrk.duration>
+        <wrk.error.rate>0</wrk.error.rate>
+        <wrk.results.dir>target/wrk-results</wrk.results.dir>
 
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
@@ -141,7 +139,20 @@
                             <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
                         </configuration>
                     </execution>
-                    <!-- Run benchmarks -->
+                    <!-- Fetch real JWT tokens from Keycloak -->
+                    <execution>
+                        <id>fetch-jwt-tokens</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>./docker/wrk/fetch-tokens.sh</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                        </configuration>
+                    </execution>
+                    <!-- Run wrk-based benchmarks with real tokens -->
                     <execution>
                         <id>run-integration-benchmarks</id>
                         <phase>integration-test</phase>
@@ -150,24 +161,14 @@
                         </goals>
                         <configuration>
                             <skip>${skip.benchmark}</skip>
-                            <executable>java</executable>
+                            <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
                             <arguments>
-                                <argument>-classpath</argument>
-                                <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
-                                <argument>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argument>
-                                <argument>-Djmh.result.format=${jmh.result.format}</argument>
-                                <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
-                                <argument>-Djmh.iterations=${jmh.iterations}</argument>
-                                <argument>-Djmh.warmupIterations=${jmh.warmupIterations}</argument>
-                                <argument>-Djmh.forks=${jmh.forks}</argument>
-                                <argument>-Djmh.threads=${jmh.threads}</argument>
-                                <argument>-Djmh.time=${jmh.time}</argument>
-                                <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
-                                <argument>-Dtest.https.port=${test.https.port}</argument>
-                                <argument>-Dtest.keycloak.port=${test.keycloak.port}</argument>
-                                <argument>-Dbenchmark.keycloak.url=${benchmark.keycloak.url}</argument>
-                                <argument>de.cuioss.jwt.quarkus.integration.benchmark.IntegrationBenchmarkRunner</argument>
+                                <argument>${wrk.threads}</argument>      <!-- threads: match CPU cores -->
+                                <argument>${wrk.connections}</argument>  <!-- connections: 20x threads -->
+                                <argument>${wrk.duration}</argument>     <!-- duration: 30 seconds -->
+                                <argument>${wrk.error.rate}</argument>   <!-- error rate: 0% -->
                             </arguments>
+                            <workingDirectory>${project.basedir}</workingDirectory>
                         </configuration>
                     </execution>
                     <!-- Stop integration tests containers after benchmarks -->

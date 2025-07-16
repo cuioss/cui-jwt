@@ -1,6 +1,6 @@
--- JWT Validation Benchmark Script for wrk
+-- JWT Validation Benchmark Script for wrk - REAL TOKENS ONLY
 -- Optimized following wrk best practices for high-performance HTTP benchmarking
--- Supports both mock and real JWT tokens for flexible testing scenarios
+-- Requires real JWT tokens from Keycloak - NO MOCK TOKENS
 
 -- ============================================================================
 -- CONFIGURATION AND CONSTANTS
@@ -16,7 +16,20 @@ local pool_size = 1000
 
 -- Environment configuration
 local error_rate = tonumber(os.getenv("WRK_ERROR_RATE")) or 0
-local use_real_tokens = os.getenv("ACCESS_TOKEN") ~= nil and os.getenv("ACCESS_TOKEN") ~= ""
+
+-- REAL TOKENS ONLY - Fail if no real token provided
+local access_token = os.getenv("ACCESS_TOKEN")
+local id_token = os.getenv("ID_TOKEN")
+local refresh_token = os.getenv("REFRESH_TOKEN")
+
+if (not access_token or access_token == "") and 
+   (not id_token or id_token == "") and 
+   (not refresh_token or refresh_token == "") then
+    print("❌ FATAL: No real JWT tokens provided")
+    print("   This script requires real JWT tokens from Keycloak")
+    print("   Please set ACCESS_TOKEN, ID_TOKEN, or REFRESH_TOKEN environment variables")
+    os.exit(1)
+end
 
 -- Token pools for different scenarios
 local token_pools = {
@@ -38,41 +51,33 @@ local stats = {
 -- ============================================================================
 
 local function initialize_token_pools()
-    if use_real_tokens then
-        -- Use real tokens from environment variables
-        local access_token = os.getenv("ACCESS_TOKEN") or ""
-        local id_token = os.getenv("ID_TOKEN") or ""
-        local refresh_token = os.getenv("REFRESH_TOKEN") or ""
-        
-        if access_token ~= "" then table.insert(token_pools.valid, access_token) end
-        if id_token ~= "" then table.insert(token_pools.valid, id_token) end
-        if refresh_token ~= "" then table.insert(token_pools.valid, refresh_token) end
-        
-        print("✅ Using real JWT tokens: " .. #token_pools.valid .. " tokens loaded")
-    else
-        -- Use mock tokens for development/testing
-        token_pools.valid = {
-            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.mock-valid-token-1",
-            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiYWRtaW4iOnRydWV9.mock-valid-token-2",
-            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkJvYiBEb2UiLCJhZG1pbiI6dHJ1ZX0.mock-valid-token-3"
-        }
-        
-        token_pools.invalid = {
-            "invalid.token.signature",
-            "corrupted-payload.token",
-            "completely-malformed-token"
-        }
-        
-        token_pools.expired = {
-            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoxNTE2MjM5MDIyfQ.expired-token-1",
-            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoxNTE2MjM5MDIyfQ.expired-token-2"
-        }
-        
-        print("✅ Using mock JWT tokens for testing")
+    -- Use ONLY real tokens from environment variables - NO MOCK TOKENS
+    if access_token and access_token ~= "" then 
+        table.insert(token_pools.valid, access_token) 
+    end
+    if id_token and id_token ~= "" then 
+        table.insert(token_pools.valid, id_token) 
+    end
+    if refresh_token and refresh_token ~= "" then 
+        table.insert(token_pools.valid, refresh_token) 
+    end
+    
+    print("✅ Using ONLY real JWT tokens: " .. #token_pools.valid .. " tokens loaded")
+    
+    -- Only use real tokens for error simulation if error_rate > 0
+    if error_rate > 0 then
+        print("⚠️  Error rate " .. error_rate .. "% configured - using real tokens for error simulation")
+        -- For error simulation, we use intentionally corrupted real tokens
+        for i, token in ipairs(token_pools.valid) do
+            -- Create invalid tokens by corrupting the signature
+            table.insert(token_pools.invalid, token .. ".corrupted")
+            -- Create expired tokens by corrupting the payload  
+            table.insert(token_pools.expired, token:gsub("%.([^%.]+)%.", ".expired."))
+        end
     end
     
     if #token_pools.valid == 0 then
-        print("❌ No valid tokens available - benchmark will fail")
+        print("❌ No valid real tokens available - benchmark will fail")
         os.exit(1)
     end
 end
@@ -106,7 +111,10 @@ local function generate_request_pool()
     for i = 1, pool_size do
         local token = select_token_by_error_rate()
         local body = '{"token":"' .. token .. '"}'
-        local headers = "Content-Type: application/json\r\nAuthorization: Bearer " .. token .. "\r\n"
+        local headers = {
+            ["Content-Type"] = "application/json",
+            ["Authorization"] = "Bearer " .. token
+        }
         
         request_pool[i] = wrk.format("POST", path, headers, body)
     end
@@ -136,7 +144,7 @@ function init(args)
     print("🚀 JWT benchmark initialized:")
     print("   Error rate: " .. error_rate .. "%")
     print("   Pool size: " .. pool_size .. " requests (optimized for throughput)")
-    print("   Token mode: " .. (use_real_tokens and "REAL" or "MOCK"))
+    print("   Token mode: REAL TOKENS ONLY")
     print("   Performance: Pre-generated request pool for minimal runtime overhead")
 end
 
@@ -215,7 +223,7 @@ function done(summary, latency, requests)
         }
     }]], 
     os.date("%Y-%m-%dT%H:%M:%SZ"),
-    use_real_tokens and "real" or "mock",
+    "real",
     error_rate,
     summary.requests, 
     summary.duration / 1000,
