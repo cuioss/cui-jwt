@@ -8,7 +8,7 @@ set -euo pipefail
 # Configuration - Optimized for Apple M4 (10 CPU cores)
 WRK_IMAGE="cui-jwt-wrk:latest"
 QUARKUS_URL="https://cui-jwt-integration-tests:8443"
-RESULTS_DIR="./target/wrk-results"
+RESULTS_DIR="./target/benchmark-results"
 
 # Performance settings following wrk best practices  
 # Threads: Reduced for stability and to avoid overwhelming the service
@@ -93,25 +93,40 @@ echo "  Connections: $CONNECTIONS ($(echo "scale=0; $CONNECTIONS / $THREADS" | b
 echo "  Duration: $DURATION"
 
 # Check if results were generated
-if [ -f "$RESULTS_DIR/wrk-results.json" ]; then
-    echo "✅ Benchmark completed successfully!"
-    echo "📊 Results saved to: $RESULTS_DIR/wrk-results.json"
+if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
+    echo "✅ JWT validation benchmark completed successfully!"
+    echo "📊 Results saved to: $RESULTS_DIR/jwt-validation-results.json"
     
-    # Display summary with proper formatting
+    # Display summary
     echo ""
-    echo "=== Performance Summary ==="
-    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/wrk-results.json" ]; then
+    echo "=== JWT Validation Performance Summary ==="
+    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/jwt-validation-results.json" ]; then
         jq -r '
             "Throughput: " + (.throughput_rps | floor | tostring) + " req/sec",
-            "Latency P95: " + (.latency_p95_ms | tostring) + "ms", 
+            "Latency P95: " + (.latency_p95_ms | tostring) + "ms (JWT validation)", 
             "Latency P99: " + (.latency_p99_ms | tostring) + "ms",
             "Errors: " + (.errors | tostring)
-        ' "$RESULTS_DIR/wrk-results.json" 2>/dev/null || echo "Results file format issue - raw output above"
-    else
-        echo "📄 Results processing skipped (file empty or jq unavailable)"
+        ' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "Results file format issue"
+    fi
+    
+    # Compare with health check baseline if available
+    if [ -f "$RESULTS_DIR/health-check-results.json" ]; then
+        echo ""
+        echo "=== Performance Comparison ==="
+        echo "Comparing JWT validation vs health check (system baseline):"
+        
+        HEALTH_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/health-check-results.json" 2>/dev/null || echo "0")
+        JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "0")
+        
+        if [ "$HEALTH_P95" != "0" ] && [ "$JWT_P95" != "0" ]; then
+            JWT_OVERHEAD=$(echo "scale=1; $JWT_P95 - $HEALTH_P95" | bc)
+            echo "  Health Check P95: ${HEALTH_P95}ms (system baseline)"
+            echo "  JWT Validation P95: ${JWT_P95}ms"
+            echo "  JWT Processing Overhead: ${JWT_OVERHEAD}ms"
+        fi
     fi
 else
-    echo "❌ No results file generated - check Docker logs for errors"
+    echo "❌ No benchmark results file generated - check Docker logs for errors"
     exit 1
 fi
 

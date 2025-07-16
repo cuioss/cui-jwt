@@ -8,7 +8,7 @@ set -euo pipefail
 # Configuration
 WRK_IMAGE="cui-jwt-wrk:latest"
 QUARKUS_URL="https://cui-jwt-integration-tests:8443"
-RESULTS_DIR="./target/wrk-results"
+RESULTS_DIR="./target/benchmark-results"
 
 # Performance settings optimized for health check endpoint
 THREADS=${1:-4}
@@ -76,13 +76,13 @@ if [ -f "$RESULTS_DIR/health-check-results.json" ]; then
     fi
     
     # Compare with JWT validation if available
-    if [ -f "$RESULTS_DIR/wrk-results.json" ]; then
+    if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         echo ""
         echo "=== Performance Comparison ==="
         echo "Comparing health check (system baseline) vs JWT validation:"
         
         HEALTH_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/health-check-results.json" 2>/dev/null || echo "0")
-        JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/wrk-results.json" 2>/dev/null || echo "0")
+        JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "0")
         
         if [ "$HEALTH_P95" != "0" ] && [ "$JWT_P95" != "0" ]; then
             JWT_OVERHEAD=$(echo "scale=1; $JWT_P95 - $HEALTH_P95" | bc)

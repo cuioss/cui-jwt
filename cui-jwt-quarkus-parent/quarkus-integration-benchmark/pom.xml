@@ -17,18 +17,17 @@
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.integration.benchmark</maven.jar.plugin.automatic.module.name>
-        <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
         <!-- HTTPS configuration for testing (reuse integration tests ports) -->
         <test.https.port>10443</test.https.port>
         <test.keycloak.port>1443</test.keycloak.port>
 
         <!-- wrk Configuration Properties - Real tokens only -->
-        <wrk.threads>6</wrk.threads>
-        <wrk.connections>180</wrk.connections>
+        <wrk.threads>4</wrk.threads>
+        <wrk.connections>80</wrk.connections>
         <wrk.duration>30s</wrk.duration>
         <wrk.error.rate>0</wrk.error.rate>
-        <wrk.results.dir>target/wrk-results</wrk.results.dir>
+        <wrk.results.dir>target/benchmark-results</wrk.results.dir>
 
         <!-- Benchmark Configuration Properties -->
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
@@ -56,133 +55,28 @@
 
     <build>
         <plugins>
-            <!-- Skip unit tests by default -->
+            <!-- Skip Java compilation - no Java artifacts needed -->
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            
+            <!-- Skip unit tests - no Java code to test -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skipTests>true</skipTests>
                 </configuration>
             </plugin>
-
-
-            <!-- Container management and benchmark execution -->
+            
+            <!-- Skip JAR creation - no Java artifacts needed -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <!-- Create benchmark results directory -->
-                    <execution>
-                        <id>create-benchmark-dir</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>mkdir</executable>
-                            <arguments>
-                                <argument>-p</argument>
-                                <argument>target/benchmark-results</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <!-- Start integration tests containers before benchmarks -->
-                    <execution>
-                        <id>start-integration-containers</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
-                            <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
-                        </configuration>
-                    </execution>
-                    <!-- Fetch real JWT tokens from Keycloak -->
-                    <execution>
-                        <id>fetch-jwt-tokens</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>./docker/wrk/fetch-tokens.sh</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                        </configuration>
-                    </execution>
-                    <!-- Run health check benchmark for system baseline -->
-                    <execution>
-                        <id>run-health-benchmark</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>./docker/wrk/run-health-benchmark.sh</executable>
-                            <arguments>
-                                <argument>${wrk.threads}</argument>      <!-- threads -->
-                                <argument>${wrk.connections}</argument>  <!-- connections -->
-                                <argument>${wrk.duration}</argument>     <!-- duration -->
-                            </arguments>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                        </configuration>
-                    </execution>
-                    <!-- Run wrk-based benchmarks with real tokens -->
-                    <execution>
-                        <id>run-integration-benchmarks</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
-                            <arguments>
-                                <argument>${wrk.threads}</argument>      <!-- threads: match CPU cores -->
-                                <argument>${wrk.connections}</argument>  <!-- connections: 20x threads -->
-                                <argument>${wrk.duration}</argument>     <!-- duration: 30 seconds -->
-                                <argument>${wrk.error.rate}</argument>   <!-- error rate: 0% -->
-                            </arguments>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                        </configuration>
-                    </execution>
-                    <!-- Stop integration tests containers after benchmarks -->
-                    <execution>
-                        <id>stop-integration-containers</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>../cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
-                            <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Build classpath for benchmark execution -->
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                </executions>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -191,10 +85,103 @@
         <!-- Profile for running integration benchmarks -->
         <profile>
             <id>integration-benchmarks</id>
-            <properties>
-                <!-- Enable integration benchmarks -->
-                <skip.benchmark>false</skip.benchmark>
-            </properties>
+            <build>
+                <plugins>
+                    <!-- Container management and benchmark execution -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Create benchmark results directory -->
+                            <execution>
+                                <id>create-benchmark-dir</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>mkdir</executable>
+                                    <arguments>
+                                        <argument>-p</argument>
+                                        <argument>target/benchmark-results</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Start integration tests containers before benchmarks -->
+                            <execution>
+                                <id>start-integration-containers</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Fetch real JWT tokens from Keycloak -->
+                            <execution>
+                                <id>fetch-jwt-tokens</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/fetch-tokens.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Run health check benchmark for system baseline -->
+                            <execution>
+                                <id>run-health-benchmark</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-health-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Run wrk-based benchmarks with real tokens -->
+                            <execution>
+                                <id>run-integration-benchmarks</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads: match CPU cores -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections: 20x threads -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration: 30 seconds -->
+                                        <argument>${wrk.error.rate}</argument>   <!-- error rate: 0% -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Stop integration tests containers after benchmarks -->
+                            <execution>
+                                <id>stop-integration-containers</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

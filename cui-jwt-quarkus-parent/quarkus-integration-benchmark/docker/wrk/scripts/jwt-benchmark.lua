@@ -49,11 +49,11 @@ function response(status, headers, body)
         
         -- Immediately write failure results and exit - don't wait for done()
         local results = '{"throughput_rps":0,"latency_p95_ms":0,"latency_p99_ms":0,"errors":1,"connection_errors":0,"fail_fast_triggered":true,"success_rate":0.0}'
-        local file = io.open("/tmp/wrk-results.json", "w")
+        local file = io.open("/tmp/jwt-validation-results.json", "w")
         if file then
             file:write(results)
             file:close()
-            print("✅ Fail-fast results written to /tmp/wrk-results.json")
+            print("✅ Fail-fast results written to /tmp/jwt-validation-results.json")
         end
         
         print("🚨 BENCHMARK FAILED: Token validation failed (fail-fast after first 401)")
@@ -68,7 +68,7 @@ function done(summary, latency, requests)
     print("🔍 Done function called - checking for fail-fast")
     
     -- Check if fail-fast results file already exists
-    local file = io.open("/tmp/wrk-results.json", "r")
+    local file = io.open("/tmp/jwt-validation-results.json", "r")
     if file then
         local content = file:read("*all")
         file:close()
@@ -104,11 +104,11 @@ function done(summary, latency, requests)
     local results = string.format('{"throughput_rps":%.0f,"latency_p95_ms":%.1f,"latency_p99_ms":%.1f,"errors":%d,"connection_errors":%d,"fail_fast_triggered":false,"success_rate":100.0}',
                                   throughput, latency_p95_ms, latency_p99_ms, connection_errors, connection_errors)
     
-    local file = io.open("/tmp/wrk-results.json", "w")
+    local file = io.open("/tmp/jwt-validation-results.json", "w")
     if file then
         file:write(results)
         file:close()
-        print("✅ Results written to /tmp/wrk-results.json")
+        print("✅ Results written to /tmp/jwt-validation-results.json")
     else
         print("❌ Failed to write results file")
     end

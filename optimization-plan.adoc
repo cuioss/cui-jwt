@@ -7,10 +7,10 @@
 
 == Critical Build Information
 
-**Build Command:** `./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Dskip.benchmark=false`
+**Build Command:** `./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks`
 
 
-**Commit Requirements:** You must only commit if the Maven command executes without errors and warnings, and you verified the results.
+**Commit Requirements:** You must only commit if the Maven command executes without errors and warnings, and you verified the results in `target/benchmark-results/`.
 
 == High Priority Tasks
 
