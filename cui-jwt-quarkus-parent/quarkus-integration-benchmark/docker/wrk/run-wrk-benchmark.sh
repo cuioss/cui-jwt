@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configuration - Optimized for Apple M4 (10 CPU cores)
 WRK_IMAGE="cui-jwt-wrk:latest"
-QUARKUS_URL="https://host.docker.internal:10443"
+QUARKUS_URL="https://cui-jwt-integration-tests:8443"
 RESULTS_DIR="./target/wrk-results"
 
 # Performance settings following wrk best practices  
@@ -17,6 +17,7 @@ THREADS=${1:-6}
 CONNECTIONS=${2:-180}
 DURATION=${3:-30s}
 ERROR_RATE=${4:-0}
+REALM=${5:-benchmark}
 
 echo "🚀 Starting Docker-based wrk benchmark..."
 echo "  Target: $QUARKUS_URL"
@@ -24,6 +25,7 @@ echo "  Threads: $THREADS"
 echo "  Connections: $CONNECTIONS"
 echo "  Duration: $DURATION"
 echo "  Error rate: $ERROR_RATE%"
+echo "  Realm: $REALM"
 
 # Create results directory
 mkdir -p "$RESULTS_DIR"
@@ -34,22 +36,38 @@ if ! docker image inspect "$WRK_IMAGE" >/dev/null 2>&1; then
     docker build -t "$WRK_IMAGE" ./docker/wrk/
 fi
 
-# Fetch JWT tokens if not using mock tokens
+# Multi-realm token support
+REALM=${5:-benchmark}
 TOKENS_DIR="./target/tokens"
-if [ -f "$TOKENS_DIR/access_token.txt" ]; then
-    echo "🔑 Loading real JWT tokens..."
+REALM_TOKENS_DIR="$TOKENS_DIR/$REALM"
+
+# Check for realm-specific tokens first, then fall back to default location
+if [ -f "$REALM_TOKENS_DIR/access_token.txt" ]; then
+    echo "🔑 Loading real JWT tokens from realm: $REALM..."
+    ACCESS_TOKEN=$(cat "$REALM_TOKENS_DIR/access_token.txt" | tr -d '\n')
+    ID_TOKEN=$(cat "$REALM_TOKENS_DIR/id_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    REFRESH_TOKEN=$(cat "$REALM_TOKENS_DIR/refresh_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    
+    TOKEN_ENV_VARS="-e ACCESS_TOKEN=$ACCESS_TOKEN -e ID_TOKEN=$ID_TOKEN -e REFRESH_TOKEN=$REFRESH_TOKEN -e REALM=$REALM"
+    echo "  ✅ Real token mode (realm: $REALM): $(echo "$ACCESS_TOKEN" | cut -c1-20)..."
+elif [ -f "$TOKENS_DIR/access_token.txt" ]; then
+    echo "🔑 Loading real JWT tokens from default location..."
     ACCESS_TOKEN=$(cat "$TOKENS_DIR/access_token.txt" | tr -d '\n')
-    TOKEN_ENV_VARS="-e ACCESS_TOKEN=$ACCESS_TOKEN"
-    echo "  ✅ Real token mode: $(echo "$ACCESS_TOKEN" | cut -c1-20)..."
+    ID_TOKEN=$(cat "$TOKENS_DIR/id_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    REFRESH_TOKEN=$(cat "$TOKENS_DIR/refresh_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    
+    TOKEN_ENV_VARS="-e ACCESS_TOKEN=$ACCESS_TOKEN -e ID_TOKEN=$ID_TOKEN -e REFRESH_TOKEN=$REFRESH_TOKEN -e REALM=$REALM"
+    echo "  ✅ Real token mode (default): $(echo "$ACCESS_TOKEN" | cut -c1-20)..."
 else
     echo "🧪 Using mock tokens (no real tokens found)"
+    echo "  Searched in: $REALM_TOKENS_DIR/ and $TOKENS_DIR/"
     TOKEN_ENV_VARS=""
 fi
 
 # Run wrk benchmark in Docker container with conservative resources
 echo "🏃 Running wrk benchmark..."
 docker run --rm \
-    --network host \
+    --network cui-jwt-quarkus-integration-tests_jwt-integration \
     --cpus="6" \
     --memory="512m" \
     --ulimit nofile=32768:32768 \

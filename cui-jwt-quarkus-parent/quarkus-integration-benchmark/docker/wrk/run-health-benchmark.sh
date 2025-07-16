@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configuration
 WRK_IMAGE="cui-jwt-wrk:latest"
-QUARKUS_URL="https://host.docker.internal:10443"
+QUARKUS_URL="https://cui-jwt-integration-tests:8443"
 RESULTS_DIR="./target/wrk-results"
 
 # Performance settings optimized for health check endpoint
@@ -34,7 +34,7 @@ fi
 # Run health check benchmark
 echo "🏃 Running health check benchmark..."
 docker run --rm \
-    --network host \
+    --network cui-jwt-quarkus-integration-tests_jwt-integration \
     --cpus="6" \
     --memory="512m" \
     --ulimit nofile=32768:32768 \
