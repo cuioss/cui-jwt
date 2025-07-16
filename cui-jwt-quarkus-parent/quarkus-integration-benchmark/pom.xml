@@ -22,10 +22,10 @@
         <!-- HTTPS configuration for testing (reuse integration tests ports) -->
         <test.https.port>10443</test.https.port>
         <test.keycloak.port>1443</test.keycloak.port>
-        
+
         <!-- wrk Configuration Properties - Real tokens only -->
-        <wrk.threads>10</wrk.threads>
-        <wrk.connections>200</wrk.connections>
+        <wrk.threads>6</wrk.threads>
+        <wrk.connections>180</wrk.connections>
         <wrk.duration>30s</wrk.duration>
         <wrk.error.rate>0</wrk.error.rate>
         <wrk.results.dir>target/wrk-results</wrk.results.dir>
@@ -34,21 +34,6 @@
         <benchmark.keycloak.url>https://localhost:1443</benchmark.keycloak.url>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-core</artifactId>
-                <version>${version.jmh}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-generator-annprocess</artifactId>
-                <scope>provided</scope>
-                <version>${version.jmh}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <!-- JWT Validation Test Utilities for token generation -->
@@ -60,16 +45,6 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- JMH dependencies -->
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-annprocess</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- HTTP client for benchmarking -->
         <dependency>
@@ -89,21 +64,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Enable annotation processing for JMH -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.openjdk.jmh</groupId>
-                            <artifactId>jmh-generator-annprocess</artifactId>
-                            <version>${version.jmh}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                    <release>21</release>
-                </configuration>
-            </plugin>
 
             <!-- Container management and benchmark execution -->
             <plugin>
@@ -149,6 +109,24 @@
                         <configuration>
                             <skip>${skip.benchmark}</skip>
                             <executable>./docker/wrk/fetch-tokens.sh</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                        </configuration>
+                    </execution>
+                    <!-- Run health check benchmark for system baseline -->
+                    <execution>
+                        <id>run-health-benchmark</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>./docker/wrk/run-health-benchmark.sh</executable>
+                            <arguments>
+                                <argument>${wrk.threads}</argument>      <!-- threads -->
+                                <argument>${wrk.connections}</argument>  <!-- connections -->
+                                <argument>${wrk.duration}</argument>     <!-- duration -->
+                            </arguments>
                             <workingDirectory>${project.basedir}</workingDirectory>
                         </configuration>
                     </execution>

@@ -44,15 +44,17 @@ services:
     ports:
       - "10443:8443"  # External test port for integration tests
 
+    environment:
+      # JVM SSL Session Cache Optimization for TLS Performance
+      - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true
+      - QUARKUS_LOG_LEVEL=INFO
+
     depends_on:
       - keycloak
 
     volumes:
       # Read-only certificate mount (production pattern)
       - ./src/main/docker/certificates:/app/certificates:ro
-
-    environment:
-      - QUARKUS_LOG_LEVEL=INFO
 
     # OWASP Security hardening (production-grade)
     security_opt:

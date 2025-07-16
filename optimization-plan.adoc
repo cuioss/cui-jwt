@@ -5,133 +5,38 @@
 :sectnums:
 :source-highlighter: highlight.js
 
-== Dismissed Items (Do Not Revisit)
+== Critical Build Information
 
-=== Items Already Ruled Out
+**Build Command:** `./mvnw verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Dskip.benchmark=false`
 
-==== 1. JWT Token Caching Implementation
-**Status:** ❌ DISMISSED  
-**Reason:** No caching by design - See micro-benchmark results showing 5ms processing time  
-**User Decision:** "Implement JWT token caching" -> No caching by design -> See micro-benchmark -> Not necessary
+IMPORTANT: Only add `clean` when the Quarkus container has changed (like during optimization).
 
-==== 2. JWKS Key Retrieval Optimization  
-**Status:** ❌ DISMISSED  
-**Reason:** Already optimized and cached by design  
-**User Decision:** "Optimize JWKS key retrieval" -> Already in place. Only to be addressed if we find a bottleneck here
+**Commit Requirements:** You must only commit if the Maven command executes without errors and warnings, and you verified the results.
 
-==== 3. Efficient JWT Libraries Research
-**Status:** ❌ DISMISSED  
-**Reason:** Focus is on optimizing the existing (user's) library, not replacing it  
-**User Decision:** "Use efficient JWT libraries" -> It is about optimizing this (my) library. Don't mock about
+== High Priority Tasks
 
-==== 4. Keycloak Container Performance Issues
-**Status:** ❌ DISMISSED  
-**Reason:** Not a problem due to efficient JWKS keystore caching by design  
-**User Decision:** "Keycloak container: Should be not a problem: We cache the jwks keystore by design"
+=== ⚠️ **CRITICAL LATENCY FOCUS**
 
-==== 5. Container-to-Container Communication Optimization
-**Status:** ❌ DISMISSED  
-**Reason:** Not an issue because Keycloak calls are efficiently cached  
-**User Decision:** "Container-to-container communication: Multiple network hops" -> No issue, because we efficiently cache the keycloak calls
+- [ ] **Analyze current latency**: Investigate 153.8ms P95 latency - still too high for 20ms target
+- [ ] **Use Flight Recorder**: Analyze problems using flight-recorder (already configured in container)
+- [ ] **Verify wrk Best Practices**: Deep web research on current script/structure compliance, especially configuration (10 threads seem low)
+- [ ] **Remove JMH code completely**: Remove all JMH dependencies and code from project
 
-==== 6. HTTP Client Configuration on Quarkus Side
-**Status:** ❌ DISMISSED  
-**Reason:** Only affects test client, not the Quarkus container  
-**User Decision:** "HTTP Client Configuration: Only on the (Test-) client side. Not on the quarkus container -> Therefore no '3.1.3. 1.3 HTTP Client Configuration'"
-
-==== 7. Thread Pool Configuration for Virtual Threads
-**Status:** ❌ DISMISSED (Pending Research)  
-**Reason:** Using virtual threads (Project Loom) already - research needed on whether traditional thread pool config is still relevant  
-**User Decision:** "Thread Pool Configuration: To consider: We use virtual threads (Project Loom) already. Research whether this is needed at all / is the correct configuration therefore"
-
-==== 8. Request Processing Pipeline Optimization
-**Status:** ❌ DISMISSED  
-**Reason:** No benefit expected, already tested, no difference with virtual threads  
-**User Decision:** "Request Processing Pipeline: No benefit expected: We already tested. No difference to virtual threads"
-
-==== 9. Regression Testing Implementation
-**Status:** ❌ DISMISSED  
-**Reason:** Already in place  
-**User Decision:** "Regression Testing: Already in place"
-
-==== 10. Reactive vs Blocking I/O Model
-**Status:** ❌ DISMISSED  
-**Reason:** Already tested, no issues found  
-**User Decision:** "Reactive vs blocking: Incorrect I/O model usage": No this is already tested: remove"
-
-==== 11. Test Client Optimization (RestAssured)
-**Status:** ❌ POSTPONED  
-**Reason:** Depends on new test framework selection, may not be necessary with wrk  
-**User Decision:** "Test Client Optimization (Test-Side Only): Postpone it: Depending on the new test-framework this may not be necessary anymore"
-
-==== 12. 200 Threads Being Problematic
-**Status:** ❌ DISMISSED  
-**Reason:** Appropriate for Apple M4 chip capabilities  
-**User Decision:** "But why do you think that is a problem. for the computer-chip, Apple M4 this should be doable"
-
-==== 13. Time Estimations and Impact Percentages
-**Status:** ❌ DISMISSED  
-**Reason:** User requested removal of all time/duration/estimation elements  
-**User Decision:** "remove all time / duration / estimation elements"
-
-
-== Action Items
+== Completed Items
 
 === Priority 1: Verify Benchmark Calculations ✅ **COMPLETED**
-- [x] **Analyze time unit mixup in benchmark results** - ✅ **COMPLETED** - No unit mixup found. Integration uses ms/op, micro-benchmarks use μs/op correctly
-- [x] **Verify 1,814ms measurement accuracy** - ✅ **COMPLETED** - Measurement is accurate. 1,814ms = HTTP client + network + container + 5ms JWT processing
-- [x] **Investigate unit conversion in badge scripts** - ✅ **COMPLETED** - Badge scripts correctly handle unit conversions between ms/op, μs/op, and display formats
-- [x] **Validate throughput calculations** - ✅ **COMPLETED** - 169.92 ops/s throughput is consistent with 1,814ms latency considering parallel processing
-- [x] **Update performance badge throughput formatting** - ✅ **COMPLETED** - Fixed process-integration-results.sh to use rounded THROUGHPUT_DISPLAY values
+Result: No calculation errors found. Badge scripts correctly format values.
 
-**Key Findings:**
-- **No calculation errors found** - All time unit conversions are correct
-- **1,814ms latency is accurate** - Represents total HTTP roundtrip time including 5ms JWT processing
-- **362x overhead** (1,814ms vs 5ms) is due to HTTP client + network + container infrastructure
-- **Badge scripts correctly format values** - Throughput rounded to whole numbers, latency in milliseconds
+=== Priority 2: Tool Replacement (Docker-Based) ✅ **COMPLETED**  
+Result: Docker-based wrk solution implemented, replaced JMH for integration testing.
 
-=== Priority 2: Tool Replacement (Docker-Based) ✅ **COMPLETED**
-- [x] **Create Docker-based wrk container** - ✅ **COMPLETED** - Dockerfile with Alpine + wrk + dependencies
-- [x] **Replace JMH with wrk for integration testing** - ✅ **COMPLETED** - Docker-based wrk solution implemented
-- [x] **Create wrk Lua scripts** - ✅ **COMPLETED** - jwt-validation.lua with rotating JWT tokens and JSON output
-- [x] **Establish baseline measurements** - ✅ **COMPLETED** - Docker wrk container successfully created and tested  
-- [x] **Compare results with corrected JMH data** - ✅ **COMPLETED** - Basic wrk functionality validated (4,210 req/sec on health endpoint)
-
-**Performance Comparison Results:**
-- **wrk HTTP baseline**: 4,210 req/sec (health endpoint, 0.5ms latency)
-- **JMH JWT validation**: 170 ops/s (1,814ms latency) 
-- **Performance gap**: 25x throughput difference, 3,628x latency difference
-- **Root cause identified**: 1,809ms container/network overhead (vs 5ms JWT processing)
-
-**Implementation Details:**
-- **Docker Container**: `cui-jwt-wrk:latest` with wrk + Alpine Linux
-- **Lua Script**: `jwt-validation.lua` - JWT token rotation, JSON results output
-- **Integration**: `run-wrk-benchmark.sh` - Docker-based execution script
-- **Compatibility**: `process-wrk-results.sh` - Converts wrk output to JMH format
-- **Comparison**: `compare-benchmarks.sh` - Side-by-side JMH vs wrk analysis
-
-=== Priority 3: Performance Issue Resolution 🚨 **CRITICAL**
-
-**Critical Finding**: 1,814ms latency indicates a severe performance issue requiring immediate attention.
-
-- [ ] **Investigate 1,809ms container overhead** - Identify source of massive networking/infrastructure delay
-- [ ] **Network configuration analysis** - Check Docker networking, DNS resolution, SSL handshake times
-- [ ] **Container resource analysis** - Verify CPU/memory constraints aren't causing delays  
-- [ ] **Quarkus configuration review** - Check for blocking operations, thread pool issues
-- [ ] **Load balancer/proxy investigation** - Identify any intermediate network components causing delays
-
-**Expected Outcome**: Reduce 1,814ms to target <20ms (90% improvement needed)
-
-=== Priority 4: Infrastructure Optimization (Secondary)
-- [ ] **Implement host networking for containers** - Eliminate Docker bridge networking overhead
-- [ ] **Increase container resource limits** - Optimize memory and CPU allocation  
-- [ ] **Analyze virtual thread configuration** - Verify proper virtual thread adoption
-- [ ] **Optimize native image build configuration** - Review GraalVM build flags
+=== Priority 3: Real Token Enforcement ✅ **COMPLETED**
+Result: All mock token fallbacks removed, real token validation enforced in all Lua scripts.
 
 == Executive Summary
 
 === Current State
-- **Current latency**: 1,814ms (confirmed from measureAverageTime benchmark result)
+- **Current latency**: 153.8ms P95 (from latest wrk results)
 - **Target latency**: 20ms (realistic for Apple M4 + Quarkus native)
 - **JWT processing baseline**: 5ms (excellent performance)
 - **Infrastructure**: Apple M4, containerized Quarkus native runtime
@@ -144,401 +49,68 @@ Based on 2024 Quarkus native benchmarks:
 - **Our target**: 20ms (achievable with proper optimization)
 - **Throughput target**: >1000 ops/s with 200 threads
 
-== Root Cause Analysis
-
-=== Primary Bottlenecks (Likely Causes)
-
-==== 1. Container Networking Overhead
-- **Docker bridge networking**: Default bridge mode adds significant latency
-- **Network namespace isolation**: Additional overhead for test client to Quarkus container communication (Note: Keycloak JWKS calls are efficiently cached by design)
-
-==== 2. Test Client Configuration Issues
-- **Connection pooling**: Inefficient connection reuse on test client side
-- **HTTP/1.1 vs HTTP/2**: Protocol overhead differences
-- **Blocking I/O operations**: Thread blocking on network calls from test client
-
-==== 3. Thread Contention at 200 Threads
-- **Resource contention**: 200 threads competing for limited resources
-- **Context switching overhead**: Excessive thread switching
-- **Lock contention**: Synchronization bottlenecks
-
-==== 4. Container Resource Constraints
-- **Memory limits**: Insufficient container memory allocation
-- **CPU throttling**: Container CPU limits causing delays
-- **Disk I/O**: Container filesystem overlay performance
-
-=== Secondary Bottlenecks (Less Likely)
-
-==== 1. GraalVM Native Image Configuration
-- **Reflection overhead**: Runtime reflection not optimized
-- **Initialization timing**: Components initializing at runtime vs build-time
-- **Memory layout**: Suboptimal native image memory structure
-
-==== 2. Quarkus Runtime Configuration
-- **Thread pool sizing**: Suboptimal thread pool configuration
-- **Request processing pipeline**: Inefficient request handling
-
-== Optimization Strategy
-
-=== Phase 1: Measurement Verification and Infrastructure Optimization
-
-==== 1.1 Network Optimization
-[source,bash]
-----
-# Test host networking mode
-docker run --network=host quarkus-app
-
-# Measure container-to-container latency
-docker exec -it container1 ping container2
-----
-
-**Actions:**
-- Switch integration test containers to host networking
-- Eliminate Docker bridge networking overhead
-- Direct localhost communication between services
-
-**Actions:**
-- Switch integration test containers to host networking
-- Eliminate Docker bridge networking overhead
-- Direct localhost communication between services
-
-==== 1.2 Container Resource Optimization
-[source,yaml]
-----
-# Increase container resources
-memory: 2Gi      # Was: 1Gi
-cpu: 1000m       # Was: 500m
-----
-
-**Actions:**
-- Double container memory allocation
-- Increase CPU limits
-- Optimize JVM/native memory settings
-
-**Actions:**
-- Double container memory allocation
-- Increase CPU limits
-- Optimize JVM/native memory settings
-
-
-=== Phase 2: Application Optimization
-
-==== 2.1 Native Image Build Optimization
-[source,bash]
-----
-# Optimize GraalVM native image build
--H:+UnlockExperimentalVMOptions
--H:+UseG1GC
--H:+StaticExecutableWithDynamicLibC
--H:+ReportExceptionStackTraces
--H:+PrintGCDetails
-----
-
-**Actions:**
-- Review and optimize native image build flags
-- Ensure all reflection is configured at build-time
-- Optimize memory layout and GC settings
-
-**Actions:**
-- Review and optimize native image build flags
-- Ensure all reflection is configured at build-time
-- Optimize memory layout and GC settings
-
-==== 2.2 Virtual Thread Configuration Analysis
-[source,properties]
-----
-# Current virtual thread settings (integration tests)
-quarkus.virtual-threads.name-prefix=jwt-validation
-quarkus.virtual-threads.shutdown-timeout=10s
-----
-
-**Current State:**
-- Virtual threads are already enabled in integration tests
-- No @RunOnVirtualThread annotations found in main application code
-- Traditional thread pool configuration may still be relevant for carrier threads
-
-**Actions:**
-- Research whether explicit @RunOnVirtualThread annotation is needed
-- Verify virtual thread adoption in JWT validation endpoints
-- Consider traditional thread pool tuning for carrier threads
-**Actions:**
-- Research whether explicit @RunOnVirtualThread annotation is needed
-- Verify virtual thread adoption in JWT validation endpoints
-- Consider traditional thread pool tuning for carrier threads
-
-==== 2.3 Request Processing Pipeline (Analysis Required)
-[source,java]
-----
-// Current implementation uses blocking I/O
-@Path("/jwt/validate")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-public class JwtValidationEndpoint {
-    
-    @POST
-    public ValidationResponse validateToken(@Valid TokenRequest request) {
-        // Current blocking implementation
-        // May benefit from virtual threads or reactive patterns
-    }
-}
-----
-
-**Actions:**
-- Analyze current endpoint implementation for blocking operations
-- Consider @RunOnVirtualThread annotation for I/O-bound operations
-- Evaluate reactive patterns vs virtual threads for JWT validation
-
-**Actions:**
-- Analyze current endpoint implementation for blocking operations
-- Consider @RunOnVirtualThread annotation for I/O-bound operations
-- Evaluate reactive patterns vs virtual threads for JWT validation
-
-=== Phase 3: Fine-Tuning
-
-==== 3.1 JMH Measurement Optimization
-[source,java]
-----
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 10, time = 10, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1, warmups = 2)
-----
-
-**Actions:**
-- Increase warmup iterations for native runtime
-- Optimize JMH measurement methodology
-- Ensure proper timing accuracy
-
-**Actions:**
-- Increase warmup iterations for native runtime
-- Optimize JMH measurement methodology
-- Ensure proper timing accuracy
-
-==== 3.2 System-Level Optimization
-[source,bash]
-----
-# macOS optimization for high-concurrency
-sudo sysctl -w kern.maxfiles=65536
-sudo sysctl -w kern.maxfilesperproc=32768
-ulimit -n 32768
-----
-
-**Actions:**
-- Optimize macOS kernel parameters
-- Increase file descriptor limits
-- Configure system for high-concurrency testing
-
-**Actions:**
-- Optimize macOS kernel parameters
-- Increase file descriptor limits
-- Configure system for high-concurrency testing
-
-== Implementation Phases
-
-=== Phase 1: Measurement Verification
-- [ ] Verify benchmark calculation accuracy
-- [ ] Investigate time unit conversions
-- [ ] Validate throughput computations
-- [ ] Cross-reference with micro-benchmark results
-
-=== Phase 2: Tool Replacement
-- [ ] Replace JMH with wrk
-- [ ] Create wrk Lua scripts
-- [ ] Establish accurate baseline measurements
-- [ ] Validate measurement methodology
-
-=== Phase 3: Infrastructure Optimization
-- [ ] Implement host networking
-- [ ] Optimize container resources
-- [ ] Verify virtual thread configuration
-- [ ] Optimize native image build
-
-== Success Metrics
-
-=== Performance Targets
-- **Latency (95th percentile)**: <20ms
-- **Throughput**: >1000 ops/s with 200 threads
-- **Latency variance**: <5ms standard deviation
-- **Resource efficiency**: <100MB memory per container
-
-=== Quality Gates
-- All optimizations must maintain functional correctness
-- Performance improvements must be reproducible
-- Configuration changes must be documented
-- Regression testing must pass
-
-== Risk Assessment
-
-=== Low Risk
-- Container resource optimization
-- HTTP client configuration
-- JMH measurement tuning
-
-=== Medium Risk
-- Native image build optimization
-- Thread pool configuration changes
-- Network mode changes
-
-=== High Risk
-- System-level kernel parameter changes
-- Major architectural changes
-- Breaking existing functionality
-
-== Monitoring and Validation
-
-=== Performance Monitoring
-[source,bash]
-----
-# Container resource monitoring
-docker stats --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
-
-# Network latency monitoring
-curl -w "@curl-format.txt" -o /dev/null -s "http://localhost:8080/jwt/validate"
-----
-
-=== Regression Testing
-- Comprehensive performance regression tests with wrk
-- Continuous integration performance gates
-- Performance trend analysis and alerting
-
-== Priority: Measurement Accuracy
-
-=== Suspected Time Unit Mixup
-
-Based on the significant discrepancy between micro-benchmark baseline (5ms) and integration test results (1,814ms), there is likely a time unit conversion error in the benchmark calculations.
-
-**Key Investigation Points:**
-- Badge scripts may be incorrectly converting between ms/op, μs/op, and seconds
-- JMH result processing may have unit conversion bugs
-- Integration vs micro-benchmark unit inconsistencies
-
-**Files to Analyze:**
-- `process-integration-results.sh` - Lines 38-47 (latency conversion)
-- `create-performance-badge.sh` - Lines 46-58 (time unit handling)
-- Benchmark result JSON files - Verify actual scoreUnit values
-
-== Tooling Assessment: JMH Fundamental Mismatch for Integration Testing
-
-=== JMH Fundamental Limitations for REST API Testing
-
-Based on deep research, **JMH is fundamentally unsuitable for integration testing**:
-
-==== 1. Design Philosophy Mismatch
-[quote]
-JMH is designed for microbenchmarking, which means it's expected not to communicate with external systems or make any type of input/output calls.
-
-==== 2. Scope Limitations
-- **JMH focus**: Algorithm performance, method-level optimizations, CPU-bound operations
-- **Integration testing needs**: Network communication, containerized services, external dependencies
-- **Fundamental conflict**: JMH explicitly avoids what integration tests require
-
-==== 3. Measurement Accuracy Issues
-- **JVM optimization interference**: JMH tries to eliminate compiler optimizations
-- **Network latency**: Cannot be accurately measured with microbenchmarking tools
-- **External dependencies**: Violate JMH's isolation principles
-
-=== Recommended Tooling Alternatives
-
-==== 1. **wrk** (Recommended for High-Performance Benchmarking)
-[source,bash]
-----
-# Example wrk command for JWT validation endpoint
-wrk -t12 -c400 -d30s --script=jwt-test.lua http://localhost:8080/jwt/validate
-----
-
-**Advantages:**
-- **5x faster** than k6 on same hardware
-- **10x faster** than Gatling
-- **100x faster** than Artillery
-- **Multi-core optimization**: Uses all CPU cores efficiently
-- **Lua scripting**: Full control over request generation
-- **HTTP/1.1 keep-alive**: Realistic connection reuse
-- **Accurate latency measurement**: Designed for HTTP benchmarking
-
-**Perfect for:**
-- High-performance HTTP benchmarking
-- Container-to-container performance testing
-- Realistic load generation with JWT tokens
-- Measuring actual network + processing latency
-
-==== 2. **Apache Bench (ab)** (Quick Baseline Testing)
-[source,bash]
-----
-# Simple baseline test
-ab -n 1000 -c 10 http://localhost:8080/jwt/validate
-----
-
-**Advantages:**
-- **Lightweight and simple**
-- **Available everywhere**
-- **Quick baseline measurements**
-
-**Limitations:**
-- **HTTP/1.0 by default** (closes connections)
-- **Limited to 14K requests/sec**
-- **No scripting capabilities**
-- **Single-threaded architecture**
-
-==== 3. **k6** (Developer-Friendly Alternative)
-[source,javascript]
-----
-import http from 'k6/http';
-
-export default function () {
-  const payload = JSON.stringify({ token: 'your-jwt-token' });
-  const params = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer your-jwt-token'
-    },
-  };
-  
-  http.post('http://localhost:8080/jwt/validate', payload, params);
-}
-----
-
-**Advantages:**
-- **Developer-centric**: JavaScript-based scripting
-- **CI/CD integration**: Excellent pipeline support
-- **Modern architecture**: Efficient resource usage
-- **40,000 VUs**: Single instance capability
-
-=== Recommendation: Replace JMH with wrk
-
-==== Implementation Strategy
-1. **Replace JMH benchmarks** with wrk-based HTTP benchmarks
-2. **Create Lua scripts** for JWT token generation and validation
-3. **Measure real integration latency** including network overhead
-4. **Use realistic connection patterns** with HTTP/1.1 keep-alive
-5. **Achieve accurate measurement** of actual performance
-
-==== Expected Benefits
-- **Accurate measurements**: Real HTTP latency vs artificial JMH metrics
-- **Higher performance**: Multi-core load generation
-- **Realistic scenarios**: Actual container networking patterns
-- **Better diagnostics**: Network-aware performance analysis
-
-==== Migration Path
-[source,bash]
-----
-# Phase 1: Replace JMH throughput tests
-wrk -t200 -c200 -d30s --script=jwt-validation.lua http://localhost:8080/jwt/validate
-
-# Phase 2: Add latency distribution analysis
-wrk -t200 -c200 -d30s --latency --script=jwt-validation.lua http://localhost:8080/jwt/validate
-
-# Phase 3: Create comprehensive test suite
-./run-integration-benchmarks.sh
-----
-
-== Conclusion
-
-The 20ms latency target is achievable through systematic optimization of the integration test infrastructure. **The primary change should be replacing JMH with wrk** for realistic HTTP benchmarking, as JMH is fundamentally unsuitable for integration testing.
-
-The optimization plan prioritizes:
-1. **Tool replacement**: JMH → wrk (immediate accuracy improvement)
-2. **Infrastructure optimization**: Container networking and resource allocation
-3. **Application tuning**: Native image and thread pool optimization
-
-The first priority is verifying measurement accuracy, as the current 1,814ms result likely contains calculation errors given the 5ms micro-benchmark baseline.
+== Open Tasks (Prioritized by Latency Impact)
+
+=== 1. **Flight Recorder Analysis** (Highest Priority)
+
+- [ ] **Use flight-recorder**: Analyze performance bottlenecks using flight-recorder (already configured in container)
+- [ ] **Identify hotspots**: Pinpoint exact causes of 153.8ms latency
+
+=== 2. **wrk Configuration Optimization**
+
+- [ ] **Research wrk best practices**: Deep web research on optimal configuration 
+- [ ] **Thread configuration**: 10 threads may be too low for Apple M4 (10+ cores)
+- [ ] **Connection optimization**: Verify 200 connections vs threads ratio
+- [ ] **Lua script optimization**: Streamline implementation between shell and Lua scripts
+
+=== 3. **JMH Cleanup**
+
+- [ ] **Remove JMH dependencies**: Clean up all JMH code and dependencies from project
+- [ ] **Remove unused JMH classes**: Delete benchmark classes no longer needed
+
+=== 4. **Infrastructure Optimization**
+
+- [ ] **Container networking**: Investigate Docker bridge networking overhead
+- [ ] **Resource constraints**: Verify CPU/memory limits aren't causing delays
+- [ ] **Virtual thread configuration**: Verify proper virtual thread adoption
+
+== Dismissed Items (Do Not Revisit)
+
+=== 6.1. Items Already Ruled Out
+
+==== 1. JWT Token Caching Implementation
+**Status:** ❌ DISMISSED - No caching by design - 5ms processing time
+
+==== 2. JWKS Key Retrieval Optimization  
+**Status:** ❌ DISMISSED - Already optimized and cached by design
+
+==== 3. Efficient JWT Libraries Research
+**Status:** ❌ DISMISSED - Focus on optimizing existing library, not replacing
+
+==== 4. Keycloak Container Performance Issues
+**Status:** ❌ DISMISSED - JWKS keystore caching handles this efficiently
+
+==== 5. Container-to-Container Communication Optimization
+**Status:** ❌ DISMISSED - Keycloak calls are efficiently cached
+
+==== 6. HTTP Client Configuration on Quarkus Side
+**Status:** ❌ DISMISSED - Only affects test client, not Quarkus container
+
+==== 7. Request Processing Pipeline Optimization
+**Status:** ❌ DISMISSED - Already tested, no difference with virtual threads
+
+==== 8. Regression Testing Implementation
+**Status:** ❌ DISMISSED - Already in place
+
+==== 9. Reactive vs Blocking I/O Model
+**Status:** ❌ DISMISSED - Already tested, no issues found
+
+==== 10. Test Client Optimization (RestAssured)
+**Status:** ❌ POSTPONED - Depends on new test framework selection
+
+==== 11. 200 Threads Being Problematic
+**Status:** ❌ DISMISSED - Appropriate for Apple M4 chip capabilities
+
+==== 12. Time Estimations and Impact Percentages
+**Status:** ❌ DISMISSED - User requested removal of all time/duration/estimation elements
+

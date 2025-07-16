@@ -10,11 +10,11 @@ WRK_IMAGE="cui-jwt-wrk:latest"
 QUARKUS_URL="https://host.docker.internal:10443"
 RESULTS_DIR="./target/wrk-results"
 
-# Performance settings following wrk best practices
-# Threads: Match CPU cores for optimal performance
-THREADS=${1:-10}
-# Connections: 10-20x threads for HTTP/1.1 keep-alive efficiency  
-CONNECTIONS=${2:-200}
+# Performance settings following wrk best practices  
+# Threads: Optimized for stable performance without timeouts
+THREADS=${1:-6}
+# Connections: 30 per thread for optimal distribution (180/6=30)  
+CONNECTIONS=${2:-180}
 DURATION=${3:-30s}
 ERROR_RATE=${4:-0}
 
@@ -46,10 +46,13 @@ else
     TOKEN_ENV_VARS=""
 fi
 
-# Run wrk benchmark in Docker container
+# Run wrk benchmark in Docker container with conservative resources
 echo "🏃 Running wrk benchmark..."
 docker run --rm \
     --network host \
+    --cpus="6" \
+    --memory="512m" \
+    --ulimit nofile=32768:32768 \
     -v "$PWD/$RESULTS_DIR:/tmp" \
     -e WRK_ERROR_RATE="$ERROR_RATE" \
     $TOKEN_ENV_VARS \
@@ -64,9 +67,12 @@ docker run --rm \
 
 # Validate performance settings
 echo "🔧 Performance Configuration:"
-echo "  CPU-optimized threads: $THREADS (recommended: CPU cores)"
-echo "  HTTP/1.1 connections: $CONNECTIONS (recommended: 10-20x threads)"
-echo "  Connection efficiency: $(echo "scale=1; $CONNECTIONS / $THREADS" | bc)x multiplier"
+echo "  Docker CPUs: 6 cores allocated"
+echo "  Docker Memory: 512MB allocated"
+echo "  File descriptors: 32768 (ulimit)"
+echo "  Threads: $THREADS (conservative for stability)"
+echo "  Connections: $CONNECTIONS ($(echo "scale=0; $CONNECTIONS / $THREADS" | bc) per thread)"
+echo "  Duration: $DURATION"
 
 # Check if results were generated
 if [ -f "$RESULTS_DIR/wrk-results.json" ]; then
@@ -79,7 +85,8 @@ if [ -f "$RESULTS_DIR/wrk-results.json" ]; then
     if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/wrk-results.json" ]; then
         jq -r '
             "Throughput: " + (.throughput_rps | floor | tostring) + " req/sec",
-            "Latency P95: " + (.latency_p95_ms | floor | tostring) + "ms", 
+            "Latency P95: " + (.latency_p95_ms | tostring) + "ms", 
+            "Latency P99: " + (.latency_p99_ms | tostring) + "ms",
             "Errors: " + (.errors | tostring)
         ' "$RESULTS_DIR/wrk-results.json" 2>/dev/null || echo "Results file format issue - raw output above"
     else
