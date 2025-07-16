@@ -1,0 +1,69 @@
+# JWT Integration Tests - Host Network Mode Testing
+# Purpose: Test host networking performance vs bridge networking
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.5
+    command:
+      - start-dev
+      - --import-realm
+      - --https-certificate-file=/opt/keycloak/certificates/localhost.crt
+      - --https-certificate-key-file=/opt/keycloak/certificates/localhost.key
+      - --https-port=8443
+    network_mode: host
+    ports:
+      - "1443:8443"
+      - "1090:9000"
+    volumes:
+      - ./src/main/docker/keycloak:/opt/keycloak/data/import:ro
+      - ./src/main/docker/certificates:/opt/keycloak/certificates:ro
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
+      - KC_METRICS_ENABLED=true
+      - KC_LOG_LEVEL=INFO
+      - KC_HOSTNAME_STRICT=false
+      - KC_HTTP_ENABLED=false
+      - KC_HTTPS_PORT=8443
+      - KC_HOSTNAME=localhost
+
+  cui-jwt-integration-tests:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.native
+      cache_from:
+        - quay.io/quarkus/quarkus-distroless-image:2.0
+    network_mode: host
+    ports:
+      - "10443:8443"
+    environment:
+      - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true
+      - QUARKUS_LOG_LEVEL=INFO
+    depends_on:
+      - keycloak
+    volumes:
+      - ./src/main/docker/certificates:/app/certificates:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+      - /app/tmp:rw,noexec,nosuid,size=50m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '2.0'
+        reservations:
+          memory: 256M
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD", "/app/health-check.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

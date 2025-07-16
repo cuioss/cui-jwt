@@ -11,8 +11,8 @@ QUARKUS_URL="https://cui-jwt-integration-tests:8443"
 RESULTS_DIR="./target/wrk-results"
 
 # Performance settings optimized for health check endpoint
-THREADS=${1:-6}
-CONNECTIONS=${2:-180}
+THREADS=${1:-4}
+CONNECTIONS=${2:-80}
 DURATION=${3:-30s}
 
 echo "🏥 Starting health check benchmark..."
