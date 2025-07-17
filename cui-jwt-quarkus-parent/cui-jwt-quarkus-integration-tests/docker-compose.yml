@@ -35,9 +35,11 @@ services:
 
   cui-jwt-integration-tests:
     build:
-      context: .
-      dockerfile: src/main/docker/Dockerfile.native
-      # Simple copy-based build - no compilation in Docker
+      context: ../..
+      dockerfile: cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/Dockerfile.native
+      # Multi-stage native build with optional JFR support
+      args:
+        ENABLE_JFR: "${ENABLE_JFR:-false}"
       cache_from:
         - quay.io/quarkus/quarkus-distroless-image:2.0
 
@@ -45,8 +47,8 @@ services:
       - "10443:8443"  # External test port for integration tests
 
     environment:
-      # JVM SSL Session Cache Optimization for TLS Performance
-      - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true -Djdk.tls.maxHandshakeMessageSize=65536 -Djdk.tls.maxCertificateChainLength=10 -Djdk.tls.useExtendedMasterSecret=true
+      # JVM SSL Session Cache Optimization for TLS Performance with conditional JFR
+      - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true -Djdk.tls.maxHandshakeMessageSize=65536 -Djdk.tls.maxCertificateChainLength=10 -Djdk.tls.useExtendedMasterSecret=true ${JFR_OPTS:-}
       - QUARKUS_LOG_LEVEL=INFO
 
     depends_on:
@@ -55,6 +57,8 @@ services:
     volumes:
       # Read-only certificate mount (production pattern)
       - ./src/main/docker/certificates:/app/certificates:ro
+      # JFR output volume (mounted when JFR is enabled)
+      - ${JFR_OUTPUT_DIR:-./target/jfr-output}:/tmp/jfr-output:rw
 
     # OWASP Security hardening (production-grade)
     security_opt:

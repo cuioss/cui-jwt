@@ -8,14 +8,15 @@ set -euo pipefail
 # Configuration - Optimized for Docker containers
 WRK_IMAGE="cui-jwt-wrk:latest"
 QUARKUS_URL="https://host.docker.internal:10443"
-RESULTS_DIR="./target/wrk-results"
+RESULTS_DIR="./target/benchmark-results"
 JFR_DIR="./target/jfr-results"
 
 # Performance settings following wrk best practices
-THREADS=${1:-6}  # Conservative thread count to reduce load
-CONNECTIONS=${2:-300}  # Reduced connections to avoid timeouts
+THREADS=${1:-4}  # Conservative thread count to reduce load
+CONNECTIONS=${2:-80}  # Reduced connections to avoid timeouts
 DURATION=${3:-60s}  # Longer duration for stable JFR profiling
 ERROR_RATE=${4:-0}
+REALM=${5:-benchmark}
 
 echo "🚀 Starting Docker-based wrk benchmark with JFR profiling..."
 echo "  Target: $QUARKUS_URL"
@@ -34,15 +35,30 @@ if ! docker image inspect "$WRK_IMAGE" >/dev/null 2>&1; then
     docker build -t "$WRK_IMAGE" ./docker/wrk/
 fi
 
-# Fetch JWT tokens
+# Multi-realm token support
 TOKENS_DIR="./target/tokens"
-if [ -f "$TOKENS_DIR/access_token.txt" ]; then
-    echo "🔑 Loading real JWT tokens..."
+REALM_TOKENS_DIR="$TOKENS_DIR/$REALM"
+
+# Check for realm-specific tokens first, then fall back to default location
+if [ -f "$REALM_TOKENS_DIR/access_token.txt" ]; then
+    echo "🔑 Loading real JWT tokens from realm: $REALM..."
+    ACCESS_TOKEN=$(cat "$REALM_TOKENS_DIR/access_token.txt" | tr -d '\n')
+    ID_TOKEN=$(cat "$REALM_TOKENS_DIR/id_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    REFRESH_TOKEN=$(cat "$REALM_TOKENS_DIR/refresh_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    
+    TOKEN_ENV_VARS="-e ACCESS_TOKEN=$ACCESS_TOKEN -e ID_TOKEN=$ID_TOKEN -e REFRESH_TOKEN=$REFRESH_TOKEN -e REALM=$REALM"
+    echo "  ✅ Real token mode (realm: $REALM): $(echo "$ACCESS_TOKEN" | cut -c1-20)..."
+elif [ -f "$TOKENS_DIR/access_token.txt" ]; then
+    echo "🔑 Loading real JWT tokens from default location..."
     ACCESS_TOKEN=$(cat "$TOKENS_DIR/access_token.txt" | tr -d '\n')
-    TOKEN_ENV_VARS="-e ACCESS_TOKEN=$ACCESS_TOKEN"
-    echo "  ✅ Real token mode: $(echo "$ACCESS_TOKEN" | cut -c1-20)..."
+    ID_TOKEN=$(cat "$TOKENS_DIR/id_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    REFRESH_TOKEN=$(cat "$TOKENS_DIR/refresh_token.txt" | tr -d '\n' 2>/dev/null || echo "")
+    
+    TOKEN_ENV_VARS="-e ACCESS_TOKEN=$ACCESS_TOKEN -e ID_TOKEN=$ID_TOKEN -e REFRESH_TOKEN=$REFRESH_TOKEN -e REALM=$REALM"
+    echo "  ✅ Real token mode (default): $(echo "$ACCESS_TOKEN" | cut -c1-20)..."
 else
     echo "❌ No real tokens found - JFR profiling requires real tokens"
+    echo "  Searched in: $REALM_TOKENS_DIR/ and $TOKENS_DIR/"
     exit 1
 fi
 
@@ -70,7 +86,7 @@ docker exec "$QUARKUS_CONTAINER" sh -c "jcmd $QUARKUS_PID JFR.start name=benchma
 # Run wrk benchmark with reduced load to avoid overwhelming the application
 echo "🏃 Running wrk benchmark with JFR profiling..."
 docker run --rm \
-    --network host \
+    --network cui-jwt-quarkus-integration-tests_jwt-integration \
     --cpus="6" \
     --memory="512m" \
     --ulimit nofile=32768:32768 \
@@ -84,7 +100,7 @@ docker run --rm \
     -d "$DURATION" \
     --latency \
     --script /benchmark/scripts/jwt-benchmark.lua \
-    "$QUARKUS_URL/jwt/validate"
+    "https://cui-jwt-integration-tests:8443/jwt/validate"
 
 # Stop JFR recording and copy results
 echo "📊 Stopping JFR recording..."
@@ -105,20 +121,20 @@ echo "  Duration: $DURATION"
 echo "  JFR file: $JFR_DIR/$JFR_FILENAME"
 
 # Check if results were generated
-if [ -f "$RESULTS_DIR/wrk-results.json" ]; then
+if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
     echo "✅ Benchmark completed successfully!"
-    echo "📊 Results saved to: $RESULTS_DIR/wrk-results.json"
+    echo "📊 Results saved to: $RESULTS_DIR/jwt-validation-results.json"
     
     # Display summary
     echo ""
     echo "=== Performance Summary ==="
-    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/wrk-results.json" ]; then
+    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/jwt-validation-results.json" ]; then
         jq -r '
             "Throughput: " + (.throughput_rps | floor | tostring) + " req/sec",
             "Latency P95: " + (.latency_p95_ms | tostring) + "ms", 
             "Latency P99: " + (.latency_p99_ms | tostring) + "ms",
             "Errors: " + (.errors | tostring)
-        ' "$RESULTS_DIR/wrk-results.json" 2>/dev/null || echo "Results file format issue"
+        ' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "Results file format issue"
     fi
 else
     echo "❌ No results file generated - check Docker logs for errors"
