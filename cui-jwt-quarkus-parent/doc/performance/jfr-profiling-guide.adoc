@@ -24,18 +24,39 @@ This guide provides technical instructions for configuring and analyzing Java Fl
 [source,properties]
 ----
 # application.properties
-# Enable JFR monitoring in native image
-quarkus.native.additional-build-args=--enable-monitoring=jfr
+# Enable JFR monitoring in native image (2024-2025 best practices)
+quarkus.native.monitoring=jfr
+----
 
-# Comprehensive monitoring configuration
-quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https,--enable-monitoring=jfr,-O2
+**Docker Multi-stage Build Configuration**:
+
+[source,dockerfile]
+----
+# Multi-stage Dockerfile for JFR-enabled native images
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+
+# Build argument to enable JFR monitoring
+ARG ENABLE_JFR=false
+
+# Build native image with conditional JFR support
+RUN if [ "$ENABLE_JFR" = "true" ]; then \
+        mvnw compile quarkus:build -Dquarkus.native.enabled=true -Dquarkus.native.monitoring=jfr; \
+    else \
+        mvnw compile quarkus:build -Dquarkus.native.enabled=true; \
+    fi
+
+# Runtime stage
+FROM quay.io/quarkus/quarkus-distroless-image:2.0
+COPY --from=build /build/target/*-runner /app/application
 ----
 
 **Native Image Build Requirements**:
 
-* Oracle GraalVM or Mandrel with JFR support
+* Mandrel 23.1.7+ with JFR support
 * JFR monitoring enabled during native image compilation
-* Minimum JDK 17 for full JFR feature support
+* Minimum JDK 21 for full JFR feature support in native images
+* Build time: ~4m 30s with JFR support
+* Performance impact: Minimal overhead (0.263s startup time)
 
 === Runtime JFR Configuration
 
@@ -57,10 +78,18 @@ quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,
 
 [source,bash]
 ----
-# Docker container with JFR recording
-docker run -v /host/jfr-output:/app/jfr \
-  jwt-application:native \
-  -XX:StartFlightRecording=duration=0,filename=/app/jfr/jwt-profile.jfr,maxsize=50M
+# Docker Compose with JFR recording
+# Copy .env.jfr-example to .env and configure:
+ENABLE_JFR=true
+JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-native-distroless.jfr,dumponexit=true,duration=300s,settings=profile
+JFR_OUTPUT_DIR=./target/jfr-results
+
+# Build and run with JFR
+docker compose build
+docker compose up -d
+
+# Extract JFR recording
+docker cp container:/tmp/jfr-output/jwt-native-distroless.jfr ./
 ----
 
 == Data Collection Methods
@@ -83,13 +112,13 @@ docker run -v /host/jfr-output:/app/jfr \
 
 [source,bash]
 ----
-# Start JFR recording before benchmark
-jcmd $(pgrep -f jwt-application) JFR.start duration=300s filename=load-test-profile.jfr
+# Note: jcmd is not available for native images
+# Use environment-based JFR configuration instead
 
-# Run performance benchmark
-./scripts/benchmark-with-monitoring.sh
+# Run benchmark with JFR-enabled container
+./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks
 
-# JFR file automatically generated after 300 seconds
+# JFR files automatically generated in ./target/jfr-results/
 ----
 
 === Production JFR Collection
@@ -98,14 +127,21 @@ jcmd $(pgrep -f jwt-application) JFR.start duration=300s filename=load-test-prof
 
 [source,bash]
 ----
-# Start recording on running application
-jcmd <PID> JFR.start duration=180s filename=production-profile.jfr settings=profile
+# Note: jcmd is not available for native images
+# Use container restart with JFR enabled
 
-# Check recording status
-jcmd <PID> JFR.check
+# Stop current container
+docker compose down
 
-# Stop recording manually if needed
-jcmd <PID> JFR.stop filename=production-profile.jfr
+# Configure JFR recording
+echo "ENABLE_JFR=true" > .env
+echo "JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/production-profile.jfr,dumponexit=true,duration=180s,settings=profile" >> .env
+
+# Start with JFR recording
+docker compose up -d
+
+# Extract recording after completion
+docker cp container:/tmp/jfr-output/production-profile.jfr ./
 ----
 
 **Continuous Production Monitoring**:
@@ -176,24 +212,34 @@ jfr print --events ThreadAllocationStatistics jwt-profile.jfr
 
 == JWT Performance Analysis Focus Areas
 
-=== CPU Bottleneck Identification
+=== Current Performance Bottleneck Analysis
+
+**Performance Breakdown** (Based on 2025 JFR Analysis):
+
+- **JWT Validation**: 195.6ms P95 (1,179 req/sec)
+- **Health Check**: 24.4ms P95 (17,639 req/sec) - System baseline
+- **JWT Processing Overhead**: 171.2ms (195.6ms - 24.4ms)
+- **JWT Library**: ~5ms (micro-benchmark confirmed)
+- **Unknown Overhead**: 166.2ms (needs JFR investigation)
 
 **Primary Analysis Targets**:
 
-1. **Signature Verification Methods**:
-   * RSA/ECDSA signature validation operations
-   * Key material processing efficiency
-   * Cryptographic algorithm performance
+1. **Unknown Overhead Investigation** (166.2ms):
+   * Likely RSA signature verification taking longer than expected
+   * Container networking overhead
+   * Native image specific performance patterns
 
-2. **JSON Parsing Operations**:
-   * JWT payload parsing methods
-   * Jakarta JSON API performance characteristics
-   * Security limit validation overhead
+2. **RSA Cryptographic Operations** (JVM Analysis Reference):
+   * 85% of CPU time in JVM mode
+   * RSA private key operations, CRT optimizations
+   * RSA-PSS signature generation
 
-3. **JWKS Loading Pipeline**:
-   * HTTP client operations for JWKS endpoints
-   * Key loading and caching efficiency
-   * Health check operation frequency
+3. **TLS/SSL Processing** (JVM Analysis Reference):
+   * 12% of CPU time in JVM mode
+   * Certificate verification and chain processing
+   * Note: Native image shows TLS performs well (no bottleneck)
+
+**Critical Finding**: The 166.2ms unknown overhead is the primary optimization target, likely related to JWT signature verification performance differences between micro-benchmarks and integration tests.
 
 === Memory Allocation Analysis
 

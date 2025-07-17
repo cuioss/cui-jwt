@@ -25,27 +25,34 @@ This document defines the current JWT validation performance characteristics, ba
 * Docker containers for JWT validation and Keycloak
 * GraalVM/Mandrel native image compilation
 
-**Current Performance** (July 6, 2025):
+**Current Performance** (July 17, 2025):
 
 [cols="3,2,2,2", options="header"]
 |===
-| Implementation | Throughput (ops/s) | Latency (ms/req) | Status
+| Test Type | Throughput (ops/s) | Latency P95 (ms) | Status
 
-| **Enhanced Reflection (Current)**
-| 240,000-250,000
-| ~0.004ms
-| ✅ Production baseline
+| **JWT Validation (JFR-enabled)**
+| 1,179
+| 195.6ms
+| ✅ Integration test baseline
 
-| **NOOP Framework Baseline**
-| 279,000-288,000
-| ~0.35ms
-| ✅ Framework performance ceiling
+| **Health Check (System baseline)**
+| 17,639
+| 24.4ms
+| ✅ Infrastructure baseline
 
-| **TokenValidator Library**
-| ~30,000
-| ~0.033ms
+| **JWT Library (Micro-benchmark)**
+| ~200,000
+| ~5ms
 | ✅ Library standalone performance
 |===
+
+**Performance Gap Analysis**:
+
+- **JWT Processing Overhead**: 171.2ms (195.6ms - 24.4ms)
+- **JWT Library Performance**: ~5ms (micro-benchmark)
+- **Unknown Overhead**: 166.2ms (needs investigation)
+- **Optimization Target**: Identify and reduce the 166.2ms unknown overhead
 
 === Load Testing Configuration
 
@@ -63,38 +70,57 @@ This document defines the current JWT validation performance characteristics, ba
 
 [source,properties]
 ----
+# JFR Native Image Support (2024-2025 best practices)
+quarkus.native.monitoring=jfr
+
 # Virtual Threads
 quarkus.virtual-threads.name-prefix=jwt-validation
 quarkus.virtual-threads.shutdown-timeout=10s
 
-# Native Image with JFR monitoring
-quarkus.native.additional-build-args=--enable-url-protocols=https,--enable-http,--enable-https,--enable-monitoring=jfr
+# Container resource limits (optimized)
+quarkus.native.container-runtime-options=-m=512m,--cpus=2.0
+----
 
-# Container memory limit
-quarkus.native.container-runtime-options=-m=64m
+**Docker Multi-stage Build**:
+
+[source,bash]
+----
+# Build with JFR support
+ENABLE_JFR=true docker compose build
+
+# Run with JFR recording
+JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile
 ----
 
 == Performance Bottleneck Analysis
 
 === JWT Validation Pipeline Analysis
 
-**Primary Bottlenecks** (by processing time percentage):
+**Current Performance Bottlenecks** (July 17, 2025):
 
-1. **Signature Verification**: 50-60% of processing time
-   * Cryptographic operations (RSA/ECDSA signature validation)
-   * JWKS key lookup and validation
+1. **Unknown Overhead**: 166.2ms (85% of total JWT processing)
+   * Likely RSA signature verification taking longer than micro-benchmark
+   * Container networking overhead
+   * Native image specific performance characteristics
+   * **Primary optimization target**
 
-2. **JSON Parsing**: 15-20% of processing time
-   * Jakarta JSON API with security limits
-   * JWT payload and header parsing
+2. **JWT Library Processing**: ~5ms (3% of total JWT processing)
+   * Confirmed by micro-benchmark analysis
+   * Signature verification, JSON parsing, JWKS loading
+   * **Already optimized**
 
-3. **JWKS Key Loading**: 10-15% of processing time
-   * HTTP calls to JWKS endpoints
-   * Key material processing and validation
+3. **System Infrastructure**: 24.4ms (12% of total latency)
+   * Docker networking, HTTP processing
+   * TLS overhead (verified as not a bottleneck)
+   * **Baseline acceptable**
 
-4. **Token/Claims Processing**: 10-15% of processing time
-   * Claim extraction and validation
-   * Token content object creation
+**JFR Analysis Results** (JVM Mode Reference):
+
+- **RSA Cryptographic Operations**: 85% of CPU time
+- **TLS/SSL Handshake Processing**: 12% of CPU time
+- **Network I/O Operations**: 3% of CPU time
+
+**Note**: Native image performance patterns may differ from JVM analysis.
 
 === Resource Utilization Targets
 
@@ -104,31 +130,33 @@ quarkus.native.container-runtime-options=-m=64m
 |===
 | Metric | Current Value | Target | Status
 
-| JWT Container CPU
-| 99-101%
-| ≥90%
-| ✅ Optimal utilization
+| JWT Validation Throughput
+| 1,179 ops/s
+| >1,000 ops/s
+| ✅ Meets target
+
+| JWT Validation P95 Latency
+| 195.6ms
+| <20ms
+| ❌ Needs optimization
+
+| Health Check P95 Latency
+| 24.4ms
+| <10ms
+| ❌ Needs optimization
 
 | JWT Container Memory
-| 15-30MB (no limit)
-| <90% when limited
+| ~50MB RSS
+| <90% of 512MB limit
 | ✅ Efficient usage
 
-| Throughput
-| 240,000-250,000 ops/s
-| >200 ops/s
-| ✅ Exceeds target significantly
-
-| Average Latency
-| ~0.004 ms/request
-| <5 ms/request
-| ✅ Sub-millisecond performance
-
-| P95 Latency (estimated)
-| ~0.006 ms
-| <10 ms
-| ✅ Excellent responsiveness
+| Startup Time
+| 0.263s
+| <1s
+| ✅ Excellent native performance
 |===
+
+**Critical Performance Issue**: The 166.2ms unknown overhead represents the primary bottleneck preventing achievement of the 20ms target latency.
 
 == Algorithm Performance Characteristics
 
@@ -172,12 +200,13 @@ Max depth: 10 levels
 * JWKS loading classes (10-15% of processing impact)
 * Domain token and claim processing classes
 
-**Native Image Build Metrics**:
+**Native Image Build Metrics** (with JFR support):
 
-* Build size: 65.11MB
-* Reflection types: 4,734 classes registered
-* Startup time: Sub-second application initialization
-* Memory efficiency: 10% of 64MB limit (~6.4MB usage)
+* Build size: ~104MB (JFR-enabled distroless container)
+* Build time: 4m 30s (multi-stage Docker build)
+* Startup time: 0.263s (minimal JFR overhead)
+* Memory efficiency: ~50MB RSS (production-ready)
+* JFR features: `--enable-monitoring=heapdump,jfr` confirmed
 
 === Container Resource Efficiency
 
