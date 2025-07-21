@@ -120,8 +120,6 @@
                                         <argument>clean</argument>
                                         <argument>verify</argument>
                                         <argument>-Pintegration-tests</argument>
-                                        <argument>-pl</argument>
-                                        <argument>cui-jwt-quarkus-integration-tests</argument>
                                         <argument>-DskipTests</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
@@ -240,8 +238,6 @@
                                         <argument>clean</argument>
                                         <argument>verify</argument>
                                         <argument>-Pjfr</argument>
-                                        <argument>-pl</argument>
-                                        <argument>cui-jwt-quarkus-integration-tests</argument>
                                         <argument>-DskipTests</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>

@@ -11,8 +11,9 @@ RUN apk add --no-cache \
 # Create working directory
 WORKDIR /benchmark
 
-# Copy Lua scripts
+# Copy Lua scripts and shell scripts
 COPY scripts/ ./scripts/
+COPY *.sh ./
 
 # Default command
 CMD ["wrk", "--help"]

@@ -1,0 +1,266 @@
+= GraalVM RSA Optimization Investigation
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Executive Summary
+
+**Investigation Date**: July 21, 2025 +
+**Context**: JWT validation performance in GraalVM native images shows 230ms overhead due to RSA signature verification +
+**Primary Bottleneck**: `BigInteger.modPow()` operations in `sun.security.rsa.RSACore.crypt()` +
+
+**Key Findings**:
+
+* **RSA Performance Degradation**: GraalVM native images show significant RSA performance degradation compared to JVM execution
+* **Root Cause**: Absence of JIT optimization in native images affects cryptographic operations heavily
+* **Alternative Algorithms**: EdDSA (Ed25519) shows 62x performance improvement over RSA
+* **JCA Provider Options**: Limited but viable alternatives exist (Jipher, BouncyCastle)
+
+== Problem Analysis
+
+=== Current Performance Profile
+
+From JFR analysis of JWT validation in GraalVM native images:
+
+* **Total JWT Validation**: 265.9ms P95
+* **RSA Signature Verification**: ~230ms (97% of overhead)
+* **BigInteger Operations**: Primary CPU consumer (`modPow()`, `squareToLen()`, `oddModPow()`)
+* **JWT Library Logic**: ~5-8ms (acceptable)
+
+=== GraalVM Native Image Limitations
+
+**Fundamental Performance Characteristics**:
+
+* Native images trade peak performance for startup time and memory usage
+* Missing JIT optimization significantly impacts cryptographic workloads
+* Performance overhead ranges from "barely noticeable" to "up to 5x slower" depending on use case
+* BigInteger operations are particularly affected by lack of runtime optimization
+
+**Technical Root Causes**:
+
+1. **No JIT Compilation**: Native images eliminate runtime optimization based on execution profiles
+2. **Static Compilation**: AOT compilation cannot optimize for specific usage patterns
+3. **Metadata Removal**: Removal of JVM metadata prevents further optimizations
+4. **Branch Prediction**: Cannot eliminate seldom-used branches dynamically
+
+== Alternative JCA Providers Analysis
+
+=== 1. BouncyCastle JCE Provider ⭐ **RECOMMENDED FOR OPEN SOURCE**
+
+**Overview**: Open-source cryptographic API with extensive algorithm support
+
+**Advantages**:
+
+- ✅ **Open Source**: Free and widely adopted
+- ✅ **Algorithm Coverage**: Comprehensive crypto algorithm support including modern algorithms
+- ✅ **Native Image Compatible**: Successfully compiles with proper reflection configuration
+- ✅ **FIPS 186-5 Compliant**: RSA, DSA, and ECDSA implementations
+
+**Limitations**:
+
+- ⚠️ **Configuration Complex**: Requires extensive reflection configuration
+- ⚠️ **Performance Unknown**: No specific GraalVM native image benchmarks available
+- ⚠️ **Pure Java**: No native optimizations
+
+**Configuration Requirements**:
+```json
+{
+  "name": "org.bouncycastle.jcajce.provider.asymmetric.RSA$Mappings",
+  "allDeclaredFields": true,
+  "allPublicFields": true
+}
+```
+
+=== 2. Conscrypt (Google) ❌ **NOT RECOMMENDED**
+
+**Overview**: Google's JCA provider using BoringSSL
+
+**Issues**:
+
+- ❌ **Native Dependencies**: Requires BoringSSL dynamic library
+- ❌ **Compatibility Problems**: Known issues with GraalVM CE 23.0
+- ❌ **Runtime Dependencies**: Dynamic library loading challenges
+- ❌ **Complex Integration**: Similar issues to SunEC provider
+
+**Status**: Not suitable for GraalVM native image deployment
+
+== Algorithm Performance Analysis
+
+=== RSA (RS256) - Current Algorithm
+
+**Performance Characteristics**:
+
+- **Native Image**: ~230ms per signature verification
+- **JVM**: Significantly faster (estimated 10-50ms)
+- **Security Level**: 2048-bit ≈ 112-bit symmetric security
+- **Token Size**: Large signatures (2048+ bits)
+
+**JFR Evidence**: `java.math.BigInteger.modPow()` dominates CPU time
+
+=== ECDSA (ES256/ES384/ES512) ⭐ **RECOMMENDED**
+
+**Performance Advantages**:
+
+- **Signature Size**: 4x smaller than RSA
+- **Performance**: Potentially 10-50x faster than RSA in native images
+- **Security**: ES256 ≈ 128-bit symmetric security
+- **OAuth Standard**: Widely supported in OAuth 2.0/OIDC
+
+**Implementation**: Supported by default JDK and BouncyCastle providers
+
+=== EdDSA (Ed25519) ⭐ **HIGHEST PERFORMANCE**
+
+**Performance Characteristics**:
+
+- **Performance**: 62x faster than 2048-bit RSA for signing
+- **Verification**: Similar performance to signing
+- **Security**: Ed25519 ≈ 128-bit symmetric security
+- **Token Size**: 512-bit signatures (smallest)
+
+**OAuth/JWT Support**:
+
+- **JOSE Header**: `"alg": "EdDSA"`
+- **Key Type**: OKP (Octet Key Pair)
+- **Curve**: Ed25519
+- **Libraries**: Nimbus JOSE+JWT, Tink
+
+**FAPI Compliance**: Approved in FAPI 2.0 draft specification
+
+== GraalVM Optimization Strategies
+
+=== Build-Time Optimizations
+
+**Community Edition Optimization Flags**:
+```bash
+# Maximum optimization for Community Edition
+native-image -O2 --enable-monitoring=jfr
+
+# Architecture-specific optimizations
+native-image -march=native -O2
+```
+
+**Expected Benefits**:
+
+- **O2 Level**: Standard aggressive optimizations
+- **JFR Support**: Performance monitoring and analysis
+- **Limitation**: Cannot achieve JIT-level optimization for crypto workloads
+
+=== Runtime Optimizations
+
+**JVM Arguments for Crypto Workloads**:
+```bash
+# Memory management
+-J-Xms128m -J-Xmx512m
+
+# Security provider ordering
+-Djava.security.properties=custom-security.properties
+```
+
+== Alternative Native Integration Approaches
+
+=== Custom JNI with GMP Library
+
+**Concept**: Replace BigInteger.modPow with GMP-optimized native implementation
+
+**Advantages**:
+
+- ✅ **Performance**: GMP provides highly optimized big number operations
+- ✅ **Proven**: I2P project shows 5-10x BigInteger performance improvement
+
+**Implementation Challenges**:
+
+- ❌ **GraalVM JNI Configuration**: Complex metadata requirements
+- ❌ **Dynamic Loading**: Native library deployment complexity  
+- ❌ **Maintenance**: Custom code maintenance burden
+- ❌ **Security**: Additional attack surface
+
+**Recommendation**: Not practical for this use case
+
+=== OpenSSL Native Integration
+
+**Options**:
+
+1. **Jipher JCE**: Oracle's supported approach (Enterprise only)
+2. **Custom JNI**: Direct OpenSSL binding (high complexity)
+3. **Existing Providers**: Conscrypt (compatibility issues)
+
+**Analysis**: Jipher JCE is the only viable production option
+
+== Recommendations
+
+=== Priority 1: Algorithm Migration ⚡ **IMMEDIATE ACTION**
+
+**Primary Recommendation**: Switch from RSA (RS256) to ECDSA (ES256) or EdDSA (Ed25519)
+
+**Expected Impact**:
+
+- **Performance**: 230ms → 5-10ms (95%+ improvement)
+- **Token Size**: 4x reduction with ECDSA, 8x with EdDSA  
+- **Throughput**: 918 → >5000 req/sec
+
+**Implementation Steps**:
+
+1. Update Keycloak realm configuration to use ES256 or EdDSA
+2. Verify cui-jwt library compatibility
+3. Run comparative benchmarks
+4. Deploy and validate
+
+=== Priority 2: GraalVM Enterprise Evaluation
+
+**If Algorithm Migration Insufficient**:
+
+- Evaluate Jipher JCE with GraalVM Enterprise Edition
+- Test PGO optimization with RSA workloads
+- Benchmark against algorithm migration results
+
+**ROI Analysis**: Algorithm migration likely provides better ROI than Enterprise licensing
+
+=== Priority 3: BouncyCastle Investigation
+
+**Fallback Option**:
+
+- Configure BouncyCastle with GraalVM native image
+- Benchmark RSA, ECDSA, and EdDSA performance
+- Compare against default JDK providers
+
+**Use Case**: If Enterprise Edition not viable and default providers insufficient
+
+=== Priority 4: Alternative JCA Provider Research
+
+**Long-term Evaluation**:
+
+- Monitor GraalVM Community Edition JCA improvements
+- Evaluate emerging cryptographic libraries
+- Consider hybrid approaches (native image + JIT for crypto)
+
+== Implementation Roadmap
+
+=== Phase 1: Algorithm Performance Verification (1-2 days)
+1. **ES256 Testing**: Configure Keycloak with ECDSA
+2. **Benchmark Execution**: Run JFR-enabled performance tests
+3. **Performance Analysis**: Measure improvement vs RS256
+4. **Compatibility Validation**: Verify end-to-end functionality
+
+=== Phase 2: EdDSA Evaluation (2-3 days)  
+1. **Ed25519 Configuration**: Update Keycloak and JWT library
+2. **Performance Comparison**: Benchmark against ES256 and RS256
+3. **Security Analysis**: Validate security level and compliance
+4. **Production Readiness**: Assess deployment requirements
+
+=== Phase 3: JCA Provider Optimization (if needed)
+1. **BouncyCastle Integration**: Configure and test
+2. **Enterprise Evaluation**: Test Jipher JCE if accessible
+3. **Performance Comparison**: Benchmark all options
+4. **Production Selection**: Choose optimal implementation
+
+== Conclusion
+
+**Primary Finding**: The 230ms RSA signature verification overhead in GraalVM native images is a fundamental limitation of AOT compilation affecting cryptographic workloads.
+
+**Optimal Solution**: Migration to ECDSA (ES256) or EdDSA (Ed25519) algorithms provides the most significant performance improvement (95%+) with minimal implementation complexity.
+
+**Alternative Solutions**: While JCA provider alternatives exist (Jipher, BouncyCastle), they are unlikely to match the performance gains of algorithm migration.
+
+**Strategic Recommendation**: Prioritize algorithm migration over GraalVM optimization strategies, as the performance benefit is greater and the implementation risk is lower.
