@@ -121,7 +121,8 @@ cui-jwt-quarkus-integration-tests/
 │   │   └── endpoint/JwtValidationEndpoint.java
 │   ├── resources/application*.properties
 │   └── docker/
-│       ├── Dockerfile.native
+│       ├── Dockerfile.native.distroless
+│       ├── Dockerfile.native.jfr
 │       └── certificates/generate-certificates.sh
 ├── src/test/java/de/cuioss/jwt/integration/
 │   ├── *IntegrationIT.java
