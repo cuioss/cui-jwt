@@ -7,7 +7,14 @@
 
 == Critical Build Information
 
-**Build Command:** `./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks`
+**Build Commands:** 
+```bash
+# Run benchmarks with distroless containers (production testing)
+./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pbenchmark-testing
+
+# Run benchmarks with JFR profiling containers (performance analysis)
+./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pbenchmark-jfr
+```
 
 **Commit Requirements:** You must only commit if the Maven command executes without errors and warnings, and you verified the results in `target/benchmark-results/`.
 
@@ -149,11 +156,21 @@ JFR analysis on JVM mode identified potential bottlenecks:
 **Maven Commands**:
 
 ```bash
-# Build distroless image (production)
-mvn clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pdocker-distroless
+# Build distroless integration test containers
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pintegration-tests
 
-# Build JFR-enabled image (profiling)
-mvn clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pdocker-jfr
+# Build JFR-enabled profiling containers  
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pjfr
+
+# Run benchmarks with distroless containers
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
+./mvnw clean verify -Pbenchmark-testing
+
+# Run benchmarks with JFR profiling containers
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
+./mvnw clean verify -Pbenchmark-jfr
 ```
 
 **Test Results**:

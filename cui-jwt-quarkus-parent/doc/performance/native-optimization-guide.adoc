@@ -173,10 +173,12 @@ quarkus.native.monitoring=jfr
 [source,bash]
 ----
 # Production build (104MB distroless image)
-mvn clean verify -Pintegration-tests
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pintegration-tests
 
 # JFR profiling build (187MB UBI-based image)
-mvn clean verify -Pjfr
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pjfr
 
 # Run and extract JFR recordings (JFR variant only)
 docker compose up -d

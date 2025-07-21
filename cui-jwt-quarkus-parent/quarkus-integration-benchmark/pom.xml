@@ -82,12 +82,12 @@
     </build>
 
     <profiles>
-        <!-- Profile for running integration benchmarks -->
+        <!-- Profile for running benchmarks with distroless containers -->
         <profile>
-            <id>integration-benchmarks</id>
+            <id>benchmark-testing</id>
             <build>
                 <plugins>
-                    <!-- Container management and benchmark execution -->
+                    <!-- Container management and benchmark execution using Maven -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
@@ -107,15 +107,23 @@
                                     </arguments>
                                 </configuration>
                             </execution>
-                            <!-- Start integration tests containers before benchmarks -->
+                            <!-- Build and start integration tests containers using Maven integration-tests profile -->
                             <execution>
-                                <id>start-integration-containers</id>
+                                <id>maven-build-distroless</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <executable>../../mvnw</executable>
+                                    <arguments>
+                                        <argument>clean</argument>
+                                        <argument>verify</argument>
+                                        <argument>-Pintegration-tests</argument>
+                                        <argument>-pl</argument>
+                                        <argument>cui-jwt-quarkus-integration-tests</argument>
+                                        <argument>-DskipTests</argument>
+                                    </arguments>
                                     <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
                                 </configuration>
                             </execution>
@@ -166,16 +174,146 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Stop integration tests containers after benchmarks -->
+                            <!-- Stop containers using Maven clean -->
                             <execution>
-                                <id>stop-integration-containers</id>
+                                <id>maven-clean-containers</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>../../mvnw</executable>
+                                    <arguments>
+                                        <argument>clean</argument>
+                                        <argument>-pl</argument>
+                                        <argument>cui-jwt-quarkus-integration-tests</argument>
+                                    </arguments>
                                     <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <!-- Don't fail build if cleanup fails -->
+                                    <successCodes>
+                                        <successCode>0</successCode>
+                                        <successCode>1</successCode>
+                                    </successCodes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <!-- Profile for running benchmarks with JFR profiling containers -->
+        <profile>
+            <id>benchmark-jfr</id>
+            <build>
+                <plugins>
+                    <!-- Container management and benchmark execution using Maven -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Create benchmark results directory -->
+                            <execution>
+                                <id>create-benchmark-dir</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>mkdir</executable>
+                                    <arguments>
+                                        <argument>-p</argument>
+                                        <argument>target/benchmark-results</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Build and start JFR containers using Maven jfr profile -->
+                            <execution>
+                                <id>maven-build-jfr</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../../mvnw</executable>
+                                    <arguments>
+                                        <argument>clean</argument>
+                                        <argument>verify</argument>
+                                        <argument>-Pjfr</argument>
+                                        <argument>-pl</argument>
+                                        <argument>cui-jwt-quarkus-integration-tests</argument>
+                                        <argument>-DskipTests</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Fetch real JWT tokens from Keycloak -->
+                            <execution>
+                                <id>fetch-jwt-tokens</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/fetch-tokens.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Run health check benchmark for system baseline -->
+                            <execution>
+                                <id>run-health-benchmark</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-health-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Run wrk-based benchmarks with real tokens -->
+                            <execution>
+                                <id>run-integration-benchmarks</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads: match CPU cores -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections: 20x threads -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration: 30 seconds -->
+                                        <argument>${wrk.error.rate}</argument>   <!-- error rate: 0% -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Stop containers using Maven clean -->
+                            <execution>
+                                <id>maven-clean-containers</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../../mvnw</executable>
+                                    <arguments>
+                                        <argument>clean</argument>
+                                        <argument>-pl</argument>
+                                        <argument>cui-jwt-quarkus-integration-tests</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <!-- Don't fail build if cleanup fails -->
+                                    <successCodes>
+                                        <successCode>0</successCode>
+                                        <successCode>1</successCode>
+                                    </successCodes>
                                 </configuration>
                             </execution>
                         </executions>

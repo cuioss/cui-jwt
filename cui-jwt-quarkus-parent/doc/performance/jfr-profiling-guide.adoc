@@ -81,23 +81,24 @@ ENTRYPOINT ["/app/application", "-XX:+FlightRecorder", \
 ./application -XX:StartFlightRecording=duration=120s,filename=jwt-detailed.jfr,settings=default
 ----
 
-**Container JFR Configuration (Separate Dockerfiles)**:
+**Container JFR Configuration (Maven Integration)**:
 
 [source,bash]
 ----
-# Build JFR-enabled image with separate Dockerfile
-DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build cui-jwt-integration-tests
-
-# Run with JFR recording (UBI-based image with JFR entrypoint)
-DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose up -d
+# Build and run JFR-enabled containers using Maven
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pjfr
 
 # JFR recording automatically starts and saves to /tmp/jfr-output/jwt-profile.jfr
-# Wait for recording duration (300s by default)
+# Recording duration is 300s by default (configurable in Dockerfile.native.jfr)
 
-# Extract JFR recording (automated via Maven profile)
-mvn clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+# JFR files are automatically extracted to target/jfr-results/ during Maven build
 
-# Manual extraction alternative
+# Run benchmarks with JFR profiling
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark  
+./mvnw clean verify -Pbenchmark-jfr
+
+# Manual extraction alternative (if needed)
 docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-profile.jfr ./target/jfr-results/
 ----
 
@@ -131,13 +132,20 @@ docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-profile.jfr ./target/jfr
 [source,bash]
 ----
 # Production build (distroless, 104MB, no JFR)
-DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pintegration-tests
 
 # Profiling build (UBI-based, 189MB, full JFR support)
-DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pjfr
 
-# Run integration tests with JFR profiling
-mvn clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+# Run benchmarks with distroless containers
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
+./mvnw clean verify -Pbenchmark-testing
+
+# Run benchmarks with JFR profiling containers
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
+./mvnw clean verify -Pbenchmark-jfr
 ----
 
 
@@ -162,12 +170,14 @@ mvn clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-te
 [source,bash]
 ----
 # Note: jcmd is not available for native images
-# Use environment-based JFR configuration instead
+# Use Maven profiles for automated JFR collection
 
-# Run benchmark with JFR-enabled container
-./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks
+# Run benchmark with JFR-enabled containers
+cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
+./mvnw clean verify -Pbenchmark-jfr
 
-# JFR files automatically generated in ./target/jfr-results/
+# JFR files automatically generated in ./target/benchmark-results/
+# JFR recordings extracted to integration-tests target/jfr-results/
 ----
 
 === Production JFR Collection
