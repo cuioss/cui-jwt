@@ -52,7 +52,7 @@ class TokenSignatureValidatorES256FormatTest {
         var jwksLoader = InMemoryKeyMaterialHandler.createJwksLoader(
                 InMemoryKeyMaterialHandler.Algorithm.ES256,
                 InMemoryKeyMaterialHandler.DEFAULT_KEY_ID,
-            securityEventCounter
+                securityEventCounter
         );
         validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
     }

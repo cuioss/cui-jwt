@@ -55,9 +55,9 @@ class MandatoryClaimsValidatorTest {
 
         // Create a default IssuerConfig for testing (claimSubOptional = false by default)
         IssuerConfig defaultIssuerConfig = IssuerConfig.builder()
-            .issuerIdentifier("https://test-issuer.example.com")
-            .jwksContent("{\"keys\":[]}")
-            .build();
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .build();
 
         validator = new MandatoryClaimsValidator(defaultIssuerConfig, securityEventCounter);
     }

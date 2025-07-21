@@ -211,7 +211,7 @@ class EcdsaSignatureFormatConverterTest {
     @DisplayName("Should throw SignatureException for null signature")
     void shouldThrowForNullSignature() {
         var exception = assertThrows(SignatureException.class, () ->
-            EcdsaSignatureFormatConverter.toJCACompatibleSignature(null, "ES256"));
+                EcdsaSignatureFormatConverter.toJCACompatibleSignature(null, "ES256"));
 
         assertEquals("Signature cannot be null", exception.getMessage());
     }
@@ -222,7 +222,7 @@ class EcdsaSignatureFormatConverterTest {
         byte[] signature = new byte[64];
 
         var exception = assertThrows(SignatureException.class, () ->
-            EcdsaSignatureFormatConverter.toJCACompatibleSignature(signature, "RS256"));
+                EcdsaSignatureFormatConverter.toJCACompatibleSignature(signature, "RS256"));
 
         assertTrue(exception.getMessage().contains("Unsupported ECDSA algorithm"));
     }
@@ -234,7 +234,7 @@ class EcdsaSignatureFormatConverterTest {
         byte[] shortSignature = new byte[32];
 
         var exception = assertThrows(SignatureException.class, () ->
-            EcdsaSignatureFormatConverter.toJCACompatibleSignature(shortSignature, "ES256"));
+                EcdsaSignatureFormatConverter.toJCACompatibleSignature(shortSignature, "ES256"));
 
         assertTrue(exception.getMessage().contains("Invalid ES256 signature length"));
         assertTrue(exception.getMessage().contains("expected 64 bytes, got 32 bytes"));
@@ -247,7 +247,7 @@ class EcdsaSignatureFormatConverterTest {
         byte[] shortSignature = new byte[64];
 
         var exception = assertThrows(SignatureException.class, () ->
-            EcdsaSignatureFormatConverter.toJCACompatibleSignature(shortSignature, "ES384"));
+                EcdsaSignatureFormatConverter.toJCACompatibleSignature(shortSignature, "ES384"));
 
         assertTrue(exception.getMessage().contains("Invalid ES384 signature length"));
         assertTrue(exception.getMessage().contains("expected 96 bytes, got 64 bytes"));
@@ -260,7 +260,7 @@ class EcdsaSignatureFormatConverterTest {
         byte[] shortSignature = new byte[96];
 
         var exception = assertThrows(SignatureException.class, () ->
-            EcdsaSignatureFormatConverter.toJCACompatibleSignature(shortSignature, "ES512"));
+                EcdsaSignatureFormatConverter.toJCACompatibleSignature(shortSignature, "ES512"));
 
         assertTrue(exception.getMessage().contains("Invalid ES512 signature length"));
         assertTrue(exception.getMessage().contains("expected 132 bytes, got 96 bytes"));
@@ -272,7 +272,7 @@ class EcdsaSignatureFormatConverterTest {
         byte[] emptySignature = new byte[0];
 
         var exception = assertThrows(SignatureException.class, () ->
-            EcdsaSignatureFormatConverter.toJCACompatibleSignature(emptySignature, "ES256"));
+                EcdsaSignatureFormatConverter.toJCACompatibleSignature(emptySignature, "ES256"));
 
         assertTrue(exception.getMessage().contains("Invalid ES256 signature length"));
     }

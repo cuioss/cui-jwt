@@ -790,8 +790,8 @@ public class IssuerConfig implements HealthStatusProvider {
      */
     @SuppressWarnings("java:S107") // ok for private constructor
     private IssuerConfig(boolean enabled, String issuerIdentifier, Set<String> expectedAudience,
-                         Set<String> expectedClientId, boolean claimSubOptional, SignatureAlgorithmPreferences algorithmPreferences,
-                         Map<String, ClaimMapper> claimMappers, @NonNull JwksLoader jwksLoader) {
+            Set<String> expectedClientId, boolean claimSubOptional, SignatureAlgorithmPreferences algorithmPreferences,
+            Map<String, ClaimMapper> claimMappers, JwksLoader jwksLoader) {
         this.enabled = enabled;
         this.issuerIdentifier = issuerIdentifier;
         this.expectedAudience = expectedAudience != null ? expectedAudience : Set.of();

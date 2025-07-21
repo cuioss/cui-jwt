@@ -28,9 +28,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.stream.Stream;
-
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -154,14 +153,14 @@ class KeycloakDefaultGroupsMapperTest {
 
     private static Stream<Arguments> groupNameFormatsProvider() {
         return Stream.of(
-            Arguments.of("groups without path prefix", 
-                List.of("test-group", "admin-group", "user-group")),
-            Arguments.of("mixed group name formats", 
-                List.of("/full-path-group", "simple-group", "/nested/path/group")),
-            Arguments.of("complex group names", 
-                List.of("/realm-management", "/account-console", "/offline_access")),
-            Arguments.of("groups with special characters", 
-                List.of("/test-group_123", "/admin@domain", "/group.with.dots"))
+                Arguments.of("groups without path prefix",
+                        List.of("test-group", "admin-group", "user-group")),
+                Arguments.of("mixed group name formats",
+                        List.of("/full-path-group", "simple-group", "/nested/path/group")),
+                Arguments.of("complex group names",
+                        List.of("/realm-management", "/account-console", "/offline_access")),
+                Arguments.of("groups with special characters",
+                        List.of("/test-group_123", "/admin@domain", "/group.with.dots"))
         );
     }
 
