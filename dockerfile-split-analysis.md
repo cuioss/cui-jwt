@@ -71,10 +71,10 @@ The current implementation uses a single multi-stage Dockerfile with conditional
 ## Implementation Checklist
 
 ### Phase 1: Preparation
-- [ ] Create `Dockerfile.native.distroless` in `src/main/docker/`
-- [ ] Create `Dockerfile.native.jfr` in `src/main/docker/`
-- [ ] Update `docker-compose.yml` with new dockerfile references
-- [ ] Update Maven profiles to use separate Dockerfiles
+- [x] Create `Dockerfile.native.distroless` in `src/main/docker/`
+- [x] Create `Dockerfile.native.jfr` in `src/main/docker/`
+- [x] Update `docker-compose.yml` with new dockerfile references
+- [x] Update Maven profiles to use separate Dockerfiles
 - [ ] Create build validation script
 
 ### Phase 2: Testing

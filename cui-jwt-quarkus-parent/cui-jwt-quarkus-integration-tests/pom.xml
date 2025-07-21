@@ -194,9 +194,9 @@
                                         <argument>cui-jwt-integration-tests</argument>
                                     </arguments>
                                     <environmentVariables>
-                                        <DOCKER_TARGET>final-distroless</DOCKER_TARGET>
-                                        <ENABLE_JFR>false</ENABLE_JFR>
-                                        <DOCKER_IMAGE_TAG>latest</DOCKER_IMAGE_TAG>
+                                        <DOCKERFILE>Dockerfile.native.distroless</DOCKERFILE>
+                                        <DOCKER_IMAGE_TAG>distroless</DOCKER_IMAGE_TAG>
+                                        <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -298,10 +298,32 @@
                                         <argument>cui-jwt-integration-tests</argument>
                                     </arguments>
                                     <environmentVariables>
-                                        <DOCKER_TARGET>final-distro</DOCKER_TARGET>
-                                        <ENABLE_JFR>true</ENABLE_JFR>
+                                        <DOCKERFILE>Dockerfile.native.jfr</DOCKERFILE>
                                         <DOCKER_IMAGE_TAG>jfr</DOCKER_IMAGE_TAG>
+                                        <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
                                     </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <!-- Extract JFR results after build -->
+                            <execution>
+                                <id>extract-jfr-results</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>cp</argument>
+                                        <argument>cui-jwt-integration-tests:/tmp/jfr-output/</argument>
+                                        <argument>${project.basedir}/target/jfr-results/</argument>
+                                    </arguments>
+                                    <!-- Don't fail build if extraction fails -->
+                                    <successCodes>
+                                        <successCode>0</successCode>
+                                        <successCode>1</successCode>
+                                    </successCodes>
                                 </configuration>
                             </execution>
                             <!-- Start application before integration tests -->

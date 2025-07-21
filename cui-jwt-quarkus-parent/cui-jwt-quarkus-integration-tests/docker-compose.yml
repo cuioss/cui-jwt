@@ -34,19 +34,17 @@ services:
       - jwt-integration
 
   cui-jwt-integration-tests:
-    # Use Maven-built image (built via Maven profiles)
-    # For distroless: mvn clean package -Pdocker-distroless
-    # For JFR:       mvn clean package -Pdocker-jfr
+    # Use separate Dockerfiles for different variants
+    # For distroless: DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless
+    # For JFR:       DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr
     image: "cui-jwt-integration-tests:${DOCKER_IMAGE_TAG:-distroless}"
     build:
       context: ../..
-      dockerfile: cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/Dockerfile.native
-      target: "${DOCKER_TARGET:-final-distroless}"
-      args:
-        ENABLE_JFR: "${ENABLE_JFR:-false}"
+      dockerfile: cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/${DOCKERFILE:-Dockerfile.native.distroless}
       cache_from:
         - quay.io/quarkus/quarkus-distroless-image:2.0
         - registry.access.redhat.com/ubi8/ubi-minimal:8.10
+        - quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21
 
     ports:
       - "10443:8443"  # External test port for integration tests

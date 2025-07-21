@@ -1,0 +1,57 @@
+# Profiling Dockerfile for UBI-based native image with JFR support
+# Optimized for: Performance analysis, debugging, monitoring
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+
+USER root
+WORKDIR /build
+COPY --chown=quarkus:quarkus . /build/
+
+# Build native image with JFR support
+USER quarkus
+RUN cd /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests && \
+    ../../mvnw compile quarkus:build --no-transfer-progress \
+    -Dquarkus.native.enabled=true \
+    -Dquarkus.native.monitoring=jfr \
+    -Dquarkus.native.container-build=false \
+    -Dquarkus.native.additional-build-args=--gc=G1,--enable-monitoring=heapdump,jfr \
+    -DskipTests -Dexec.skip=true
+
+# UBI-based runtime with JFR support
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10
+
+LABEL org.opencontainers.image.title="CUI JWT Integration Tests - JFR Enabled"
+LABEL org.opencontainers.image.description="UBI-based Quarkus native application with JFR profiling"
+LABEL org.opencontainers.image.vendor="CUI"
+LABEL org.opencontainers.image.version="1.0.0-SNAPSHOT"
+LABEL security.scan.required="true"
+LABEL security.distroless="false"
+LABEL performance.jfr.enabled="true"
+LABEL performance.profiling="enabled"
+
+# Install debugging tools and create directories
+RUN microdnf install -y findutils procps-ng && microdnf clean all \
+    && mkdir -p /app/certificates /tmp/jfr-output /app/tmp /app/profiling \
+    && chown -R 1001:1001 /tmp/jfr-output /app/tmp /app/profiling \
+    && chmod 755 /tmp/jfr-output /app/tmp /app/profiling
+
+WORKDIR /app
+
+# Copy application and certificates
+COPY --from=build --chmod=0755 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/*-runner /app/application
+COPY --from=build --chmod=0755 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/health-check.sh /app/health-check.sh
+COPY --from=build --chmod=0644 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.crt /app/certificates/localhost.crt
+COPY --from=build --chmod=0600 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.key /app/certificates/localhost.key
+COPY --from=build --chmod=0644 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost-truststore.p12 /app/certificates/localhost-truststore.p12
+
+EXPOSE 8443
+HEALTHCHECK --interval=15s --timeout=8s --retries=3 --start-period=15s CMD ["/app/health-check.sh"]
+USER 1001
+
+# JFR-enabled entrypoint with profiling
+ENTRYPOINT ["/app/application", \
+  "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12", \
+  "-Djavax.net.ssl.trustStorePassword=localhost-trust", \
+  "-Djavax.net.ssl.trustStoreType=PKCS12", \
+  "-XX:+FlightRecorder", \
+  "-XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile", \
+  "-XX:FlightRecorderOptions=repository=/app/profiling,maxchunksize=10MB"]
