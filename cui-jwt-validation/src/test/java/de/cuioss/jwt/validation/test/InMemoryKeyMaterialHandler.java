@@ -27,7 +27,9 @@ import lombok.NonNull;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECPoint;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -286,10 +288,35 @@ public class InMemoryKeyMaterialHandler {
      * @return a JWKS string
      */
     private static String createJwksFromEcKey(String keyId, String algorithm) {
-        // For EC keys, we need to include the x and y coordinates
-        // We'll use dummy values that are valid Base64URL-encoded strings
-        String x = "dGVzdF94X2Nvb3JkaW5hdGU"; // Base64URL-encoded "test_x_coordinate"
-        String y = "dGVzdF95X2Nvb3JkaW5hdGU"; // Base64URL-encoded "test_y_coordinate"
+        // Get the actual EC public key to extract coordinates
+        PublicKey publicKey = getPublicKey(Algorithm.valueOf(algorithm), keyId);
+
+        if (!(publicKey instanceof ECPublicKey)) {
+            throw new IllegalArgumentException("Expected ECPublicKey for algorithm: " + algorithm);
+        }
+
+        ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+
+        // Extract the x and y coordinates from the EC public key point
+        ECPoint w = ecPublicKey.getW();
+        byte[] xBytes = w.getAffineX().toByteArray();
+        byte[] yBytes = w.getAffineY().toByteArray();
+
+        // Determine coordinate size based on algorithm
+        int coordSize = switch (algorithm) {
+            case "ES256" -> 32; // P-256: 256 bits / 8 = 32 bytes
+            case "ES384" -> 48; // P-384: 384 bits / 8 = 48 bytes  
+            case "ES512" -> 66; // P-521: 521 bits / 8 = 65.125 -> 66 bytes
+            default -> throw new IllegalArgumentException("Unsupported EC algorithm: " + algorithm);
+        };
+
+        // Pad or trim coordinates to the expected size
+        xBytes = normalizeCoordinate(xBytes, coordSize);
+        yBytes = normalizeCoordinate(yBytes, coordSize);
+
+        // Base64 URL encode the coordinates
+        String x = Base64.getUrlEncoder().withoutPadding().encodeToString(xBytes);
+        String y = Base64.getUrlEncoder().withoutPadding().encodeToString(yBytes);
 
         // Determine the curve name based on the algorithm
         String curve = switch (algorithm) {
@@ -302,6 +329,30 @@ public class InMemoryKeyMaterialHandler {
         // Create JWKS JSON with the specified key ID, algorithm, curve, and coordinates
         return "{\"keys\":[{\"kty\":\"EC\",\"kid\":\"%s\",\"crv\":\"%s\",\"x\":\"%s\",\"y\":\"%s\",\"alg\":\"%s\"}]}".formatted(
                 keyId, curve, x, y, algorithm);
+    }
+
+    /**
+     * Normalizes a coordinate byte array to the expected size for the curve.
+     * Removes leading zero bytes from BigInteger encoding and pads to the correct size.
+     */
+    private static byte[] normalizeCoordinate(byte[] coordinate, int expectedSize) {
+        // Remove leading zero bytes (BigInteger sign bit)
+        int startIndex = 0;
+        while (startIndex < coordinate.length && coordinate[startIndex] == 0) {
+            startIndex++;
+        }
+
+        // Create result array of expected size
+        byte[] result = new byte[expectedSize];
+
+        // Copy the coordinate data, right-aligned (padding with zeros on the left if needed)
+        int sourceLength = coordinate.length - startIndex;
+        int destStart = Math.max(0, expectedSize - sourceLength);
+        int copyLength = Math.min(sourceLength, expectedSize);
+
+        System.arraycopy(coordinate, startIndex, result, destStart, copyLength);
+
+        return result;
     }
 
     /**
@@ -390,17 +441,40 @@ public class InMemoryKeyMaterialHandler {
                         .append(n).append("\",\"e\":\"").append(e).append("\",\"alg\":\"")
                         .append(algName).append("\"}");
             } else if (algName.startsWith("ES")) {
-                // EC key
+                // EC key - extract real coordinates
+                if (!(publicKey instanceof ECPublicKey)) {
+                    throw new IllegalArgumentException("Expected ECPublicKey for algorithm: " + algName);
+                }
+
+                ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
+
+                // Extract the x and y coordinates from the EC public key point
+                ECPoint w = ecPublicKey.getW();
+                byte[] xBytes = w.getAffineX().toByteArray();
+                byte[] yBytes = w.getAffineY().toByteArray();
+
+                // Determine coordinate size based on algorithm
+                int coordSize = switch (algName) {
+                    case "ES256" -> 32; // P-256: 256 bits / 8 = 32 bytes
+                    case "ES384" -> 48; // P-384: 384 bits / 8 = 48 bytes  
+                    case "ES512" -> 66; // P-521: 521 bits / 8 = 65.125 -> 66 bytes
+                    default -> throw new IllegalArgumentException("Unsupported EC algorithm: " + algName);
+                };
+
+                // Pad or trim coordinates to the expected size
+                xBytes = normalizeCoordinate(xBytes, coordSize);
+                yBytes = normalizeCoordinate(yBytes, coordSize);
+
+                // Base64 URL encode the coordinates
+                String x = Base64.getUrlEncoder().withoutPadding().encodeToString(xBytes);
+                String y = Base64.getUrlEncoder().withoutPadding().encodeToString(yBytes);
+
                 String curve = switch (algName) {
                     case "ES256" -> "P-256";
                     case "ES384" -> "P-384";
                     case "ES512" -> "P-521";
                     default -> throw new IllegalArgumentException("Unsupported EC algorithm: " + algName);
                 };
-
-                // Use dummy values for x and y coordinates
-                String x = "dGVzdF94X2Nvb3JkaW5hdGU"; // Base64URL-encoded "test_x_coordinate"
-                String y = "dGVzdF95X2Nvb3JkaW5hdGU"; // Base64URL-encoded "test_y_coordinate"
 
                 jwksBuilder.append("{\"kty\":\"EC\",\"kid\":\"").append(alg.name())
                         .append("\",\"crv\":\"").append(curve)

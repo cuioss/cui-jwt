@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.util.EcdsaSignatureFormatConverter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
 import lombok.NonNull;
@@ -191,8 +192,16 @@ public class TokenSignatureValidator {
             Signature verifier = getSignatureVerifier(algorithm);
             verifier.initVerify(publicKey);
             verifier.update(dataBytes);
+
+            // Convert ECDSA signatures from IEEE P1363 to ASN.1/DER format if needed
+            byte[] verificationSignature = signatureBytes;
+            if (isEcdsaAlgorithm(algorithm)) {
+                LOGGER.debug("Converting ECDSA signature from IEEE P1363 to ASN.1/DER format for algorithm: %s", algorithm);
+                verificationSignature = EcdsaSignatureFormatConverter.toJCACompatibleSignature(signatureBytes, algorithm);
+            }
+
             // Verify the signature
-            boolean isValid = verifier.verify(signatureBytes);
+            boolean isValid = verifier.verify(verificationSignature);
             if (isValid) {
                 LOGGER.debug("Signature is valid");
             } else {
@@ -247,6 +256,17 @@ public class TokenSignatureValidator {
         }
 
         return signature;
+    }
+
+    /**
+     * Checks if the algorithm is an ECDSA algorithm that requires signature format conversion.
+     * 
+     * @param algorithm the signature algorithm to check
+     * @return true if the algorithm is ECDSA (ES256, ES384, ES512), false otherwise
+     */
+    private boolean isEcdsaAlgorithm(String algorithm) {
+        return algorithm != null &&
+                ("ES256".equals(algorithm) || "ES384".equals(algorithm) || "ES512".equals(algorithm));
     }
 
     /**

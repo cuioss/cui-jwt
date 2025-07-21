@@ -215,6 +215,45 @@ public class TestTokenHolder implements TokenContent {
     }
 
     /**
+     * Sets the signing algorithm to ES256 for testing ECDSA signature format issues.
+     * 
+     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
+     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
+     * This causes signature validation failures until format conversion is implemented.</p>
+     * 
+     * @return this instance for method chaining
+     */
+    public TestTokenHolder withES256IeeeP1363Format() {
+        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES256);
+    }
+
+    /**
+     * Sets the signing algorithm to ES384 for testing ECDSA signature format issues.
+     * 
+     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
+     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
+     * This causes signature validation failures until format conversion is implemented.</p>
+     * 
+     * @return this instance for method chaining
+     */
+    public TestTokenHolder withES384IeeeP1363Format() {
+        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES384);
+    }
+
+    /**
+     * Sets the signing algorithm to ES512 for testing ECDSA signature format issues.
+     * 
+     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
+     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
+     * This causes signature validation failures until format conversion is implemented.</p>
+     * 
+     * @return this instance for method chaining
+     */
+    public TestTokenHolder withES512IeeeP1363Format() {
+        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES512);
+    }
+
+    /**
      * Gets the public key material associated with the current key ID and signing algorithm.
      *
      * @return the public key
