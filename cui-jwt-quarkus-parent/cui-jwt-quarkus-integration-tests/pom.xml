@@ -125,42 +125,21 @@
     </build>
 
     <profiles>
-        <!-- Profile for running integration tests with Maven-built native image -->
+        <!-- Profile for running integration tests with distroless native image (no JFR) -->
         <profile>
             <id>integration-tests</id>
             <properties>
                 <!-- Enable integration tests -->
                 <skipITs>false</skipITs>
-
-                <!-- Enable native image building in Maven (disabled by default - use Docker build) -->
-                <quarkus.native.container-build>true</quarkus.native.container-build>
-                <quarkus.native.enabled>true</quarkus.native.enabled>
+                
+                <!-- Disable Maven native building - Docker handles it -->
+                <quarkus.native.container-build>false</quarkus.native.container-build>
+                <quarkus.native.enabled>false</quarkus.native.enabled>
                 <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
             </properties>
             <build>
                 <plugins>
-                    <!-- Quarkus Maven Plugin for code generation and build -->
-                    <plugin>
-                        <groupId>io.quarkus</groupId>
-                        <artifactId>quarkus-maven-plugin</artifactId>
-                        <executions>
-                            <!-- Single execution for all goals to prevent duplicates -->
-                            <execution>
-                                <goals>
-                                    <goal>generate-code</goal>
-                                    <goal>generate-code-tests</goal>
-                                    <goal>build</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <properties>
-                                <quarkus.native.enabled>true</quarkus.native.enabled>
-                                <quarkus.package.jar.enabled>false</quarkus.package.jar.enabled>
-                            </properties>
-                        </configuration>
-                    </plugin>
-
+                    
                     <!-- Skip Unit Tests (Surefire) -->
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
@@ -170,91 +149,6 @@
                     </plugin>
 
                     <!-- Integration Test Configuration -->
-                    <plugin>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <!-- Inherits base configuration from parent, adds module-specific overrides -->
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Include all tests in integration package -->
-                                    <includes>
-                                        <include>**/integration/**/*IT.java</include>
-                                    </includes>
-                                    <systemPropertyVariables>
-                                        <test.https.port>${test.https.port}</test.https.port>
-                                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                                        <quarkus.native.enabled>${quarkus.native.enabled}</quarkus.native.enabled>
-                                    </systemPropertyVariables>
-                                    <!-- Use the skipITs property -->
-                                    <skipITs>${skipITs}</skipITs>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <!-- Start/Stop application using scripts -->
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>${version.exec-maven-plugin}</version>
-                        <executions>
-                            <!-- Start application before integration tests -->
-                            <execution>
-                                <id>start-integration-app</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>./scripts/start-integration-container.sh</executable>
-                                    <workingDirectory>${project.basedir}</workingDirectory>
-                                </configuration>
-                            </execution>
-                            <!-- Stop application after integration tests -->
-                            <execution>
-                                <id>stop-integration-app</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>./scripts/stop-integration-container.sh</executable>
-                                    <workingDirectory>${project.basedir}</workingDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
-        <!-- Profile for Docker-based native builds (recommended approach) -->
-        <profile>
-            <id>docker-native</id>
-            <properties>
-                <!-- Enable integration tests -->
-                <skipITs>false</skipITs>
-
-                <!-- Disable Maven native building - Docker handles it -->
-                <quarkus.native.container-build>false</quarkus.native.container-build>
-                <quarkus.native.enabled>false</quarkus.native.enabled>
-                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
-            </properties>
-            <build>
-                <plugins>
-                    <!-- Skip Unit Tests (Surefire) -->
-                    <plugin>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <skipTests>true</skipTests>
-                        </configuration>
-                    </plugin>
-
-                    <!-- Integration Test Configuration for Docker-built native image -->
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <executions>
@@ -278,12 +172,34 @@
                         </executions>
                     </plugin>
 
-                    <!-- Start/Stop Docker containers using scripts -->
+                    <!-- Docker build and application lifecycle -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${version.exec-maven-plugin}</version>
                         <executions>
+                            <!-- Docker build with distroless image -->
+                            <execution>
+                                <id>docker-build-distroless</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>compose</argument>
+                                        <argument>build</argument>
+                                        <argument>cui-jwt-integration-tests</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <DOCKER_TARGET>final-distroless</DOCKER_TARGET>
+                                        <ENABLE_JFR>false</ENABLE_JFR>
+                                        <DOCKER_IMAGE_TAG>latest</DOCKER_IMAGE_TAG>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
                             <!-- Start application before integration tests -->
                             <execution>
                                 <id>start-integration-app</id>
@@ -314,28 +230,108 @@
             </build>
         </profile>
         
-        <!-- Profile for PGO instrumentation (step 1) -->
+        <!-- Profile for JFR profiling with UBI-based images -->
         <profile>
-            <id>pgo-instrument</id>
+            <id>jfr</id>
             <properties>
-                <quarkus.native.enabled>true</quarkus.native.enabled>
-                <quarkus.native.container-build>true</quarkus.native.container-build>
-                <quarkus.native.builder-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.native.builder-image>
-                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
-                <quarkus.native.additional-build-args>--pgo-instrument</quarkus.native.additional-build-args>
+                <!-- Enable integration tests -->
+                <skipITs>false</skipITs>
+                
+                <!-- Disable Maven native building - Docker handles it -->
+                <quarkus.native.container-build>false</quarkus.native.container-build>
+                <quarkus.native.enabled>false</quarkus.native.enabled>
+                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
             </properties>
-        </profile>
-        
-        <!-- Profile for PGO optimized build (step 3) -->
-        <profile>
-            <id>pgo-optimize</id>
-            <properties>
-                <quarkus.native.enabled>true</quarkus.native.enabled>
-                <quarkus.native.container-build>true</quarkus.native.container-build>
-                <quarkus.native.builder-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.native.builder-image>
-                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
-                <quarkus.native.additional-build-args>--pgo=${project.basedir}/default.iprof</quarkus.native.additional-build-args>
-            </properties>
+            <build>
+                <plugins>
+                    <!-- Skip Unit Tests (Surefire) -->
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Integration Test Configuration for JFR -->
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/integration/**/*IT.java</include>
+                                    </includes>
+                                    <systemPropertyVariables>
+                                        <test.https.port>${test.https.port}</test.https.port>
+                                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                                        <quarkus.native.enabled>false</quarkus.native.enabled>
+                                    </systemPropertyVariables>
+                                    <skipITs>${skipITs}</skipITs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Docker build and application lifecycle -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${version.exec-maven-plugin}</version>
+                        <executions>
+                            <!-- Docker build with JFR support -->
+                            <execution>
+                                <id>docker-build-jfr</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>compose</argument>
+                                        <argument>build</argument>
+                                        <argument>cui-jwt-integration-tests</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <DOCKER_TARGET>final-distro</DOCKER_TARGET>
+                                        <ENABLE_JFR>true</ENABLE_JFR>
+                                        <DOCKER_IMAGE_TAG>jfr</DOCKER_IMAGE_TAG>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <!-- Start application before integration tests -->
+                            <execution>
+                                <id>start-integration-app</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Stop application after integration tests -->
+                            <execution>
+                                <id>stop-integration-app</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

@@ -25,20 +25,20 @@ This document defines the current JWT validation performance characteristics, ba
 * Docker containers for JWT validation and Keycloak
 * GraalVM/Mandrel native image compilation
 
-**Current Performance** (July 17, 2025):
+**Current Performance** (July 20, 2025):
 
 [cols="3,2,2,2", options="header"]
 |===
 | Test Type | Throughput (ops/s) | Latency P95 (ms) | Status
 
-| **JWT Validation (JFR-enabled)**
-| 1,179
-| 195.6ms
-| ✅ Integration test baseline
+| **JWT Validation (Native)**
+| 889-1,179
+| 195.6-280.2ms
+| ✅ Varies by image type
 
 | **Health Check (System baseline)**
-| 17,639
-| 24.4ms
+| 20,301
+| 23.7ms
 | ✅ Infrastructure baseline
 
 | **JWT Library (Micro-benchmark)**
@@ -49,21 +49,22 @@ This document defines the current JWT validation performance characteristics, ba
 
 **Performance Gap Analysis**:
 
-- **JWT Processing Overhead**: 171.2ms (195.6ms - 24.4ms)
+- **JWT Processing Overhead**: 171.9ms (195.6ms - 23.7ms)
 - **JWT Library Performance**: ~5ms (micro-benchmark)
 - **Unknown Overhead**: 166.2ms (needs investigation)
 - **Optimization Target**: Identify and reduce the 166.2ms unknown overhead
 
 === Load Testing Configuration
 
-**JMH Benchmark Parameters**:
+**wrk Benchmark Parameters**:
 
-[source,xml]
+[source,bash]
 ----
-<jmh.threads>200</jmh.threads>
-<jmh.iterations>5</jmh.iterations>
-<jmh.warmupIterations>3</jmh.warmupIterations>
-<jmh.forks>5</jmh.forks>
+# Health check benchmark (system baseline)
+./docker/wrk/run-health-benchmark.sh 4 80 120s
+
+# JWT validation benchmark
+./docker/wrk/run-wrk-benchmark.sh 4 80 120s benchmark
 ----
 
 **Container Configuration**:
@@ -81,35 +82,37 @@ quarkus.virtual-threads.shutdown-timeout=10s
 quarkus.native.container-runtime-options=-m=512m,--cpus=2.0
 ----
 
-**Docker Multi-stage Build**:
+**Docker Multi-stage Build (Maven Profiles)**:
 
 [source,bash]
 ----
-# Build with JFR support
-ENABLE_JFR=true docker compose build
+# Production build (distroless, 104MB)
+mvn clean verify -Pintegration-tests
 
-# Run with JFR recording
-JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile
+# JFR profiling build (UBI-based, 187MB)
+mvn clean verify -Pjfr
+
+# Run containers with chosen image
+docker compose up -d
 ----
 
 == Performance Bottleneck Analysis
 
 === JWT Validation Pipeline Analysis
 
-**Current Performance Bottlenecks** (July 17, 2025):
+**Current Performance Bottlenecks** (July 20, 2025):
 
 1. **Unknown Overhead**: 166.2ms (85% of total JWT processing)
-   * Likely RSA signature verification taking longer than micro-benchmark
-   * Container networking overhead
-   * Native image specific performance characteristics
-   * **Primary optimization target**
+   * Requires JFR analysis to identify root cause
+   * Likely cryptographic operations or container networking
+   * **Primary optimization target: JFR profiling**
 
 2. **JWT Library Processing**: ~5ms (3% of total JWT processing)
    * Confirmed by micro-benchmark analysis
    * Signature verification, JSON parsing, JWKS loading
    * **Already optimized**
 
-3. **System Infrastructure**: 24.4ms (12% of total latency)
+3. **System Infrastructure**: 23.7ms (12% of total latency)
    * Docker networking, HTTP processing
    * TLS overhead (verified as not a bottleneck)
    * **Baseline acceptable**
@@ -141,7 +144,7 @@ JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/j
 | ❌ Needs optimization
 
 | Health Check P95 Latency
-| 24.4ms
+| 23.7ms
 | <10ms
 | ❌ Needs optimization
 
@@ -156,7 +159,7 @@ JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/j
 | ✅ Excellent native performance
 |===
 
-**Critical Performance Issue**: The 166.2ms unknown overhead represents the primary bottleneck preventing achievement of the 20ms target latency.
+**Critical Performance Issue**: The 166.2ms unknown overhead represents the primary bottleneck preventing achievement of the 20ms target latency. JFR analysis is required to identify the root cause.
 
 == Algorithm Performance Characteristics
 
@@ -200,13 +203,20 @@ Max depth: 10 levels
 * JWKS loading classes (10-15% of processing impact)
 * Domain token and claim processing classes
 
-**Native Image Build Metrics** (with JFR support):
+**Native Image Build Metrics** (dual-image approach):
 
-* Build size: ~104MB (JFR-enabled distroless container)
-* Build time: 4m 30s (multi-stage Docker build)
-* Startup time: 0.263s (minimal JFR overhead)
-* Memory efficiency: ~50MB RSS (production-ready)
-* JFR features: `--enable-monitoring=heapdump,jfr` confirmed
+* **Distroless (Production)**:
+  * Build size: ~104MB (minimal attack surface)
+  * Startup time: 0.263s
+  * JFR: Limited by filesystem permissions
+  
+* **UBI-based (Profiling)**:
+  * Build size: ~187MB (includes UBI runtime)
+  * Startup time: 0.296s
+  * JFR: Fully functional with file generation
+  
+* Build time: 4m 30s (both variants)
+* Memory efficiency: ~50MB RSS (both variants)
 
 === Container Resource Efficiency
 

@@ -222,7 +222,7 @@ quarkus.micrometer.export.prometheus.enabled=true
 
 # Testing
 ../../mvnw clean verify -Pintegration-tests
-../../mvnw clean verify -Pintegration-tests,native -am
+../../mvnw clean verify -Pjfr
 ----
 
 == Manual Testing
@@ -243,14 +243,40 @@ curl -k https://localhost:10443/q/metrics | grep cui_jwt
 
 == Docker Integration
 
+=== Maven Profile-Based Builds
+
+The module supports dual-image builds via Maven profiles:
+
 [source,bash]
 ----
-# Docker Compose
-docker-compose -f docker-compose up --build
+# Production build (104MB distroless image)
+mvn clean package -Pdocker-distroless
 
-# Manual Docker
-docker build -f src/main/docker/Dockerfile.native -t cui-jwt-integration .
-docker run -p 10443:8443 cui-jwt-integration
+# JFR profiling build (187MB UBI-based image)
+mvn clean package -Pdocker-jfr
+
+# Run with Docker Compose (uses built image)
+docker compose up
+----
+
+**Image Characteristics**:
+
+* **Distroless** (`docker-distroless`): 
+  - Minimal attack surface for production
+  - 104MB image size
+  - JFR limited by filesystem permissions
+  - 0.263s startup time
+
+* **UBI-based** (`docker-jfr`):
+  - Full JFR support for profiling
+  - 187MB image size
+  - JFR files generated in `/tmp/jfr-output/`
+  - 0.296s startup time
+
+[source,bash]
+----
+# Extract JFR recordings (JFR variant only)
+docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./target/jfr-results/
 ----
 
 == Troubleshooting
@@ -273,9 +299,11 @@ curl -k https://localhost:10443/validate/health
 
 == Performance
 
-* Native compilation: 5-10 minutes
-* Memory: ~100MB native vs ~300MB JVM
-* Startup: ~1s native vs ~3s JVM
+* Native compilation: 4-5 minutes
+* Memory: ~50MB RSS (both image variants)
+* Startup: 0.263s (distroless) / 0.296s (JFR-enabled)
+* Image sizes: 104MB (distroless) / 187MB (UBI-based)
+* JFR overhead: <1% performance impact
 
 == Security
 

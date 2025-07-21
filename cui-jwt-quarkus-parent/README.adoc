@@ -206,9 +206,22 @@ xref:doc/development/quarkus-test-setup.adoc[Quarkus Test Setup]
 
 === Native Image Support
 
-The extension supports GraalVM Native Image compilation. More information can be found here:
+The extension supports GraalVM Native Image compilation with dual-image builds for production and profiling:
 
-xref:doc/configuration/native-image-configuration.adoc[Native Image Support]
+* **Production**: Distroless images (104MB) with minimal attack surface
+* **Profiling**: UBI-based images (187MB) with full JFR support
+
+Build commands:
+[source,bash]
+----
+# Production build (distroless native image)
+mvn clean verify -Pintegration-tests
+
+# JFR profiling build (UBI-based native image)
+mvn clean verify -Pjfr
+----
+
+More information: xref:doc/configuration/native-image-configuration.adoc[Native Image Support]
 
 === Health Checks
 

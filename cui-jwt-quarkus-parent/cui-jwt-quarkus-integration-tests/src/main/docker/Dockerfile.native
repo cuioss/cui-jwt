@@ -1,4 +1,6 @@
-# Multi-stage Dockerfile for native build with optional JFR support
+# Multi-stage Dockerfile for native build with dual runtime options:
+# - distroless: Production-ready, minimal attack surface (JFR limited)
+# - distro-jfr: UBI-based with full JFR support for profiling
 # Stage 1: Build native image with Mandrel
 FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
 
@@ -22,20 +24,21 @@ RUN cd /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests && \
         ../../mvnw compile quarkus:build --no-transfer-progress -Dquarkus.native.enabled=true -Dquarkus.native.container-build=false -DskipTests -Dexec.skip=true; \
     fi
 
-# Stage 2: Distroless runtime with native executable
-FROM quay.io/quarkus/quarkus-distroless-image:2.0
+# Stage 2A: Distroless runtime with native executable (production default)
+FROM quay.io/quarkus/quarkus-distroless-image:2.0 AS distroless
 
 # Build argument propagated to runtime stage
 ARG ENABLE_JFR=false
 
 # Security metadata and labels
-LABEL org.opencontainers.image.title="CUI JWT Quarkus Integration Tests"
+LABEL org.opencontainers.image.title="CUI JWT Quarkus Integration Tests - Distroless"
 LABEL org.opencontainers.image.description="Security-hardened Quarkus native application for JWT validation"
 LABEL org.opencontainers.image.vendor="CUI"
 LABEL org.opencontainers.image.version="1.0.0-SNAPSHOT"
 LABEL security.scan.required="true"
 LABEL security.distroless="true"
 LABEL performance.jfr.enabled="$ENABLE_JFR"
+LABEL performance.jfr.working="false"
 
 WORKDIR /app
 
@@ -46,18 +49,9 @@ COPY --from=build --chmod=0755 --chown=root:root /build/cui-jwt-quarkus-parent/c
 COPY --from=build --chmod=0755 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/health-check.sh /app/health-check.sh
 
 # Copy PEM certificates with restrictive permissions (root ownership)
-# Certificate (public) - readable by all but owned by root
-# Private key - restricted access and owned by root
-# Truststore - readable by application but owned by root
 COPY --from=build --chmod=0644 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.crt /app/certificates/localhost.crt
 COPY --from=build --chmod=0600 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.key /app/certificates/localhost.key
 COPY --from=build --chmod=0644 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost-truststore.p12 /app/certificates/localhost-truststore.p12
-
-# Note: For read-only filesystem support, temporary directories will be mounted as tmpfs
-# Distroless images don't include shell commands, so tmpfs mounts are configured at runtime
-
-# Console logging only - no log files needed for security
-# Temporary files will use tmpfs mounts
 
 # Expose HTTPS port only (no HTTP for security)
 EXPOSE 8443
@@ -70,5 +64,62 @@ HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=10s \
 USER nonroot
 
 # Use exec form for better signal handling and security
-# SSL system properties for native image HTTPS client functionality (GraalVM best practice)
 ENTRYPOINT ["/app/application", "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12", "-Djavax.net.ssl.trustStorePassword=localhost-trust", "-Djavax.net.ssl.trustStoreType=PKCS12"]
+
+# Stage 2B: UBI-based runtime with JFR support (for profiling)
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10 AS distro-jfr
+
+# Build argument propagated to runtime stage
+ARG ENABLE_JFR=false
+
+# Security metadata and labels
+LABEL org.opencontainers.image.title="CUI JWT Quarkus Integration Tests - JFR Enabled"
+LABEL org.opencontainers.image.description="UBI-based Quarkus native application with JFR profiling support"
+LABEL org.opencontainers.image.vendor="CUI"
+LABEL org.opencontainers.image.version="1.0.0-SNAPSHOT"
+LABEL security.scan.required="true"
+LABEL security.distroless="false"
+LABEL performance.jfr.enabled="true"
+LABEL performance.jfr.working="true"
+
+# Install minimal required packages and create directories
+RUN microdnf install -y findutils && microdnf clean all \
+    && mkdir -p /app/certificates /tmp/jfr-output /app/tmp \
+    && chown -R 1001:1001 /tmp/jfr-output /app/tmp \
+    && chmod 755 /tmp/jfr-output /app/tmp
+
+WORKDIR /app
+
+# Copy the native executable with restrictive permissions  
+COPY --from=build --chmod=0755 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/*-runner /app/application
+
+# Copy health check script with restrictive permissions (root ownership)
+COPY --from=build --chmod=0755 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/health-check.sh /app/health-check.sh
+
+# Copy PEM certificates with restrictive permissions (root ownership)
+COPY --from=build --chmod=0644 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.crt /app/certificates/localhost.crt
+COPY --from=build --chmod=0600 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.key /app/certificates/localhost.key
+COPY --from=build --chmod=0644 --chown=root:root /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost-truststore.p12 /app/certificates/localhost-truststore.p12
+
+# Expose HTTPS port only (no HTTP for security)
+EXPOSE 8443
+
+# Health check using internal script
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=10s \
+  CMD ["/app/health-check.sh"]
+
+# Run as non-root user for security
+USER 1001
+
+# JFR is always enabled for this image variant
+# Use exec form for better signal handling and security
+ENTRYPOINT ["/app/application", \
+  "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12", \
+  "-Djavax.net.ssl.trustStorePassword=localhost-trust", \
+  "-Djavax.net.ssl.trustStoreType=PKCS12", \
+  "-XX:+FlightRecorder", \
+  "-XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-distro-profile.jfr,dumponexit=true,duration=300s,settings=profile"]
+
+# Stage 3: Final stage selector based on target
+FROM distroless AS final-distroless
+FROM distro-jfr AS final-distro

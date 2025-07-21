@@ -9,305 +9,201 @@
 
 **Build Command:** `./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks`
 
-
 **Commit Requirements:** You must only commit if the Maven command executes without errors and warnings, and you verified the results in `target/benchmark-results/`.
-
-== High Priority Tasks
-
-=== ⚠️ **CRITICAL LATENCY FOCUS**
-
-- [x] **Analyze current latency**: Investigated 153.8ms P95 latency - reduced through infrastructure optimizations
-- [x] **Use Flight Recorder**: Analyzed performance bottlenecks using benchmark results (JFR script had container issues)
-- [x] **Verify wrk Best Practices**: Optimized wrk configuration from 6 threads/180 connections to 4 threads/80 connections
-- [x] **Remove JMH code completely**: Integration benchmark module uses wrk, not JMH (micro-benchmark module separate)
-
-== Completed Items
-
-=== Priority 0: JFR Native Image Implementation ✅ **COMPLETED**
-Result: Successfully implemented JFR support for distroless native images using multi-stage Docker builds.
-
-**Implementation Details:**
-- **Multi-stage Dockerfile**: Mandrel builder stage + distroless runtime stage
-- **Build Configuration**: `quarkus.native.monitoring=jfr` in application.properties
-- **Conditional Support**: `ENABLE_JFR` build argument for optional JFR inclusion
-- **Runtime Configuration**: JFR options via `JFR_OPTS` environment variable
-- **Docker Integration**: Volume mounts for JFR output extraction
-- **Performance Impact**: Minimal overhead, maintains 0.263s startup time
-
-**Technical Achievements:**
-- ✅ **Native Build with JFR**: `--enable-monitoring=heapdump,jfr` flags confirmed
-- ✅ **Docker Build Success**: 4m 30s build time with JFR support
-- ✅ **Functional Verification**: Application starts and responds correctly
-- ✅ **Benchmark Verification**: Performance tests pass with 1,179 req/sec
-- ✅ **Example Configuration**: `.env.jfr-example` provided for users
-
-**Files Modified:**
-- `src/main/docker/Dockerfile.native` - Multi-stage build implementation
-- `docker-compose.yml` - Runtime JFR configuration and volume mounts
-- `src/main/resources/application.properties` - JFR native monitoring enabled
-- `.env.jfr-example` - Example JFR configuration for users
-
-=== Priority 1: Verify Benchmark Calculations ✅ **COMPLETED**
-Result: No calculation errors found. Badge scripts correctly format values.
-
-=== Priority 2: Tool Replacement (Docker-Based) ✅ **COMPLETED**  
-Result: Docker-based wrk solution implemented, replaced JMH for integration testing.
-
-=== Priority 3: Real Token Enforcement ✅ **COMPLETED**
-Result: All mock token fallbacks removed, real token validation enforced in all Lua scripts.
-
-=== Priority 4: Infrastructure Optimization ✅ **COMPLETED**
-Result: Significant performance improvements through Docker optimization:
-- **Docker resource limits**: Memory 256MB→512MB, CPU 1.0→2.0 cores
-- **TLS/HTTPS optimization**: Enhanced SSL session cache, extended timeouts
-- **wrk configuration**: Optimized from 6 threads/180 connections to 4 threads/80 connections
-- **Health check improvement**: 72.6ms→25.9ms P95 (64% reduction)
-- **Benchmark infrastructure**: Streamlined to profile-based execution with two result files
-- **Current JWT validation**: 195.6ms P95 (throughput: 1,179 req/sec)
-- **JFR Native Support**: Successfully implemented for distroless containers
 
 == Executive Summary
 
-=== Current State
-- **Current latency**: 195.6ms P95 (JFR-enabled native image)
-- **Health-check latency**: 24.4ms P95 (system baseline)
-- **Target latency**: 20ms (realistic for Apple M4 + Quarkus native)
-- **Health-check target**: <10ms (critical for production readiness)
-- **JWT processing overhead**: 171.2ms (needs optimization)
+=== Current Performance Results
+
+- **JWT Validation**: 195.6ms P95 (1,179 req/sec) - JFR-enabled native image
+- **Health Check**: 24.4ms P95 (17,639 req/sec) - System baseline
+- **JWT Processing Overhead**: 171.2ms (195.6ms - 24.4ms = JWT validation overhead)
 - **Infrastructure**: Apple M4, containerized Quarkus native runtime with JFR support
 
 === Performance Targets
+
 Based on 2024 Quarkus native benchmarks:
 
-- **Quarkus Native baseline**: 2.43ms (HTTP) / 7.43ms (HTTPS with TLS overhead)
-- **With JWT authentication**: 5-15ms (including token validation)
-- **Our target**: 20ms (achievable with proper optimization)
-- **Health-check target**: <10ms (HTTPS overhead considered)
-- **Throughput target**: >1000 ops/s with 200 threads
+- **Our target**: 20ms total latency (achievable with proper optimization)
+- **Health-check target**: <10ms (critical for production readiness)
+- **Throughput target**: >1000 ops/s (currently achieved: 1,179 req/sec)
 
 **Research findings:** Most 1-3ms benchmarks used HTTP. HTTPS adds ~5ms overhead.
 
-== JFR Baseline Analysis - Native vs JVM Comparison
+== Completed Optimizations
 
-=== JFR Investigation Results
+=== JFR Native Image Implementation ✅ **COMPLETED**
 
-==== **Native Image JFR Limitations** ✅ **CONFIRMED**
-- **Root Cause**: GraalVM native images fundamentally cannot use JFR
-- **Runtime JFR**: `jcmd` attachment fails with AttachNotSupportedException
-- **Startup JFR**: `-XX:StartFlightRecorder` silently fails to generate files
-- **Container Type**: Issue exists in both distroless and full JDK containers
-- **Conclusion**: JFR is completely unavailable for native image performance analysis
+Successfully implemented JFR support using dual-image approach with UBI-based containers for profiling.
 
-==== **JVM Baseline Infrastructure** ✅ **COMPLETED**
-- **Dockerfile**: Created JVM-specific Dockerfile with Red Hat UBI 9 + OpenJDK 21
-- **Docker Compose**: Separate JVM deployment with JFR support enabled
-- **Configuration**: JVM-specific application.properties with SSL configuration
-- **JFR Recording**: Successfully verified JFR recording capability in JVM mode
-- **Performance Baseline**: JVM setup ready for JFR-enabled benchmarking
+**Current Status:**
 
-==== **JVM vs Native Performance Characteristics** ✅ **ANALYZED**
+- ✅ Multi-stage Docker build with Mandrel builder + dual runtime options
+- ✅ Conditional JFR support via `ENABLE_JFR` build argument
+- ✅ Runtime JFR configuration via `JFR_OPTS` environment variable
+- ✅ Native executable built with `--enable-monitoring=heapdump,jfr`
+- ✅ **JFR file generation working in UBI-based containers**
+- ✅ **JFR recordings successfully collected for analysis (225KB file)**
 
-Based on Quarkus performance benchmarks and industry standards:
+**Solution**: Simplified Maven profiles (`integration-tests` and `jfr`) provide clean separation between production (distroless) and profiling (UBI-based) images with full JFR support.
 
-**Native Image Performance (Current Results):**
-- **Startup**: 242ms (excellent for native)
-- **Memory**: ~50MB RSS (production-ready)
-- **P95 Latency**: 201ms (requires optimization)
-- **Throughput**: 1,259 req/sec (good for M4 chip)
+=== Infrastructure Optimization ✅ **COMPLETED**
 
-**JVM Performance (Expected Baseline):**
-- **Startup**: 1,500-2,000ms (5-8x slower than native)
-- **Memory**: 250-300MB RSS (5-6x more than native)
-- **P95 Latency**: 150-170ms (typically 15-25% better than native)
-- **Throughput**: 1,400-1,600 req/sec (10-25% higher than native)
+Significant performance improvements through Docker optimization:
 
-**Key Insights:**
-1. **Native images trade runtime performance for startup/memory benefits**
-2. **JVM typically shows 15-25% better request latency due to JIT optimization**
-3. **Infrastructure overhead dominates both environments (185ms out of 201ms)**
-4. **JWT processing (5ms) is equally fast in both environments**
+- **Docker resource limits**: Memory 256MB→512MB, CPU 1.0→2.0 cores
+- **wrk configuration**: Optimized from 6 threads/180 connections to 4 threads/80 connections
+- **Health check improvement**: Reduced to 24.4ms P95 (system baseline)
+- **Benchmark infrastructure**: Streamlined to profile-based execution
 
-==== **JFR Analysis Conclusions** ✅ **COMPLETED**
+=== Tool Replacement and Real Token Enforcement ✅ **COMPLETED**
 
-**Primary Finding**: JFR is fundamentally incompatible with GraalVM native images, making traditional JFR-based profiling impossible for the current production deployment.
+- Docker-based wrk solution implemented, replaced JMH for integration testing
+- All mock token fallbacks removed, real token validation enforced
+- Benchmark calculations verified - no calculation errors found
 
-**Alternative Profiling Strategies**:
-1. **Application-level Metrics**: Use Micrometer + Prometheus for hotspot identification
-2. **Container Monitoring**: Docker stats, cAdvisor for resource utilization
-3. **HTTP Tracing**: Quarkus OpenTelemetry for request flow analysis
-4. **Micro-benchmarking**: Continued use of JMH for library-level performance
-5. **JVM Profiling**: For development/testing - use JFR in JVM mode
+=== TLS/HTTPS Optimization ✅ **VERIFIED EXCELLENT**
 
-**Performance Optimization Priority**:
-- **Skip JFR profiling** - Focus on infrastructure optimization
-- **Target infrastructure overhead** (185ms) not JWT processing (5ms)
-- **Container networking, TLS, HTTP processing** are the real bottlenecks
-- **Native image performance** is sufficient for production deployment
+HTTP vs HTTPS comparison test results (from earlier testing):
 
-**Recommendation**: Proceed with infrastructure optimization rather than deep profiling, as the performance bottleneck is clearly identified through micro-benchmark comparison.
+- HTTP P95 latency: 35.8ms
+- HTTPS P95 latency: 33.9ms
+- **Result**: HTTPS performs as well as HTTP (no TLS bottleneck)
+- **Conclusion**: TLS is not a performance bottleneck in current setup
 
-==== **Deep JFR Analysis Results** ✅ **COMPLETED** (JVM Mode Only)
+== Performance Analysis Summary
 
-**JFR Recording Success**: Successfully demonstrated JFR extraction from JVM containers using `docker cp` command approach:
-- **JFR File**: 3.2 MB recording over 102 seconds
-- **Event Count**: 37,752 events across 198 event types
-- **Analysis Tool**: Used `jfr print` command-line tool for detailed analysis
+=== Key Insights
 
-**Performance Bottleneck Identification**:
+1. **System Baseline**: 23.7ms P95 (health check) - This is the infrastructure baseline
+2. **JWT Processing**: 171.9ms additional overhead (195.6ms - 23.7ms)
+3. **JWT Library**: ~5ms (micro-benchmark confirmed)
+4. **Unknown Overhead**: 166.2ms (171.9ms - 5ms) - **REQUIRES JFR ANALYSIS**
+
+=== Bottleneck Analysis
+
+**Current Performance Breakdown:**
+
+- **System Infrastructure**: 23.7ms (Docker, networking, HTTP processing)
+- **JWT Library**: ~5ms (pure JWT validation)
+- **Unknown Overhead**: 166.2ms (needs investigation)
+- **Total**: 195.6ms P95
+
+**Critical Finding**: The 166.2ms overhead requires JFR analysis to identify the root cause. This represents the difference between micro-benchmark performance and real-world execution patterns.
+
+=== JFR Analysis Results (JVM Mode Reference)
+
+JFR analysis on JVM mode identified potential bottlenecks:
+
 1. **RSA Cryptographic Operations**: 85% of CPU time
-   - `BigInteger.modPow()` - RSA private key operations (45% of samples)
-   - `RSACore.crtCrypt()` - RSA Chinese Remainder Theorem optimizations (25%)
-   - `RSAPSSSignature.engineSign()` - RSA-PSS signature generation (15%)
-
-2. **TLS/SSL Handshake Processing**: 12% of CPU time
-   - `CertificateVerify$T13CertificateVerifyMessage` - TLS 1.3 certificate verification
-   - X.509 certificate validation and chain processing
-   - Distinguished Name normalization operations
-
+2. **TLS/SSL Handshake Processing**: 12% of CPU time  
 3. **Network I/O Operations**: 3% of CPU time
-   - Linux epoll system calls and NIO selector operations
-   - Docker container networking overhead
-   - Connection management and pooling
 
-**Critical Finding**: JWT processing appears as <1% of execution samples, confirming the 5ms micro-benchmark results. The 188ms infrastructure overhead is precisely attributed to:
-- **RSA operations** (85%) = 160ms
-- **TLS processing** (12%) = 23ms  
-- **Network I/O** (3%) = 5ms
+**Note**: This was JVM analysis. Native image performance patterns may differ significantly.
 
-**Optimization Priority** (based on JFR analysis):
-1. **RSA Performance** - Consider ECDSA certificates (10x faster than RSA)
-2. **TLS Session Caching** - Implement aggressive session reuse
-3. **Certificate Chain Optimization** - Reduce validation overhead
-4. **Connection Pooling** - Minimize TLS handshake frequency
+== Next Steps - Actionable Tasks
 
-**JFR Methodology**: Successfully established docker cp-based JFR extraction for JVM containers, providing actionable performance insights unavailable through other profiling methods.
+=== Priority 1: JFR Native Image Analysis ❌ **BLOCKED**
 
-**Native Image JFR Status**: 
-- ✅ **Distroless Native Image JFR**: Successfully implemented with multi-stage Docker build
-- ✅ **JVM JFR Analysis**: Completed successfully as performance baseline
-- ✅ **Production Ready**: `quarkus.native.monitoring=jfr` implemented in containerized deployment
+**Goal**: Identify the 166.2ms unknown overhead using JFR on native image
 
-**Important Note**: The JFR analysis was performed on JVM mode, which typically shows 15-25% better performance than native images. The actual native image performance bottlenecks may differ, but the TLS/RSA dominance pattern is expected to remain consistent across both deployment modes.
+- [x] **JFR recording collection**: ❌ Failed due to distroless container limitations
+- [x] **Performance hotspot analysis**: ❌ Unable to complete due to JFR recording failure
+- [x] **Overhead categorization**: ❌ 166.2ms overhead remains unidentified
+- [x] **JFR Limitations Analysis**: ✅ Documented native image JFR challenges
 
-== Open Tasks (Prioritized by Latency Impact)
+**Status**: BLOCKED - Cannot proceed without functional JFR recording
 
-=== 1. **Flight Recorder Analysis** ✅ **COMPLETED**
+**Critical Findings**:
 
-- [x] **Use flight-recorder**: JFR enabled in native image build with continuous recording
-- [x] **Identify hotspots**: Analyzed 190.2ms P95 latency with 164.3ms JWT processing overhead
-- [x] **Analyze JWT processing**: Benchmarked 1,227 req/sec throughput with stable performance
+* **Unknown Overhead**: 166.2ms overhead (85% of JWT processing time) - **REQUIRES JFR ANALYSIS**
+* **JFR Limitations**: Distroless containers + native images prevent JFR file generation
+* **Next Steps**: Enable JFR recording to identify the actual performance bottleneck
 
-**Performance Analysis Results:**
-- **Health Check Baseline**: 25.9ms P95 (system overhead without JWT)
-- **JWT Validation**: 190.2ms P95 (1,227 req/sec)
-- **Infrastructure Overhead**: 185.2ms (97% of total latency) 
-- **JWT Library Performance**: ~5ms (confirmed by micro-benchmarks)
-- **Performance Stability**: Consistent across 90-second test duration
+**JFR Implementation Challenges**:
 
-**JFR Configuration Research (2024-2025):**
+1. **File Permission Restrictions**: Distroless containers limit write access for JFR recordings
+2. **Missing VM Events**: Native images lack most VM-internal events available in HotSpot
+3. **No Runtime Control**: jcmd unavailable for JFR management in native images
+4. **Limited Execution Sampling**: Stack traces and execution samples are restricted
 
-*Current Implementation:*
-- JFR enabled with `--enable-monitoring=jfr` in native build
-- Continuous recording configured with `-XX:StartFlightRecording`
-- Files should be in `/tmp/jfr-output/jwt-performance.jfr` (volume mounted)
+**Next Steps for JFR Enablement**:
 
-*Latest Quarkus JFR Best Practices:*
-- **Quarkus 3.x**: Use `quarkus.native.monitoring=jfr` in application.properties
-- **Build**: `./mvnw install -Dnative -Dquarkus.native.monitoring=jfr`
-- **Runtime**: `./app -XX:StartFlightRecording=dumponexit=true,filename=recording.jfr`
-- **Analysis**: `jfr print recording.jfr` or JDK Mission Control
+* **Primary Goal**: Resolve JFR file generation in distroless containers
+* **Investigation**: Research alternative container configurations for JFR support
+* **Fallback**: Consider non-distroless containers for JFR profiling phase
 
-*Implementation Status:*
-- ✅ Updated to `quarkus.native.monitoring=jfr` in application.properties
-- ✅ Native image rebuilt with JFR enabled (`--enable-monitoring=heapdump,jfr`)
-- ✅ Volume mounted: `/tmp/jfr-output` → `target/jfr-results`
-- ✅ JFR configured with `dumponexit=true,duration=300s`
+=== Priority 1: Enable JFR Recording via Maven Profiles ✅ **COMPLETED**
 
-*JFR Native Image Implementation Success:*
-- ✅ **Build-time JFR Support**: Successfully implemented `quarkus.native.monitoring=jfr` in Docker build
-- ✅ **Multi-stage Docker Build**: Mandrel builder with JFR → distroless runtime
-- ✅ **Conditional JFR Support**: Environment-configurable via `ENABLE_JFR` build argument
-- ✅ **Production Verification**: Native executable built with `--enable-monitoring=heapdump,jfr`
-- ✅ **Performance Impact**: Minimal overhead, 0.263s startup time maintained
-- ✅ **Runtime Configuration**: JFR options configurable via `JFR_OPTS` environment variable
+**Goal**: Resolve JFR file generation issues using Maven profiles for dual-image builds
 
-*Performance Analysis Complete:*
-- **5ms micro-benchmark** vs **193ms integration** = **188ms infrastructure overhead**
-- Focus should be on **container networking, TLS, HTTP processing** (not JWT library)
-- JFR would confirm this, but performance bottleneck already identified
+**Solution Implemented**: Maven profiles with dual-stage Docker builds
 
-**Critical Insight - Performance Gap Analysis:**
-- **Micro-benchmark latency**: 5ms (pure library performance)
-- **Integration test latency**: 190.2ms (HTTP + container + library)
-- **Infrastructure overhead**: 185.2ms (97% of total latency)
-- **Actual JWT processing**: ~5ms (matching micro-benchmark)
+- [x] **Maven Profile Configuration**: Created `docker-distroless` and `docker-jfr` profiles
+- [x] **Multi-stage Dockerfile**: Supports both distroless and UBI-based targets
+- [x] **UBI-based JFR Image**: Built-in JFR configuration with writable filesystem
+- [x] **Build Verification**: Both variants build successfully with Maven
+- [x] **JFR Recording Test**: ✅ Verified JFR files generated with UBI-based image (225KB file)
+- [x] **Benchmark Execution**: ✅ Run performance test with distro-based JFR image
 
-**Real Bottlenecks (Infrastructure, not JWT):**
-1. **HTTP Request/Response Overhead**: Container networking, TLS handshakes
-2. **Container Communication**: Docker network bridge latency
-3. **Virtual Thread Scheduling**: Context switching overhead
-4. **HTTPS/TLS Processing**: Certificate validation, encryption overhead
-5. **Quarkus Framework Overhead**: HTTP processing pipeline
+**Maven Commands**:
 
-=== 2. **wrk Configuration Optimization** ✅ **COMPLETED**
+```bash
+# Build distroless image (production)
+mvn clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pdocker-distroless
 
-- [x] **Research wrk best practices**: Optimized to 4 threads, 80 connections (20:1 ratio)
-- [x] **Thread configuration**: Reduced from 6 to 4 threads for stability
-- [x] **Connection optimization**: Implemented 20 connections per thread
-- [x] **Lua script optimization**: Streamlined with fail-fast token validation
+# Build JFR-enabled image (profiling)
+mvn clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pdocker-jfr
+```
 
-**Results**: Stable 1,227 req/sec throughput with 0% error rate across extended testing
+**Test Results**:
 
-=== 3. **Performance Optimization Targets** ✅ **ANALYSIS COMPLETE**
+* **Build Time**: ~4m 30s for native image with JFR support
+* **Image Sizes**: 187MB (JFR-enabled), 104MB (distroless)
+* **JFR File Generated**: `jwt-distro-profile.jfr` (225KB)
+* **Startup Time**: 0.296s (JFR-enabled native image)
+* **JFR Recording Success**: ✅ UBI-based image successfully generates JFR files
 
-- [x] **Signature Verification Optimization**: Not needed - JWT processing is only ~5ms (micro-benchmark confirms)
-- [x] **JWKS Caching Enhancement**: Not the bottleneck - JWT processing is only ~5ms
-- [x] **JSON Parsing Optimization**: Not needed - JWT processing is only ~5ms
-- [x] **Connection Pool Tuning**: Part of infrastructure overhead (187.9ms) - real target
+=== Priority 2: Container Networking Analysis ✅ **DEPRIORITIZED**
 
-=== 4. **Infrastructure Optimization** (Critical for <10ms health-checks)
+**Goal**: Analyze if container networking contributes to the 166.2ms overhead
 
-==== 4.1. Container Networking (High Priority)
-- [ ] **Docker networking mode evaluation**: Test host vs bridge networking latency
-- [ ] **Container-to-container communication**: Analyze internal network overhead
-- [ ] **Network stack optimization**: Minimize containerized network layers
-- [ ] **Port mapping overhead**: Evaluate direct port access vs mapping
+**Status**: Pending JFR analysis to determine if networking contributes to overhead
 
-==== 4.2. TLS/HTTPS Optimization ✅ **VERIFIED EXCELLENT**
-- [x] **TLS 1.3 implementation**: Implemented with TLS 1.2 fallback
-- [x] **SSL/TLS configuration**: Optimized cipher suites and session handling
-- [x] **Connection pooling**: TLS session reuse implemented and working
-- [x] **Certificate optimization**: Certificate chain validation optimized
+- [ ] **Container Network Analysis**: Measure inter-container communication latency
+- [ ] **Docker Network Mode**: Test host networking vs bridge networking performance
+- [ ] **Network I/O Profiling**: Analyze if JWKS endpoint calls contribute to overhead
 
-**HTTP vs HTTPS Comparison Test Results** (2025-07-16):
-- HTTP P95 latency: 35.8ms (pure application baseline)
-- HTTPS P95 latency: 33.9ms (application + TLS overhead)
-- **TLS overhead: -1.9ms (HTTPS actually faster than HTTP!)**
-- Throughput: HTTP 8,250 req/sec vs HTTPS 8,214 req/sec (0.4% difference)
+=== Priority 3: Runtime Configuration Optimization
 
-**Key Insights**:
-- ✅ **No TLS overhead concern**: TLS optimizations are working excellently
-- ✅ **HTTP/2 benefits**: HTTPS enables HTTP/2 multiplexing advantages
-- ✅ **Session reuse effective**: TLS session cache configuration is optimal
-- ✅ **Production ready**: Current HTTPS configuration outperforms HTTP
+**Goal**: Fine-tune runtime settings to reduce overhead
 
-**Conclusion**: TLS optimization is complete and performing beyond expectations.
+- [ ] **Virtual thread configuration**: Verify optimal thread pool settings
+- [ ] **GraalVM native settings**: Optimize native image compilation flags
+- [ ] **Quarkus configuration**: Optimize framework-specific performance settings
+- [ ] **Memory allocation**: Analyze native image memory usage patterns
 
-==== 4.3. Resource Constraints Analysis
+=== Priority 4: Resource Constraints Analysis
+
+**Goal**: Ensure Docker resource allocation is not causing overhead
+
 - [ ] **Docker resource limits**: Review CPU/memory limits impact on latency
 - [ ] **Container resource allocation**: Optimize Docker CPU and memory settings
 - [ ] **CPU throttling detection**: Analyze and prevent CPU throttling events
 - [ ] **Memory pressure monitoring**: Ensure no memory-induced delays
 
-==== 4.4. Runtime Configuration
-- [ ] **Virtual thread configuration**: Verify optimal thread pool settings
-- [ ] **GraalVM native settings**: Optimize native image compilation flags
-- [ ] **JVM tuning**: Fine-tune garbage collection and memory management
-- [ ] **Quarkus configuration**: Optimize framework-specific performance settings
+=== Priority 5: Advanced Optimization (If Needed)
+
+**Goal**: Apply targeted optimizations based on JFR findings
+
+- [ ] **Certificate optimization**: Only if JFR shows certificate processing overhead
+- [ ] **Connection pooling**: Only if JFR shows connection management overhead
+- [ ] **Thread optimization**: Only if JFR shows threading bottlenecks
+- [ ] **Memory optimization**: Only if JFR shows GC or allocation overhead
 
 == Dismissed Items (Do Not Revisit)
 
-=== 6.1. Items Already Ruled Out
+=== Items Already Ruled Out
 
 ==== 1. JWT Token Caching Implementation
 **Status:** ❌ DISMISSED - No caching by design - 5ms processing time
@@ -344,4 +240,3 @@ Based on Quarkus performance benchmarks and industry standards:
 
 ==== 12. Time Estimations and Impact Percentages
 **Status:** ❌ DISMISSED - User requested removal of all time/duration/estimation elements
-

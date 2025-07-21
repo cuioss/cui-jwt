@@ -134,7 +134,7 @@ resources:
 
 === JFR Monitoring Configuration
 
-**JFR Native Image Implementation** (Successfully Implemented):
+**JFR Native Image Implementation** (Dual-Image Maven Profiles):
 
 [source,properties]
 ----
@@ -143,37 +143,44 @@ resources:
 quarkus.native.monitoring=jfr
 ----
 
-**Docker Multi-stage Build Configuration**:
+**Maven Profile Configuration**:
 
-[source,dockerfile]
+[source,xml]
 ----
-# Multi-stage Dockerfile with JFR support
-FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+<!-- Production build (distroless) -->
+<profile>
+    <id>integration-tests</id>
+    <properties>
+        <skipITs>false</skipITs>
+        <quarkus.native.container-build>false</quarkus.native.container-build>
+        <quarkus.native.enabled>false</quarkus.native.enabled>
+    </properties>
+</profile>
 
-# Build argument to enable JFR monitoring
-ARG ENABLE_JFR=false
-
-# Build native image with conditional JFR support
-RUN if [ "$ENABLE_JFR" = "true" ]; then \
-        mvnw compile quarkus:build -Dquarkus.native.enabled=true -Dquarkus.native.monitoring=jfr; \
-    else \
-        mvnw compile quarkus:build -Dquarkus.native.enabled=true; \
-    fi
-
-# Runtime stage with distroless image
-FROM quay.io/quarkus/quarkus-distroless-image:2.0
-COPY --from=build /build/target/*-runner /app/application
+<!-- JFR profiling build (UBI-based) -->
+<profile>
+    <id>jfr</id>
+    <properties>
+        <skipITs>false</skipITs>
+        <quarkus.native.container-build>false</quarkus.native.container-build>
+        <quarkus.native.enabled>false</quarkus.native.enabled>
+    </properties>
+</profile>
 ----
 
-**JFR Runtime Configuration**:
+**Build and Run Commands**:
 
 [source,bash]
 ----
-# Configure JFR via environment variables
-JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile
+# Production build (104MB distroless image)
+mvn clean verify -Pintegration-tests
 
-# Extract JFR recordings
-docker cp container:/tmp/jfr-output/jwt-profile.jfr ./
+# JFR profiling build (187MB UBI-based image)
+mvn clean verify -Pjfr
+
+# Run and extract JFR recordings (JFR variant only)
+docker compose up -d
+docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./
 ----
 
 == Network and Security Configuration
@@ -321,13 +328,21 @@ quarkus.native.reuse-existing=true
 
 === Performance Validation
 
-**Key Performance Indicators** (with JFR support):
+**Key Performance Indicators** (dual-image variants):
 
-* Native image size: ~104MB (JFR-enabled distroless container)
-* Startup time: 0.263s (minimal JFR overhead)
-* Memory usage: ~50MB RSS (production-ready)
+* **Distroless Production Image**:
+  * Native image size: ~104MB
+  * Startup time: 0.263s
+  * JFR support: Limited (filesystem restrictions)
+  
+* **UBI-based Profiling Image**:
+  * Native image size: ~187MB
+  * Startup time: 0.296s  
+  * JFR support: Full (file generation works)
+  
+* Memory usage: ~50MB RSS (both variants)
 * CPU utilization: 90%+ under load
-* Build time: 4m 30s (multi-stage Docker build)
+* Build time: 4m 30s (both variants)
 * JFR overhead: Minimal (<1% performance impact)
 
 **Validation Command**:

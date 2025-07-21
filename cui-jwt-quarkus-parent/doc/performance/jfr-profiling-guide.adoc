@@ -74,23 +74,58 @@ COPY --from=build /build/target/*-runner /app/application
 ./application -XX:StartFlightRecording=duration=120s,filename=jwt-detailed.jfr,settings=default
 ----
 
-**Container JFR Configuration**:
+**Container JFR Configuration (Maven Profiles)**:
 
 [source,bash]
 ----
-# Docker Compose with JFR recording
-# Copy .env.jfr-example to .env and configure:
-ENABLE_JFR=true
-JFR_OPTS=-XX:+FlightRecorder -XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-native-distroless.jfr,dumponexit=true,duration=300s,settings=profile
-JFR_OUTPUT_DIR=./target/jfr-results
+# Build JFR-enabled image using Maven profile
+mvn clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pdocker-jfr
 
-# Build and run with JFR
-docker compose build
+# Run with JFR recording (UBI-based image has JFR built into entrypoint)
 docker compose up -d
 
+# JFR recording automatically starts and saves to /tmp/jfr-output/jwt-distro-profile.jfr
+# Wait for recording duration (300s by default)
+
 # Extract JFR recording
-docker cp container:/tmp/jfr-output/jwt-native-distroless.jfr ./
+docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./target/jfr-results/
 ----
+
+== Native Image JFR Challenges and Solutions
+
+=== Confirmed Limitations in Distroless Containers
+
+**Technical Challenges Identified** (July 2025):
+
+* **File Permission Restrictions**: Distroless containers have limited write access for JFR recordings
+* **Missing VM Events**: Most VM-internal events available in HotSpot JVM are missing in native images
+* **No Runtime Control**: jcmd is unavailable for JFR management in native images
+* **Limited Stack Traces**: Execution sampling and stack traces are restricted
+
+**JFR Enablement Status**:
+
+* ✅ **Native Image Built with JFR Support**: Successfully enabled `quarkus.native.monitoring=jfr`
+* ✅ **JFR Environment Configuration**: Properly configured `JFR_OPTS` and volume mounts
+* ❌ **JFR File Generation**: Not working in current distroless environment
+* ❌ **Runtime JFR Control**: No jcmd support in native images
+
+**Resolution Implemented**:
+
+1. **Maven Profile Solution**: Dual-image approach with `docker-distroless` and `docker-jfr` profiles
+2. **UBI-based Image for JFR**: Full JFR support with writable filesystem (187MB image)
+3. **Production Distroless**: Minimal attack surface for production use (104MB image)
+
+**Build Commands**:
+
+[source,bash]
+----
+# Production build (distroless, no JFR file generation)
+mvn clean package -Pdocker-distroless
+
+# Profiling build (UBI-based, full JFR support)
+mvn clean package -Pdocker-jfr
+----
+
 
 == Data Collection Methods
 
@@ -217,16 +252,16 @@ jfr print --events ThreadAllocationStatistics jwt-profile.jfr
 **Performance Breakdown** (Based on 2025 JFR Analysis):
 
 - **JWT Validation**: 195.6ms P95 (1,179 req/sec)
-- **Health Check**: 24.4ms P95 (17,639 req/sec) - System baseline
-- **JWT Processing Overhead**: 171.2ms (195.6ms - 24.4ms)
+- **Health Check**: 23.7ms P95 (20,301 req/sec) - System baseline
+- **JWT Processing Overhead**: 171.9ms (195.6ms - 23.7ms)
 - **JWT Library**: ~5ms (micro-benchmark confirmed)
 - **Unknown Overhead**: 166.2ms (needs JFR investigation)
 
 **Primary Analysis Targets**:
 
 1. **Unknown Overhead Investigation** (166.2ms):
-   * Likely RSA signature verification taking longer than expected
-   * Container networking overhead
+   * Requires JFR analysis to identify root cause
+   * Likely cryptographic operations or container networking
    * Native image specific performance patterns
 
 2. **RSA Cryptographic Operations** (JVM Analysis Reference):
@@ -239,7 +274,7 @@ jfr print --events ThreadAllocationStatistics jwt-profile.jfr
    * Certificate verification and chain processing
    * Note: Native image shows TLS performs well (no bottleneck)
 
-**Critical Finding**: The 166.2ms unknown overhead is the primary optimization target, likely related to JWT signature verification performance differences between micro-benchmarks and integration tests.
+**Critical Finding**: The 166.2ms unknown overhead is the primary optimization target. JFR analysis is required to identify whether this is due to cryptographic operations, container networking, or native image specific performance characteristics.
 
 === Memory Allocation Analysis
 
