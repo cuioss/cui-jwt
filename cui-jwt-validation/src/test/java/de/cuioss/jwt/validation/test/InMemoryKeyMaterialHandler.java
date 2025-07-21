@@ -119,7 +119,7 @@ public class InMemoryKeyMaterialHandler {
             KEY_PAIRS.get(algorithm).put(keyId, keyPair);
             return keyPair;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate key pair for algorithm " + algorithm, e);
+            throw new IllegalStateException("Failed to generate key pair for algorithm " + algorithm, e);
         }
     }
 

@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.security.PrivateKey;
 import java.security.Signature;
 import java.util.Base64;
 
@@ -46,15 +45,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 class TokenSignatureValidatorES256FormatTest {
 
     private TokenSignatureValidator validator;
-    private SecurityEventCounter securityEventCounter;
 
     @BeforeEach
     void setUp() {
-        securityEventCounter = new SecurityEventCounter();
+        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
         var jwksLoader = InMemoryKeyMaterialHandler.createJwksLoader(
                 InMemoryKeyMaterialHandler.Algorithm.ES256,
                 InMemoryKeyMaterialHandler.DEFAULT_KEY_ID,
-                securityEventCounter
+            securityEventCounter
         );
         validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
     }
@@ -64,7 +62,7 @@ class TokenSignatureValidatorES256FormatTest {
     void es256IeeeP1363FormatNowWorks() {
         // This test verifies that ES256 signatures in IEEE P1363 format now work correctly
         // with the implemented signature format conversion
-        
+
         // Create a token with ES256 algorithm that generates IEEE P1363 format signatures
         var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN))
                 .withES256IeeeP1363Format();
@@ -83,7 +81,7 @@ class TokenSignatureValidatorES256FormatTest {
     void jjwtES256TokensNowWork() {
         // JJWT generates IEEE P1363 format signatures, and with format conversion implemented,
         // these tokens should now validate successfully
-        
+
         var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN))
                 .withES256IeeeP1363Format();
 
@@ -143,7 +141,7 @@ class TokenSignatureValidatorES256FormatTest {
             return new DecodedJwt(headerJson, payloadJson, signatureEncoded, parts, completeJwt);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create IEEE P1363 format ES256 token", e);
+            throw new IllegalStateException("Failed to create IEEE P1363 format ES256 token", e);
         }
     }
 
@@ -183,17 +181,18 @@ class TokenSignatureValidatorES256FormatTest {
      * Converts ASN.1/DER ECDSA signature to IEEE P1363 format.
      * This is a simplified conversion for ES256 (P-256 curve).
      */
+    @SuppressWarnings("java:S125")
     private byte[] convertAsn1ToIeeeP1363(byte[] asn1Signature) throws Exception {
         // Parse ASN.1 DER structure: SEQUENCE { r INTEGER, s INTEGER }
         // This is a simplified parser for the specific case
-        
+
         int index = 0;
         if (asn1Signature[index++] != 0x30) { // SEQUENCE tag
             throw new IllegalArgumentException("Invalid ASN.1 signature format");
         }
 
         index++; // Skip length byte
-        
+
         // Parse R
         if (asn1Signature[index++] != 0x02) { // INTEGER tag
             throw new IllegalArgumentException("Invalid R component");
@@ -206,7 +205,7 @@ class TokenSignatureValidatorES256FormatTest {
                 Math.min(32, rLength));
         index += rLength;
 
-        // Parse S  
+        // Parse S
         if (asn1Signature[index++] != 0x02) { // INTEGER tag
             throw new IllegalArgumentException("Invalid S component");
         }

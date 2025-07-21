@@ -24,21 +24,21 @@ import java.security.SignatureException;
 
 /**
  * Utility class for converting ECDSA signatures between IEEE P1363 and ASN.1/DER formats.
- * 
+ *
  * <p>This class addresses the incompatibility between JWT standard ECDSA signatures
- * (IEEE P1363 format - raw R,S concatenation) and JDK ECDSA verification 
+ * (IEEE P1363 format - raw R,S concatenation) and JDK ECDSA verification
  * (ASN.1/DER format - structured encoding).</p>
- * 
+ *
  * <h3>Format Details:</h3>
  * <ul>
  *   <li><strong>IEEE P1363:</strong> Raw concatenation of R and S components (R || S)</li>
  *   <li><strong>ASN.1/DER:</strong> Structured encoding: SEQUENCE { r INTEGER, s INTEGER }</li>
  * </ul>
- * 
+ *
  * <h3>Algorithm Support:</h3>
  * <ul>
  *   <li><strong>ES256 (P-256):</strong> 32-byte R and S components (64 bytes total in P1363)</li>
- *   <li><strong>ES384 (P-384):</strong> 48-byte R and S components (96 bytes total in P1363)</li>  
+ *   <li><strong>ES384 (P-384):</strong> 48-byte R and S components (96 bytes total in P1363)</li>
  *   <li><strong>ES512 (P-521):</strong> 66-byte R and S components (132 bytes total in P1363)</li>
  * </ul>
  */
@@ -55,15 +55,16 @@ public class EcdsaSignatureFormatConverter {
 
     /**
      * Converts an ECDSA signature from IEEE P1363 format to ASN.1/DER format.
-     * 
+     *
      * <p>This conversion is necessary when validating JWT tokens with ECDSA signatures
      * using the JDK's ECDSA signature verification, which expects ASN.1/DER format.</p>
-     * 
+     *
      * @param ieeeP1363Signature the signature in IEEE P1363 format (raw R||S concatenation)
      * @param algorithm the ECDSA algorithm (ES256, ES384, or ES512)
      * @return the signature in ASN.1/DER format
      * @throws SignatureException if the conversion fails or the signature format is invalid
      */
+    @SuppressWarnings("java:S125")
     public static byte[] toJCACompatibleSignature(byte[] ieeeP1363Signature, String algorithm) throws SignatureException {
         if (ieeeP1363Signature == null) {
             throw new SignatureException("Signature cannot be null");
@@ -89,18 +90,18 @@ public class EcdsaSignatureFormatConverter {
             // Convert to BigInteger (handles leading zeros correctly)
             BigInteger r = new BigInteger(1, rBytes); // Positive BigInteger
             BigInteger s = new BigInteger(1, sBytes); // Positive BigInteger
-            
+
             // Encode as ASN.1/DER SEQUENCE { r INTEGER, s INTEGER }
             return encodeAsn1Signature(r, s);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new SignatureException("Failed to convert IEEE P1363 signature to ASN.1/DER format: " + e.getMessage(), e);
         }
     }
 
     /**
      * Gets the component size in bytes for the specified ECDSA algorithm.
-     * 
+     *
      * @param algorithm the ECDSA algorithm (ES256, ES384, or ES512)
      * @return the component size in bytes
      * @throws SignatureException if the algorithm is not supported
@@ -116,7 +117,7 @@ public class EcdsaSignatureFormatConverter {
 
     /**
      * Encodes R and S components as ASN.1/DER SEQUENCE { r INTEGER, s INTEGER }.
-     * 
+     *
      * <p>ASN.1 DER encoding rules:
      * <ul>
      *   <li>SEQUENCE tag: 0x30</li>
@@ -125,9 +126,9 @@ public class EcdsaSignatureFormatConverter {
      *   <li>Length of integer</li>
      *   <li>Integer value (with padding byte if MSB is 1 to ensure positive)</li>
      * </ul></p>
-     * 
+     *
      * @param r the R component as a BigInteger
-     * @param s the S component as a BigInteger  
+     * @param s the S component as a BigInteger
      * @return the ASN.1/DER encoded signature
      * @throws IOException if encoding fails
      */
@@ -153,7 +154,7 @@ public class EcdsaSignatureFormatConverter {
         // R component
         sequence.write(rEncoded);
 
-        // S component  
+        // S component
         sequence.write(sEncoded);
 
         byte[] result = sequence.toByteArray();
@@ -165,14 +166,14 @@ public class EcdsaSignatureFormatConverter {
 
     /**
      * Encodes a BigInteger as ASN.1/DER INTEGER.
-     * 
+     *
      * @param value the BigInteger value to encode
      * @return the ASN.1/DER encoded INTEGER
      * @throws IOException if encoding fails
      */
     private static byte[] encodeAsn1Integer(BigInteger value) throws IOException {
         byte[] valueBytes = value.toByteArray(); // BigInteger.toByteArray() handles sign bit correctly
-        
+
         ByteArrayOutputStream integerEncoding = new ByteArrayOutputStream();
 
         // INTEGER tag
@@ -189,18 +190,17 @@ public class EcdsaSignatureFormatConverter {
 
     /**
      * Writes a length value in ASN.1/DER definite form.
-     * 
+     *
      * <p>DER length encoding:
      * <ul>
      *   <li>Short form (length &lt; 128): single byte with the length value</li>
      *   <li>Long form (length ≥ 128): first byte = 0x80 | number_of_length_bytes, followed by length bytes</li>
      * </ul></p>
-     * 
+     *
      * @param out the output stream to write to
      * @param length the length value to encode
-     * @throws IOException if writing fails
      */
-    private static void writeLength(ByteArrayOutputStream out, int length) throws IOException {
+    private static void writeLength(ByteArrayOutputStream out, int length) {
         if (length < 128) {
             // Short form
             out.write(length);

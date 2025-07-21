@@ -184,7 +184,7 @@ public class TestTokenHolder implements TokenContent {
             cachedRawToken = builder.compact();
             return cachedRawToken;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate JWT token", e);
+            throw new IllegalStateException("Failed to generate JWT token", e);
         }
     }
 
@@ -433,7 +433,7 @@ public class TestTokenHolder implements TokenContent {
      * the header, body, and signature.
      *
      * @return a DecodedJwt instance representing this token
-     * @throws RuntimeException if the conversion fails
+     * @throws IllegalStateException if the conversion fails
      */
     public DecodedJwt asDecodedJwt() {
         try {
@@ -461,7 +461,7 @@ public class TestTokenHolder implements TokenContent {
             // Create and return the DecodedJwt
             return new DecodedJwt(header, body, signature, parts, signedJwt);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to convert TestTokenHolder to DecodedJwt", e);
+            throw new IllegalStateException("Failed to convert TestTokenHolder to DecodedJwt", e);
         }
     }
 
