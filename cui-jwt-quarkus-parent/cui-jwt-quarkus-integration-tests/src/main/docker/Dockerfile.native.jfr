@@ -52,5 +52,4 @@ ENTRYPOINT ["/app/application", \
   "-Djavax.net.ssl.trustStorePassword=localhost-trust", \
   "-Djavax.net.ssl.trustStoreType=PKCS12", \
   "-XX:+FlightRecorder", \
-  "-XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile", \
-  "-XX:FlightRecorderOptions=repository=/app/profiling,maxchunksize=10MB"]
+  "-XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile"]

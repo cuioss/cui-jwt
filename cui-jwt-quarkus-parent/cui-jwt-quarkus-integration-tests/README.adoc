@@ -54,6 +54,61 @@ curl -k https://localhost:10443/q/health
 ./scripts/stop-integration-container.sh
 ----
 
+== Image Variants
+
+The integration tests support two optimized container variants for different use cases:
+
+=== Distroless (Production)
+
+* **Dockerfile**: `Dockerfile.native.distroless`
+* **Base Image**: Quarkus Distroless (security-hardened)
+* **Size**: ~104MB
+* **Use Case**: Production deployments, CI/CD pipelines
+* **Features**: Minimal attack surface, fast startup, optimized security
+
+[source,bash]
+----
+# Build distroless variant
+DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build cui-jwt-integration-tests
+
+# Run integration tests with distroless
+../../mvnw clean verify -Pintegration-tests
+----
+
+=== JFR-Enabled (Profiling)
+
+* **Dockerfile**: `Dockerfile.native.jfr`
+* **Base Image**: UBI 8 Minimal with debugging tools
+* **Size**: ~189MB
+* **Use Case**: Performance analysis, profiling, debugging
+* **Features**: Full JFR profiling, debugging tools, monitoring capabilities
+
+[source,bash]
+----
+# Build JFR variant
+DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build cui-jwt-integration-tests
+
+# Run JFR profiling tests
+../../mvnw clean verify -Pjfr
+
+# Extract JFR recordings (automatic via Maven)
+ls -la target/jfr-results/
+----
+
+=== Image Comparison
+
+|===
+|Feature |Distroless |JFR-Enabled
+
+|Size |~104MB |~189MB
+|Base Image |Distroless |UBI 8 Minimal
+|Security |Minimal attack surface |Standard
+|Startup Time |<3s |<5s
+|JFR Profiling |❌ |✅
+|Debugging Tools |❌ |✅
+|Production Ready |✅ |⚠️ (Development/Profiling)
+|===
+
 == Module Structure
 
 [source]
