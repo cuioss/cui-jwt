@@ -42,9 +42,10 @@ quarkus.http.ssl-port=8443
 quarkus.http.insecure-requests=redirect
 ----
 
-==== Client HTTPS (Dockerfile.native)
+==== Client HTTPS (Docker Containers)
 [source,dockerfile]
 ----
+# Both Dockerfile.native.distroless and Dockerfile.native.jfr use:
 ENTRYPOINT ["/app/application", 
   "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12",
   "-Djavax.net.ssl.trustStorePassword=localhost-trust",
