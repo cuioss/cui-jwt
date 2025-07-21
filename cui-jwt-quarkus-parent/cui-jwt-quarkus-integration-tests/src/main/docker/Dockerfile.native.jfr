@@ -13,7 +13,6 @@ RUN cd /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests && \
     -Dquarkus.native.enabled=true \
     -Dquarkus.native.monitoring=jfr \
     -Dquarkus.native.container-build=false \
-    -Dquarkus.native.additional-build-args=--gc=G1,--enable-monitoring=heapdump,jfr \
     -DskipTests -Dexec.skip=true
 
 # UBI-based runtime with JFR support

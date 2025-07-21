@@ -12,7 +12,6 @@ RUN cd /build/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests && \
     ../../mvnw compile quarkus:build --no-transfer-progress \
     -Dquarkus.native.enabled=true \
     -Dquarkus.native.container-build=false \
-    -Dquarkus.native.additional-build-args=--gc=G1,--optimize=2 \
     -DskipTests -Dexec.skip=true
 
 # Distroless runtime
