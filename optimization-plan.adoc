@@ -94,11 +94,24 @@
 --pgo=profile.iprof            # Use PGO data for RSA hotpaths
 ----
 
-2. **Alternative JCA Provider Testing**:
-   - **BouncyCastle** (open-source): Test native-optimized BC provider
-   - **Conscrypt** (open-source): Android's OpenSSL-based provider
-   - **Amazon Corretto Crypto Provider** (open-source): AWS's optimized provider
-   - **Note**: Jipher JCE requires commercial Oracle GraalVM Enterprise license
+2. **BouncyCastle Provider Testing** (Quarkus Native Compatible):
++
+[source,properties]
+----
+# application.properties
+quarkus.security.security-providers=BC
+----
++
+[source,xml]
+----
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-jdk18on</artifactId>
+</dependency>
+----
++
+   - ✅ **Confirmed compatible** with Quarkus native via `quarkus-security` extension
+   - Expected modest performance improvement over default JDK provider
 
 3. **BigInteger.modPow() Optimization Investigation**:
    - Profile exact RSA operations with async-profiler
@@ -189,11 +202,26 @@ class RSAVerificationEvent extends Event {
 
 **Research Conclusion**: The 8x ES256/RS256 performance gap is algorithmic (ECDSA verification complexity vs RSA with small exponents). Java ECDSA implementations are additionally 3x slower than native. Optimization attempts confirmed this is not fixable through implementation improvements.
 
-==== 2. JWT Token Caching Implementation  
+==== 2. Jipher JCE Provider
+**Status:** ❌ DISMISSED - Requires commercial licensing
+
+**Reason**: Jipher JCE is an Oracle GraalVM Enterprise Edition feature requiring commercial licensing. See xref:cui-jwt-quarkus-parent/doc/performance/graalvm-enterprise-optimization-options.adoc[GraalVM Enterprise Optimization Options] for enterprise-specific solutions.
+
+==== 3. Conscrypt JCA Provider  
+**Status:** ❌ DISMISSED - Incompatible with Quarkus native
+
+**Research**: Quarkus Issue #4248 documents `ClassNotFoundException: org.conscrypt.BufferAllocator` when using Conscrypt with native images. Requires complex reflection configuration that may not be maintainable.
+
+==== 4. Amazon Corretto Crypto Provider (ACCP)
+**Status:** ❌ DISMISSED - Native image compatibility issues
+
+**Research**: GitHub Issue #177 shows ACCP fails with GraalVM native-image due to thread initialization at build time. No official Quarkus native support documented as of 2025.
+
+==== 5. JWT Token Caching Implementation  
 **Status:** ❌ DISMISSED - Processing time too high, caching won't solve core issue
 
-==== 3. JWKS Key Retrieval Optimization
+==== 6. JWKS Key Retrieval Optimization
 **Status:** ❌ DISMISSED - Already optimized and cached
 
-==== 4. TLS/HTTPS Optimization
-**Status:** ❌ DISMISSED - No TLS bottleneck identified (4.1ms health check baseline)
+==== 7. TLS/HTTPS Optimization
+**Status:** ❌ DISMISSED - No TLS bottleneck identified (5.0ms health check baseline)
