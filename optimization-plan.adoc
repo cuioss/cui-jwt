@@ -24,29 +24,33 @@
 
 **Infrastructure**: Apple M4, OrbStack containerization, Quarkus native runtime
 
-| Algorithm | P95 Latency | Throughput | Processing Overhead | Token Length |
-|-----------|------------|------------|-------------------|--------------|
-| **RS256** | **170.7ms** | **1,426 req/sec** | **166.6ms** | 977 chars |
-| **ES256** | **504.9ms** | **450 req/sec** | **500.8ms** | 721 chars |
-| **Health Check** | **4.1ms** | **33,553 req/sec** | **0ms (baseline)** | N/A |
+|===
+| Algorithm | P95 Latency | Throughput | Processing Overhead | Token Length
+| **RS256** | **170.7ms** | **1,426 req/sec** | **166.6ms** | 977 chars
+| **ES256** | **504.9ms** | **450 req/sec** | **500.8ms** | 721 chars
+| **Health Check** | **4.1ms** | **33,553 req/sec** | **0ms (baseline)** | N/A
+|===
 
 **Key Finding**: **ES256 is 3x slower than RS256** in GraalVM native images, contradicting cryptographic performance expectations.
 
 === Algorithm Performance Analysis
 
 **RS256 (Current Best Performer)**:
+
 - P95 Latency: 170.7ms
 - Throughput: 1,426 req/sec
 - Processing Overhead: 166.6ms
 - Status: ✅ **RECOMMENDED**
 
 **ES256 (Poor Performer)**:
+
 - P95 Latency: 504.9ms  
 - Throughput: 450 req/sec
 - Processing Overhead: 500.8ms
 - Status: ❌ **AVOID** - 3x slower than RS256
 
 **Root Cause (ES256 Performance Issues)**:
+
 - ECDSA signature format conversion overhead (IEEE P1363 ↔ ASN.1/DER)
 - GraalVM native image ECDSA optimization deficiencies
 - Possible cui-jwt library ECDSA implementation inefficiencies
@@ -54,6 +58,7 @@
 === Infrastructure Optimization Status ✅ **COMPLETED**
 
 **OrbStack Migration**: Switching from Docker Desktop to OrbStack provided excellent system performance:
+
 - Health Check: 4.1ms P95 (33,553 req/sec) - **Highly optimized system baseline**
 - Container startup and networking performance significantly improved
 
@@ -68,6 +73,7 @@
 - **Evidence**: `sun.security.rsa.RSACore.crypt()` and `de.cuioss.jwt.validation.pipeline.TokenSignatureValidator.verifySignature()` as primary CPU consumers
 
 **Performance Breakdown (RS256)**:
+
 - System Infrastructure: 4.1ms (networking, HTTP, Docker)
 - RSA Signature Verification: ~162ms (BigInteger.modPow operations)
 - JWT Parsing/Validation: ~4ms (library logic)
@@ -114,6 +120,7 @@
 **Status**: ✅ **ROOT CAUSE IDENTIFIED** - Inefficient signature format conversion
 
 **JFR Analysis Results** (July 22, 2025):
+
 - **Current ES256 Performance**: 592.2ms P95 (vs 5.2ms health check baseline)
 - **JWT Processing Overhead**: 587.0ms (compared to ~170ms for RS256)
 - **Performance Regression**: ES256 is consistently 3x slower than expected
@@ -121,16 +128,19 @@
 **Microbenchmark Analysis Results**:
 
 **✅ SIGNATURE FORMAT CONVERSION PERFORMANCE**:
+
 - **EcdsaSignatureFormatConverter**: **2.8 μs per conversion** (NOT the bottleneck)
 - **ECParameterSpec initialization**: **3.1 μs per initialization** (NOT the bottleneck)
 - **Both operations are performing optimally** and cannot explain 587ms overhead
 
 **❌ ROOT CAUSE STILL UNKNOWN**:
+
 - **Current ES256 Performance**: 592.2ms P95 (vs 5.2ms health check baseline)
 - **JWT Processing Overhead**: 587.0ms (compared to ~170ms for RS256)
 - **Microbenchmark Results**: Format conversion + parameter init = ~6 μs total
 
 **Performance Mystery**:
+
 - Expected bottlenecks (format conversion, key parsing) are fast
 - Actual 587ms overhead remains unexplained
 - **Something else in the ES256 validation pipeline is causing the delay**
@@ -138,6 +148,7 @@
 **Investigation Status**: ❌ **BOTTLENECK IDENTIFICATION FAILED**
 
 **Next Investigation Required**:
+
 1. **Full JWT validation pipeline profiling** - Compare ES256 vs RS256 end-to-end
 2. **Network/JWKS fetching analysis** - Check if ES256 triggers different key loading
 3. **Token parsing differences** - Examine JWT header/payload processing for ES256
@@ -145,7 +156,9 @@
 5. **Container/GraalVM investigation** - Check if native image has ES256-specific issues
 
 **Current Hypothesis**:
+
 The 587ms delay may be coming from:
+
 - **Different JWKS key loading patterns** for ECDSA vs RSA
 - **ES256-specific validation logic** not visible in isolated microbenchmarks  
 - **Network timeouts or retries** specific to ES256 key fetching

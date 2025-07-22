@@ -268,9 +268,8 @@ Consider these limitations when interpreting the score:
 
 If the weighting scheme needs adjustment, modify the calculation in:
 
-1. **Benchmark Class**: Update `calculatePerformanceScore()` method
-2. **Workflow**: Update the badge creation script
-3. **Documentation**: Update this document with new rationale
+1. **Workflow**: Update the badge creation script in GitHub Actions
+2. **Documentation**: Update this document with new rationale
 
 === Adding New Metrics
 

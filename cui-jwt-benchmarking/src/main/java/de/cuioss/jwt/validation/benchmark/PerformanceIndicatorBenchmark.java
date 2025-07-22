@@ -142,27 +142,4 @@ public class PerformanceIndicatorBenchmark {
         }
     }
 
-    /**
-     * Calculates a comprehensive weighted performance score based on multiple metrics.
-     * <p>
-     * The performance score is calculated as:
-     * <code>Score = (Throughput * 0.6) + ((1000000 / AvgTimeInMicros) * 0.4)</code>
-     * <p>
-     * This formula weights:
-     * <ul>
-     *   <li><strong>Throughput (60%)</strong>: Operations per second under concurrent load</li>
-     *   <li><strong>Latency (40%)</strong>: Inverted average time per operation</li>
-     * </ul>
-     *
-     * @param throughputOpsPerSec Operations per second from throughput benchmark
-     * @param avgTimeInMicros Average time per operation in microseconds
-     * @return Weighted performance score
-     */
-    public static double calculatePerformanceScore(double throughputOpsPerSec, double avgTimeInMicros) {
-        // Convert average time to operations per second (inverted metric)
-        double latencyOpsPerSec = 1_000_000.0 / avgTimeInMicros;
-        
-        // Weighted score: 60% throughput, 40% latency
-        return (throughputOpsPerSec * 0.6) + (latencyOpsPerSec * 0.4);
-    }
 }

@@ -265,59 +265,5 @@ public class ES256ValidationPipelineBenchmark {
         }
     }
 
-    /**
-     * Calculates relative performance score comparing ES256 to RS256.
-     * 
-     * <p>Performance ratio calculation:
-     * <ul>
-     *   <li>Ratio &lt; 1.0: ES256 is faster than RS256 (expected)</li>
-     *   <li>Ratio &gt; 1.0: ES256 is slower than RS256 (current problem)</li>
-     *   <li>Current observed ratio: ~3.4x (ES256 3.4x slower than RS256)</li>
-     * </ul></p>
-     * 
-     * @param es256AvgTimeMs ES256 average validation time in milliseconds
-     * @param rs256AvgTimeMs RS256 average validation time in milliseconds
-     * @return performance ratio (ES256/RS256)
-     */
-    public static double calculateES256PerformanceRatio(double es256AvgTimeMs, double rs256AvgTimeMs) {
-        if (rs256AvgTimeMs <= 0) {
-            throw new IllegalArgumentException("RS256 average time must be positive");
-        }
-        return es256AvgTimeMs / rs256AvgTimeMs;
-    }
 
-    /**
-     * Analyzes benchmark results to identify performance bottleneck characteristics.
-     * 
-     * @param es256ThroughputOps ES256 operations per second
-     * @param rs256ThroughputOps RS256 operations per second
-     * @param es256AvgTimeMs ES256 average time in milliseconds
-     * @param rs256AvgTimeMs RS256 average time in milliseconds
-     * @return performance analysis summary
-     */
-    public static String analyzePerformanceResults(double es256ThroughputOps, double rs256ThroughputOps, 
-                                                  double es256AvgTimeMs, double rs256AvgTimeMs) {
-        double performanceRatio = calculateES256PerformanceRatio(es256AvgTimeMs, rs256AvgTimeMs);
-        double throughputRatio = rs256ThroughputOps / es256ThroughputOps;
-        
-        StringBuilder analysis = new StringBuilder();
-        analysis.append("Performance Analysis:\n");
-        analysis.append(String.format("ES256 avg time: %.2f ms\n", es256AvgTimeMs));
-        analysis.append(String.format("RS256 avg time: %.2f ms\n", rs256AvgTimeMs));
-        analysis.append(String.format("Performance ratio (ES256/RS256): %.2fx\n", performanceRatio));
-        analysis.append(String.format("Throughput ratio (RS256/ES256): %.2fx\n", throughputRatio));
-        
-        if (performanceRatio > 2.0) {
-            analysis.append("CRITICAL: ES256 is significantly slower than RS256 (>2x)\n");
-            analysis.append("This contradicts cryptographic expectations - ES256 should be faster\n");
-        } else if (performanceRatio > 1.2) {
-            analysis.append("WARNING: ES256 is slower than RS256\n");
-        } else if (performanceRatio < 0.5) {
-            analysis.append("EXCELLENT: ES256 is significantly faster than RS256 (as expected)\n");
-        } else {
-            analysis.append("ACCEPTABLE: ES256 and RS256 performance are comparable\n");
-        }
-        
-        return analysis.toString();
-    }
 }

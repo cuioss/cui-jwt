@@ -48,15 +48,15 @@ The integration benchmark methods are named to match the micro-benchmark extract
 
 === Score Calculation Implementation
 
-[source,java]
+The performance score calculation is implemented in the GitHub Actions workflow scripts using shell/awk:
+
+[source,bash]
 ----
-public static double calculatePerformanceScore(double throughputOpsPerSec, double avgTimeInMillis, double errorResilienceOpsPerSec) {
-    // Convert average time to operations per second (inverted metric)
-    double latencyOpsPerSec = 1_000.0 / avgTimeInMillis;
-    
-    // Weighted score: 57% throughput, 40% latency, 3% error resilience
-    return (throughputOpsPerSec * 0.57) + (latencyOpsPerSec * 0.40) + (errorResilienceOpsPerSec * 0.03);
-}
+# Convert average time to operations per second (inverted metric)  
+latency_ops_per_sec=$(echo "1000 / $avg_time_millis" | bc -l)
+
+# Weighted score: 57% throughput, 40% latency, 3% error resilience
+performance_score=$(echo "($throughput_ops_per_sec * 0.57) + ($latency_ops_per_sec * 0.40) + ($error_resilience_ops_per_sec * 0.03)" | bc -l)
 ----
 
 == Integration Environment
