@@ -30,12 +30,12 @@
 | **Health Check** | **5.0ms** | **26,104 req/sec** | **0ms (baseline)** | N/A | ✅ BASELINE
 |===
 
-**Current Focus**: Reduce RS256 JWT validation latency from 173ms to <50ms through RSA-specific optimizations.
+**Current Focus**: Reduce RS256 JWT validation latency from 173ms to <20ms through RSA-specific optimizations.
 
 === Quick Performance Summary
 
 **RS256 Performance**: 173.0ms P95 latency, 1,413 req/sec throughput
-**Target**: <50ms P95 latency (3.5x improvement needed)
+**Target**: <20ms P95 latency (10ms achievable based on 5ms microbenchmark)
 **Bottleneck**: RSA signature verification (`BigInteger.modPow()` ~97% of time)
 
 === Infrastructure Optimization Status ✅ **COMPLETED**
@@ -60,8 +60,9 @@
 
 - System Infrastructure: 5.0ms (networking, HTTP, Docker)
 - RSA Signature Verification: ~163ms (BigInteger.modPow operations)
-- JWT Parsing/Validation: ~5ms (library logic)
+- JWT Parsing/Validation: ~5ms (library logic - matches microbenchmark)
 - **Total**: 173.0ms P95
+- **Gap to Target**: 163ms RSA overhead must be reduced to <15ms
 
 === Critical Findings
 
@@ -75,38 +76,36 @@
 
 === Priority 1: RSA Performance Optimization 🚀 **NEXT FOCUS**
 
-**Goal**: Reduce RSA signature verification overhead from 168ms to target <50ms
+**Goal**: Reduce RSA signature verification overhead from 168ms to target <20ms
 
 **Current Status**: RS256 baseline established at 173.0ms P95 (1,413 req/sec)
+**Microbenchmark Reference**: JWT library alone achieves 5ms - proving <10ms is possible
 
 **Next Optimization Paths**:
 
 1. **GraalVM Native Image Tuning** ⭐ **IMMEDIATE ACTION**:
-   ```bash
-   # Add to native image build
-   -march=native                    # ARM64 CPU-specific optimizations
-   -O3                             # Maximum optimization level
-   --pgo-instrument                # Generate PGO data
-   --pgo=profile.iprof            # Use PGO data for RSA hotpaths
-   ```
++
+[source,bash]
+----
+# Add to native image build
+-march=native                    # ARM64 CPU-specific optimizations
+-O3                             # Maximum optimization level
+--pgo-instrument                # Generate PGO data
+--pgo=profile.iprof            # Use PGO data for RSA hotpaths
+----
 
-2. **Jipher JCE Provider Testing** (Oracle GraalVM):
-   ```xml
-   <!-- Add to pom.xml -->
-   <dependency>
-     <groupId>com.oracle.graalvm.jipher</groupId>
-     <artifactId>jipher-jce</artifactId>
-   </dependency>
-   ```
-   - Provides OpenSSL 3.0 native RSA implementation
-   - Expected 2-5x performance improvement
+2. **Alternative JCA Provider Testing**:
+   - **BouncyCastle** (open-source): Test native-optimized BC provider
+   - **Conscrypt** (open-source): Android's OpenSSL-based provider
+   - **Amazon Corretto Crypto Provider** (open-source): AWS's optimized provider
+   - **Note**: Jipher JCE requires commercial Oracle GraalVM Enterprise license
 
 3. **BigInteger.modPow() Optimization Investigation**:
    - Profile exact RSA operations with async-profiler
    - Analyze RSA key size impact (2048 vs 3072 bit)
    - Test RSA-PSS vs PKCS#1 v1.5 padding performance
 
-**Target Performance**: 50ms P95 (requires 3.5x improvement from current 173.0ms)
+**Target Performance**: <20ms P95 (10ms achievable based on 5ms microbenchmark)
 
 === Priority 2: Production Monitoring Setup 📊 **REQUIRED**
 
@@ -115,14 +114,16 @@
 **Implementation Tasks**:
 
 1. **Micrometer Metrics Integration**:
-   ```java
-   @Timed(value = "jwt.validation.time", histogram = true)
-   @Counted(value = "jwt.validation.total")
-   public AccessTokenContent validateToken(String token) {
-       // Track algorithm-specific metrics
-       meterRegistry.counter("jwt.validation.algorithm", "type", algorithm).increment();
-   }
-   ```
++
+[source,java]
+----
+@Timed(value = "jwt.validation.time", histogram = true)
+@Counted(value = "jwt.validation.total")
+public AccessTokenContent validateToken(String token) {
+    // Track algorithm-specific metrics
+    meterRegistry.counter("jwt.validation.algorithm", "type", algorithm).increment();
+}
+----
 
 2. **OpenTelemetry Tracing**:
    - Trace full JWT validation pipeline
@@ -130,15 +131,17 @@
    - Correlate with infrastructure metrics
 
 3. **Custom JFR Events** (for better native image profiling):
-   ```java
-   @Name("jwt.RSAVerification")
-   @Label("RSA Signature Verification")
-   @Category("JWT Validation")
-   class RSAVerificationEvent extends Event {
-       @Label("Key Size") int keySize;
-       @Label("Duration") long duration;
-   }
-   ```
++
+[source,java]
+----
+@Name("jwt.RSAVerification")
+@Label("RSA Signature Verification")
+@Category("JWT Validation")
+class RSAVerificationEvent extends Event {
+    @Label("Key Size") int keySize;
+    @Label("Duration") long duration;
+}
+----
 
 **Expected Outcomes**: Real production data to guide optimization priorities
 
@@ -150,10 +153,12 @@
 **Tasks**:
 
 1. **Warmup Period Implementation**:
-   ```bash
-   # Add warmup phase to benchmarks
-   ./mvnw verify -Pbenchmark-jfr -Dwarmup.duration=60s -Dmeasurement.duration=120s
-   ```
++
+[source,bash]
+----
+# Add warmup phase to benchmarks
+./mvnw verify -Pbenchmark-jfr -Dwarmup.duration=60s -Dmeasurement.duration=120s
+----
 
 2. **Multi-Algorithm Comparative Benchmarks**:
    - Side-by-side RS256, RS384, RS512 performance
