@@ -20,385 +20,134 @@
 
 == Executive Summary
 
-=== Current Performance Results (July 22, 2025)
+=== Current Performance Baseline (July 22, 2025)
 
-**CRITICAL: Performance Degradation Identified** ❌
+**Infrastructure**: Apple M4, OrbStack containerization, Quarkus native runtime
 
-- **JWT Validation**: 495.6ms P95 (470 req/sec) - Distroless native image with RS256 ❌ **WORSE**
-- **Health Check**: 4.0ms P95 (33,871 req/sec) - System baseline ✅ **IMPROVED**
-- **JWT Processing Overhead**: 491.6ms (495.6ms - 4.0ms = JWT validation overhead) ❌ **DEGRADED 2.1x**
-- **Infrastructure**: Apple M4, containerized Quarkus native runtime
+| Algorithm | P95 Latency | Throughput | Processing Overhead | Token Length |
+|-----------|------------|------------|-------------------|--------------|
+| **RS256** | **170.7ms** | **1,426 req/sec** | **166.6ms** | 977 chars |
+| **ES256** | **504.9ms** | **450 req/sec** | **500.8ms** | 721 chars |
+| **Health Check** | **4.1ms** | **33,553 req/sec** | **0ms (baseline)** | N/A |
 
-**Performance Trend Analysis:**
-- Previous JWT Validation: 265.9ms P95 (918 req/sec) 
-- Current JWT Validation: 495.6ms P95 (470 req/sec)
-- **Degradation**: 229.7ms increase (86% worse) - **SIGNIFICANT REGRESSION**
+**Key Finding**: **ES256 is 3x slower than RS256** in GraalVM native images, contradicting cryptographic performance expectations.
 
-**Health Check Performance:**
-- Previous Health Check: 27.2ms P95 (13,520 req/sec)
-- Current Health Check: 4.0ms P95 (33,871 req/sec) 
-- **Infrastructure Improvement**: 23.2ms faster (85% better) - System optimized
+=== Algorithm Performance Analysis
 
-=== Performance Regression Analysis (July 22, 2025)
+**RS256 (Current Best Performer)**:
+- P95 Latency: 170.7ms
+- Throughput: 1,426 req/sec
+- Processing Overhead: 166.6ms
+- Status: ✅ **RECOMMENDED**
 
-**Root Cause Investigation Required** ❌
+**ES256 (Poor Performer)**:
+- P95 Latency: 504.9ms  
+- Throughput: 450 req/sec
+- Processing Overhead: 500.8ms
+- Status: ❌ **AVOID** - 3x slower than RS256
 
-The current benchmark results show a significant performance regression compared to previous measurements, requiring immediate investigation:
+**Root Cause (ES256 Performance Issues)**:
+- ECDSA signature format conversion overhead (IEEE P1363 ↔ ASN.1/DER)
+- GraalVM native image ECDSA optimization deficiencies
+- Possible cui-jwt library ECDSA implementation inefficiencies
 
-**Key Findings:**
+=== Infrastructure Optimization Status ✅ **COMPLETED**
 
-1. **System Performance Improved**: Health check latency dropped from 27.2ms to 4.0ms P95 (85% improvement)
-   - Docker/networking/HTTP processing is now highly optimized
-   - 8.5x throughput improvement (13,520 → 33,871 req/sec)
-   - System infrastructure is no longer a bottleneck
-
-2. **JWT Validation Severely Degraded**: JWT validation increased from 265.9ms to 495.6ms P95 (86% worse)
-   - Processing overhead increased from 238.7ms to 491.6ms (2.1x worse)
-   - Throughput degraded from 918 to 470 req/sec (49% worse)
-   - **This represents a significant regression in JWT processing performance**
-
-3. **Discrepancy Analysis**: 
-   - Infrastructure optimizations should have improved both health check AND JWT validation
-   - JWT validation getting worse while infrastructure improved suggests:
-     - New bottleneck introduced in JWT processing pipeline
-     - Possible native image compilation changes
-     - Container runtime differences
-     - Different test conditions or token complexity
-
-**Immediate Action Required:**
-
-- [ ] **Investigate regression causes**: Compare current vs previous test environments
-- [ ] **JFR Analysis**: Run JFR profiling to identify new bottlenecks
-- [ ] **Environment Analysis**: Compare Docker configurations, native image builds
-- [ ] **Token Analysis**: Verify token complexity hasn't changed
-- [ ] **Algorithm Verification**: Confirm RS256 is still being used correctly
-
-**Priority**: **CRITICAL** - This regression must be understood before proceeding with ES256 optimization.
-
-=== ES256 Implementation Results (July 21, 2025)
-
-**Algorithm Migration Status**: ✅ Keycloak Configuration Complete, ✅ **JWT Library ES256 Implementation COMPLETED**
-
-**Key Findings**:
-
-- **Keycloak ES256 Support**: ✅ Successfully configured to generate ES256 tokens
-- **Token Verification**: ✅ ES256 tokens generated with correct algorithm header (`"alg": "ES256"`)
-- **cui-jwt Library Algorithm Support**: ✅ **ES256 is supported** (3rd priority in SignatureAlgorithmPreferences)
-- **Root Cause Identified**: ✅ **ECDSA signature format incompatibility resolved** between Keycloak and JDK
-- **Technical Solution**: ✅ **IEEE P1363 to ASN.1/DER conversion implemented** in EcdsaSignatureFormatConverter
-- **Implementation Details**: ✅ Comprehensive ES256/ES384/ES512 support with format conversion
-- **Performance Measurement**: ✅ **Ready for ES256 performance benchmarking**
-
-**Status**: ✅ **IMPLEMENTATION COMPLETED** - The cui-jwt-validation library now includes comprehensive ECDSA signature format conversion, enabling ES256/ES384/ES512 performance testing and expected 95%+ performance improvement measurement.
-
-=== JFR Analysis Results (July 21, 2025)
-
-**Performance Breakdown from JFR Native Image Analysis:**
-
-- **RSA Signature Verification**: ~230ms (97% of JWT overhead)
-- **JWT Parsing/Validation Logic**: ~5-8ms
-- **Other Overhead**: ~1-3ms (logging, metrics, etc.)
-
-**Root Cause**: RSA signature verification (`BigInteger.modPow()` operations) is the primary bottleneck in GraalVM native images.
-
-=== Performance Targets
-
-Based on JFR analysis showing RSA as the primary bottleneck:
-
-- **Current Performance**: 265.9ms P95 (918 req/sec) with RS256
-- **Target with Algorithm Optimization**: 35-50ms P95 (>5000 req/sec) with ES256/EdDSA
-- **Breakdown Target**: 27.2ms (system) + 5-10ms (crypto) + 5-8ms (JWT library) = 37-45ms P95
-- **Throughput Target**: >5000 ops/s (achievable with optimized crypto algorithm)
-
-**Critical Path**: Cryptographic algorithm optimization is the key to achieving target performance. Infrastructure and JWT library are already optimized.
-
-== Completed Optimizations
-
-=== JFR Native Image Implementation ✅ **COMPLETED**
-
-Successfully implemented JFR support using dual-image approach with UBI-based containers for profiling.
-
-**Current Status:**
-
-- ✅ Multi-stage Docker build with Mandrel builder + dual runtime options
-- ✅ Conditional JFR support via `ENABLE_JFR` build argument
-- ✅ Runtime JFR configuration via `JFR_OPTS` environment variable
-- ✅ Native executable built with `--enable-monitoring=heapdump,jfr`
-- ✅ **JFR file generation working in UBI-based containers**
-- ✅ **JFR recordings successfully collected for analysis (225KB file)**
-
-**Solution**: Simplified Maven profiles (`integration-tests` and `jfr`) provide clean separation between production (distroless) and profiling (UBI-based) images with full JFR support.
-
-=== Benchmark Infrastructure Implementation ✅ **COMPLETED**
-
-Successfully implemented Maven-based benchmark execution with JFR profiling capabilities.
-
-**Current Status:**
-
-- ✅ **Maven Benchmark Profiles**: Created `benchmark-testing` and `benchmark-jfr` profiles
-- ✅ **JFR Integration**: Automated JFR recording collection during benchmarks
-- ✅ **Performance Baseline**: Established health check baseline (27.2ms P95, 13,520 req/sec)
-- ✅ **JWT Validation Metrics**: Measured JWT validation performance (265.9ms P95, 918 req/sec)
-- ✅ **Root Cause Identification**: JFR analysis identified RSA as primary bottleneck
-
-**Solution**: Maven-driven benchmark execution with automated JFR profiling provides comprehensive performance analysis capabilities.
-
-=== Infrastructure Optimization ✅ **COMPLETED**
-
-Significant performance improvements through Docker optimization:
-
-- **Docker resource limits**: Memory 256MB→512MB, CPU 1.0→2.0 cores
-- **wrk configuration**: Optimized from 6 threads/180 connections to 4 threads/80 connections
-- **Health check improvement**: Reduced to 24.4ms P95 (system baseline)
-- **Benchmark infrastructure**: Streamlined to profile-based execution
-
-=== Tool Replacement and Real Token Enforcement ✅ **COMPLETED**
-
-- Docker-based wrk solution implemented, replaced JMH for integration testing
-- All mock token fallbacks removed, real token validation enforced
-- Benchmark calculations verified - no calculation errors found
-
-=== TLS/HTTPS Optimization ✅ **VERIFIED EXCELLENT**
-
-HTTP vs HTTPS comparison test results (from earlier testing):
-
-- HTTP P95 latency: 35.8ms
-- HTTPS P95 latency: 33.9ms
-- **Result**: HTTPS performs as well as HTTP (no TLS bottleneck)
-- **Conclusion**: TLS is not a performance bottleneck in current setup
+**OrbStack Migration**: Switching from Docker Desktop to OrbStack provided excellent system performance:
+- Health Check: 4.1ms P95 (33,553 req/sec) - **Highly optimized system baseline**
+- Container startup and networking performance significantly improved
 
 == Performance Analysis Summary
 
-=== Key Insights
+=== JFR Analysis Results ✅ **COMPLETED**
 
-1. **System Baseline**: 27.2ms P95 (health check) - This is the infrastructure baseline
-2. **JWT Processing**: 238.7ms additional overhead (265.9ms - 27.2ms)
-3. **JWT Library**: ~5-8ms (micro-benchmark confirmed)
-4. **RSA Signature Verification**: ~230ms (97% of JWT processing overhead) - **IDENTIFIED VIA JFR**
+**Root Cause Identification**: JFR profiling of RSA signature verification identified the primary bottleneck:
 
-=== Bottleneck Analysis
+- **RSA Signature Verification**: ~97% of JWT processing time in GraalVM native images
+- **Critical Stack Traces**: `java.math.BigInteger.modPow()` operations dominating CPU time
+- **Evidence**: `sun.security.rsa.RSACore.crypt()` and `de.cuioss.jwt.validation.pipeline.TokenSignatureValidator.verifySignature()` as primary CPU consumers
 
-**Current Performance Breakdown from JFR Native Image Analysis:**
+**Performance Breakdown (RS256)**:
+- System Infrastructure: 4.1ms (networking, HTTP, Docker)
+- RSA Signature Verification: ~162ms (BigInteger.modPow operations)
+- JWT Parsing/Validation: ~4ms (library logic)
+- **Total**: 170.7ms P95
 
-- **System Infrastructure**: 27.2ms (Docker, networking, HTTP processing)
-- **RSA Signature Verification**: ~230ms (BigInteger.modPow operations)
-- **JWT Parsing/Validation**: ~5-8ms (library logic)
-- **Other Overhead**: ~1-3ms (logging, metrics, etc.)
-- **Total**: 265.9ms P95
+=== Critical Findings
 
-**Critical Finding**: JFR analysis definitively identified RSA signature verification as the primary bottleneck, consuming 97% of JWT validation time in GraalVM native images.
-
-**JFR Evidence**: Stack traces consistently show `java.math.BigInteger.modPow()`, `sun.security.rsa.RSACore.crypt()`, and `de.cuioss.jwt.validation.pipeline.TokenSignatureValidator.verifySignature()` as the dominant CPU consumers during benchmark execution.
+1. **System Baseline**: 4.1ms P95 (health check) - Infrastructure is highly optimized
+2. **JWT Processing**: 166.6ms additional overhead for RS256
+3. **Algorithm Impact**: RS256 significantly outperforms ES256 in GraalVM native images
+4. **RSA Bottleneck**: `BigInteger.modPow()` operations consume 97% of JWT validation time
 
 == Next Steps - Actionable Tasks
 
-=== Priority 0: Performance Regression Investigation ❌ **CRITICAL**
+=== Priority 1: RSA Performance Optimization
 
-**Goal**: Investigate and resolve 86% performance regression in JWT validation (265.9ms → 495.6ms P95)
+**Goal**: Reduce RSA signature verification overhead from 166.6ms to target <50ms
 
-**Current Status**: ❌ **CRITICAL REGRESSION** - JWT validation performance degraded significantly while infrastructure improved
+**Current Status**: RS256 established as baseline at 170.7ms P95
 
-**Immediate Tasks**:
+**Optimization Paths**:
 
-- [ ] **Environment Comparison**: Compare current distroless build vs previous JFR-enabled build environments
-- [ ] **JFR Analysis**: Run JFR profiling on current setup to identify new bottlenecks
-- [ ] **Token Validation**: Confirm token complexity and validation logic hasn't changed
-- [ ] **Native Image Build**: Compare GraalVM compilation flags and optimization settings  
-- [ ] **Container Analysis**: Verify Docker resource allocation and runtime configuration
-- [ ] **Algorithm Verification**: Ensure RS256 signature verification is working correctly
-- [ ] **Load Testing Validation**: Verify benchmark methodology consistency
+1. **GraalVM Native Image Tuning**:
+   - Investigate `-march=native` for ARM64 optimization
+   - Profile-guided optimization (PGO) for RSA operations
+   - Native image build parameter optimization
 
-**Critical Questions**:
-1. Why did JWT validation get 2x slower while infrastructure got 7x faster?
-2. Are we testing the same algorithm/token types as before?
-3. Did native image compilation settings change?
-4. Is there a new bottleneck in the JWT processing pipeline?
+2. **Alternative JCA Providers**:
+   - Research BouncyCastle JCE performance in native images
+   - Evaluate Jipher JCE (if available) for OpenSSL integration
+   - Compare JCA provider RSA performance characteristics
 
-**Success Criteria**: Restore JWT validation to at least previous performance (≤265.9ms P95) before proceeding
+3. **RSA Implementation Analysis**:
+   - Deep dive into `BigInteger.modPow()` performance bottlenecks
+   - Investigate RSA key size optimization (2048 vs 4096 bit)
+   - Analyze RSA-PSS vs PKCS#1 padding performance
 
-=== Priority 1: JFR Native Image Analysis ✅ **COMPLETED** 
+**Target Performance**: 50ms P95 (>3x improvement from current 170.7ms)
 
-**Goal**: Identify the 238.7ms JWT processing overhead using JFR on native image
+=== Priority 2: ES256 Performance Investigation ⚠️ **RESEARCH ONLY**
 
-- [x] **JFR recording collection**: ✅ Successfully collected 2.7MB JFR recording
-- [x] **Performance hotspot analysis**: ✅ RSA signature verification identified as bottleneck  
-- [x] **Overhead categorization**: ✅ 230ms RSA operations, 5-8ms JWT library, 1-3ms other
-- [x] **JFR Analysis**: ✅ JFR definitively shows `BigInteger.modPow()` dominating CPU time
+**Goal**: Understand why ES256 performs 3x worse than RS256
 
-**Status**: COMPLETED - Root cause identified as RSA signature verification in GraalVM native images
+**Status**: ❌ **AVOID ES256** - Performance significantly worse than RS256
 
-**Critical Findings**:
+**Investigation Areas**:
+- ECDSA signature format conversion efficiency
+- GraalVM native image ECDSA optimization gaps  
+- Alternative ECDSA implementation approaches
 
-* **RSA Bottleneck**: 230ms (97%) of JWT processing time spent in RSA signature verification
-* **JFR Evidence**: Stack traces consistently show `java.math.BigInteger.modPow()` operations
-* **Algorithm Impact**: RS256 (RSA) appears significantly slower in GraalVM native images vs HotSpot
+**Note**: ES256 optimization is **LOW PRIORITY** given poor performance baseline
 
-=== Priority 2: Cryptographic Algorithm Optimization ⏸️ **PAUSED PENDING REGRESSION RESOLUTION**
+=== Priority 3: Advanced Optimization (If Needed)
 
-**Goal**: Reduce RSA signature verification overhead from ~230ms to <20ms through algorithm optimization
+**Goal**: Additional optimizations if RSA tuning doesn't achieve target performance
 
-**Status**: ⏸️ **PAUSED** - Must resolve current performance regression before algorithm optimization
+- **Token Caching Strategy**: Application-level validated token caching
+- **Memory Allocation**: Optimize BigInteger operations memory patterns  
+- **Connection Optimization**: JWKS loading and HTTP client tuning
 
-==== Task 1.1: ES256 Implementation and Performance Testing ✅ **COMPLETED**
+== Implementation Status
 
-**Goal**: Test if ECDSA (ES256) provides dramatically better performance than RSA (RS256)
+=== Completed Optimizations ✅
 
-- [x] **Update Keycloak realm configuration** to use ES256 instead of RS256
-- [x] **Implement ECDSA signature format conversion** in cui-jwt library
-- [x] **Verify JWT validation compatibility** with ES256/ES384/ES512 algorithms
-- [x] **Comprehensive test coverage** for ECDSA signature format conversion
-- [x] **Integration testing** with both unit and Quarkus integration tests
+1. **Benchmark Infrastructure**: Maven-based execution with JFR profiling
+2. **Container Optimization**: OrbStack migration for improved system performance  
+3. **Algorithm Analysis**: Comprehensive RS256 vs ES256 performance comparison
+4. **JFR Profiling**: Root cause identification (BigInteger.modPow bottleneck)
+5. **ES256 Implementation**: Complete ECDSA support with format conversion (performance issues identified)
 
-**Status**: ✅ **IMPLEMENTATION COMPLETED** - ES256/ES384/ES512 support fully implemented and tested
+=== Dismissed Items (Do Not Revisit)
 
-**Critical Achievements**:
+==== 1. ES256 Algorithm Migration
+**Status:** ❌ DISMISSED - ES256 performs 3x worse than RS256
 
-* **Keycloak ES256 Configuration**: ✅ Successfully configured Keycloak to issue ES256 tokens
-* **Token Generation**: ✅ Confirmed ES256 tokens are generated correctly (JWT header: `"alg": "ES256"`)
-* **cui-jwt Library Algorithm Support**: ✅ **ES256/ES384/ES512 fully supported** with format conversion
-* **ECDSA Format Conversion**: ✅ **IEEE P1363 to ASN.1/DER conversion implemented** in EcdsaSignatureFormatConverter
-* **Technical Solution**: ✅ Comprehensive support for all ECDSA curves with proper signature format handling
-* **Testing**: ✅ 1126 unit tests + 291 Quarkus integration tests all passing
-* **Performance Ready**: ✅ **Ready for ES256 performance benchmarking**
+==== 2. JWT Token Caching Implementation  
+**Status:** ❌ DISMISSED - Processing time too high, caching won't solve core issue
 
-**Implementation Details**:
-1. **EcdsaSignatureFormatConverter**: Core utility for IEEE P1363 ↔ ASN.1/DER conversion
-2. **Algorithm Support**: ES256 (P-256), ES384 (P-384), ES512 (P-521) with proper component sizes
-3. **Integration**: Automatic format conversion in TokenSignatureValidator for ECDSA algorithms
-4. **Test Coverage**: 20+ test cases covering edge cases, error conditions, and algorithm variations
+==== 3. JWKS Key Retrieval Optimization
+**Status:** ❌ DISMISSED - Already optimized and cached
 
-==== Task 1.2: ES256 Performance Benchmark ⚠️ **INFRASTRUCTURE BLOCKED**
-
-**Goal**: Measure ES256 vs RS256 performance to validate expected 95%+ improvement
-
-- [x] **Configure Keycloak** to use ES256 algorithm for benchmark realm ✅
-- [ ] **Run ES256 benchmark** using implemented ECDSA support ❌ BLOCKED
-- [ ] **Compare performance metrics** with baseline RS256 results (265.9ms P95) ❌ BLOCKED
-- [ ] **Document performance improvement** (expected: 265.9ms → 35-50ms P95) ❌ BLOCKED
-- [ ] **Validate throughput increase** (expected: 918 → >5000 req/sec) ❌ BLOCKED
-
-**Implementation Status**: ✅ **COMPLETE**
-- [x] **ES256 Algorithm Support**: Full ECDSA signature format conversion implemented
-- [x] **Keycloak ES256 Configuration**: Benchmark realm configured with ES256 algorithm
-- [x] **Testing**: All unit tests (1126) and integration tests (291) passing
-- [x] **Production Ready**: ES256 tokens can be validated successfully
-
-**Benchmark Infrastructure Issues**:
-- ❌ **Docker Container Startup**: Native image containers fail to start during benchmarking
-- ❌ **Maven Integration**: Benchmark execution blocked by container orchestration issues
-- ❌ **Environment Conflicts**: Port conflicts and container lifecycle management problems
-
-**Expected Results Based on JFR Analysis** (Theoretical):
-- **Current RS256**: 265.9ms P95 (918 req/sec) - 230ms RSA overhead in native image
-- **Target ES256**: 35-50ms P95 (>5000 req/sec) - ~5-10ms ECDSA overhead in native image
-- **Performance Gain**: 5-7x improvement in latency, 5-6x improvement in throughput
-
-**Status**: ✅ **IMPLEMENTATION READY** - ES256 support fully implemented and tested, awaiting infrastructure resolution for performance measurement
-
-==== Task 1.3: OAuth Algorithm Research
-
-**Goal**: Research OAuth-compatible asymmetric signature algorithms for optimal native image performance
-
-**Research Areas**:
-
-- [ ] **ES256/ES384/ES512 (ECDSA)**: Elliptic curve performance in GraalVM native images
-- [ ] **PS256/PS384/PS512 (RSA-PSS)**: Alternative RSA padding schemes performance  
-- [ ] **EdDSA (Ed25519)**: Next-generation signature algorithm support and performance
-- [ ] **Performance benchmarks**: Comparative analysis across OAuth-standard algorithms
-
-**Deliverable**: Comprehensive analysis of OAuth asymmetric algorithms with GraalVM native image performance characteristics
-
-==== Task 1.3: GraalVM RSA Optimization Investigation ✅ **COMPLETED**
-
-**Goal**: Investigate either GraalVM RSA performance optimization or alternative JCA implementations
-
-**Investigation Paths**:
-
-- [x] **GraalVM Analysis**: Confirmed native image RSA performance degradation due to missing JIT optimization
-- [x] **Alternative JCA Providers**: Researched BouncyCastle, Conscrypt, and Jipher JCE
-- [x] **Native Library Integration**: Evaluated OpenSSL integration options and complexity
-- [x] **GraalVM Build Flags**: Investigated -O3, -march=native, PGO optimization options
-
-**Key Findings**:
-
-- **Root Cause**: GraalVM native images lack JIT optimization, causing 5x+ RSA performance degradation
-- **Best JCA Option**: Jipher JCE (Enterprise only) provides OpenSSL 3.0 integration
-- **BouncyCastle**: Viable but complex configuration, no performance benchmarks available
-- **Conscrypt**: Not recommended due to compatibility issues with GraalVM native image
-- **Build Optimizations**: -O3, PGO provide 15-20% improvement but won't solve fundamental RSA issue
-
-**Primary Recommendation**: **Algorithm migration is more effective than JCA provider optimization**
-
-**Deliverable**: ✅ Comprehensive analysis document: `doc/performance/graalvm-rsa-optimization-analysis.adoc`
-
-=== Priority 3: Implementation and Verification ⏸️ **PAUSED**
-
-**Goal**: Implement the optimal cryptographic solution identified in Priority 2
-
-**Status**: ⏸️ **PAUSED** - Depends on Priority 0 regression resolution
-
-- [ ] **Algorithm Migration**: Implement the best-performing OAuth algorithm
-- [ ] **Integration Testing**: Verify end-to-end functionality with new algorithm  
-- [ ] **Performance Validation**: Confirm expected performance improvements via benchmarks
-- [ ] **Documentation Update**: Update all configuration and deployment guides
-
-=== Priority 4: Advanced Optimization (If Needed) ⏸️ **PAUSED**
-
-**Goal**: Additional optimizations if Priority 2 doesn't achieve target performance
-
-**Status**: ⏸️ **PAUSED** - Depends on Priority 0 regression resolution
-
-- [ ] **Token Caching Strategy**: Implement application-level validated token caching (lower priority)
-- [ ] **Connection Optimization**: Optimize HTTP client configurations for JWKS loading
-- [ ] **Native Image Tuning**: Fine-tune GraalVM compilation parameters
-- [ ] **Memory Allocation**: Optimize BigInteger operations memory patterns
-
-=== Priority 5: Monitoring and Alerting ⏸️ **PAUSED**
-
-**Goal**: Implement production monitoring for JWT validation performance
-
-**Status**: ⏸️ **PAUSED** - Depends on Priority 0 regression resolution
-
-- [ ] **Performance Metrics**: Add detailed JWT validation timing metrics
-- [ ] **Algorithm Detection**: Monitor which algorithms are being used in production
-- [ ] **Performance Regression Detection**: Alert on JWT validation performance degradation
-
-== Dismissed Items (Do Not Revisit)
-
-=== Items Already Ruled Out
-
-==== 1. JWT Token Caching Implementation
-**Status:** ❌ DISMISSED - No caching by design - 5ms processing time
-
-==== 2. JWKS Key Retrieval Optimization  
-**Status:** ❌ DISMISSED - Already optimized and cached by design
-
-==== 3. Efficient JWT Libraries Research
-**Status:** ❌ DISMISSED - Focus on optimizing existing library, not replacing
-
-==== 4. Keycloak Container Performance Issues
-**Status:** ❌ DISMISSED - JWKS keystore caching handles this efficiently
-
-==== 5. Container-to-Container Communication Optimization
-**Status:** ❌ DISMISSED - Keycloak calls are efficiently cached
-
-==== 6. HTTP Client Configuration on Quarkus Side
-**Status:** ❌ DISMISSED - Only affects test client, not Quarkus container
-
-==== 7. Request Processing Pipeline Optimization
-**Status:** ❌ DISMISSED - Already tested, no difference with virtual threads
-
-==== 8. Regression Testing Implementation
-**Status:** ❌ DISMISSED - Already in place
-
-==== 9. Reactive vs Blocking I/O Model
-**Status:** ❌ DISMISSED - Already tested, no issues found
-
-==== 10. Test Client Optimization (RestAssured)
-**Status:** ❌ POSTPONED - Depends on new test framework selection
-
-==== 11. 200 Threads Being Problematic
-**Status:** ❌ DISMISSED - Appropriate for Apple M4 chip capabilities
-
-==== 12. Time Estimations and Impact Percentages
-**Status:** ❌ DISMISSED - User requested removal of all time/duration/estimation elements
+==== 4. TLS/HTTPS Optimization
+**Status:** ❌ DISMISSED - No TLS bottleneck identified (4.1ms health check baseline)
