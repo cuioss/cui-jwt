@@ -13,16 +13,21 @@ echo "Root directory: ${ROOT_DIR}"
 
 cd "${PROJECT_DIR}"
 
-# Check build mode - Docker build vs Maven build
+# Check build approach - Native executable + Docker copy vs Docker build
 RUNNER_FILE=$(find target/ -name "*-runner" -type f 2>/dev/null | head -n 1)
-if [[ -n "$RUNNER_FILE" ]]; then
-    echo "📦 Using Maven-built native image from target directory: $RUNNER_FILE"
+if [[ -n "$RUNNER_FILE" ]] && docker image inspect cui-jwt-integration-tests:distroless >/dev/null 2>&1; then
+    echo "📦 Using Maven-built native executable: $(basename "$RUNNER_FILE")"
+    echo "🐳 Docker image: cui-jwt-integration-tests:distroless"
     COMPOSE_FILE="docker-compose.yml"
-    MODE="native (Maven-built)"
+    MODE="native (Maven-built + Docker copy)"
+elif docker image inspect cui-jwt-integration-tests:distroless >/dev/null 2>&1; then
+    echo "📦 Using Docker-built native image: cui-jwt-integration-tests:distroless"
+    COMPOSE_FILE="docker-compose.yml"
+    MODE="native (Docker-built)"
 else
-    echo "❌ No pre-built native executable found in target directory"
-    echo "The integration-tests profile should have built the native executable during the package phase"
-    echo "This script is called from the integration-tests profile which builds the native executable first"
+    echo "❌ Neither native executable nor Docker image found"
+    echo "Expected: target/*-runner file and cui-jwt-integration-tests:distroless image"
+    echo "Run: mvnw verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
     exit 1
 fi
 

@@ -132,19 +132,27 @@
                 <!-- Enable integration tests -->
                 <skipITs>false</skipITs>
                 
-                <!-- Disable Maven native building - Docker handles it -->
-                <quarkus.native.container-build>false</quarkus.native.container-build>
-                <quarkus.native.enabled>false</quarkus.native.enabled>
-                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
+                <!-- Container-based native build with optimized rebuild detection -->
+                <quarkus.native.container-build>true</quarkus.native.container-build>
+                <quarkus.native.enabled>true</quarkus.native.enabled>
             </properties>
             <build>
                 <plugins>
+                    
+                    <!-- Quarkus plugin (build only on-demand via script) -->
+                    <plugin>
+                        <groupId>io.quarkus</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <!-- No default executions - only build when called explicitly -->
+                    </plugin>
                     
                     <!-- Skip Unit Tests (Surefire) -->
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>true</skipTests>
+                            <!-- Fix argLine placeholder issue inherited from parent -->
+                            <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         </configuration>
                     </plugin>
 
@@ -161,6 +169,8 @@
                                     <includes>
                                         <include>**/integration/**/*IT.java</include>
                                     </includes>
+                                    <!-- Fix argLine placeholder issue inherited from parent -->
+                                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                                     <systemPropertyVariables>
                                         <test.https.port>${test.https.port}</test.https.port>
                                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -178,10 +188,10 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${version.exec-maven-plugin}</version>
                         <executions>
-                            <!-- Docker build with distroless image -->
+                            <!-- Build Docker image (native executable must already exist) -->
                             <execution>
                                 <id>docker-build-distroless</id>
-                                <phase>package</phase>
+                                <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -237,18 +247,29 @@
                 <!-- Enable integration tests -->
                 <skipITs>false</skipITs>
                 
-                <!-- Disable Maven native building - Docker handles it -->
-                <quarkus.native.container-build>false</quarkus.native.container-build>
-                <quarkus.native.enabled>false</quarkus.native.enabled>
-                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
+                <!-- Container-based native build with JFR support -->
+                <quarkus.native.container-build>true</quarkus.native.container-build>
+                <quarkus.native.enabled>true</quarkus.native.enabled>
+                <!-- JFR-specific native build options -->
+                <quarkus.native.additional-build-args>--enable-monitoring=heapdump,jfr</quarkus.native.additional-build-args>
             </properties>
             <build>
                 <plugins>
+                    
+                    <!-- Quarkus plugin with JFR support (build only on-demand via script) -->
+                    <plugin>
+                        <groupId>io.quarkus</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <!-- No default executions - only build when called explicitly -->
+                    </plugin>
+                    
                     <!-- Skip Unit Tests (Surefire) -->
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>true</skipTests>
+                            <!-- Fix argLine placeholder issue inherited from parent -->
+                            <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         </configuration>
                     </plugin>
 
@@ -265,6 +286,8 @@
                                     <includes>
                                         <include>**/integration/**/*IT.java</include>
                                     </includes>
+                                    <!-- Fix argLine placeholder issue inherited from parent -->
+                                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                                     <systemPropertyVariables>
                                         <test.https.port>${test.https.port}</test.https.port>
                                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -282,10 +305,10 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${version.exec-maven-plugin}</version>
                         <executions>
-                            <!-- Docker build with JFR support -->
+                            <!-- Build Docker image with JFR support (native executable must already exist) -->
                             <execution>
                                 <id>docker-build-jfr</id>
-                                <phase>package</phase>
+                                <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -298,7 +321,7 @@
                                         <argument>cui-jwt-integration-tests</argument>
                                     </arguments>
                                     <environmentVariables>
-                                        <DOCKERFILE>Dockerfile.native.jfr</DOCKERFILE>
+                                        <DOCKERFILE>Dockerfile.native.jfr.simple</DOCKERFILE>
                                         <DOCKER_IMAGE_TAG>jfr</DOCKER_IMAGE_TAG>
                                         <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
                                     </environmentVariables>

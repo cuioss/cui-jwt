@@ -117,7 +117,6 @@
                                 <configuration>
                                     <executable>../../mvnw</executable>
                                     <arguments>
-                                        <argument>clean</argument>
                                         <argument>verify</argument>
                                         <argument>-Pintegration-tests</argument>
                                         <argument>-DskipTests</argument>
@@ -172,9 +171,9 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Stop containers using Maven clean -->
+                            <!-- Stop containers using exec:exec (stop-docker-containers) -->
                             <execution>
-                                <id>maven-clean-containers</id>
+                                <id>maven-stop-containers</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
@@ -182,7 +181,7 @@
                                 <configuration>
                                     <executable>../../mvnw</executable>
                                     <arguments>
-                                        <argument>clean</argument>
+                                        <argument>exec:exec@stop-docker-containers</argument>
                                         <argument>-pl</argument>
                                         <argument>cui-jwt-quarkus-integration-tests</argument>
                                     </arguments>
@@ -235,7 +234,6 @@
                                 <configuration>
                                     <executable>../../mvnw</executable>
                                     <arguments>
-                                        <argument>clean</argument>
                                         <argument>verify</argument>
                                         <argument>-Pjfr</argument>
                                         <argument>-DskipTests</argument>
@@ -290,9 +288,9 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Stop containers using Maven clean -->
+                            <!-- Stop containers using exec:exec (stop-docker-containers) -->
                             <execution>
-                                <id>maven-clean-containers</id>
+                                <id>maven-stop-containers</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
@@ -300,7 +298,7 @@
                                 <configuration>
                                     <executable>../../mvnw</executable>
                                     <arguments>
-                                        <argument>clean</argument>
+                                        <argument>exec:exec@stop-docker-containers</argument>
                                         <argument>-pl</argument>
                                         <argument>cui-jwt-quarkus-integration-tests</argument>
                                     </arguments>
