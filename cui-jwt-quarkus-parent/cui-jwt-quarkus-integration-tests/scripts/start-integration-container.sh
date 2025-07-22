@@ -16,8 +16,8 @@ cd "${PROJECT_DIR}"
 # Check build approach - Native executable + Docker copy vs Docker build
 RUNNER_FILE=$(find target/ -name "*-runner" -type f 2>/dev/null | head -n 1)
 # Detect image type - prefer JFR if available, fallback to distroless
-JFR_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:jfr$")
-DISTROLESS_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:distroless$")
+JFR_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:jfr$" || true)
+DISTROLESS_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:distroless$" || true)
 
 if [[ -n "$JFR_IMAGE" ]]; then
     AVAILABLE_IMAGE="$JFR_IMAGE"
@@ -56,7 +56,7 @@ fi
 
 # Start with Docker Compose (includes Keycloak)
 echo "🐳 Starting Docker containers (Quarkus $MODE + Keycloak)..."
-docker compose -f "$COMPOSE_FILE" up -d
+(cd "${PROJECT_DIR}" && docker compose -f "$COMPOSE_FILE" up -d)
 
 # Wait for Keycloak to be ready first
 echo "⏳ Waiting for Keycloak to be ready..."
