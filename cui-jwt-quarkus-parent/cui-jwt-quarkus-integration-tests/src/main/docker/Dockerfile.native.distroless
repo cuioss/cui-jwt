@@ -1,4 +1,4 @@
-# Production Dockerfile for distroless native image
+??# Production Dockerfile for distroless native image
 # Optimized for: Security, minimal size, fast startup
 FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
 

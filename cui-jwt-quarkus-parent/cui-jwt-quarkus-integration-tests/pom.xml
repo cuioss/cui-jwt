@@ -321,7 +321,7 @@
                                         <argument>cui-jwt-integration-tests</argument>
                                     </arguments>
                                     <environmentVariables>
-                                        <DOCKERFILE>Dockerfile.native.jfr.simple</DOCKERFILE>
+                                        <DOCKERFILE>Dockerfile.native.jfr</DOCKERFILE>
                                         <DOCKER_IMAGE_TAG>jfr</DOCKER_IMAGE_TAG>
                                         <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
                                     </environmentVariables>
