@@ -25,17 +25,21 @@
 **Infrastructure**: Apple M4, OrbStack containerization, Quarkus native runtime
 
 |===
-| Algorithm | P95 Latency | Throughput | Processing Overhead | Token Length | Status
-| **RS256** | **173.0ms** | **1,413 req/sec** | **168.0ms** | 977 chars | ✅ CURRENT
-| **Health Check** | **5.0ms** | **26,104 req/sec** | **0ms (baseline)** | N/A | ✅ BASELINE
+| Algorithm | P95 Latency | Throughput | Processing Overhead | Token Length | Provider | Status
+| **RS256** | **143.0ms** | **1,533 req/sec** | **138.9ms** | 977 chars | BouncyCastle | ✅ CURRENT
+| RS256 (Default JDK) | 173.0ms | 1,413 req/sec | 168.0ms | 977 chars | SUN | ⚪ BASELINE
+| **Health Check** | **4.1ms** | **33,227 req/sec** | **0ms (baseline)** | N/A | N/A | ✅ BASELINE
 |===
 
-**Current Focus**: Reduce RS256 JWT validation latency from 173ms to <20ms through RSA-specific optimizations.
+**Current Focus**: Reduce RS256 JWT validation latency from 143ms to <20ms through RSA-specific optimizations.
+
+**BouncyCastle Achievement**: 17% improvement (173ms → 143ms), 29ms overhead reduction
 
 === Quick Performance Summary
 
-**RS256 Performance**: 173.0ms P95 latency, 1,413 req/sec throughput
+**RS256 Performance**: 143.0ms P95 latency, 1,533 req/sec throughput (BouncyCastle)
 **Target**: <20ms P95 latency (10ms achievable based on 5ms microbenchmark)
+**Remaining Gap**: 123ms (86% improvement still needed)
 **Bottleneck**: RSA signature verification (`BigInteger.modPow()` ~97% of time)
 
 === Infrastructure Optimization Status ✅ **COMPLETED**
@@ -56,30 +60,33 @@
 - **Critical Stack Traces**: `java.math.BigInteger.modPow()` operations dominating CPU time
 - **Evidence**: `sun.security.rsa.RSACore.crypt()` and `de.cuioss.jwt.validation.pipeline.TokenSignatureValidator.verifySignature()` as primary CPU consumers
 
-**Performance Breakdown (RS256)**:
+**Performance Breakdown (RS256 with BouncyCastle)**:
 
-- System Infrastructure: 5.0ms (networking, HTTP, Docker)
-- RSA Signature Verification: ~163ms (BigInteger.modPow operations)
+- System Infrastructure: 4.1ms (networking, HTTP, Docker)
+- RSA Signature Verification: ~134ms (BouncyCastle RSA operations)
 - JWT Parsing/Validation: ~5ms (library logic - matches microbenchmark)
-- **Total**: 173.0ms P95
-- **Gap to Target**: 163ms RSA overhead must be reduced to <15ms
+- **Total**: 143.0ms P95
+- **Gap to Target**: 134ms RSA overhead must be reduced to <16ms
+- **BouncyCastle Benefit**: 29ms RSA overhead reduction vs default JDK
 
 === Critical Findings
 
-1. **System Baseline**: 5.0ms P95 (health check) - Infrastructure is highly optimized
-2. **JWT Processing**: 168.0ms additional overhead for RS256 (down from 500.8ms with ES256)
-3. **Algorithm Impact**: RS256 performs 3.1x better than ES256 - **confirmed algorithmic difference**
-4. **RSA Bottleneck**: `BigInteger.modPow()` operations consume ~97% of JWT validation time
-5. **Migration Success**: Switching to RS256 reduced latency by 65.7% (504.9ms → 173.0ms)
+1. **System Baseline**: 4.1ms P95 (health check) - Infrastructure is highly optimized
+2. **JWT Processing**: 138.9ms additional overhead for RS256 with BouncyCastle
+3. **BouncyCastle Impact**: 17% improvement over default JDK (173.0ms → 143.0ms)
+4. **RSA Bottleneck**: `BigInteger.modPow()` operations consume ~94% of JWT validation time
+5. **Algorithm Migration Success**: ES256 → RS256 improved performance by 71.7% (504.9ms → 143.0ms)
+6. **Provider Optimization Success**: SUN → BouncyCastle improved performance by 17.3%
 
 == Next Steps - Actionable Tasks
 
 === Priority 1: RSA Performance Optimization 🚀 **NEXT FOCUS**
 
-**Goal**: Reduce RSA signature verification overhead from 168ms to target <20ms
+**Goal**: Reduce RSA signature verification overhead from 134ms to target <16ms
 
-**Current Status**: RS256 baseline established at 173.0ms P95 (1,413 req/sec)
+**Current Status**: RS256 with BouncyCastle at 143.0ms P95 (1,533 req/sec)
 **Microbenchmark Reference**: JWT library alone achieves 5ms - proving <10ms is possible
+**BouncyCastle Benefit**: 17% improvement (29ms reduction) over default JDK provider
 
 **Next Optimization Paths**:
 
@@ -118,7 +125,7 @@ quarkus.security.security-providers=BC
    - Analyze RSA key size impact (2048 vs 3072 bit)
    - Test RSA-PSS vs PKCS#1 v1.5 padding performance
 
-**Target Performance**: <20ms P95 (10ms achievable based on 5ms microbenchmark)
+**Target Performance**: <20ms P95 (123ms improvement needed from current 143ms BouncyCastle baseline)
 
 === Priority 2: Production Monitoring Setup 📊 **REQUIRED**
 
@@ -194,6 +201,7 @@ class RSAVerificationEvent extends Event {
 5. **ES256 Implementation**: Complete ECDSA support with format conversion (performance issues identified)
 6. **Algorithm Migration**: Successfully switched default from ES256 to RS256 (3.1x improvement)
 7. **Research Documentation**: Proven 8x ES256/RS256 gap is algorithmic, not implementation-based
+8. **BouncyCastle JCA Provider**: Integrated with 17% performance improvement (29ms reduction)
 
 === Dismissed Items (Do Not Revisit)
 
