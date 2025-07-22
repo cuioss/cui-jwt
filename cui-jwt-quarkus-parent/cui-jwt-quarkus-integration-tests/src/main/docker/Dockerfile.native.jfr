@@ -1,6 +1,6 @@
 # Simple Dockerfile for copying pre-built native executable with JFR support
 # This approach is much faster as it avoids rebuilding the native image in Docker
-FROM quay.io/quarkus/ubi-quarkus-runtime-native:jdk-21
+FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0
 
 LABEL org.opencontainers.image.title="CUI JWT Integration Tests - JFR"
 LABEL org.opencontainers.image.description="Quarkus native application with JFR profiling support"

@@ -15,20 +15,22 @@ cd "${PROJECT_DIR}"
 
 # Check build approach - Native executable + Docker copy vs Docker build
 RUNNER_FILE=$(find target/ -name "*-runner" -type f 2>/dev/null | head -n 1)
-IMAGE_EXISTS=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^cui-jwt-integration-tests:distroless$" && echo "true" || echo "false")
+# Detect available cui-jwt-integration-tests image (distroless or jfr)
+AVAILABLE_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:" | head -n 1)
+IMAGE_EXISTS=$([ ! -z "$AVAILABLE_IMAGE" ] && echo "true" || echo "false")
 
 if [[ -n "$RUNNER_FILE" ]] && [[ "$IMAGE_EXISTS" == "true" ]]; then
     echo "📦 Using Maven-built native executable: $(basename "$RUNNER_FILE")"
-    echo "🐳 Docker image: cui-jwt-integration-tests:distroless"
+    echo "🐳 Docker image: $AVAILABLE_IMAGE"
     COMPOSE_FILE="docker-compose.yml"
     MODE="native (Maven-built + Docker copy)"
 elif [[ "$IMAGE_EXISTS" == "true" ]]; then
-    echo "📦 Using Docker-built native image: cui-jwt-integration-tests:distroless"
+    echo "📦 Using Docker-built native image: $AVAILABLE_IMAGE"
     COMPOSE_FILE="docker-compose.yml"
     MODE="native (Docker-built)"
 else
     echo "❌ Neither native executable nor Docker image found"
-    echo "Expected: target/*-runner file and cui-jwt-integration-tests:distroless image"
+    echo "Expected: target/*-runner file and cui-jwt-integration-tests image"
     echo "Available images:"
     docker images | grep cui-jwt || echo "  No cui-jwt images found"
     echo "Run: mvnw verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
@@ -84,7 +86,7 @@ fi
 # Show actual image size
 IMAGE_SIZE=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep cui-jwt-integration-tests | awk '{print $2}' | head -1)
 if [ ! -z "$IMAGE_SIZE" ]; then
-    echo "📦 Image size: ${IMAGE_SIZE} (distroless native)"
+    echo "📦 Image size: ${IMAGE_SIZE} (native image)"
 fi
 
 echo ""
