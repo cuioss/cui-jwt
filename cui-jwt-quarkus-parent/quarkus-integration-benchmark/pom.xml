@@ -107,9 +107,9 @@
                                     </arguments>
                                 </configuration>
                             </execution>
-                            <!-- Build and start integration tests containers using Maven integration-tests profile -->
+                            <!-- Build integration tests (without running containers) -->
                             <execution>
-                                <id>maven-build-distroless</id>
+                                <id>maven-build-integration-tests</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
@@ -117,11 +117,26 @@
                                 <configuration>
                                     <executable>../../mvnw</executable>
                                     <arguments>
-                                        <argument>verify</argument>
+                                        <argument>clean</argument>
+                                        <argument>compile</argument>
+                                        <argument>quarkus:build</argument>
+                                        <argument>exec:exec@docker-build-distroless</argument>
                                         <argument>-Pintegration-tests</argument>
                                         <argument>-DskipTests</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Start integration test containers (keep running for benchmarks) -->
+                            <execution>
+                                <id>start-integration-containers</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
                             <!-- Fetch real JWT tokens from Keycloak -->
@@ -171,21 +186,16 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Stop containers using exec:exec (stop-docker-containers) -->
+                            <!-- Stop integration test containers -->
                             <execution>
-                                <id>maven-stop-containers</id>
+                                <id>stop-integration-containers</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../mvnw</executable>
-                                    <arguments>
-                                        <argument>exec:exec@stop-docker-containers</argument>
-                                        <argument>-pl</argument>
-                                        <argument>cui-jwt-quarkus-integration-tests</argument>
-                                    </arguments>
-                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>
                                         <successCode>0</successCode>
@@ -224,9 +234,9 @@
                                     </arguments>
                                 </configuration>
                             </execution>
-                            <!-- Build and start JFR containers using Maven jfr profile -->
+                            <!-- Build JFR integration tests (without running containers) -->
                             <execution>
-                                <id>maven-build-jfr</id>
+                                <id>maven-build-jfr-tests</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
@@ -234,11 +244,26 @@
                                 <configuration>
                                     <executable>../../mvnw</executable>
                                     <arguments>
-                                        <argument>verify</argument>
+                                        <argument>clean</argument>
+                                        <argument>compile</argument>
+                                        <argument>quarkus:build</argument>
+                                        <argument>exec:exec@docker-build-jfr</argument>
                                         <argument>-Pjfr</argument>
                                         <argument>-DskipTests</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Start JFR integration test containers (keep running for benchmarks) -->
+                            <execution>
+                                <id>start-jfr-containers</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
                             <!-- Fetch real JWT tokens from Keycloak -->
@@ -288,21 +313,16 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Stop containers using exec:exec (stop-docker-containers) -->
+                            <!-- Stop integration test containers -->
                             <execution>
-                                <id>maven-stop-containers</id>
+                                <id>stop-integration-containers</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../mvnw</executable>
-                                    <arguments>
-                                        <argument>exec:exec@stop-docker-containers</argument>
-                                        <argument>-pl</argument>
-                                        <argument>cui-jwt-quarkus-integration-tests</argument>
-                                    </arguments>
-                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>
                                         <successCode>0</successCode>
