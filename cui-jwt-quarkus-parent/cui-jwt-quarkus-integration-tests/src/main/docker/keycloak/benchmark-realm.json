@@ -11,14 +11,24 @@
   "attributes": {
     "frontendUrl": "https://keycloak:8443"
   },
-  "defaultSignatureAlgorithm": "ES256",
+  "defaultSignatureAlgorithm": "RS256",
   "components": {
     "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "rsa-generated",
+        "providerId": "rsa-generated",
+        "config": {
+          "priority": ["100"],
+          "enabled": ["true"],
+          "active": ["true"],
+          "keySize": ["2048"]
+        }
+      },
       {
         "name": "ecdsa-generated",
         "providerId": "ecdsa-generated",
         "config": {
-          "priority": ["100"],
+          "priority": ["50"],
           "enabled": ["true"],
           "active": ["true"],
           "ecdsaEllipticCurveKey": ["P-256"]
