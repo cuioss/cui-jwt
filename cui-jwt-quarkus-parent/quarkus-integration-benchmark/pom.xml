@@ -219,7 +219,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <!-- Create benchmark results directory -->
+                            <!-- Create benchmark and JFR results directories -->
                             <execution>
                                 <id>create-benchmark-dir</id>
                                 <phase>pre-integration-test</phase>
@@ -231,6 +231,7 @@
                                     <arguments>
                                         <argument>-p</argument>
                                         <argument>target/benchmark-results</argument>
+                                        <argument>target/jfr-reports</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -313,6 +314,7 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
+                            <!-- JFR files are automatically available via volume mount at target/jfr-reports/ -->
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-integration-containers</id>

@@ -15,19 +15,36 @@ cd "${PROJECT_DIR}"
 
 # Check build approach - Native executable + Docker copy vs Docker build
 RUNNER_FILE=$(find target/ -name "*-runner" -type f 2>/dev/null | head -n 1)
-# Detect available cui-jwt-integration-tests image (distroless or jfr)
-AVAILABLE_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:" | head -n 1)
+# Detect image type - prefer JFR if available, fallback to distroless
+JFR_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:jfr$")
+DISTROLESS_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:distroless$")
+
+if [[ -n "$JFR_IMAGE" ]]; then
+    AVAILABLE_IMAGE="$JFR_IMAGE"
+    IMAGE_TYPE="jfr"
+    export DOCKER_IMAGE_TAG="jfr"
+    export DOCKERFILE="Dockerfile.native.jfr"
+elif [[ -n "$DISTROLESS_IMAGE" ]]; then
+    AVAILABLE_IMAGE="$DISTROLESS_IMAGE"
+    IMAGE_TYPE="distroless"
+    export DOCKER_IMAGE_TAG="distroless"
+    export DOCKERFILE="Dockerfile.native.distroless"
+else
+    AVAILABLE_IMAGE=""
+    IMAGE_TYPE="none"
+fi
+
 IMAGE_EXISTS=$([ ! -z "$AVAILABLE_IMAGE" ] && echo "true" || echo "false")
 
 if [[ -n "$RUNNER_FILE" ]] && [[ "$IMAGE_EXISTS" == "true" ]]; then
     echo "📦 Using Maven-built native executable: $(basename "$RUNNER_FILE")"
-    echo "🐳 Docker image: $AVAILABLE_IMAGE"
+    echo "🐳 Docker image: $AVAILABLE_IMAGE ($IMAGE_TYPE mode)"
     COMPOSE_FILE="docker-compose.yml"
-    MODE="native (Maven-built + Docker copy)"
+    MODE="native (Maven-built + Docker copy) - $IMAGE_TYPE"
 elif [[ "$IMAGE_EXISTS" == "true" ]]; then
-    echo "📦 Using Docker-built native image: $AVAILABLE_IMAGE"
+    echo "📦 Using Docker-built native image: $AVAILABLE_IMAGE ($IMAGE_TYPE mode)"
     COMPOSE_FILE="docker-compose.yml"
-    MODE="native (Docker-built)"
+    MODE="native (Docker-built) - $IMAGE_TYPE"
 else
     echo "❌ Neither native executable nor Docker image found"
     echo "Expected: target/*-runner file and cui-jwt-integration-tests image"

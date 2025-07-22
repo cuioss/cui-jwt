@@ -24,10 +24,13 @@ EXPOSE 8443
 HEALTHCHECK --interval=15s --timeout=8s --retries=3 --start-period=15s CMD ["/app/health-check.sh"]
 USER 1001
 
-# JFR-enabled entrypoint with profiling
+# Create JFR output directory
+RUN mkdir -p /tmp/jfr-output && chmod 777 /tmp/jfr-output
+
+# JFR-enabled entrypoint with profiling optimized for benchmarking
 ENTRYPOINT ["/app/application", \
   "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12", \
   "-Djavax.net.ssl.trustStorePassword=localhost-trust", \
   "-Djavax.net.ssl.trustStoreType=PKCS12", \
   "-XX:+FlightRecorder", \
-  "-XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=300s,settings=profile"]
+  "-XX:StartFlightRecording=filename=/tmp/jfr-output/jwt-profile.jfr,dumponexit=true,duration=240s,settings=profile"]

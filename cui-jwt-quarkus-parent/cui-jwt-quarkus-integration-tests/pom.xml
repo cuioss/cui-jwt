@@ -327,28 +327,6 @@
                                     </environmentVariables>
                                 </configuration>
                             </execution>
-                            <!-- Extract JFR results after build -->
-                            <execution>
-                                <id>extract-jfr-results</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>docker</executable>
-                                    <workingDirectory>${project.basedir}</workingDirectory>
-                                    <arguments>
-                                        <argument>cp</argument>
-                                        <argument>cui-jwt-integration-tests:/tmp/jfr-output/</argument>
-                                        <argument>${project.basedir}/target/jfr-results/</argument>
-                                    </arguments>
-                                    <!-- Don't fail build if extraction fails -->
-                                    <successCodes>
-                                        <successCode>0</successCode>
-                                        <successCode>1</successCode>
-                                    </successCodes>
-                                </configuration>
-                            </execution>
                             <!-- Start application before integration tests -->
                             <execution>
                                 <id>start-integration-app</id>
