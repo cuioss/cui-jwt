@@ -26,6 +26,8 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLSession;
+
+import javax.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Set;
 
@@ -178,8 +180,8 @@ public class TestHttpServerRequest implements HttpServerRequest {
     }
 
     @Override
-    public javax.security.cert.X509Certificate[] peerCertificateChain() {
-        return new javax.security.cert.X509Certificate[0];
+    public X509Certificate[] peerCertificateChain() {
+        return new X509Certificate[0];
     }
 
     @Override

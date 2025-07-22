@@ -60,6 +60,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                    <release>21</release>
                 </configuration>
             </plugin>
             

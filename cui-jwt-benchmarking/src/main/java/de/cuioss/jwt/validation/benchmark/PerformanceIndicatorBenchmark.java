@@ -70,10 +70,10 @@ public class PerformanceIndicatorBenchmark {
         TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
         IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
         tokenValidator = new TokenValidator(issuerConfig);
-        
+
         // Generate primary validation token
         validAccessToken = baseTokenHolder.getRawToken();
-        
+
         // Generate token pool for concurrent benchmarks
         tokenPool = new String[TOKEN_POOL_SIZE];
         for (int i = 0; i < TOKEN_POOL_SIZE; i++) {

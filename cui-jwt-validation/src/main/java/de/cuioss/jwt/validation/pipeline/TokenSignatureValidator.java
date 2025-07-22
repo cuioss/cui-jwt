@@ -26,8 +26,6 @@ import lombok.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.PSSParameterSpec;
 import java.util.Base64;
 
 /**
@@ -60,7 +58,7 @@ import java.util.Base64;
 public class TokenSignatureValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenSignatureValidator.class);
-    public static final String RSASSA_PSS = "RSASSA-PSS";
+
 
     @Getter
     @NonNull
@@ -68,6 +66,9 @@ public class TokenSignatureValidator {
 
     @NonNull
     private final SecurityEventCounter securityEventCounter;
+
+    @NonNull
+    private final SignatureTemplateManager signatureTemplateManager;
 
     /**
      * Constructs a TokenSignatureValidator with the specified JwksLoader and SecurityEventCounter.
@@ -78,6 +79,7 @@ public class TokenSignatureValidator {
     public TokenSignatureValidator(@NonNull JwksLoader jwksLoader, @NonNull SecurityEventCounter securityEventCounter) {
         this.jwksLoader = jwksLoader;
         this.securityEventCounter = securityEventCounter;
+        this.signatureTemplateManager = new SignatureTemplateManager();
     }
 
     /**
@@ -212,7 +214,7 @@ public class TokenSignatureValidator {
                         "Invalid signature"
                 );
             }
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidAlgorithmParameterException e) {
+        } catch (InvalidKeyException | SignatureException e) {
             LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
@@ -220,42 +222,28 @@ public class TokenSignatureValidator {
                     "Signature validation failed: %s".formatted(e.getMessage()),
                     e
             );
+        } catch (SignatureTemplateManager.UnsupportedAlgorithmException e) {
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
+            securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
+            throw new TokenValidationException(
+                    SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
+                    "Algorithm not supported: %s".formatted(e.getMessage()),
+                    e
+            );
         }
     }
 
     /**
-     * Gets a Signature verifier for the specified algorithm.
+     * Gets a Signature verifier for the specified algorithm using cached templates for performance.
+     * This method significantly improves ES256 performance by avoiding expensive getInstance() calls.
      *
      * @param algorithm the algorithm to use
      * @return a Signature verifier
-     * @throws IllegalArgumentException if the algorithm is not supported
+     * @throws SignatureTemplateManager.UnsupportedAlgorithmException if the algorithm is not supported by the JDK or PSS parameters are invalid
+     * @throws IllegalArgumentException if the algorithm is not recognized
      */
-    private Signature getSignatureVerifier(String algorithm) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        Signature signature;
-
-        switch (algorithm) {
-            case "RS256" -> signature = Signature.getInstance("SHA256withRSA");
-            case "RS384" -> signature = Signature.getInstance("SHA384withRSA");
-            case "RS512" -> signature = Signature.getInstance("SHA512withRSA");
-            case "ES256" -> signature = Signature.getInstance("SHA256withECDSA");
-            case "ES384" -> signature = Signature.getInstance("SHA384withECDSA");
-            case "ES512" -> signature = Signature.getInstance("SHA512withECDSA");
-            case "PS256" -> {
-                signature = Signature.getInstance(RSASSA_PSS);
-                signature.setParameter(new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1));
-            }
-            case "PS384" -> {
-                signature = Signature.getInstance(RSASSA_PSS);
-                signature.setParameter(new PSSParameterSpec("SHA-384", "MGF1", MGF1ParameterSpec.SHA384, 48, 1));
-            }
-            case "PS512" -> {
-                signature = Signature.getInstance(RSASSA_PSS);
-                signature.setParameter(new PSSParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512, 64, 1));
-            }
-            default -> throw new IllegalArgumentException("Unsupported algorithm: %s".formatted(algorithm));
-        }
-
-        return signature;
+    private Signature getSignatureVerifier(String algorithm) {
+        return signatureTemplateManager.getSignatureInstance(algorithm);
     }
 
     /**
@@ -265,8 +253,7 @@ public class TokenSignatureValidator {
      * @return true if the algorithm is ECDSA (ES256, ES384, ES512), false otherwise
      */
     private boolean isEcdsaAlgorithm(String algorithm) {
-        return algorithm != null &&
-                ("ES256".equals(algorithm) || "ES384".equals(algorithm) || "ES512".equals(algorithm));
+        return "ES256".equals(algorithm) || "ES384".equals(algorithm) || "ES512".equals(algorithm);
     }
 
     /**

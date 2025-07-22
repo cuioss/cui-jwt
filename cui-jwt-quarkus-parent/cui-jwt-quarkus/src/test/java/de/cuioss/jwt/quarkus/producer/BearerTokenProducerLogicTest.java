@@ -282,20 +282,20 @@ class BearerTokenProducerLogicTest {
                 case FULLY_VERIFIED -> {
                     AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
                     yield BearerTokenResult.success(tokenContent,
-                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 }
                 case NO_TOKEN_GIVEN -> BearerTokenResult.noTokenGiven(
-                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 case PARSING_ERROR -> {
                     TokenValidationException ex = new TokenValidationException(
-                        SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
+                            SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
                     yield BearerTokenResult.parsingError(ex,
-                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 }
                 case CONSTRAINT_VIOLATION -> BearerTokenResult.constraintViolation(
-                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 case COULD_NOT_ACCESS_REQUEST -> BearerTokenResult.couldNotAccessRequest(
-                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 default -> throw new IllegalStateException("Unknown status: " + status);
             };
 
