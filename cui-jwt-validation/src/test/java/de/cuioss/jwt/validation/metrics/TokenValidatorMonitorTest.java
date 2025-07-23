@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.metrics;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableGeneratorController
 @DisplayName("Tests TokenValidatorMonitor functionality")
 class TokenValidatorMonitorTest {
+
+    private static final CuiLogger log = new CuiLogger(TokenValidatorMonitorTest.class);
 
     @Test
     @DisplayName("Should create monitor with default window size")
@@ -264,7 +267,7 @@ class TokenValidatorMonitorTest {
                     startLatch.await();
                     for (int j = 0; j < measurementsPerThread; j++) {
                         // Use different durations per thread for verification
-                        long duration = (threadId + 1) * 1_000_000; // 1ms, 2ms, 3ms, etc.
+                        long duration = (threadId + 1) * 1_000_000L; // 1ms, 2ms, 3ms, etc.
                         monitor.recordMeasurement(measurementType, duration);
                     }
                 } catch (InterruptedException e) {
@@ -353,7 +356,7 @@ class TokenValidatorMonitorTest {
         assertTrue(measurementsPerMs > 1000, // Should handle at least 1000 measurements per millisecond
                 "Performance too slow: %.1f measurements/ms (expected > 1000)".formatted(measurementsPerMs));
 
-        System.out.printf("Massive parallel test: %d threads, %d measurements/thread, %.1f measurements/ms%n",
+        log.info("Massive parallel test: {} threads, {} measurements/thread, {:.1f} measurements/ms",
                 threadCount, measurementsPerThread, measurementsPerMs);
     }
 
@@ -371,7 +374,7 @@ class TokenValidatorMonitorTest {
         // Submit threads for each measurement type
         for (int typeIndex = 0; typeIndex < measurementTypes.length; typeIndex++) {
             final var measurementType = measurementTypes[typeIndex];
-            final long baseDuration = (typeIndex + 1) * 1_000_000; // 1ms, 2ms, 3ms, etc.
+            final long baseDuration = (typeIndex + 1) * 1_000_000L; // 1ms, 2ms, 3ms, etc.
 
             for (int threadIndex = 0; threadIndex < threadsPerType; threadIndex++) {
                 executor.submit(() -> {
@@ -451,6 +454,6 @@ class TokenValidatorMonitorTest {
                 "Performance overhead too high: %.1f ns/measurement (expected < 1000)".formatted(
                         overheadPerMeasurementNanos));
 
-        System.out.printf("Performance overhead: %.1f ns per measurement%n", overheadPerMeasurementNanos);
+        log.info("Performance overhead: {:.1f} ns per measurement", overheadPerMeasurementNanos);
     }
 }

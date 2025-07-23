@@ -26,13 +26,12 @@ import java.security.Signature;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for {@link SignatureTemplateManager}.
- * 
+ *
  * @author Oliver Wolff
  */
 class SignatureTemplateManagerTest {
@@ -49,7 +48,7 @@ class SignatureTemplateManagerTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512"})
-    void getSignatureInstanceSupportedAlgorithms(String algorithm) throws Exception {
+    void getSignatureInstanceSupportedAlgorithms(String algorithm) {
         // When
         Signature signature = manager.getSignatureInstance(algorithm);
 
@@ -77,7 +76,7 @@ class SignatureTemplateManagerTest {
      * but with the same algorithm.
      */
     @Test
-    void templateCaching() throws Exception {
+    void templateCaching() {
         // When
         Signature signature1 = manager.getSignatureInstance("ES256");
         Signature signature2 = manager.getSignatureInstance("ES256");
@@ -92,7 +91,7 @@ class SignatureTemplateManagerTest {
      * Tests that the manager is thread-safe by calling it concurrently from multiple threads.
      */
     @Test
-    void concurrentAccess() throws InterruptedException, ExecutionException {
+    void concurrentAccess() {
         // Given
         int numberOfThreads = 10;
         int operationsPerThread = 20;
@@ -125,7 +124,7 @@ class SignatureTemplateManagerTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {"PS256", "PS384", "PS512"})
-    void pssAlgorithms(String algorithm) throws Exception {
+    void pssAlgorithms(String algorithm) {
         // When
         Signature signature = manager.getSignatureInstance(algorithm);
 
@@ -140,7 +139,7 @@ class SignatureTemplateManagerTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {"ES256", "ES384", "ES512"})
-    void ecdsaAlgorithms(String algorithm) throws Exception {
+    void ecdsaAlgorithms(String algorithm) {
         // When
         Signature signature = manager.getSignatureInstance(algorithm);
 
@@ -155,7 +154,7 @@ class SignatureTemplateManagerTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {"RS256", "RS384", "RS512"})
-    void rsaAlgorithms(String algorithm) throws Exception {
+    void rsaAlgorithms(String algorithm) {
         // When
         Signature signature = manager.getSignatureInstance(algorithm);
 

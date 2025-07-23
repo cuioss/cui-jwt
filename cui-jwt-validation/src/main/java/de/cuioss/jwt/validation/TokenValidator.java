@@ -22,6 +22,8 @@ import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
+import de.cuioss.jwt.validation.metrics.MeasurementType;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
 import de.cuioss.jwt.validation.pipeline.TokenBuilder;
@@ -90,6 +92,10 @@ import java.util.Optional;
  *
  * // Access the security event counter for monitoring
  * SecurityEventCounter securityEventCounter = tokenValidator.getSecurityEventCounter();
+ *
+ * // Access the performance monitor for detailed pipeline metrics
+ * TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();
+ * Duration avgSignatureTime = performanceMonitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION);
  * </pre>
  * <p>
  * Implements requirements:
@@ -126,6 +132,14 @@ public class TokenValidator {
     @NonNull
     private final SecurityEventCounter securityEventCounter;
 
+    /**
+     * Monitor for performance metrics of JWT validation pipeline steps.
+     * This monitor is thread-safe and provides detailed timing measurements for each validation step.
+     */
+    @Getter
+    @NonNull
+    private final TokenValidatorMonitor performanceMonitor;
+
 
     /**
      * Creates a new TokenValidator with the given issuer configurations.
@@ -146,6 +160,7 @@ public class TokenValidator {
     public TokenValidator(@NonNull ParserConfig config, @NonNull IssuerConfig... issuerConfigs) {
         LOGGER.debug("Initialize token validator with %s and %s issuer configurations", config, issuerConfigs.length);
         this.securityEventCounter = new SecurityEventCounter();
+        this.performanceMonitor = new TokenValidatorMonitor();
         this.jwtParser = NonValidatingJwtParser.builder()
                 .config(config)
                 .securityEventCounter(securityEventCounter)
@@ -250,6 +265,9 @@ public class TokenValidator {
      * <p>
      * Validators are only created if needed, avoiding unnecessary object creation
      * for invalid tokens.
+     * <p>
+     * Performance measurements are recorded for each pipeline step to enable
+     * detailed analysis of validation performance.
      *
      * @param tokenString  the token string to process
      * @param tokenBuilder function to build the token from the decoded JWT and issuer config
@@ -261,18 +279,25 @@ public class TokenValidator {
             String tokenString,
             TokenBuilderFunction<T> tokenBuilder) {
 
-        validateTokenFormat(tokenString);
-        DecodedJwt decodedJwt = decodeToken(tokenString);
-        String issuer = validateAndExtractIssuer(decodedJwt);
-        IssuerConfig issuerConfig = resolveIssuerConfig(issuer);
+        long pipelineStartTime = System.nanoTime();
+        try {
+            validateTokenFormat(tokenString);
+            DecodedJwt decodedJwt = decodeToken(tokenString);
+            String issuer = validateAndExtractIssuer(decodedJwt);
+            IssuerConfig issuerConfig = resolveIssuerConfig(issuer);
 
-        validateTokenHeader(decodedJwt, issuerConfig);
-        validateTokenSignature(decodedJwt, issuerConfig);
-        T token = buildToken(decodedJwt, issuerConfig, tokenBuilder);
-        T validatedToken = validateTokenClaims(token, issuerConfig);
+            validateTokenHeader(decodedJwt, issuerConfig);
+            validateTokenSignature(decodedJwt, issuerConfig);
+            T token = buildToken(decodedJwt, issuerConfig, tokenBuilder);
+            T validatedToken = validateTokenClaims(token, issuerConfig);
 
-        LOGGER.debug("Token successfully validated");
-        return validatedToken;
+            LOGGER.debug("Token successfully validated");
+            return validatedToken;
+        } finally {
+            // Record complete validation time (including error scenarios)
+            long pipelineEndTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.COMPLETE_VALIDATION, pipelineEndTime - pipelineStartTime);
+        }
     }
 
     private void validateTokenFormat(String tokenString) {
@@ -287,7 +312,13 @@ public class TokenValidator {
     }
 
     private DecodedJwt decodeToken(String tokenString) {
-        return jwtParser.decode(tokenString);
+        long startTime = System.nanoTime();
+        try {
+            return jwtParser.decode(tokenString);
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.TOKEN_PARSING, endTime - startTime);
+        }
     }
 
     private String validateAndExtractIssuer(DecodedJwt decodedJwt) {
@@ -316,14 +347,32 @@ public class TokenValidator {
     }
 
     private void validateTokenHeader(DecodedJwt decodedJwt, IssuerConfig issuerConfig) {
-        TokenHeaderValidator headerValidator = new TokenHeaderValidator(issuerConfig, securityEventCounter);
-        headerValidator.validate(decodedJwt);
+        long startTime = System.nanoTime();
+        try {
+            TokenHeaderValidator headerValidator = new TokenHeaderValidator(issuerConfig, securityEventCounter);
+            headerValidator.validate(decodedJwt);
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.HEADER_VALIDATION, endTime - startTime);
+        }
     }
 
     private void validateTokenSignature(DecodedJwt decodedJwt, IssuerConfig issuerConfig) {
-        JwksLoader jwksLoader = issuerConfig.getJwksLoader();
-        TokenSignatureValidator signatureValidator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
-        signatureValidator.validateSignature(decodedJwt);
+        long startTime = System.nanoTime();
+        try {
+            JwksLoader jwksLoader = issuerConfig.getJwksLoader();
+
+            // Measure JWKS operations separately if loader access involves network/cache operations
+            long jwksStartTime = System.nanoTime();
+            TokenSignatureValidator signatureValidator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+            long jwksEndTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.JWKS_OPERATIONS, jwksEndTime - jwksStartTime);
+
+            signatureValidator.validateSignature(decodedJwt);
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, endTime - startTime);
+        }
     }
 
     @NonNull
@@ -344,9 +393,15 @@ public class TokenValidator {
 
     @SuppressWarnings("unchecked")
     private <T extends TokenContent> T validateTokenClaims(TokenContent token, IssuerConfig issuerConfig) {
-        TokenClaimValidator claimValidator = new TokenClaimValidator(issuerConfig, securityEventCounter);
-        TokenContent validatedContent = claimValidator.validate(token);
-        return (T) validatedContent;
+        long startTime = System.nanoTime();
+        try {
+            TokenClaimValidator claimValidator = new TokenClaimValidator(issuerConfig, securityEventCounter);
+            TokenContent validatedContent = claimValidator.validate(token);
+            return (T) validatedContent;
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.CLAIMS_VALIDATION, endTime - startTime);
+        }
     }
 
 
