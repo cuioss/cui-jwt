@@ -89,7 +89,7 @@ echo "  Docker CPUs: 6 cores allocated"
 echo "  Docker Memory: 512MB allocated"
 echo "  File descriptors: 32768 (ulimit)"
 echo "  Threads: $THREADS (conservative for stability)"
-echo "  Connections: $CONNECTIONS ($(echo "scale=0; $CONNECTIONS / $THREADS" | bc) per thread)"
+echo "  Connections: $CONNECTIONS ($((CONNECTIONS / THREADS)) per thread)"
 echo "  Duration: $DURATION"
 
 # Check if results were generated
@@ -109,6 +109,107 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         ' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "Results file format issue"
     fi
     
+    # Fetch and display JWT metrics from TokenValidatorMonitor
+    echo ""
+    echo "=== JWT Validation Pipeline Metrics (TokenValidatorMonitor) ==="
+    echo "📊 Fetching JWT validation metrics from Prometheus endpoint..."
+    
+    # Use curl to fetch metrics from inside Docker container (with timeout)
+    if docker run --rm \
+        --network cui-jwt-quarkus-integration-tests_jwt-integration \
+        curlimages/curl:latest \
+        -s -k --max-time 10 "https://cui-jwt-integration-tests:8443/q/metrics" | \
+    grep "cui_jwt_validation_duration" | grep -v "^#" > "$RESULTS_DIR/jwt-metrics-raw.txt" 2>/dev/null; then
+        echo "✅ Successfully fetched JWT metrics"
+    else
+        echo "⚠️  Failed to fetch JWT metrics - continuing without metrics collection"
+        touch "$RESULTS_DIR/jwt-metrics-raw.txt" # Create empty file
+    fi
+    
+    if [ -s "$RESULTS_DIR/jwt-metrics-raw.txt" ]; then
+        # Parse and display metrics by step
+        echo "Processing JWT validation duration metrics..."
+        
+        # Extract unique steps
+        STEPS=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep -oE 'step="[^"]+' | sed 's/step="//' | sort -u)
+        
+        for step in $STEPS; do
+            echo ""
+            echo "Step: $step"
+            
+            # Get count for this step
+            COUNT=$(grep "cui_jwt_validation_duration_seconds_count{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            if [ -n "$COUNT" ]; then
+                echo "  Count: $COUNT"
+            fi
+            
+            # Get sum for this step and calculate average
+            SUM=$(grep "cui_jwt_validation_duration_seconds_sum{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ]; then
+                AVG=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
+                echo "  Average: ${AVG}ms"
+            fi
+            
+            # Get percentiles
+            P50=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.5\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            if [ -n "$P50" ]; then
+                P50_MS=$(awk -v p50="$P50" 'BEGIN {printf "%.3f", p50 * 1000}' 2>/dev/null || echo "0.000")
+                echo "  P50: ${P50_MS}ms"
+            fi
+            
+            P95=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.95\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            if [ -n "$P95" ]; then
+                P95_MS=$(awk -v p95="$P95" 'BEGIN {printf "%.3f", p95 * 1000}' 2>/dev/null || echo "0.000")
+                echo "  P95: ${P95_MS}ms"
+            fi
+            
+            P99=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            if [ -n "$P99" ]; then
+                P99_MS=$(awk -v p99="$P99" 'BEGIN {printf "%.3f", p99 * 1000}' 2>/dev/null || echo "0.000")
+                echo "  P99: ${P99_MS}ms"
+            fi
+        done
+        
+        # Save processed metrics to JSON
+        echo ""
+        echo "Saving JWT metrics to: $RESULTS_DIR/jwt-validation-metrics.json"
+        
+        # Create JSON from metrics (simplified version)
+        echo "{" > "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "  \"steps\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        
+        FIRST_STEP=true
+        for step in $STEPS; do
+            if [ "$FIRST_STEP" = false ]; then
+                echo "," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            fi
+            FIRST_STEP=false
+            
+            COUNT=$(grep "cui_jwt_validation_duration_seconds_count{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            SUM=$(grep "cui_jwt_validation_duration_seconds_sum{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            P50=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.5\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            P95=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.95\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            P99=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            
+            echo -n "    \"$step\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            echo -n "\"count\": ${COUNT:-0}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            [ -n "$SUM" ] && echo -n ", \"sum_ms\": $(awk -v sum="$SUM" 'BEGIN {printf "%.3f", sum * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            [ -n "$P50" ] && echo -n ", \"p50_ms\": $(awk -v p50="$P50" 'BEGIN {printf "%.3f", p50 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            [ -n "$P95" ] && echo -n ", \"p95_ms\": $(awk -v p95="$P95" 'BEGIN {printf "%.3f", p95 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            [ -n "$P99" ] && echo -n ", \"p99_ms\": $(awk -v p99="$P99" 'BEGIN {printf "%.3f", p99 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            echo -n "}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        done
+        
+        echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "  }" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        
+    else
+        echo "⚠️  No JWT validation duration metrics found in Prometheus endpoint"
+        echo "   This may indicate that TokenValidatorMonitor is not collecting metrics"
+    fi
+    
     # Compare with health check baseline if available
     if [ -f "$RESULTS_DIR/health-check-results.json" ]; then
         echo ""
@@ -119,7 +220,7 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "0")
         
         if [ "$HEALTH_P95" != "0" ] && [ "$JWT_P95" != "0" ]; then
-            JWT_OVERHEAD=$(echo "scale=1; $JWT_P95 - $HEALTH_P95" | bc)
+            JWT_OVERHEAD=$(awk -v jwt="$JWT_P95" -v health="$HEALTH_P95" 'BEGIN {printf "%.1f", jwt - health}')
             echo "  Health Check P95: ${HEALTH_P95}ms (system baseline)"
             echo "  JWT Validation P95: ${JWT_P95}ms"
             echo "  JWT Processing Overhead: ${JWT_OVERHEAD}ms"

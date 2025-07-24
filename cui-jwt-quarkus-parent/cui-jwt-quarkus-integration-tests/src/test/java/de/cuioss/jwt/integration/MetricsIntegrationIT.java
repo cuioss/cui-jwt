@@ -144,6 +144,8 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
         // Perform multiple token validations to ensure metrics are generated
         // By this point, other integration tests should have already created some metrics
         for (int i = 0; i < 3; i++) {
+            LOGGER.info("Performing token validation {}/3", i + 1);
+            
             given()
                 .contentType(CONTENT_TYPE_JSON)
                 .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
@@ -153,6 +155,19 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
                 .statusCode(200)
                 .body("valid", equalTo(true))
                 .body("message", equalTo(ACCESS_TOKEN_VALID_MESSAGE));
+            
+            // Collect and log performance metrics after each validation
+            String metricsAfterValidation = given()
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract()
+                .body()
+                .asString();
+            
+            LOGGER.info("=== Performance Metrics After Validation {} ===", i + 1);
+            logPerformanceMetrics(metricsAfterValidation);
         }
 
         LOGGER.info("JWT token validations completed - checking metrics immediately");
@@ -160,7 +175,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
         // JWT metrics should be initialized immediately when JwtMetricsCollector starts
         // The 10s schedule is only for updating values, not for initializing metrics definitions
 
-        // Read metrics and verify they exist
+        // Read final metrics and verify they exist
         String metricsResponse = given()
             .when()
             .get("/q/metrics")
@@ -230,6 +245,65 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
             }
         } else {
             LOGGER.info("Found {} JWT-related metric lines", jwtMetricLines);
+        }
+    }
+
+    /**
+     * Logs performance metrics from the TokenValidatorMonitor.
+     * Parses the Prometheus metrics response to extract JWT validation duration metrics.
+     */
+    private void logPerformanceMetrics(String metricsResponse) {
+        String[] lines = metricsResponse.split("\n");
+        boolean foundDurationMetrics = false;
+
+        for (String line : lines) {
+            // Look for cui_jwt_validation_duration metrics
+            if (line.contains("cui_jwt_validation_duration") && !line.startsWith("#")) {
+                foundDurationMetrics = true;
+                
+                // Parse the metric line
+                // Format: cui_jwt_validation_duration_seconds{step="parsing",quantile="0.5"} 0.001234
+                if (line.contains("{") && line.contains("}")) {
+                    String metricName = line.substring(0, line.indexOf("{"));
+                    String tags = line.substring(line.indexOf("{") + 1, line.indexOf("}"));
+                    String value = line.substring(line.lastIndexOf(" ") + 1).trim();
+                    
+                    // Extract step tag
+                    String step = "";
+                    if (tags.contains("step=")) {
+                        int stepStart = tags.indexOf("step=\"") + 6;
+                        int stepEnd = tags.indexOf("\"", stepStart);
+                        if (stepEnd > stepStart) {
+                            step = tags.substring(stepStart, stepEnd);
+                        }
+                    }
+                    
+                    // Log based on metric type
+                    if (metricName.contains("_count")) {
+                        LOGGER.info("  Step '{}' - Count: {}", step, value);
+                    } else if (metricName.contains("_sum")) {
+                        LOGGER.info("  Step '{}' - Sum: {} seconds", step, value);
+                    } else if (tags.contains("quantile")) {
+                        // Extract quantile value
+                        String quantile = "";
+                        if (tags.contains("quantile=")) {
+                            int qStart = tags.indexOf("quantile=\"") + 10;
+                            int qEnd = tags.indexOf("\"", qStart);
+                            if (qEnd > qStart) {
+                                quantile = tags.substring(qStart, qEnd);
+                            }
+                        }
+                        LOGGER.info("  Step '{}' - {}th percentile: {} seconds", step, 
+                            Double.parseDouble(quantile) * 100, value);
+                    } else if (metricName.contains("_max")) {
+                        LOGGER.info("  Step '{}' - Max: {} seconds", step, value);
+                    }
+                }
+            }
+        }
+        
+        if (!foundDurationMetrics) {
+            LOGGER.info("  No JWT duration metrics found yet - metrics may be updated on schedule");
         }
     }
 

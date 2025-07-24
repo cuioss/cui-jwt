@@ -55,7 +55,7 @@ echo "  Test Type: Health Check (system baseline)"
 echo "  Docker CPUs: 6 cores allocated"
 echo "  Docker Memory: 512MB allocated"
 echo "  Threads: $THREADS"
-echo "  Connections: $CONNECTIONS ($(echo "scale=0; $CONNECTIONS / $THREADS" | bc) per thread)"
+echo "  Connections: $CONNECTIONS ($((CONNECTIONS / THREADS)) per thread)"
 echo "  Duration: $DURATION"
 
 # Check if results were generated
@@ -85,7 +85,7 @@ if [ -f "$RESULTS_DIR/health-check-results.json" ]; then
         JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "0")
         
         if [ "$HEALTH_P95" != "0" ] && [ "$JWT_P95" != "0" ]; then
-            JWT_OVERHEAD=$(echo "scale=1; $JWT_P95 - $HEALTH_P95" | bc)
+            JWT_OVERHEAD=$(awk -v jwt="$JWT_P95" -v health="$HEALTH_P95" 'BEGIN {printf "%.1f", jwt - health}')
             echo "  Health Check P95: ${HEALTH_P95}ms (system baseline)"
             echo "  JWT Validation P95: ${JWT_P95}ms"
             echo "  JWT Processing Overhead: ${JWT_OVERHEAD}ms"
