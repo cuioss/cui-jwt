@@ -53,17 +53,15 @@ class QuarkusTokenValidatorProducerTest {
     @Inject
     List<IssuerConfig> issuerConfigs;
 
-    @Inject
-    SecurityEventCounter securityEventCounter;
-
     @Test
     @DisplayName("Should successfully inject and initialize all JWT components via CDI")
     void shouldSuccessfullyInjectAndInitializeJwtComponents() {
         assertFalse(issuerConfigs.isEmpty(), "Should have at least one issuer config");
 
-        assertEquals(securityEventCounter.getCounters().size(),
-                tokenValidator.getSecurityEventCounter().getCounters().size(),
-                "Injected SecurityEventCounter should have same counters as TokenValidator's");
+        // Verify SecurityEventCounter is accessible through TokenValidator
+        SecurityEventCounter securityEventCounter = tokenValidator.getSecurityEventCounter();
+        assertNotNull(securityEventCounter, "SecurityEventCounter should be accessible via TokenValidator");
+        assertTrue(securityEventCounter.getCounters().isEmpty(), "SecurityEventCounter should start with empty counters");
 
         assertTrue(issuerConfigs.stream()
                         .anyMatch(issuer -> "https://example.com/auth".equals(issuer.getIssuerIdentifier())),

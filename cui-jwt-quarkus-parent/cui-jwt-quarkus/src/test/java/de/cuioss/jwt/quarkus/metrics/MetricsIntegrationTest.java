@@ -51,6 +51,9 @@ class MetricsIntegrationTest {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    JwtMetricsCollector metricsCollector;
+
     @Test
     @DisplayName("Should record metrics for token validation")
     void shouldRecordMetricsForTokenValidation() {

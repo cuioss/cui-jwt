@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.metrics;
 
 import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
+import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.EventCategory;
@@ -32,6 +33,7 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import lombok.NonNull;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,13 +87,11 @@ public class JwtMetricsCollector {
     private static final String RESULT_FAILURE = "failure";
 
     private final MeterRegistry registry;
-    
-    // Lazy injected dependencies to avoid circular dependency with TokenValidatorProducer
-    @Inject
-    SecurityEventCounter securityEventCounter;
-    
-    @Inject
-    TokenValidatorMonitor tokenValidatorMonitor;
+    private final TokenValidator tokenValidator;
+
+    private SecurityEventCounter securityEventCounter;
+    private TokenValidatorMonitor tokenValidatorMonitor;
+
 
     // Caching of counters to avoid lookups
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
@@ -103,35 +103,26 @@ public class JwtMetricsCollector {
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new JwtMetricsCollector with the given MeterRegistry.
-     * SecurityEventCounter and TokenValidatorMonitor are injected via field injection
-     * to avoid circular dependency with TokenValidatorProducer.
+     * Creates a new JwtMetricsCollector with the given MeterRegistry and TokenValidator.
      *
      * @param registry the Micrometer registry
+     * @param tokenValidator the token validator containing monitoring components
      */
     @Inject
-    public JwtMetricsCollector(MeterRegistry registry) {
+    public JwtMetricsCollector(@NonNull MeterRegistry registry, @NonNull TokenValidator tokenValidator) {
         this.registry = registry;
+        this.tokenValidator = tokenValidator;
     }
 
     /**
-     * Initializes metrics collection on application startup.
-     *
-     * @param event the startup event
+     * Initializes all metrics when the application starts.
+     * 
+     * @param ev the startup event
      */
-    void onStart(@Observes StartupEvent event) {
+    void initialize(@Observes StartupEvent ev) {
         LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
-        initializeMetrics();
-    }
-
-    /**
-     * Initializes all metrics.
-     */
-    private void initializeMetrics() {
-        if (securityEventCounter == null) {
-            LOGGER.warn(WARN.SECURITY_EVENT_COUNTER_NOT_AVAILABLE::format);
-            return;
-        }
+        securityEventCounter = tokenValidator.getSecurityEventCounter();
+        tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
 
         // Register counters for all event types
         registerEventCounters();
@@ -217,10 +208,6 @@ public class JwtMetricsCollector {
      */
     @Scheduled(every = "${" + JwtPropertyKeys.METRICS.COLLECTION_INTERVAL + ":10s}")
     public void updateCounters() {
-        if (securityEventCounter == null) {
-            return;
-        }
-
         updateSecurityEventCounters();
         updatePerformanceMetrics();
     }
@@ -229,7 +216,6 @@ public class JwtMetricsCollector {
      * Updates security event counters from the SecurityEventCounter state.
      */
     private void updateSecurityEventCounters() {
-
         // Get current counts for all event types
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
 

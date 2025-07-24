@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
-// Removed imports for cui-jwt-quarkus classes - they now use @RegisterForReflection
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
@@ -64,6 +63,7 @@ import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -267,8 +267,6 @@ public class CuiJwtProcessor {
 
     /**
      * Register additional CDI beans for JWT validation.
-     * Note: cui-jwt-quarkus module classes now have @ApplicationScoped annotations
-     * and are auto-discovered by CDI scanning.
      *
      * @return A {@link AdditionalBeanBuildItem} for CDI beans that need explicit registration
      */
@@ -283,7 +281,7 @@ public class CuiJwtProcessor {
                         de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
                         ParserConfigResolver.class,
                         VertxServletObjectsResolver.class,
-                        de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector.class
+                        JwtMetricsCollector.class
                 )
                 .setUnremovable()
                 .build();
@@ -292,7 +290,6 @@ public class CuiJwtProcessor {
     /**
      * Register core JWT validation beans as unremovable to ensure they're available for injection.
      * This is critical for native image compilation where CDI discovery can be limited.
-     * Note: cui-jwt-quarkus module beans are marked unremovable via their producers.
      *
      * @param unremovableBeans producer for unremovable bean build items
      */
@@ -301,10 +298,8 @@ public class CuiJwtProcessor {
         // Ensure core library beans are never removed from the CDI container
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
                 DotName.createSimple(TokenValidator.class.getName()),
-                DotName.createSimple("de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector"),
-                DotName.createSimple("de.cuioss.jwt.validation.security.SecurityEventCounter"),
-                DotName.createSimple("de.cuioss.jwt.validation.metrics.TokenValidatorMonitor"),
-                DotName.createSimple("io.micrometer.core.instrument.MeterRegistry")
+                DotName.createSimple(JwtMetricsCollector.class.getName()),
+                DotName.createSimple(MeterRegistry.class.getName())
         ));
     }
 

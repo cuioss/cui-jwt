@@ -37,7 +37,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
 /**
  * CDI producer for JWT validation related instances.
  * <p>
- * This producer creates and manages all JWT validation components from
+ * This producer creates and manages JWT validation components from
  * configuration properties. Components are initialized during startup
  * via {@link PostConstruct} and exposed through field-based producers.
  * </p>
@@ -49,10 +49,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * <p>
  * Produced components:
  * <ul>
- *   <li>{@link TokenValidator} - Main JWT validation component</li>
+ *   <li>{@link TokenValidator} - Main JWT validation component (includes SecurityEventCounter and TokenValidatorMonitor)</li>
  *   <li>{@link List}&lt;{@link IssuerConfig}&gt; - Resolved issuer configurations</li>
- *   <li>{@link SecurityEventCounter} - Security event monitoring</li>
- *   <li>{@link TokenValidatorMonitor} - Performance metrics monitoring</li>
  * </ul>
  *
  * @since 1.0

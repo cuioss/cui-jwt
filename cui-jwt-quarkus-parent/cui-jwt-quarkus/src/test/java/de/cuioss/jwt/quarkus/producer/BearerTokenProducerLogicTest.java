@@ -80,7 +80,6 @@ class BearerTokenProducerLogicTest {
 
             // Only test the public API now
 
-            // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
             assertTrue(resolved.isPresent());
             assertEquals(expected, resolved.get());
@@ -129,7 +128,6 @@ class BearerTokenProducerLogicTest {
 
             // Only test the public API now
 
-            // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
             assertFalse(resolved.isPresent());
         }
@@ -155,7 +153,6 @@ class BearerTokenProducerLogicTest {
 
             // Only test the public API now
 
-            // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
             assertFalse(resolved.isPresent());
         }

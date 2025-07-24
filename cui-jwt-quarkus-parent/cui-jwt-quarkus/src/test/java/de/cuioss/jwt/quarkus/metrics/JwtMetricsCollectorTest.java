@@ -25,10 +25,8 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,9 +63,6 @@ class JwtMetricsCollectorTest {
     @Inject
     JwtMetricsCollector metricsCollector;
 
-    @Inject
-    Event<StartupEvent> startupEvent;
-
     @Test
     @DisplayName("Should initialize metrics for all event types")
     void shouldInitializeMetrics() {
@@ -91,9 +86,6 @@ class JwtMetricsCollectorTest {
     @Test
     @DisplayName("Should record metrics for security events")
     void shouldHaveMetricsForSecurityEvents() {
-        // Fire the startup event to ensure metrics are initialized
-        startupEvent.fire(new StartupEvent());
-
         // Get the security event counter from the token validator
         SecurityEventCounter counter = tokenValidator.getSecurityEventCounter();
         assertNotNull(counter);
@@ -139,9 +131,6 @@ class JwtMetricsCollectorTest {
     @Test
     @DisplayName("Should record performance metrics when monitor has data")
     void shouldRecordPerformanceMetrics() {
-        // Fire the startup event to ensure metrics are initialized
-        startupEvent.fire(new StartupEvent());
-
         // Get the performance monitor from the token validator
         TokenValidatorMonitor monitor = tokenValidator.getPerformanceMonitor();
         assertNotNull(monitor);
