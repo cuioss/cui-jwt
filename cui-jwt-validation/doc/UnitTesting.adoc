@@ -16,7 +16,7 @@ The project provides a test artifact with the classifier `generators` that conta
 
 === Maven Dependency
 
-For Maven dependency information, see xref:README.adoc#test-artifact[Test Artifact Dependencies] in the main module documentation.
+For Maven dependency information, see xref:../README.adoc#test-artifact[Test Artifact Dependencies] in the main module documentation.
 
 === Contents
 
@@ -256,7 +256,7 @@ void shouldRejectTokenWithMissingClaims() {
 ----
 
 == Testing Code Using OIDC Discovery (`HttpWellKnownResolver`)
-_See link:../doc/specification/well-known.adoc[OIDC Discovery Specification Details]_
+_See link:../../doc/specification/well-known.adoc[OIDC Discovery Specification Details]_
 
 When your application uses the `HttpWellKnownResolver` to discover OIDC provider details, you'll want to test this integration without making actual network calls. The `de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher` utility class is provided for this purpose.
 

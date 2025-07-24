@@ -1,4 +1,4 @@
-= JWT Validation Module
+ t= JWT Validation Module
 :toc: macro
 :toclevels: 3
 :sectnumlevels: 1
@@ -682,4 +682,5 @@ For a complete list of event types and categories, refer to the `SecurityEventCo
 * xref:../doc/specification/well-known.adoc[OIDC Discovery] - OpenID Connect Discovery specification
 * xref:../doc/security/security-specifications.adoc[Security Specifications] - Security implementation details
 * xref:../doc/security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations
-* xref:UnitTesting.adoc[Test Utilities] - Testing support documentation
+* xref:doc/UnitTesting.adoc[Test Utilities] - Testing support documentation
+* xref:doc/developing.adoc[Developer Guide] - Guide for extending the library
