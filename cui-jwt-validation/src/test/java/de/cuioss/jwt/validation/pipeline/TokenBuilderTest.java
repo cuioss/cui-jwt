@@ -49,7 +49,6 @@ class TokenBuilderTest {
 
     @BeforeEach
     void setUp() {
-        // Create a simple IssuerConfig for testing
         IssuerConfig issuerConfig = IssuerConfig.builder()
                 .issuerIdentifier("test-issuer")
                 .jwksContent("{\"keys\":[]}")
@@ -84,10 +83,8 @@ class TokenBuilderTest {
         @Test
         @DisplayName("createAccessToken should handle DecodedJwt with missing body")
         void createAccessTokenShouldHandleDecodedJwtWithMissingBody() {
-            // Given a DecodedJwt with null body
             DecodedJwt decodedJwt = new DecodedJwt(null, null, null, new String[]{"", "", ""}, "test-validation");
 
-            // When creating an AccessTokenContent
             Optional<AccessTokenContent> result = tokenBuilder.createAccessToken(decodedJwt);
             assertTrue(result.isEmpty(), "Should return empty Optional when body is missing");
         }
@@ -121,10 +118,8 @@ class TokenBuilderTest {
         @Test
         @DisplayName("createIdToken should handle DecodedJwt with missing body")
         void createIdTokenShouldHandleDecodedJwtWithMissingBody() {
-            // Given a DecodedJwt with null body
             DecodedJwt decodedJwt = new DecodedJwt(null, null, null, new String[]{"", "", ""}, "test-validation");
 
-            // When creating an IdTokenContent
             Optional<IdTokenContent> result = tokenBuilder.createIdToken(decodedJwt);
             assertTrue(result.isEmpty(), "Should return empty Optional when body is missing");
         }
@@ -137,27 +132,23 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should extract claims from JsonObject")
         void extractClaimsForRefreshTokenShouldExtractClaims() {
-            // Given a JsonObject with claims
             JsonObjectBuilder builder = Json.createObjectBuilder();
             builder.add("sub", "test-subject");
             builder.add("iss", "test-issuer");
             builder.add("custom-claim", "custom-value");
             JsonObject jsonObject = builder.build();
 
-            // When extracting claims
             Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
             assertNotNull(claims, "Claims should not be null");
             assertFalse(claims.isEmpty(), "Claims should not be empty");
             assertEquals(3, claims.size(), "Should extract all claims");
 
-            // Verify standard claims
             assertTrue(claims.containsKey("sub"), "Claims should contain subject");
             assertEquals("test-subject", claims.get("sub").getOriginalString(), "Subject claim value should match");
 
             assertTrue(claims.containsKey("iss"), "Claims should contain issuer");
             assertEquals("test-issuer", claims.get("iss").getOriginalString(), "Issuer claim value should match");
 
-            // Verify custom claim
             assertTrue(claims.containsKey("custom-claim"), "Claims should contain custom claim");
             assertEquals("custom-value", claims.get("custom-claim").getOriginalString(), "Custom claim value should match");
         }
@@ -165,10 +156,8 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should handle empty JsonObject")
         void extractClaimsForRefreshTokenShouldHandleEmptyJsonObject() {
-            // Given an empty JsonObject
             JsonObject jsonObject = Json.createObjectBuilder().build();
 
-            // When extracting claims
             Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
             assertNotNull(claims, "Claims should not be null");
             assertTrue(claims.isEmpty(), "Claims should be empty");

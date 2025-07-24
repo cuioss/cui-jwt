@@ -43,27 +43,17 @@ class SignatureTemplateManagerTest {
         manager = new SignatureTemplateManager();
     }
 
-    /**
-     * Tests that all supported algorithms can create Signature instances.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512"})
     void getSignatureInstanceSupportedAlgorithms(String algorithm) {
-        // When
         Signature signature = manager.getSignatureInstance(algorithm);
-
-        // Then
         assertNotNull(signature, "Signature should not be null for algorithm: " + algorithm);
         assertTrue(signature.getAlgorithm().contains("RSA") || signature.getAlgorithm().contains("ECDSA"),
                 "Algorithm should be RSA or ECDSA based for: " + algorithm);
     }
 
-    /**
-     * Tests that unsupported algorithms throw IllegalArgumentException.
-     */
     @Test
     void getSignatureInstanceUnsupportedAlgorithm() {
-        // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> manager.getSignatureInstance("UNSUPPORTED"));
 
@@ -71,33 +61,21 @@ class SignatureTemplateManagerTest {
                 "Exception message should mention unsupported algorithm");
     }
 
-    /**
-     * Tests that template caching works correctly by ensuring multiple calls return different instances
-     * but with the same algorithm.
-     */
     @Test
     void templateCaching() {
-        // When
         Signature signature1 = manager.getSignatureInstance("ES256");
         Signature signature2 = manager.getSignatureInstance("ES256");
-
-        // Then
         assertNotSame(signature1, signature2, "Different Signature instances should be returned");
         assertEquals(signature1.getAlgorithm(), signature2.getAlgorithm(),
                 "Same algorithm should be used for both instances");
     }
 
-    /**
-     * Tests that the manager is thread-safe by calling it concurrently from multiple threads.
-     */
     @Test
     void concurrentAccess() {
-        // Given
         int numberOfThreads = 10;
         int operationsPerThread = 20;
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-        // When
         for (int i = 0; i < numberOfThreads; i++) {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 for (int j = 0; j < operationsPerThread; j++) {
@@ -111,71 +89,45 @@ class SignatureTemplateManagerTest {
             futures.add(future);
         }
 
-        // Wait for all futures to complete
         CompletableFuture<Void> allFutures = CompletableFuture.allOf(
                 futures.toArray(new CompletableFuture[0]));
 
-        // Then
         assertDoesNotThrow(() -> allFutures.get(), "Concurrent access should not throw exceptions");
     }
 
-    /**
-     * Tests that PSS algorithms have proper parameters set.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"PS256", "PS384", "PS512"})
     void pssAlgorithms(String algorithm) {
-        // When
         Signature signature = manager.getSignatureInstance(algorithm);
-
-        // Then
         assertNotNull(signature, "PSS signature should not be null for algorithm: " + algorithm);
         assertEquals("RSASSA-PSS", signature.getAlgorithm(),
                 "PSS algorithms should use RSASSA-PSS");
     }
 
-    /**
-     * Tests that ECDSA algorithms work correctly.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"ES256", "ES384", "ES512"})
     void ecdsaAlgorithms(String algorithm) {
-        // When
         Signature signature = manager.getSignatureInstance(algorithm);
-
-        // Then
         assertNotNull(signature, "ECDSA signature should not be null for algorithm: " + algorithm);
         assertTrue(signature.getAlgorithm().contains("ECDSA"),
                 "ECDSA algorithms should contain 'ECDSA' in name");
     }
 
-    /**
-     * Tests that RSA algorithms work correctly.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"RS256", "RS384", "RS512"})
     void rsaAlgorithms(String algorithm) {
-        // When
         Signature signature = manager.getSignatureInstance(algorithm);
-
-        // Then
         assertNotNull(signature, "RSA signature should not be null for algorithm: " + algorithm);
         assertTrue(signature.getAlgorithm().contains("RSA"),
                 "RSA algorithms should contain 'RSA' in name");
     }
 
-    /**
-     * Tests UnsupportedAlgorithmException behavior.
-     */
     @Test
     void unsupportedAlgorithmException() {
-        // Given
         String invalidAlgorithm = "INVALID_ALG";
 
-        // When & Then
         SignatureTemplateManager.UnsupportedAlgorithmException exception =
                 assertThrows(SignatureTemplateManager.UnsupportedAlgorithmException.class, () -> {
-                    // Force the exception by simulating a failure in template creation
                     throw new SignatureTemplateManager.UnsupportedAlgorithmException(
                             "Test exception for: " + invalidAlgorithm,
                             new NoSuchAlgorithmException("Mock exception"));
