@@ -84,6 +84,21 @@ public class TokenSignatureValidator {
 
     /**
      * Validates the signature of a decoded JWT Token.
+     * <p>
+     * <strong>Preconditions:</strong> This validator assumes that the following have already been validated:
+     * <ul>
+     *   <li>Token format (3 parts: header.payload.signature)</li>
+     *   <li>Algorithm (alg) claim presence and support - validated by {@link TokenHeaderValidator#validateAlgorithm}</li>
+     *   <li>Header structure and basic JWT format</li>
+     * </ul>
+     * <p>
+     * This validator is responsible for:
+     * <ul>
+     *   <li>Key ID (kid) claim presence validation</li>
+     *   <li>Key retrieval from JWKS</li>
+     *   <li>Algorithm compatibility between token and key</li>
+     *   <li>Cryptographic signature verification</li>
+     * </ul>
      *
      * @param decodedJwt the decoded JWT Token to validate
      * @throws TokenValidationException if the signature is invalid
@@ -92,64 +107,41 @@ public class TokenSignatureValidator {
     public void validateSignature(@NonNull DecodedJwt decodedJwt) {
         LOGGER.debug("Validating validation signature");
 
-        // Get the kid from the validation header
-        var kid = decodedJwt.getKid();
-        if (kid.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required key ID (kid) claim in token header. Available header claims: " + (decodedJwt.getHeader().isPresent() ? decodedJwt.getHeader().get().keySet() : "none")
-            );
-        }
+        // Get the kid from the validation header - precondition: already validated by TokenHeaderValidator
+        var kid = decodedJwt.getKid().orElseThrow(() -> 
+            new IllegalStateException("Key ID (kid) should have been validated by TokenHeaderValidator"));
 
-        // Get the algorithm from the validation header
-        var algorithm = decodedJwt.getAlg();
-        if (algorithm.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("alg"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required algorithm (alg) claim in token header. Available header claims: " + (decodedJwt.getHeader().isPresent() ? decodedJwt.getHeader().get().keySet() : "none")
-            );
-        }
+        // Get the algorithm from the validation header - precondition: already validated by TokenHeaderValidator
+        var algorithm = decodedJwt.getAlg().orElseThrow(() -> 
+            new IllegalStateException("Algorithm (alg) should have been validated by TokenHeaderValidator"));
 
-        // Get the signature from the validation
-        var signature = decodedJwt.getSignature();
-        if (signature.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("signature"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required signature in token. Token parts: " + (decodedJwt.parts() != null ? decodedJwt.parts().length : 0)
-            );
-        }
+        // Signature validation is performed in verifySignature method
 
         // Get the key from the JwksLoader
-        var keyInfo = jwksLoader.getKeyInfo(kid.get());
+        var keyInfo = jwksLoader.getKeyInfo(kid);
         if (keyInfo.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.KEY_NOT_FOUND.format(kid.get()));
+            LOGGER.warn(JWTValidationLogMessages.WARN.KEY_NOT_FOUND.format(kid));
             securityEventCounter.increment(SecurityEventCounter.EventType.KEY_NOT_FOUND);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.KEY_NOT_FOUND,
-                    "Key not found for key ID: %s. Please verify the key exists in the JWKS endpoint or configuration.".formatted(kid.get())
+                    "Key not found for key ID: %s. Please verify the key exists in the JWKS endpoint or configuration.".formatted(kid)
             );
         }
 
         // Verify that the key's algorithm matches the validation's algorithm
-        if (!isAlgorithmCompatible(algorithm.get(), keyInfo.get().algorithm())) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format(algorithm.get()));
+        if (!isAlgorithmCompatible(algorithm, keyInfo.get().algorithm())) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format(algorithm));
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
-                    "Algorithm not compatible with key: %s is not compatible with %s".formatted(algorithm.get(), keyInfo.get().algorithm())
+                    "Algorithm not compatible with key: %s is not compatible with %s".formatted(algorithm, keyInfo.get().algorithm())
             );
         }
 
         // Verify the signature
         try {
             LOGGER.debug("All checks passed, verifying signature");
-            verifySignature(decodedJwt, keyInfo.get().key(), algorithm.get());
+            verifySignature(decodedJwt, keyInfo.get().key(), algorithm);
         } catch (IllegalArgumentException e) {
             LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()), e);
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
@@ -171,15 +163,10 @@ public class TokenSignatureValidator {
      */
     private void verifySignature(DecodedJwt decodedJwt, PublicKey publicKey, String algorithm) {
         LOGGER.trace("Verifying signature:\nDecodedJwt: %s\nPublicKey: %s\nAlgorithm: %s", decodedJwt, publicKey, algorithm);
-        // Get the parts of the validation
+        // Get the parts of the validation - precondition: format already validated during parsing
         String[] parts = decodedJwt.parts();
-        if (parts.length != 3) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.format(parts.length));
-            securityEventCounter.increment(SecurityEventCounter.EventType.INVALID_JWT_FORMAT);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.INVALID_JWT_FORMAT,
-                    "Invalid JWT format: expected 3 parts but found %s".formatted(parts.length)
-            );
+        if (parts == null || parts.length != 3) {
+            throw new IllegalStateException("JWT format should have been validated during token parsing");
         }
 
         // Get the data to verify (header.payload)

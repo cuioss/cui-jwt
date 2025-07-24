@@ -68,6 +68,13 @@ public class TokenHeaderValidator {
     /**
      * Validates a decoded JWT Token's header.
      * <p>
+     * This validator checks:
+     * <ul>
+     *   <li>Algorithm (alg) claim presence and support</li>
+     *   <li>Key ID (kid) claim presence for signature validation</li>
+     *   <li>Absence of embedded JWK to prevent CVE-2018-0114 attacks</li>
+     * </ul>
+     * <p>
      * Note: Issuer validation is now performed at the TokenValidator level during
      * issuer configuration resolution, not here.
      * </p>
@@ -79,6 +86,7 @@ public class TokenHeaderValidator {
         LOGGER.trace("Validating validation header");
 
         validateAlgorithm(decodedJwt);
+        validateKeyId(decodedJwt);
         // Issuer validation removed - now handled in TokenValidator.resolveIssuerConfig()
         validateNoEmbeddedJwk(decodedJwt);
 
@@ -132,6 +140,26 @@ public class TokenHeaderValidator {
         }
 
         LOGGER.debug("Algorithm is valid: %s", algorithm.get());
+    }
+
+    /**
+     * Validates that the token contains a key ID (kid) claim in the header.
+     * The kid is required for signature validation to identify the correct key.
+     *
+     * @param decodedJwt the decoded JWT Token
+     * @throws TokenValidationException if the kid claim is missing
+     */
+    private void validateKeyId(DecodedJwt decodedJwt) {
+        var kid = decodedJwt.getKid();
+        if (kid.isEmpty()) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
+            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
+            throw new TokenValidationException(
+                    SecurityEventCounter.EventType.MISSING_CLAIM,
+                    "Missing required key ID (kid) claim in token header. Available header claims: " + (decodedJwt.getHeader().isPresent() ? decodedJwt.getHeader().get().keySet() : "none")
+            );
+        }
+        LOGGER.debug("Key ID is valid: %s", kid.get());
     }
 
 }

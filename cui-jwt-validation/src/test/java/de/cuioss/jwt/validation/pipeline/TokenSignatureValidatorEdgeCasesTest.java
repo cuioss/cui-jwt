@@ -100,24 +100,20 @@ class TokenSignatureValidatorEdgeCasesTest {
     }
 
     @Test
-    @DisplayName("Should reject token with missing algorithm (alg) claim")
+    @DisplayName("Should throw IllegalStateException when algorithm is missing (precondition violation)")
     void shouldRejectTokenWithMissingAlgorithm() {
-        long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM);
-
         String token = createTokenWithoutAlgorithm();
 
         DecodedJwt decodedJwt = jwtParser.decode(token);
         assertNotNull(decodedJwt, "Decoded JWT should not be null");
 
-        TokenValidationException exception = assertThrows(TokenValidationException.class,
+        // Algorithm validation is now a precondition - should be validated by TokenHeaderValidator first
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> validator.validateSignature(decodedJwt),
-                "Should throw exception when algorithm is missing");
+                "Should throw IllegalStateException when algorithm precondition is violated");
 
-        assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType(),
-                "Exception should have MISSING_CLAIM event type");
-
-        assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM),
-                "MISSING_CLAIM event should be incremented");
+        assertTrue(exception.getMessage().contains("Algorithm (alg) should have been validated by TokenHeaderValidator"),
+                "Exception message should indicate precondition violation");
     }
 
     /**

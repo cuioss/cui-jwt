@@ -180,11 +180,8 @@ class TokenSignatureValidatorTest {
     }
 
     @Test
-    @DisplayName("Should reject validation with missing kid")
+    @DisplayName("Should throw IllegalStateException when kid is missing (precondition violation)")
     void shouldRejectTokenWithMissingKid() {
-        // Get initial count
-        long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM);
-
         // Create a validation without a kid
         String token = createTokenWithoutKid();
 
@@ -200,18 +197,12 @@ class TokenSignatureValidatorTest {
         // Create the validator with the in-memory JwksLoader and security event counter
         TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
 
-        // Validate the signature - should throw an exception
-        TokenValidationException exception = assertThrows(TokenValidationException.class,
+        // Kid validation is now a precondition - should be validated by TokenHeaderValidator first
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> validator.validateSignature(decodedJwt));
 
-        // Verify the exception has the correct event type
-        assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType());
-
-        // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Token is missing required claim: kid");
-
-        // Verify security event was recorded
-        assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+        assertTrue(exception.getMessage().contains("Key ID (kid) should have been validated by TokenHeaderValidator"),
+                "Exception message should indicate precondition violation");
     }
 
     @Test
