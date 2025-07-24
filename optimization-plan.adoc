@@ -39,10 +39,16 @@
 
 === Quick Performance Summary
 
-**RS256 Performance**: 143.0ms P95 latency, 1,533 req/sec throughput (BouncyCastle)
+**RS256 Performance**: 143.0ms P95 latency (194.8ms with new metrics), 1,533 req/sec throughput (BouncyCastle)
 **Target**: <20ms P95 latency (10ms achievable based on 5ms microbenchmark)
 **Remaining Gap**: 123ms (86% improvement still needed)
 **Bottleneck**: RSA signature verification (`BigInteger.modPow()` ~97% of time)
+
+**New Metrics Insights**:
+- Average validation time: 16.573ms (complete_validation)
+- Individual steps sum: 6.395ms (token_parsing + header_validation + claims_validation + signature_validation)
+- **Unaccounted overhead: 10.178ms (61.4%)** - likely framework/HTTP processing
+- High variance: P95 (194.8ms) and P99 (267.9ms) are 11.8x and 16.2x higher than average
 
 === Infrastructure Optimization Status ✅ **COMPLETED**
 
@@ -120,51 +126,67 @@
    - Integrated with 17% improvement (173ms → 143ms)
    - 29ms RSA overhead reduction vs default JDK
 
-4. **Production Monitoring Implementation** 🚀 **NEXT FOCUS**:
-   - Library-agnostic metrics collection (similar to SecurityEventCounter pattern)
-   - Pipeline step measurement for each JWT validation phase
-   - Quarkus module integration with Micrometer translation layer
-   - Real-world performance insights for production optimization
+4. **Production Monitoring Implementation** ✅ **COMPLETED**:
+   - Library-agnostic metrics collection implemented via TokenValidatorMonitor
+   - Pipeline step measurement for each JWT validation phase (token_parsing, header_validation, claims_validation, signature_validation, complete_validation)
+   - Quarkus module integration with Micrometer translation layer (CuiJwtMetricsProducer)
+   - Real-world performance insights now available through Prometheus metrics
 
 **Target Performance**: <20ms P95 (123ms improvement needed from current 143ms BouncyCastle baseline)
 
-=== Priority 2: Production Monitoring Setup 📊 **REQUIRED**
+=== Priority 2: Metrics Analysis & Optimization 📊 **NEW FINDINGS**
 
-**Goal**: Establish comprehensive JWT validation monitoring for production insights
+**Goal**: Address critical gaps identified in benchmark monitoring analysis
 
-**Implementation Tasks**:
+**Key Findings from Benchmark Analysis**:
 
-1. **Micrometer Metrics Integration**:
-+
-[source,java]
-----
-@Timed(value = "jwt.validation.time", histogram = true)
-@Counted(value = "jwt.validation.total")
-public AccessTokenContent validateToken(String token) {
-    // Track algorithm-specific metrics
-    meterRegistry.counter("jwt.validation.algorithm", "type", algorithm).increment();
-}
-----
+1. **Missing Performance Time** 🔴 **CRITICAL**:
+   - Complete validation: 16.573ms average
+   - Sum of individual steps: 6.395ms
+   - **Unaccounted time: 10.178ms (61.4% of total)**
+   - This missing time is likely framework overhead, HTTP processing, or unmeasured operations
 
-2. **OpenTelemetry Tracing**:
-   - Trace full JWT validation pipeline
-   - Identify exact bottlenecks in production
-   - Correlate with infrastructure metrics
+2. **Inconsistent Metric Collection** ⚠️ **WARNING**:
+   - Header validation: Only 14 of 29 requests (48.3%) recorded
+   - Suggests conditional validation logic or metric recording issues
 
-3. **Custom JFR Events** (for better native image profiling):
-+
-[source,java]
-----
-@Name("jwt.RSAVerification")
-@Label("RSA Signature Verification")
-@Category("JWT Validation")
-class RSAVerificationEvent extends Event {
-    @Label("Key Size") int keySize;
-    @Label("Duration") long duration;
-}
-----
+3. **High Latency Variance** ⚠️ **WARNING**:
+   - Average: 16.573ms
+   - P95: 194.8ms (11.8x average)
+   - P99: 267.9ms (16.2x average)
+   - Indicates GC pauses, resource contention, or periodic operations
 
-**Expected Outcomes**: Real production data to guide optimization priorities
+**Required Actions**:
+
+1. **Add Missing Metrics in JWT Validation Library** ✅ **IN PROGRESS**:
+   - Add TOKEN_FORMAT_CHECK measurement for empty/blank validation
+   - Add ISSUER_EXTRACTION measurement for issuer claim extraction
+   - Add ISSUER_CONFIG_RESOLUTION measurement for config lookup
+   - Add TOKEN_BUILDING measurement for token object creation
+   - Track token type (access/id/refresh) in metrics
+
+2. **Fix Header Validation Metrics** ✅ **RESOLVED**:
+   - Root cause identified: Refresh tokens skip the validation pipeline
+   - No fix needed - this is expected behavior for refresh tokens
+   - Consider adding separate refresh token metrics
+
+3. **Add HTTP-Level Metrics in Quarkus Module** 🚀 **NEXT TASK**:
+   - Implement HTTP request/response processing time metrics
+   - Measure token extraction from Authorization header
+   - Track response formatting and serialization time
+   - Capture framework overhead (JAX-RS, filters, interceptors)
+   - Monitor memory allocation and GC impact
+   - Implementation location: cui-jwt-quarkus module
+
+4. **Profile High Percentile Latencies**:
+   - Add JFR events for outlier detection
+   - Monitor GC activity during benchmarks
+   - Track thread pool and connection pool metrics
+
+5. **Benchmark Infrastructure Updates**:
+   - Add warmup period to eliminate JIT compilation effects
+   - Extend measurement duration for stable percentiles
+   - Monitor CPU and memory usage during tests
 
 
 === Priority 3: Benchmark Infrastructure Enhancement 🔧
@@ -203,6 +225,18 @@ class RSAVerificationEvent extends Event {
 6. **Algorithm Migration**: Successfully switched default from ES256 to RS256 (3.1x improvement)
 7. **Research Documentation**: Proven 8x ES256/RS256 gap is algorithmic, not implementation-based
 8. **BouncyCastle JCA Provider**: Integrated with 17% performance improvement (29ms reduction)
+
+9. **Production Metrics Integration**: Complete TokenValidatorMonitor implementation
+   - **Library-level**: TokenValidatorMonitor interface with DefaultTokenValidatorMonitor implementation
+   - **Pipeline metrics**: Automatic timing for token_parsing, header_validation, claims_validation, signature_validation, complete_validation
+   - **Quarkus integration**: CuiJwtMetricsProducer translates to Micrometer metrics
+   - **Prometheus export**: cui_jwt_validation_duration_seconds histogram with step labels
+   - **Benchmark integration**: Metrics collected during performance tests for analysis
+
+10. **Integration Test Build Optimization**: Reduced incremental build time from >2 minutes to 22 seconds
+    - Disabled automatic native compilation in Maven lifecycle
+    - Added conditional build script (build-native-if-needed.sh)
+    - Native executable built only when missing (first run or after clean)
 
 === In Progress
 

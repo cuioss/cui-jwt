@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
+import de.cuioss.jwt.validation.TokenType;
 import lombok.NonNull;
 
 import java.time.Duration;
@@ -74,6 +75,12 @@ public class TokenValidatorMonitor {
     private final StripedRingBuffer[] measurementBuffers;
 
     /**
+     * Tracks the count of tokens processed by type.
+     * Array indexed by TokenType.ordinal()
+     */
+    private final java.util.concurrent.atomic.AtomicLong[] tokenTypeCounts;
+
+    /**
      * Creates a new metrics monitor with default window size.
      */
     public TokenValidatorMonitor() {
@@ -95,6 +102,12 @@ public class TokenValidatorMonitor {
         this.measurementBuffers = new StripedRingBuffer[MeasurementType.values().length];
         for (int i = 0; i < measurementBuffers.length; i++) {
             measurementBuffers[i] = new StripedRingBuffer(windowSize);
+        }
+
+        // Initialize token type counters
+        this.tokenTypeCounts = new java.util.concurrent.atomic.AtomicLong[TokenType.values().length];
+        for (int i = 0; i < tokenTypeCounts.length; i++) {
+            tokenTypeCounts[i] = new java.util.concurrent.atomic.AtomicLong(0);
         }
     }
 
@@ -155,6 +168,44 @@ public class TokenValidatorMonitor {
         for (StripedRingBuffer buffer : measurementBuffers) {
             buffer.reset();
         }
+        for (java.util.concurrent.atomic.AtomicLong counter : tokenTypeCounts) {
+            counter.set(0);
+        }
+    }
+
+    /**
+     * Records that a token of the specified type was processed.
+     * <p>
+     * This method increments the counter for the given token type,
+     * allowing tracking of the distribution of token types being validated.
+     *
+     * @param tokenType the type of token that was processed
+     */
+    public void recordTokenType(@NonNull TokenType tokenType) {
+        tokenTypeCounts[tokenType.ordinal()].incrementAndGet();
+    }
+
+    /**
+     * Gets the count of tokens processed for the specified type.
+     *
+     * @param tokenType the type of token to get the count for
+     * @return the number of tokens of this type that have been processed
+     */
+    public long getTokenTypeCount(@NonNull TokenType tokenType) {
+        return tokenTypeCounts[tokenType.ordinal()].get();
+    }
+
+    /**
+     * Gets the counts of all token types as a map.
+     *
+     * @return a map of token type to count
+     */
+    public java.util.Map<TokenType, Long> getTokenTypeCounts() {
+        java.util.Map<TokenType, Long> counts = new java.util.EnumMap<>(TokenType.class);
+        for (TokenType type : TokenType.values()) {
+            counts.put(type, tokenTypeCounts[type.ordinal()].get());
+        }
+        return counts;
     }
 
 }

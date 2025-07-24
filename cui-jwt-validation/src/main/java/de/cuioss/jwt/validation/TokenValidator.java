@@ -189,6 +189,7 @@ public class TokenValidator {
 
         LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED::format);
         securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
+        performanceMonitor.recordTokenType(TokenType.ACCESS_TOKEN);
 
         return result;
     }
@@ -210,6 +211,7 @@ public class TokenValidator {
 
         LOGGER.debug(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED::format);
         securityEventCounter.increment(SecurityEventCounter.EventType.ID_TOKEN_CREATED);
+        performanceMonitor.recordTokenType(TokenType.ID_TOKEN);
 
         return result;
     }
@@ -248,6 +250,7 @@ public class TokenValidator {
         var refreshToken = new RefreshTokenContent(tokenString, claims);
         LOGGER.debug(JWTValidationLogMessages.DEBUG.REFRESH_TOKEN_CREATED::format);
         securityEventCounter.increment(SecurityEventCounter.EventType.REFRESH_TOKEN_CREATED);
+        performanceMonitor.recordTokenType(TokenType.REFRESH_TOKEN);
         return refreshToken;
     }
 
@@ -301,13 +304,19 @@ public class TokenValidator {
     }
 
     private void validateTokenFormat(String tokenString) {
-        if (MoreStrings.isBlank(tokenString)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
-            securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.TOKEN_EMPTY,
-                    "Token is empty or null"
-            );
+        long startTime = System.nanoTime();
+        try {
+            if (MoreStrings.isBlank(tokenString)) {
+                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
+                securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.TOKEN_EMPTY,
+                        "Token is empty or null"
+                );
+            }
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.TOKEN_FORMAT_CHECK, endTime - startTime);
         }
     }
 
@@ -322,16 +331,22 @@ public class TokenValidator {
     }
 
     private String validateAndExtractIssuer(DecodedJwt decodedJwt) {
-        Optional<String> issuer = decodedJwt.getIssuer();
-        if (issuer.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required issuer (iss) claim in token"
-            );
+        long startTime = System.nanoTime();
+        try {
+            Optional<String> issuer = decodedJwt.getIssuer();
+            if (issuer.isEmpty()) {
+                LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
+                securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.MISSING_CLAIM,
+                        "Missing required issuer (iss) claim in token"
+                );
+            }
+            return issuer.get();
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.ISSUER_EXTRACTION, endTime - startTime);
         }
-        return issuer.get();
     }
 
     /**
@@ -343,7 +358,13 @@ public class TokenValidator {
      * @throws TokenValidationException if no configuration found or issuer is unhealthy
      */
     private IssuerConfig resolveIssuerConfig(String issuer) {
-        return issuerConfigResolver.resolveConfig(issuer);
+        long startTime = System.nanoTime();
+        try {
+            return issuerConfigResolver.resolveConfig(issuer);
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.ISSUER_CONFIG_RESOLUTION, endTime - startTime);
+        }
     }
 
     private void validateTokenHeader(DecodedJwt decodedJwt, IssuerConfig issuerConfig) {
@@ -380,15 +401,21 @@ public class TokenValidator {
             DecodedJwt decodedJwt,
             IssuerConfig issuerConfig,
             TokenBuilderFunction<T> tokenBuilder) {
-        Optional<T> token = tokenBuilder.apply(decodedJwt, issuerConfig);
-        if (token.isEmpty()) {
-            LOGGER.debug("Token building failed");
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Failed to build token from decoded JWT"
-            );
+        long startTime = System.nanoTime();
+        try {
+            Optional<T> token = tokenBuilder.apply(decodedJwt, issuerConfig);
+            if (token.isEmpty()) {
+                LOGGER.debug("Token building failed");
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.MISSING_CLAIM,
+                        "Failed to build token from decoded JWT"
+                );
+            }
+            return token.get();
+        } finally {
+            long endTime = System.nanoTime();
+            performanceMonitor.recordMeasurement(MeasurementType.TOKEN_BUILDING, endTime - startTime);
         }
-        return token.get();
     }
 
     @SuppressWarnings("unchecked")

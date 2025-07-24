@@ -92,7 +92,43 @@ public enum MeasurementType {
      * and perform key caching operations. High values here may indicate network
      * latency issues, JWKS endpoint problems, or key processing inefficiencies.
      */
-    JWKS_OPERATIONS("JWKS key operations");
+    JWKS_OPERATIONS("JWKS key operations"),
+
+    /**
+     * Token format validation.
+     * <p>
+     * Measures time to validate basic token format including empty/blank checks
+     * before any parsing occurs. This is typically very fast but helps identify
+     * the overhead of initial validation checks.
+     */
+    TOKEN_FORMAT_CHECK("Token format validation"),
+
+    /**
+     * Issuer extraction from decoded JWT.
+     * <p>
+     * Measures time to extract and validate the presence of the issuer (iss) claim
+     * from the decoded JWT. This includes claim lookup and validation that the
+     * issuer is present.
+     */
+    ISSUER_EXTRACTION("Issuer extraction"),
+
+    /**
+     * Issuer configuration resolution.
+     * <p>
+     * Measures time to look up the appropriate issuer configuration based on the
+     * issuer claim. This includes configuration cache lookups and health checks.
+     * High values may indicate configuration lookup inefficiencies or cache misses.
+     */
+    ISSUER_CONFIG_RESOLUTION("Issuer config resolution"),
+
+    /**
+     * Token object building.
+     * <p>
+     * Measures time to construct the typed token objects (AccessTokenContent,
+     * IdTokenContent) from the validated JWT claims. This includes claim extraction,
+     * type conversion, and object instantiation.
+     */
+    TOKEN_BUILDING("Token building");
 
     /**
      * Human-readable description of this measurement type for logging and monitoring.
