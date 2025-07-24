@@ -140,6 +140,12 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(112)
                 .build();
 
+        public static final LogRecord HTTP_METRICS_MONITOR_NOT_AVAILABLE = LogRecordModel.builder()
+                .template("HttpMetricsMonitor not available, HTTP-level metrics will not be collected")
+                .prefix(PREFIX)
+                .identifier(113)
+                .build();
+
         // Bearer Token Warnings (121-130)
         
         public static final LogRecord BEARER_TOKEN_ANNOTATION_MISSING = LogRecordModel.builder()

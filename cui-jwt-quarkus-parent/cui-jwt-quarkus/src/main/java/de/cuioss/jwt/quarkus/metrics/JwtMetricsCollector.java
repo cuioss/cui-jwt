@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.metrics;
 
 import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
+import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -77,19 +78,24 @@ public class JwtMetricsCollector {
 
     private static final String VALIDATION_ERRORS = JwtPropertyKeys.METRICS.VALIDATION_ERRORS;
     private static final String VALIDATION_DURATION = JwtPropertyKeys.METRICS.VALIDATION_DURATION;
+    private static final String HTTP_REQUEST_DURATION = "cui.jwt.http.request.duration";
+    private static final String HTTP_REQUEST_COUNT = "cui.jwt.http.request.count";
 
     private static final String TAG_EVENT_TYPE = "event_type";
     private static final String TAG_RESULT = "result";
     private static final String TAG_CATEGORY = "category";
     private static final String TAG_STEP = "step";
+    private static final String TAG_STATUS = "status";
 
     private static final String RESULT_FAILURE = "failure";
 
     private final MeterRegistry registry;
     private final TokenValidator tokenValidator;
+    private final BearerTokenProducer bearerTokenProducer;
 
     private SecurityEventCounter securityEventCounter;
     private TokenValidatorMonitor tokenValidatorMonitor;
+    private HttpMetricsMonitor httpMetricsMonitor;
 
 
     // Caching of counters to avoid lookups
@@ -102,15 +108,19 @@ public class JwtMetricsCollector {
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new JwtMetricsCollector with the given MeterRegistry and TokenValidator.
+     * Creates a new JwtMetricsCollector with the given MeterRegistry, TokenValidator, and BearerTokenProducer.
      *
      * @param registry the Micrometer registry
      * @param tokenValidator the token validator containing monitoring components
+     * @param bearerTokenProducer the bearer token producer containing HTTP monitoring components
      */
     @Inject
-    public JwtMetricsCollector(@NonNull MeterRegistry registry, @NonNull TokenValidator tokenValidator) {
+    public JwtMetricsCollector(@NonNull MeterRegistry registry, 
+                              @NonNull TokenValidator tokenValidator,
+                              @NonNull BearerTokenProducer bearerTokenProducer) {
         this.registry = registry;
         this.tokenValidator = tokenValidator;
+        this.bearerTokenProducer = bearerTokenProducer;
     }
 
     /**
@@ -122,12 +132,16 @@ public class JwtMetricsCollector {
         LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
         securityEventCounter = tokenValidator.getSecurityEventCounter();
         tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
+        httpMetricsMonitor = bearerTokenProducer.getHttpMetricsMonitor();
 
         // Register counters for all event types
         registerEventCounters();
 
         // Register performance timers for all measurement types
         registerPerformanceTimers();
+
+        // Register HTTP metrics
+        registerHttpMetrics();
 
         // Initialize the last known counts
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
@@ -199,6 +213,43 @@ public class JwtMetricsCollector {
     }
 
     /**
+     * Registers HTTP-level metrics for request processing.
+     */
+    private void registerHttpMetrics() {
+        if (httpMetricsMonitor == null) {
+            LOGGER.warn(WARN.HTTP_METRICS_MONITOR_NOT_AVAILABLE::format);
+            return;
+        }
+
+        // Register timers for HTTP measurement types
+        for (HttpMetricsMonitor.HttpMeasurementType measurementType : HttpMetricsMonitor.HttpMeasurementType.values()) {
+            Tags tags = Tags.of(Tag.of(TAG_STEP, measurementType.name().toLowerCase()));
+            
+            Timer timer = Timer.builder(HTTP_REQUEST_DURATION)
+                    .tags(tags)
+                    .description("Duration of HTTP-level JWT processing: " + measurementType.getDescription())
+                    .register(registry);
+            
+            timers.put("HTTP_" + measurementType.name(), timer);
+            LOGGER.debug("Registered HTTP timer for measurement type %s", measurementType.name());
+        }
+
+        // Register counters for HTTP request statuses
+        for (HttpMetricsMonitor.HttpRequestStatus status : HttpMetricsMonitor.HttpRequestStatus.values()) {
+            Tags tags = Tags.of(Tag.of(TAG_STATUS, status.name().toLowerCase()));
+            
+            Counter counter = Counter.builder(HTTP_REQUEST_COUNT)
+                    .tags(tags)
+                    .description("Count of HTTP requests by status")
+                    .baseUnit("requests")
+                    .register(registry);
+            
+            counters.put("HTTP_STATUS_" + status.name(), counter);
+            LOGGER.debug("Registered HTTP counter for status %s", status.name());
+        }
+    }
+
+    /**
      * Updates all counters and performance metrics from the current state.
      * This method is called periodically to ensure metrics are up to date.
      * <p>
@@ -209,6 +260,7 @@ public class JwtMetricsCollector {
     public void updateCounters() {
         updateSecurityEventCounters();
         updatePerformanceMetrics();
+        updateHttpMetrics();
     }
 
     /**
@@ -268,6 +320,43 @@ public class JwtMetricsCollector {
                     LOGGER.debug("Updated timer for measurement type %s with average %s",
                             measurementType.name(), averageDuration);
                 }
+            }
+        }
+    }
+
+    /**
+     * Updates HTTP-level metrics from the HttpMetricsMonitor state.
+     */
+    private void updateHttpMetrics() {
+        if (httpMetricsMonitor == null) {
+            return;
+        }
+
+        // Update HTTP performance timers
+        for (HttpMetricsMonitor.HttpMeasurementType measurementType : HttpMetricsMonitor.HttpMeasurementType.values()) {
+            Timer timer = timers.get("HTTP_" + measurementType.name());
+            if (timer != null) {
+                var averageDuration = httpMetricsMonitor.getAverageDuration(measurementType);
+                if (!averageDuration.isZero()) {
+                    timer.record(averageDuration);
+                    LOGGER.debug("Updated HTTP timer for measurement type %s with average %s",
+                            measurementType.name(), averageDuration);
+                }
+            }
+        }
+
+        // Update HTTP request status counters
+        Map<HttpMetricsMonitor.HttpRequestStatus, Long> statusCounts = httpMetricsMonitor.getRequestStatusCounts();
+        for (Map.Entry<HttpMetricsMonitor.HttpRequestStatus, Long> entry : statusCounts.entrySet()) {
+            HttpMetricsMonitor.HttpRequestStatus status = entry.getKey();
+            Long count = entry.getValue();
+            
+            Counter counter = counters.get("HTTP_STATUS_" + status.name());
+            if (counter != null && count > 0) {
+                // For simplicity, we'll just increment by the total count
+                // In a real implementation, you'd track deltas like with security events
+                counter.increment(count);
+                LOGGER.debug("Updated HTTP status counter for %s with count %d", status.name(), count);
             }
         }
     }

@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
+import de.cuioss.jwt.quarkus.metrics.HttpMetricsMonitor;
 import de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -111,12 +112,23 @@ public class BearerTokenProducer {
 
     private final TokenValidator tokenValidator;
     private final HttpServletRequestResolver servletObjectsResolver;
+    private final HttpMetricsMonitor httpMetricsMonitor;
 
     @Inject
     public BearerTokenProducer(TokenValidator tokenValidator,
             @ServletObjectsResolver(ServletObjectsResolver.Variant.VERTX) HttpServletRequestResolver servletObjectsResolver) {
         this.tokenValidator = tokenValidator;
         this.servletObjectsResolver = servletObjectsResolver;
+        this.httpMetricsMonitor = new HttpMetricsMonitor();
+    }
+
+    /**
+     * Gets the HTTP metrics monitor for external metric collection.
+     * 
+     * @return the HTTP metrics monitor instance
+     */
+    public HttpMetricsMonitor getHttpMetricsMonitor() {
+        return httpMetricsMonitor;
     }
 
     /**
@@ -141,47 +153,65 @@ public class BearerTokenProducer {
     private BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
-        LOGGER.debug("Validating bearer token with required scopes: %s, roles: %s, groups: %s",
-                requiredScopes, requiredRoles, requiredGroups);
-
-        Optional<String> tokenResult = extractBearerTokenFromHeaderMap();
-        if (tokenResult.isEmpty()) {
-            // No token found or missing token - don't call validator, outcome is clear
-            LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
-            return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
-        }
-
-        String bearerToken = tokenResult.get();
-
+        long requestStartTime = System.nanoTime();
         try {
-            LOGGER.trace("Validating bearer token: %s", bearerToken);
-            AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);
+            LOGGER.debug("Validating bearer token with required scopes: %s, roles: %s, groups: %s",
+                    requiredScopes, requiredRoles, requiredGroups);
 
-            // Determine missing scopes, roles, and groups
-            Set<String> missingScopes = tokenContent.determineMissingScopes(requiredScopes);
-            Set<String> missingRoles = tokenContent.determineMissingRoles(requiredRoles);
-            Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
-
-
-            if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
-                LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
-                return BearerTokenResult.builder()
-                        .status(BearerTokenStatus.FULLY_VERIFIED)
-                        .accessTokenContent(tokenContent)
-                        .build();
-            } else {
-                LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED.format(missingScopes, missingRoles, missingGroups));
-                return BearerTokenResult.builder()
-                        .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
-                        .missingScopes(missingScopes)
-                        .missingRoles(missingRoles)
-                        .missingGroups(missingGroups)
-                        .build();
+            Optional<String> tokenResult = extractBearerTokenFromHeaderMap();
+            if (tokenResult.isEmpty()) {
+                // No token found or missing token - don't call validator, outcome is clear
+                LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
+                httpMetricsMonitor.recordRequestStatus(HttpMetricsMonitor.HttpRequestStatus.MISSING_TOKEN);
+                return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
             }
-        } catch (TokenValidationException e) {
-            // No need to use logger.warn, because precise logging already took place in the library
-            LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
-            return BearerTokenResult.parsingError(e, requiredScopes, requiredRoles, requiredGroups);
+
+            String bearerToken = tokenResult.get();
+
+            try {
+                LOGGER.trace("Validating bearer token: %s", bearerToken);
+                AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);
+
+                // Measure authorization check time
+                long authCheckStartTime = System.nanoTime();
+                // Determine missing scopes, roles, and groups
+                Set<String> missingScopes = tokenContent.determineMissingScopes(requiredScopes);
+                Set<String> missingRoles = tokenContent.determineMissingRoles(requiredRoles);
+                Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
+                long authCheckEndTime = System.nanoTime();
+                httpMetricsMonitor.recordMeasurement(
+                        HttpMetricsMonitor.HttpMeasurementType.AUTHORIZATION_CHECK, 
+                        authCheckEndTime - authCheckStartTime);
+
+                if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
+                    LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
+                    httpMetricsMonitor.recordRequestStatus(HttpMetricsMonitor.HttpRequestStatus.SUCCESS);
+                    return BearerTokenResult.builder()
+                            .status(BearerTokenStatus.FULLY_VERIFIED)
+                            .accessTokenContent(tokenContent)
+                            .build();
+                } else {
+                    LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED.format(missingScopes, missingRoles, missingGroups));
+                    httpMetricsMonitor.recordRequestStatus(HttpMetricsMonitor.HttpRequestStatus.INSUFFICIENT_PERMISSIONS);
+                    return BearerTokenResult.builder()
+                            .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
+                            .missingScopes(missingScopes)
+                            .missingRoles(missingRoles)
+                            .missingGroups(missingGroups)
+                            .build();
+                }
+            } catch (TokenValidationException e) {
+                // No need to use logger.warn, because precise logging already took place in the library
+                LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
+                httpMetricsMonitor.recordRequestStatus(HttpMetricsMonitor.HttpRequestStatus.INVALID_TOKEN);
+                return BearerTokenResult.parsingError(e, requiredScopes, requiredRoles, requiredGroups);
+            }
+        } finally {
+            // Record total request processing time
+            long requestEndTime = System.nanoTime();
+            httpMetricsMonitor.recordMeasurement(
+                    HttpMetricsMonitor.HttpMeasurementType.REQUEST_PROCESSING, 
+                    requestEndTime - requestStartTime);
         }
     }
 
@@ -199,28 +229,44 @@ public class BearerTokenProducer {
      * @throws IllegalStateException if header map cannot be accessed due to infrastructure issues
      */
     private Optional<String> extractBearerTokenFromHeaderMap() {
-        Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
-        LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
+        long startTime = System.nanoTime();
+        try {
+            // Measure header extraction time
+            long headerExtractionStart = System.nanoTime();
+            Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
+            long headerExtractionEnd = System.nanoTime();
+            httpMetricsMonitor.recordMeasurement(
+                    HttpMetricsMonitor.HttpMeasurementType.HEADER_EXTRACTION, 
+                    headerExtractionEnd - headerExtractionStart);
+            
+            LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
 
-        // Header names are normalized to lowercase by HttpServletRequestResolver per RFC 9113 (HTTP/2)
-        // and RFC 7230 (HTTP/1.1). Direct lookup with lowercase key is sufficient.
-        List<String> authHeaders = headerMap.get("authorization");
+            // Header names are normalized to lowercase by HttpServletRequestResolver per RFC 9113 (HTTP/2)
+            // and RFC 7230 (HTTP/1.1). Direct lookup with lowercase key is sufficient.
+            List<String> authHeaders = headerMap.get("authorization");
 
-        if (authHeaders == null || authHeaders.isEmpty()) {
-            LOGGER.debug("Authorization header not found in headerMap");
-            return Optional.empty(); // No Authorization header - missing token
+            if (authHeaders == null || authHeaders.isEmpty()) {
+                LOGGER.debug("Authorization header not found in headerMap");
+                return Optional.empty(); // No Authorization header - missing token
+            }
+
+            String authHeader = authHeaders.getFirst();
+            if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+                LOGGER.trace("Authorization header does not start with 'Bearer ': %s", authHeader);
+                return Optional.empty(); // Not a Bearer token - missing token
+            }
+
+            // Bearer token found - extract the token part (may be empty string for "Bearer ")
+            String token = authHeader.substring(BEARER_PREFIX.length());
+            LOGGER.trace("Extracted bearer token from headerMap: %s", token);
+            return Optional.of(token);
+        } finally {
+            // Record token extraction time (includes header extraction)
+            long endTime = System.nanoTime();
+            httpMetricsMonitor.recordMeasurement(
+                    HttpMetricsMonitor.HttpMeasurementType.TOKEN_EXTRACTION, 
+                    endTime - startTime);
         }
-
-        String authHeader = authHeaders.getFirst();
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            LOGGER.trace("Authorization header does not start with 'Bearer ': %s", authHeader);
-            return Optional.empty(); // Not a Bearer token - missing token
-        }
-
-        // Bearer token found - extract the token part (may be empty string for "Bearer ")
-        String token = authHeader.substring(BEARER_PREFIX.length());
-        LOGGER.trace("Extracted bearer token from headerMap: %s", token);
-        return Optional.of(token);
     }
 
 
