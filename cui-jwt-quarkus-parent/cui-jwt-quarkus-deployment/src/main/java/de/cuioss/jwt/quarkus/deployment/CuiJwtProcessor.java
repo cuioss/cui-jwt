@@ -60,6 +60,9 @@ import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 // Security and algorithm classes
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+// Metrics and monitoring classes
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -124,7 +127,8 @@ public class CuiJwtProcessor {
                 // Classes that need methods + constructors for instantiation
                 TokenValidator.class,        // Public constructors, API methods
                 IssuerConfigResolver.class,  // Package constructor, internal methods
-                SecurityEventCounter.class)  // Default constructor, counter methods
+                SecurityEventCounter.class,  // Default constructor, counter methods
+                TokenValidatorMonitor.class) // Constructor + methods for metrics collection
                 .methods(true)    // Methods needed for API calls and getters
                 .fields(false)    // No direct field access needed
                 .constructors(true) // Constructors needed for instantiation
@@ -202,7 +206,9 @@ public class CuiJwtProcessor {
                 // Claim handling classes - need full reflection for enum handling
                 ClaimValue.class,
                 ClaimName.class,
-                ClaimValueType.class)
+                ClaimValueType.class,
+                // Metrics enum - need full reflection for enum handling
+                MeasurementType.class)
                 .methods(true)  // Methods needed for getters/setters on token content
                 .fields(true)   // Fields needed for direct field access in token content
                 .constructors(true) // Constructors needed for instantiation
