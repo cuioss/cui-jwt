@@ -438,6 +438,20 @@ public final class JwtPropertyKeys {
         public static final String VALIDATION_DURATION = BASE + ".duration";
 
         /**
+         * Interval for metrics collection in seconds.
+         * Template: "cui.jwt.metrics.collection.interval"
+         * <p>
+         * Controls how frequently the {@link de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector}
+         * updates Micrometer metrics from the internal counters and monitors.
+         * </p>
+         * <p>
+         * Default value is {@code 10s} for production environments.
+         * For integration tests, this can be set to {@code 2s} for faster testing.
+         * </p>
+         */
+        public static final String COLLECTION_INTERVAL = PREFIX + ".metrics.collection.interval";
+
+        /**
          * Base path for JWKS metrics.
          */
         public static final String JWKS_BASE = PREFIX + DOT_JWKS;

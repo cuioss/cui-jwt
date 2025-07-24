@@ -19,6 +19,8 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
@@ -31,8 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * These tests verify that Prometheus metrics are properly exposed
  * and include JWT validation metrics against an external running application.
  * Tests validate tokens and then read/log the JWT metrics at info level.
+ * <p>
+ * IMPORTANT: This test class should run LAST to benefit from metrics created by other integration tests.
  */
 @DisplayName("JWT Metrics Integration Tests")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class MetricsIntegrationIT extends BaseIntegrationTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(MetricsIntegrationIT.class);
@@ -43,6 +48,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     private static final String ACCESS_TOKEN_VALID_MESSAGE = "Access token is valid";
 
     @Test
+    @Order(1)
     void shouldExposeMetricsEndpoint() {
         given()
             .when()
@@ -53,6 +59,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     }
 
     @Test
+    @Order(2)
     void shouldIncludeBasicMetrics() {
         String metricsResponse = given()
             .when()
@@ -71,6 +78,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     }
 
     @Test
+    @Order(3)
     void shouldIncludeSystemMetrics() {
         given()
             .when()
@@ -82,6 +90,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     }
 
     @Test
+    @Order(4)
     void shouldIncludeHttpMetrics() {
         given()
             .when()
@@ -92,6 +101,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     }
 
     @Test
+    @Order(5)
     void shouldProvideMetricsInPrometheusFormat() {
         String metricsResponse = given()
             .when()
@@ -115,7 +125,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(100)
+    @Order(1000)  // Run this test LAST to benefit from metrics created by previous tests
     @DisplayName("Validate tokens and verify JWT performance metrics are collected")
     void shouldValidateTokensAndVerifyMetricsAreCollected() {
         // Get test realm for token validation
@@ -131,10 +141,11 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
         TestRealm.TokenResponse tokenResponse = testRealm.obtainValidToken();
         String validAccessToken = tokenResponse.accessToken();
 
-        LOGGER.info("Starting multiple JWT token validations to generate performance metrics");
+        LOGGER.info("Starting JWT token validations to generate performance metrics");
 
         // Perform multiple token validations to ensure metrics are generated
-        for (int i = 0; i < 5; i++) {
+        // By this point, other integration tests should have already created some metrics
+        for (int i = 0; i < 3; i++) {
             given()
                 .contentType(CONTENT_TYPE_JSON)
                 .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
@@ -146,19 +157,10 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
                 .body("message", equalTo(ACCESS_TOKEN_VALID_MESSAGE));
         }
 
-        LOGGER.info("JWT token validations completed - waiting for metrics collection");
+        LOGGER.info("JWT token validations completed - checking metrics immediately");
 
-        // Wait for the metrics collector to run (it runs every 10 seconds)
-        // We need to wait at least 12 seconds to ensure one full collection cycle
-        try {
-            LOGGER.info("Waiting 12 seconds for scheduled metrics collection...");
-            Thread.sleep(12000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
-        }
-
-        LOGGER.info("Reading metrics after collection period");
+        // JWT metrics should be initialized immediately when JwtMetricsCollector starts
+        // The 10s schedule is only for updating values, not for initializing metrics definitions
 
         // Read metrics and verify they exist
         String metricsResponse = given()
@@ -170,112 +172,71 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
             .body()
             .asString();
 
-        // Debug: Log a sample of the metrics response to see what's available
-        LOGGER.info("=== Debug: Metrics Response Sample ===");
-        String[] lines = metricsResponse.split("\n");
-        int lineCount = 0;
-        for (String line : lines) {
-            if (line.contains("cui_jwt") || line.contains("jwt") || lineCount < 10) {
-                LOGGER.info("Metrics line {}: {}", lineCount, line);
-            }
-            lineCount++;
-            if (lineCount > 50 && !line.contains("cui_jwt")) break; // Limit output but show all JWT lines
-        }
+        LOGGER.info("=== JWT Metrics Validation ===");
         
-        // Verify and log JWT performance metrics
-        boolean performanceMetricsFound = verifyAndLogJwtPerformanceMetrics(metricsResponse);
+        // CRITICAL: Verify that JWT metrics are properly initialized and present
+        // These metrics should be available immediately when JwtMetricsCollector starts
         
-        // Verify and log JWT security metrics
-        boolean securityMetricsFound = verifyAndLogJwtSecurityMetrics(metricsResponse);
+        // 1. Check for SecurityEventCounter metrics (cui_jwt_validation_errors)
+        boolean securityMetricsInitialized = metricsResponse.contains("cui_jwt_validation_errors");
+        LOGGER.info("SecurityEventCounter metrics initialized: {}", securityMetricsInitialized);
         
-        // Check if metrics collection is working at all by looking for any JWT-related metrics
-        boolean anyJwtMetrics = metricsResponse.contains("cui_jwt");
-        LOGGER.info("Any JWT metrics found: {}", anyJwtMetrics);
+        // 2. Check for TokenValidatorMonitor metrics (cui_jwt_validation_duration) 
+        boolean performanceMetricsInitialized = metricsResponse.contains("cui_jwt_validation_duration");
+        LOGGER.info("TokenValidatorMonitor metrics initialized: {}", performanceMetricsInitialized);
         
-        if (!performanceMetricsFound) {
-            // Log diagnostic information for troubleshooting
-            LOGGER.warn("JWT performance metrics not found after {} seconds wait. This could indicate:", 12);
-            LOGGER.warn("1. Metrics collection may not be enabled in the integration test environment");
-            LOGGER.warn("2. The JwtMetricsCollector may not be running in native mode");
-            LOGGER.warn("3. The TokenValidatorMonitor may not be properly integrated");
+        // 3. Log actual JWT metrics found for debugging
+        logJwtMetricsDetails(metricsResponse);
+        
+        // 4. ASSERT that both metrics types are present - FAIL THE TEST if not
+        assertTrue(securityMetricsInitialized, 
+            "SecurityEventCounter metrics (cui_jwt_validation_errors) must be initialized in metrics registry. " +
+            "This indicates JwtMetricsCollector is not properly instantiated or SecurityEventCounter injection failed.");
             
-            // This test validates that token validation works and metrics endpoint is functional
-            // The actual presence of JWT metrics in native mode is a separate integration concern
-            LOGGER.info("Metrics endpoint is functional - token validation and basic metrics collection verified");
-        } else {
-            LOGGER.info("JWT metrics verification completed successfully - full integration working");
-        }
+        assertTrue(performanceMetricsInitialized,
+            "TokenValidatorMonitor metrics (cui_jwt_validation_duration) must be initialized in metrics registry. " +
+            "This indicates JwtMetricsCollector is not properly instantiated or TokenValidatorMonitor injection failed.");
+        
+        LOGGER.info("✅ JWT metrics validation PASSED - both SecurityEventCounter and TokenValidatorMonitor metrics are properly initialized");
     }
 
     /**
-     * Verifies and logs JWT performance metrics at info level.
-     * @return true if performance metrics were found, false otherwise
+     * Logs detailed information about JWT metrics found in the response.
+     * This helps with debugging metrics collection issues.
      */
-    private boolean verifyAndLogJwtPerformanceMetrics(String metricsResponse) {
-        LOGGER.info("=== JWT Performance Metrics ===");
+    private void logJwtMetricsDetails(String metricsResponse) {
+        LOGGER.info("=== JWT Metrics Details ===");
         
         String[] lines = metricsResponse.split("\n");
-        boolean foundPerformanceMetrics = false;
-        int metricDataLines = 0;
+        int jwtMetricLines = 0;
         
         for (String line : lines) {
-            if (line.contains("cui_jwt_validation_duration")) {
-                foundPerformanceMetrics = true;
+            if (line.contains("cui_jwt_validation")) {
+                jwtMetricLines++;
                 if (line.startsWith("# HELP")) {
-                    LOGGER.info("Performance Metric Help: {}", line.substring(7));
+                    LOGGER.info("HELP: {}", line.substring(7).trim());
                 } else if (line.startsWith("# TYPE")) {
-                    LOGGER.info("Performance Metric Type: {}", line.substring(7));
+                    LOGGER.info("TYPE: {}", line.substring(7).trim());
                 } else if (!line.startsWith("#") && !line.trim().isEmpty()) {
-                    LOGGER.info("Performance Metric Data: {}", line);
-                    metricDataLines++;
+                    LOGGER.info("DATA: {}", line.trim());
                 }
             }
         }
         
-        if (!foundPerformanceMetrics) {
-            LOGGER.warn("No JWT performance metrics found in response after token validation");
-        } else {
-            LOGGER.info("JWT performance metrics successfully found and logged ({} data lines)", metricDataLines);
-        }
-        
-        return foundPerformanceMetrics && metricDataLines > 0;
-    }
-
-    /**
-     * Verifies and logs JWT security event metrics at info level.
-     * @return true if security metrics were found, false otherwise
-     */
-    private boolean verifyAndLogJwtSecurityMetrics(String metricsResponse) {
-        LOGGER.info("=== JWT Security Event Metrics ===");
-        
-        String[] lines = metricsResponse.split("\n");
-        boolean foundSecurityMetrics = false;
-        int metricDataLines = 0;
-        
-        for (String line : lines) {
-            if (line.contains("cui_jwt_validation_errors")) {
-                foundSecurityMetrics = true;
-                if (line.startsWith("# HELP")) {
-                    LOGGER.info("Security Metric Help: {}", line.substring(7));
-                } else if (line.startsWith("# TYPE")) {
-                    LOGGER.info("Security Metric Type: {}", line.substring(7));
-                } else if (!line.startsWith("#") && !line.trim().isEmpty()) {
-                    LOGGER.info("Security Metric Data: {}", line);
-                    metricDataLines++;
-                }
+        if (jwtMetricLines == 0) {
+            LOGGER.warn("No JWT metrics found in metrics response");
+            // Log first 10 lines for debugging
+            LOGGER.info("First 10 lines of metrics response for debugging:");
+            for (int i = 0; i < Math.min(10, lines.length); i++) {
+                LOGGER.info("Line {}: {}", i, lines[i]);
             }
-        }
-        
-        if (!foundSecurityMetrics) {
-            LOGGER.info("No JWT security event metrics found - expected for error-free validation runs");
         } else {
-            LOGGER.info("JWT security event metrics successfully found and logged ({} data lines)", metricDataLines);
+            LOGGER.info("Found {} JWT-related metric lines", jwtMetricLines);
         }
-        
-        return foundSecurityMetrics;
     }
 
     @Test
+    @Order(6)
     @DisplayName("Verify JWT metrics are exposed in Prometheus format")
     void shouldExposeJwtMetricsInPrometheusFormat() {
         String metricsResponse = given()

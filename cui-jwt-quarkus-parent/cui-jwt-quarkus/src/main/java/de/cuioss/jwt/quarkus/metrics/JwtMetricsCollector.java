@@ -85,8 +85,13 @@ public class JwtMetricsCollector {
     private static final String RESULT_FAILURE = "failure";
 
     private final MeterRegistry registry;
-    private final SecurityEventCounter securityEventCounter;
-    private final TokenValidatorMonitor tokenValidatorMonitor;
+    
+    // Lazy injected dependencies to avoid circular dependency with TokenValidatorProducer
+    @Inject
+    SecurityEventCounter securityEventCounter;
+    
+    @Inject
+    TokenValidatorMonitor tokenValidatorMonitor;
 
     // Caching of counters to avoid lookups
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
@@ -98,17 +103,15 @@ public class JwtMetricsCollector {
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new JwtMetricsCollector with the given MeterRegistry, SecurityEventCounter, and TokenValidatorMonitor.
+     * Creates a new JwtMetricsCollector with the given MeterRegistry.
+     * SecurityEventCounter and TokenValidatorMonitor are injected via field injection
+     * to avoid circular dependency with TokenValidatorProducer.
      *
      * @param registry the Micrometer registry
-     * @param securityEventCounter the security event counter
-     * @param tokenValidatorMonitor the performance monitor
      */
     @Inject
-    public JwtMetricsCollector(MeterRegistry registry, SecurityEventCounter securityEventCounter, TokenValidatorMonitor tokenValidatorMonitor) {
+    public JwtMetricsCollector(MeterRegistry registry) {
         this.registry = registry;
-        this.securityEventCounter = securityEventCounter;
-        this.tokenValidatorMonitor = tokenValidatorMonitor;
     }
 
     /**
@@ -208,8 +211,11 @@ public class JwtMetricsCollector {
     /**
      * Updates all counters and performance metrics from the current state.
      * This method is called periodically to ensure metrics are up to date.
+     * <p>
+     * The interval can be configured via the property: cui.jwt.metrics.collection.interval
+     * Default: 10s (production), can be set to 2s for faster integration testing.
      */
-    @Scheduled(every = "10s")
+    @Scheduled(every = "${" + JwtPropertyKeys.METRICS.COLLECTION_INTERVAL + ":10s}")
     public void updateCounters() {
         if (securityEventCounter == null) {
             return;

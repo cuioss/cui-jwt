@@ -301,7 +301,10 @@ public class CuiJwtProcessor {
         // Ensure core library beans are never removed from the CDI container
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
                 DotName.createSimple(TokenValidator.class.getName()),
-                DotName.createSimple("de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector")
+                DotName.createSimple("de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector"),
+                DotName.createSimple("de.cuioss.jwt.validation.security.SecurityEventCounter"),
+                DotName.createSimple("de.cuioss.jwt.validation.metrics.TokenValidatorMonitor"),
+                DotName.createSimple("io.micrometer.core.instrument.MeterRegistry")
         ));
     }
 
