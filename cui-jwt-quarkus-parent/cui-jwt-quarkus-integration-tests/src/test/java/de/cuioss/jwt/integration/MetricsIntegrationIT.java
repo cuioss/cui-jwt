@@ -15,15 +15,12 @@
  */
 package de.cuioss.jwt.integration;
 
-import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
-import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -42,10 +39,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Oliver Wolff
  */
-@QuarkusIntegrationTest
-@EnableTestLogger
 @DisplayName("Tests HTTP metrics integration with JWT validation")
-class MetricsIntegrationIT {
+class MetricsIntegrationIT extends BaseIntegrationTest {
 
     private static final CuiLogger log = new CuiLogger(MetricsIntegrationIT.class);
     private static final TestRealm testRealm = TestRealm.createIntegrationRealm();
