@@ -64,6 +64,7 @@ import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.tools.logging.CuiLogger;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
 import io.quarkus.deployment.IsDevelopment;
@@ -128,7 +129,8 @@ public class CuiJwtProcessor {
                 TokenValidator.class,        // Public constructors, API methods
                 IssuerConfigResolver.class,  // Package constructor, internal methods
                 SecurityEventCounter.class,  // Default constructor, counter methods
-                TokenValidatorMonitor.class) // Constructor + methods for metrics collection
+                TokenValidatorMonitor.class, // Constructor + methods for metrics collection
+                MeterRegistry.class)         // Micrometer registry for metrics
                 .methods(true)    // Methods needed for API calls and getters
                 .fields(false)    // No direct field access needed
                 .constructors(true) // Constructors needed for instantiation
@@ -280,7 +282,8 @@ public class CuiJwtProcessor {
                         BearerTokenProducer.class,
                         de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
                         ParserConfigResolver.class,
-                        VertxServletObjectsResolver.class
+                        VertxServletObjectsResolver.class,
+                        de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector.class
                 )
                 .setUnremovable()
                 .build();
@@ -297,7 +300,8 @@ public class CuiJwtProcessor {
     public void registerUnremovableBeans(BuildProducer<UnremovableBeanBuildItem> unremovableBeans) {
         // Ensure core library beans are never removed from the CDI container
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(
-                DotName.createSimple(TokenValidator.class.getName())
+                DotName.createSimple(TokenValidator.class.getName()),
+                DotName.createSimple("de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector")
         ));
     }
 
