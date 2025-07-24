@@ -63,6 +63,7 @@ counter.reset(EventType.INVALID_JWT_FORMAT);
 ----
 
 Event types are categorized by `EventCategory`:
+
 * `INVALID_STRUCTURE` - Malformed tokens, size violations
 * `INVALID_SIGNATURE` - Signature verification failures
 * `SEMANTIC_ISSUES` - Expired tokens, audience mismatches
@@ -84,47 +85,21 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
 ----
 
 Built-in mappers include:
+
 * `JsonCollectionMapper` - Handles JSON arrays and strings
 * `StringSplitterMapper` - Splits delimited strings
 * `IdentityMapper` - Returns values unchanged
 
-== Extending Token Types
-
-The library supports three token types via the `TokenType` enum:
-* `ACCESS_TOKEN` - OAuth2 access tokens
-* `ID_TOKEN` - OpenID Connect ID tokens  
-* `REFRESH_TOKEN` - OAuth2 refresh tokens
-
-Each type has specific validation requirements enforced by the pipeline validators.
-
 == Integration Points
-
-=== Custom JWKS Loaders
-
-Implement `JwksLoader` interface for custom key sources:
-
-[source,java]
-----
-public class CustomJwksLoader implements JwksLoader {
-    @Override
-    public Map<String, Key> loadKeys() {
-        // Custom key loading logic
-    }
-    
-    @Override
-    public LoaderStatus getLoaderStatus() {
-        // Return loader health status
-    }
-}
-----
 
 === Pipeline Customization
 
 The validation pipeline consists of:
-1. `NonValidatingJwtParser` - Basic JWT parsing
-2. `TokenHeaderValidator` - Header validation
-3. `TokenSignatureValidator` - Signature verification
-4. `TokenClaimValidator` - Claims validation
+
+. `NonValidatingJwtParser` - Basic JWT parsing
+. `TokenHeaderValidator` - Header validation
+. `TokenSignatureValidator` - Signature verification
+. `TokenClaimValidator` - Claims validation
 
 Each validator throws `TokenValidationException` with specific `EventType` on failure.
 
@@ -149,6 +124,7 @@ The library provides comprehensive test utilities via the `generators` artifact.
 == Memory Management
 
 Configure limits in `ParserConfig` to prevent attacks:
+
 * `maxTokenSize` - Limits entire JWT token (default 8KB)
 * `maxPayloadSize` - Limits decoded parts (default 2KB)
 * `maxStringSize` - Limits JSON strings (default 1KB)
