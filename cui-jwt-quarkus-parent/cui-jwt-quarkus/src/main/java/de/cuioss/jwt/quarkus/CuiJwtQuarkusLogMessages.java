@@ -134,6 +134,12 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(111)
                 .build();
 
+        public static final LogRecord TOKEN_VALIDATOR_MONITOR_NOT_AVAILABLE = LogRecordModel.builder()
+                .template("TokenValidatorMonitor not available, performance metrics will not be collected")
+                .prefix(PREFIX)
+                .identifier(112)
+                .build();
+
         // Bearer Token Warnings (121-130)
         
         public static final LogRecord BEARER_TOKEN_ANNOTATION_MISSING = LogRecordModel.builder()

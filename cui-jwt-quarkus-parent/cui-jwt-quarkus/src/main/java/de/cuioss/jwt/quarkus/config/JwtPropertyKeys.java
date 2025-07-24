@@ -433,6 +433,11 @@ public final class JwtPropertyKeys {
         public static final String VALIDATION_ERRORS = BASE + ".errors";
 
         /**
+         * Timer for JWT validation pipeline steps.
+         */
+        public static final String VALIDATION_DURATION = BASE + ".duration";
+
+        /**
          * Base path for JWKS metrics.
          */
         public static final String JWKS_BASE = PREFIX + DOT_JWKS;

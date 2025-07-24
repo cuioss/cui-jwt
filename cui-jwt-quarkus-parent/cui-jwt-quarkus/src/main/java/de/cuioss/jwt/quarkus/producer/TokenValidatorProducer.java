@@ -20,6 +20,7 @@ import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -51,6 +52,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  *   <li>{@link TokenValidator} - Main JWT validation component</li>
  *   <li>{@link List}&lt;{@link IssuerConfig}&gt; - Resolved issuer configurations</li>
  *   <li>{@link SecurityEventCounter} - Security event monitoring</li>
+ *   <li>{@link TokenValidatorMonitor} - Performance metrics monitoring</li>
  * </ul>
  *
  * @since 1.0
@@ -77,6 +79,11 @@ public class TokenValidatorProducer {
     @ApplicationScoped
     @NonNull
     SecurityEventCounter securityEventCounter;
+
+    @Produces
+    @ApplicationScoped
+    @NonNull
+    TokenValidatorMonitor tokenValidatorMonitor;
 
     @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
@@ -108,6 +115,9 @@ public class TokenValidatorProducer {
 
         // Extract SecurityEventCounter from the TokenValidator
         securityEventCounter = tokenValidator.getSecurityEventCounter();
+
+        // Extract TokenValidatorMonitor from the TokenValidator
+        tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
 
         LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
     }
