@@ -193,11 +193,35 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
             P99=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
             
             echo -n "    \"$step\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-            echo -n "\"count\": ${COUNT:-0}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-            [ -n "$SUM" ] && echo -n ", \"sum_ms\": $(awk -v sum="$SUM" 'BEGIN {printf "%.3f", sum * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-            [ -n "$P50" ] && echo -n ", \"p50_ms\": $(awk -v p50="$P50" 'BEGIN {printf "%.3f", p50 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-            [ -n "$P95" ] && echo -n ", \"p95_ms\": $(awk -v p95="$P95" 'BEGIN {printf "%.3f", p95 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-            [ -n "$P99" ] && echo -n ", \"p99_ms\": $(awk -v p99="$P99" 'BEGIN {printf "%.3f", p99 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            
+            # Start with empty JSON object, add fields as available
+            FIRST_FIELD=true
+            
+            # Add average_ms field if we have both sum and count
+            if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ] && [ "$COUNT" != "0.0" ]; then
+                AVG_JSON=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
+                echo -n "\"average_ms\": $AVG_JSON" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                FIRST_FIELD=false
+            fi
+            
+            if [ -n "$P50" ]; then
+                [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"p50_ms\": $(awk -v p50="$P50" 'BEGIN {printf "%.3f", p50 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                FIRST_FIELD=false
+            fi
+            
+            if [ -n "$P95" ]; then
+                [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"p95_ms\": $(awk -v p95="$P95" 'BEGIN {printf "%.3f", p95 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                FIRST_FIELD=false
+            fi
+            
+            if [ -n "$P99" ]; then
+                [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"p99_ms\": $(awk -v p99="$P99" 'BEGIN {printf "%.3f", p99 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                FIRST_FIELD=false
+            fi
+            
             echo -n "}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         done
         
