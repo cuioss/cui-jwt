@@ -86,6 +86,7 @@ public class JwtMetricsCollector {
     private static final String TAG_CATEGORY = "category";
     private static final String TAG_STEP = "step";
     private static final String TAG_STATUS = "status";
+    private static final String TAG_TYPE = "type";
 
     private static final String RESULT_FAILURE = "failure";
 
@@ -106,6 +107,7 @@ public class JwtMetricsCollector {
 
     // Track last known counts to calculate deltas
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
+    private final Map<HttpMetricsMonitor.HttpRequestStatus, Long> lastKnownHttpStatusCounts = new ConcurrentHashMap<>();
 
     /**
      * Creates a new JwtMetricsCollector with the given MeterRegistry, TokenValidator, and BearerTokenProducer.
@@ -146,6 +148,12 @@ public class JwtMetricsCollector {
         // Initialize the last known counts
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
         lastKnownCounts.putAll(currentCounts);
+
+        // Initialize HTTP status counts
+        if (httpMetricsMonitor != null) {
+            Map<HttpMetricsMonitor.HttpRequestStatus, Long> currentHttpStatusCounts = httpMetricsMonitor.getRequestStatusCounts();
+            lastKnownHttpStatusCounts.putAll(currentHttpStatusCounts);
+        }
 
         LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size()));
     }
@@ -223,7 +231,7 @@ public class JwtMetricsCollector {
 
         // Register timers for HTTP measurement types
         for (HttpMetricsMonitor.HttpMeasurementType measurementType : HttpMetricsMonitor.HttpMeasurementType.values()) {
-            Tags tags = Tags.of(Tag.of(TAG_STEP, measurementType.name().toLowerCase()));
+            Tags tags = Tags.of(Tag.of(TAG_TYPE, measurementType.name().toLowerCase()));
             
             Timer timer = Timer.builder(HTTP_REQUEST_DURATION)
                     .tags(tags)
@@ -349,14 +357,24 @@ public class JwtMetricsCollector {
         Map<HttpMetricsMonitor.HttpRequestStatus, Long> statusCounts = httpMetricsMonitor.getRequestStatusCounts();
         for (Map.Entry<HttpMetricsMonitor.HttpRequestStatus, Long> entry : statusCounts.entrySet()) {
             HttpMetricsMonitor.HttpRequestStatus status = entry.getKey();
-            Long count = entry.getValue();
+            Long currentCount = entry.getValue();
             
-            Counter counter = counters.get("HTTP_STATUS_" + status.name());
-            if (counter != null && count > 0) {
-                // For simplicity, we'll just increment by the total count
-                // In a real implementation, you'd track deltas like with security events
-                counter.increment(count);
-                LOGGER.debug("Updated HTTP status counter for %s with count %d", status.name(), count);
+            // Get the last known count for this status
+            Long lastCount = lastKnownHttpStatusCounts.getOrDefault(status, 0L);
+            
+            // Calculate the delta
+            long delta = currentCount - lastCount;
+            
+            // Only update if there's a change
+            if (delta > 0) {
+                Counter counter = counters.get("HTTP_STATUS_" + status.name());
+                if (counter != null) {
+                    counter.increment(delta);
+                    LOGGER.debug("Updated HTTP status counter for %s by %d", status.name(), delta);
+                }
+                
+                // Update the last known count
+                lastKnownHttpStatusCounts.put(status, currentCount);
             }
         }
     }

@@ -119,7 +119,7 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         --network cui-jwt-quarkus-integration-tests_jwt-integration \
         curlimages/curl:latest \
         -s -k --max-time 10 "https://cui-jwt-integration-tests:8443/q/metrics" | \
-    grep "cui_jwt_validation_duration" | grep -v "^#" > "$RESULTS_DIR/jwt-metrics-raw.txt" 2>/dev/null; then
+    grep -E "cui_jwt_(validation_duration|http_request)" | grep -v "^#" > "$RESULTS_DIR/jwt-metrics-raw.txt" 2>/dev/null; then
         echo "✅ Successfully fetched JWT metrics"
     else
         echo "⚠️  Failed to fetch JWT metrics - continuing without metrics collection"
@@ -232,6 +232,56 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
     else
         echo "⚠️  No JWT validation duration metrics found in Prometheus endpoint"
         echo "   This may indicate that TokenValidatorMonitor is not collecting metrics"
+    fi
+    
+    # Process HTTP-level metrics if available
+    if grep -q "cui_jwt_http_request" "$RESULTS_DIR/jwt-metrics-raw.txt" 2>/dev/null; then
+        echo ""
+        echo "=== HTTP-Level JWT Processing Metrics (HttpMetricsMonitor) ==="
+        echo "Processing HTTP request metrics..."
+        
+        # Extract HTTP measurement types
+        HTTP_STEPS=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_duration_seconds" | grep -oE 'type="[^"]+' | sed 's/type="//' | sort -u)
+        
+        if [ -n "$HTTP_STEPS" ]; then
+            for step in $HTTP_STEPS; do
+                echo ""
+                echo "HTTP Measurement Type: $step"
+                
+                # Get count for this step
+                COUNT=$(grep "cui_jwt_http_request_duration_seconds_count{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                if [ -n "$COUNT" ]; then
+                    echo "  Count: $COUNT"
+                fi
+                
+                # Get sum for this step and calculate average
+                SUM=$(grep "cui_jwt_http_request_duration_seconds_sum{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ]; then
+                    AVG=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
+                    echo "  Average: ${AVG}ms"
+                fi
+            done
+        fi
+        
+        # Check HTTP request status counts
+        echo ""
+        echo "=== HTTP Request Status Counts ==="
+        HTTP_STATUSES=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_count_total" | grep -oE 'status="[^"]+' | sed 's/status="//' | sort -u)
+        
+        if [ -n "$HTTP_STATUSES" ]; then
+            for status in $HTTP_STATUSES; do
+                COUNT=$(grep "cui_jwt_http_request_count_total{status=\"$status\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                if [ -n "$COUNT" ]; then
+                    echo "  Status $status: $COUNT requests"
+                fi
+            done
+        else
+            echo "  No HTTP request status metrics found"
+        fi
+    else
+        echo ""
+        echo "⚠️  No HTTP-level JWT metrics found (cui_jwt_http_request)"
+        echo "   This may indicate that HttpMetricsMonitor is not collecting metrics"
     fi
     
     # Compare with health check baseline if available

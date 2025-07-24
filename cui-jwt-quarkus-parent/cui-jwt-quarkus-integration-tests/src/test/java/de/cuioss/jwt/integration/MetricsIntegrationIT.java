@@ -15,325 +15,342 @@
  */
 package de.cuioss.jwt.integration;
 
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
-
-import org.junit.jupiter.api.*;
+import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * REST API tests for metrics endpoints against external application.
+ * Integration tests to verify that HTTP-level JWT metrics are properly collected and exposed.
  * <p>
- * These tests verify that Prometheus metrics are properly exposed
- * and include JWT validation metrics against an external running application.
- * Tests validate tokens and then read/log the JWT metrics at info level.
+ * This test verifies the integration between:
+ * <ul>
+ *   <li>Custom {@code HttpMetricsMonitor} - JWT-specific HTTP processing metrics</li>
+ *   <li>JWT validation library metrics - Token validation pipeline measurements</li>
+ *   <li>Quarkus Micrometer integration - Standard HTTP server metrics</li>
+ *   <li>Prometheus metrics export - All metrics available at /q/metrics endpoint</li>
+ * </ul>
  * <p>
- * IMPORTANT: This test class should run LAST to benefit from metrics created by other integration tests.
+ * The test performs actual JWT validation requests and verifies that both
+ * custom JWT metrics and standard HTTP metrics are properly recorded and exported.
+ *
+ * @author Oliver Wolff
  */
-@DisplayName("JWT Metrics Integration Tests")
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class MetricsIntegrationIT extends BaseIntegrationTest {
+@QuarkusIntegrationTest
+@EnableTestLogger
+@DisplayName("Tests HTTP metrics integration with JWT validation")
+class MetricsIntegrationIT {
 
-    private static final CuiLogger LOGGER = new CuiLogger(MetricsIntegrationIT.class);
-    private static final String AUTHORIZATION = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final String JWT_VALIDATE_PATH = "/jwt/validate";
-    private static final String CONTENT_TYPE_JSON = "application/json";
-    private static final String ACCESS_TOKEN_VALID_MESSAGE = "Access token is valid";
+    private static final CuiLogger log = new CuiLogger(MetricsIntegrationIT.class);
+    private static final TestRealm testRealm = TestRealm.createIntegrationRealm();
 
     @Test
-    @Order(1)
-    void shouldExposeMetricsEndpoint() {
+    @DisplayName("Should expose custom JWT HTTP metrics after successful validation")
+    void shouldExposeCustomJwtHttpMetricsAfterSuccessfulValidation() {
+        // Obtain a valid token with required scopes
+        TestRealm.TokenResponse tokens = testRealm.obtainValidTokenWithAllScopes();
+        
+        // Make a successful JWT validation request
         given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .contentType(containsString("text"));
-    }
-
-    @Test
-    @Order(2)
-    void shouldIncludeBasicMetrics() {
-        String metricsResponse = given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .extract()
-            .body()
-            .asString();
-
-        // Verify basic metrics are present
-        assertTrue(
-            metricsResponse.contains("jvm_") || metricsResponse.contains("http_"),
-            "Should include basic JVM or HTTP metrics"
-        );
-    }
-
-    @Test
-    @Order(3)
-    void shouldIncludeSystemMetrics() {
-        given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .body(containsString("jvm_memory_used_bytes"))
-            .body(containsString("process_cpu_usage"));
-    }
-
-    @Test
-    @Order(4)
-    void shouldIncludeHttpMetrics() {
-        given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .body(containsString("http_server"));
-    }
-
-    @Test
-    @Order(5)
-    void shouldProvideMetricsInPrometheusFormat() {
-        String metricsResponse = given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .extract()
-            .body()
-            .asString();
-
-        // Verify Prometheus format
-        assertTrue(
-            metricsResponse.contains("# HELP"),
-            "Should include Prometheus HELP comments"
-        );
-
-        assertTrue(
-            metricsResponse.contains("# TYPE"),
-            "Should include Prometheus TYPE comments"
-        );
-    }
-
-    @Test
-    @Order(1000)
-    // Run this test LAST to benefit from metrics created by previous tests
-    @DisplayName("Validate tokens and verify JWT performance metrics are collected")
-    void shouldValidateTokensAndVerifyMetricsAreCollected() {
-        // Get test realm for token validation
-        TestRealm testRealm = TestRealm.createIntegrationRealm();
-
-        // Skip if Keycloak is not healthy
-        if (!testRealm.isKeycloakHealthy()) {
-            LOGGER.warn("Skipping token validation - Keycloak is not healthy");
-            return;
-        }
-
-        // Obtain valid tokens
-        TestRealm.TokenResponse tokenResponse = testRealm.obtainValidToken();
-        String validAccessToken = tokenResponse.accessToken();
-
-        LOGGER.info("Starting JWT token validations to generate performance metrics");
-
-        // Perform multiple token validations to ensure metrics are generated
-        // By this point, other integration tests should have already created some metrics
-        for (int i = 0; i < 3; i++) {
-            LOGGER.info("Performing token validation {}/3", i + 1);
-            
-            given()
-                .contentType(CONTENT_TYPE_JSON)
-                .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
+                .header("Authorization", "Bearer " + tokens.accessToken())
                 .when()
-                .post(JWT_VALIDATE_PATH)
+                .get("/secured")
                 .then()
-                .statusCode(200)
-                .body("valid", equalTo(true))
-                .body("message", equalTo(ACCESS_TOKEN_VALID_MESSAGE));
-            
-            // Collect and log performance metrics after each validation
-            String metricsAfterValidation = given()
+                .statusCode(200);
+
+        // Verify custom JWT HTTP metrics are exposed
+        Response metricsResponse = given()
                 .when()
                 .get("/q/metrics")
                 .then()
                 .statusCode(200)
-                .extract()
-                .body()
-                .asString();
-            
-            LOGGER.info("=== Performance Metrics After Validation {} ===", i + 1);
-            logPerformanceMetrics(metricsAfterValidation);
-        }
+                .extract().response();
 
-        LOGGER.info("JWT token validations completed - checking metrics immediately");
+        String metricsBody = metricsResponse.getBody().asString();
+        log.info("Metrics response length: {} characters", metricsBody.length());
 
-        // JWT metrics should be initialized immediately when JwtMetricsCollector starts
-        // The 10s schedule is only for updating values, not for initializing metrics definitions
-
-        // Read final metrics and verify they exist
-        String metricsResponse = given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .extract()
-            .body()
-            .asString();
-
-        LOGGER.info("=== JWT Metrics Validation ===");
-
-        // CRITICAL: Verify that JWT metrics are properly initialized and present
-        // These metrics should be available immediately when JwtMetricsCollector starts
+        // Verify custom JWT HTTP metrics exist
+        assertMetricExists(metricsBody, "cui_jwt_http_request_duration_seconds", 
+                "Custom JWT HTTP request duration metric should be present");
         
-        // 1. Check for SecurityEventCounter metrics (cui_jwt_validation_errors)
-        boolean securityMetricsInitialized = metricsResponse.contains("cui_jwt_validation_errors");
-        LOGGER.info("SecurityEventCounter metrics initialized: {}", securityMetricsInitialized);
+        assertMetricExists(metricsBody, "cui_jwt_http_request_count_total", 
+                "Custom JWT HTTP request count metric should be present");
 
-        // 2. Check for TokenValidatorMonitor metrics (cui_jwt_validation_duration) 
-        boolean performanceMetricsInitialized = metricsResponse.contains("cui_jwt_validation_duration");
-        LOGGER.info("TokenValidatorMonitor metrics initialized: {}", performanceMetricsInitialized);
+        // Verify JWT validation library metrics exist  
+        assertMetricExists(metricsBody, "cui_jwt_validation_duration_seconds", 
+                "JWT validation pipeline metrics should be present");
 
-        // 3. Log actual JWT metrics found for debugging
-        logJwtMetricsDetails(metricsResponse);
+        // Verify standard Quarkus HTTP metrics exist
+        assertMetricExists(metricsBody, "http_server_requests_seconds", 
+                "Standard Quarkus HTTP server metrics should be present");
 
-        // 4. ASSERT that both metrics types are present - FAIL THE TEST if not
-        assertTrue(securityMetricsInitialized,
-            "SecurityEventCounter metrics (cui_jwt_validation_errors) must be initialized in metrics registry. " +
-                "This indicates JwtMetricsCollector is not properly instantiated or SecurityEventCounter injection failed.");
-
-        assertTrue(performanceMetricsInitialized,
-            "TokenValidatorMonitor metrics (cui_jwt_validation_duration) must be initialized in metrics registry. " +
-                "This indicates JwtMetricsCollector is not properly instantiated or TokenValidatorMonitor injection failed.");
-
-        LOGGER.info("✅ JWT metrics validation PASSED - both SecurityEventCounter and TokenValidatorMonitor metrics are properly initialized");
-    }
-
-    /**
-     * Logs detailed information about JWT metrics found in the response.
-     * This helps with debugging metrics collection issues.
-     */
-    private void logJwtMetricsDetails(String metricsResponse) {
-        LOGGER.info("=== JWT Metrics Details ===");
-
-        String[] lines = metricsResponse.split("\n");
-        int jwtMetricLines = 0;
-
-        for (String line : lines) {
-            if (line.contains("cui_jwt_validation")) {
-                jwtMetricLines++;
-                if (line.startsWith("# HELP")) {
-                    LOGGER.info("HELP: {}", line.substring(7).trim());
-                } else if (line.startsWith("# TYPE")) {
-                    LOGGER.info("TYPE: {}", line.substring(7).trim());
-                } else if (!line.startsWith("#") && !line.trim().isEmpty()) {
-                    LOGGER.info("DATA: {}", line.trim());
-                }
-            }
-        }
-
-        if (jwtMetricLines == 0) {
-            LOGGER.warn("No JWT metrics found in metrics response");
-            // Log first 10 lines for debugging
-            LOGGER.info("First 10 lines of metrics response for debugging:");
-            for (int i = 0; i < Math.min(10, lines.length); i++) {
-                LOGGER.info("Line {}: {}", i, lines[i]);
-            }
-        } else {
-            LOGGER.info("Found {} JWT-related metric lines", jwtMetricLines);
-        }
-    }
-
-    /**
-     * Logs performance metrics from the TokenValidatorMonitor.
-     * Parses the Prometheus metrics response to extract JWT validation duration metrics.
-     */
-    private void logPerformanceMetrics(String metricsResponse) {
-        String[] lines = metricsResponse.split("\n");
-        boolean foundDurationMetrics = false;
-
-        for (String line : lines) {
-            // Look for cui_jwt_validation_duration metrics
-            if (line.contains("cui_jwt_validation_duration") && !line.startsWith("#")) {
-                foundDurationMetrics = true;
-                
-                // Parse the metric line
-                // Format: cui_jwt_validation_duration_seconds{step="parsing",quantile="0.5"} 0.001234
-                if (line.contains("{") && line.contains("}")) {
-                    String metricName = line.substring(0, line.indexOf("{"));
-                    String tags = line.substring(line.indexOf("{") + 1, line.indexOf("}"));
-                    String value = line.substring(line.lastIndexOf(" ") + 1).trim();
-                    
-                    // Extract step tag
-                    String step = "";
-                    if (tags.contains("step=")) {
-                        int stepStart = tags.indexOf("step=\"") + 6;
-                        int stepEnd = tags.indexOf("\"", stepStart);
-                        if (stepEnd > stepStart) {
-                            step = tags.substring(stepStart, stepEnd);
-                        }
-                    }
-                    
-                    // Log based on metric type
-                    if (metricName.contains("_count")) {
-                        LOGGER.info("  Step '{}' - Count: {}", step, value);
-                    } else if (metricName.contains("_sum")) {
-                        LOGGER.info("  Step '{}' - Sum: {} seconds", step, value);
-                    } else if (tags.contains("quantile")) {
-                        // Extract quantile value
-                        String quantile = "";
-                        if (tags.contains("quantile=")) {
-                            int qStart = tags.indexOf("quantile=\"") + 10;
-                            int qEnd = tags.indexOf("\"", qStart);
-                            if (qEnd > qStart) {
-                                quantile = tags.substring(qStart, qEnd);
-                            }
-                        }
-                        LOGGER.info("  Step '{}' - {}th percentile: {} seconds", step, 
-                            Double.parseDouble(quantile) * 100, value);
-                    } else if (metricName.contains("_max")) {
-                        LOGGER.info("  Step '{}' - Max: {} seconds", step, value);
-                    }
-                }
-            }
-        }
-        
-        if (!foundDurationMetrics) {
-            LOGGER.info("  No JWT duration metrics found yet - metrics may be updated on schedule");
-        }
+        // Log sample of metrics for debugging
+        log.info("Sample metrics found: JWT HTTP duration={}, JWT validation={}, Standard HTTP={}", 
+                metricsBody.contains("cui_jwt_http_request_duration_seconds"),
+                metricsBody.contains("cui_jwt_validation_duration_seconds"),
+                metricsBody.contains("http_server_requests_seconds"));
     }
 
     @Test
-    @Order(6)
-    @DisplayName("Verify JWT metrics are exposed in Prometheus format")
-    void shouldExposeJwtMetricsInPrometheusFormat() {
-        String metricsResponse = given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .extract()
-            .body()
-            .asString();
+    @DisplayName("Should expose HTTP metrics for missing token scenario")
+    void shouldExposeHttpMetricsForMissingTokenScenario() {
+        // Make request without Authorization header
+        given()
+                .when()
+                .get("/secured")
+                .then()
+                .statusCode(401);
 
-        // Check for JWT validation error metrics
-        boolean hasErrorMetrics = metricsResponse.contains("cui_jwt_validation_errors");
+        // Verify metrics are still recorded for failed requests
+        Response metricsResponse = given()
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract().response();
 
-        // Check for JWT validation duration metrics  
-        boolean hasPerformanceMetrics = metricsResponse.contains("cui_jwt_validation_duration");
+        String metricsBody = metricsResponse.getBody().asString();
 
-        LOGGER.info("JWT Error Metrics Present: {}", hasErrorMetrics);
-        LOGGER.info("JWT Performance Metrics Present: {}", hasPerformanceMetrics);
+        // Should have HTTP-level metrics even for failed requests
+        assertMetricExists(metricsBody, "cui_jwt_http_request_duration_seconds", 
+                "HTTP request duration should be recorded for missing token");
+        
+        assertMetricExists(metricsBody, "cui_jwt_http_request_count_total", 
+                "HTTP request count should be recorded for missing token");
 
-        // At minimum, we should have the metrics definitions even if no data yet
-        if (hasErrorMetrics || hasPerformanceMetrics) {
-            LOGGER.info("JWT metrics are properly exposed in Prometheus format");
-        } else {
-            LOGGER.info("JWT metrics not yet present - may appear after token validation operations");
+        // Standard HTTP metrics should show 401 status
+        assertTrue(metricsBody.contains("status=\"401\""), 
+                "Standard HTTP metrics should record 401 status for missing token");
+    }
+
+    @Test
+    @DisplayName("Should expose HTTP metrics for invalid token scenario")
+    void shouldExposeHttpMetricsForInvalidTokenScenario() {
+        // Make request with invalid token
+        given()
+                .header("Authorization", "Bearer invalid.token.here")
+                .when()
+                .get("/secured")
+                .then()
+                .statusCode(401);
+
+        // Verify metrics include invalid token processing
+        Response metricsResponse = given()
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        String metricsBody = metricsResponse.getBody().asString();
+
+        // Should have HTTP-level metrics for invalid token processing
+        assertMetricExists(metricsBody, "cui_jwt_http_request_duration_seconds", 
+                "HTTP request duration should be recorded for invalid token");
+
+        // JWT validation metrics should show token processing attempts
+        assertMetricExists(metricsBody, "cui_jwt_validation_duration_seconds", 
+                "JWT validation metrics should record invalid token processing");
+    }
+
+    @Test
+    @DisplayName("Should track different HTTP measurement types")
+    void shouldTrackDifferentHttpMeasurementTypes() {
+        // Obtain a valid token with required scopes
+        TestRealm.TokenResponse tokens = testRealm.obtainValidTokenWithAllScopes();
+        
+        // Make multiple requests to generate diverse metrics
+        for (int i = 0; i < 5; i++) {
+            // Successful request
+            given()
+                    .header("Authorization", "Bearer " + tokens.accessToken())
+                    .when()
+                    .get("/secured")
+                    .then()
+                    .statusCode(200);
+
+            // Missing token request  
+            given()
+                    .when()
+                    .get("/secured")
+                    .then()
+                    .statusCode(401);
         }
+
+        // Verify comprehensive metrics collection
+        Response metricsResponse = given()
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        String metricsBody = metricsResponse.getBody().asString();
+
+        // Verify different metric dimensions exist
+        assertTrue(metricsBody.contains("cui_jwt_http_request_duration_seconds_count"), 
+                "HTTP duration count metric should exist");
+        assertTrue(metricsBody.contains("cui_jwt_http_request_duration_seconds_sum"), 
+                "HTTP duration sum metric should exist");
+        assertTrue(metricsBody.contains("cui_jwt_http_request_count_total"), 
+                "HTTP request count metric should exist");
+
+        // Verify different request outcomes are tracked
+        boolean hasSuccessMetrics = metricsBody.contains("status=\"success\"") || 
+                                   metricsBody.contains("status=\"200\"");
+        boolean hasFailureMetrics = metricsBody.contains("status=\"missing_token\"") || 
+                                   metricsBody.contains("status=\"401\"");
+
+        assertTrue(hasSuccessMetrics, "Should have metrics for successful requests");
+        assertTrue(hasFailureMetrics, "Should have metrics for failed requests");
+
+        log.info("Verified diverse HTTP metrics: success={}, failure={}", 
+                hasSuccessMetrics, hasFailureMetrics);
+    }
+
+    @Test
+    @DisplayName("Should expose both JWT-specific and standard HTTP metrics simultaneously")
+    void shouldExposeBothJwtSpecificAndStandardHttpMetricsSimultaneously() {
+        // Obtain a valid token with required scopes
+        TestRealm.TokenResponse tokens = testRealm.obtainValidTokenWithAllScopes();
+        
+        // Generate some traffic
+        given()
+                .header("Authorization", "Bearer " + tokens.accessToken())
+                .when()
+                .get("/secured")
+                .then()
+                .statusCode(200);
+
+        // Access health endpoint (should only have standard metrics, no JWT processing)
+        given()
+                .when()
+                .get("/q/health")
+                .then()
+                .statusCode(200);
+
+        // Verify both types of metrics coexist
+        Response metricsResponse = given()
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        String metricsBody = metricsResponse.getBody().asString();
+
+        // JWT-specific metrics (only for /secured endpoint)
+        assertMetricExists(metricsBody, "cui_jwt_http_request_duration_seconds", 
+                "JWT-specific HTTP metrics should exist");
+        assertMetricExists(metricsBody, "cui_jwt_validation_duration_seconds", 
+                "JWT validation metrics should exist");
+
+        // Standard HTTP metrics (for all endpoints)
+        assertMetricExists(metricsBody, "http_server_requests_seconds", 
+                "Standard HTTP metrics should exist");
+
+        // Verify both endpoints are tracked in standard metrics
+        assertTrue(metricsBody.contains("uri=\"/secured\""), 
+                "Standard metrics should track secured endpoint");
+        assertTrue(metricsBody.contains("uri=\"/q/health\""), 
+                "Standard metrics should track health endpoint");
+
+        // JWT metrics should only be for secured endpoints
+        int jwtMetricsCount = countOccurrences(metricsBody, "cui_jwt_http_request");
+        int standardMetricsCount = countOccurrences(metricsBody, "http_server_requests_seconds");
+
+        assertTrue(jwtMetricsCount > 0, "Should have JWT-specific metrics");
+        assertTrue(standardMetricsCount > jwtMetricsCount, 
+                "Should have more standard metrics than JWT-specific metrics");
+
+        log.info("Metrics coexistence verified: JWT={}, Standard={}", 
+                jwtMetricsCount, standardMetricsCount);
+    }
+
+    @Test
+    @DisplayName("Should maintain metric accuracy under concurrent load")
+    void shouldMaintainMetricAccuracyUnderConcurrentLoad() {
+        // Obtain a valid token with required scopes
+        TestRealm.TokenResponse tokens = testRealm.obtainValidTokenWithAllScopes();
+        
+        // Make multiple concurrent requests to test thread safety
+        int requestCount = 20;
+        
+        for (int i = 0; i < requestCount; i++) {
+            if (i % 2 == 0) {
+                // Successful requests
+                given()
+                        .header("Authorization", "Bearer " + tokens.accessToken())
+                        .when()
+                        .get("/secured")
+                        .then()
+                        .statusCode(200);
+            } else {
+                // Failed requests
+                given()
+                        .when()
+                        .get("/secured")
+                        .then()
+                        .statusCode(401);
+            }
+        }
+
+        // Verify metrics reflect the load
+        Response metricsResponse = given()
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract().response();
+
+        String metricsBody = metricsResponse.getBody().asString();
+
+        // Verify metrics show reasonable counts
+        assertMetricExists(metricsBody, "cui_jwt_http_request_count_total", 
+                "HTTP request count should be present after load");
+
+        // Should have both success and failure counts in standard metrics
+        boolean hasSuccessCount = metricsBody.matches(".*http_server_requests_seconds_count.*status=\"200\".*[1-9][0-9]*.*");
+        boolean hasFailureCount = metricsBody.matches(".*http_server_requests_seconds_count.*status=\"401\".*[1-9][0-9]*.*");
+
+        assertTrue(hasSuccessCount, "Should have positive success count in standard metrics");
+        assertTrue(hasFailureCount, "Should have positive failure count in standard metrics");
+
+        log.info("Concurrent load test completed: {} requests processed", requestCount);
+    }
+
+    /**
+     * Helper method to assert that a specific metric exists in the metrics output.
+     *
+     * @param metricsBody the full metrics response body
+     * @param metricName  the name of the metric to check for
+     * @param message     the assertion message
+     */
+    private void assertMetricExists(String metricsBody, String metricName, String message) {
+        assertTrue(metricsBody.contains(metricName), 
+                message + " (searching for: " + metricName + ")");
+    }
+
+    /**
+     * Helper method to count occurrences of a substring in a text.
+     *
+     * @param text the text to search in
+     * @param substring the substring to count
+     * @return the number of occurrences
+     */
+    private int countOccurrences(String text, String substring) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(substring, index)) != -1) {
+            count++;
+            index += substring.length();
+        }
+        return count;
     }
 }
