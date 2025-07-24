@@ -19,6 +19,9 @@ import de.cuioss.jwt.validation.TokenType;
 import lombok.NonNull;
 
 import java.time.Duration;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Provides high-metrics, thread-safe monitoring of JWT validation pipeline metrics.
@@ -78,7 +81,7 @@ public class TokenValidatorMonitor {
      * Tracks the count of tokens processed by type.
      * Array indexed by TokenType.ordinal()
      */
-    private final java.util.concurrent.atomic.AtomicLong[] tokenTypeCounts;
+    private final AtomicLong[] tokenTypeCounts;
 
     /**
      * Creates a new metrics monitor with default window size.
@@ -105,9 +108,9 @@ public class TokenValidatorMonitor {
         }
 
         // Initialize token type counters
-        this.tokenTypeCounts = new java.util.concurrent.atomic.AtomicLong[TokenType.values().length];
+        this.tokenTypeCounts = new AtomicLong[TokenType.values().length];
         for (int i = 0; i < tokenTypeCounts.length; i++) {
-            tokenTypeCounts[i] = new java.util.concurrent.atomic.AtomicLong(0);
+            tokenTypeCounts[i] = new AtomicLong(0);
         }
     }
 
@@ -168,7 +171,7 @@ public class TokenValidatorMonitor {
         for (StripedRingBuffer buffer : measurementBuffers) {
             buffer.reset();
         }
-        for (java.util.concurrent.atomic.AtomicLong counter : tokenTypeCounts) {
+        for (AtomicLong counter : tokenTypeCounts) {
             counter.set(0);
         }
     }
@@ -200,8 +203,8 @@ public class TokenValidatorMonitor {
      *
      * @return a map of token type to count
      */
-    public java.util.Map<TokenType, Long> getTokenTypeCounts() {
-        java.util.Map<TokenType, Long> counts = new java.util.EnumMap<>(TokenType.class);
+    public Map<TokenType, Long> getTokenTypeCounts() {
+        Map<TokenType, Long> counts = new EnumMap<>(TokenType.class);
         for (TokenType type : TokenType.values()) {
             counts.put(type, tokenTypeCounts[type.ordinal()].get());
         }

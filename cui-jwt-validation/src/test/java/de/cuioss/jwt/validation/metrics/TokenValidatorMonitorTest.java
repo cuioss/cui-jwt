@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
+import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -455,5 +457,153 @@ class TokenValidatorMonitorTest {
                         overheadPerMeasurementNanos));
 
         log.info("Performance overhead: {:.1f} ns per measurement", overheadPerMeasurementNanos);
+    }
+
+    @Test
+    @DisplayName("Should track token types correctly")
+    void shouldTrackTokenTypes() {
+        var monitor = new TokenValidatorMonitor();
+
+        // Initially, all counts should be zero
+        assertEquals(0, monitor.getTokenTypeCount(TokenType.ACCESS_TOKEN),
+                "Initial access token count should be zero");
+        assertEquals(0, monitor.getTokenTypeCount(TokenType.ID_TOKEN),
+                "Initial ID token count should be zero");
+        assertEquals(0, monitor.getTokenTypeCount(TokenType.REFRESH_TOKEN),
+                "Initial refresh token count should be zero");
+
+        // Record different token types
+        monitor.recordTokenType(TokenType.ACCESS_TOKEN);
+        monitor.recordTokenType(TokenType.ACCESS_TOKEN);
+        monitor.recordTokenType(TokenType.ID_TOKEN);
+        monitor.recordTokenType(TokenType.REFRESH_TOKEN);
+        monitor.recordTokenType(TokenType.REFRESH_TOKEN);
+        monitor.recordTokenType(TokenType.REFRESH_TOKEN);
+
+        // Verify individual counts
+        assertEquals(2, monitor.getTokenTypeCount(TokenType.ACCESS_TOKEN),
+                "Should have 2 access tokens");
+        assertEquals(1, monitor.getTokenTypeCount(TokenType.ID_TOKEN),
+                "Should have 1 ID token");
+        assertEquals(3, monitor.getTokenTypeCount(TokenType.REFRESH_TOKEN),
+                "Should have 3 refresh tokens");
+        assertEquals(0, monitor.getTokenTypeCount(TokenType.UNKNOWN),
+                "Should have 0 unknown tokens");
+    }
+
+    @Test
+    @DisplayName("Should return all token type counts as map")
+    void shouldReturnAllTokenTypeCountsAsMap() {
+        var monitor = new TokenValidatorMonitor();
+
+        // Record various token types
+        monitor.recordTokenType(TokenType.ACCESS_TOKEN);
+        monitor.recordTokenType(TokenType.ACCESS_TOKEN);
+        monitor.recordTokenType(TokenType.ACCESS_TOKEN);
+        monitor.recordTokenType(TokenType.ID_TOKEN);
+
+        // Get all counts as map
+        Map<TokenType, Long> counts = monitor.getTokenTypeCounts();
+
+        assertNotNull(counts, "Token type counts map should not be null");
+        assertEquals(4, counts.size(), "Map should contain all token types");
+
+        assertEquals(3L, counts.get(TokenType.ACCESS_TOKEN),
+                "Access token count should be 3");
+        assertEquals(1L, counts.get(TokenType.ID_TOKEN),
+                "ID token count should be 1");
+        assertEquals(0L, counts.get(TokenType.REFRESH_TOKEN),
+                "Refresh token count should be 0");
+        assertEquals(0L, counts.get(TokenType.UNKNOWN),
+                "Unknown token count should be 0");
+    }
+
+    @Test
+    @DisplayName("Should reset token type counts with resetAll")
+    void shouldResetTokenTypeCountsWithResetAll() {
+        var monitor = new TokenValidatorMonitor();
+
+        // Record some token types
+        monitor.recordTokenType(TokenType.ACCESS_TOKEN);
+        monitor.recordTokenType(TokenType.ID_TOKEN);
+        monitor.recordTokenType(TokenType.REFRESH_TOKEN);
+
+        // Reset all
+        monitor.resetAll();
+
+        // Verify all token type counts are reset
+        for (TokenType type : TokenType.values()) {
+            assertEquals(0, monitor.getTokenTypeCount(type),
+                    "Token type count should be reset to zero for " + type);
+        }
+
+        // Verify map is also reset
+        Map<TokenType, Long> counts = monitor.getTokenTypeCounts();
+        assertTrue(counts.values().stream().allMatch(count -> count == 0),
+                "All token type counts in map should be zero");
+    }
+
+    @Test
+    @DisplayName("Should handle concurrent token type recording")
+    void shouldHandleConcurrentTokenTypeRecording() {
+        var monitor = new TokenValidatorMonitor();
+        var threadCount = 20;
+        var recordingsPerThread = 100;
+        var startLatch = new CountDownLatch(1);
+        var completedThreads = new AtomicInteger(0);
+        var executor = Executors.newFixedThreadPool(threadCount);
+
+        // Submit threads for each token type
+        for (int i = 0; i < threadCount; i++) {
+            final TokenType tokenType = TokenType.values()[i % 3]; // Cycle through ACCESS, ID, REFRESH
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    for (int j = 0; j < recordingsPerThread; j++) {
+                        monitor.recordTokenType(tokenType);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    completedThreads.incrementAndGet();
+                }
+            });
+        }
+
+        // Start all threads simultaneously
+        startLatch.countDown();
+
+        // Wait for all threads to complete
+        await("All token type recording threads to complete")
+                .atMost(10, SECONDS)
+                .until(() -> completedThreads.get() == threadCount);
+
+        executor.shutdown();
+
+        // Verify total count
+        Map<TokenType, Long> counts = monitor.getTokenTypeCounts();
+        long totalRecorded = counts.values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        assertEquals(threadCount * recordingsPerThread, totalRecorded,
+                "Total recorded token types should match expected");
+
+        // Log the distribution for debugging
+        log.info("Token type distribution after concurrent recording: {}", counts);
+    }
+
+    @Test
+    @DisplayName("Should handle null token type gracefully")
+    void shouldHandleNullTokenTypeGracefully() {
+        var monitor = new TokenValidatorMonitor();
+
+        assertThrows(NullPointerException.class,
+                () -> monitor.recordTokenType(null),
+                "Should throw NPE for null token type");
+
+        assertThrows(NullPointerException.class,
+                () -> monitor.getTokenTypeCount(null),
+                "Should throw NPE for null token type in getCount");
     }
 }
