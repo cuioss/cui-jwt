@@ -108,12 +108,12 @@ public class TokenSignatureValidator {
         LOGGER.debug("Validating validation signature");
 
         // Get the kid from the validation header - precondition: already validated by TokenHeaderValidator
-        var kid = decodedJwt.getKid().orElseThrow(() -> 
-            new IllegalStateException("Key ID (kid) should have been validated by TokenHeaderValidator"));
+        var kid = decodedJwt.getKid().orElseThrow(() ->
+                new IllegalStateException("Key ID (kid) should have been validated by TokenHeaderValidator"));
 
         // Get the algorithm from the validation header - precondition: already validated by TokenHeaderValidator
-        var algorithm = decodedJwt.getAlg().orElseThrow(() -> 
-            new IllegalStateException("Algorithm (alg) should have been validated by TokenHeaderValidator"));
+        var algorithm = decodedJwt.getAlg().orElseThrow(() ->
+                new IllegalStateException("Algorithm (alg) should have been validated by TokenHeaderValidator"));
 
         // Signature validation is performed in verifySignature method
 

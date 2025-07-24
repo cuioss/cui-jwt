@@ -57,6 +57,9 @@ class MetricsIntegrationTest {
     @Test
     @DisplayName("Should record metrics for token validation")
     void shouldRecordMetricsForTokenValidation() {
+        // Force initialization of metrics collector
+        metricsCollector.updateCounters();
+
         String invalidToken = "invalid.jwt.token";
 
         assertThrows(TokenValidationException.class, () -> tokenValidator.createAccessToken(invalidToken),
@@ -79,6 +82,9 @@ class MetricsIntegrationTest {
     @Test
     @DisplayName("Should register metrics for all security event types")
     void shouldRegisterMetricsForAllSecurityEventTypes() {
+        // Force initialization of metrics collector
+        metricsCollector.updateCounters();
+
         // Verify that metrics are registered for all event types
         for (SecurityEventCounter.EventType eventType : SecurityEventCounter.EventType.values()) {
             // Skip success events as they're handled differently
@@ -126,6 +132,9 @@ class MetricsIntegrationTest {
     @MethodSource("invalidTokenScenarios")
     @DisplayName("Should record metrics for different invalid token scenarios")
     void shouldRecordMetricsForDifferentInvalidTokens(String description, String invalidToken, Class<? extends Exception> expectedException) {
+        // Force initialization of metrics collector
+        metricsCollector.updateCounters();
+
         Exception thrownException = assertThrows(expectedException, () -> tokenValidator.createAccessToken(invalidToken), "Should throw an exception for invalid token: " + description);
 
         assertTrue(expectedException.isAssignableFrom(thrownException.getClass()),

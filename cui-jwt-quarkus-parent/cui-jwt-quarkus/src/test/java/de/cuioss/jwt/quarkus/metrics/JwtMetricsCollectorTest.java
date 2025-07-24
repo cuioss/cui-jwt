@@ -114,6 +114,9 @@ class JwtMetricsCollectorTest {
         // Ensure collector is properly initialized
         assertNotNull(metricsCollector);
 
+        // Force initialization by calling a method on the collector
+        metricsCollector.updateCounters();
+
         // Get timers from registry
         Collection<Timer> timers = registry.find(JwtPropertyKeys.METRICS.VALIDATION_DURATION).timers();
 

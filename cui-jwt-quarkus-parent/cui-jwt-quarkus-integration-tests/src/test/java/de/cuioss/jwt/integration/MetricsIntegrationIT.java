@@ -16,11 +16,8 @@
 package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.MethodOrderer;
+
+import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
@@ -125,12 +122,13 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(1000)  // Run this test LAST to benefit from metrics created by previous tests
+    @Order(1000)
+    // Run this test LAST to benefit from metrics created by previous tests
     @DisplayName("Validate tokens and verify JWT performance metrics are collected")
     void shouldValidateTokensAndVerifyMetricsAreCollected() {
         // Get test realm for token validation
         TestRealm testRealm = TestRealm.createIntegrationRealm();
-        
+
         // Skip if Keycloak is not healthy
         if (!testRealm.isKeycloakHealthy()) {
             LOGGER.warn("Skipping token validation - Keycloak is not healthy");
@@ -173,30 +171,30 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
             .asString();
 
         LOGGER.info("=== JWT Metrics Validation ===");
-        
+
         // CRITICAL: Verify that JWT metrics are properly initialized and present
         // These metrics should be available immediately when JwtMetricsCollector starts
         
         // 1. Check for SecurityEventCounter metrics (cui_jwt_validation_errors)
         boolean securityMetricsInitialized = metricsResponse.contains("cui_jwt_validation_errors");
         LOGGER.info("SecurityEventCounter metrics initialized: {}", securityMetricsInitialized);
-        
+
         // 2. Check for TokenValidatorMonitor metrics (cui_jwt_validation_duration) 
         boolean performanceMetricsInitialized = metricsResponse.contains("cui_jwt_validation_duration");
         LOGGER.info("TokenValidatorMonitor metrics initialized: {}", performanceMetricsInitialized);
-        
+
         // 3. Log actual JWT metrics found for debugging
         logJwtMetricsDetails(metricsResponse);
-        
+
         // 4. ASSERT that both metrics types are present - FAIL THE TEST if not
-        assertTrue(securityMetricsInitialized, 
+        assertTrue(securityMetricsInitialized,
             "SecurityEventCounter metrics (cui_jwt_validation_errors) must be initialized in metrics registry. " +
-            "This indicates JwtMetricsCollector is not properly instantiated or SecurityEventCounter injection failed.");
-            
+                "This indicates JwtMetricsCollector is not properly instantiated or SecurityEventCounter injection failed.");
+
         assertTrue(performanceMetricsInitialized,
             "TokenValidatorMonitor metrics (cui_jwt_validation_duration) must be initialized in metrics registry. " +
-            "This indicates JwtMetricsCollector is not properly instantiated or TokenValidatorMonitor injection failed.");
-        
+                "This indicates JwtMetricsCollector is not properly instantiated or TokenValidatorMonitor injection failed.");
+
         LOGGER.info("✅ JWT metrics validation PASSED - both SecurityEventCounter and TokenValidatorMonitor metrics are properly initialized");
     }
 
@@ -206,10 +204,10 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
      */
     private void logJwtMetricsDetails(String metricsResponse) {
         LOGGER.info("=== JWT Metrics Details ===");
-        
+
         String[] lines = metricsResponse.split("\n");
         int jwtMetricLines = 0;
-        
+
         for (String line : lines) {
             if (line.contains("cui_jwt_validation")) {
                 jwtMetricLines++;
@@ -222,7 +220,7 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
                 }
             }
         }
-        
+
         if (jwtMetricLines == 0) {
             LOGGER.warn("No JWT metrics found in metrics response");
             // Log first 10 lines for debugging
@@ -250,13 +248,13 @@ class MetricsIntegrationIT extends BaseIntegrationTest {
 
         // Check for JWT validation error metrics
         boolean hasErrorMetrics = metricsResponse.contains("cui_jwt_validation_errors");
-        
+
         // Check for JWT validation duration metrics  
         boolean hasPerformanceMetrics = metricsResponse.contains("cui_jwt_validation_duration");
-        
+
         LOGGER.info("JWT Error Metrics Present: {}", hasErrorMetrics);
         LOGGER.info("JWT Performance Metrics Present: {}", hasPerformanceMetrics);
-        
+
         // At minimum, we should have the metrics definitions even if no data yet
         if (hasErrorMetrics || hasPerformanceMetrics) {
             LOGGER.info("JWT metrics are properly exposed in Prometheus format");

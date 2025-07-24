@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
 import de.cuioss.jwt.quarkus.servlet.VertxServletObjectsResolver;
@@ -48,6 +49,9 @@ import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.jwks.parser.JwksParser;
+import de.cuioss.jwt.validation.metrics.MeasurementType;
+// Metrics and monitoring classes
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 // JWT validation pipeline classes
 import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
@@ -59,11 +63,7 @@ import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 // Security and algorithm classes
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
-// Metrics and monitoring classes
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;

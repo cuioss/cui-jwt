@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -79,7 +78,7 @@ class SignatureTemplateManagerTest {
         for (int i = 0; i < numberOfThreads; i++) {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 for (int j = 0; j < operationsPerThread; j++) {
-                    Assertions.assertDoesNotThrow(() -> {
+                    assertDoesNotThrow(() -> {
                         Signature signature = manager.getSignatureInstance("ES256");
                         assertNotNull(signature);
                         assertEquals("SHA256withECDSA", signature.getAlgorithm());

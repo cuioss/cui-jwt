@@ -28,10 +28,9 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.arc.Unremovable;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.scheduler.Scheduled;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import lombok.NonNull;
 
@@ -115,11 +114,11 @@ public class JwtMetricsCollector {
     }
 
     /**
-     * Initializes all metrics when the application starts.
-     * 
-     * @param ev the startup event
+     * Initializes all metrics after dependency injection is complete.
+     * This method is guaranteed to run before any business method can be called.
      */
-    void initialize(@Observes StartupEvent ev) {
+    @PostConstruct
+    void initialize() {
         LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
         securityEventCounter = tokenValidator.getSecurityEventCounter();
         tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
