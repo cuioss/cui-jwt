@@ -170,24 +170,6 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            <!-- Maven Failsafe Plugin for Integration Tests -->
-            <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
-                    <systemPropertyVariables>
-                        <!-- Inherit parent properties but override problematic ones -->
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
-                        <maven.home>${maven.home}</maven.home>
-                        <!-- Override parent's quarkus.test.arg-line to avoid @{argLine} placeholder issues in native tests -->
-                        <quarkus.test.arg-line>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</quarkus.test.arg-line>
-                    </systemPropertyVariables>
-                    <useModulePath>false</useModulePath>
-                    <useFile>false</useFile>
-                    <trimStackTrace>false</trimStackTrace>
-                </configuration>
-            </plugin>
             <!-- JaCoCo Plugin for test coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -200,29 +182,10 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>default-prepare-agent-integration</id>
-                        <goals>
-                            <goal>prepare-agent-integration</goal>
-                        </goals>
-                    </execution>
-                    <execution>
                         <id>default-report</id>
                         <phase>test</phase>
                         <goals>
                             <goal>report</goal>
-                        </goals>
-                        <configuration>
-                            <formats>
-                                <format>XML</format>
-                                <format>HTML</format>
-                            </formats>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>default-report-integration</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>report-integration</goal>
                         </goals>
                         <configuration>
                             <formats>
