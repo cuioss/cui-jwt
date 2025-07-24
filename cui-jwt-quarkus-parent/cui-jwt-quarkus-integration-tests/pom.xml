@@ -150,7 +150,13 @@
                     <plugin>
                         <groupId>io.quarkus</groupId>
                         <artifactId>quarkus-maven-plugin</artifactId>
-                        <!-- No default executions - only build when called explicitly -->
+                        <executions>
+                            <!-- Override parent's default execution to prevent automatic native build -->
+                            <execution>
+                                <id>default</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
                     </plugin>
                     
                     <!-- Skip Unit Tests (Surefire) -->
@@ -195,6 +201,18 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${version.exec-maven-plugin}</version>
                         <executions>
+                            <!-- Build native executable if needed -->
+                            <execution>
+                                <id>build-native-if-needed</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/build-native-if-needed.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Build Docker image (native executable must already exist) -->
                             <execution>
                                 <id>docker-build-distroless</id>
@@ -267,7 +285,13 @@
                     <plugin>
                         <groupId>io.quarkus</groupId>
                         <artifactId>quarkus-maven-plugin</artifactId>
-                        <!-- No default executions - only build when called explicitly -->
+                        <executions>
+                            <!-- Override parent's default execution to prevent automatic native build -->
+                            <execution>
+                                <id>default</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
                     </plugin>
                     
                     <!-- Skip Unit Tests (Surefire) -->
@@ -312,6 +336,18 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${version.exec-maven-plugin}</version>
                         <executions>
+                            <!-- Build native executable if needed -->
+                            <execution>
+                                <id>build-native-if-needed</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/build-native-if-needed.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Build Docker image with JFR support (native executable must already exist) -->
                             <execution>
                                 <id>docker-build-jfr</id>
