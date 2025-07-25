@@ -86,7 +86,7 @@ public class TokenSignatureValidator {
      * <strong>Preconditions:</strong> This validator assumes that the following have already been validated:
      * <ul>
      *   <li>Token format (3 parts: header.payload.signature)</li>
-     *   <li>Algorithm (alg) claim presence and support - validated by {@link TokenHeaderValidator#validateAlgorithm}</li>
+     *   <li>Algorithm (alg) claim presence and support  </li>
      *   <li>Header structure and basic JWT format</li>
      * </ul>
      * <p>
@@ -182,7 +182,7 @@ public class TokenSignatureValidator {
 
         // Initialize the signature verifier with the appropriate algorithm
         try {
-            Signature verifier = getSignatureVerifier(algorithm);
+            Signature verifier = signatureTemplateManager.getSignatureInstance(algorithm);
             verifier.initVerify(publicKey);
             verifier.update(dataBytes);
 
@@ -222,19 +222,6 @@ public class TokenSignatureValidator {
                     e
             );
         }
-    }
-
-    /**
-     * Gets a Signature verifier for the specified algorithm using cached templates for performance.
-     * This method significantly improves ES256 performance by avoiding expensive getInstance() calls.
-     *
-     * @param algorithm the algorithm to use
-     * @return a Signature verifier
-     * @throws SignatureTemplateManager.UnsupportedAlgorithmException if the algorithm is not supported by the JDK or PSS parameters are invalid
-     * @throws IllegalArgumentException if the algorithm is not recognized
-     */
-    private Signature getSignatureVerifier(String algorithm) {
-        return signatureTemplateManager.getSignatureInstance(algorithm);
     }
 
     /**
