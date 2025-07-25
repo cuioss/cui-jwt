@@ -63,7 +63,7 @@ class IssuerConfigResolverConcurrencyTest {
         }
 
         IssuerConfigResolver resolver = new IssuerConfigResolver(
-                issuerConfigs.toArray(new IssuerConfig[0]),
+                issuerConfigs,
                 new SecurityEventCounter()
         );
 
@@ -123,7 +123,7 @@ class IssuerConfigResolverConcurrencyTest {
         String issuerId = config.getIssuerIdentifier();
 
         IssuerConfigResolver resolver = new IssuerConfigResolver(
-                new IssuerConfig[]{config},
+                List.of(config),
                 new SecurityEventCounter()
         );
 
@@ -177,7 +177,7 @@ class IssuerConfigResolverConcurrencyTest {
         }
 
         IssuerConfigResolver resolver = new IssuerConfigResolver(
-                issuerConfigs.toArray(new IssuerConfig[0]),
+                issuerConfigs,
                 new SecurityEventCounter()
         );
 

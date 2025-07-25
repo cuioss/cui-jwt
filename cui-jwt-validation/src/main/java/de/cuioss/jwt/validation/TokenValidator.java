@@ -150,9 +150,7 @@ public class TokenValidator {
     @Builder
     private TokenValidator(
             ParserConfig parserConfig,
-            @Singular @NonNull List<IssuerConfig> issuerConfigs,
-            SecurityEventCounter securityEventCounter,
-            TokenValidatorMonitor performanceMonitor) {
+            @Singular @NonNull List<IssuerConfig> issuerConfigs) {
 
         if (issuerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one issuer configuration must be provided");
@@ -165,8 +163,9 @@ public class TokenValidator {
 
         LOGGER.debug("Initialize token validator with %s and %s issuer configurations", parserConfig, issuerConfigs.size());
 
-        this.securityEventCounter = securityEventCounter != null ? securityEventCounter : new SecurityEventCounter();
-        this.performanceMonitor = performanceMonitor != null ? performanceMonitor : new TokenValidatorMonitor();
+        // Always create new instances internally
+        this.securityEventCounter = new SecurityEventCounter();
+        this.performanceMonitor = new TokenValidatorMonitor();
 
         this.jwtParser = NonValidatingJwtParser.builder()
                 .config(parserConfig)
@@ -174,8 +173,7 @@ public class TokenValidator {
                 .build();
 
         // Let the IssuerConfigResolver handle all issuer config processing
-        IssuerConfig[] configArray = issuerConfigs.toArray(new IssuerConfig[0]);
-        this.issuerConfigResolver = new IssuerConfigResolver(configArray, this.securityEventCounter);
+        this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }

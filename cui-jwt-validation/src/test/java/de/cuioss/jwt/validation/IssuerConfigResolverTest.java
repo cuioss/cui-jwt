@@ -65,7 +65,7 @@ class IssuerConfigResolverTest {
             String issuerIdentifier = config.getIssuerIdentifier();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 
@@ -81,7 +81,7 @@ class IssuerConfigResolverTest {
             String issuerIdentifier = config.getIssuerIdentifier();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 
@@ -104,7 +104,7 @@ class IssuerConfigResolverTest {
             String issuer2 = config2.getIssuerIdentifier();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config1, config2},
+                    List.of(config1, config2),
                     securityEventCounter
             );
 
@@ -132,7 +132,7 @@ class IssuerConfigResolverTest {
             IssuerConfig config = tokenHolder1.getIssuerConfig();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 
@@ -151,7 +151,7 @@ class IssuerConfigResolverTest {
             IssuerConfig config = tokenHolder1.getIssuerConfig();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 
@@ -176,7 +176,7 @@ class IssuerConfigResolverTest {
             String issuerIdentifier = config.getIssuerIdentifier();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 
@@ -222,7 +222,7 @@ class IssuerConfigResolverTest {
             }
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    configs.toArray(new IssuerConfig[0]),
+                    configs,
                     securityEventCounter
             );
 
@@ -265,7 +265,7 @@ class IssuerConfigResolverTest {
             String issuerIdentifier = config.getIssuerIdentifier();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 
@@ -286,7 +286,7 @@ class IssuerConfigResolverTest {
             String issuerIdentifier = config.getIssuerIdentifier();
 
             IssuerConfigResolver resolver = new IssuerConfigResolver(
-                    new IssuerConfig[]{config},
+                    List.of(config),
                     securityEventCounter
             );
 

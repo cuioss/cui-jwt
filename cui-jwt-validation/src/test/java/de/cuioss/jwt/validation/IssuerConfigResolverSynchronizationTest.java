@@ -53,7 +53,7 @@ class IssuerConfigResolverSynchronizationTest {
         issuerIdentifier = issuerConfig.getIssuerIdentifier();
 
         SecurityEventCounter securityEventCounter = new SecurityEventCounter();
-        issuerConfigResolver = new IssuerConfigResolver(new IssuerConfig[]{issuerConfig}, securityEventCounter);
+        issuerConfigResolver = new IssuerConfigResolver(List.of(issuerConfig), securityEventCounter);
     }
 
     @Test
@@ -68,7 +68,7 @@ class IssuerConfigResolverSynchronizationTest {
         for (int i = 0; i < 5; i++) {
             TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
             IssuerConfig config = tokenHolder.getIssuerConfig();
-            resolvers.add(new IssuerConfigResolver(new IssuerConfig[]{config}, securityEventCounter));
+            resolvers.add(new IssuerConfigResolver(List.of(config), securityEventCounter));
             issuerIds.add(config.getIssuerIdentifier());
         }
 
