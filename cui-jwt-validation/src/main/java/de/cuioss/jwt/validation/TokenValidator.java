@@ -24,6 +24,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
 import de.cuioss.jwt.validation.pipeline.TokenBuilder;
@@ -77,11 +78,18 @@ import java.util.Optional;
  *     .httpJwksLoaderConfig(httpConfig)
  *     .build(); // Validation happens automatically
  *
- * // Create the token validator
+ * // Create the token validator with custom metrics configuration
+ * TokenValidatorMonitorConfig metricsConfig = TokenValidatorMonitorConfig.builder()
+ *     .windowSize(200)
+ *     .measurementType(MeasurementType.SIGNATURE_VALIDATION)
+ *     .measurementType(MeasurementType.COMPLETE_VALIDATION)
+ *     .build();
+ *
  * // The validator creates a SecurityEventCounter internally and passes it to all components
  * TokenValidator tokenValidator = TokenValidator.builder()
  *     .parserConfig(ParserConfig.builder().build())
  *     .issuerConfig(issuerConfig)
+ *     .monitorConfig(metricsConfig)  // Optional: null means all types monitored
  *     .build();
  *
  * // Parse an access token
@@ -120,7 +128,6 @@ public class TokenValidator {
 
     private final NonValidatingJwtParser jwtParser;
 
-
     /**
      * Resolver for issuer configurations that handles caching and concurrency.
      * This encapsulates the complex logic for resolving issuer configs thread-safely.
@@ -150,7 +157,8 @@ public class TokenValidator {
     @Builder
     private TokenValidator(
             ParserConfig parserConfig,
-            @Singular @NonNull List<IssuerConfig> issuerConfigs) {
+            @Singular @NonNull List<IssuerConfig> issuerConfigs,
+            TokenValidatorMonitorConfig monitorConfig) {
 
         if (issuerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one issuer configuration must be provided");
@@ -165,7 +173,14 @@ public class TokenValidator {
 
         // Always create new instances internally
         this.securityEventCounter = new SecurityEventCounter();
-        this.performanceMonitor = new TokenValidatorMonitor();
+
+        // Create monitor based on configuration
+        if (monitorConfig != null) {
+            this.performanceMonitor = monitorConfig.createMonitor();
+        } else {
+            // Default: monitor all types with default window size
+            this.performanceMonitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
+        }
 
         this.jwtParser = NonValidatingJwtParser.builder()
                 .config(parserConfig)

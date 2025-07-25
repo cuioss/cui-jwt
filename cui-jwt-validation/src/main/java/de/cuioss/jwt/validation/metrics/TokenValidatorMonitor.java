@@ -16,9 +16,11 @@
 package de.cuioss.jwt.validation.metrics;
 
 import de.cuioss.tools.concurrent.StripedRingBuffer;
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.time.Duration;
+import java.util.Set;
 
 /**
  * Provides high-metrics, thread-safe monitoring of JWT validation pipeline metrics.
@@ -64,10 +66,6 @@ import java.time.Duration;
  */
 public class TokenValidatorMonitor {
 
-    /**
-     * Default number of samples to maintain in the rolling window.
-     */
-    public static final int DEFAULT_WINDOW_SIZE = 100;
 
     /**
      * Striped ring buffers for each measurement type.
@@ -75,27 +73,35 @@ public class TokenValidatorMonitor {
     private final StripedRingBuffer[] measurementBuffers;
 
     /**
-     * Creates a new metrics monitor with default window size.
+     * Set of enabled measurement types. Only measurements for these types
+     * will be recorded; others will be no-op operations.
      */
-    public TokenValidatorMonitor() {
-        this(DEFAULT_WINDOW_SIZE);
-    }
+    @Getter
+    private final Set<MeasurementType> enabledTypes;
 
     /**
-     * Creates a new metrics monitor with specified window size.
+     * Creates a new metrics monitor with specified window size and enabled measurement types.
+     * <p>
+     * Package-private constructor to be used from TokenValidatorMonitorConfig.
      *
      * @param windowSize number of samples to maintain per measurement type (must be positive)
+     * @param enabledTypes set of measurement types to monitor (others will be no-op)
      * @throws IllegalArgumentException if windowSize is not positive
      */
-    public TokenValidatorMonitor(int windowSize) {
+    TokenValidatorMonitor(int windowSize, @NonNull Set<MeasurementType> enabledTypes) {
         if (windowSize <= 0) {
             throw new IllegalArgumentException("Window size must be positive, got: " + windowSize);
         }
 
+        this.enabledTypes = Set.copyOf(enabledTypes); // Defensive copy
+
         // Initialize one striped ring buffer per measurement type
         this.measurementBuffers = new StripedRingBuffer[MeasurementType.values().length];
         for (int i = 0; i < measurementBuffers.length; i++) {
-            measurementBuffers[i] = new StripedRingBuffer(windowSize);
+            // Only create buffers for enabled types to save memory
+            if (this.enabledTypes.contains(MeasurementType.values()[i])) {
+                measurementBuffers[i] = new StripedRingBuffer(windowSize);
+            }
         }
     }
 
@@ -105,27 +111,44 @@ public class TokenValidatorMonitor {
      * This method is designed for maximum metrics with minimal overhead.
      * The measurement is recorded in microseconds and stored in a lock-free
      * ring buffer for later analysis.
+     * <p>
+     * If the measurement type is not enabled in this monitor's configuration,
+     * this method performs a no-op operation for optimal performance.
      *
      * @param measurementType the type of measurement being recorded
      * @param durationNanos   the duration in nanoseconds (will be converted to microseconds)
      */
     public void recordMeasurement(@NonNull MeasurementType measurementType, long durationNanos) {
-        // Convert nanoseconds to microseconds for consistent storage
-        long durationMicros = Math.max(0, durationNanos / 1000);
-        measurementBuffers[measurementType.ordinal()].recordMeasurement(durationMicros);
+        // Early return for disabled measurement types (no-op)
+        if (!enabledTypes.contains(measurementType)) {
+            return;
+        }
+
+        StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
+        if (buffer != null) { // Additional safety check
+            // Convert nanoseconds to microseconds for consistent storage
+            long durationMicros = Math.max(0, durationNanos / 1000);
+            buffer.recordMeasurement(durationMicros);
+        }
     }
 
     /**
      * Calculates the average duration for the specified measurement type.
      * <p>
      * The average is calculated from all current samples in the rolling window.
-     * If no measurements have been recorded, returns Duration.ZERO.
+     * If no measurements have been recorded or the measurement type is disabled,
+     * returns Duration.ZERO.
      *
      * @param measurementType the type of measurement to analyze
-     * @return the average duration, or Duration.ZERO if no measurements exist
+     * @return the average duration, or Duration.ZERO if no measurements exist or type is disabled
      */
     public Duration getAverageDuration(@NonNull MeasurementType measurementType) {
-        long averageMicros = measurementBuffers[measurementType.ordinal()].getAverage();
+        StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
+        if (buffer == null) {
+            return Duration.ZERO; // Measurement type not enabled
+        }
+
+        long averageMicros = buffer.getAverage();
         // Convert microseconds back to Duration
         return Duration.ofNanos(averageMicros * 1000);
     }
@@ -134,10 +157,11 @@ public class TokenValidatorMonitor {
      * Gets the current sample count for the specified measurement type.
      *
      * @param measurementType the type of measurement to check
-     * @return the number of samples currently recorded (up to window size)
+     * @return the number of samples currently recorded (up to window size), or 0 if type is disabled
      */
     public int getSampleCount(@NonNull MeasurementType measurementType) {
-        return measurementBuffers[measurementType.ordinal()].getSampleCount();
+        StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
+        return buffer != null ? buffer.getSampleCount() : 0;
     }
 
     /**
@@ -146,15 +170,20 @@ public class TokenValidatorMonitor {
      * @param measurementType the type of measurement to reset
      */
     public void reset(@NonNull MeasurementType measurementType) {
-        measurementBuffers[measurementType.ordinal()].reset();
+        StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
+        if (buffer != null) {
+            buffer.reset();
+        }
     }
 
     /**
-     * Resets all measurements for all types.
+     * Resets all measurements for all enabled types.
      */
     public void resetAll() {
         for (StripedRingBuffer buffer : measurementBuffers) {
-            buffer.reset();
+            if (buffer != null) {
+                buffer.reset();
+            }
         }
     }
 

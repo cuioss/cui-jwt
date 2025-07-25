@@ -103,6 +103,18 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(22)
                 .build();
 
+        public static final LogRecord MONITOR_CONFIG_DISABLED = LogRecordModel.builder()
+                .template("JWT validation metrics monitoring is disabled")
+                .prefix(PREFIX)
+                .identifier(23)
+                .build();
+
+        public static final LogRecord MONITOR_CONFIG_RESOLVED = LogRecordModel.builder()
+                .template("Resolved TokenValidatorMonitorConfig: windowSize=%s, measurementTypes=%s (%s)")
+                .prefix(PREFIX)
+                .identifier(24)
+                .build();
+
         // Bearer Token Messages (031-040)
         
         public static final LogRecord BEARER_TOKEN_VALIDATION_SUCCESS = LogRecordModel.builder()

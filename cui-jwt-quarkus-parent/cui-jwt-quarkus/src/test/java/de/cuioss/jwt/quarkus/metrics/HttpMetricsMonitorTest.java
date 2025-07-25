@@ -115,11 +115,11 @@ class HttpMetricsMonitorTest {
                 "Should have three samples recorded");
 
         Duration average = monitor.getAverageDuration(measurementType);
-        
+
         // With exponential moving average (alpha=0.1), the result should be between first and last measurement
         assertTrue(average.toMillis() >= 10 && average.toMillis() <= 30,
                 "Average should be between 10ms and 30ms: " + average.toMillis() + "ms");
-        
+
         // The exponential moving average should not be exactly the simple average (20ms)
         // Due to the weighting algorithm, it will be influenced by the sequence of measurements
         assertNotEquals(20, average.toMillis(),
@@ -285,7 +285,7 @@ class HttpMetricsMonitorTest {
                         // Use different durations per thread for verification
                         long duration = (threadId + 1) * 1_000_000L; // 1ms, 2ms, 3ms, etc.
                         monitor.recordMeasurement(measurementType, duration);
-                        
+
                         // Also record request statuses
                         HttpRequestStatus status = HttpRequestStatus.values()[j % HttpRequestStatus.values().length];
                         monitor.recordRequestStatus(status);
@@ -407,7 +407,7 @@ class HttpMetricsMonitorTest {
             for (int threadIndex = 0; threadIndex < threadsPerType; threadIndex++) {
                 final int statusIndex = threadIndex % requestStatuses.length;
                 final var requestStatus = requestStatuses[statusIndex];
-                
+
                 executor.submit(() -> {
                     try {
                         startLatch.await();
@@ -503,15 +503,15 @@ class HttpMetricsMonitorTest {
     @DisplayName("Should verify enum descriptions")
     void shouldVerifyEnumDescriptions() {
         // Verify HttpMeasurementType descriptions
-        assertEquals("Total HTTP request processing", 
+        assertEquals("Total HTTP request processing",
                 HttpMeasurementType.REQUEST_PROCESSING.getDescription());
-        assertEquals("Authorization header extraction", 
+        assertEquals("Authorization header extraction",
                 HttpMeasurementType.HEADER_EXTRACTION.getDescription());
-        assertEquals("Bearer token extraction", 
+        assertEquals("Bearer token extraction",
                 HttpMeasurementType.TOKEN_EXTRACTION.getDescription());
-        assertEquals("Authorization requirements check", 
+        assertEquals("Authorization requirements check",
                 HttpMeasurementType.AUTHORIZATION_CHECK.getDescription());
-        assertEquals("Error response formatting", 
+        assertEquals("Error response formatting",
                 HttpMeasurementType.RESPONSE_FORMATTING.getDescription());
 
         // Verify HttpRequestStatus enum values exist

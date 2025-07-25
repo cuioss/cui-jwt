@@ -121,10 +121,10 @@ public class HttpMetricsMonitor {
     public void recordMeasurement(@NonNull HttpMeasurementType measurementType, long durationNanos) {
         int index = measurementType.ordinal();
         Duration newDuration = Duration.ofNanos(Math.max(0, durationNanos));
-        
+
         // Increment sample count
         long count = sampleCounts[index].incrementAndGet();
-        
+
         // Update average using exponential moving average
         averageDurations[index].updateAndGet(current -> {
             if (count == 1) {

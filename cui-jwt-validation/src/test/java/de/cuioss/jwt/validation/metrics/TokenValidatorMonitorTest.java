@@ -60,7 +60,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should create monitor with default window size")
     void shouldCreateMonitorWithDefaultWindowSize() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         assertNotNull(monitor, "Monitor should be created");
 
         // Verify initial state - no measurements recorded
@@ -75,7 +75,11 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should create monitor with custom window size")
     void shouldCreateMonitorWithCustomWindowSize() {
-        var monitor = new TokenValidatorMonitor(50);
+        var monitor = TokenValidatorMonitorConfig.builder()
+                .windowSize(50)
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
         assertNotNull(monitor, "Monitor should be created with custom window size");
     }
 
@@ -83,18 +87,26 @@ class TokenValidatorMonitorTest {
     @DisplayName("Should reject invalid window sizes")
     void shouldRejectInvalidWindowSizes() {
         assertThrows(IllegalArgumentException.class,
-                () -> new TokenValidatorMonitor(0),
+                () -> TokenValidatorMonitorConfig.builder()
+                        .windowSize(0)
+                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                        .build()
+                        .createMonitor(),
                 "Should reject zero window size");
 
         assertThrows(IllegalArgumentException.class,
-                () -> new TokenValidatorMonitor(-1),
+                () -> TokenValidatorMonitorConfig.builder()
+                        .windowSize(-1)
+                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                        .build()
+                        .createMonitor(),
                 "Should reject negative window size");
     }
 
     @Test
     @DisplayName("Should record single measurement")
     void shouldRecordSingleMeasurement() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.SIGNATURE_VALIDATION;
 
         // Record 1 millisecond (1,000,000 nanoseconds)
@@ -112,7 +124,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should record multiple measurements and calculate average")
     void shouldRecordMultipleMeasurementsAndCalculateAverage() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.COMPLETE_VALIDATION;
 
         // Record measurements: 1ms, 2ms, 3ms (average = 2ms)
@@ -131,7 +143,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should handle microsecond precision")
     void shouldHandleMicrosecondPrecision() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.TOKEN_PARSING;
 
         // Record 500 microseconds (500,000 nanoseconds)
@@ -146,7 +158,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should isolate measurements between types")
     void shouldIsolateMeasurementsBetweenTypes() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
 
         // Record different values for different types
         monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, 5_000_000); // 5ms
@@ -169,7 +181,11 @@ class TokenValidatorMonitorTest {
     @DisplayName("Should respect rolling window size")
     void shouldRespectRollingWindowSize() {
         var windowSize = 3;
-        var monitor = new TokenValidatorMonitor(windowSize);
+        var monitor = TokenValidatorMonitorConfig.builder()
+                .windowSize(windowSize)
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
         var measurementType = MeasurementType.HEADER_VALIDATION;
 
         // Record more measurements than window size
@@ -191,7 +207,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should reset specific measurement type")
     void shouldResetSpecificMeasurementType() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
 
         // Record measurements for multiple types
         monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, 5_000_000);
@@ -212,7 +228,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should reset all measurements")
     void shouldResetAllMeasurements() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
 
         // Record measurements for all types
         for (MeasurementType type : MeasurementType.values()) {
@@ -234,7 +250,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should handle zero and negative durations")
     void shouldHandleZeroAndNegativeDurations() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.JWKS_OPERATIONS;
 
         // Record zero duration
@@ -253,7 +269,7 @@ class TokenValidatorMonitorTest {
     void shouldBeThreadSafeUnderModerateLoad() {
         var threadCount = 10;
         var measurementsPerThread = 1000;
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.COMPLETE_VALIDATION;
         var startLatch = new CountDownLatch(1);
         var completedThreads = new AtomicInteger(0);
@@ -302,7 +318,11 @@ class TokenValidatorMonitorTest {
     void shouldHandleMassiveParallelLoad() {
         var threadCount = 50;
         var measurementsPerThread = 5000;
-        var monitor = new TokenValidatorMonitor(200); // Larger window for this test
+        var monitor = TokenValidatorMonitorConfig.builder()
+                .windowSize(200) // Larger window for this test
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
         var measurementType = MeasurementType.SIGNATURE_VALIDATION;
         var startLatch = new CountDownLatch(1);
         var completedThreads = new AtomicInteger(0);
@@ -363,7 +383,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should handle concurrent access to different measurement types")
     void shouldHandleConcurrentAccessToDifferentMeasurementTypes() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementTypes = MeasurementType.values();
         var threadsPerType = 5;
         var measurementsPerThread = 100;
@@ -420,7 +440,7 @@ class TokenValidatorMonitorTest {
     @RepeatedTest(5)
     @DisplayName("Should be consistent across multiple runs")
     void shouldBeConsistentAcrossMultipleRuns() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.CLAIMS_VALIDATION;
 
         // Record consistent measurements
@@ -435,7 +455,7 @@ class TokenValidatorMonitorTest {
     @Test
     @DisplayName("Should have minimal metrics overhead")
     void shouldHaveMinimalPerformanceOverhead() {
-        var monitor = new TokenValidatorMonitor();
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.SIGNATURE_VALIDATION;
         var iterations = 100_000;
 

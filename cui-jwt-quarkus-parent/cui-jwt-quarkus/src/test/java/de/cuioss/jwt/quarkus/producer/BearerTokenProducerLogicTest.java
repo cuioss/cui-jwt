@@ -64,7 +64,7 @@ class BearerTokenProducerLogicTest {
     void setup() {
         requestResolverMock = new HttpServletRequestResolverMock();
         mockTokenValidator = new MockTokenValidator();
-        underTest = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+        underTest = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
     }
 
     @Nested
@@ -328,7 +328,7 @@ class BearerTokenProducerLogicTest {
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Use the CDI producer with requirements that will fail
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
             var result = producer.produceBearerTokenResult(new MockInjectionPoint(
                     Set.of("read"), Set.of("admin"), Set.of("managers")));
 
@@ -352,7 +352,7 @@ class BearerTokenProducerLogicTest {
             mockTokenValidator.setAccessTokenContent(tokenContent);
 
             // Use the CDI producer
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
             MockInjectionPoint injectionPoint = new MockInjectionPoint(Set.of("read"), Set.of("admin"), Set.of("managers"));
 
             // IllegalStateException should now bubble up
@@ -372,7 +372,7 @@ class BearerTokenProducerLogicTest {
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Use the CDI producer with requirements that will partially fail
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
             var result = producer.produceBearerTokenResult(new MockInjectionPoint(
                     Set.of("read", "write"), Set.of("admin"), Set.of("developers")));
 
@@ -396,7 +396,7 @@ class BearerTokenProducerLogicTest {
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Use the CDI producer with only scope requirements
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
             var result = producer.produceBearerTokenResult(new MockInjectionPoint(
                     Set.of("read"), Set.of(), Set.of()));
 
@@ -424,7 +424,7 @@ class BearerTokenProducerLogicTest {
             trackingMock.setRequestContextAvailable(false);
 
             // Create producer with tracking mock
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, trackingMock);
+            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator.getDelegate(), trackingMock);
             MockInjectionPoint injectionPoint = new MockInjectionPoint(Set.of("read"), Set.of("admin"), Set.of("managers"));
 
             // IllegalStateException should now bubble up
@@ -436,14 +436,14 @@ class BearerTokenProducerLogicTest {
         void shouldProperlyDistinguishBetweenInfrastructureErrorsAndMissingTokens() {
             // Test infrastructure error case - should throw IllegalStateException
             requestResolverMock.setRequestContextAvailable(false);
-            BearerTokenProducer producer1 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer1 = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
             MockInjectionPoint injectionPoint1 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
             assertThrows(IllegalStateException.class, () -> producer1.produceBearerTokenResult(injectionPoint1));
 
             // Test missing token case
             requestResolverMock.setRequestContextAvailable(true);
             requestResolverMock.clearHeaders(); // No Authorization header
-            BearerTokenProducer producer2 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer2 = new BearerTokenProducer(mockTokenValidator.getDelegate(), requestResolverMock);
             MockInjectionPoint injectionPoint2 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
             var result2 = producer2.produceBearerTokenResult(injectionPoint2);
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result2.getStatus());

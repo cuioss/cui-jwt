@@ -180,7 +180,7 @@ public class BearerTokenProducer {
                 Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
                 long authCheckEndTime = System.nanoTime();
                 httpMetricsMonitor.recordMeasurement(
-                        HttpMetricsMonitor.HttpMeasurementType.AUTHORIZATION_CHECK, 
+                        HttpMetricsMonitor.HttpMeasurementType.AUTHORIZATION_CHECK,
                         authCheckEndTime - authCheckStartTime);
 
                 if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
@@ -210,7 +210,7 @@ public class BearerTokenProducer {
             // Record total request processing time
             long requestEndTime = System.nanoTime();
             httpMetricsMonitor.recordMeasurement(
-                    HttpMetricsMonitor.HttpMeasurementType.REQUEST_PROCESSING, 
+                    HttpMetricsMonitor.HttpMeasurementType.REQUEST_PROCESSING,
                     requestEndTime - requestStartTime);
         }
     }
@@ -236,9 +236,9 @@ public class BearerTokenProducer {
             Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
             long headerExtractionEnd = System.nanoTime();
             httpMetricsMonitor.recordMeasurement(
-                    HttpMetricsMonitor.HttpMeasurementType.HEADER_EXTRACTION, 
+                    HttpMetricsMonitor.HttpMeasurementType.HEADER_EXTRACTION,
                     headerExtractionEnd - headerExtractionStart);
-            
+
             LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
 
             // Header names are normalized to lowercase by HttpServletRequestResolver per RFC 9113 (HTTP/2)
@@ -264,7 +264,7 @@ public class BearerTokenProducer {
             // Record token extraction time (includes header extraction)
             long endTime = System.nanoTime();
             httpMetricsMonitor.recordMeasurement(
-                    HttpMetricsMonitor.HttpMeasurementType.TOKEN_EXTRACTION, 
+                    HttpMetricsMonitor.HttpMeasurementType.TOKEN_EXTRACTION,
                     endTime - startTime);
         }
     }

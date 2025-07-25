@@ -117,9 +117,9 @@ public class JwtMetricsCollector {
      * @param bearerTokenProducer the bearer token producer containing HTTP monitoring components
      */
     @Inject
-    public JwtMetricsCollector(@NonNull MeterRegistry registry, 
-                              @NonNull TokenValidator tokenValidator,
-                              @NonNull BearerTokenProducer bearerTokenProducer) {
+    public JwtMetricsCollector(@NonNull MeterRegistry registry,
+            @NonNull TokenValidator tokenValidator,
+            @NonNull BearerTokenProducer bearerTokenProducer) {
         this.registry = registry;
         this.tokenValidator = tokenValidator;
         this.bearerTokenProducer = bearerTokenProducer;
@@ -156,7 +156,7 @@ public class JwtMetricsCollector {
         }
 
         LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size()));
-        
+
         // Force initial update to ensure metrics are visible immediately
         updateCounters();
     }
@@ -195,7 +195,7 @@ public class JwtMetricsCollector {
     }
 
     /**
-     * Registers timers for all performance measurement types.
+     * Registers timers for enabled performance measurement types only.
      */
     private void registerPerformanceTimers() {
         if (tokenValidatorMonitor == null) {
@@ -203,8 +203,8 @@ public class JwtMetricsCollector {
             return;
         }
 
-        // For each measurement type, create a timer with appropriate tags
-        for (MeasurementType measurementType : MeasurementType.values()) {
+        // Only register timers for measurement types that are enabled in the monitor
+        for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
             // Create tags for this measurement type
             Tags tags = Tags.of(
                     Tag.of(TAG_STEP, measurementType.name().toLowerCase())
@@ -219,8 +219,10 @@ public class JwtMetricsCollector {
             // Store the timer for later updates
             timers.put(measurementType.name(), timer);
 
-            LOGGER.debug("Registered timer for measurement type %s", measurementType.name());
+            LOGGER.debug("Registered timer for enabled measurement type %s", measurementType.name());
         }
+
+        LOGGER.debug("Registered %s performance timers for enabled measurement types", timers.size());
     }
 
     /**
@@ -235,12 +237,12 @@ public class JwtMetricsCollector {
         // Register timers for HTTP measurement types
         for (HttpMetricsMonitor.HttpMeasurementType measurementType : HttpMetricsMonitor.HttpMeasurementType.values()) {
             Tags tags = Tags.of(Tag.of(TAG_TYPE, measurementType.name().toLowerCase()));
-            
+
             Timer timer = Timer.builder(HTTP_REQUEST_DURATION)
                     .tags(tags)
                     .description("Duration of HTTP-level JWT processing: " + measurementType.getDescription())
                     .register(registry);
-            
+
             timers.put("HTTP_" + measurementType.name(), timer);
             LOGGER.debug("Registered HTTP timer for measurement type %s", measurementType.name());
         }
@@ -248,13 +250,13 @@ public class JwtMetricsCollector {
         // Register counters for HTTP request statuses
         for (HttpMetricsMonitor.HttpRequestStatus status : HttpMetricsMonitor.HttpRequestStatus.values()) {
             Tags tags = Tags.of(Tag.of(TAG_STATUS, status.name().toLowerCase()));
-            
+
             Counter counter = Counter.builder(HTTP_REQUEST_COUNT)
                     .tags(tags)
                     .description("Count of HTTP requests by status")
                     .baseUnit("requests")
                     .register(registry);
-            
+
             counters.put("HTTP_STATUS_" + status.name(), counter);
             LOGGER.debug("Registered HTTP counter for status %s", status.name());
         }
@@ -310,15 +312,15 @@ public class JwtMetricsCollector {
 
     /**
      * Updates performance metrics from the TokenValidatorMonitor state.
-     * Records the current average duration for each measurement type as gauge values.
+     * Only processes measurement types that are enabled in the monitor configuration.
      */
     private void updatePerformanceMetrics() {
         if (tokenValidatorMonitor == null) {
             return;
         }
 
-        // For each measurement type, record the current average as a gauge
-        for (MeasurementType measurementType : MeasurementType.values()) {
+        // Only process measurement types that are enabled and have registered timers
+        for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
             Timer timer = timers.get(measurementType.name());
             if (timer != null) {
                 // Get the current average duration from the monitor
@@ -361,13 +363,13 @@ public class JwtMetricsCollector {
         for (Map.Entry<HttpMetricsMonitor.HttpRequestStatus, Long> entry : statusCounts.entrySet()) {
             HttpMetricsMonitor.HttpRequestStatus status = entry.getKey();
             Long currentCount = entry.getValue();
-            
+
             // Get the last known count for this status
             Long lastCount = lastKnownHttpStatusCounts.getOrDefault(status, 0L);
-            
+
             // Calculate the delta
             long delta = currentCount - lastCount;
-            
+
             // Only update if there's a change
             if (delta > 0) {
                 Counter counter = counters.get("HTTP_STATUS_" + status.name());
@@ -375,7 +377,7 @@ public class JwtMetricsCollector {
                     counter.increment(delta);
                     LOGGER.debug("Updated HTTP status counter for %s by %d", status.name(), delta);
                 }
-                
+
                 // Update the last known count
                 lastKnownHttpStatusCounts.put(status, currentCount);
             }

@@ -17,10 +17,12 @@ package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.config.TokenValidatorMonitorConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -108,15 +110,20 @@ public class TokenValidatorProducer {
         ParserConfigResolver parserConfigResolver = new ParserConfigResolver(config);
         ParserConfig parserConfig = parserConfigResolver.resolveParserConfig();
 
+        // Resolve monitor config using the dedicated resolver
+        TokenValidatorMonitorConfigResolver monitorConfigResolver = new TokenValidatorMonitorConfigResolver(config);
+        TokenValidatorMonitorConfig monitorConfig = monitorConfigResolver.resolveMonitorConfig();
+
         // Create TokenValidator using builder pattern - it handles internal initialization
         TokenValidator.TokenValidatorBuilder builder = TokenValidator.builder()
-                .parserConfig(parserConfig);
-        
+                .parserConfig(parserConfig)
+                .monitorConfig(monitorConfig);
+
         // Add each issuer config to the builder
         for (IssuerConfig issuerConfig : issuerConfigs) {
             builder.issuerConfig(issuerConfig);
         }
-        
+
         tokenValidator = builder.build();
 
         // Extract SecurityEventCounter from the TokenValidator

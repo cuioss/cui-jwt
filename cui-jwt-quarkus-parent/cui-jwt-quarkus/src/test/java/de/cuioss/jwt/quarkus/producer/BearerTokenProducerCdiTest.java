@@ -275,7 +275,7 @@ class BearerTokenProducerCdiTest {
 
         @Produces
         public TokenValidator tokenValidator() {
-            return mockTokenValidator;
+            return mockTokenValidator.getDelegate();
         }
 
         @Produces
