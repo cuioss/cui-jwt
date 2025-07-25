@@ -122,7 +122,7 @@ class BearerTokenProducerLogicTest {
                                            new ArrayList<>(actual.getScopes()).stream().sorted().toList());
                 case GROUPS -> assertEquals(new ArrayList<>(expected.getGroups()).stream().sorted().toList(),
                                            new ArrayList<>(actual.getGroups()).stream().sorted().toList());
-                default -> fail("Test is not configured to handle claim type: " + claimName)
+                default -> fail("Test is not configured to handle claim type: " + claimName);
             }
         }
     }
