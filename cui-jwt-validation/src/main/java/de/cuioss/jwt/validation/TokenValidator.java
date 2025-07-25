@@ -33,10 +33,13 @@ import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Singular;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -76,10 +79,10 @@ import java.util.Optional;
  *
  * // Create the token validator
  * // The validator creates a SecurityEventCounter internally and passes it to all components
- * TokenValidator tokenValidator = new TokenValidator(
- *     ParserConfig.builder().build(),
- *     issuerConfig
- * );
+ * TokenValidator tokenValidator = TokenValidator.builder()
+ *     .parserConfig(ParserConfig.builder().build())
+ *     .issuerConfig(issuerConfig)
+ *     .build();
  *
  * // Parse an access token
  * Optional&lt;AccessTokenContent&gt; accessToken = tokenValidator.createAccessToken(tokenString);
@@ -142,34 +145,49 @@ public class TokenValidator {
 
 
     /**
-     * Creates a new TokenValidator with the given issuer configurations.
-     * It is used for standard use cases where no special configuration is needed.
-     *
-     * @param issuerConfigs varargs of issuer configurations, must not be null
+     * Private constructor used by builder.
      */
-    public TokenValidator(@NonNull IssuerConfig... issuerConfigs) {
-        this(ParserConfig.builder().build(), issuerConfigs);
-    }
+    @Builder
+    private TokenValidator(
+            @NonNull ParserConfig parserConfig,
+            @Singular @NonNull List<IssuerConfig> issuerConfigs,
+            SecurityEventCounter securityEventCounter,
+            TokenValidatorMonitor performanceMonitor) {
 
-    /**
-     * Creates a new TokenValidator with the given issuer configurations and parser configuration.
-     *
-     * @param config        configuration for the parser, must not be null
-     * @param issuerConfigs varargs of issuer configurations, must not be null and must contain at least one configuration
-     */
-    public TokenValidator(@NonNull ParserConfig config, @NonNull IssuerConfig... issuerConfigs) {
-        LOGGER.debug("Initialize token validator with %s and %s issuer configurations", config, issuerConfigs.length);
-        this.securityEventCounter = new SecurityEventCounter();
-        this.performanceMonitor = new TokenValidatorMonitor();
+        if (issuerConfigs.isEmpty()) {
+            throw new IllegalArgumentException("At least one issuer configuration must be provided");
+        }
+
+        LOGGER.debug("Initialize token validator with %s and %s issuer configurations", parserConfig, issuerConfigs.size());
+
+        this.securityEventCounter = securityEventCounter != null ? securityEventCounter : new SecurityEventCounter();
+        this.performanceMonitor = performanceMonitor != null ? performanceMonitor : new TokenValidatorMonitor();
+
         this.jwtParser = NonValidatingJwtParser.builder()
-                .config(config)
-                .securityEventCounter(securityEventCounter)
+                .config(parserConfig)
+                .securityEventCounter(this.securityEventCounter)
                 .build();
 
         // Let the IssuerConfigResolver handle all issuer config processing
-        this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, securityEventCounter);
+        IssuerConfig[] configArray = issuerConfigs.toArray(new IssuerConfig[0]);
+        this.issuerConfigResolver = new IssuerConfigResolver(configArray, this.securityEventCounter);
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
+    }
+
+    /**
+     * Builder class for TokenValidator. Uses default values if not specified.
+     */
+    public static class TokenValidatorBuilder {
+        private ParserConfig parserConfig = ParserConfig.builder().build();
+
+        /**
+         * Sets the parser configuration. If not called, uses default ParserConfig.
+         */
+        public TokenValidatorBuilder parserConfig(ParserConfig parserConfig) {
+            this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+            return this;
+        }
     }
 
     /**

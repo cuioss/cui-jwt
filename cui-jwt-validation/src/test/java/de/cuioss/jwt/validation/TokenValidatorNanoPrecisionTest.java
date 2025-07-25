@@ -35,7 +35,7 @@ class TokenValidatorNanoPrecisionTest {
     @BeforeEach
     void setUp() {
         testTokenHolder = TestTokenGenerators.accessTokens().next();
-        tokenValidator = new TokenValidator(testTokenHolder.getIssuerConfig());
+        tokenValidator = TokenValidator.builder().issuerConfig(testTokenHolder.getIssuerConfig()).build();
     }
 
     @Test

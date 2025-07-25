@@ -76,7 +76,7 @@ class OAuth2JWTBestPracticesComplianceTest {
                 .build();
 
         // Create validation factory
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
     }
 
     @Nested
@@ -176,7 +176,7 @@ class OAuth2JWTBestPracticesComplianceTest {
 
             assertNotEquals(tamperedToken, token, "Token should be tampered");
 
-            TokenValidator validator = new TokenValidator(tokenHolder.getIssuerConfig());
+            TokenValidator validator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> validator.createAccessToken(tamperedToken),
@@ -200,7 +200,7 @@ class OAuth2JWTBestPracticesComplianceTest {
             );
 
             assertNotEquals(tamperedToken, token, "Token should be tampered");
-            TokenValidator validator = new TokenValidator(tokenHolder.getIssuerConfig());
+            TokenValidator validator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> validator.createIdToken(tamperedToken),
                     "Token with invalid signature should be rejected, offending validation: " + tamperedToken);
@@ -268,13 +268,16 @@ class OAuth2JWTBestPracticesComplianceTest {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxTokenSize(customMaxSize)
                     .build();
-            var factory = new TokenValidator(customConfig, IssuerConfig.builder()
-                    .issuerIdentifier("test-issuer")
-                    .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
-                    .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
-                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
-                    .algorithmPreferences(new SignatureAlgorithmPreferences())
-                    .build());
+            var factory = TokenValidator.builder()
+                    .parserConfig(customConfig)
+                    .issuerConfig(IssuerConfig.builder()
+                            .issuerIdentifier("test-issuer")
+                            .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
+                            .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                            .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                            .algorithmPreferences(new SignatureAlgorithmPreferences())
+                            .build())
+                    .build();
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> factory.createAccessToken(largeToken),
                     "Token exceeding max size should be rejected");

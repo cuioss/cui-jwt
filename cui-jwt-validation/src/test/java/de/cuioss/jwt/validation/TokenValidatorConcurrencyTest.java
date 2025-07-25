@@ -57,7 +57,7 @@ class TokenValidatorConcurrencyTest {
         var issuerConfig2 = testToken2.getIssuerConfig();
 
         var parserConfig = ParserConfig.builder().build();
-        var tokenValidator = new TokenValidator(parserConfig, issuerConfig1, issuerConfig2);
+        var tokenValidator = TokenValidator.builder().parserConfig(parserConfig).issuerConfig(issuerConfig1).issuerConfig(issuerConfig2).build();
 
         // Use the first test token for validation
         var validJwt = testToken1.getRawToken();
@@ -127,7 +127,7 @@ class TokenValidatorConcurrencyTest {
         // Generate test token using existing infrastructure
         var testToken = TestTokenGenerators.accessTokens().next();
         var issuerConfig = testToken.getIssuerConfig();
-        var tokenValidator = new TokenValidator(ParserConfig.builder().build(), issuerConfig);
+        var tokenValidator = TokenValidator.builder().parserConfig(ParserConfig.builder().build()).issuerConfig(issuerConfig).build();
         var validJwt = testToken.getRawToken();
 
         AtomicInteger raceConditionCount = new AtomicInteger(0);

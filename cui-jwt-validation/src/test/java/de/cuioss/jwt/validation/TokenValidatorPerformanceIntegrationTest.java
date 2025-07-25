@@ -51,7 +51,7 @@ class TokenValidatorPerformanceIntegrationTest {
         // Create a TokenValidator (will initialize with default performance monitor)
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         var issuerConfig = tokenHolder.getIssuerConfig();
-        var tokenValidator = new TokenValidator(issuerConfig);
+        var tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
 
         // Get the performance monitor
         TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();
@@ -122,7 +122,7 @@ class TokenValidatorPerformanceIntegrationTest {
     void shouldProvideAccessToPerformanceMonitor() {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         var issuerConfig = tokenHolder.getIssuerConfig();
-        var tokenValidator = new TokenValidator(issuerConfig);
+        var tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
 
         // Verify performance monitor is accessible
         TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();

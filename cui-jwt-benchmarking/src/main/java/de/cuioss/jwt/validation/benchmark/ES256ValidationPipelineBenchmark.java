@@ -96,7 +96,7 @@ public class ES256ValidationPipelineBenchmark {
         IssuerConfig es256IssuerConfig = baseEs256Token.getIssuerConfig();
 
         // Create single shared validator - critical for contention
-        sharedEs256Validator = new TokenValidator(es256IssuerConfig);
+        sharedEs256Validator = TokenValidator.builder().issuerConfig(es256IssuerConfig).build();
         es256AccessToken = baseEs256Token.getRawToken();
 
         // Generate ES256 token pool
@@ -110,7 +110,7 @@ public class ES256ValidationPipelineBenchmark {
         // Setup RS256 for comparison
         TestTokenHolder baseRs256Token = TestTokenGenerators.accessTokens().next();
         IssuerConfig rs256IssuerConfig = baseRs256Token.getIssuerConfig();
-        sharedRs256Validator = new TokenValidator(rs256IssuerConfig);
+        sharedRs256Validator = TokenValidator.builder().issuerConfig(rs256IssuerConfig).build();
         rs256AccessToken = baseRs256Token.getRawToken();
 
         // Generate RS256 token pool

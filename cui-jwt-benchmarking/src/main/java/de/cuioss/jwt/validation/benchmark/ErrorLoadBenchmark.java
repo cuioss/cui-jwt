@@ -82,7 +82,7 @@ public class ErrorLoadBenchmark {
         // Create base token holder and validator
         TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
         IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
 
         // Generate primary tokens for basic error scenarios
         validAccessToken = baseTokenHolder.getRawToken();

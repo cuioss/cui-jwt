@@ -62,7 +62,7 @@ class EmbeddedJwkAttackTest {
 
         // Create validation factory
         ParserConfig config = ParserConfig.builder().build();
-        tokenValidator = new TokenValidator(config, issuerConfig);
+        tokenValidator = TokenValidator.builder().parserConfig(config).issuerConfig(issuerConfig).build();
     }
 
     @ParameterizedTest

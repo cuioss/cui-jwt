@@ -165,7 +165,10 @@ void shouldTestWithAccessToken(TestTokenHolder tokenHolder) {
     String token = tokenHolder.getRawToken();
 
     // When
-    AccessTokenContent result = new TokenValidator(tokenHolder.getIssuerConfig()).createAccessToken(token);
+    AccessTokenContent result = TokenValidator.builder()
+            .issuerConfig(tokenHolder.getIssuerConfig())
+            .build()
+            .createAccessToken(token);
 
     // Then
     assertNotNull(result, "Token should be parsed successfully");
@@ -195,7 +198,10 @@ void shouldTestWithMultipleAccessTokens(TestTokenHolder tokenHolder) {
     String token = tokenHolder.getRawToken();
 
     // When
-    AccessTokenContent result = new TokenValidator(tokenHolder.getIssuerConfig()).createAccessToken(token);
+    AccessTokenContent result = TokenValidator.builder()
+            .issuerConfig(tokenHolder.getIssuerConfig())
+            .build()
+            .createAccessToken(token);
 
     // Then
     assertNotNull(result, "Token should be parsed successfully");
@@ -215,7 +221,10 @@ void shouldValidateToken() {
     String token = tokenHolder.getRawToken();
 
     // Act - Using the simplified approach with the new TokenValidator constructor
-    AccessTokenContent result = new TokenValidator(tokenHolder.getIssuerConfig()).createAccessToken(token);
+    AccessTokenContent result = TokenValidator.builder()
+            .issuerConfig(tokenHolder.getIssuerConfig())
+            .build()
+            .createAccessToken(token);
 
     // Assert
     assertNotNull(result);
@@ -245,7 +254,9 @@ void shouldRejectTokenWithMissingClaims() {
         .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
         .build(); // Validation happens automatically
 
-    TokenValidator validator = new TokenValidator(issuerConfig);
+    TokenValidator validator = TokenValidator.builder()
+            .issuerConfig(issuerConfig)
+            .build();
 
     // Act/Assert
     TokenValidationException exception = assertThrows(TokenValidationException.class,

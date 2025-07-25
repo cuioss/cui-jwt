@@ -69,7 +69,7 @@ public class PerformanceIndicatorBenchmark {
         // Generate single issuer config and validator
         TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
         IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
 
         // Generate primary validation token
         validAccessToken = baseTokenHolder.getRawToken();

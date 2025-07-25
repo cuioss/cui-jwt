@@ -60,7 +60,7 @@ class CustomClaimMapperTest {
                 .claimMapper(ROLE_CLAIM, roleMapper)
                 .build();
 
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
 
         var claimControl = ClaimControlParameter.builder().build();
         var tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, claimControl);
@@ -97,8 +97,9 @@ class CustomClaimMapperTest {
                 .jwksContent(jwksContent)
                 .build();
 
-        TokenValidator factoryWithoutCustomMapper = new TokenValidator(
-                issuerConfigWithoutCustomMapper);
+        TokenValidator factoryWithoutCustomMapper = TokenValidator.builder()
+                .issuerConfig(issuerConfigWithoutCustomMapper)
+                .build();
 
         AccessTokenContent tokenContent = factoryWithoutCustomMapper.createAccessToken(tokenWithRoles);
         ClaimValue roleClaim = tokenContent.getClaims().get(ROLE_CLAIM);

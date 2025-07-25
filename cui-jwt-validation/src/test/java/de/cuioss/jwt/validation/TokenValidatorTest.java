@@ -71,7 +71,7 @@ class TokenValidatorTest {
     @BeforeEach
     void setUp() {
         issuerConfig = createDefaultIssuerConfig();
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
     }
 
     @Nested
@@ -140,7 +140,7 @@ class TokenValidatorTest {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxTokenSize(customMaxSize)
                     .build();
-            var factory = new TokenValidator(customConfig, issuerConfig);
+            var factory = TokenValidator.builder().parserConfig(customConfig).issuerConfig(issuerConfig).build();
 
             var exception = assertThrows(TokenValidationException.class,
                     () -> factory.createAccessToken(largeToken));
@@ -156,7 +156,7 @@ class TokenValidatorTest {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxPayloadSize(100)
                     .build();
-            var factory = new TokenValidator(customConfig, issuerConfig);
+            var factory = TokenValidator.builder().parserConfig(customConfig).issuerConfig(issuerConfig).build();
 
             tokenHolder.withClaim("large-claim", ClaimValue.forPlainString("a".repeat(200)));
             String token = tokenHolder.getRawToken();
@@ -299,7 +299,7 @@ class TokenValidatorTest {
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                     .build();
 
-            TokenValidator newTokenValidator = new TokenValidator(newIssuerConfig);
+            TokenValidator newTokenValidator = TokenValidator.builder().issuerConfig(newIssuerConfig).build();
 
             var exception = assertThrows(TokenValidationException.class,
                     () -> newTokenValidator.createAccessToken(token));

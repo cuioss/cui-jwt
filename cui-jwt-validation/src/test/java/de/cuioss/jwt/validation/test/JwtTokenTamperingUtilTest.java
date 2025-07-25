@@ -57,7 +57,7 @@ class JwtTokenTamperingUtilTest {
                 .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
                 .algorithmPreferences(new SignatureAlgorithmPreferences())
                 .build();
-        tokenValidator = new TokenValidator(config, issuerConfig);
+        tokenValidator = TokenValidator.builder().parserConfig(config).issuerConfig(issuerConfig).build();
 
     }
 

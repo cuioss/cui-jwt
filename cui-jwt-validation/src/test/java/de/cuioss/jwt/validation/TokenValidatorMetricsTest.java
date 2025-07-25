@@ -54,7 +54,7 @@ class TokenValidatorMetricsTest {
 
         issuerConfig = testTokenHolder.getIssuerConfig();
 
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
     }
 
     @Test

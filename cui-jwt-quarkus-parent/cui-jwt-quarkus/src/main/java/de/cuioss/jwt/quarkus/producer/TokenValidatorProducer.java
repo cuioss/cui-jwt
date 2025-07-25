@@ -108,8 +108,16 @@ public class TokenValidatorProducer {
         ParserConfigResolver parserConfigResolver = new ParserConfigResolver(config);
         ParserConfig parserConfig = parserConfigResolver.resolveParserConfig();
 
-        // Create TokenValidator directly - it handles internal initialization
-        tokenValidator = new TokenValidator(parserConfig, issuerConfigs.toArray(new IssuerConfig[0]));
+        // Create TokenValidator using builder pattern - it handles internal initialization
+        TokenValidator.TokenValidatorBuilder builder = TokenValidator.builder()
+                .parserConfig(parserConfig);
+        
+        // Add each issuer config to the builder
+        for (IssuerConfig issuerConfig : issuerConfigs) {
+            builder.issuerConfig(issuerConfig);
+        }
+        
+        tokenValidator = builder.build();
 
         // Extract SecurityEventCounter from the TokenValidator
         securityEventCounter = tokenValidator.getSecurityEventCounter();
