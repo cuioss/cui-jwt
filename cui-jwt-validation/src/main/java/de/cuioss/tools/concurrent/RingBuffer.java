@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.metrics;
+package de.cuioss.tools.concurrent;
 
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * High-metrics lock-free ring buffer implementation.
+ * High-performance lock-free ring buffer implementation.
  * <p>
  * This class implements a fixed-size circular buffer using atomic operations
  * for thread-safe access without locks. It's optimized for high-frequency
@@ -40,13 +40,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * while read operations provide eventually consistent snapshots.
  * <p>
  * <strong>Capacity:</strong>
- * The actual capacity will be rounded up to the next power of 2 for metrics
+ * The actual capacity will be rounded up to the next power of 2 for performance
  * optimization. For example, requesting capacity 100 will result in actual capacity 128.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-class RingBuffer {
+public class RingBuffer {
 
     private static final CuiLogger LOGGER = new CuiLogger(RingBuffer.class);
 
@@ -74,12 +74,12 @@ class RingBuffer {
      * Creates a new ring buffer with the specified capacity.
      * <p>
      * The actual capacity will be rounded up to the next power of 2
-     * for metrics optimization.
+     * for performance optimization.
      *
      * @param capacity the desired capacity (must be positive)
      * @throws IllegalArgumentException if capacity is not positive
      */
-    RingBuffer(int capacity) {
+    public RingBuffer(int capacity) {
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity must be positive: " + capacity);
         }
@@ -97,13 +97,13 @@ class RingBuffer {
     /**
      * Records a measurement in the ring buffer.
      * <p>
-     * This operation is lock-free and designed for maximum metrics.
+     * This operation is lock-free and designed for maximum performance.
      * The measurement will overwrite the oldest value when the buffer is full.
      *
      * @param microseconds the measurement value in microseconds (must not be negative)
      * @throws IllegalArgumentException if microseconds is negative
      */
-    void recordMeasurement(long microseconds) {
+    public void recordMeasurement(long microseconds) {
         if (microseconds < 0) {
             throw new IllegalArgumentException("Microseconds cannot be negative: " + microseconds);
         }
@@ -124,7 +124,7 @@ class RingBuffer {
      *
      * @return immutable statistics snapshot
      */
-    RingBufferStatistics getStatistics() {
+    public RingBufferStatistics getStatistics() {
         int count = sampleCount.get();
         if (count == 0) {
             return new RingBufferStatistics(0, 0);
@@ -132,7 +132,7 @@ class RingBuffer {
 
         long sum = 0;
         // Read current samples (may include some inconsistency during concurrent writes,
-        // but this is acceptable for metrics monitoring where perfect accuracy
+        // but this is acceptable for performance monitoring where perfect accuracy
         // is less important than minimal overhead)
         for (int i = 0; i < count; i++) {
             sum += samples[i];
@@ -147,7 +147,7 @@ class RingBuffer {
      * This operation resets the write position and sample count.
      * The underlying array is not cleared as samples will be overwritten.
      */
-    void reset() {
+    public void reset() {
         writeIndex.set(0);
         sampleCount.set(0);
     }

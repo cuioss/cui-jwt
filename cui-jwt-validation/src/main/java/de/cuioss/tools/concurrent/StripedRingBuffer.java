@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.metrics;
+package de.cuioss.tools.concurrent;
 
 import de.cuioss.tools.logging.CuiLogger;
 
 /**
- * High-metrics striped ring buffer implementation for concurrent measurements.
+ * High-performance striped ring buffer implementation for concurrent measurements.
  * <p>
  * Uses multiple independent ring buffers (stripes) to minimize contention
  * between threads. Each thread writes to a different stripe based on its
@@ -33,10 +33,10 @@ import de.cuioss.tools.logging.CuiLogger;
  * </ul>
  * <p>
  * <strong>Design Pattern:</strong>
- * This follows the striping pattern commonly used in high-metrics concurrent
+ * This follows the striping pattern commonly used in high-performance concurrent
  * data structures. By distributing operations across multiple independent buffers,
  * we achieve better scalability than single-buffer solutions while maintaining
- * the statistical accuracy needed for metrics monitoring.
+ * the statistical accuracy needed for performance monitoring.
  * <p>
  * <strong>Thread Safety:</strong>
  * All operations are thread-safe and lock-free. Multiple threads can simultaneously
@@ -45,7 +45,7 @@ import de.cuioss.tools.logging.CuiLogger;
  * @author Oliver Wolff
  * @since 1.0
  */
-class StripedRingBuffer {
+public class StripedRingBuffer {
 
     private static final CuiLogger log = new CuiLogger(StripedRingBuffer.class);
 
@@ -74,7 +74,7 @@ class StripedRingBuffer {
      * @param windowSize total number of samples to maintain across all stripes (must be positive)
      * @throws IllegalArgumentException if windowSize is not positive
      */
-    StripedRingBuffer(int windowSize) {
+    public StripedRingBuffer(int windowSize) {
         if (windowSize <= 0) {
             throw new IllegalArgumentException("Window size must be positive: " + windowSize);
         }
@@ -98,14 +98,14 @@ class StripedRingBuffer {
     /**
      * Records a measurement in the appropriate stripe for the current thread.
      * <p>
-     * This operation is lock-free and designed for maximum metrics.
+     * This operation is lock-free and designed for maximum performance.
      * The stripe is selected based on the current thread's hash code to
      * distribute load and minimize contention.
      *
      * @param microseconds the measurement value in microseconds (must not be negative)
      * @throws IllegalArgumentException if microseconds is negative
      */
-    void recordMeasurement(long microseconds) {
+    public void recordMeasurement(long microseconds) {
         if (microseconds < 0) {
             throw new IllegalArgumentException("Microseconds cannot be negative: " + microseconds);
         }
@@ -125,7 +125,7 @@ class StripedRingBuffer {
      *
      * @return the average value in microseconds, or 0 if no measurements exist
      */
-    long getAverage() {
+    public long getAverage() {
         long totalSum = 0;
         int totalCount = 0;
 
@@ -147,7 +147,7 @@ class StripedRingBuffer {
      *
      * @return the total number of samples across all stripes
      */
-    int getSampleCount() {
+    public int getSampleCount() {
         int totalCount = 0;
         for (RingBuffer stripe : stripes) {
             totalCount += stripe.getStatistics().count();
@@ -161,7 +161,7 @@ class StripedRingBuffer {
      * This operation resets all underlying ring buffers, clearing all
      * measurements and resetting counters to zero.
      */
-    void reset() {
+    public void reset() {
         for (RingBuffer stripe : stripes) {
             stripe.reset();
         }

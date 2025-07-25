@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
+import de.cuioss.tools.concurrent.StripedRingBuffer;
 import lombok.NonNull;
 
 import java.time.Duration;

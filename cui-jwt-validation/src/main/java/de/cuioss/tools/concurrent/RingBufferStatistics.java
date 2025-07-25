@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.metrics;
+package de.cuioss.tools.concurrent;
 
 /**
  * Immutable statistics snapshot from a ring buffer.
@@ -31,7 +31,7 @@ package de.cuioss.jwt.validation.metrics;
  * @author Oliver Wolff
  * @since 1.0
  */
-record RingBufferStatistics(long sum, int count) {
+public record RingBufferStatistics(long sum, int count) {
 
     /**
      * Creates statistics with validation.
