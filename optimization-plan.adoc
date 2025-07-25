@@ -317,3 +317,17 @@
 **Status:** ❌ DISMISSED - Not suitable for general library design
 
 **Reason**: The library must support industry-standard key sizes (2048-bit minimum for security). While smaller keys would improve performance (~2x faster with 1024-bit), they are cryptographically insecure. Larger keys (3072-bit) would degrade performance (~2x slower). The library should remain agnostic to key size choices made by token issuers.
+
+==== 11. Additional Fine-Grained JWT Validation Metrics
+**Status:** ❌ DISMISSED - Current metrics are sufficient, "missing" metrics explained
+
+**Research Conclusion**: Unit testing revealed that apparently "missing" metrics in benchmark JSON output are not actually missing:
+
+- **token_format_check** and **issuer_extraction**: Operations are too fast (<20 nanoseconds), get averaged to 0 when converted to milliseconds
+- **jwks_operations**: Only measured on first token validation (~677μs), subsequent runs use cache (0ns), averaging approaches 0  
+- **response_formatting**: HTTP-level metric, not part of TokenValidator core validation
+
+**Timing Gap Explanation**: The 72% overhead between complete validation (15.6ms) and sum of steps (4.3ms) is due to:
+- In unit tests: Only 3-5% overhead from framework/monitoring/orchestration
+- In benchmarks: Quarkus/HTTP layer adds significant latency under load
+- No additional metrics needed - current implementation provides sufficient visibility
