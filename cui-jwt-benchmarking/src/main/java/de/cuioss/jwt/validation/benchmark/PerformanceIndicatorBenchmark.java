@@ -19,11 +19,19 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
+import de.cuioss.jwt.validation.metrics.MeasurementType;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
+import io.jsonwebtoken.Jwts;
 import org.openjdk.jmh.annotations.*;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Consolidated core validation benchmark that measures essential JWT validation performance metrics.
@@ -57,28 +65,234 @@ public class PerformanceIndicatorBenchmark {
     private String validAccessToken;
 
     /**
+     * Number of different issuers to simulate issuer config resolution overhead
+     */
+    private static final int ISSUER_COUNT = 3;
+
+    /**
      * Shared token pool for reduced setup overhead.
      * Pre-generated tokens reduce benchmark setup time.
      */
-    private static final int TOKEN_POOL_SIZE = 20;
+    private static final int TOKEN_POOL_SIZE = 60; // 20 tokens per issuer
     private String[] tokenPool;
     private int tokenIndex = 0;
 
+    private final Random random = new Random(42); // Fixed seed for reproducibility
+    
+    /**
+     * Thread-safe metrics aggregator for collecting measurements across all threads
+     */
+    private static final Map<String, Map<MeasurementType, AtomicLong>> GLOBAL_METRICS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<MeasurementType, AtomicLong>> GLOBAL_COUNTS = new ConcurrentHashMap<>();
+
+    /**
+     * Shutdown hook to ensure metrics are exported when JVM exits
+     */
+    static {
+        // Initialize metrics maps
+        GLOBAL_METRICS.put("measureAverageTime", new ConcurrentHashMap<>());
+        GLOBAL_METRICS.put("measureThroughput", new ConcurrentHashMap<>());
+        GLOBAL_METRICS.put("measureConcurrentValidation", new ConcurrentHashMap<>());
+
+        GLOBAL_COUNTS.put("measureAverageTime", new ConcurrentHashMap<>());
+        GLOBAL_COUNTS.put("measureThroughput", new ConcurrentHashMap<>());
+        GLOBAL_COUNTS.put("measureConcurrentValidation", new ConcurrentHashMap<>());
+
+        // Initialize atomic counters for each measurement type
+        for (String benchmarkName : GLOBAL_METRICS.keySet()) {
+            for (MeasurementType type : MeasurementType.values()) {
+                GLOBAL_METRICS.get(benchmarkName).put(type, new AtomicLong(0));
+                GLOBAL_COUNTS.get(benchmarkName).put(type, new AtomicLong(0));
+            }
+        }
+
+        // Add shutdown hook to export metrics when JVM exits
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                exportGlobalMetrics();
+            } catch (Exception e) {
+                // Silent failure - metrics export is optional
+            }
+        }));
+    }
+
     @Setup(Level.Trial)
     public void setup() {
-        // Generate single issuer config and validator
-        TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
-        IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
-        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+        // Generate multiple issuer key materials for benchmarking
+        InMemoryKeyMaterialHandler.IssuerKeyMaterial[] issuers =
+                InMemoryKeyMaterialHandler.createMultipleIssuers(ISSUER_COUNT);
 
-        // Generate primary validation token
-        validAccessToken = baseTokenHolder.getRawToken();
+        List<IssuerConfig> issuerConfigs = new ArrayList<>();
+        List<String> allTokens = new ArrayList<>();
 
-        // Generate token pool for concurrent benchmarks
-        tokenPool = new String[TOKEN_POOL_SIZE];
-        for (int i = 0; i < TOKEN_POOL_SIZE; i++) {
-            TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-            tokenPool[i] = tokenHolder.getRawToken();
+        // Create issuer configs and generate tokens for each issuer
+        for (InMemoryKeyMaterialHandler.IssuerKeyMaterial issuer : issuers) {
+            // Create issuer config with the issuer's JWKS
+            IssuerConfig config = IssuerConfig.builder()
+                    .issuerIdentifier(issuer.getIssuerIdentifier())
+                    .jwksContent(issuer.getJwks())
+                    .expectedAudience("benchmark-client")
+                    .build();
+
+            issuerConfigs.add(config);
+
+            // Generate tokens for this issuer
+            for (int j = 0; j < (TOKEN_POOL_SIZE / ISSUER_COUNT); j++) {
+                String token = generateTokenForIssuer(issuer);
+                allTokens.add(token);
+            }
+        }
+
+        // Build validator with all metrics explicitly enabled
+        TokenValidatorMonitorConfig monitorConfig = TokenValidatorMonitorConfig.builder()
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .windowSize(10000) // Large window for benchmark stability
+                .build();
+
+        tokenValidator = TokenValidator.builder()
+                .issuerConfigs(issuerConfigs)
+                .monitorConfig(monitorConfig)
+                .build();
+
+        // Convert token list to array and shuffle
+        tokenPool = allTokens.toArray(new String[0]);
+        shuffleArray(tokenPool);
+
+        // Set primary validation token
+        validAccessToken = tokenPool[0];
+    }
+
+    /**
+     * Generates a valid JWT token for the given issuer.
+     */
+    private String generateTokenForIssuer(InMemoryKeyMaterialHandler.IssuerKeyMaterial issuer) {
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .header()
+                .keyId(issuer.getKeyId())
+                .and()
+                .issuer(issuer.getIssuerIdentifier())
+                .subject("benchmark-user")
+                .audience().add("benchmark-client").and()
+                .expiration(Date.from(now.plusSeconds(3600)))
+                .notBefore(Date.from(now))
+                .issuedAt(Date.from(now))
+                .id(UUID.randomUUID().toString())
+                .claim("scope", "read write")
+                .claim("roles", List.of("user", "admin"))
+                .claim("groups", List.of("test-group"))
+                .signWith(issuer.getPrivateKey(), issuer.getAlgorithm().getAlgorithm())
+                .compact();
+    }
+
+    private void shuffleArray(String[] array) {
+        for (int i = array.length - 1; i > 0; i--) {
+            int index = random.nextInt(i + 1);
+            String temp = array[index];
+            array[index] = array[i];
+            array[i] = temp;
+        }
+    }
+
+    @TearDown(Level.Iteration)
+    public void collectMetrics() {
+        // Get the performance monitor from the validator
+        TokenValidatorMonitor monitor = tokenValidator.getPerformanceMonitor();
+
+        if (monitor != null) {
+            // Determine which benchmark is running based on thread name
+            String benchmarkName = getCurrentBenchmarkName();
+
+            if (benchmarkName != null) {
+                Map<MeasurementType, AtomicLong> metricsSums = GLOBAL_METRICS.get(benchmarkName);
+                Map<MeasurementType, AtomicLong> metricsCounts = GLOBAL_COUNTS.get(benchmarkName);
+
+                // Collect metrics for each measurement type
+                int metricsCollected = 0;
+                for (MeasurementType type : monitor.getEnabledTypes()) {
+                    Duration avgDuration = monitor.getAverageDuration(type);
+                    int sampleCount = monitor.getSampleCount(type);
+
+                    if (sampleCount > 0) {
+                        long totalNanos = avgDuration.toNanos() * sampleCount;
+                        metricsSums.get(type).addAndGet(totalNanos);
+                        metricsCounts.get(type).addAndGet(sampleCount);
+                        metricsCollected++;
+                    }
+                }
+
+                // Successfully collected metrics
+            }
+        }
+    }
+
+    /**
+     * Determines the current benchmark name from the thread name or stack trace
+     */
+    private String getCurrentBenchmarkName() {
+        // JMH typically includes the benchmark method name in the thread name
+        String threadName = Thread.currentThread().getName();
+
+        if (threadName.contains("measureAverageTime")) {
+            return "measureAverageTime";
+        } else if (threadName.contains("measureThroughput")) {
+            return "measureThroughput";
+        } else if (threadName.contains("measureConcurrentValidation")) {
+            return "measureConcurrentValidation";
+        }
+
+        // Fallback: check stack trace
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTrace) {
+            String methodName = element.getMethodName();
+            if ("measureAverageTime".equals(methodName) ||
+                    "measureThroughput".equals(methodName) ||
+                    "measureConcurrentValidation".equals(methodName)) {
+                return methodName;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Exports collected metrics to a JSON file
+     */
+    private static void exportGlobalMetrics() {
+        try {
+            Map<String, Map<String, Double>> aggregatedMetrics = new LinkedHashMap<>();
+
+            for (Map.Entry<String, Map<MeasurementType, AtomicLong>> entry : GLOBAL_METRICS.entrySet()) {
+                String benchmarkName = entry.getKey();
+                Map<MeasurementType, AtomicLong> sums = entry.getValue();
+                Map<MeasurementType, AtomicLong> counts = GLOBAL_COUNTS.get(benchmarkName);
+
+                Map<String, Double> benchmarkMetrics = new LinkedHashMap<>();
+                int metricsFound = 0;
+
+                for (MeasurementType type : MeasurementType.values()) {
+                    long totalNanos = sums.get(type).get();
+                    long sampleCount = counts.get(type).get();
+
+                    if (sampleCount > 0) {
+                        double avgMs = (totalNanos / (double) sampleCount) / 1_000_000.0;
+                        benchmarkMetrics.put(type.name().toLowerCase(), avgMs);
+                        benchmarkMetrics.put(type.name().toLowerCase() + "_count", (double) sampleCount);
+                        metricsFound++;
+                    }
+                }
+
+                if (!benchmarkMetrics.isEmpty()) {
+                    aggregatedMetrics.put(benchmarkName, benchmarkMetrics);
+                }
+            }
+
+            // Export to file
+            BenchmarkMetricsCollector.exportAggregatedMetrics(aggregatedMetrics);
+
+        } catch (Exception e) {
+            // Silent failure - metrics export is optional
         }
     }
 

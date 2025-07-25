@@ -513,4 +513,62 @@ public class InMemoryKeyMaterialHandler {
     public static JwksLoader createMultiAlgorithmJwksLoader() {
         return createMultiAlgorithmJwksLoader(new SecurityEventCounter());
     }
+
+    /**
+     * Container for key material belonging to a specific issuer.
+     * This allows creating multiple distinct key sets for benchmarking issuer resolution.
+     */
+    @Getter
+    public static class IssuerKeyMaterial {
+        private final String issuerIdentifier;
+        private final String keyId;
+        private final Algorithm algorithm;
+        private final PrivateKey privateKey;
+        private final PublicKey publicKey;
+        private final String jwks;
+
+        public IssuerKeyMaterial(String issuerIdentifier, String keyId, Algorithm algorithm) {
+            this.issuerIdentifier = issuerIdentifier;
+            this.keyId = keyId;
+            this.algorithm = algorithm;
+            
+            // Generate unique key pair for this issuer
+            KeyPair keyPair = generateKeyPair(algorithm, issuerIdentifier + "-" + keyId);
+            this.privateKey = keyPair.getPrivate();
+            this.publicKey = keyPair.getPublic();
+            
+            // Create JWKS for this issuer's key
+            this.jwks = createJwksFromKey(publicKey, keyId, algorithm.getJwkAlgorithmName());
+        }
+    }
+
+    /**
+     * Creates multiple issuer key materials for benchmarking issuer resolution overhead.
+     * Each issuer gets its own unique key pair.
+     *
+     * @param count     number of issuers to create
+     * @param algorithm algorithm to use for all issuers
+     * @return array of IssuerKeyMaterial instances
+     */
+    public static IssuerKeyMaterial[] createMultipleIssuers(int count, Algorithm algorithm) {
+        IssuerKeyMaterial[] issuers = new IssuerKeyMaterial[count];
+        
+        for (int i = 0; i < count; i++) {
+            String issuerIdentifier = "https://test-issuer-" + i + ".example.com";
+            String keyId = "issuer-" + i + "-key";
+            issuers[i] = new IssuerKeyMaterial(issuerIdentifier, keyId, algorithm);
+        }
+        
+        return issuers;
+    }
+
+    /**
+     * Creates multiple issuer key materials with RS256 algorithm.
+     *
+     * @param count number of issuers to create
+     * @return array of IssuerKeyMaterial instances
+     */
+    public static IssuerKeyMaterial[] createMultipleIssuers(int count) {
+        return createMultipleIssuers(count, Algorithm.RS256);
+    }
 }

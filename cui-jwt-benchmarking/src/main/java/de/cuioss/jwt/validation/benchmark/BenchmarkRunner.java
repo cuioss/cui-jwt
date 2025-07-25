@@ -72,6 +72,8 @@ public class BenchmarkRunner {
 
         // Run the benchmarks
         new Runner(options).run();
+
+        // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
     }
 
     /**

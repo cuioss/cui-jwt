@@ -169,6 +169,26 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
+                            <!-- Run echo benchmark for infrastructure baseline -->
+                            <execution>
+                                <id>run-echo-benchmark</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration -->
+                                        <argument>${wrk.error.rate}</argument>   <!-- error rate -->
+                                        <argument>benchmark</argument>           <!-- realm -->
+                                        <argument>echo</argument>                <!-- benchmark type -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Run wrk-based benchmarks with real tokens -->
                             <execution>
                                 <id>run-integration-benchmarks</id>
@@ -183,6 +203,8 @@
                                         <argument>${wrk.connections}</argument>  <!-- connections: 20x threads -->
                                         <argument>${wrk.duration}</argument>     <!-- duration: 30 seconds -->
                                         <argument>${wrk.error.rate}</argument>   <!-- error rate: 0% -->
+                                        <argument>benchmark</argument>           <!-- realm -->
+                                        <argument>jwt</argument>                 <!-- benchmark type -->
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
@@ -297,6 +319,26 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
+                            <!-- Run echo benchmark for infrastructure baseline -->
+                            <execution>
+                                <id>run-echo-benchmark-jfr</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration -->
+                                        <argument>${wrk.error.rate}</argument>   <!-- error rate -->
+                                        <argument>benchmark</argument>           <!-- realm -->
+                                        <argument>echo</argument>                <!-- benchmark type -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Run wrk-based benchmarks with real tokens -->
                             <execution>
                                 <id>run-integration-benchmarks</id>
@@ -311,6 +353,8 @@
                                         <argument>${wrk.connections}</argument>  <!-- connections: 20x threads -->
                                         <argument>${wrk.duration}</argument>     <!-- duration: 30 seconds -->
                                         <argument>${wrk.error.rate}</argument>   <!-- error rate: 0% -->
+                                        <argument>benchmark</argument>           <!-- realm -->
+                                        <argument>jwt</argument>                 <!-- benchmark type -->
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>

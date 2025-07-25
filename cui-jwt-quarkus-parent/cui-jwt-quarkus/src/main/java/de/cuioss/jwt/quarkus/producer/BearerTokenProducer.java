@@ -28,6 +28,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.*;
@@ -112,6 +113,7 @@ public class BearerTokenProducer {
 
     private final TokenValidator tokenValidator;
     private final HttpServletRequestResolver servletObjectsResolver;
+    @Getter
     private final HttpMetricsMonitor httpMetricsMonitor;
 
     @Inject
@@ -120,15 +122,6 @@ public class BearerTokenProducer {
         this.tokenValidator = tokenValidator;
         this.servletObjectsResolver = servletObjectsResolver;
         this.httpMetricsMonitor = new HttpMetricsMonitor();
-    }
-
-    /**
-     * Gets the HTTP metrics monitor for external metric collection.
-     * 
-     * @return the HTTP metrics monitor instance
-     */
-    public HttpMetricsMonitor getHttpMetricsMonitor() {
-        return httpMetricsMonitor;
     }
 
     /**

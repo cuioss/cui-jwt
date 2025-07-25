@@ -221,6 +221,32 @@ public class JwtValidationEndpoint {
         return processBearerTokenResult(basicToken, "Basic token");
     }
 
+    /**
+     * Echo endpoint for performance analysis.
+     * Touches the TokenValidator (via getSecurityEventCounter) to maintain similar dependency injection
+     * overhead but skips actual JWT validation work.
+     *
+     * @param echoRequest Request containing data to echo back
+     * @return Echo response with the same data
+     */
+    @POST
+    @Path("/echo")
+    public Response echo(EchoRequest echoRequest) {
+        // Touch the TokenValidator to simulate dependency usage
+        var securityEventCounter = tokenValidator.getSecurityEventCounter();
+        long totalEvents = securityEventCounter.getCounters().values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+        LOGGER.debug("Echo endpoint called - total security events: %d", totalEvents);
+        
+        // Return the exact same data that was sent
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("echo", echoRequest != null ? echoRequest.data() : null);
+        responseData.put("eventCounter", totalEvents);
+        
+        return Response.ok(new ValidationResponse(true, "Echo successful", responseData)).build();
+    }
+
 
     // Helper methods
 
@@ -273,6 +299,9 @@ public class JwtValidationEndpoint {
         public boolean isEmpty() {
             return token == null || token.trim().isEmpty();
         }
+    }
+
+    public record EchoRequest(Map<String, Object> data) {
     }
 
     public record ValidationResponse(boolean valid, String message, Map<String, Object> data) {

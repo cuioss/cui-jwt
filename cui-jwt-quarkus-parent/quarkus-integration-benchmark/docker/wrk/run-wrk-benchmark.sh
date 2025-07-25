@@ -18,6 +18,7 @@ CONNECTIONS=${2:-80}
 DURATION=${3:-30s}
 ERROR_RATE=${4:-0}
 REALM=${5:-benchmark}
+BENCHMARK_TYPE=${6:-jwt}  # jwt or echo
 
 echo "🚀 Starting Docker-based wrk benchmark..."
 echo "  Target: $QUARKUS_URL"
@@ -26,6 +27,7 @@ echo "  Connections: $CONNECTIONS"
 echo "  Duration: $DURATION"
 echo "  Error rate: $ERROR_RATE%"
 echo "  Realm: $REALM"
+echo "  Benchmark type: $BENCHMARK_TYPE"
 
 # Create results directory
 mkdir -p "$RESULTS_DIR"
@@ -64,6 +66,19 @@ else
     TOKEN_ENV_VARS=""
 fi
 
+# Determine script and endpoint based on benchmark type
+if [ "$BENCHMARK_TYPE" = "echo" ]; then
+    SCRIPT_NAME="echo-benchmark.lua"
+    ENDPOINT="/jwt/echo"
+    RESULTS_FILE="echo-benchmark-results.json"
+    echo "🔊 Running Echo endpoint benchmark (infrastructure overhead measurement)"
+else
+    SCRIPT_NAME="jwt-benchmark.lua"
+    ENDPOINT="/jwt/validate"
+    RESULTS_FILE="jwt-validation-results.json"
+    echo "🔐 Running JWT validation benchmark"
+fi
+
 # Run wrk benchmark in Docker container with conservative resources
 echo "🏃 Running wrk benchmark..."
 docker run --rm \
@@ -80,8 +95,8 @@ docker run --rm \
     -c "$CONNECTIONS" \
     -d "$DURATION" \
     --latency \
-    --script /benchmark/scripts/jwt-benchmark.lua \
-    "$QUARKUS_URL/jwt/validate" | grep -v "Non-2xx or 3xx responses:"
+    --script /benchmark/scripts/$SCRIPT_NAME \
+    "$QUARKUS_URL$ENDPOINT" | grep -v "Non-2xx or 3xx responses:"
 
 # Validate performance settings
 echo "🔧 Performance Configuration:"
@@ -93,26 +108,27 @@ echo "  Connections: $CONNECTIONS ($((CONNECTIONS / THREADS)) per thread)"
 echo "  Duration: $DURATION"
 
 # Check if results were generated
-if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
-    echo "✅ JWT validation benchmark completed successfully!"
-    echo "📊 Results saved to: $RESULTS_DIR/jwt-validation-results.json"
+if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
+    echo "✅ $BENCHMARK_TYPE benchmark completed successfully!"
+    echo "📊 Results saved to: $RESULTS_DIR/$RESULTS_FILE"
     
     # Display summary
     echo ""
-    echo "=== JWT Validation Performance Summary ==="
-    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/jwt-validation-results.json" ]; then
+    echo "=== $BENCHMARK_TYPE Benchmark Performance Summary ==="
+    if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/$RESULTS_FILE" ]; then
         jq -r '
             "Throughput: " + (.throughput_rps | floor | tostring) + " req/sec",
-            "Latency P95: " + (.latency_p95_ms | tostring) + "ms (JWT validation)", 
+            "Latency P95: " + (.latency_p95_ms | tostring) + "ms", 
             "Latency P99: " + (.latency_p99_ms | tostring) + "ms",
             "Errors: " + (.errors | tostring)
-        ' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "Results file format issue"
+        ' "$RESULTS_DIR/$RESULTS_FILE" 2>/dev/null || echo "Results file format issue"
     fi
     
-    # Fetch and display JWT metrics from TokenValidatorMonitor
-    echo ""
-    echo "=== JWT Validation Pipeline Metrics (TokenValidatorMonitor) ==="
-    echo "📊 Fetching JWT validation metrics from Prometheus endpoint..."
+    # Fetch and display JWT metrics from TokenValidatorMonitor (only for JWT benchmarks)
+    if [ "$BENCHMARK_TYPE" = "jwt" ]; then
+        echo ""
+        echo "=== JWT Validation Pipeline Metrics (TokenValidatorMonitor) ==="
+        echo "📊 Fetching JWT validation metrics from Prometheus endpoint..."
     
     # Use curl to fetch metrics from inside Docker container (with timeout)
     if docker run --rm \
@@ -339,21 +355,42 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         echo "⚠️  No HTTP-level JWT metrics found (cui_jwt_http_request)"
         echo "   This may indicate that HttpMetricsMonitor is not collecting metrics"
     fi
+    fi  # End of JWT-specific metrics
     
-    # Compare with health check baseline if available
+    # Compare with other benchmarks if available
+    echo ""
+    echo "=== Performance Comparison ==="
+    
+    # Always show health check baseline if available
     if [ -f "$RESULTS_DIR/health-check-results.json" ]; then
-        echo ""
-        echo "=== Performance Comparison ==="
-        echo "Comparing JWT validation vs health check (system baseline):"
-        
         HEALTH_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/health-check-results.json" 2>/dev/null || echo "0")
+        HEALTH_RPS=$(jq -r '.throughput_rps' "$RESULTS_DIR/health-check-results.json" 2>/dev/null || echo "0")
+        echo "  Health Check: ${HEALTH_RPS} req/sec @ ${HEALTH_P95}ms P95 (minimal overhead)"
+    fi
+    
+    # Show echo benchmark if available
+    if [ -f "$RESULTS_DIR/echo-benchmark-results.json" ]; then
+        ECHO_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/echo-benchmark-results.json" 2>/dev/null || echo "0")
+        ECHO_RPS=$(jq -r '.throughput_rps' "$RESULTS_DIR/echo-benchmark-results.json" 2>/dev/null || echo "0")
+        echo "  Echo Endpoint: ${ECHO_RPS} req/sec @ ${ECHO_P95}ms P95 (CDI + virtual threads)"
+    fi
+    
+    # Show JWT benchmark if available
+    if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "0")
-        
-        if [ "$HEALTH_P95" != "0" ] && [ "$JWT_P95" != "0" ]; then
-            JWT_OVERHEAD=$(awk -v jwt="$JWT_P95" -v health="$HEALTH_P95" 'BEGIN {printf "%.1f", jwt - health}')
-            echo "  Health Check P95: ${HEALTH_P95}ms (system baseline)"
-            echo "  JWT Validation P95: ${JWT_P95}ms"
-            echo "  JWT Processing Overhead: ${JWT_OVERHEAD}ms"
+        JWT_RPS=$(jq -r '.throughput_rps' "$RESULTS_DIR/jwt-validation-results.json" 2>/dev/null || echo "0")
+        echo "  JWT Validation: ${JWT_RPS} req/sec @ ${JWT_P95}ms P95 (full processing)"
+    fi
+    
+    # Calculate overhead if we're running JWT benchmark
+    if [ "$BENCHMARK_TYPE" = "jwt" ] && [ -f "$RESULTS_DIR/echo-benchmark-results.json" ]; then
+        echo ""
+        echo "JWT Processing Overhead Analysis:"
+        ECHO_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/echo-benchmark-results.json" 2>/dev/null || echo "0")
+        JWT_P95=$(jq -r '.latency_p95_ms' "$RESULTS_DIR/$RESULTS_FILE" 2>/dev/null || echo "0")
+        if [ "$ECHO_P95" != "0" ] && [ "$JWT_P95" != "0" ]; then
+            JWT_OVERHEAD=$(awk -v jwt="$JWT_P95" -v echo="$ECHO_P95" 'BEGIN {printf "%.1f", jwt - echo}')
+            echo "  Pure JWT validation overhead: ${JWT_OVERHEAD}ms (JWT - Echo)"
         fi
     fi
 else

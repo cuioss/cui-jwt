@@ -331,3 +331,85 @@
 - In unit tests: Only 3-5% overhead from framework/monitoring/orchestration
 - In benchmarks: Quarkus/HTTP layer adds significant latency under load
 - No additional metrics needed - current implementation provides sufficient visibility
+
+== Latest Benchmark Analysis (July 25, 2025)
+
+=== Infrastructure Overhead Analysis
+
+**Three-Tier Performance Measurement**:
+
+|===
+| Endpoint Type | Throughput | P95 Latency | Description | Overhead vs Health Check
+| Health Check | 32,392 req/sec | 4.7ms | Minimal overhead baseline | 0ms (baseline)
+| Echo Endpoint | 9,988 req/sec | 59.0ms | CDI + virtual threads | +54.3ms
+| JWT Validation | 1,314 req/sec | 186.6ms | Full JWT processing | +181.9ms
+|===
+
+**Key Findings**:
+
+1. **Infrastructure Overhead (Echo vs Health Check)**:
+   - **69% throughput reduction** (32,392 → 9,988 req/sec)
+   - **54.3ms latency increase** (4.7ms → 59.0ms)
+   - Caused by: CDI RequestScoped instantiation, virtual thread scheduling, dependency injection
+
+2. **JWT Processing Overhead (JWT vs Echo)**:
+   - **87% throughput reduction** (9,988 → 1,314 req/sec)
+   - **127.6ms latency increase** (59.0ms → 186.6ms)
+   - Actual JWT validation: 17.74ms (only 9% of total request time)
+
+3. **Time Distribution for JWT Request (186.6ms P95)**:
+```
+Total P95 Latency:           186.6ms
+├─ Infrastructure (Echo):     59.0ms (32%)
+├─ JWT Validation:            17.7ms (9%)
+├─ Issuer Resolution:         21.5ms (12%)
+├─ HTTP Processing:           26.7ms (14%)
+└─ Untracked Overhead:       ~61.7ms (33%)
+   ├─ Thread pool queuing
+   ├─ GC pauses
+   ├─ Network/TLS
+   └─ Lock contention
+```
+
+4. **Critical Bottlenecks**:
+   - **Issuer Config Resolution**: 21.5ms average (single largest JWT-specific bottleneck)
+   - **Virtual Thread Overhead**: 54.3ms added by CDI and virtual thread scheduling
+   - **Untracked Time**: 33% of request time unaccounted for, suggesting concurrency issues
+
+**Conclusion**: Only 9% of request time is actual JWT validation. Infrastructure and framework overhead dominate performance profile.
+
+=== Microbenchmark Results (cui-jwt-benchmarking)
+
+After implementing multi-issuer support with 3 different issuers:
+
+**Performance Indicators**:
+* **Throughput**: 69,354 ops/s with 200 threads
+* **Average Time**: 2.7ms per operation with 200 threads  
+* **Concurrent Validation**: 2.8ms per operation with token rotation across 3 issuers
+
+**Key Observations**:
+1. **Microbenchmarks vs Integration Tests**:
+   - Microbenchmark: 2.7-2.8ms latency
+   - Integration test: 186.6ms P95 latency
+   - **66x difference** indicates framework/infrastructure overhead dominates
+   
+2. **Multi-Issuer Impact**:
+   - Token rotation across 3 issuers: 2.8ms
+   - Single issuer validation: 2.7ms
+   - **Minimal overhead** (0.1ms) for issuer config resolution in microbenchmarks
+   
+3. **Error Handling Performance**:
+   - Malformed tokens: 0.78ms (fast-fail)
+   - Invalid signatures: 0.82ms (fast-fail)
+   - Expired tokens: 2.8ms (full validation)
+   - Valid tokens: 2.5ms (full validation)
+   
+4. **Throughput Scalability**:
+   - 200 threads: 69,354 ops/s
+   - Near-linear scaling with thread count
+   - No significant lock contention in core library
+
+**Implications**:
+- Core JWT library is highly optimized (2.7ms)
+- 97% of integration test latency comes from framework/infrastructure
+- Focus optimization on Quarkus/HTTP layer, not JWT library
