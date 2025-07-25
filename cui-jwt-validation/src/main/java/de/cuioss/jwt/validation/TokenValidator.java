@@ -155,7 +155,7 @@ public class TokenValidator {
         if (issuerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one issuer configuration must be provided");
         }
-        
+
         // Use default ParserConfig if not provided
         if (parserConfig == null) {
             parserConfig = ParserConfig.builder().build();
