@@ -149,13 +149,18 @@ public class TokenValidator {
      */
     @Builder
     private TokenValidator(
-            @NonNull ParserConfig parserConfig,
+            ParserConfig parserConfig,
             @Singular @NonNull List<IssuerConfig> issuerConfigs,
             SecurityEventCounter securityEventCounter,
             TokenValidatorMonitor performanceMonitor) {
 
         if (issuerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one issuer configuration must be provided");
+        }
+        
+        // Use default ParserConfig if not provided
+        if (parserConfig == null) {
+            parserConfig = ParserConfig.builder().build();
         }
 
         LOGGER.debug("Initialize token validator with %s and %s issuer configurations", parserConfig, issuerConfigs.size());
@@ -175,20 +180,6 @@ public class TokenValidator {
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
 
-    /**
-     * Builder class for TokenValidator. Uses default values if not specified.
-     */
-    public static class TokenValidatorBuilder {
-        private ParserConfig parserConfig = ParserConfig.builder().build();
-
-        /**
-         * Sets the parser configuration. If not called, uses default ParserConfig.
-         */
-        public TokenValidatorBuilder parserConfig(ParserConfig parserConfig) {
-            this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
-            return this;
-        }
-    }
 
     /**
      * Creates an access token from the given token string.
