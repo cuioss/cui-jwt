@@ -26,7 +26,6 @@ import lombok.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.Base64;
 
 /**
  * Validator for JWT Token signatures.
@@ -58,7 +57,6 @@ import java.util.Base64;
 public class TokenSignatureValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenSignatureValidator.class);
-
 
     @Getter
     @NonNull
@@ -163,18 +161,24 @@ public class TokenSignatureValidator {
      */
     private void verifySignature(DecodedJwt decodedJwt, PublicKey publicKey, String algorithm) {
         LOGGER.trace("Verifying signature:\nDecodedJwt: %s\nPublicKey: %s\nAlgorithm: %s", decodedJwt, publicKey, algorithm);
-        // Get the parts of the validation - precondition: format already validated during parsing
-        String[] parts = decodedJwt.parts();
-        if (parts == null || parts.length != 3) {
-            throw new IllegalStateException("JWT format should have been validated during token parsing");
+
+        // Get the data to verify and signature bytes from DecodedJwt
+        String dataToVerify;
+        byte[] signatureBytes;
+        try {
+            dataToVerify = decodedJwt.getDataToVerify();
+            signatureBytes = decodedJwt.getSignatureAsDecodedBytes();
+        } catch (IllegalStateException e) {
+            LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()), e);
+            securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
+            throw new TokenValidationException(
+                    SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
+                    "Failed to extract JWT data for signature verification: %s".formatted(e.getMessage()),
+                    e
+            );
         }
 
-        // Get the data to verify (header.payload)
-        String dataToVerify = "%s.%s".formatted(parts[0], parts[1]);
         byte[] dataBytes = dataToVerify.getBytes(StandardCharsets.UTF_8);
-
-        // Get the signature bytes
-        byte[] signatureBytes = Base64.getUrlDecoder().decode(parts[2]);
 
         // Initialize the signature verifier with the appropriate algorithm
         try {
@@ -235,7 +239,7 @@ public class TokenSignatureValidator {
 
     /**
      * Checks if the algorithm is an ECDSA algorithm that requires signature format conversion.
-     * 
+     *
      * @param algorithm the signature algorithm to check
      * @return true if the algorithm is ECDSA (ES256, ES384, ES512), false otherwise
      */

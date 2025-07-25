@@ -22,6 +22,8 @@ import jakarta.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -200,6 +202,96 @@ class DecodedJwtTest {
                 "toString should include array content representation");
         assertTrue(toString.contains("DecodedJwt["),
                 "toString should follow expected format");
+    }
+
+    @Test
+    @DisplayName("Should decode signature bytes correctly")
+    void shouldDecodeSignatureBytesCorrectly() {
+        // Create a test JWT with proper Base64URL-encoded parts
+        String encodedHeader = Base64.getUrlEncoder().withoutPadding().encodeToString("header".getBytes());
+        String encodedPayload = Base64.getUrlEncoder().withoutPadding().encodeToString("payload".getBytes());
+        String encodedSignature = Base64.getUrlEncoder().withoutPadding().encodeToString("test-signature-bytes".getBytes());
+        String[] validParts = {encodedHeader, encodedPayload, encodedSignature};
+
+        JsonObject header = createTestHeader();
+        JsonObject body = createTestBody();
+        DecodedJwt jwt = new DecodedJwt(header, body, encodedSignature, validParts, "header.payload.signature");
+
+        // Test successful decoding
+        byte[] decodedBytes = jwt.getSignatureAsDecodedBytes();
+        assertNotNull(decodedBytes);
+        assertArrayEquals("test-signature-bytes".getBytes(), decodedBytes);
+    }
+
+    @Test
+    @DisplayName("Should throw IllegalStateException for invalid JWT format")
+    void shouldThrowIllegalStateExceptionForInvalidFormat() {
+        JsonObject header = createTestHeader();
+        JsonObject body = createTestBody();
+
+        // Test with null parts
+        DecodedJwt jwtNullParts = new DecodedJwt(header, body, SIGNATURE, null, RAW_TOKEN);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, jwtNullParts::getSignatureAsDecodedBytes);
+        assertTrue(exception.getMessage().contains("JWT format is invalid"));
+        assertTrue(exception.getMessage().contains("null"));
+
+        // Test with wrong number of parts
+        String[] wrongParts = {"header", "payload"};
+        DecodedJwt jwtWrongParts = new DecodedJwt(header, body, SIGNATURE, wrongParts, RAW_TOKEN);
+        exception = assertThrows(IllegalStateException.class, jwtWrongParts::getSignatureAsDecodedBytes);
+        assertTrue(exception.getMessage().contains("JWT format is invalid"));
+        assertTrue(exception.getMessage().contains("2"));
+    }
+
+    @Test
+    @DisplayName("Should throw IllegalStateException for invalid Base64URL signature")
+    void shouldThrowIllegalStateExceptionForInvalidBase64() {
+        JsonObject header = createTestHeader();
+        JsonObject body = createTestBody();
+
+        // Create parts with invalid Base64URL in signature part
+        String[] invalidBase64Parts = {"header", "payload", "invalid@base64!signature"};
+        DecodedJwt jwt = new DecodedJwt(header, body, "invalid@base64!signature", invalidBase64Parts, RAW_TOKEN);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, jwt::getSignatureAsDecodedBytes);
+        assertTrue(exception.getMessage().contains("Failed to decode signature from Base64URL format"));
+        assertNotNull(exception.getCause());
+        assertEquals(IllegalArgumentException.class, exception.getCause().getClass());
+    }
+
+    @Test
+    @DisplayName("Should get data to verify correctly")
+    void shouldGetDataToVerifyCorrectly() {
+        // Create a test JWT with proper parts
+        String[] validParts = {"encodedHeader", "encodedPayload", "encodedSignature"};
+
+        JsonObject header = createTestHeader();
+        JsonObject body = createTestBody();
+        DecodedJwt jwt = new DecodedJwt(header, body, "encodedSignature", validParts, "header.payload.signature");
+
+        // Test successful data extraction
+        String dataToVerify = jwt.getDataToVerify();
+        assertEquals("encodedHeader.encodedPayload", dataToVerify);
+    }
+
+    @Test
+    @DisplayName("Should throw IllegalStateException for invalid JWT format when getting data to verify")
+    void shouldThrowIllegalStateExceptionForInvalidFormatWhenGettingDataToVerify() {
+        JsonObject header = createTestHeader();
+        JsonObject body = createTestBody();
+
+        // Test with null parts
+        DecodedJwt jwtNullParts = new DecodedJwt(header, body, SIGNATURE, null, RAW_TOKEN);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, jwtNullParts::getDataToVerify);
+        assertTrue(exception.getMessage().contains("JWT format is invalid"));
+        assertTrue(exception.getMessage().contains("null"));
+
+        // Test with wrong number of parts
+        String[] wrongParts = {"header", "payload"};
+        DecodedJwt jwtWrongParts = new DecodedJwt(header, body, SIGNATURE, wrongParts, RAW_TOKEN);
+        exception = assertThrows(IllegalStateException.class, jwtWrongParts::getDataToVerify);
+        assertTrue(exception.getMessage().contains("JWT format is invalid"));
+        assertTrue(exception.getMessage().contains("2"));
     }
 
     private JsonObject createTestHeader() {
