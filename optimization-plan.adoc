@@ -39,16 +39,17 @@
 
 === Quick Performance Summary
 
-**RS256 Performance**: 143.0ms P95 latency (194.8ms with new metrics), 1,533 req/sec throughput (BouncyCastle)
+**RS256 Performance**: 143.0ms P95 latency (204.4ms latest run), 1,125 req/sec throughput (BouncyCastle)
 **Target**: <20ms P95 latency (10ms achievable based on 5ms microbenchmark)
-**Remaining Gap**: 123ms (86% improvement still needed)
+**Remaining Gap**: 184ms (90% improvement still needed from latest run)
 **Bottleneck**: RSA signature verification (`BigInteger.modPow()` ~97% of time)
 
-**New Metrics Insights**:
-- Average validation time: 16.573ms (complete_validation)
-- Individual steps sum: 6.395ms (token_parsing + header_validation + claims_validation + signature_validation)
-- **Unaccounted overhead: 10.178ms (61.4%)** - likely framework/HTTP processing
-- High variance: P95 (194.8ms) and P99 (267.9ms) are 11.8x and 16.2x higher than average
+**Latest Metrics Insights (July 25, 2025)**:
+- Average validation time: 15.604ms (complete_validation)
+- Individual steps sum: 4.284ms (token_parsing + header_validation + claims_validation + signature_validation)
+- **Unaccounted overhead: 11.320ms (72.5%)** - likely framework/HTTP processing
+- High variance: P95 (204.4ms) and P99 (289.0ms) are 13.1x and 18.5x higher than average
+- HTTP processing overhead: 41.831ms average (request_processing metric)
 
 === Infrastructure Optimization Status ✅ **COMPLETED**
 
@@ -251,6 +252,13 @@
     - **Status tracking**: Monitors request outcomes (SUCCESS, MISSING_TOKEN, INVALID_TOKEN, INSUFFICIENT_PERMISSIONS)
     - **Micrometer integration**: Exposes metrics via cui.jwt.http.request.duration and cui.jwt.http.request.count
     - **Addresses 61.4% gap**: Helps identify the 10.178ms unaccounted overhead in benchmark results
+
+13. **Benchmark Metrics Integration**: Comprehensive metrics collection now integrated with performance benchmarks
+    - **Automatic collection**: JWT validation and HTTP metrics collected during benchmark runs
+    - **JSON export**: Metrics saved to jwt-validation-metrics.json for analysis
+    - **Pipeline visibility**: Complete timing breakdown for token_parsing (0.101ms), header_validation (0.001ms), claims_validation (3.848ms), signature_validation (0.334ms)
+    - **HTTP overhead tracking**: request_processing (41.831ms avg), authorization_check (0.059ms), header_extraction (0.018ms)
+    - **Status counts**: Tracks success/error distribution (160K+ successful validations with 0 errors in latest run)
 
 === In Progress
 

@@ -156,6 +156,9 @@ public class JwtMetricsCollector {
         }
 
         LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size()));
+        
+        // Force initial update to ensure metrics are visible immediately
+        updateCounters();
     }
 
     /**

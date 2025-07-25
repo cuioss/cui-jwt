@@ -226,6 +226,65 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         done
         
         echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "  }," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        
+        # Add HTTP metrics section
+        echo "  \"http_metrics\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        
+        # Process HTTP request duration metrics
+        HTTP_STEPS=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_duration_seconds" | grep -oE 'type="[^"]+' | sed 's/type="//' | sort -u)
+        
+        if [ -n "$HTTP_STEPS" ]; then
+            FIRST_HTTP_STEP=true
+            for step in $HTTP_STEPS; do
+                if [ "$FIRST_HTTP_STEP" = false ]; then
+                    echo "," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                fi
+                FIRST_HTTP_STEP=false
+                
+                # Get metrics for this HTTP step
+                COUNT=$(grep "cui_jwt_http_request_duration_seconds_count{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                SUM=$(grep "cui_jwt_http_request_duration_seconds_sum{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                
+                echo -n "    \"$step\": " >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                
+                # Add average_ms only if there were actual requests
+                if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ] && [ "$COUNT" != "0.0" ]; then
+                    AVG_JSON=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
+                    echo -n "{\"average_ms\": $AVG_JSON}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                else
+                    # No requests for this type, output empty object
+                    echo -n "{}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                fi
+            done
+        fi
+        
+        echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "  }," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        
+        # Add HTTP status counts
+        echo "  \"http_status_counts\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        
+        HTTP_STATUSES=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_count_requests_total" | grep -oE 'status="[^"]+' | sed 's/status="//' | sort -u)
+        
+        if [ -n "$HTTP_STATUSES" ]; then
+            FIRST_STATUS=true
+            for status in $HTTP_STATUSES; do
+                if [ "$FIRST_STATUS" = false ]; then
+                    echo "," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                fi
+                FIRST_STATUS=false
+                
+                COUNT=$(grep "cui_jwt_http_request_count_requests_total{status=\"$status\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                if [ -n "$COUNT" ]; then
+                    echo -n "    \"$status\": $COUNT" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                else
+                    echo -n "    \"$status\": 0" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                fi
+            done
+        fi
+        
+        echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         echo "  }" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         echo "}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
@@ -248,14 +307,11 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
                 echo ""
                 echo "HTTP Measurement Type: $step"
                 
-                # Get count for this step
+                # Get count and sum for this step
                 COUNT=$(grep "cui_jwt_http_request_duration_seconds_count{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
-                if [ -n "$COUNT" ]; then
-                    echo "  Count: $COUNT"
-                fi
-                
-                # Get sum for this step and calculate average
                 SUM=$(grep "cui_jwt_http_request_duration_seconds_sum{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                
+                # Calculate and display average only
                 if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ]; then
                     AVG=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
                     echo "  Average: ${AVG}ms"
@@ -266,11 +322,11 @@ if [ -f "$RESULTS_DIR/jwt-validation-results.json" ]; then
         # Check HTTP request status counts
         echo ""
         echo "=== HTTP Request Status Counts ==="
-        HTTP_STATUSES=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_count_total" | grep -oE 'status="[^"]+' | sed 's/status="//' | sort -u)
+        HTTP_STATUSES=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_count_requests_total" | grep -oE 'status="[^"]+' | sed 's/status="//' | sort -u)
         
         if [ -n "$HTTP_STATUSES" ]; then
             for status in $HTTP_STATUSES; do
-                COUNT=$(grep "cui_jwt_http_request_count_total{status=\"$status\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+                COUNT=$(grep "cui_jwt_http_request_count_requests_total{status=\"$status\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
                 if [ -n "$COUNT" ]; then
                     echo "  Status $status: $COUNT requests"
                 fi
