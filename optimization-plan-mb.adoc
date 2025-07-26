@@ -95,7 +95,7 @@
 - **4,813x variance**: Indicates combination of GC pauses + synchronous system calls
 - **200-thread load**: Amplifies both memory pressure and time operation contention
 
-**Next Investigation Priority** - **URGENT: Address 27+ Time System Calls**:
+**Next Investigation Priority** - **RE-EVALUATE: True Root Cause of P99 Variance**:
 
 **CRITICAL (Must fix - causes 4,813x variance)**:
 1. **Eliminate OffsetDateTime.now() in critical path** ✅ **COMPLETED**
@@ -136,12 +136,13 @@
 
 **Module**: `cui-jwt-benchmarking` - JMH microbenchmarks, isolated JWT library performance
 
-**Current Results** (65,075 samples, 200 threads):
-- **Throughput**: 71,151 ops/sec (±258K variance)
-- **Average Latency**: 2.6ms per operation
+**LATEST RESULTS** - After ValidationContext Implementation (65,536 samples, 200 threads):
+- **Throughput**: 57,106 ops/sec (±166K variance) - Previously 71,151
+- **Average Latency**: 2.9ms per operation - Previously 2.6ms
 
-=== Critical Bottleneck: Claims Validation P99
+=== ⚠️ **UNEXPECTED RESULT**: Claims Validation P99 Increased from 96ms to 105ms
 
+**Before Optimization** (Previous Run):
 |===
 | Validation Step | P50 | P95 | P99 | P99/P50 Ratio
 | **Claims Validation** | 0.020ms | 2.545ms | **96.253ms** | **4,813x** 🔴
@@ -151,17 +152,49 @@
 | Header Validation | 0.001ms | 0.002ms | 0.003ms | 3x ✅
 |===
 
-**Key Finding**: Claims validation P99 (96ms) represents 69% of total validation P99 latency (139ms).
+**After ValidationContext Optimization** (Current Run):
+|===
+| Validation Step | P50 | P95 | P99 | P99/P50 Ratio | Improvement
+| **Claims Validation** | 0.029ms | 4.796ms | **104.936ms** | **3,618x** | ⚠️ P99 worse by 9%
+| Complete Validation | 0.173ms | 18.358ms | 146.951ms | 850x | P99 worse by 6%
+| Signature Validation | 0.093ms | 0.165ms | 13.532ms | 145x | P99 improved by 13%
+| Token Parsing | 0.014ms | 0.027ms | 0.080ms | 6x ✅ | P99 improved by 44%
+| Header Validation | 0.001ms | 0.002ms | 0.003ms | 3x ✅ | No change
+| Token Building | 0.024ms | 0.107ms | 30.346ms | 1,264x | New metric
+|===
+
+**Performance Degradation Analysis**:
+- **Claims validation P99 WORSENED** from 96ms to 105ms (+9%) despite removing 3 OffsetDateTime.now() calls
+- **P50 latency WORSENED** from 0.020ms to 0.029ms (+45%)
+- **Complete validation P99 WORSENED** from 139ms to 147ms (+6%)
+- **Throughput DECREASED** from 71,151 to 57,106 ops/sec (-20%)
+
+**Root Cause Hypothesis for P99 Degradation**: 
+1. **Run-to-run variance**: P99 latencies can vary significantly between benchmark runs due to:
+   - GC timing differences
+   - OS scheduling variations under 200-thread load
+   - CPU thermal throttling
+   - Background system activity
+2. **Benchmark methodology**: Only 3 iterations with 4s measurement may not capture true P99
+3. **ValidationContext implementation**: While removing 3 time calls, we added:
+   - Object allocation per validation
+   - Additional method parameter passing through entire pipeline
+   - Constructor overhead for ValidationContext
+4. **The optimization addressed the wrong bottleneck**: The 4,813x variance likely comes from:
+   - GC pauses under memory pressure
+   - Thread contention on shared resources
+   - Not from the 3 OffsetDateTime.now() calls themselves
 
 === Error Handling Performance
 
-**Fast-fail scenarios** (μs/op averages):
-- Invalid signature: 785μs (fastest detection)
-- Malformed tokens: 780μs  
-- Valid tokens: 2,461μs
-- Expired tokens: 2,896μs
+**Fast-fail scenarios** (μs/op averages - Latest Run):
+- Invalid signature: 673-935μs (fastest detection)
+- Malformed tokens: 673-705μs  
+- Valid tokens: 2,475μs (stable)
+- Expired tokens: 2,803-2,970μs (slight improvement)
+- Mixed tokens: 2,021-2,705μs
 
-**Observation**: Error percentage (0% vs 50%) has minimal performance impact.
+**Observation**: Error percentage (0% vs 50%) has minimal performance impact. Performance remains consistent.
 
 == Root Cause Investigation Focus
 
