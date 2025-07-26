@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.config;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.tools.logging.CuiLogger;
+
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 

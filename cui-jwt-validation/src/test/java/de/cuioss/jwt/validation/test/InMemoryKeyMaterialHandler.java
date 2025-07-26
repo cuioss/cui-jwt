@@ -531,12 +531,12 @@ public class InMemoryKeyMaterialHandler {
             this.issuerIdentifier = issuerIdentifier;
             this.keyId = keyId;
             this.algorithm = algorithm;
-            
+
             // Generate unique key pair for this issuer
             KeyPair keyPair = generateKeyPair(algorithm, issuerIdentifier + "-" + keyId);
             this.privateKey = keyPair.getPrivate();
             this.publicKey = keyPair.getPublic();
-            
+
             // Create JWKS for this issuer's key
             this.jwks = createJwksFromKey(publicKey, keyId, algorithm.getJwkAlgorithmName());
         }
@@ -552,13 +552,13 @@ public class InMemoryKeyMaterialHandler {
      */
     public static IssuerKeyMaterial[] createMultipleIssuers(int count, Algorithm algorithm) {
         IssuerKeyMaterial[] issuers = new IssuerKeyMaterial[count];
-        
+
         for (int i = 0; i < count; i++) {
             String issuerIdentifier = "https://test-issuer-" + i + ".example.com";
             String keyId = "issuer-" + i + "-key";
             issuers[i] = new IssuerKeyMaterial(issuerIdentifier, keyId, algorithm);
         }
-        
+
         return issuers;
     }
 

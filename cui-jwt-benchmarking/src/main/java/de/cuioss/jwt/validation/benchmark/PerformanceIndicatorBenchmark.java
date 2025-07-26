@@ -22,16 +22,15 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
-import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 
-import java.util.Optional;
 import io.jsonwebtoken.Jwts;
 import org.openjdk.jmh.annotations.*;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -94,10 +93,10 @@ public class PerformanceIndicatorBenchmark {
     static {
         // Initialize metrics maps for each benchmark
         String[] benchmarkNames = {"measureAverageTime", "measureThroughput", "measureConcurrentValidation"};
-        
+
         for (String benchmarkName : benchmarkNames) {
             Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = new ConcurrentHashMap<>();
-            
+
             // Initialize metrics for each measurement type
             for (MeasurementType type : MeasurementType.values()) {
                 ConcurrentHashMap<String, AtomicLong> typeMetrics = new ConcurrentHashMap<>();
@@ -107,7 +106,7 @@ public class PerformanceIndicatorBenchmark {
                 typeMetrics.put("p99_sum", new AtomicLong(0));
                 benchmarkMetrics.put(type, typeMetrics);
             }
-            
+
             GLOBAL_METRICS.put(benchmarkName, benchmarkMetrics);
         }
 
@@ -221,13 +220,13 @@ public class PerformanceIndicatorBenchmark {
                         StripedRingBufferStatistics metrics = metricsOpt.get();
                         if (metrics.sampleCount() > 0) {
                             ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
-                            
+
                             // Accumulate all statistics
                             typeMetrics.get("sampleCount").addAndGet(metrics.sampleCount());
                             typeMetrics.get("p50_sum").addAndGet(metrics.p50().toNanos() * metrics.sampleCount());
                             typeMetrics.get("p95_sum").addAndGet(metrics.p95().toNanos() * metrics.sampleCount());
                             typeMetrics.get("p99_sum").addAndGet(metrics.p99().toNanos() * metrics.sampleCount());
-                            
+
                             metricsCollected++;
                         }
                     }
@@ -287,16 +286,16 @@ public class PerformanceIndicatorBenchmark {
                     if (sampleCount > 0) {
                         Map<String, Object> stepMetrics = new LinkedHashMap<>();
                         stepMetrics.put("sample_count", sampleCount);
-                        
+
                         // Calculate averages from accumulated sums
                         double p50Ms = (typeMetrics.get("p50_sum").get() / (double) sampleCount) / 1_000_000.0;
                         double p95Ms = (typeMetrics.get("p95_sum").get() / (double) sampleCount) / 1_000_000.0;
                         double p99Ms = (typeMetrics.get("p99_sum").get() / (double) sampleCount) / 1_000_000.0;
-                        
+
                         stepMetrics.put("p50_ms", Math.round(p50Ms * 1000) / 1000.0);
                         stepMetrics.put("p95_ms", Math.round(p95Ms * 1000) / 1000.0);
                         stepMetrics.put("p99_ms", Math.round(p99Ms * 1000) / 1000.0);
-                        
+
                         benchmarkResults.put(type.name().toLowerCase(), stepMetrics);
                     }
                 }

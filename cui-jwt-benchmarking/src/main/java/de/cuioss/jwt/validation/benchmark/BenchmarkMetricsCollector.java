@@ -59,17 +59,17 @@ public class BenchmarkMetricsCollector {
             for (Map.Entry<String, Object> stepEntry : benchmarkData.entrySet()) {
                 String stepName = stepEntry.getKey();
                 Map<String, Object> stepMetrics = (Map<String, Object>) stepEntry.getValue();
-                
+
                 // Initialize aggregated metrics for this step if needed
                 aggregatedStepMetrics.putIfAbsent(stepName, new LinkedHashMap<>());
                 Map<String, Double> aggregated = aggregatedStepMetrics.get(stepName);
-                
+
                 // Aggregate each metric
                 Long sampleCount = (Long) stepMetrics.get("sample_count");
                 Double p50Ms = (Double) stepMetrics.get("p50_ms");
                 Double p95Ms = (Double) stepMetrics.get("p95_ms");
                 Double p99Ms = (Double) stepMetrics.get("p99_ms");
-                
+
                 if (sampleCount != null && sampleCount > 0) {
                     // Weight metrics by sample count
                     aggregated.merge("sample_count", sampleCount.doubleValue(), Double::sum);
@@ -84,7 +84,7 @@ public class BenchmarkMetricsCollector {
         for (Map.Entry<String, Map<String, Double>> entry : aggregatedStepMetrics.entrySet()) {
             String stepName = entry.getKey();
             Map<String, Double> metrics = entry.getValue();
-            
+
             Double totalSamples = metrics.get("sample_count");
             if (totalSamples != null && totalSamples > 0) {
                 Map<String, Object> stepMetrics = new LinkedHashMap<>();
@@ -104,13 +104,13 @@ public class BenchmarkMetricsCollector {
         // Add http_metrics section for compatibility
         Map<String, Map<String, Object>> httpMetrics = new LinkedHashMap<>();
         Map<String, Object> jwtValidation = new LinkedHashMap<>();
-        
+
         // Calculate total sample count from all steps
         long totalSampleCount = 0;
         for (Map<String, Object> stepMetrics : steps.values()) {
             totalSampleCount += (Long) stepMetrics.get("sample_count");
         }
-        
+
         jwtValidation.put("request_count", totalSampleCount);
         jwtValidation.put("total_duration_ms", 0.0);
         jwtValidation.put("average_duration_ms", 0.0);

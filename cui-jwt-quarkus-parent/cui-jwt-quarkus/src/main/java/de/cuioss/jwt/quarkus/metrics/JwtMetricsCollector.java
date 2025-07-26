@@ -29,7 +29,6 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
-import java.util.Optional;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.PostConstruct;
@@ -38,6 +37,7 @@ import jakarta.inject.Inject;
 import lombok.NonNull;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;

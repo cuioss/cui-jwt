@@ -31,6 +31,7 @@ import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.string.Joiner;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -117,11 +118,11 @@ class BearerTokenProducerLogicTest {
             // Compare the relevant claim based on type (sort to avoid order issues)
             switch (claimName) {
                 case ROLES -> assertEquals(new ArrayList<>(expected.getRoles()).stream().sorted().toList(),
-                                           new ArrayList<>(actual.getRoles()).stream().sorted().toList());
+                        new ArrayList<>(actual.getRoles()).stream().sorted().toList());
                 case SCOPE -> assertEquals(new ArrayList<>(expected.getScopes()).stream().sorted().toList(),
-                                           new ArrayList<>(actual.getScopes()).stream().sorted().toList());
+                        new ArrayList<>(actual.getScopes()).stream().sorted().toList());
                 case GROUPS -> assertEquals(new ArrayList<>(expected.getGroups()).stream().sorted().toList(),
-                                           new ArrayList<>(actual.getGroups()).stream().sorted().toList());
+                        new ArrayList<>(actual.getGroups()).stream().sorted().toList());
                 default -> fail("Test is not configured to handle claim type: " + claimName);
             }
         }

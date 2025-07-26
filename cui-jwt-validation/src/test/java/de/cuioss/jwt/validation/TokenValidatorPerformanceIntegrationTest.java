@@ -21,12 +21,12 @@ import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,7 +59,7 @@ class TokenValidatorPerformanceIntegrationTest {
 
         // Verify initial state - no measurements
         assertEquals(Duration.ZERO, performanceMonitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
-                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
+                .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
         assertEquals(0, performanceMonitor.getSampleCount(MeasurementType.COMPLETE_VALIDATION));
 
         // Try to validate an invalid token (empty string) - this should record metrics even for failures
@@ -74,7 +74,7 @@ class TokenValidatorPerformanceIntegrationTest {
         assertTrue(performanceMonitor.getSampleCount(MeasurementType.COMPLETE_VALIDATION) > 0,
                 "Complete validation time should be recorded even for failed validations");
         assertTrue(performanceMonitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() > 0,
+                .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() > 0,
                 "Complete validation average should be positive");
 
         // Try with a malformed token - this should get further in the pipeline
@@ -93,7 +93,7 @@ class TokenValidatorPerformanceIntegrationTest {
         // For malformed tokens, parsing might be attempted
         var parsingCount = performanceMonitor.getSampleCount(MeasurementType.TOKEN_PARSING);
         var parsingAverage = performanceMonitor.getValidationMetrics(MeasurementType.TOKEN_PARSING)
-                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
+                .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
         if (parsingCount > 0) {
             assertTrue(parsingAverage.toNanos() > 0,
@@ -104,27 +104,27 @@ class TokenValidatorPerformanceIntegrationTest {
         log.info("- Complete validation: {} samples, avg {:.2f} μs",
                 performanceMonitor.getSampleCount(MeasurementType.COMPLETE_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
         log.info("- Token parsing: {} samples, avg {:.2f} μs",
                 performanceMonitor.getSampleCount(MeasurementType.TOKEN_PARSING),
                 performanceMonitor.getValidationMetrics(MeasurementType.TOKEN_PARSING)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
         log.info("- Header validation: {} samples, avg {:.2f} μs",
                 performanceMonitor.getSampleCount(MeasurementType.HEADER_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.HEADER_VALIDATION)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
         log.info("- Signature validation: {} samples, avg {:.2f} μs",
                 performanceMonitor.getSampleCount(MeasurementType.SIGNATURE_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
         log.info("- Claims validation: {} samples, avg {:.2f} μs",
                 performanceMonitor.getSampleCount(MeasurementType.CLAIMS_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.CLAIMS_VALIDATION)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
         log.info("- JWKS operations: {} samples, avg {:.2f} μs",
                 performanceMonitor.getSampleCount(MeasurementType.JWKS_OPERATIONS),
                 performanceMonitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
-                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
     }
 
     @Test
@@ -141,7 +141,7 @@ class TokenValidatorPerformanceIntegrationTest {
         // Verify it's properly initialized
         for (MeasurementType type : MeasurementType.values()) {
             assertEquals(Duration.ZERO, performanceMonitor.getValidationMetrics(type)
-                            .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
+                            .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                     "Initial average should be zero for " + type);
             assertEquals(0, performanceMonitor.getSampleCount(type),
                     "Initial sample count should be zero for " + type);

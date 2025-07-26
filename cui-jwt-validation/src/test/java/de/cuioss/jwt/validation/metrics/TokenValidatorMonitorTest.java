@@ -518,13 +518,13 @@ class TokenValidatorMonitorTest {
 
         StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
                 .orElseThrow(() -> new AssertionError("Metrics should be present"));
-        
+
         // Verify percentiles are ordered correctly
         assertTrue(metrics.p99().compareTo(metrics.p95()) >= 0,
                 "P99 should be >= P95");
         assertTrue(metrics.p95().compareTo(metrics.p50()) >= 0,
                 "P95 should be >= P50");
-        
+
         // Verify they're within expected ranges
         // Due to striped ring buffer behavior, values may be slightly higher than expected
         assertTrue(metrics.p50().toMillis() >= 40 && metrics.p50().toMillis() <= 70,
@@ -539,10 +539,10 @@ class TokenValidatorMonitorTest {
     @DisplayName("Should return zero metrics for empty buffer")
     void shouldReturnZeroMetricsForEmptyBuffer() {
         var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
-        
+
         Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(MeasurementType.TOKEN_PARSING);
         assertTrue(metricsOpt.isPresent(), "Metrics should be present for enabled measurement type");
-        
+
         StripedRingBufferStatistics metrics = metricsOpt.get();
         assertEquals(0, metrics.sampleCount(), "Empty buffer should have zero sample count");
         assertEquals(Duration.ZERO, metrics.p50(), "Empty buffer should have zero P50");
@@ -555,7 +555,7 @@ class TokenValidatorMonitorTest {
     void shouldHandleSingleMeasurementForPercentiles() {
         var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
         var measurementType = MeasurementType.CLAIMS_VALIDATION;
-        
+
         monitor.recordMeasurement(measurementType, 5_000_000); // 5ms
         
         StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)

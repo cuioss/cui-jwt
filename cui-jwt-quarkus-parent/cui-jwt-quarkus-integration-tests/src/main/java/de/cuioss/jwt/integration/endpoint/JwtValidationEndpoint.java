@@ -235,15 +235,15 @@ public class JwtValidationEndpoint {
         // Touch the TokenValidator to simulate dependency usage
         var securityEventCounter = tokenValidator.getSecurityEventCounter();
         long totalEvents = securityEventCounter.getCounters().values().stream()
-                .mapToLong(Long::longValue)
-                .sum();
+            .mapToLong(Long::longValue)
+            .sum();
         LOGGER.debug("Echo endpoint called - total security events: %d", totalEvents);
-        
+
         // Return the exact same data that was sent
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("echo", echoRequest != null ? echoRequest.data() : null);
         responseData.put("eventCounter", totalEvents);
-        
+
         return Response.ok(new ValidationResponse(true, "Echo successful", responseData)).build();
     }
 

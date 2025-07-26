@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.jwks.JwksLoader;
+
 import lombok.experimental.UtilityClass;
 
 /**

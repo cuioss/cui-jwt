@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.servlet.adapter;
 
 import de.cuioss.jwt.quarkus.servlet.TestHttpServerRequest;
 import de.cuioss.jwt.quarkus.servlet.VertxHttpServletRequestAdapter;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

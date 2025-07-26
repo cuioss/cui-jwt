@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;

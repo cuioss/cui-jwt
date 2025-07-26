@@ -22,6 +22,7 @@ import de.cuioss.jwt.quarkus.test.TestConfigurations;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
