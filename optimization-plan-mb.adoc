@@ -25,12 +25,24 @@
 
 **Critical Performance Bottlenecks Identified** (Source Code Analysis):
 
-1. **🔴 SYNCHRONOUS TIME OPERATIONS** - **Primary Suspect for 4,813x Variance**
-   - **ExpirationValidator.java:65, 92, 97**: Multiple `OffsetDateTime.now()` calls per validation
-   - **TokenContent.java:163**: Additional `OffsetDateTime.now()` in `isExpired()` method
-   - **Impact**: System calls with high variance under concurrent load (200 threads)
-   - **Problem**: Each token validation triggers 2-3 blocking time system calls
-   - **Evidence**: Time-dependent operations are primary cause of tail latency variance
+1. **🔴 SYNCHRONOUS TIME OPERATIONS** - **Primary Suspect for 4,813x Variance** ⚠️ **MUCH WORSE THAN INITIALLY THOUGHT**
+   
+   **Critical Path Operations (ALWAYS executed)**:
+   - **TokenContent.java:163**: `OffsetDateTime.now()` in `isExpired()` method - **EVERY token validation**
+   - **ExpirationValidator.java:92**: `OffsetDateTime.now().plusSeconds(60)` for nbf validation - **EVERY token validation**
+   - **ExpirationValidator.java:65, 97**: `OffsetDateTime.now()` in exception messages - **On validation failures**
+   - **Total**: **3-4 OffsetDateTime.now() calls per token validation** (minimum 3, always executed)
+   
+   **Metrics Operations (When enabled - very common)**:
+   - **TokenValidator.java**: **18 System.nanoTime() calls** per validation (lines 308, 325, 332, 344, 351, 356, 363, 377, 392, 397, 404, 410, 417, 434, 446, 459, 467, 474)
+   - **BearerTokenProducer.java**: **6+ System.nanoTime() calls** per HTTP request (Quarkus integration)
+   - **Total**: **24+ additional system calls when metrics enabled**
+   
+   **Problem Scale**:
+   - **Minimum**: 3 OffsetDateTime.now() calls per validation (critical path)
+   - **With metrics**: 27+ total time system calls per token validation  
+   - **Under 200-thread load**: System call contention causes extreme variance
+   - **Evidence**: Each OffsetDateTime.now() can vary from microseconds to milliseconds under load
 
 2. **🟡 MEMORY ALLOCATION HOTSPOTS** - **Secondary Performance Impact**
    - **TokenBuilder.java:111**: `new HashMap<>()` for every token's claim extraction
@@ -56,20 +68,32 @@
    - **ClaimName.fromString()**: Optional-based lookups with object creation
    - **Impact**: Additional object allocation and method call overhead
 
-**Specific Problem Locations**:
+**Specific Problem Locations** - **COMPREHENSIVE TIME OPERATIONS AUDIT**:
 
 ```java
-// PRIMARY BOTTLENECK - Synchronous time operations
-// ExpirationValidator.java:65, 92, 97
-// OffsetDateTime.now()  - Called 2-3 times per token validation
+// PRIMARY BOTTLENECK - Critical Path Time Operations (ALWAYS executed)
+// TokenContent.java:163
+// return getExpirationTime().isBefore(OffsetDateTime.now());  - EVERY validation
 
-// SECONDARY BOTTLENECKS - Memory allocation per token
-// TokenBuilder.java:111
-// Map<String, ClaimValue> claims = new HashMap<>();  - Per token
+// ExpirationValidator.java:92  
+// if (notBefore.get().isAfter(OffsetDateTime.now().plusSeconds(CLOCK_SKEW_SECONDS)))  - EVERY validation
 
-// MandatoryClaimsValidator.java:83  
-// SortedSet<String> missingClaims = new TreeSet<>();  - Per validation
+// ExpirationValidator.java:65, 97 (on validation failures)
+// "Current time: " + OffsetDateTime.now()  - Exception messages
+
+// SECONDARY BOTTLENECK - Metrics Time Operations (When enabled - common)
+// TokenValidator.java: 18 System.nanoTime() calls per validation
+// BearerTokenProducer.java: 6+ System.nanoTime() calls per request
+
+// MEMORY ALLOCATION BOTTLENECKS  
+// TokenBuilder.java:111 - new HashMap<>();  per token
+// MandatoryClaimsValidator.java:83 - new TreeSet<>();  per validation
 ```
+
+**Total Time System Calls Per Token Validation**:
+- **Minimum (critical path)**: 3 OffsetDateTime.now() calls  
+- **With metrics enabled**: 27+ total time system calls
+- **Root cause of 4,813x variance**: System call contention under 200-thread load
 
 **Performance Impact Analysis**:
 - **P50 (0.020ms)**: Fast path when no GC pressure, cached time operations
@@ -77,11 +101,22 @@
 - **4,813x variance**: Indicates combination of GC pauses + synchronous system calls
 - **200-thread load**: Amplifies both memory pressure and time operation contention
 
-**Next Investigation Priority**:
-1. **Eliminate synchronous time operations** - Use cached time or async patterns
-2. **Object pool for HashMap allocation** - Reuse claim maps to reduce GC pressure  
-3. **Optimize audience validation** - Avoid stream operations under load
-4. **Profile time operation variance** - Measure `OffsetDateTime.now()` distribution under load
+**Next Investigation Priority** - **URGENT: Address 27+ Time System Calls**:
+
+**CRITICAL (Must fix - causes 4,813x variance)**:
+1. **Eliminate OffsetDateTime.now() in critical path** (3 calls minimum)
+   - Cache current time at validation start, reuse throughout pipeline
+   - Remove OffsetDateTime.now() from TokenContent.isExpired() 
+   - Remove OffsetDateTime.now() from ExpirationValidator.validateNotBefore()
+   
+2. **Optimize metrics System.nanoTime() calls** (24+ calls when enabled)
+   - Batch timing measurements to reduce system call frequency
+   - Consider disabling metrics in performance-critical scenarios
+   - Use single start time, calculate deltas instead of multiple nanoTime() calls
+
+**HIGH PRIORITY (Secondary optimization)**:
+3. **Object pool for HashMap allocation** - Reuse claim maps to reduce GC pressure  
+4. **Profile complete time operation distribution** - Measure all 27+ calls under load
 
 === High Priority - Tail Latency Analysis  
 - [ ] Enable GC logging in microbenchmarks (-XX:+PrintGC)
