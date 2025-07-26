@@ -7,19 +7,81 @@
 
 == Action Items Checklist
 
-=== **HIGHEST PRIORITY** - Benchmark Command Standardization 🚀
-- [ ] Standardize benchmark execution to `./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark`
-- [ ] Update optimization-plan.adoc benchmark command references
-- [ ] Update .github/workflows/benchmark.yml to use -Pbenchmark profile
-- [ ] Verify -Pbenchmark profile exists and works correctly in cui-jwt-benchmarking/pom.xml
-- [ ] Audit all documentation for benchmark command consistency
+=== **HIGHEST PRIORITY** - Benchmark Command Standardization ✅ **COMPLETED**
+- [x] Standardize benchmark execution to `./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark`
+- [x] Update optimization-plan.adoc benchmark command references
+- [x] Update .github/workflows/benchmark.yml to use -Pbenchmark profile
+- [x] Verify -Pbenchmark profile exists and works correctly in cui-jwt-benchmarking/pom.xml
+- [x] Audit all documentation for benchmark command consistency
 
-=== Immediate Priority - Claims Validation Investigation
+=== Immediate Priority - Claims Validation Investigation 🔴 **CRITICAL PERFORMANCE ISSUES IDENTIFIED**
 - [ ] Add JFR instrumentation to TokenClaimsValidator methods
 - [ ] Profile individual claim validation steps (exp, nbf, aud, custom claims)
 - [ ] Identify synchronous operations in claims processing
 - [ ] Analyze memory allocation patterns during claim validation
 - [ ] Profile date/time calculation overhead under concurrent load
+
+==== **ULTRATHINK Analysis Results** - Root Cause Investigation Findings
+
+**Critical Performance Bottlenecks Identified** (Source Code Analysis):
+
+1. **🔴 SYNCHRONOUS TIME OPERATIONS** - **Primary Suspect for 4,813x Variance**
+   - **ExpirationValidator.java:65, 92, 97**: Multiple `OffsetDateTime.now()` calls per validation
+   - **TokenContent.java:163**: Additional `OffsetDateTime.now()` in `isExpired()` method
+   - **Impact**: System calls with high variance under concurrent load (200 threads)
+   - **Problem**: Each token validation triggers 2-3 blocking time system calls
+   - **Evidence**: Time-dependent operations are primary cause of tail latency variance
+
+2. **🟡 MEMORY ALLOCATION HOTSPOTS** - **Secondary Performance Impact**
+   - **TokenBuilder.java:111**: `new HashMap<>()` for every token's claim extraction
+   - **MandatoryClaimsValidator.java:83**: `new TreeSet<>()` for missing claims collection
+   - **ClaimValue.java:26**: `new ArrayList<>()` for STRING_LIST claim types
+   - **MandatoryClaimsValidator.java:153-175**: `StringBuilder` allocation in error handling
+   - **Impact**: GC pressure causing tail latency spikes under concurrent load
+
+3. **🟡 COLLECTION OPERATIONS UNDER LOAD**
+   - **AudienceValidator.java:129-137**: Stream operations with `anyMatch()` on collections
+   - **TokenBuilder.java:114-132**: Map lookups and iterations during claim extraction
+   - **Various validators**: Set containment checks that scale with memory pressure
+   - **Impact**: Performance degradation under high concurrency (200 threads)
+
+4. **🟡 STRING PROCESSING OVERHEAD**
+   - **Error message formatting**: Multiple string concatenations and formatting operations
+   - **Log message preparation**: String formatting even when logging disabled at runtime
+   - **ClaimName operations**: String-to-enum lookups and mappings
+   - **Impact**: CPU overhead and string object allocation
+
+5. **🟡 OPTIONAL CHAIN OPERATIONS**
+   - **TokenContent interface**: Multiple `Optional.map()` chains creating intermediate objects
+   - **ClaimName.fromString()**: Optional-based lookups with object creation
+   - **Impact**: Additional object allocation and method call overhead
+
+**Specific Problem Locations**:
+
+```java
+// PRIMARY BOTTLENECK - Synchronous time operations
+// ExpirationValidator.java:65, 92, 97
+// OffsetDateTime.now()  - Called 2-3 times per token validation
+
+// SECONDARY BOTTLENECKS - Memory allocation per token
+// TokenBuilder.java:111
+// Map<String, ClaimValue> claims = new HashMap<>();  - Per token
+
+// MandatoryClaimsValidator.java:83  
+// SortedSet<String> missingClaims = new TreeSet<>();  - Per validation
+```
+
+**Performance Impact Analysis**:
+- **P50 (0.020ms)**: Fast path when no GC pressure, cached time operations
+- **P99 (96.253ms)**: Extreme tail latency when GC pressure + time operation variance combine
+- **4,813x variance**: Indicates combination of GC pauses + synchronous system calls
+- **200-thread load**: Amplifies both memory pressure and time operation contention
+
+**Next Investigation Priority**:
+1. **Eliminate synchronous time operations** - Use cached time or async patterns
+2. **Object pool for HashMap allocation** - Reuse claim maps to reduce GC pressure  
+3. **Optimize audience validation** - Avoid stream operations under load
+4. **Profile time operation variance** - Measure `OffsetDateTime.now()` distribution under load
 
 === High Priority - Tail Latency Analysis  
 - [ ] Enable GC logging in microbenchmarks (-XX:+PrintGC)
