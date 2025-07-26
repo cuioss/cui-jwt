@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.JwtTokenTamperingUtil;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
@@ -56,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("RFC 7519 JWT Compliance Tests")
 class RFC7519JWTComplianceTest {
     // No longer need a tokenValidator field as we'll create it on demand using tokenHolder.getIssuerConfig()
+    private final ValidationContext validationContext = new ValidationContext(60);
 
     @Nested
     @DisplayName("Section 4.1: Registered Claim Names")
@@ -108,7 +110,7 @@ class RFC7519JWTComplianceTest {
             AccessTokenContent result = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build().createAccessToken(token);
             assertNotNull(result, "Token should be parsed successfully");
             assertNotNull(result.getExpirationTime());
-            assertFalse(result.isExpired());
+            assertFalse(result.isExpired(validationContext));
         }
 
         @Test

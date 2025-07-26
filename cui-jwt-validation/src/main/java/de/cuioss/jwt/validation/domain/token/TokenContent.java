@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import lombok.NonNull;
 
 import java.time.OffsetDateTime;
@@ -155,11 +156,16 @@ public interface TokenContent extends MinimalTokenContent {
     }
 
     /**
-     * Checks if the validation has expired.
+     * Checks if the token has expired using the provided validation context.
+     * <p>
+     * This method eliminates synchronous OffsetDateTime.now() calls by using the cached
+     * current time from the ValidationContext, significantly improving performance under
+     * concurrent load.
      *
-     * @return true if the validation has expired, false otherwise
+     * @param context the validation context containing cached current time
+     * @return true if the token has expired, false otherwise
      */
-    default boolean isExpired() {
-        return getExpirationTime().isBefore(OffsetDateTime.now());
+    default boolean isExpired(@NonNull ValidationContext context) {
+        return context.isExpired(getExpirationTime());
     }
 }

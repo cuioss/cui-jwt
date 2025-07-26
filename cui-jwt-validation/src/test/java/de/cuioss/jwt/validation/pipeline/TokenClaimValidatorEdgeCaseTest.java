@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests TokenClaimValidator edge cases")
 class TokenClaimValidatorEdgeCaseTest {
     private final SecurityEventCounter securityEventCounter = new SecurityEventCounter();
+    private final ValidationContext validationContext = new ValidationContext(60);
 
     // Helper method to create a TokenClaimValidator with the shared SecurityEventCounter
     private TokenClaimValidator createValidator(IssuerConfig issuerConfig) {
@@ -81,9 +82,9 @@ class TokenClaimValidatorEdgeCaseTest {
             TokenContent tokenAboutToExpire = createTokenWithExpirationTime(OffsetDateTime.now().plusSeconds(5));
 
             // Then the validation should pass (no exception thrown)
-            TokenContent result = validator.validate(tokenAboutToExpire);
+            TokenContent result = validator.validate(tokenAboutToExpire, validationContext);
             // If we get here, the validation passed
-            assertFalse(result.isExpired(), "Token should be valid when about to expire but not yet expired");
+            assertFalse(result.isExpired(validationContext), "Token should be valid when about to expire but not yet expired");
         }
 
         @Test
@@ -102,7 +103,7 @@ class TokenClaimValidatorEdgeCaseTest {
             TokenContent tokenJustExpired = createTokenWithExpirationTime(OffsetDateTime.now().minusSeconds(5));
 
             // Then the validation should fail with a TokenValidationException
-            assertThrows(TokenValidationException.class, () -> validator.validate(tokenJustExpired),
+            assertThrows(TokenValidationException.class, () -> validator.validate(tokenJustExpired, validationContext),
                     "Token should be invalid when just expired");
 
             // Verify that the appropriate warning is logged
@@ -130,7 +131,7 @@ class TokenClaimValidatorEdgeCaseTest {
             TokenContent tokenWithPastNotBefore = createTokenWithNotBeforeTime(OffsetDateTime.now().minusMinutes(5));
 
             // Then the validation should pass (no exception thrown)
-            TokenContent result = validator.validate(tokenWithPastNotBefore);
+            TokenContent result = validator.validate(tokenWithPastNotBefore, validationContext);
             // If we get here, the validation passed
             assertNotNull(result, "Token should be valid with not before time in the past");
         }
@@ -152,7 +153,7 @@ class TokenClaimValidatorEdgeCaseTest {
             TokenContent tokenWithFutureNotBefore = createTokenWithNotBeforeTime(OffsetDateTime.now().plusSeconds(30));
 
             // Then the validation should pass (no exception thrown)
-            TokenContent result = validator.validate(tokenWithFutureNotBefore);
+            TokenContent result = validator.validate(tokenWithFutureNotBefore, validationContext);
             // If we get here, the validation passed
             assertNotNull(result, "Token should be valid with not before time slightly in the future (within clock skew)");
         }
@@ -174,7 +175,7 @@ class TokenClaimValidatorEdgeCaseTest {
             TokenContent tokenWithFarFutureNotBefore = createTokenWithNotBeforeTime(OffsetDateTime.now().plusSeconds(90));
 
             // Then the validation should fail with a TokenValidationException
-            assertThrows(TokenValidationException.class, () -> validator.validate(tokenWithFarFutureNotBefore),
+            assertThrows(TokenValidationException.class, () -> validator.validate(tokenWithFarFutureNotBefore, validationContext),
                     "Token should be invalid with not before time far in the future (beyond clock skew)");
 
             // Verify that the appropriate warning is logged

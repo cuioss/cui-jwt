@@ -31,6 +31,7 @@ import de.cuioss.jwt.validation.pipeline.TokenBuilder;
 import de.cuioss.jwt.validation.pipeline.TokenClaimValidator;
 import de.cuioss.jwt.validation.pipeline.TokenHeaderValidator;
 import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
+import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
@@ -466,8 +467,12 @@ public class TokenValidator {
     private <T extends TokenContent> T validateTokenClaims(TokenContent token, IssuerConfig issuerConfig, boolean recordMetrics) {
         long startTime = recordMetrics ? System.nanoTime() : 0;
         try {
+            // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
+            // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
+            ValidationContext context = new ValidationContext(60);
+            
             TokenClaimValidator claimValidator = new TokenClaimValidator(issuerConfig, securityEventCounter);
-            TokenContent validatedContent = claimValidator.validate(token);
+            TokenContent validatedContent = claimValidator.validate(token, context);
             return (T) validatedContent;
         } finally {
             if (recordMetrics) {

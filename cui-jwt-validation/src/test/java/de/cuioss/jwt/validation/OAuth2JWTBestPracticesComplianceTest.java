@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
+import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -61,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("OAuth 2.0 JWT Best Practices Compliance Tests")
 class OAuth2JWTBestPracticesComplianceTest {
     private TokenValidator tokenValidator;
+    private ValidationContext validationContext;
 
     @BeforeEach
     void setUp() {
@@ -77,6 +79,9 @@ class OAuth2JWTBestPracticesComplianceTest {
 
         // Create validation factory
         tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+        
+        // Initialize validation context
+        validationContext = new ValidationContext(60);
     }
 
     @Nested
@@ -224,7 +229,7 @@ class OAuth2JWTBestPracticesComplianceTest {
             assertNotNull(result, "Token should be parsed successfully");
             assertNotNull(result.getExpirationTime(),
                     "Expiration time claim should be present");
-            assertFalse(result.isExpired(),
+            assertFalse(result.isExpired(validationContext),
                     "Token should not be expired");
         }
 

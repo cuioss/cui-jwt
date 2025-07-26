@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
+import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
@@ -51,6 +52,7 @@ class OpenIDConnectComplianceTest {
     private static final String ISSUER = "Token-Test-testIssuer";
 
     private TokenValidator tokenValidator;
+    private ValidationContext validationContext;
 
     @BeforeEach
     void setUp() {
@@ -68,6 +70,9 @@ class OpenIDConnectComplianceTest {
 
         // Create validation factory
         tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+        
+        // Initialize validation context
+        validationContext = new ValidationContext(60);
     }
 
     @Nested
@@ -119,7 +124,7 @@ class OpenIDConnectComplianceTest {
             String token = TestTokenGenerators.idTokens().next().getRawToken();
             IdTokenContent result = tokenValidator.createIdToken(token);
             assertNotNull(result.getExpirationTime());
-            assertFalse(result.isExpired());
+            assertFalse(result.isExpired(validationContext));
         }
 
         @Test

@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @EnableGeneratorController
 class TokenContentTest {
+
+    private final ValidationContext validationContext = new ValidationContext(60);
 
     @Test
     @DisplayName("Should provide access to claims")
@@ -160,10 +163,10 @@ class TokenContentTest {
     @DisplayName("Should check expiration correctly")
     void shouldCheckExpirationCorrectly() {
         TestTokenContent validToken = createTestToken();
-        assertFalse(validToken.isExpired());
+        assertFalse(validToken.isExpired(validationContext));
 
         TestTokenContent expiredToken = createExpiredTestToken();
-        assertTrue(expiredToken.isExpired());
+        assertTrue(expiredToken.isExpired(validationContext));
     }
 
     @Test
