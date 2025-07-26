@@ -168,6 +168,15 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>benchmark</id>
+            <properties>
+                <skip.benchmark>false</skip.benchmark>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <!-- Skip unit tests by default -->

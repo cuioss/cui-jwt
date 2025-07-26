@@ -42,10 +42,10 @@ To run benchmarks from the command line:
 [source,bash]
 ----
 # From the project root directory
-./mvnw clean verify -pl cui-jwt-benchmarking -Dskip.benchmark=false
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
 
 # With custom JMH parameters
-./mvnw clean verify -pl cui-jwt-benchmarking -Dskip.benchmark=false \
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
   -Djmh.iterations=5 \
   -Djmh.warmupIterations=3 \
   -Djmh.forks=2 \
@@ -69,7 +69,7 @@ To run specific benchmarks, you can use the `jmh.includes` parameter:
 
 [source,bash]
 ----
-./mvnw clean verify -pl cui-jwt-benchmarking -Dskip.benchmark=false \
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
   -Djmh.includes=TokenValidatorBenchmark
 ----
 

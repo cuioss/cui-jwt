@@ -1,415 +1,294 @@
-= JWT Integration Test Latency Optimization Plan
+= JWT Integration Test Performance Optimization Plan
 :toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
 :source-highlighter: highlight.js
 
-== Critical Build Information
-
-**Build Commands:** 
-```bash
-# Run benchmarks with distroless containers (production testing)
-./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pbenchmark-testing
-
-# Run benchmarks with JFR profiling containers (performance analysis)
-./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pbenchmark-jfr
-```
-
-**Commit Requirements:** You must only commit if the Maven command executes without errors and warnings, and you verified the results in `target/benchmark-results/`.
-
 == Executive Summary
 
-=== Current Performance Baseline (July 22, 2025)
+**Focus**: Integration test performance optimization for Quarkus JWT validation endpoint
+
+**Target**: Reduce P95 latency from 186.6ms to <20ms through infrastructure and framework optimization
+
+**Key Finding**: 97% of request latency comes from framework/infrastructure overhead, not JWT library
+
+== Current Performance Baseline (July 26, 2025)
+
+=== Integration Test Results
 
 **Infrastructure**: Apple M4, OrbStack containerization, Quarkus native runtime
 
 |===
-| Algorithm | P95 Latency | Throughput | Processing Overhead | Token Length | Provider | Status
-| **RS256** | **143.0ms** | **1,533 req/sec** | **138.9ms** | 977 chars | BouncyCastle | ✅ CURRENT
-| RS256 (Default JDK) | 173.0ms | 1,413 req/sec | 168.0ms | 977 chars | SUN | ⚪ BASELINE
-| **Health Check** | **3.5ms** | **38,683 req/sec** | **0ms (baseline)** | N/A | N/A | ✅ BASELINE
+| Endpoint Type | Throughput | P95 Latency | Description | Overhead Analysis
+| **Health Check** | 32,392 req/sec | 4.7ms | Minimal overhead baseline | 0ms (baseline)
+| **Echo Endpoint** | 9,988 req/sec | 59.0ms | CDI + virtual threads | +54.3ms framework
+| **JWT Validation** | 1,314 req/sec | 186.6ms | Full JWT processing | +127.6ms JWT pipeline
 |===
 
-**Current Focus**: Reduce RS256 JWT validation latency from 143ms to <20ms through RSA-specific optimizations.
+=== Performance Gap Analysis
 
-**Optimization Achievement**:
-- BouncyCastle: 17% improvement (173ms → 143ms)
-- **Note**: -march=native optimization removed due to Docker portability concerns
+**Integration vs Microbenchmarks**:
+- **Microbenchmarks**: 2.6ms average (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
+- **Integration Tests**: 186.6ms P95 latency
+- **Gap**: 66x difference indicates infrastructure dominates performance
 
-=== Quick Performance Summary
+=== Latency Breakdown (186.6ms P95 Total)
 
-**RS256 Performance**: 143.0ms P95 latency (204.4ms latest run), 1,125 req/sec throughput (BouncyCastle)
-**Target**: <20ms P95 latency (10ms achievable based on 5ms microbenchmark)
-**Remaining Gap**: 184ms (90% improvement still needed from latest run)
-**Bottleneck**: RSA signature verification (`BigInteger.modPow()` ~97% of time)
-
-**Latest Metrics Insights (July 25, 2025)**:
-- Average validation time: 15.604ms (complete_validation)
-- Individual steps sum: 4.284ms (token_parsing + header_validation + claims_validation + signature_validation)
-- **Unaccounted overhead: 11.320ms (72.5%)** - likely framework/HTTP processing
-- High variance: P95 (204.4ms) and P99 (289.0ms) are 13.1x and 18.5x higher than average
-- HTTP processing overhead: 41.831ms average (request_processing metric)
-
-=== Infrastructure Optimization Status ✅ **COMPLETED**
-
-**OrbStack Migration**: Switching from Docker Desktop to OrbStack provided excellent system performance:
-
-- Health Check: 5.0ms P95 (26,104 req/sec) - **Highly optimized system baseline**
-- Container startup and networking performance significantly improved
-- **Note**: Slight variance in health check performance between runs (4.1-5.0ms)
-
-== Performance Analysis Summary
-
-=== JFR Analysis Results ✅ **COMPLETED**
-
-**Root Cause Identification**: JFR profiling of RSA signature verification identified the primary bottleneck:
-
-- **RSA Signature Verification**: ~97% of JWT processing time in GraalVM native images
-- **Critical Stack Traces**: `java.math.BigInteger.modPow()` operations dominating CPU time
-- **Evidence**: `sun.security.rsa.RSACore.crypt()` and `de.cuioss.jwt.validation.pipeline.TokenSignatureValidator.verifySignature()` as primary CPU consumers
-
-**Performance Breakdown (RS256 with BouncyCastle)**:
-
-- System Infrastructure: 4.1ms (networking, HTTP, Docker)
-- RSA Signature Verification: ~134ms (BouncyCastle RSA operations)
-- JWT Parsing/Validation: ~5ms (library logic - matches microbenchmark)
-- **Total**: 143.0ms P95
-- **Gap to Target**: 134ms RSA overhead must be reduced to <16ms
-- **BouncyCastle Benefit**: 29ms RSA overhead reduction vs default JDK
-
-=== Critical Findings
-
-1. **System Baseline**: 3.5ms P95 (health check) - Infrastructure is highly optimized
-2. **JWT Processing**: 137.9ms additional overhead for RS256 with BouncyCastle + -march=native
-3. **BouncyCastle Impact**: 17% improvement over default JDK (173.0ms → 143.0ms)
-4. **RSA Bottleneck**: `BigInteger.modPow()` operations consume ~94% of JWT validation time
-5. **Algorithm Migration Success**: ES256 → RS256 improved performance by 71.7% (504.9ms → 143.0ms)
-6. **Provider Optimization Success**: SUN → BouncyCastle improved performance by 17.3%
-
-== Next Steps - Actionable Tasks
-
-=== Priority 1: RSA Performance Optimization 🚀 **NEXT FOCUS**
-
-**Goal**: Reduce RSA signature verification overhead from 134ms to target <16ms
-
-**Current Status**: RS256 with BouncyCastle at 143.0ms P95 (1,533 req/sec)
-**Microbenchmark Reference**: JWT library alone achieves 5ms - proving <10ms is possible
-**BouncyCastle Benefit**: 17% improvement (29ms reduction) over default JDK provider
-
-**Next Optimization Paths**:
-
-1. **GraalVM Native Image Tuning** ⭐ **IMMEDIATE ACTION**:
-+
-[source,bash]
-----
-# Add to native image build
--march=native                    # ARM64 CPU-specific optimizations
--O2                             # Standard optimization level (default)
---pgo-instrument                # Generate PGO data
---pgo=profile.iprof            # Use PGO data for RSA hotpaths
-----
-
-2. **Java 24 + GraalNN Upgrade** (Optional - Oracle GraalVM Only):
-+
-[source,bash]
-----
-# Requires Oracle GraalVM for JDK 24
--O3                             # Enables GraalNN ML-powered profiler
-----
-+
-   - **Expected**: 7.9% improvement (143ms → ~132ms)
-   - **Cost**: Migration to non-LTS Java 24
-   - **Risk**: Limited benefit for RSA computational bottleneck
-   - **Docker**: Use `amazoncorretto:24` base image
-
-3. **BouncyCastle Provider** ✅ **COMPLETED**:
-   - Integrated with 17% improvement (173ms → 143ms)
-   - 29ms RSA overhead reduction vs default JDK
-
-4. **Production Monitoring Implementation** ✅ **COMPLETED**:
-   - Library-agnostic metrics collection implemented via TokenValidatorMonitor
-   - Pipeline step measurement for each JWT validation phase (token_parsing, header_validation, claims_validation, signature_validation, complete_validation)
-   - Quarkus module integration with Micrometer translation layer (CuiJwtMetricsProducer)
-   - Real-world performance insights now available through Prometheus metrics
-
-**Target Performance**: <20ms P95 (123ms improvement needed from current 143ms BouncyCastle baseline)
-
-=== Priority 2: Metrics Analysis & Optimization 📊 **NEW FINDINGS**
-
-**Goal**: Address critical gaps identified in benchmark monitoring analysis
-
-**Key Findings from Benchmark Analysis**:
-
-1. **Missing Performance Time** 🔴 **CRITICAL**:
-   - Complete validation: 16.573ms average
-   - Sum of individual steps: 6.395ms
-   - **Unaccounted time: 10.178ms (61.4% of total)**
-   - This missing time is likely framework overhead, HTTP processing, or unmeasured operations
-
-2. **Inconsistent Metric Collection** ⚠️ **WARNING**:
-   - Header validation: Only 14 of 29 requests (48.3%) recorded
-   - Suggests conditional validation logic or metric recording issues
-
-3. **High Latency Variance** ⚠️ **WARNING**:
-   - Average: 16.573ms
-   - P95: 194.8ms (11.8x average)
-   - P99: 267.9ms (16.2x average)
-   - Indicates GC pauses, resource contention, or periodic operations
-
-**Required Actions**:
-
-1. **Add Missing Metrics in JWT Validation Library** ✅ **COMPLETED**:
-   - Added TOKEN_FORMAT_CHECK measurement for empty/blank validation
-   - Added ISSUER_EXTRACTION measurement for issuer claim extraction
-   - Added ISSUER_CONFIG_RESOLUTION measurement for config lookup
-   - Added TOKEN_BUILDING measurement for token object creation
-   - Added token type tracking (access/id/refresh) in metrics
-
-2. **Fix Header Validation Metrics** ✅ **RESOLVED**:
-   - Root cause identified: Refresh tokens skip the validation pipeline
-   - No fix needed - this is expected behavior for refresh tokens
-   - Consider adding separate refresh token metrics
-
-3. **Add HTTP-Level Metrics in Quarkus Module** ✅ **COMPLETED**:
-   - Implemented HttpMetricsMonitor for HTTP-level performance tracking
-   - Measures REQUEST_PROCESSING (total HTTP request time)
-   - Measures HEADER_EXTRACTION (Authorization header access)
-   - Measures TOKEN_EXTRACTION (Bearer token extraction)
-   - Measures AUTHORIZATION_CHECK (scopes/roles/groups validation)
-   - Tracks request outcomes: SUCCESS, MISSING_TOKEN, INVALID_TOKEN, INSUFFICIENT_PERMISSIONS
-   - Integrated with JwtMetricsCollector for Prometheus export
-
-4. **Profile High Percentile Latencies**:
-   - Add JFR events for outlier detection
-   - Monitor GC activity during benchmarks
-   - Track thread pool and connection pool metrics
-
-5. **Benchmark Infrastructure Updates**:
-   - Add warmup period to eliminate JIT compilation effects
-   - Extend measurement duration for stable percentiles
-   - Monitor CPU and memory usage during tests
-
-
-=== Priority 3: Benchmark Infrastructure Enhancement 🔧
-
-**Goal**: Improve measurement accuracy and coverage
-
-**Tasks**:
-
-1. **Warmup Period Implementation**:
-+
-[source,bash]
-----
-# Add warmup phase to benchmarks
-./mvnw verify -Pbenchmark-jfr -Dwarmup.duration=60s -Dmeasurement.duration=120s
-----
-
-2. **Multi-Algorithm Comparative Benchmarks**:
-   - Side-by-side RS256, RS384, RS512 performance
-   - Key size impact analysis (2048 vs 3072 vs 4096 bit)
-   - Padding scheme comparisons
-
-3. **Load Pattern Variations**:
-   - Burst traffic simulation
-   - Sustained load testing
-   - Connection pool sizing optimization
-
-== Implementation Status
-
-=== Completed Optimizations ✅
-
-1. **Benchmark Infrastructure**: Maven-based execution with JFR profiling
-2. **Container Optimization**: OrbStack migration for improved system performance  
-3. **Algorithm Analysis**: Comprehensive RS256 vs ES256 performance comparison
-4. **JFR Profiling**: Root cause identification (BigInteger.modPow bottleneck)
-5. **ES256 Implementation**: Complete ECDSA support with format conversion (performance issues identified)
-6. **Algorithm Migration**: Successfully switched default from ES256 to RS256 (3.1x improvement)
-7. **Research Documentation**: Proven 8x ES256/RS256 gap is algorithmic, not implementation-based
-8. **BouncyCastle JCA Provider**: Integrated with 17% performance improvement (29ms reduction)
-
-9. **Production Metrics Integration**: Complete TokenValidatorMonitor implementation
-   - **Library-level**: TokenValidatorMonitor interface with DefaultTokenValidatorMonitor implementation
-   - **Pipeline metrics**: Automatic timing for token_parsing, header_validation, claims_validation, signature_validation, complete_validation
-   - **Quarkus integration**: CuiJwtMetricsProducer translates to Micrometer metrics
-   - **Prometheus export**: cui_jwt_validation_duration_seconds histogram with step labels
-   - **Benchmark integration**: Metrics collected during performance tests for analysis
-
-10. **Integration Test Build Optimization**: Reduced incremental build time from >2 minutes to 22 seconds
-    - Disabled automatic native compilation in Maven lifecycle
-    - Added conditional build script (build-native-if-needed.sh)
-    - Native executable built only when missing (first run or after clean)
-
-11. **Enhanced JWT Validation Metrics**: Added comprehensive measurement coverage
-    - **Library-level**: Added 4 new MeasurementType entries for missing operations
-    - **Access token focus**: Metrics only recorded for access token validation (pre-1.0 compliance)
-    - **Complete coverage**: Now measures all validation steps (format check, issuer extraction, config resolution, token building)
-    - **Performance-optimized**: ID and refresh token validation skip metrics recording for zero overhead
-
-12. **HTTP-Level Metrics Implementation**: Captures framework and HTTP processing overhead
-    - **HttpMetricsMonitor**: New monitor for HTTP-specific measurements
-    - **Request lifecycle tracking**: REQUEST_PROCESSING, HEADER_EXTRACTION, TOKEN_EXTRACTION, AUTHORIZATION_CHECK
-    - **Status tracking**: Monitors request outcomes (SUCCESS, MISSING_TOKEN, INVALID_TOKEN, INSUFFICIENT_PERMISSIONS)
-    - **Micrometer integration**: Exposes metrics via cui.jwt.http.request.duration and cui.jwt.http.request.count
-    - **Addresses 61.4% gap**: Helps identify the 10.178ms unaccounted overhead in benchmark results
-
-13. **Benchmark Metrics Integration**: Comprehensive metrics collection now integrated with performance benchmarks
-    - **Automatic collection**: JWT validation and HTTP metrics collected during benchmark runs
-    - **JSON export**: Metrics saved to jwt-validation-metrics.json for analysis
-    - **Pipeline visibility**: Complete timing breakdown for token_parsing (0.101ms), header_validation (0.001ms), claims_validation (3.848ms), signature_validation (0.334ms)
-    - **HTTP overhead tracking**: request_processing (41.831ms avg), authorization_check (0.059ms), header_extraction (0.018ms)
-    - **Status counts**: Tracks success/error distribution (160K+ successful validations with 0 errors in latest run)
-
-=== In Progress
-
-==== 1. Profile-Guided Optimization (PGO)
-**Status:** ❌ NOT AVAILABLE - Mandrel doesn't support PGO
-
-**Research Finding**: PGO is only available in Oracle GraalVM Enterprise Edition. Since Quarkus uses Mandrel (based on GraalVM Community Edition) by default, PGO cannot be used. Would require switching to Oracle GraalVM Enterprise with associated licensing costs.
-
-**Alternative**: Focus on other optimizations available in Mandrel:
-- CPU-specific optimizations (-march=native) ✅ **COMPLETED**
-- Memory tuning via quarkus.native.native-image-xmx
-- Algorithm and key size optimizations
-
-=== Dismissed Items (Do Not Revisit)
-
-==== 1. ES256 Algorithm Migration
-**Status:** ❌ DISMISSED - ES256 performs 3x worse than RS256
-
-**Research Conclusion**: The 8x ES256/RS256 performance gap is algorithmic (ECDSA verification complexity vs RSA with small exponents). Java ECDSA implementations are additionally 3x slower than native. Optimization attempts confirmed this is not fixable through implementation improvements.
-
-==== 2. Jipher JCE Provider
-**Status:** ❌ DISMISSED - Requires commercial licensing
-
-**Reason**: Jipher JCE is an Oracle GraalVM Enterprise Edition feature requiring commercial licensing. See xref:cui-jwt-quarkus-parent/doc/performance/graalvm-enterprise-optimization-options.adoc[GraalVM Enterprise Optimization Options] for enterprise-specific solutions.
-
-==== 3. Conscrypt JCA Provider  
-**Status:** ❌ DISMISSED - Incompatible with Quarkus native
-
-**Research**: Quarkus Issue #4248 documents `ClassNotFoundException: org.conscrypt.BufferAllocator` when using Conscrypt with native images. Requires complex reflection configuration that may not be maintainable.
-
-==== 4. Amazon Corretto Crypto Provider (ACCP)
-**Status:** ❌ DISMISSED - Native image compatibility issues
-
-**Research**: GitHub Issue #177 shows ACCP fails with GraalVM native-image due to thread initialization at build time. No official Quarkus native support documented as of 2025.
-
-==== 5. JWT Token Caching Implementation  
-**Status:** ❌ DISMISSED - Processing time too high, caching won't solve core issue
-
-==== 6. JWKS Key Retrieval Optimization
-**Status:** ❌ DISMISSED - Already optimized and cached
-
-==== 7. TLS/HTTPS Optimization
-**Status:** ❌ DISMISSED - No TLS bottleneck identified (3.5ms health check baseline)
-
-==== 8. CPU-Specific Optimization (-march=native)
-**Status:** ❌ DISMISSED - Compromises Docker container portability
-
-**Research Finding**: -march=native optimizes for build-time CPU architecture only, not runtime architecture. Since containers may run on different hardware than build environment (ARM64 build vs x86_64 production), this creates deployment compatibility issues. The 1.1% performance gain (1.6ms) doesn't justify the portability risk.
-
-==== 9. Hardware-Specific Acceleration (Intel AES-NI, ARM Crypto Extensions)
-**Status:** ❌ DISMISSED - Not suitable for general Docker containers
-
-**Reason**: Hardware-specific optimizations compromise portability. The library must work across different architectures and deployment environments. Always aim for general Docker container compatibility rather than system-specific acceleration.
-
-==== 10. RSA Key Size Optimization
-**Status:** ❌ DISMISSED - Not suitable for general library design
-
-**Reason**: The library must support industry-standard key sizes (2048-bit minimum for security). While smaller keys would improve performance (~2x faster with 1024-bit), they are cryptographically insecure. Larger keys (3072-bit) would degrade performance (~2x slower). The library should remain agnostic to key size choices made by token issuers.
-
-==== 11. Additional Fine-Grained JWT Validation Metrics
-**Status:** ❌ DISMISSED - Current metrics are sufficient, "missing" metrics explained
-
-**Research Conclusion**: Unit testing revealed that apparently "missing" metrics in benchmark JSON output are not actually missing:
-
-- **token_format_check** and **issuer_extraction**: Operations are too fast (<20 nanoseconds), get averaged to 0 when converted to milliseconds
-- **jwks_operations**: Only measured on first token validation (~677μs), subsequent runs use cache (0ns), averaging approaches 0  
-- **response_formatting**: HTTP-level metric, not part of TokenValidator core validation
-
-**Timing Gap Explanation**: The 72% overhead between complete validation (15.6ms) and sum of steps (4.3ms) is due to:
-- In unit tests: Only 3-5% overhead from framework/monitoring/orchestration
-- In benchmarks: Quarkus/HTTP layer adds significant latency under load
-- No additional metrics needed - current implementation provides sufficient visibility
-
-== Latest Benchmark Analysis (July 25, 2025)
-
-=== Infrastructure Overhead Analysis
-
-**Three-Tier Performance Measurement**:
-
-|===
-| Endpoint Type | Throughput | P95 Latency | Description | Overhead vs Health Check
-| Health Check | 32,392 req/sec | 4.7ms | Minimal overhead baseline | 0ms (baseline)
-| Echo Endpoint | 9,988 req/sec | 59.0ms | CDI + virtual threads | +54.3ms
-| JWT Validation | 1,314 req/sec | 186.6ms | Full JWT processing | +181.9ms
-|===
-
-**Key Findings**:
-
-1. **Infrastructure Overhead (Echo vs Health Check)**:
-   - **69% throughput reduction** (32,392 → 9,988 req/sec)
-   - **54.3ms latency increase** (4.7ms → 59.0ms)
-   - Caused by: CDI RequestScoped instantiation, virtual thread scheduling, dependency injection
-
-2. **JWT Processing Overhead (JWT vs Echo)**:
-   - **87% throughput reduction** (9,988 → 1,314 req/sec)
-   - **127.6ms latency increase** (59.0ms → 186.6ms)
-   - Actual JWT validation: 17.74ms (only 9% of total request time)
-
-3. **Time Distribution for JWT Request (186.6ms P95)**:
 ```
-Total P95 Latency:           186.6ms
-├─ Infrastructure (Echo):     59.0ms (32%)
-├─ JWT Validation:            17.7ms (9%)
-├─ Issuer Resolution:         21.5ms (12%)
-├─ HTTP Processing:           26.7ms (14%)
-└─ Untracked Overhead:       ~61.7ms (33%)
-   ├─ Thread pool queuing
-   ├─ GC pauses
-   ├─ Network/TLS
-   └─ Lock contention
+Total P95 Latency:           186.6ms (100%)
+├─ Infrastructure (Echo):     59.0ms (32%) - CDI + Virtual Threads
+├─ JWT Library:               17.7ms (9%)  - Core validation logic  
+├─ Issuer Resolution:         21.5ms (12%) - Config lookup/caching
+├─ HTTP Processing:           26.7ms (14%) - Request/response handling
+└─ Untracked Overhead:       ~61.7ms (33%) - Thread pools, GC, contention
 ```
 
-4. **Critical Bottlenecks**:
-   - **Issuer Config Resolution**: 21.5ms average (single largest JWT-specific bottleneck)
-   - **Virtual Thread Overhead**: 54.3ms added by CDI and virtual thread scheduling
-   - **Untracked Time**: 33% of request time unaccounted for, suggesting concurrency issues
+== Critical Integration Test Bottlenecks
 
-**Conclusion**: Only 9% of request time is actual JWT validation. Infrastructure and framework overhead dominate performance profile.
+=== 1. Virtual Thread + CDI Overhead 🔴 **MAJOR BOTTLENECK**
 
-=== Microbenchmark Results (cui-jwt-benchmarking)
+**Problem**: 54.3ms latency increase from virtual thread scheduling and CDI RequestScoped instantiation
 
-After implementing multi-issuer support with 3 different issuers:
+**Impact**: 
+- 69% throughput reduction (32,392 → 9,988 req/sec)
+- Single largest controllable overhead source
 
-**Performance Indicators**:
-* **Throughput**: 69,354 ops/s with 200 threads
-* **Average Time**: 2.7ms per operation with 200 threads  
-* **Concurrent Validation**: 2.8ms per operation with token rotation across 3 issuers
+**Root Causes**:
+- CDI RequestScoped bean instantiation per request
+- Virtual thread scheduling latency under load
+- Dependency injection overhead in request context
 
-**Key Observations**:
-1. **Microbenchmarks vs Integration Tests**:
-   - Microbenchmark: 2.7-2.8ms latency
-   - Integration test: 186.6ms P95 latency
-   - **66x difference** indicates framework/infrastructure overhead dominates
-   
-2. **Multi-Issuer Impact**:
-   - Token rotation across 3 issuers: 2.8ms
-   - Single issuer validation: 2.7ms
-   - **Minimal overhead** (0.1ms) for issuer config resolution in microbenchmarks
-   
-3. **Error Handling Performance**:
-   - Malformed tokens: 0.78ms (fast-fail)
-   - Invalid signatures: 0.82ms (fast-fail)
-   - Expired tokens: 2.8ms (full validation)
-   - Valid tokens: 2.5ms (full validation)
-   
-4. **Throughput Scalability**:
-   - 200 threads: 69,354 ops/s
-   - Near-linear scaling with thread count
-   - No significant lock contention in core library
+=== 2. Issuer Configuration Resolution 🔴 **JWT-SPECIFIC BOTTLENECK**
 
-**Implications**:
-- Core JWT library is highly optimized (2.7ms)
-- 97% of integration test latency comes from framework/infrastructure
-- Focus optimization on Quarkus/HTTP layer, not JWT library
+**Problem**: 21.5ms average for issuer config lookup
+
+**Analysis**:
+- Largest JWT-specific performance impact (12% of total latency)
+- May involve HTTP calls to issuer endpoints
+- Potential caching inefficiencies under concurrent load
+
+=== 3. Untracked Overhead 🔴 **INVESTIGATION REQUIRED**
+
+**Problem**: 61.7ms (33%) of request time unaccounted for
+
+**Likely Sources**:
+- Thread pool queuing delays
+- GC pause accumulation  
+- Network/TLS overhead
+- Lock contention in framework components
+- Memory allocation pressure
+
+== Priority Action Plan
+
+=== Priority 1: CDI and Virtual Thread Optimization 🚀 **IMMEDIATE ACTION**
+
+**Goal**: Reduce framework overhead from 54.3ms to <10ms
+
+**Investigation Tasks**:
+
+1. **CDI Scope Optimization**:
+   ```java
+   // Investigate changing from RequestScoped to ApplicationScoped
+   @ApplicationScoped  // vs @RequestScoped
+   public class JwtValidationService {
+   ```
+
+2. **Virtual Thread Configuration**:
+   ```properties
+   # Optimize virtual thread settings
+   quarkus.virtual-threads.name-prefix=jwt-worker
+   quarkus.virtual-threads.shutdown-timeout=5s
+   ```
+
+3. **Bean Instantiation Profiling**:
+   - Profile CDI bean creation overhead
+   - Identify expensive dependency injections
+   - Consider bean pre-instantiation strategies
+
+**Expected Impact**: 30-40ms latency reduction (20-25% improvement)
+
+=== Priority 2: Issuer Resolution Optimization 📊 **HIGH PRIORITY**
+
+**Goal**: Reduce issuer config resolution from 21.5ms to <2ms
+
+**Action Items**:
+
+1. **Caching Analysis**:
+   - Profile issuer config cache hit/miss rates
+   - Optimize cache warming strategies
+   - Implement cache preloading for known issuers
+
+2. **Network Operation Review**:
+   - Identify HTTP calls in issuer resolution
+   - Implement connection pooling optimizations
+   - Add timeout configurations for issuer lookups
+
+3. **Config Resolution Async Pattern**:
+   ```java
+   // Consider async issuer resolution
+   CompletableFuture<IssuerConfig> resolveIssuerAsync(String issuer)
+   ```
+
+**Expected Impact**: 15-20ms latency reduction (10-12% improvement)
+
+=== Priority 3: Untracked Overhead Investigation 🔍 **INVESTIGATION FOCUS**
+
+**Goal**: Identify and optimize the 61.7ms unaccounted overhead
+
+**Investigation Strategy**:
+
+1. **JFR Profiling for Integration Tests**:
+   ```bash
+   # Run integration benchmarks with comprehensive JFR
+   ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
+     -Djfr.duration=300s -Djfr.settings=profile
+   ```
+
+2. **GC Impact Analysis**:
+   - Monitor GC pause frequency during load tests
+   - Profile memory allocation patterns
+   - Optimize heap sizing for integration test load
+
+3. **Thread Pool Monitoring**:
+   - Analyze thread pool saturation metrics
+   - Monitor queue depths in HTTP processing
+   - Profile lock contention in Quarkus components
+
+4. **Network/TLS Profiling**:
+   - Measure TLS handshake overhead
+   - Profile HTTP connection reuse
+   - Analyze network latency patterns
+
+**Expected Impact**: 30-40ms latency reduction (20-25% improvement)
+
+=== Priority 4: HTTP Processing Optimization ⚠️ **MEDIUM PRIORITY**
+
+**Goal**: Reduce HTTP processing overhead from 26.7ms to <10ms
+
+**Optimization Areas**:
+
+1. **Request Processing Pipeline**:
+   - Optimize HTTP header parsing
+   - Reduce Authorization header extraction overhead
+   - Streamline Bearer token extraction logic
+
+2. **Response Generation**:
+   - Minimize response serialization overhead
+   - Optimize content-type handling
+   - Reduce response header generation
+
+**Expected Impact**: 10-15ms latency reduction (5-8% improvement)
+
+== Success Metrics and Timeline
+
+=== Target Performance Goals
+
+|===
+| Metric | Current | Target | Improvement
+| **P95 Latency** | 186.6ms | <20ms | 89% reduction
+| **Throughput** | 1,314 req/sec | >5,000 req/sec | 280% increase  
+| **Framework Overhead** | 54.3ms | <10ms | 82% reduction
+| **Issuer Resolution** | 21.5ms | <2ms | 91% reduction
+|===
+
+=== Implementation Timeline
+
+==== Week 1: CDI and Virtual Thread Focus
+- Profile CDI RequestScoped overhead
+- Experiment with ApplicationScoped alternatives
+- Optimize virtual thread configuration
+- Measure framework overhead reduction
+
+==== Week 2: Issuer Resolution and Caching
+- Deep-dive issuer config resolution profiling
+- Implement advanced caching strategies  
+- Optimize network operations in issuer lookup
+- Add async patterns where beneficial
+
+==== Week 3: Untracked Overhead Investigation
+- Comprehensive JFR profiling of integration tests
+- GC and memory allocation optimization
+- Thread pool and contention analysis
+- Infrastructure tuning based on findings
+
+==== Week 4: Validation and Final Optimization
+- Run complete integration benchmark suite
+- Validate target metrics achievement
+- Fine-tune based on results
+- Document optimization techniques
+
+=== Validation Protocol
+
+**Benchmark Execution**:
+```bash
+# Run comprehensive integration benchmarks
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
+```
+
+**Success Criteria**:
+- P95 latency: <20ms (from 186.6ms)
+- Throughput: >5,000 req/sec (from 1,314)
+- Framework overhead: <10ms (from 54.3ms)
+- Consistent results across multiple runs
+
+== Dismissed Integration Test Optimization Approaches
+
+=== BouncyCastle JCA Provider for Integration Tests
+**Status:** ❌ DISMISSED - Adds complexity without addressing framework overhead
+
+**Reason:** Integration tests show 97% of latency comes from framework/infrastructure (CDI, virtual threads, HTTP processing). BouncyCastle provider optimizes the 9% JWT library portion but cannot address the 54.3ms CDI overhead or 61.7ms untracked infrastructure overhead. Focus should be on framework optimization.
+
+=== Profile-Guided Optimization (PGO) for Quarkus Native
+**Status:** ❌ DISMISSED - Not available in Mandrel, limited benefit for infrastructure bottlenecks
+
+**Reason:** PGO is only available in Oracle GraalVM Enterprise Edition. Quarkus uses Mandrel (GraalVM Community Edition) by default. Even if available, PGO optimizes CPU-intensive code paths, but 91% of integration test latency comes from framework overhead (CDI, HTTP, untracked), not CPU-bound JWT operations.
+
+=== Container Optimization Beyond OrbStack
+**Status:** ❌ DISMISSED - OrbStack already provides excellent baseline performance
+
+**Reason:** Health check endpoint achieves 4.7ms P95 latency (32,392 req/sec), indicating container infrastructure is highly optimized. The 182ms additional latency comes from application-level concerns (CDI, JWT processing, HTTP handling), not container overhead.
+
+=== Native Image Compilation Flags Tuning
+**Status:** ❌ DISMISSED - Infrastructure overhead dominates, not native compilation efficiency
+
+**Reason:** Native image optimization (memory settings, compilation flags) targets CPU and memory efficiency of compiled code. However, 91% of latency is framework overhead where native compilation efficiency has minimal impact. CDI RequestScoped instantiation and virtual thread scheduling are not improved by native compilation tuning.
+
+=== HTTP/2 and Connection Optimization
+**Status:** ❌ DISMISSED - Single request latency focus, not connection reuse
+
+**Reason:** Integration test measures single request P95 latency (186.6ms), not sustained throughput over persistent connections. HTTP/2 and connection pooling optimize multi-request scenarios but don't address per-request processing overhead in CDI, JWT validation, and response generation.
+
+=== JVM Garbage Collector Tuning for Integration Tests
+**Status:** ❌ DISMISSED - GC impact appears in untracked overhead, requires investigation first
+
+**Reason:** The 61.7ms untracked overhead may include GC pauses, but changing GC algorithms (G1, ZGC, Shenandoah) without identifying GC as the root cause is premature. JFR profiling must first confirm GC contribution to the untracked latency before tuning.
+
+=== Quarkus Virtual Thread Replacement with Platform Threads
+**Status:** ❌ DISMISSED - Virtual threads are architectural choice, not optimization target
+
+**Reason:** Virtual threads in Quarkus provide scalability benefits for I/O-bound workloads. The 54.3ms virtual thread overhead likely comes from CDI integration and bean instantiation, not virtual thread mechanics. Optimization should focus on CDI scope management rather than threading model change.
+
+=== Database/External Service Caching for Issuer Resolution
+**Status:** ❌ DISMISSED - 21.5ms issuer resolution suggests local processing, not external calls
+
+**Reason:** Issuer config resolution shows 21.5ms average latency. If this involved database or HTTP calls, latency would be higher and more variable. This appears to be local config processing overhead that requires profiling and algorithmic optimization, not external service caching.
+
+== Related Documentation
+
+- **Microbenchmark Optimization**: xref:optimization-plan-mb.adoc[Core Library Performance Plan] - Focus on 2.6ms library-level optimizations
+- **Infrastructure Details**: Container and native compilation optimization status
+- **Benchmark Infrastructure**: Maven-based execution with JFR profiling capabilities
+
+== Key Strategy
+
+**Integration-First Approach**: Since 97% of latency comes from framework/infrastructure, optimization efforts focus on:
+
+1. **CDI and Virtual Thread efficiency** (32% of total latency)
+2. **Issuer resolution optimization** (12% of total latency)  
+3. **Untracked overhead investigation** (33% of total latency)
+4. **HTTP processing streamlining** (14% of total latency)
+
+**Library optimization** (9% of latency) is addressed separately in the microbenchmark optimization plan.
+
+**Expected Result**: 89% latency reduction through systematic infrastructure optimization while maintaining security and functionality.

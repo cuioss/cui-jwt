@@ -1,0 +1,142 @@
+= JWT Microbenchmark Optimization Plan
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+== Action Items Checklist
+
+=== **HIGHEST PRIORITY** - Benchmark Command Standardization 🚀
+- [ ] Standardize benchmark execution to `./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark`
+- [ ] Update optimization-plan.adoc benchmark command references
+- [ ] Update .github/workflows/benchmark.yml to use -Pbenchmark profile
+- [ ] Verify -Pbenchmark profile exists and works correctly in cui-jwt-benchmarking/pom.xml
+- [ ] Audit all documentation for benchmark command consistency
+
+=== Immediate Priority - Claims Validation Investigation
+- [ ] Add JFR instrumentation to TokenClaimsValidator methods
+- [ ] Profile individual claim validation steps (exp, nbf, aud, custom claims)
+- [ ] Identify synchronous operations in claims processing
+- [ ] Analyze memory allocation patterns during claim validation
+- [ ] Profile date/time calculation overhead under concurrent load
+
+=== High Priority - Tail Latency Analysis  
+- [ ] Enable GC logging in microbenchmarks (-XX:+PrintGC)
+- [ ] Profile thread contention in validation pipeline
+- [ ] Compare single-thread vs 200-thread performance patterns
+- [ ] Identify shared resource access causing contention
+- [ ] Analyze object creation hotspots
+
+=== Medium Priority - Signature Validation
+- [ ] Profile RSA operations under concurrent load (default JDK provider)
+- [ ] Analyze BigInteger.modPow performance characteristics
+- [ ] Compare signature validation across different thread counts
+- [ ] Investigate 187x P50-to-P99 variance root cause
+
+=== Validation
+- [ ] Re-run benchmarks: `./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark`
+- [ ] Collect 100,000+ samples for statistical significance
+- [ ] Validate claims validation P99 reduction
+- [ ] Confirm overall validation latency improvement
+- [ ] Document optimization techniques applied
+
+== Performance Analysis Summary
+
+**Module**: `cui-jwt-benchmarking` - JMH microbenchmarks, isolated JWT library performance
+
+**Current Results** (65,075 samples, 200 threads):
+- **Throughput**: 71,151 ops/sec (±258K variance)
+- **Average Latency**: 2.6ms per operation
+
+=== Critical Bottleneck: Claims Validation P99
+
+|===
+| Validation Step | P50 | P95 | P99 | P99/P50 Ratio
+| **Claims Validation** | 0.020ms | 2.545ms | **96.253ms** | **4,813x** 🔴
+| Complete Validation | 0.142ms | 7.689ms | 138.981ms | 979x
+| Signature Validation | 0.083ms | 0.144ms | 15.562ms | 187x
+| Token Parsing | 0.012ms | 0.021ms | 0.143ms | 12x ✅
+| Header Validation | 0.001ms | 0.002ms | 0.003ms | 3x ✅
+|===
+
+**Key Finding**: Claims validation P99 (96ms) represents 69% of total validation P99 latency (139ms).
+
+=== Error Handling Performance
+
+**Fast-fail scenarios** (μs/op averages):
+- Invalid signature: 785μs (fastest detection)
+- Malformed tokens: 780μs  
+- Valid tokens: 2,461μs
+- Expired tokens: 2,896μs
+
+**Observation**: Error percentage (0% vs 50%) has minimal performance impact.
+
+== Root Cause Investigation Focus
+
+=== Claims Validation Bottleneck Analysis
+
+**Hypothesis**: 4,813x P50-to-P99 variance indicates:
+1. **Expensive operations**: Complex claim validation logic
+2. **Concurrency issues**: Shared resource contention
+3. **Memory pressure**: Object allocation during validation
+4. **Time calculations**: Date/time operations under load
+
+**Investigation Required**:
+- Profile specific claim validation methods
+- Identify which claims cause high latency
+- Analyze memory allocation patterns
+- Check for blocking operations
+
+=== Tail Latency Pattern Analysis
+
+**Problem**: Extreme variance across all validation steps suggests systemic issues:
+- Claims: 4,813x variance
+- Complete validation: 979x variance  
+- Signature validation: 187x variance
+
+**Likely Causes**:
+- GC pressure from object allocation
+- Thread contention under 200-thread load
+- Resource exhaustion at high concurrency
+
+== Dismissed Optimization Approaches
+
+=== JWT Token Caching
+**Status:** ❌ DISMISSED - Processing time too high, caching won't solve core issue
+
+**Reason:** With P99 latencies of 96ms for claims validation and 15ms for signature validation, caching cannot address the fundamental performance bottlenecks. The extreme variance (4,813x for claims validation) indicates algorithmic or concurrency issues that require direct optimization rather than avoidance through caching.
+
+=== ES256 Algorithm Migration  
+**Status:** ❌ DISMISSED - Integration tests use RS256, microbenchmarks follow suit
+
+**Reason:** Integration test infrastructure is built around RS256. Microbenchmarks measure the same algorithm to ensure consistency. ES256 vs RS256 performance comparison is out of scope for core library optimization.
+
+=== Hardware-Specific Optimizations
+**Status:** ❌ DISMISSED - Focus on algorithmic improvements
+
+**Reason:** CPU-specific optimizations (AES-NI, ARM crypto extensions) compromise portability and don't address the claims validation bottleneck which appears to be algorithmic rather than cryptographic.
+
+=== Alternative JCA Providers in Microbenchmarks
+**Status:** ❌ DISMISSED - Microbenchmarks use default JDK providers for consistency
+
+**Reason:** BouncyCastle and other providers are integration test concerns. Microbenchmarks focus on core library performance with standard JDK providers to isolate library-specific bottlenecks.
+
+=== Extended Measurement Duration
+**Status:** ❌ DISMISSED - 4-second measurement sufficient for trend identification
+
+**Reason:** Current setup provides 65,075 samples with clear P99 bottleneck identification. Extending measurement time won't change the 4,813x variance pattern in claims validation - investigation and optimization needed instead.
+
+== Technical Context
+
+**Microbenchmark Setup**:
+- JMH 1.37, Java 21.0.7
+- 200 threads, 3 iterations, 4s measurement, 1s warmup
+- Default JDK cryptographic providers (no BouncyCastle)
+
+**vs Integration Tests**:
+- Microbenchmarks: 2.6ms average (pure library)
+- Integration tests: 186.6ms P95 (with framework)
+- **66x difference** = 97% framework overhead
+
+**Focus**: Core library optimization separate from infrastructure optimization.
