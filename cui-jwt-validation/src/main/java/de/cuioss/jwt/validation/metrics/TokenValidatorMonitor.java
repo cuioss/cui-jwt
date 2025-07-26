@@ -20,7 +20,6 @@ import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +57,7 @@ import java.util.concurrent.TimeUnit;
  * monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, durationNanos);
  *
  * // Get comprehensive metrics for analysis
- * Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION);
+ * Optional&lt;StripedRingBufferStatistics&gt; metricsOpt = monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION);
  * if (metricsOpt.isPresent()) {
  *     StripedRingBufferStatistics metrics = metricsOpt.get();
  *     Duration avgSignatureTime = metrics.p50();
