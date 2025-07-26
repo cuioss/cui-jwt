@@ -54,30 +54,16 @@ class TokenValidatorMetricsVerificationTest {
         }
 
         // Then - analyze metrics
-        System.out.println("\n=== METRICS ANALYSIS ===");
-        System.out.println("After " + iterations + " iterations:");
-
         // Check each metric type
         long totalIndividualSteps = 0;
         for (MeasurementType type : MeasurementType.values()) {
             Duration duration = monitor.getValidationMetrics(type)
                     .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             long nanos = duration.toNanos();
-            double millis = nanos / 1_000_000.0;
 
             if (type != MeasurementType.COMPLETE_VALIDATION && nanos > 0) {
                 totalIndividualSteps += nanos;
             }
-
-            String status = "OK";
-            if (nanos == 0) {
-                status = "MISSING!";
-            } else if (nanos < 1000) { // Less than 1 microsecond
-                status = "VERY FAST";
-            }
-
-            System.out.printf("%-30s: %10d ns (%8.3f ms) - %s%n",
-                    type, nanos, millis, status);
         }
 
         // Calculate timing gap
@@ -85,24 +71,6 @@ class TokenValidatorMetricsVerificationTest {
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos();
         long timingGap = completeValidationNanos - totalIndividualSteps;
         double timingGapMillis = timingGap / 1_000_000.0;
-        double timingGapPercentage = (timingGap * 100.0) / completeValidationNanos;
-
-        System.out.println("\n=== TIMING GAP ANALYSIS ===");
-        System.out.printf("Complete validation:     %10d ns (%8.3f ms)%n",
-                completeValidationNanos, completeValidationNanos / 1_000_000.0);
-        System.out.printf("Sum of individual steps: %10d ns (%8.3f ms)%n",
-                totalIndividualSteps, totalIndividualSteps / 1_000_000.0);
-        System.out.printf("Timing gap:              %10d ns (%8.3f ms) = %.1f%%%n",
-                timingGap, timingGapMillis, timingGapPercentage);
-
-        // Identify missing metrics (those that appear as empty in benchmark JSON)
-        System.out.println("\n=== MISSING METRICS (0 duration) ===");
-        for (MeasurementType type : MeasurementType.values()) {
-            if (monitor.getValidationMetrics(type)
-                    .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() == 0) {
-                System.out.println("- " + type);
-            }
-        }
 
         // Verify our findings
         assertTrue(completeValidationNanos > 0, "Complete validation should have duration");
@@ -115,7 +83,6 @@ class TokenValidatorMetricsVerificationTest {
                         completeValidationNanos, totalIndividualSteps, timingGap, timingGapMillis));
 
         // Check specific metrics that were missing in the benchmark
-        System.out.println("\n=== BENCHMARK PROBLEMATIC METRICS ===");
         checkMetric("TOKEN_FORMAT_CHECK", monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
         checkMetric("ISSUER_EXTRACTION", monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
@@ -128,14 +95,6 @@ class TokenValidatorMetricsVerificationTest {
 
     private void checkMetric(String name, Duration duration) {
         long nanos = duration.toNanos();
-        if (nanos == 0) {
-            System.out.printf("%s: MISSING (0 ns) - would appear as empty in JSON%n", name);
-        } else if (nanos < 1000) {
-            System.out.printf("%s: %d ns (%.6f ms) - very fast, might round to 0%n",
-                    name, nanos, nanos / 1_000_000.0);
-        } else {
-            System.out.printf("%s: %d ns (%.3f ms) - OK%n",
-                    name, nanos, nanos / 1_000_000.0);
-        }
+        assertTrue(nanos >= 0, name + " metric should have non-negative duration");
     }
 }
