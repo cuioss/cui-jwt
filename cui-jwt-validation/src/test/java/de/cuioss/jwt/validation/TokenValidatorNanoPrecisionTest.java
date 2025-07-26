@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Demonstrates nanosecond precision issues that cause metrics to appear as 0.
@@ -62,8 +63,10 @@ class TokenValidatorNanoPrecisionTest {
         System.out.println("\n=== NANOSECOND PRECISION ISSUE ===");
 
         // These operations are so fast they often measure < 1000 ns
-        Duration tokenFormatCheck = monitor.getAverageDuration(MeasurementType.TOKEN_FORMAT_CHECK);
-        Duration issuerExtraction = monitor.getAverageDuration(MeasurementType.ISSUER_EXTRACTION);
+        Duration tokenFormatCheck = monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
+        Duration issuerExtraction = monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
         System.out.println("Fast operations that might round to 0:");
         System.out.printf("TOKEN_FORMAT_CHECK: %d ns - String.isBlank() check%n", tokenFormatCheck.toNanos());
@@ -78,7 +81,8 @@ class TokenValidatorNanoPrecisionTest {
 
         // JWKS operations are only measured during signature validation
         System.out.println("\nJWKS_OPERATIONS issue:");
-        Duration jwksOps = monitor.getAverageDuration(MeasurementType.JWKS_OPERATIONS);
+        Duration jwksOps = monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
         System.out.printf("JWKS_OPERATIONS: %d ns%n", jwksOps.toNanos());
         System.out.println("This is 0 because JwksLoader creation is not the actual JWKS fetch.");
         System.out.println("The actual JWKS operations happen inside signature validation.");
@@ -86,7 +90,8 @@ class TokenValidatorNanoPrecisionTest {
 
     private void printMetrics(TokenValidatorMonitor monitor) {
         for (MeasurementType type : MeasurementType.values()) {
-            Duration duration = monitor.getAverageDuration(type);
+            Duration duration = monitor.getValidationMetrics(type)
+                    .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             long nanos = duration.toNanos();
             if (nanos > 0) {
                 System.out.printf("%-30s: %10d ns (%.6f ms)%n",

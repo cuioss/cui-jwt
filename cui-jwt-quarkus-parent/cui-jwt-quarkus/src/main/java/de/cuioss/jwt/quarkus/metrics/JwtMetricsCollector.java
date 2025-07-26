@@ -28,6 +28,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+
+import java.util.Optional;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.PostConstruct;
@@ -323,15 +325,18 @@ public class JwtMetricsCollector {
         for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
             Timer timer = timers.get(measurementType.name());
             if (timer != null) {
-                // Get the current average duration from the monitor
-                var averageDuration = tokenValidatorMonitor.getAverageDuration(measurementType);
+                // Get the current metrics from the monitor
+                var metricsOpt = tokenValidatorMonitor.getValidationMetrics(measurementType);
 
-                // Record the duration in the timer (we use a sample with the average duration)
+                // Record the duration in the timer (we use a sample with the P50 duration)
                 // Note: This is a simplified approach - in practice, we might want to record individual measurements
-                if (!averageDuration.isZero()) {
-                    timer.record(averageDuration);
-                    LOGGER.debug("Updated timer for measurement type %s with average %s",
-                            measurementType.name(), averageDuration);
+                if (metricsOpt.isPresent()) {
+                    var averageDuration = metricsOpt.get().p50();
+                    if (!averageDuration.isZero()) {
+                        timer.record(averageDuration);
+                        LOGGER.debug("Updated timer for measurement type %s with average %s",
+                                measurementType.name(), averageDuration);
+                    }
                 }
             }
         }

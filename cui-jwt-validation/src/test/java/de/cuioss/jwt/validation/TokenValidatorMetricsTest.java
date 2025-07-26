@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,7 +74,8 @@ class TokenValidatorMetricsTest {
         // Verify all metrics are recorded
         Set<MeasurementType> recordedMetrics = new HashSet<>();
         for (MeasurementType type : MeasurementType.values()) {
-            Duration avgDuration = monitor.getAverageDuration(type);
+            Duration avgDuration = monitor.getValidationMetrics(type)
+                    .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             if (avgDuration.toNanos() > 0) {
                 recordedMetrics.add(type);
             }
@@ -95,9 +97,12 @@ class TokenValidatorMetricsTest {
                 "SIGNATURE_VALIDATION should be recorded");
 
         // These might be missing or have zero duration
-        System.out.println("TOKEN_FORMAT_CHECK duration: " + monitor.getAverageDuration(MeasurementType.TOKEN_FORMAT_CHECK).toNanos() + " ns");
-        System.out.println("ISSUER_EXTRACTION duration: " + monitor.getAverageDuration(MeasurementType.ISSUER_EXTRACTION).toNanos() + " ns");
-        System.out.println("JWKS_OPERATIONS duration: " + monitor.getAverageDuration(MeasurementType.JWKS_OPERATIONS).toNanos() + " ns");
+        System.out.println("TOKEN_FORMAT_CHECK duration: " + monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() + " ns");
+        System.out.println("ISSUER_EXTRACTION duration: " + monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() + " ns");
+        System.out.println("JWKS_OPERATIONS duration: " + monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() + " ns");
     }
 
     @Test
@@ -116,11 +121,13 @@ class TokenValidatorMetricsTest {
         long sumOfSteps = 0;
         for (MeasurementType type : MeasurementType.values()) {
             if (type != MeasurementType.COMPLETE_VALIDATION) {
-                sumOfSteps += monitor.getAverageDuration(type).toNanos();
+                sumOfSteps += monitor.getValidationMetrics(type)
+                        .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos();
             }
         }
 
-        long completeValidationTime = monitor.getAverageDuration(MeasurementType.COMPLETE_VALIDATION).toNanos();
+        long completeValidationTime = monitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos();
 
         System.out.println("Complete validation time: " + completeValidationTime + " ns (" + completeValidationTime / 1_000_000.0 + " ms)");
         System.out.println("Sum of individual steps: " + sumOfSteps + " ns (" + sumOfSteps / 1_000_000.0 + " ms)");
@@ -129,7 +136,8 @@ class TokenValidatorMetricsTest {
         // Print breakdown
         System.out.println("\nDetailed breakdown:");
         for (MeasurementType type : MeasurementType.values()) {
-            Duration duration = monitor.getAverageDuration(type);
+            Duration duration = monitor.getValidationMetrics(type)
+                    .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             if (duration.toNanos() > 0) {
                 System.out.printf("%s: %d ns (%.3f ms)%n",
                         type,
@@ -154,9 +162,12 @@ class TokenValidatorMetricsTest {
         tokenValidator.createAccessToken(tokenString);
 
         // Then - check for very fast operations
-        Duration tokenFormatCheck = monitor.getAverageDuration(MeasurementType.TOKEN_FORMAT_CHECK);
-        Duration issuerExtraction = monitor.getAverageDuration(MeasurementType.ISSUER_EXTRACTION);
-        Duration headerValidation = monitor.getAverageDuration(MeasurementType.HEADER_VALIDATION);
+        Duration tokenFormatCheck = monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
+        Duration issuerExtraction = monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
+        Duration headerValidation = monitor.getValidationMetrics(MeasurementType.HEADER_VALIDATION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
         System.out.println("\nFast operations analysis:");
         System.out.printf("TOKEN_FORMAT_CHECK: %d ns (%.6f ms) - %s%n",
@@ -188,8 +199,10 @@ class TokenValidatorMetricsTest {
         tokenValidator.createAccessToken(tokenString);
 
         // Then
-        Duration jwksOperations = monitor.getAverageDuration(MeasurementType.JWKS_OPERATIONS);
-        Duration signatureValidation = monitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION);
+        Duration jwksOperations = monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
+        Duration signatureValidation = monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
         System.out.println("\nJWKS operations analysis:");
         System.out.printf("JWKS_OPERATIONS: %d ns (%.3f ms)%n",

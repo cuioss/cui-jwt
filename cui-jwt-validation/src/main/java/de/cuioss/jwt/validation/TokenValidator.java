@@ -106,7 +106,8 @@ import java.util.Optional;
  *
  * // Access the performance monitor for detailed pipeline metrics
  * TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();
- * Duration avgSignatureTime = performanceMonitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION);
+ * StripedRingBufferStatistics metrics = performanceMonitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION);
+ * Duration p50SignatureTime = metrics.p50();
  * </pre>
  * <p>
  * Implements requirements:

@@ -38,7 +38,7 @@ public class BenchmarkMetricsCollector {
     /**
      * Exports aggregated metrics collected from benchmarks
      */
-    public static void exportAggregatedMetrics(Map<String, Map<String, Double>> aggregatedMetrics) throws IOException {
+    public static void exportAggregatedMetrics(Map<String, Map<String, Object>> aggregatedMetrics) throws IOException {
         // Create output directory
         Path outputDir = Path.of(OUTPUT_DIR);
         Files.createDirectories(outputDir);
@@ -47,58 +47,71 @@ public class BenchmarkMetricsCollector {
         metricsJson.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
 
         // Convert benchmark metrics to integration test format
-        Map<String, Map<String, Double>> steps = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> steps = new LinkedHashMap<>();
 
         // Aggregate metrics across all benchmarks
-        Map<String, Double> totalSums = new LinkedHashMap<>();
-        Map<String, Double> totalCounts = new LinkedHashMap<>();
+        Map<String, Map<String, Double>> aggregatedStepMetrics = new LinkedHashMap<>();
 
-        for (Map.Entry<String, Map<String, Double>> entry : aggregatedMetrics.entrySet()) {
+        for (Map.Entry<String, Map<String, Object>> entry : aggregatedMetrics.entrySet()) {
             String benchmarkName = entry.getKey();
-            Map<String, Double> metrics = entry.getValue();
+            Map<String, Object> benchmarkData = entry.getValue();
 
-            for (Map.Entry<String, Double> metric : metrics.entrySet()) {
-                String metricName = metric.getKey();
-                Double value = metric.getValue();
-
-                if (metricName.endsWith("_count")) {
-                    totalCounts.merge(metricName.replace("_count", ""), value, Double::sum);
-                } else {
-                    // For averages, we need to weight by count
-                    String countKey = metricName + "_count";
-                    Double count = metrics.getOrDefault(countKey, 1.0);
-                    totalSums.merge(metricName, value * count, Double::sum);
+            for (Map.Entry<String, Object> stepEntry : benchmarkData.entrySet()) {
+                String stepName = stepEntry.getKey();
+                Map<String, Object> stepMetrics = (Map<String, Object>) stepEntry.getValue();
+                
+                // Initialize aggregated metrics for this step if needed
+                aggregatedStepMetrics.putIfAbsent(stepName, new LinkedHashMap<>());
+                Map<String, Double> aggregated = aggregatedStepMetrics.get(stepName);
+                
+                // Aggregate each metric
+                Long sampleCount = (Long) stepMetrics.get("sample_count");
+                Double p50Ms = (Double) stepMetrics.get("p50_ms");
+                Double p95Ms = (Double) stepMetrics.get("p95_ms");
+                Double p99Ms = (Double) stepMetrics.get("p99_ms");
+                
+                if (sampleCount != null && sampleCount > 0) {
+                    // Weight metrics by sample count
+                    aggregated.merge("sample_count", sampleCount.doubleValue(), Double::sum);
+                    aggregated.merge("p50_sum", p50Ms * sampleCount, Double::sum);
+                    aggregated.merge("p95_sum", p95Ms * sampleCount, Double::sum);
+                    aggregated.merge("p99_sum", p99Ms * sampleCount, Double::sum);
                 }
             }
         }
 
-        // Calculate weighted averages
-        for (Map.Entry<String, Double> entry : totalSums.entrySet()) {
-            String metricName = entry.getKey();
-            Double totalSum = entry.getValue();
-            Double totalCount = totalCounts.getOrDefault(metricName, 1.0);
-
-            if (totalCount > 0) {
-                Map<String, Double> stepMetrics = new LinkedHashMap<>();
-                stepMetrics.put("average_ms", Math.round((totalSum / totalCount) * 1000) / 1000.0);
-                stepMetrics.put("sample_count", totalCount);
-                steps.put(metricName, stepMetrics);
+        // Calculate final weighted averages
+        for (Map.Entry<String, Map<String, Double>> entry : aggregatedStepMetrics.entrySet()) {
+            String stepName = entry.getKey();
+            Map<String, Double> metrics = entry.getValue();
+            
+            Double totalSamples = metrics.get("sample_count");
+            if (totalSamples != null && totalSamples > 0) {
+                Map<String, Object> stepMetrics = new LinkedHashMap<>();
+                stepMetrics.put("sample_count", totalSamples.longValue());
+                stepMetrics.put("p50_ms", Math.round((metrics.get("p50_sum") / totalSamples) * 1000) / 1000.0);
+                stepMetrics.put("p95_ms", Math.round((metrics.get("p95_sum") / totalSamples) * 1000) / 1000.0);
+                stepMetrics.put("p99_ms", Math.round((metrics.get("p99_sum") / totalSamples) * 1000) / 1000.0);
+                steps.put(stepName, stepMetrics);
             }
         }
 
         metricsJson.put("steps", steps);
 
         // Add benchmark-specific metrics
-        Map<String, Object> benchmarkMetrics = new LinkedHashMap<>();
-        for (Map.Entry<String, Map<String, Double>> entry : aggregatedMetrics.entrySet()) {
-            benchmarkMetrics.put(entry.getKey(), entry.getValue());
-        }
-        metricsJson.put("benchmark_metrics", benchmarkMetrics);
+        metricsJson.put("benchmark_metrics", aggregatedMetrics);
 
         // Add http_metrics section for compatibility
-        Map<String, Map<String, Double>> httpMetrics = new LinkedHashMap<>();
-        Map<String, Double> jwtValidation = new LinkedHashMap<>();
-        jwtValidation.put("request_count", totalCounts.values().stream().mapToDouble(Double::doubleValue).sum());
+        Map<String, Map<String, Object>> httpMetrics = new LinkedHashMap<>();
+        Map<String, Object> jwtValidation = new LinkedHashMap<>();
+        
+        // Calculate total sample count from all steps
+        long totalSampleCount = 0;
+        for (Map<String, Object> stepMetrics : steps.values()) {
+            totalSampleCount += (Long) stepMetrics.get("sample_count");
+        }
+        
+        jwtValidation.put("request_count", totalSampleCount);
         jwtValidation.put("total_duration_ms", 0.0);
         jwtValidation.put("average_duration_ms", 0.0);
         httpMetrics.put("jwt_validation", jwtValidation);

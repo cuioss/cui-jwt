@@ -22,7 +22,10 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
+
+import java.util.Optional;
 import io.jsonwebtoken.Jwts;
 import org.openjdk.jmh.annotations.*;
 
@@ -81,29 +84,31 @@ public class PerformanceIndicatorBenchmark {
     
     /**
      * Thread-safe metrics aggregator for collecting measurements across all threads
+     * Now stores comprehensive metrics: sample count, p50, p95, p99
      */
-    private static final Map<String, Map<MeasurementType, AtomicLong>> GLOBAL_METRICS = new ConcurrentHashMap<>();
-    private static final Map<String, Map<MeasurementType, AtomicLong>> GLOBAL_COUNTS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> GLOBAL_METRICS = new ConcurrentHashMap<>();
 
     /**
      * Shutdown hook to ensure metrics are exported when JVM exits
      */
     static {
-        // Initialize metrics maps
-        GLOBAL_METRICS.put("measureAverageTime", new ConcurrentHashMap<>());
-        GLOBAL_METRICS.put("measureThroughput", new ConcurrentHashMap<>());
-        GLOBAL_METRICS.put("measureConcurrentValidation", new ConcurrentHashMap<>());
-
-        GLOBAL_COUNTS.put("measureAverageTime", new ConcurrentHashMap<>());
-        GLOBAL_COUNTS.put("measureThroughput", new ConcurrentHashMap<>());
-        GLOBAL_COUNTS.put("measureConcurrentValidation", new ConcurrentHashMap<>());
-
-        // Initialize atomic counters for each measurement type
-        for (String benchmarkName : GLOBAL_METRICS.keySet()) {
+        // Initialize metrics maps for each benchmark
+        String[] benchmarkNames = {"measureAverageTime", "measureThroughput", "measureConcurrentValidation"};
+        
+        for (String benchmarkName : benchmarkNames) {
+            Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = new ConcurrentHashMap<>();
+            
+            // Initialize metrics for each measurement type
             for (MeasurementType type : MeasurementType.values()) {
-                GLOBAL_METRICS.get(benchmarkName).put(type, new AtomicLong(0));
-                GLOBAL_COUNTS.get(benchmarkName).put(type, new AtomicLong(0));
+                ConcurrentHashMap<String, AtomicLong> typeMetrics = new ConcurrentHashMap<>();
+                typeMetrics.put("sampleCount", new AtomicLong(0));
+                typeMetrics.put("p50_sum", new AtomicLong(0));
+                typeMetrics.put("p95_sum", new AtomicLong(0));
+                typeMetrics.put("p99_sum", new AtomicLong(0));
+                benchmarkMetrics.put(type, typeMetrics);
             }
+            
+            GLOBAL_METRICS.put(benchmarkName, benchmarkMetrics);
         }
 
         // Add shutdown hook to export metrics when JVM exits
@@ -205,20 +210,26 @@ public class PerformanceIndicatorBenchmark {
             String benchmarkName = getCurrentBenchmarkName();
 
             if (benchmarkName != null) {
-                Map<MeasurementType, AtomicLong> metricsSums = GLOBAL_METRICS.get(benchmarkName);
-                Map<MeasurementType, AtomicLong> metricsCounts = GLOBAL_COUNTS.get(benchmarkName);
+                Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
 
                 // Collect metrics for each measurement type
                 int metricsCollected = 0;
                 for (MeasurementType type : monitor.getEnabledTypes()) {
-                    Duration avgDuration = monitor.getAverageDuration(type);
-                    int sampleCount = monitor.getSampleCount(type);
+                    Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
 
-                    if (sampleCount > 0) {
-                        long totalNanos = avgDuration.toNanos() * sampleCount;
-                        metricsSums.get(type).addAndGet(totalNanos);
-                        metricsCounts.get(type).addAndGet(sampleCount);
-                        metricsCollected++;
+                    if (metricsOpt.isPresent()) {
+                        StripedRingBufferStatistics metrics = metricsOpt.get();
+                        if (metrics.sampleCount() > 0) {
+                            ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
+                            
+                            // Accumulate all statistics
+                            typeMetrics.get("sampleCount").addAndGet(metrics.sampleCount());
+                            typeMetrics.get("p50_sum").addAndGet(metrics.p50().toNanos() * metrics.sampleCount());
+                            typeMetrics.get("p95_sum").addAndGet(metrics.p95().toNanos() * metrics.sampleCount());
+                            typeMetrics.get("p99_sum").addAndGet(metrics.p99().toNanos() * metrics.sampleCount());
+                            
+                            metricsCollected++;
+                        }
                     }
                 }
 
@@ -261,30 +272,37 @@ public class PerformanceIndicatorBenchmark {
      */
     private static void exportGlobalMetrics() {
         try {
-            Map<String, Map<String, Double>> aggregatedMetrics = new LinkedHashMap<>();
+            Map<String, Map<String, Object>> aggregatedMetrics = new LinkedHashMap<>();
 
-            for (Map.Entry<String, Map<MeasurementType, AtomicLong>> entry : GLOBAL_METRICS.entrySet()) {
+            for (Map.Entry<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> entry : GLOBAL_METRICS.entrySet()) {
                 String benchmarkName = entry.getKey();
-                Map<MeasurementType, AtomicLong> sums = entry.getValue();
-                Map<MeasurementType, AtomicLong> counts = GLOBAL_COUNTS.get(benchmarkName);
+                Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = entry.getValue();
 
-                Map<String, Double> benchmarkMetrics = new LinkedHashMap<>();
-                int metricsFound = 0;
+                Map<String, Object> benchmarkResults = new LinkedHashMap<>();
 
                 for (MeasurementType type : MeasurementType.values()) {
-                    long totalNanos = sums.get(type).get();
-                    long sampleCount = counts.get(type).get();
+                    ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
+                    long sampleCount = typeMetrics.get("sampleCount").get();
 
                     if (sampleCount > 0) {
-                        double avgMs = (totalNanos / (double) sampleCount) / 1_000_000.0;
-                        benchmarkMetrics.put(type.name().toLowerCase(), avgMs);
-                        benchmarkMetrics.put(type.name().toLowerCase() + "_count", (double) sampleCount);
-                        metricsFound++;
+                        Map<String, Object> stepMetrics = new LinkedHashMap<>();
+                        stepMetrics.put("sample_count", sampleCount);
+                        
+                        // Calculate averages from accumulated sums
+                        double p50Ms = (typeMetrics.get("p50_sum").get() / (double) sampleCount) / 1_000_000.0;
+                        double p95Ms = (typeMetrics.get("p95_sum").get() / (double) sampleCount) / 1_000_000.0;
+                        double p99Ms = (typeMetrics.get("p99_sum").get() / (double) sampleCount) / 1_000_000.0;
+                        
+                        stepMetrics.put("p50_ms", Math.round(p50Ms * 1000) / 1000.0);
+                        stepMetrics.put("p95_ms", Math.round(p95Ms * 1000) / 1000.0);
+                        stepMetrics.put("p99_ms", Math.round(p99Ms * 1000) / 1000.0);
+                        
+                        benchmarkResults.put(type.name().toLowerCase(), stepMetrics);
                     }
                 }
 
-                if (!benchmarkMetrics.isEmpty()) {
-                    aggregatedMetrics.put(benchmarkName, benchmarkMetrics);
+                if (!benchmarkResults.isEmpty()) {
+                    aggregatedMetrics.put(benchmarkName, benchmarkResults);
                 }
             }
 

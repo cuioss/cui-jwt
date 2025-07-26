@@ -17,12 +17,14 @@ package de.cuioss.jwt.validation.metrics;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,8 +67,11 @@ class TokenValidatorMonitorTest {
 
         // Verify initial state - no measurements recorded
         for (MeasurementType type : MeasurementType.values()) {
-            assertEquals(Duration.ZERO, monitor.getAverageDuration(type),
-                    "Initial average should be zero for " + type);
+            var metricsOpt = monitor.getValidationMetrics(type);
+            assertTrue(metricsOpt.isPresent(), "Metrics should be present for enabled type " + type);
+            var metrics = metricsOpt.get();
+            assertEquals(0, metrics.sampleCount(), "Initial sample count should be zero for " + type);
+            assertEquals(Duration.ZERO, metrics.p50(), "Initial P50 should be zero for " + type);
             assertEquals(0, monitor.getSampleCount(type),
                     "Initial sample count should be zero for " + type);
         }
@@ -116,9 +121,11 @@ class TokenValidatorMonitorTest {
         assertEquals(1, monitor.getSampleCount(measurementType),
                 "Should have one sample recorded");
 
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertEquals(Duration.ofMillis(1), average,
-                "Average should equal the single measurement");
+        var metricsOpt = monitor.getValidationMetrics(measurementType);
+        assertTrue(metricsOpt.isPresent(), "Metrics should be present");
+        var metrics = metricsOpt.get();
+        assertEquals(Duration.ofMillis(1), metrics.p50(),
+                "P50 should equal the single measurement");
     }
 
     @Test
@@ -135,9 +142,10 @@ class TokenValidatorMonitorTest {
         assertEquals(3, monitor.getSampleCount(measurementType),
                 "Should have three samples recorded");
 
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertEquals(Duration.ofMillis(2), average,
-                "Average should be 2ms");
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        assertEquals(Duration.ofMillis(2), metrics.p50(),
+                "P50 should be 2ms");
     }
 
     @Test
@@ -150,8 +158,9 @@ class TokenValidatorMonitorTest {
         long durationNanos = 500_000;
         monitor.recordMeasurement(measurementType, durationNanos);
 
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertEquals(Duration.ofNanos(500_000), average,
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        assertEquals(Duration.ofNanos(500_000), metrics.p50(),
                 "Should maintain microsecond precision");
     }
 
@@ -165,15 +174,18 @@ class TokenValidatorMonitorTest {
         monitor.recordMeasurement(MeasurementType.CLAIMS_VALIDATION, 1_000_000);    // 1ms
 
         assertEquals(Duration.ofMillis(5),
-                monitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION),
-                "Signature validation average should be 5ms");
+                monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
+                "Signature validation P50 should be 5ms");
 
         assertEquals(Duration.ofMillis(1),
-                monitor.getAverageDuration(MeasurementType.CLAIMS_VALIDATION),
-                "Claims validation average should be 1ms");
+                monitor.getValidationMetrics(MeasurementType.CLAIMS_VALIDATION)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
+                "Claims validation P50 should be 1ms");
 
         assertEquals(Duration.ZERO,
-                monitor.getAverageDuration(MeasurementType.TOKEN_PARSING),
+                monitor.getValidationMetrics(MeasurementType.TOKEN_PARSING)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                 "Unused measurement type should remain at zero");
     }
 
@@ -198,10 +210,12 @@ class TokenValidatorMonitorTest {
         assertTrue(monitor.getSampleCount(measurementType) <= windowSize,
                 "Sample count should not exceed window size");
 
-        // Average should reflect recent values
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertTrue(average.toMillis() >= 2 && average.toMillis() <= 4,
-                "Average should reflect recent measurements: " + average.toMillis() + "ms");
+        // P50 should reflect recent values
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        long p50Millis = metrics.p50().toMillis();
+        assertTrue(p50Millis >= 2 && p50Millis <= 4,
+                "P50 should reflect recent measurements: " + p50Millis + "ms");
     }
 
     @Test
@@ -217,11 +231,13 @@ class TokenValidatorMonitorTest {
         monitor.reset(MeasurementType.SIGNATURE_VALIDATION);
 
         assertEquals(Duration.ZERO,
-                monitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION),
+                monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                 "Reset measurement type should be zero");
 
         assertEquals(Duration.ofMillis(1),
-                monitor.getAverageDuration(MeasurementType.CLAIMS_VALIDATION),
+                monitor.getValidationMetrics(MeasurementType.CLAIMS_VALIDATION)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                 "Other measurement types should remain unchanged");
     }
 
@@ -240,7 +256,8 @@ class TokenValidatorMonitorTest {
 
         // Verify all are reset
         for (MeasurementType type : MeasurementType.values()) {
-            assertEquals(Duration.ZERO, monitor.getAverageDuration(type),
+            assertEquals(Duration.ZERO, monitor.getValidationMetrics(type)
+                            .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                     "All measurement types should be reset: " + type);
             assertEquals(0, monitor.getSampleCount(type),
                     "All sample counts should be reset: " + type);
@@ -255,12 +272,14 @@ class TokenValidatorMonitorTest {
 
         // Record zero duration
         monitor.recordMeasurement(measurementType, 0);
-        assertEquals(Duration.ZERO, monitor.getAverageDuration(measurementType),
+        assertEquals(Duration.ZERO, monitor.getValidationMetrics(measurementType)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                 "Zero duration should be handled correctly");
 
         // Record negative duration (should be clamped to zero)
         monitor.recordMeasurement(measurementType, -1000);
-        assertEquals(Duration.ZERO, monitor.getAverageDuration(measurementType),
+        assertEquals(Duration.ZERO, monitor.getValidationMetrics(measurementType)
+                        .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO),
                 "Negative duration should be clamped to zero");
     }
 
@@ -308,9 +327,10 @@ class TokenValidatorMonitorTest {
         assertTrue(monitor.getSampleCount(measurementType) > 0,
                 "Should have recorded measurements");
 
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertTrue(average.toNanos() > 0,
-                "Average should be positive: " + average.toNanos() + "ns");
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        assertTrue(metrics.p50().toNanos() > 0,
+                "P50 should be positive: " + metrics.p50().toNanos() + "ns");
     }
 
     @Test
@@ -365,10 +385,12 @@ class TokenValidatorMonitorTest {
         assertTrue(monitor.getSampleCount(measurementType) > 0,
                 "Should have recorded measurements under massive load");
 
-        // Verify average is reasonable (should be close to 2ms)
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertTrue(average.toMillis() >= 1 && average.toMillis() <= 3,
-                "Average should be close to 2ms under massive load: " + average.toMillis() + "ms");
+        // Verify P50 is reasonable (should be close to 2ms)
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        long p50Millis = metrics.p50().toMillis();
+        assertTrue(p50Millis >= 1 && p50Millis <= 3,
+                "P50 should be close to 2ms under massive load: " + p50Millis + "ms");
 
         // Performance assertion - should complete reasonably quickly
         double measurementsPerMs = totalMeasurements.get() / (double) totalDurationMs;
@@ -431,9 +453,10 @@ class TokenValidatorMonitorTest {
             assertTrue(monitor.getSampleCount(measurementType) > 0,
                     "Should have samples for " + measurementType);
 
-            Duration average = monitor.getAverageDuration(measurementType);
-            assertEquals(expectedDurationMs, average.toMillis(),
-                    "Average for " + measurementType + " should be " + expectedDurationMs + "ms");
+            StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                    .orElseThrow(() -> new AssertionError("Metrics should be present for " + measurementType));
+            assertEquals(expectedDurationMs, metrics.p50().toMillis(),
+                    "P50 for " + measurementType + " should be " + expectedDurationMs + "ms");
         }
     }
 
@@ -447,9 +470,10 @@ class TokenValidatorMonitorTest {
         IntStream.range(0, 100).forEach(i ->
                 monitor.recordMeasurement(measurementType, 1_500_000)); // 1.5ms each
 
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertEquals(Duration.ofNanos(1_500_000), average,
-                "Average should be consistent across repeated runs");
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        assertEquals(Duration.ofNanos(1_500_000), metrics.p50(),
+                "P50 should be consistent across repeated runs");
     }
 
     @Test
@@ -475,5 +499,70 @@ class TokenValidatorMonitorTest {
                         overheadPerMeasurementNanos));
 
         log.info("Performance overhead: {:.1f} ns per measurement", overheadPerMeasurementNanos);
+    }
+
+    @Test
+    @DisplayName("Should calculate percentiles correctly")
+    void shouldCalculatePercentilesCorrectly() {
+        var monitor = TokenValidatorMonitorConfig.builder()
+                .windowSize(1000) // Large window to hold all values
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
+        var measurementType = MeasurementType.SIGNATURE_VALIDATION;
+
+        // Add a range of values with known distribution
+        for (int i = 1; i <= 100; i++) {
+            monitor.recordMeasurement(measurementType, i * 1_000_000); // 1ms to 100ms
+        }
+
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        
+        // Verify percentiles are ordered correctly
+        assertTrue(metrics.p99().compareTo(metrics.p95()) >= 0,
+                "P99 should be >= P95");
+        assertTrue(metrics.p95().compareTo(metrics.p50()) >= 0,
+                "P95 should be >= P50");
+        
+        // Verify they're within expected ranges
+        // Due to striped ring buffer behavior, values may be slightly higher than expected
+        assertTrue(metrics.p50().toMillis() >= 40 && metrics.p50().toMillis() <= 70,
+                "P50 should be around 50ms, got: " + metrics.p50().toMillis());
+        assertTrue(metrics.p95().toMillis() >= 80,
+                "P95 should be at least 80ms, got: " + metrics.p95().toMillis());
+        assertTrue(metrics.p99().toMillis() >= 90,
+                "P99 should be at least 90ms, got: " + metrics.p99().toMillis());
+    }
+
+    @Test
+    @DisplayName("Should return zero metrics for empty buffer")
+    void shouldReturnZeroMetricsForEmptyBuffer() {
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
+        
+        Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(MeasurementType.TOKEN_PARSING);
+        assertTrue(metricsOpt.isPresent(), "Metrics should be present for enabled measurement type");
+        
+        StripedRingBufferStatistics metrics = metricsOpt.get();
+        assertEquals(0, metrics.sampleCount(), "Empty buffer should have zero sample count");
+        assertEquals(Duration.ZERO, metrics.p50(), "Empty buffer should have zero P50");
+        assertEquals(Duration.ZERO, metrics.p95(), "Empty buffer should have zero P95");
+        assertEquals(Duration.ZERO, metrics.p99(), "Empty buffer should have zero P99");
+    }
+
+    @Test
+    @DisplayName("Should handle single measurement for percentiles")
+    void shouldHandleSingleMeasurementForPercentiles() {
+        var monitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
+        var measurementType = MeasurementType.CLAIMS_VALIDATION;
+        
+        monitor.recordMeasurement(measurementType, 5_000_000); // 5ms
+        
+        StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
+                .orElseThrow(() -> new AssertionError("Metrics should be present"));
+        assertEquals(1, metrics.sampleCount());
+        assertEquals(Duration.ofMillis(5), metrics.p50());
+        assertEquals(Duration.ofMillis(5), metrics.p95());
+        assertEquals(Duration.ofMillis(5), metrics.p99());
     }
 }

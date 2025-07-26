@@ -16,11 +16,14 @@
 package de.cuioss.jwt.validation.metrics;
 
 import de.cuioss.tools.concurrent.StripedRingBuffer;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import lombok.Getter;
 import lombok.NonNull;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provides high-metrics, thread-safe monitoring of JWT validation pipeline metrics.
@@ -54,8 +57,13 @@ import java.util.Set;
  * long durationNanos = System.nanoTime() - startNanos;
  * monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, durationNanos);
  *
- * // Get average for analysis
- * Duration avgSignatureTime = monitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION);
+ * // Get comprehensive metrics for analysis
+ * Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION);
+ * if (metricsOpt.isPresent()) {
+ *     StripedRingBufferStatistics metrics = metricsOpt.get();
+ *     Duration avgSignatureTime = metrics.p50();
+ *     Duration p99SignatureTime = metrics.p99();
+ * }
  * </pre>
  * <p>
  * This implementation is structured to simplify later integration with micrometer-based
@@ -100,7 +108,8 @@ public class TokenValidatorMonitor {
         for (int i = 0; i < measurementBuffers.length; i++) {
             // Only create buffers for enabled types to save memory
             if (this.enabledTypes.contains(MeasurementType.values()[i])) {
-                measurementBuffers[i] = new StripedRingBuffer(windowSize);
+                // Use NANOSECONDS as we store nanosecond values
+                measurementBuffers[i] = new StripedRingBuffer(windowSize, TimeUnit.NANOSECONDS);
             }
         }
     }
@@ -109,14 +118,14 @@ public class TokenValidatorMonitor {
      * Records a metrics measurement for the specified pipeline step.
      * <p>
      * This method is designed for maximum metrics with minimal overhead.
-     * The measurement is recorded in microseconds and stored in a lock-free
-     * ring buffer for later analysis.
+     * The measurement is recorded in nanoseconds internally, maintaining
+     * high precision for accurate percentile calculations.
      * <p>
      * If the measurement type is not enabled in this monitor's configuration,
      * this method performs a no-op operation for optimal performance.
      *
      * @param measurementType the type of measurement being recorded
-     * @param durationNanos   the duration in nanoseconds (will be converted to microseconds)
+     * @param durationNanos   the duration in nanoseconds
      */
     public void recordMeasurement(@NonNull MeasurementType measurementType, long durationNanos) {
         // Early return for disabled measurement types (no-op)
@@ -126,31 +135,37 @@ public class TokenValidatorMonitor {
 
         StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
         if (buffer != null) { // Additional safety check
-            // Convert nanoseconds to microseconds for consistent storage
-            long durationMicros = Math.max(0, durationNanos / 1000);
-            buffer.recordMeasurement(durationMicros);
+            // Store in nanoseconds for maximum precision
+            buffer.recordMeasurement(Math.max(0, durationNanos));
         }
     }
 
     /**
-     * Calculates the average duration for the specified measurement type.
+     * Gets comprehensive performance metrics for the specified measurement type.
      * <p>
-     * The average is calculated from all current samples in the rolling window.
+     * This method returns an {@link Optional} containing {@link StripedRingBufferStatistics} with:
+     * <ul>
+     *   <li>Sample count - number of measurements recorded</li>
+     *   <li>50th percentile (P50/median) - 50% of requests are faster than this</li>
+     *   <li>95th percentile (P95) - 95% of requests are faster than this</li>
+     *   <li>99th percentile (P99) - 99% of requests are faster than this</li>
+     * </ul>
+     * <p>
      * If no measurements have been recorded or the measurement type is disabled,
-     * returns Duration.ZERO.
+     * returns an empty Optional.
      *
      * @param measurementType the type of measurement to analyze
-     * @return the average duration, or Duration.ZERO if no measurements exist or type is disabled
+     * @return optional containing striped ring buffer statistics, empty if measurement type is not enabled
+     * @since 1.0
      */
-    public Duration getAverageDuration(@NonNull MeasurementType measurementType) {
+    public Optional<StripedRingBufferStatistics> getValidationMetrics(@NonNull MeasurementType measurementType) {
         StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
         if (buffer == null) {
-            return Duration.ZERO; // Measurement type not enabled
+            return Optional.empty(); // Measurement type not enabled
         }
 
-        long averageMicros = buffer.getAverage();
-        // Convert microseconds back to Duration
-        return Duration.ofNanos(averageMicros * 1000);
+        // Get comprehensive statistics
+        return Optional.of(buffer.getStatistics());
     }
 
     /**
@@ -161,7 +176,7 @@ public class TokenValidatorMonitor {
      */
     public int getSampleCount(@NonNull MeasurementType measurementType) {
         StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
-        return buffer != null ? buffer.getSampleCount() : 0;
+        return buffer != null ? buffer.getStatistics().sampleCount() : 0;
     }
 
     /**

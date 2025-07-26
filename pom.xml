@@ -35,6 +35,8 @@
         <system>GitHub Issues</system>
     </issueManagement>
     <properties>
+        <!-- TODO Remove after parent update -->
+        <version.cui.java.tools>2.5.1</version.cui.java.tools>
         <!-- Frontend Maven Plugin -->
         <frontend.node.version>v20.19.2</frontend.node.version>
         <frontend.npm.version>10.5.0</frontend.npm.version>

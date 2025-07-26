@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -59,7 +60,8 @@ class TokenValidatorMetricsVerificationTest {
         // Check each metric type
         long totalIndividualSteps = 0;
         for (MeasurementType type : MeasurementType.values()) {
-            Duration duration = monitor.getAverageDuration(type);
+            Duration duration = monitor.getValidationMetrics(type)
+                    .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             long nanos = duration.toNanos();
             double millis = nanos / 1_000_000.0;
 
@@ -79,7 +81,8 @@ class TokenValidatorMetricsVerificationTest {
         }
 
         // Calculate timing gap
-        long completeValidationNanos = monitor.getAverageDuration(MeasurementType.COMPLETE_VALIDATION).toNanos();
+        long completeValidationNanos = monitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos();
         long timingGap = completeValidationNanos - totalIndividualSteps;
         double timingGapMillis = timingGap / 1_000_000.0;
         double timingGapPercentage = (timingGap * 100.0) / completeValidationNanos;
@@ -95,7 +98,8 @@ class TokenValidatorMetricsVerificationTest {
         // Identify missing metrics (those that appear as empty in benchmark JSON)
         System.out.println("\n=== MISSING METRICS (0 duration) ===");
         for (MeasurementType type : MeasurementType.values()) {
-            if (monitor.getAverageDuration(type).toNanos() == 0) {
+            if (monitor.getValidationMetrics(type)
+                    .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() == 0) {
                 System.out.println("- " + type);
             }
         }
@@ -106,10 +110,14 @@ class TokenValidatorMetricsVerificationTest {
 
         // Check specific metrics that were missing in the benchmark
         System.out.println("\n=== BENCHMARK PROBLEMATIC METRICS ===");
-        checkMetric("TOKEN_FORMAT_CHECK", monitor.getAverageDuration(MeasurementType.TOKEN_FORMAT_CHECK));
-        checkMetric("ISSUER_EXTRACTION", monitor.getAverageDuration(MeasurementType.ISSUER_EXTRACTION));
-        checkMetric("JWKS_OPERATIONS", monitor.getAverageDuration(MeasurementType.JWKS_OPERATIONS));
-        checkMetric("HEADER_VALIDATION", monitor.getAverageDuration(MeasurementType.HEADER_VALIDATION));
+        checkMetric("TOKEN_FORMAT_CHECK", monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
+        checkMetric("ISSUER_EXTRACTION", monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
+        checkMetric("JWKS_OPERATIONS", monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
+        checkMetric("HEADER_VALIDATION", monitor.getValidationMetrics(MeasurementType.HEADER_VALIDATION)
+                .map(de.cuioss.tools.concurrent.StripedRingBufferStatistics::p50).orElse(Duration.ZERO));
     }
 
     private void checkMetric(String name, Duration duration) {
