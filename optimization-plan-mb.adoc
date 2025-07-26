@@ -7,19 +7,13 @@
 
 == Action Items Checklist
 
-=== **HIGHEST PRIORITY** - Benchmark Command Standardization ✅ **COMPLETED**
-- [x] Standardize benchmark execution to `./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark`
-- [x] Update optimization-plan.adoc benchmark command references
-- [x] Update .github/workflows/benchmark.yml to use -Pbenchmark profile
-- [x] Verify -Pbenchmark profile exists and works correctly in cui-jwt-benchmarking/pom.xml
-- [x] Audit all documentation for benchmark command consistency
-
 === Immediate Priority - Claims Validation Investigation 🔴 **CRITICAL PERFORMANCE ISSUES IDENTIFIED**
-- [ ] Add JFR instrumentation to TokenClaimsValidator methods
-- [ ] Profile individual claim validation steps (exp, nbf, aud, custom claims)
-- [ ] Identify synchronous operations in claims processing
-- [ ] Analyze memory allocation patterns during claim validation
-- [ ] Profile date/time calculation overhead under concurrent load
+- [x] ✅ **COMPLETED** Deep analysis of source code using ULTRATHINK
+- [x] ✅ **COMPLETED** Identified 27+ time system calls causing 4,813x variance
+- [x] ✅ **COMPLETED** Implemented ValidationContext to cache current time
+- [x] ✅ **COMPLETED** Eliminated 3 critical OffsetDateTime.now() calls from validation path
+- [ ] Add JFR instrumentation to measure time operation variance under concurrent load
+- [ ] Profile complete 27+ time system calls distribution under 200-thread load
 
 ==== **ULTRATHINK Analysis Results** - Root Cause Investigation Findings
 
@@ -104,15 +98,15 @@
 **Next Investigation Priority** - **URGENT: Address 27+ Time System Calls**:
 
 **CRITICAL (Must fix - causes 4,813x variance)**:
-1. **Eliminate OffsetDateTime.now() in critical path** (3 calls minimum)
-   - Cache current time at validation start, reuse throughout pipeline
-   - Remove OffsetDateTime.now() from TokenContent.isExpired() 
-   - Remove OffsetDateTime.now() from ExpirationValidator.validateNotBefore()
+1. **Eliminate OffsetDateTime.now() in critical path** ✅ **COMPLETED**
+   - [x] Cached current time at validation start via ValidationContext
+   - [x] Removed OffsetDateTime.now() from TokenContent.isExpired() 
+   - [x] Removed OffsetDateTime.now() from ExpirationValidator.validateNotBefore()
    
 2. **Optimize metrics System.nanoTime() calls** (24+ calls when enabled)
-   - Batch timing measurements to reduce system call frequency
-   - Consider disabling metrics in performance-critical scenarios
-   - Use single start time, calculate deltas instead of multiple nanoTime() calls
+   - [ ] Batch timing measurements to reduce system call frequency
+   - [ ] Consider disabling metrics in performance-critical scenarios
+   - [ ] Use single start time, calculate deltas instead of multiple nanoTime() calls
 
 **HIGH PRIORITY (Secondary optimization)**:
 3. **Object pool for HashMap allocation** - Reuse claim maps to reduce GC pressure  
