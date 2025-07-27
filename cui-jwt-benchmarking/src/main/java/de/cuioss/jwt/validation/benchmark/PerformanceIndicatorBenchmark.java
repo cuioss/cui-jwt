@@ -18,14 +18,14 @@ package de.cuioss.jwt.validation.benchmark;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
-
 import org.openjdk.jmh.annotations.*;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -59,18 +59,14 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PerformanceIndicatorBenchmark {
 
     private TokenValidator tokenValidator;
-    private TokenRepository tokenRepository;
     private CoreValidationDelegate validationDelegate;
-    
+
     /**
      * Thread-safe metrics aggregator for collecting measurements across all threads
      * Now stores comprehensive metrics: sample count, p50, p95, p99
      */
     private static final Map<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> GLOBAL_METRICS = new ConcurrentHashMap<>();
 
-    /**
-     * Shutdown hook to ensure metrics are exported when JVM exits
-     */
     static {
         // Initialize metrics maps for each benchmark
         String[] benchmarkNames = {"measureAverageTime", "measureThroughput", "measureConcurrentValidation"};
@@ -103,12 +99,13 @@ public class PerformanceIndicatorBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
+        TokenRepository tokenRepository;
         // Initialize token repository with default configuration
         tokenRepository = new TokenRepository();
-        
+
         // Create pre-configured token validator
         tokenValidator = tokenRepository.createTokenValidator();
-        
+
         // Initialize validation delegate
         validationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
     }
@@ -119,31 +116,27 @@ public class PerformanceIndicatorBenchmark {
         // Get the performance monitor from the validator
         TokenValidatorMonitor monitor = tokenValidator.getPerformanceMonitor();
 
-        if (monitor != null) {
-            // Determine which benchmark is running based on thread name
-            String benchmarkName = getCurrentBenchmarkName();
+        // Determine which benchmark is running based on thread name
+        String benchmarkName = getCurrentBenchmarkName();
 
-            if (benchmarkName != null) {
-                Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
+        if (benchmarkName != null) {
+            Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
 
-                // Collect metrics for each measurement type
-                int metricsCollected = 0;
-                for (MeasurementType type : monitor.getEnabledTypes()) {
-                    Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
+            // Collect metrics for each measurement type
+            for (MeasurementType type : monitor.getEnabledTypes()) {
+                Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
 
-                    if (metricsOpt.isPresent()) {
-                        StripedRingBufferStatistics metrics = metricsOpt.get();
-                        if (metrics.sampleCount() > 0) {
-                            ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
+                if (metricsOpt.isPresent()) {
+                    StripedRingBufferStatistics metrics = metricsOpt.get();
+                    if (metrics.sampleCount() > 0) {
+                        ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
 
-                            // Accumulate all statistics
-                            typeMetrics.get("sampleCount").addAndGet(metrics.sampleCount());
-                            typeMetrics.get("p50_sum").addAndGet(metrics.p50().toNanos() * metrics.sampleCount());
-                            typeMetrics.get("p95_sum").addAndGet(metrics.p95().toNanos() * metrics.sampleCount());
-                            typeMetrics.get("p99_sum").addAndGet(metrics.p99().toNanos() * metrics.sampleCount());
+                        // Accumulate all statistics
+                        typeMetrics.get("sampleCount").addAndGet(metrics.sampleCount());
+                        typeMetrics.get("p50_sum").addAndGet(metrics.p50().toNanos() * metrics.sampleCount());
+                        typeMetrics.get("p95_sum").addAndGet(metrics.p95().toNanos() * metrics.sampleCount());
+                        typeMetrics.get("p99_sum").addAndGet(metrics.p99().toNanos() * metrics.sampleCount());
 
-                            metricsCollected++;
-                        }
                     }
                 }
 
@@ -172,8 +165,8 @@ public class PerformanceIndicatorBenchmark {
         for (StackTraceElement element : stackTrace) {
             String methodName = element.getMethodName();
             if ("measureAverageTime".equals(methodName) ||
-                    "measureThroughput".equals(methodName) ||
-                    "measureConcurrentValidation".equals(methodName)) {
+                "measureThroughput".equals(methodName) ||
+                "measureConcurrentValidation".equals(methodName)) {
                 return methodName;
             }
         }

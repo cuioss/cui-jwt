@@ -16,12 +16,10 @@
 package de.cuioss.jwt.validation.benchmark;
 
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.File;
 
@@ -59,20 +57,20 @@ public class JfrBenchmarkRunner {
                 // Include only JFR instrumented benchmarks
                 .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.UnifiedJfrBenchmark")
                 // Set number of forks
-                .forks(Integer.getInteger("jmh.forks", 1))
+                .forks(BenchmarkOptionsHelper.getForks(1))
                 // Set warmup iterations
-                .warmupIterations(Integer.getInteger("jmh.warmupIterations", 3))
+                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(3))
                 // Set measurement iterations
-                .measurementIterations(Integer.getInteger("jmh.iterations", 5))
+                .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(5))
                 // Set measurement time
-                .measurementTime(getMeasurementTime())
+                .measurementTime(BenchmarkOptionsHelper.getMeasurementTime("5s"))
                 // Set warmup time
-                .warmupTime(getWarmupTime())
+                .warmupTime(BenchmarkOptionsHelper.getWarmupTime("3s"))
                 // Set number of threads
-                .threads(getThreadCount())
+                .threads(BenchmarkOptionsHelper.getThreadCount(8))
                 // Configure result output
-                .resultFormat(getResultFormat())
-                .result(getResultFile())
+                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
+                .result(getJfrResultFile())
                 // Add JVM args for better JFR profiling
                 .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
                         "-XX:+DebugNonSafepoints",
@@ -90,22 +88,12 @@ public class JfrBenchmarkRunner {
         log.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer target/benchmark-results/jfr-benchmark.jfr");
     }
 
-    /**
-     * Gets the result format from system property or defaults to JSON.
-     */
-    private static ResultFormatType getResultFormat() {
-        String format = System.getProperty("jmh.result.format", "JSON");
-        try {
-            return ResultFormatType.valueOf(format.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ResultFormatType.JSON;
-        }
-    }
 
     /**
-     * Gets the result file from system property or defaults to jfr-benchmark-result.json.
+     * Gets the JFR-specific result file from system property or defaults to jfr-benchmark-result.json.
+     * This method appends "-jfr" to the file prefix to distinguish from regular benchmark results.
      */
-    private static String getResultFile() {
+    private static String getJfrResultFile() {
         String filePrefix = System.getProperty("jmh.result.filePrefix");
         if (filePrefix != null && !filePrefix.isEmpty()) {
             String resultFile = filePrefix + "-jfr.json";
@@ -118,50 +106,5 @@ public class JfrBenchmarkRunner {
             return resultFile;
         }
         return "target/benchmark-results/jfr-benchmark-result.json";
-    }
-
-    /**
-     * Gets the measurement time from system property or defaults to 5 seconds for better variance data.
-     */
-    private static TimeValue getMeasurementTime() {
-        String time = System.getProperty("jmh.time", "5s");
-        return parseTimeValue(time);
-    }
-
-    /**
-     * Gets the warmup time from system property or defaults to 3 seconds.
-     */
-    private static TimeValue getWarmupTime() {
-        String time = System.getProperty("jmh.warmupTime", "3s");
-        return parseTimeValue(time);
-    }
-
-    /**
-     * Gets the thread count from system property. Defaults to 8 for variance analysis.
-     */
-    private static int getThreadCount() {
-        String threads = System.getProperty("jmh.threads", "8");
-        if ("MAX".equals(threads)) {
-            return Runtime.getRuntime().availableProcessors();
-        }
-        try {
-            return Integer.parseInt(threads);
-        } catch (NumberFormatException e) {
-            return 8; // Default for better concurrency variance analysis
-        }
-    }
-
-    /**
-     * Parses a time value string (e.g., "2s", "1000ms") into a TimeValue object.
-     */
-    private static TimeValue parseTimeValue(String timeStr) {
-        if (timeStr.endsWith("s")) {
-            return TimeValue.seconds(Integer.parseInt(timeStr.substring(0, timeStr.length() - 1)));
-        } else if (timeStr.endsWith("ms")) {
-            return TimeValue.milliseconds(Integer.parseInt(timeStr.substring(0, timeStr.length() - 2)));
-        } else {
-            // Default to seconds if no unit specified
-            return TimeValue.seconds(Integer.parseInt(timeStr));
-        }
     }
 }
