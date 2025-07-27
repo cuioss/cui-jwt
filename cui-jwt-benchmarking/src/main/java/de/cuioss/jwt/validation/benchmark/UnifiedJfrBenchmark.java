@@ -44,7 +44,8 @@ public class UnifiedJfrBenchmark {
     private ErrorLoadDelegate errorLoadDelegate;
     private JfrInstrumentation jfrInstrumentation;
     
-    private int errorPercentage = 0; // Default to 0% errors to match standard benchmarks
+    @Param({"0", "50"})
+    private int errorPercentage;
 
     @Setup(Level.Trial)
     public void setup() {
