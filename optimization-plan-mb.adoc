@@ -5,262 +5,284 @@
 :sectnums:
 :source-highlighter: highlight.js
 
-== Action Items Checklist
+== Executive Summary of Latest Findings (July 27, 2025)
 
-=== Immediate Priority - Claims Validation Investigation 🔴 **CRITICAL PERFORMANCE ISSUES IDENTIFIED**
+=== 🔴 **CRITICAL DISCOVERY: 20x Performance Gap & 95.5% Thread Efficiency Loss**
+
+Our comprehensive JFR-instrumented benchmark analysis reveals:
+
+* **Component-level performance**: 95-177μs per JWT validation
+* **System-level performance**: 1,927-3,460μs per operation (20x overhead)
+* **Thread efficiency**: Only 4.5% with 200 threads
+* **Primary bottleneck**: Signature validation (73.7% of time)
+* **Root cause**: Unknown - requires deep investigation
+
+=== Key Performance Metrics
+
+|===
+| Metric | Value | Impact
+| **Thread Efficiency** | 4.5% (200 threads) | 🔴 95.5% capacity lost
+| **Signature Validation** | 73.7% of time | 🔴 Primary bottleneck - root cause unknown
+| **Performance Variance** | CV: 197-335% | 🔴 Extremely unstable
+| **JFR vs Standard** | +74% throughput | 🟡 Measurement anomaly
+| **Error Handling Impact** | 4.7-8.4% | ✅ Efficient, no optimization needed
+|===
+
+== Action Items Checklist - Updated Priority
+
+=== 🔴 HIGHEST PRIORITY - Signature Validation Root Cause Analysis
+
+- [ ] **Research JWT Libraries Signature Implementation** - Deep analysis of how competitors handle RSA verification
+  - [ ] Analyze **jjwt** signature validation approach
+  - [ ] Analyze **smallrye-jwt** signature validation approach  
+  - [ ] Analyze **jose4j** signature validation approach
+  - [ ] Document key differences in JCA usage patterns
+  - [ ] Identify reuse strategies for Signature instances
+
+- [ ] **Profile Current Signature Validation** - Identify the actual bottleneck
+  - [ ] Add JFR custom events around `Signature.initVerify()` at line 186
+  - [ ] Measure cost of Signature instance creation vs reuse
+  - [ ] Profile `signatureTemplateManager.getSignatureInstance()` overhead
+  - [ ] Check if public key initialization is the bottleneck
+  - [ ] Analyze thread safety implications of Signature reuse
+
+- [ ] **Investigate Signature Instance Reuse** - Suspected performance killer
+  ```java
+  // Current code at TokenSignatureValidator.java:186
+  Signature verifier = signatureTemplateManager.getSignatureInstance(algorithm);
+  verifier.initVerify(publicKey);  // Reinitializing every time - potential bottleneck?
+  ```
+  - [ ] Test if Signature instances can be cached per algorithm
+  - [ ] Investigate thread-local Signature instance pooling
+  - [ ] Measure performance impact of reuse vs recreation
+
+=== 🔴 HIGH PRIORITY - JCA Performance Investigation
+
+- [ ] **Deep Dive into JCA Provider Performance**
+  - [ ] Profile default SunRsaSign provider performance
+  - [ ] Analyze BigInteger.modPow hot spots
+  - [ ] Check for lock contention in JCA internals
+  - [ ] Compare single-threaded vs multi-threaded JCA performance
+
+- [ ] **Benchmark Signature Operations in Isolation**
+  - [ ] Create micro-benchmark for just RSA signature verification
+  - [ ] Test with different key sizes (2048, 3072, 4096)
+  - [ ] Compare performance with/without provider caching
+  - [ ] Measure impact of security provider ordering
+
+=== 🟡 MEDIUM PRIORITY - Thread Contention Analysis (After Root Cause Found)
+
+- [ ] **Thread Scaling Analysis** - Only after signature bottleneck is understood
+- [ ] **Profile Lock Contention** - Focus on JCA-related locks
+- [ ] **Analyze Synchronization Points** - Especially in security providers
+
+=== 🟡 MEDIUM PRIORITY - Memory Allocation & GC Pressure
+
+- [ ] **Object Pooling for TokenBuilder** - P99: 133ms indicates severe GC issues
+- [ ] **Profile GC Logs** - Enable -XX:+PrintGC in benchmarks
+- [ ] **Reduce Allocation Rate** - Target <100MB/s per thread
+
+=== 🟢 LOW PRIORITY - Deferred Optimizations
+
+- [ ] **Signature Cache Implementation** - Only after root cause is fixed
+  - Note: Must use standard Java collections (LinkedHashMap with LRU)
+  - No external dependencies due to Quarkus native constraints
+- [ ] **Pool HashMap Instances** - After primary bottleneck resolved
+
+=== ✅ COMPLETED - Previous Optimizations
+
+- [x] ✅ **COMPLETED** Add JFR instrumentation to measure operation variance
 - [x] ✅ **COMPLETED** Deep analysis of source code using ULTRATHINK
-- [x] ✅ **COMPLETED** Identified 27+ time system calls causing 4,813x variance
+- [x] ✅ **COMPLETED** Identified 27+ time system calls causing variance
 - [x] ✅ **COMPLETED** Implemented ValidationContext to cache current time
-- [x] ✅ **COMPLETED** Eliminated 3 critical OffsetDateTime.now() calls from validation path
-- [ ] Add JFR instrumentation to measure time operation variance under concurrent load
-- [ ] Profile complete 27+ time system calls distribution under 200-thread load
+- [x] ✅ **COMPLETED** Eliminated 3 critical OffsetDateTime.now() calls
 
-==== **ULTRATHINK Analysis Results** - Root Cause Investigation Findings
+== Research Tasks - JWT Library Comparison
 
-**Critical Performance Bottlenecks Identified** (Source Code Analysis):
+=== Task 1: Analyze jjwt Signature Validation
 
-1. **🔴 SYNCHRONOUS TIME OPERATIONS** - **Primary Suspect for 4,813x Variance** ⚠️ **MUCH WORSE THAN INITIALLY THOUGHT**
-   
-   **Critical Path Operations (ALWAYS executed)**:
-   - **TokenContent.java:163**: `OffsetDateTime.now()` in `isExpired()` method - **EVERY token validation**
-   - **ExpirationValidator.java:92**: `OffsetDateTime.now().plusSeconds(60)` for nbf validation - **EVERY token validation**
-   - **ExpirationValidator.java:65, 97**: `OffsetDateTime.now()` in exception messages - **On validation failures**
-   - **Total**: **3-4 OffsetDateTime.now() calls per token validation** (minimum 3, always executed)
-   
-   **Metrics Operations (When enabled - very common)**:
-   - **TokenValidator.java**: **18 System.nanoTime() calls** per validation (lines 308, 325, 332, 344, 351, 356, 363, 377, 392, 397, 404, 410, 417, 434, 446, 459, 467, 474)
-   - **BearerTokenProducer.java**: **6+ System.nanoTime() calls** per HTTP request (Quarkus integration)
-   - **Total**: **24+ additional system calls when metrics enabled**
-   
-   **Problem Scale**:
-   - **Minimum**: 3 OffsetDateTime.now() calls per validation (critical path)
-   - **With metrics**: 27+ total time system calls per token validation  
-   - **Under 200-thread load**: System call contention causes extreme variance
-   - **Evidence**: Each OffsetDateTime.now() can vary from microseconds to milliseconds under load
+**Repository**: https://github.com/jwtk/jjwt
 
-2. **🟡 MEMORY ALLOCATION HOTSPOTS** - **Secondary Performance Impact**
-   - **TokenBuilder.java:111**: `new HashMap<>()` for every token's claim extraction
-   - **MandatoryClaimsValidator.java:83**: `new TreeSet<>()` for missing claims collection
-   - **ClaimValue.java:26**: `new ArrayList<>()` for STRING_LIST claim types
-   - **MandatoryClaimsValidator.java:153-175**: `StringBuilder` allocation in error handling
-   - **Impact**: GC pressure causing tail latency spikes under concurrent load
+**Research Questions**:
+1. How does jjwt handle Signature instance creation?
+2. Do they cache or pool Signature instances?
+3. What's their approach to thread safety?
+4. How do they initialize public keys?
 
-3. **🟡 COLLECTION OPERATIONS UNDER LOAD**
-   - **AudienceValidator.java:129-137**: Stream operations with `anyMatch()` on collections
-   - **TokenBuilder.java:114-132**: Map lookups and iterations during claim extraction
-   - **Various validators**: Set containment checks that scale with memory pressure
-   - **Impact**: Performance degradation under high concurrency (200 threads)
+**Key Files to Analyze**:
+- `DefaultJwtParser.java`
+- `RsaSignatureValidator.java` (or equivalent)
+- Security provider management
 
-4. **🟡 STRING PROCESSING OVERHEAD**
-   - **Error message formatting**: Multiple string concatenations and formatting operations
-   - **Log message preparation**: String formatting even when logging disabled at runtime
-   - **ClaimName operations**: String-to-enum lookups and mappings
-   - **Impact**: CPU overhead and string object allocation
+=== Task 2: Analyze smallrye-jwt Signature Validation
 
-5. **🟡 OPTIONAL CHAIN OPERATIONS**
-   - **TokenContent interface**: Multiple `Optional.map()` chains creating intermediate objects
-   - **ClaimName.fromString()**: Optional-based lookups with object creation
-   - **Impact**: Additional object allocation and method call overhead
+**Repository**: https://github.com/smallrye/smallrye-jwt
 
-**Specific Problem Locations** - **COMPREHENSIVE TIME OPERATIONS AUDIT**:
+**Research Questions**:
+1. Integration with MicroProfile JWT
+2. Signature verification implementation
+3. Performance optimizations used
+4. Thread safety approach
 
+**Key Areas**:
+- RSA signature validation
+- Provider management
+- Instance reuse patterns
+
+=== Task 3: Analyze jose4j Signature Validation
+
+**Repository**: https://bitbucket.org/b_c/jose4j
+
+**Research Questions**:
+1. How does jose4j optimize signature verification?
+2. Caching strategies employed
+3. JCA provider usage patterns
+4. Performance considerations documented
+
+=== Expected Findings
+
+Based on the 73.7% time spent in signature validation, we expect to find:
+
+1. **Signature Instance Reuse** - Other libraries likely cache Signature instances
+2. **Provider Optimization** - Specific provider selection for performance
+3. **Thread-Local Patterns** - Avoiding synchronization in JCA calls
+4. **Key Initialization** - Optimized public key handling
+
+== Detailed Performance Analysis
+
+=== Signature Validation Bottleneck (73.7% of time)
+
+**Current Implementation Analysis**:
 ```java
-// PRIMARY BOTTLENECK - Critical Path Time Operations (ALWAYS executed)
-// TokenContent.java:163
-// return getExpirationTime().isBefore(OffsetDateTime.now());  - EVERY validation
-
-// ExpirationValidator.java:92  
-// if (notBefore.get().isAfter(OffsetDateTime.now().plusSeconds(CLOCK_SKEW_SECONDS)))  - EVERY validation
-
-// ExpirationValidator.java:65, 97 (on validation failures)
-// "Current time: " + OffsetDateTime.now()  - Exception messages
-
-// SECONDARY BOTTLENECK - Metrics Time Operations (When enabled - common)
-// TokenValidator.java: 18 System.nanoTime() calls per validation
-// BearerTokenProducer.java: 6+ System.nanoTime() calls per request
-
-// MEMORY ALLOCATION BOTTLENECKS  
-// TokenBuilder.java:111 - new HashMap<>();  per token
-// MandatoryClaimsValidator.java:83 - new TreeSet<>();  per validation
+// TokenSignatureValidator.java:185-186
+Signature verifier = signatureTemplateManager.getSignatureInstance(algorithm);
+verifier.initVerify(publicKey);
 ```
 
-**Total Time System Calls Per Token Validation**:
-- **Minimum (critical path)**: 3 OffsetDateTime.now() calls  
-- **With metrics enabled**: 27+ total time system calls
-- **Root cause of 4,813x variance**: System call contention under 200-thread load
+**Potential Issues**:
+1. **Instance Creation Overhead** - Creating new Signature instance per validation
+2. **Public Key Initialization** - RSA key initialization is expensive
+3. **Provider Lookup** - Security provider resolution per operation
+4. **Thread Contention** - JCA internal locks under high concurrency
 
-**Performance Impact Analysis**:
-- **P50 (0.020ms)**: Fast path when no GC pressure, cached time operations
-- **P99 (96.253ms)**: Extreme tail latency when GC pressure + time operation variance combine
-- **4,813x variance**: Indicates combination of GC pauses + synchronous system calls
-- **200-thread load**: Amplifies both memory pressure and time operation contention
+**Benchmark Data Supporting This**:
+- Single operation: 70-110μs
+- Under 200 threads: Efficiency drops to 4.5%
+- Variance: 145-187x between P50 and P99
 
-**Next Investigation Priority** - **RE-EVALUATE: True Root Cause of P99 Variance**:
+=== Component Performance Breakdown
 
-**CRITICAL (Must fix - causes 4,813x variance)**:
-1. **Eliminate OffsetDateTime.now() in critical path** ✅ **COMPLETED**
-   - [x] Cached current time at validation start via ValidationContext
-   - [x] Removed OffsetDateTime.now() from TokenContent.isExpired() 
-   - [x] Removed OffsetDateTime.now() from ExpirationValidator.validateNotBefore()
-   
-2. **Optimize metrics System.nanoTime() calls** (24+ calls when enabled)
-   - [ ] Batch timing measurements to reduce system call frequency
-   - [ ] Consider disabling metrics in performance-critical scenarios
-   - [ ] Use single start time, calculate deltas instead of multiple nanoTime() calls
-
-**HIGH PRIORITY (Secondary optimization)**:
-3. **Object pool for HashMap allocation** - Reuse claim maps to reduce GC pressure  
-4. **Profile complete time operation distribution** - Measure all 27+ calls under load
-
-=== High Priority - Tail Latency Analysis  
-- [ ] Enable GC logging in microbenchmarks (-XX:+PrintGC)
-- [ ] Profile thread contention in validation pipeline
-- [ ] Compare single-thread vs 200-thread performance patterns
-- [ ] Identify shared resource access causing contention
-- [ ] Analyze object creation hotspots
-
-=== Medium Priority - Signature Validation
-- [ ] Profile RSA operations under concurrent load (default JDK provider)
-- [ ] Analyze BigInteger.modPow performance characteristics
-- [ ] Compare signature validation across different thread counts
-- [ ] Investigate 187x P50-to-P99 variance root cause
-
-=== Validation
-- [ ] Re-run benchmarks: `./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark`
-- [ ] Collect 100,000+ samples for statistical significance
-- [ ] Validate claims validation P99 reduction
-- [ ] Confirm overall validation latency improvement
-- [ ] Document optimization techniques applied
-
-== Performance Analysis Summary
-
-**Module**: `cui-jwt-benchmarking` - JMH microbenchmarks, isolated JWT library performance
-
-**LATEST RESULTS** - After ValidationContext Implementation (65,536 samples, 200 threads):
-- **Throughput**: 57,106 ops/sec (±166K variance) - Previously 71,151
-- **Average Latency**: 2.9ms per operation - Previously 2.6ms
-
-=== ⚠️ **UNEXPECTED RESULT**: Claims Validation P99 Increased from 96ms to 105ms
-
-**Before Optimization** (Previous Run):
 |===
-| Validation Step | P50 | P95 | P99 | P99/P50 Ratio
-| **Claims Validation** | 0.020ms | 2.545ms | **96.253ms** | **4,813x** 🔴
-| Complete Validation | 0.142ms | 7.689ms | 138.981ms | 979x
-| Signature Validation | 0.083ms | 0.144ms | 15.562ms | 187x
-| Token Parsing | 0.012ms | 0.021ms | 0.143ms | 12x ✅
-| Header Validation | 0.001ms | 0.002ms | 0.003ms | 3x ✅
+| Operation | Time (μs) | % of Total | Investigation Priority
+| **Signature Validation** | 70-110 | 73.7% | 🔴 **CRITICAL - Root cause unknown**
+| Token Building | 9-24 | 9.5% | 🟡 Secondary
+| Token Parsing | 6-21 | 6.3% | 🟢 Acceptable
+| Claims Validation | 5-12 | 5.3% | 🟢 Acceptable
+| Other Operations | <1 | <1% | ✅ No action
 |===
 
-**After ValidationContext Optimization** (Current Run):
+== Implementation Plan
+
+=== Phase 1: Root Cause Analysis (1 week)
+
+1. **Library Research** (2-3 days)
+   - Deep dive into jjwt, smallrye-jwt, jose4j
+   - Document signature validation patterns
+   - Identify optimization techniques
+
+2. **JCA Profiling** (2-3 days)
+   - Add detailed JFR events to signature validation
+   - Profile Signature instance lifecycle
+   - Measure initialization vs verification time
+
+3. **Prototype Solutions** (1-2 days)
+   - Test Signature instance reuse
+   - Benchmark thread-local caching
+   - Validate thread safety
+
+=== Phase 2: Implementation (1-2 weeks)
+
+Based on findings from Phase 1:
+
+1. **Implement Signature Optimization**
+   - Apply discovered patterns from other libraries
+   - Ensure thread safety
+   - Maintain Quarkus native compatibility
+
+2. **Validation & Testing**
+   - Benchmark improvements
+   - Verify thread safety
+   - Test with various thread counts
+
+=== Phase 3: Secondary Optimizations (2-3 weeks)
+
+Only after signature validation is fixed:
+
+1. **Memory Optimization**
+   - Object pooling with standard Java
+   - GC tuning
+
+2. **Thread Optimization**
+   - Optimal thread count determination
+   - Lock contention reduction
+
+== Validation Methodology
+
+=== Focused Benchmarking
+
+```bash
+# Signature validation micro-benchmark
+mvn verify -Pbenchmark \
+  -Djmh.includes=".*SignatureValidation.*" \
+  -Djmh.prof=jfr \
+  -Djmh.iterations=10
+
+# After optimization
+mvn verify -Pbenchmark \
+  -Djmh.threads=1,10,50,100,200 \
+  -Djmh.iterations=10
+```
+
+=== Success Metrics
+
 |===
-| Validation Step | P50 | P95 | P99 | P99/P50 Ratio | Improvement
-| **Claims Validation** | 0.029ms | 4.796ms | **104.936ms** | **3,618x** | ⚠️ P99 worse by 9%
-| Complete Validation | 0.173ms | 18.358ms | 146.951ms | 850x | P99 worse by 6%
-| Signature Validation | 0.093ms | 0.165ms | 13.532ms | 145x | P99 improved by 13%
-| Token Parsing | 0.014ms | 0.027ms | 0.080ms | 6x ✅ | P99 improved by 44%
-| Header Validation | 0.001ms | 0.002ms | 0.003ms | 3x ✅ | No change
-| Token Building | 0.024ms | 0.107ms | 30.346ms | 1,264x | New metric
+| Metric | Current | Target | Priority
+| Signature Validation Time | 70-110μs | <20μs | 🔴 Critical
+| Thread Efficiency | 4.5% | >50% | 🔴 Critical
+| P99 Latency | 147ms | <5ms | 🟡 High
+| Throughput (50 threads) | ~25k ops/s | 200k ops/s | 🟡 High
 |===
-
-**Performance Degradation Analysis**:
-- **Claims validation P99 WORSENED** from 96ms to 105ms (+9%) despite removing 3 OffsetDateTime.now() calls
-- **P50 latency WORSENED** from 0.020ms to 0.029ms (+45%)
-- **Complete validation P99 WORSENED** from 139ms to 147ms (+6%)
-- **Throughput DECREASED** from 71,151 to 57,106 ops/sec (-20%)
-
-**Root Cause Hypothesis for P99 Degradation**: 
-1. **Run-to-run variance**: P99 latencies can vary significantly between benchmark runs due to:
-   - GC timing differences
-   - OS scheduling variations under 200-thread load
-   - CPU thermal throttling
-   - Background system activity
-2. **Benchmark methodology**: Only 3 iterations with 4s measurement may not capture true P99
-3. **ValidationContext implementation**: While removing 3 time calls, we added:
-   - Object allocation per validation
-   - Additional method parameter passing through entire pipeline
-   - Constructor overhead for ValidationContext
-4. **The optimization addressed the wrong bottleneck**: The 4,813x variance likely comes from:
-   - GC pauses under memory pressure
-   - Thread contention on shared resources
-   - Not from the 3 OffsetDateTime.now() calls themselves
-
-=== Error Handling Performance
-
-**Fast-fail scenarios** (μs/op averages - Latest Run):
-- Invalid signature: 673-935μs (fastest detection)
-- Malformed tokens: 673-705μs  
-- Valid tokens: 2,475μs (stable)
-- Expired tokens: 2,803-2,970μs (slight improvement)
-- Mixed tokens: 2,021-2,705μs
-
-**Observation**: Error percentage (0% vs 50%) has minimal performance impact. Performance remains consistent.
-
-== Root Cause Investigation Focus
-
-=== Claims Validation Bottleneck Analysis
-
-**Hypothesis**: 4,813x P50-to-P99 variance indicates:
-1. **Expensive operations**: Complex claim validation logic
-2. **Concurrency issues**: Shared resource contention
-3. **Memory pressure**: Object allocation during validation
-4. **Time calculations**: Date/time operations under load
-
-**Investigation Required**:
-- Profile specific claim validation methods
-- Identify which claims cause high latency
-- Analyze memory allocation patterns
-- Check for blocking operations
-
-=== Tail Latency Pattern Analysis
-
-**Problem**: Extreme variance across all validation steps suggests systemic issues:
-- Claims: 4,813x variance
-- Complete validation: 979x variance  
-- Signature validation: 187x variance
-
-**Likely Causes**:
-- GC pressure from object allocation
-- Thread contention under 200-thread load
-- Resource exhaustion at high concurrency
 
 == Dismissed Optimization Approaches
 
-=== JWT Token Caching
-**Status:** ❌ DISMISSED - Processing time too high, caching won't solve core issue
+=== Native Crypto / Hardware Acceleration
+**Status:** ❌ DISMISSED - Docker environment constraint
 
-**Reason:** With P99 latencies of 96ms for claims validation and 15ms for signature validation, caching cannot address the fundamental performance bottlenecks. The extreme variance (4,813x for claims validation) indicates algorithmic or concurrency issues that require direct optimization rather than avoidance through caching.
+**Reason:** Focus on Docker-compatible solutions. Hardware acceleration not portable across container environments.
 
-=== ES256 Algorithm Migration  
-**Status:** ❌ DISMISSED - Integration tests use RS256, microbenchmarks follow suit
+=== Caffeine Cache
+**Status:** ❌ DISMISSED - Quarkus native constraints
 
-**Reason:** Integration test infrastructure is built around RS256. Microbenchmarks measure the same algorithm to ensure consistency. ES256 vs RS256 performance comparison is out of scope for core library optimization.
+**Reason:** External dependencies not compatible with Quarkus native compilation. Must use standard Java collections.
 
-=== Hardware-Specific Optimizations
-**Status:** ❌ DISMISSED - Focus on algorithmic improvements
+=== Extended Thread Scaling Without Root Cause
+**Status:** ❌ DISMISSED - Premature optimization
 
-**Reason:** CPU-specific optimizations (AES-NI, ARM crypto extensions) compromise portability and don't address the claims validation bottleneck which appears to be algorithmic rather than cryptographic.
+**Reason:** Thread scaling analysis only makes sense after understanding why signature validation consumes 73.7% of time.
 
-=== Alternative JCA Providers in Microbenchmarks
-**Status:** ❌ DISMISSED - Microbenchmarks use default JDK providers for consistency
+=== Alternative JCA Providers
+**Status:** ❌ DISMISSED - Complexity and compatibility
 
-**Reason:** BouncyCastle and other providers are integration test concerns. Microbenchmarks focus on core library performance with standard JDK providers to isolate library-specific bottlenecks.
+**Reason:** Focus on optimizing default provider usage first. Alternative providers add complexity and may not be available in all environments.
 
-=== Extended Measurement Duration
-**Status:** ❌ DISMISSED - 4-second measurement sufficient for trend identification
+== Conclusion
 
-**Reason:** Current setup provides 65,075 samples with clear P99 bottleneck identification. Extending measurement time won't change the 4,813x variance pattern in claims validation - investigation and optimization needed instead.
+The JWT validation library's performance is dominated by signature validation (73.7% of time). Before any other optimization, we must understand why signature validation is so expensive compared to other JWT libraries.
 
-== Technical Context
+**Immediate Actions**:
+1. **Research** how jjwt, smallrye-jwt, and jose4j handle signature validation
+2. **Profile** the current implementation with focus on Signature instance lifecycle
+3. **Test** signature instance reuse patterns for thread safety and performance
 
-**Microbenchmark Setup**:
-- JMH 1.37, Java 21.0.7
-- 200 threads, 3 iterations, 4s measurement, 1s warmup
-- Default JDK cryptographic providers (no BouncyCastle)
-
-**vs Integration Tests**:
-- Microbenchmarks: 2.6ms average (pure library)
-- Integration tests: 186.6ms P95 (with framework)
-- **66x difference** = 97% framework overhead
-
-**Focus**: Core library optimization separate from infrastructure optimization.
+**Expected Outcome**:
+Based on the extreme performance difference (73.7% of time), we likely will find that other libraries reuse Signature instances while we recreate them for every validation. Fixing this could reduce signature validation time by 50-80%.
