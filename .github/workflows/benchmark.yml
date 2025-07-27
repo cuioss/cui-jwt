@@ -57,7 +57,7 @@ jobs:
           mkdir -p benchmark-results
 
           # Run micro benchmarks using configuration from pom.xml
-          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
 
           # Move micro benchmark results to expected location for upload
           if [ -d "cui-jwt-benchmarking/target/benchmark-results" ]; then

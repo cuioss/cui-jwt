@@ -20,6 +20,9 @@
         <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
         <version.mockwebserver3>5.0.0-alpha.12</version.mockwebserver3>
+        
+        <!-- Default benchmark runner -->
+        <benchmark.runner>de.cuioss.jwt.validation.benchmark.BenchmarkRunner</benchmark.runner>
 
         <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.result.format>JSON</jmh.result.format>
@@ -166,6 +169,14 @@
             <artifactId>parsson</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <!-- HdrHistogram for accurate latency recording -->
+        <dependency>
+            <groupId>org.hdrhistogram</groupId>
+            <artifactId>HdrHistogram</artifactId>
+            <version>2.1.12</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -173,6 +184,19 @@
             <id>benchmark</id>
             <properties>
                 <skip.benchmark>false</skip.benchmark>
+            </properties>
+        </profile>
+        <profile>
+            <id>benchmark-jfr</id>
+            <properties>
+                <skip.benchmark>false</skip.benchmark>
+                <benchmark.runner>de.cuioss.jwt.validation.benchmark.JfrBenchmarkRunner</benchmark.runner>
+                <!-- Extended settings for JFR benchmarks -->
+                <jmh.iterations>5</jmh.iterations>
+                <jmh.warmupIterations>3</jmh.warmupIterations>
+                <jmh.threads>8</jmh.threads>
+                <jmh.time>5s</jmh.time>
+                <jmh.warmupTime>3s</jmh.warmupTime>
             </properties>
         </profile>
     </profiles>
@@ -244,7 +268,9 @@
                                 <argument>-Djmh.time=${jmh.time}</argument>
                                 <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
                                 <argument>-Djava.util.logging.config.file=src/test/resources/benchmark-logging.properties</argument>
-                                <argument>de.cuioss.jwt.validation.benchmark.BenchmarkRunner</argument>
+                                <argument>-XX:+UnlockDiagnosticVMOptions</argument>
+                                <argument>-XX:+DebugNonSafepoints</argument>
+                                <argument>${benchmark.runner}</argument>
                             </arguments>
                         </configuration>
                     </execution>

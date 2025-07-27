@@ -73,6 +73,40 @@ To run specific benchmarks, you can use the `jmh.includes` parameter:
   -Djmh.includes=TokenValidatorBenchmark
 ----
 
+=== Running JFR-Instrumented Benchmarks
+
+For detailed variance analysis and performance profiling, use the JFR-instrumented benchmark profile:
+
+[source,bash]
+----
+# Run benchmarks with JFR instrumentation
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark-jfr
+
+# Custom parameters for extended analysis
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark-jfr \
+  -Djmh.iterations=10 \
+  -Djmh.threads=16 \
+  -Djmh.time=10s
+----
+
+The JFR profile:
+
+* Runs only JFR-instrumented benchmarks (`JfrInstrumentedBenchmark`)
+* Captures detailed timing and variance metrics
+* Generates JFR recording at `target/benchmark-results/jfr-benchmark.jfr`
+* Extended default settings: 8 threads, 5s measurements, 3 warmup iterations
+
+To analyze the JFR data:
+
+[source,bash]
+----
+java -cp "target/classes:target/dependency/*" \
+  de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
+  target/benchmark-results/jfr-benchmark.jfr
+----
+
+See link:JFR-INSTRUMENTATION.md[JFR Instrumentation Guide] for detailed information about variance analysis.
+
 == Benchmark Results
 
 After running the benchmarks, results will be available in the `target` directory. If you've configured JSON output, you can visualize the results using the HTML visualizer template included in this module.
