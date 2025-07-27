@@ -23,12 +23,8 @@ import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import org.openjdk.jmh.annotations.*;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Consolidated core validation benchmark that measures essential JWT validation performance metrics.
@@ -61,40 +57,13 @@ public class PerformanceIndicatorBenchmark {
     private TokenValidator tokenValidator;
     private CoreValidationDelegate validationDelegate;
 
-    /**
-     * Thread-safe metrics aggregator for collecting measurements across all threads
-     * Now stores comprehensive metrics: sample count, p50, p95, p99
-     */
-    private static final Map<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> GLOBAL_METRICS = new ConcurrentHashMap<>();
-
     static {
-        // Initialize metrics maps for each benchmark
-        String[] benchmarkNames = {"measureAverageTime", "measureThroughput", "measureConcurrentValidation"};
-
-        for (String benchmarkName : benchmarkNames) {
-            Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = new ConcurrentHashMap<>();
-
-            // Initialize metrics for each measurement type
-            for (MeasurementType type : MeasurementType.values()) {
-                ConcurrentHashMap<String, AtomicLong> typeMetrics = new ConcurrentHashMap<>();
-                typeMetrics.put("sampleCount", new AtomicLong(0));
-                typeMetrics.put("p50_sum", new AtomicLong(0));
-                typeMetrics.put("p95_sum", new AtomicLong(0));
-                typeMetrics.put("p99_sum", new AtomicLong(0));
-                benchmarkMetrics.put(type, typeMetrics);
-            }
-
-            GLOBAL_METRICS.put(benchmarkName, benchmarkMetrics);
-        }
-
-        // Add shutdown hook to export metrics when JVM exits
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                exportGlobalMetrics();
-            } catch (Exception e) {
-                // Silent failure - metrics export is optional
-            }
-        }));
+        // Register benchmarks for metrics collection
+        BenchmarkMetricsAggregator.registerBenchmarks(
+            "measureAverageTime", 
+            "measureThroughput", 
+            "measureConcurrentValidation"
+        );
     }
 
     @Setup(Level.Trial)
@@ -120,8 +89,6 @@ public class PerformanceIndicatorBenchmark {
         String benchmarkName = getCurrentBenchmarkName();
 
         if (benchmarkName != null) {
-            Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
-
             // Collect metrics for each measurement type
             for (MeasurementType type : monitor.getEnabledTypes()) {
                 Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
@@ -129,18 +96,15 @@ public class PerformanceIndicatorBenchmark {
                 if (metricsOpt.isPresent()) {
                     StripedRingBufferStatistics metrics = metricsOpt.get();
                     if (metrics.sampleCount() > 0) {
-                        ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
-
-                        // Accumulate all statistics
-                        typeMetrics.get("sampleCount").addAndGet(metrics.sampleCount());
-                        typeMetrics.get("p50_sum").addAndGet(metrics.p50().toNanos() * metrics.sampleCount());
-                        typeMetrics.get("p95_sum").addAndGet(metrics.p95().toNanos() * metrics.sampleCount());
-                        typeMetrics.get("p99_sum").addAndGet(metrics.p99().toNanos() * metrics.sampleCount());
-
+                        // Aggregate metrics for each sample
+                        // Note: This is a simplified approach - we're reporting the median value
+                        // for each sample as an approximation
+                        long medianNanos = metrics.p50().toNanos();
+                        for (int i = 0; i < metrics.sampleCount(); i++) {
+                            BenchmarkMetricsAggregator.aggregateMetrics(benchmarkName, type, medianNanos);
+                        }
                     }
                 }
-
-                // Successfully collected metrics
             }
         }
     }
@@ -174,52 +138,6 @@ public class PerformanceIndicatorBenchmark {
         return null;
     }
 
-    /**
-     * Exports collected metrics to a JSON file
-     */
-    private static void exportGlobalMetrics() {
-        try {
-            Map<String, Map<String, Object>> aggregatedMetrics = new LinkedHashMap<>();
-
-            for (Map.Entry<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> entry : GLOBAL_METRICS.entrySet()) {
-                String benchmarkName = entry.getKey();
-                Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = entry.getValue();
-
-                Map<String, Object> benchmarkResults = new LinkedHashMap<>();
-
-                for (MeasurementType type : MeasurementType.values()) {
-                    ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
-                    long sampleCount = typeMetrics.get("sampleCount").get();
-
-                    if (sampleCount > 0) {
-                        Map<String, Object> stepMetrics = new LinkedHashMap<>();
-                        stepMetrics.put("sample_count", sampleCount);
-
-                        // Calculate averages from accumulated sums
-                        double p50Ms = (typeMetrics.get("p50_sum").get() / (double) sampleCount) / 1_000_000.0;
-                        double p95Ms = (typeMetrics.get("p95_sum").get() / (double) sampleCount) / 1_000_000.0;
-                        double p99Ms = (typeMetrics.get("p99_sum").get() / (double) sampleCount) / 1_000_000.0;
-
-                        stepMetrics.put("p50_ms", Math.round(p50Ms * 1000) / 1000.0);
-                        stepMetrics.put("p95_ms", Math.round(p95Ms * 1000) / 1000.0);
-                        stepMetrics.put("p99_ms", Math.round(p99Ms * 1000) / 1000.0);
-
-                        benchmarkResults.put(type.name().toLowerCase(), stepMetrics);
-                    }
-                }
-
-                if (!benchmarkResults.isEmpty()) {
-                    aggregatedMetrics.put(benchmarkName, benchmarkResults);
-                }
-            }
-
-            // Export to file
-            BenchmarkMetricsCollector.exportAggregatedMetrics(aggregatedMetrics);
-
-        } catch (Exception e) {
-            // Silent failure - metrics export is optional
-        }
-    }
 
     /**
      * Measures average validation time for single-threaded token validation.

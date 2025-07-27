@@ -21,9 +21,14 @@ import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.metrics.MeasurementType;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+
+import java.util.Optional;
 
 import java.util.concurrent.TimeUnit;
 
@@ -40,12 +45,22 @@ import java.util.concurrent.TimeUnit;
 public class UnifiedJfrBenchmark {
 
     private TokenRepository tokenRepository;
+    private TokenValidator tokenValidator;
     private CoreValidationDelegate coreValidationDelegate;
     private ErrorLoadDelegate errorLoadDelegate;
     private JfrInstrumentation jfrInstrumentation;
     
     @Param({"0", "50"})
     private int errorPercentage;
+    
+    static {
+        // Register benchmarks for metrics collection
+        BenchmarkMetricsAggregator.registerBenchmarks(
+            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
+            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
+            "validateMalformedTokenWithJfr", "validateMixedTokensWithJfr"
+        );
+    }
 
     @Setup(Level.Trial)
     public void setup() {
@@ -56,7 +71,7 @@ public class UnifiedJfrBenchmark {
         tokenRepository = new TokenRepository();
         
         // Create token validator
-        TokenValidator tokenValidator = tokenRepository.createTokenValidator();
+        tokenValidator = tokenRepository.createTokenValidator();
         
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
@@ -73,12 +88,75 @@ public class UnifiedJfrBenchmark {
         jfrInstrumentation.recordPhase(benchmarkName, phase, 0, 0, 1, threads);
     }
 
+    @TearDown(Level.Iteration)
+    public void collectMetrics() {
+        // Get the performance monitor from the validator
+        TokenValidatorMonitor monitor = tokenValidator.getPerformanceMonitor();
+
+        // Determine which benchmark is running based on thread name
+        String benchmarkName = getCurrentBenchmarkName();
+
+        if (benchmarkName != null) {
+            // Collect metrics for each measurement type
+            for (MeasurementType type : monitor.getEnabledTypes()) {
+                Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
+
+                if (metricsOpt.isPresent()) {
+                    StripedRingBufferStatistics metrics = metricsOpt.get();
+                    if (metrics.sampleCount() > 0) {
+                        // Aggregate metrics for each sample
+                        // Note: This is a simplified approach - we're reporting the median value
+                        // for each sample as an approximation
+                        long medianNanos = metrics.p50().toNanos();
+                        for (int i = 0; i < metrics.sampleCount(); i++) {
+                            BenchmarkMetricsAggregator.aggregateMetrics(benchmarkName, type, medianNanos);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     @TearDown(Level.Trial)
     public void tearDown() {
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {
             jfrInstrumentation.shutdown();
         }
+    }
+    
+    /**
+     * Determines the current benchmark name from the thread name or stack trace
+     */
+    private String getCurrentBenchmarkName() {
+        // JMH typically includes the benchmark method name in the thread name
+        String threadName = Thread.currentThread().getName();
+
+        // Check all registered benchmark names
+        String[] benchmarkNames = {
+            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
+            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
+            "validateMalformedTokenWithJfr", "validateMixedTokensWithJfr"
+        };
+        
+        for (String name : benchmarkNames) {
+            if (threadName.contains(name)) {
+                return name;
+            }
+        }
+
+        // Fallback: check stack trace
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTrace) {
+            String methodName = element.getMethodName();
+            for (String name : benchmarkNames) {
+                if (name.equals(methodName)) {
+                    return methodName;
+                }
+            }
+        }
+
+        return null;
     }
 
     // ========== Core Validation Benchmarks ==========
@@ -238,4 +316,5 @@ public class UnifiedJfrBenchmark {
             return result;
         }
     }
+    
 }

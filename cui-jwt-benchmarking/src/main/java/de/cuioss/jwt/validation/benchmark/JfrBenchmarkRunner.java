@@ -71,10 +71,11 @@ public class JfrBenchmarkRunner {
                 // Configure result output
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
                 .result(getJfrResultFile())
-                // Add JVM args for better JFR profiling
+                // Add JVM args for better JFR profiling and logging configuration
                 .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
                         "-XX:+DebugNonSafepoints",
-                        "-XX:StartFlightRecording=filename=target/benchmark-results/jfr-benchmark.jfr,settings=profile");
+                        "-XX:StartFlightRecording=filename=target/benchmark-results/jfr-benchmark.jfr,settings=profile",
+                        "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties");
 
         Options options = builder.build();
 

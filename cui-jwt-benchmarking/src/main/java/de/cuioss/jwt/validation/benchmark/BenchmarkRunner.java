@@ -63,7 +63,8 @@ public class BenchmarkRunner {
                 // Configure result output - create a combined report for all benchmarks
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
                 .result(BenchmarkOptionsHelper.getResultFile("target/benchmark-results/micro-benchmark-result.json"))
-                // JVM arguments are controlled by POM configuration
+                // Add logging configuration to suppress verbose logs
+                .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties")
                 .build();
 
         // Run the benchmarks
