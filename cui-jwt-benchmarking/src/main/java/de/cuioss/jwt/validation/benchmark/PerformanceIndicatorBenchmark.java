@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.benchmark;
 
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
@@ -58,9 +59,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PerformanceIndicatorBenchmark {
 
     private TokenValidator tokenValidator;
-    private String validAccessToken;
     private TokenRepository tokenRepository;
-    private int tokenIndex = 0;
+    private CoreValidationDelegate validationDelegate;
     
     /**
      * Thread-safe metrics aggregator for collecting measurements across all threads
@@ -109,8 +109,8 @@ public class PerformanceIndicatorBenchmark {
         // Create pre-configured token validator
         tokenValidator = tokenRepository.createTokenValidator();
         
-        // Set primary validation token
-        validAccessToken = tokenRepository.getPrimaryToken();
+        // Initialize validation delegate
+        validationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
     }
 
 
@@ -240,11 +240,7 @@ public class PerformanceIndicatorBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTime() {
-        try {
-            return tokenValidator.createAccessToken(validAccessToken);
-        } catch (TokenValidationException e) {
-            throw new RuntimeException("Unexpected validation failure during average time measurement", e);
-        }
+        return validationDelegate.validatePrimaryToken();
     }
 
     /**
@@ -259,11 +255,7 @@ public class PerformanceIndicatorBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughput() {
-        try {
-            return tokenValidator.createAccessToken(validAccessToken);
-        } catch (TokenValidationException e) {
-            throw new RuntimeException("Unexpected validation failure during throughput measurement", e);
-        }
+        return validationDelegate.validatePrimaryToken();
     }
 
     /**
@@ -279,13 +271,7 @@ public class PerformanceIndicatorBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureConcurrentValidation() {
-        try {
-            // Rotate through token pool to simulate different tokens
-            String token = tokenRepository.getToken(tokenIndex++);
-            return tokenValidator.createAccessToken(token);
-        } catch (TokenValidationException e) {
-            throw new RuntimeException("Unexpected validation failure during concurrent validation", e);
-        }
+        return validationDelegate.validateWithRotation();
     }
 
 }

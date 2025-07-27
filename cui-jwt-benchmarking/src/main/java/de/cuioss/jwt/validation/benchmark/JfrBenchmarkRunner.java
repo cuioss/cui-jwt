@@ -39,7 +39,7 @@ import java.io.File;
  * <p>
  * JFR data is automatically saved to: {@code target/benchmark-results/}
  *
- * @see JfrInstrumentedBenchmark
+ * @see UnifiedJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer
  */
 public class JfrBenchmarkRunner {
@@ -57,7 +57,7 @@ public class JfrBenchmarkRunner {
         // Configure JMH options
         ChainedOptionsBuilder builder = new OptionsBuilder()
                 // Include only JFR instrumented benchmarks
-                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.JfrInstrumentedBenchmark")
+                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.UnifiedJfrBenchmark")
                 // Set number of forks
                 .forks(Integer.getInteger("jmh.forks", 1))
                 // Set warmup iterations
