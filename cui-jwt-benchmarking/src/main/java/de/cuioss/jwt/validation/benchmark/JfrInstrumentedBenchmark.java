@@ -15,21 +15,14 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
-import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
-import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 
-import io.jsonwebtoken.Jwts;
 import org.openjdk.jmh.annotations.*;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -65,75 +58,22 @@ public class JfrInstrumentedBenchmark {
     private TokenValidator tokenValidator;
     private String validAccessToken;
     private JfrInstrumentation jfrInstrumentation;
-
-    /**
-     * Number of different issuers to simulate issuer config resolution overhead
-     */
-    private static final int ISSUER_COUNT = 3;
-
-    /**
-     * Shared token pool for reduced setup overhead.
-     * Pre-generated tokens reduce benchmark setup time.
-     */
-    private static final int TOKEN_POOL_SIZE = 60; // 20 tokens per issuer
-    private String[] tokenPool;
+    private TokenRepository tokenRepository;
     private int tokenIndex = 0;
-
-    private final Random random = new Random(42); // Fixed seed for reproducibility
-    
-    /**
-     * Map to store issuer identifier for each token for JFR events
-     */
-    private Map<String, String> tokenToIssuer = new HashMap<>();
 
     @Setup(Level.Trial)
     public void setup() {
         // Initialize JFR instrumentation
         jfrInstrumentation = new JfrInstrumentation();
-
-        // Generate multiple issuer key materials for benchmarking
-        InMemoryKeyMaterialHandler.IssuerKeyMaterial[] issuers =
-                InMemoryKeyMaterialHandler.createMultipleIssuers(ISSUER_COUNT);
-
-        List<IssuerConfig> issuerConfigs = new ArrayList<>();
-        List<String> allTokens = new ArrayList<>();
-
-        // Create issuer configs and generate tokens for each issuer
-        for (InMemoryKeyMaterialHandler.IssuerKeyMaterial issuer : issuers) {
-            // Create issuer config with the issuer's JWKS
-            IssuerConfig config = IssuerConfig.builder()
-                    .issuerIdentifier(issuer.getIssuerIdentifier())
-                    .jwksContent(issuer.getJwks())
-                    .expectedAudience("benchmark-client")
-                    .build();
-
-            issuerConfigs.add(config);
-
-            // Generate tokens for this issuer
-            for (int j = 0; j < (TOKEN_POOL_SIZE / ISSUER_COUNT); j++) {
-                String token = generateTokenForIssuer(issuer);
-                allTokens.add(token);
-                tokenToIssuer.put(token, issuer.getIssuerIdentifier());
-            }
-        }
-
-        // Build validator with all metrics explicitly enabled
-        TokenValidatorMonitorConfig monitorConfig = TokenValidatorMonitorConfig.builder()
-                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
-                .windowSize(10000) // Large window for benchmark stability
-                .build();
-
-        tokenValidator = TokenValidator.builder()
-                .issuerConfigs(issuerConfigs)
-                .monitorConfig(monitorConfig)
-                .build();
-
-        // Convert token list to array and shuffle
-        tokenPool = allTokens.toArray(new String[0]);
-        shuffleArray(tokenPool);
-
+        
+        // Initialize token repository
+        tokenRepository = new TokenRepository();
+        
+        // Create pre-configured token validator
+        tokenValidator = tokenRepository.createTokenValidator();
+        
         // Set primary validation token
-        validAccessToken = tokenPool[0];
+        validAccessToken = tokenRepository.getPrimaryToken();
     }
 
     @Setup(Level.Iteration)
@@ -147,38 +87,6 @@ public class JfrInstrumentedBenchmark {
         jfrInstrumentation.recordPhase(benchmarkName, phase, 0, 0, 1, threads);
     }
 
-    /**
-     * Generates a valid JWT token for the given issuer.
-     */
-    private String generateTokenForIssuer(InMemoryKeyMaterialHandler.IssuerKeyMaterial issuer) {
-        Instant now = Instant.now();
-
-        return Jwts.builder()
-                .header()
-                .keyId(issuer.getKeyId())
-                .and()
-                .issuer(issuer.getIssuerIdentifier())
-                .subject("benchmark-user")
-                .audience().add("benchmark-client").and()
-                .expiration(Date.from(now.plusSeconds(3600)))
-                .notBefore(Date.from(now))
-                .issuedAt(Date.from(now))
-                .id(UUID.randomUUID().toString())
-                .claim("scope", "read write")
-                .claim("roles", List.of("user", "admin"))
-                .claim("groups", List.of("test-group"))
-                .signWith(issuer.getPrivateKey(), issuer.getAlgorithm().getAlgorithm())
-                .compact();
-    }
-
-    private void shuffleArray(String[] array) {
-        for (int i = array.length - 1; i > 0; i--) {
-            int index = random.nextInt(i + 1);
-            String temp = array[index];
-            array[index] = array[i];
-            array[i] = temp;
-        }
-    }
 
     @TearDown(Level.Trial)
     public void tearDown() {
@@ -203,8 +111,8 @@ public class JfrInstrumentedBenchmark {
         String token = validAccessToken;
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", "validation")) {
-            recorder.withTokenSize(token.getBytes(StandardCharsets.UTF_8).length)
-                    .withIssuer(tokenToIssuer.get(token));
+            recorder.withTokenSize(token.length())
+                    .withIssuer(tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = tokenValidator.createAccessToken(token);
             recorder.withSuccess(true);
@@ -231,8 +139,8 @@ public class JfrInstrumentedBenchmark {
         String token = validAccessToken;
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", "validation")) {
-            recorder.withTokenSize(token.getBytes(StandardCharsets.UTF_8).length)
-                    .withIssuer(tokenToIssuer.get(token));
+            recorder.withTokenSize(token.length())
+                    .withIssuer(tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = tokenValidator.createAccessToken(token);
             recorder.withSuccess(true);
@@ -257,11 +165,11 @@ public class JfrInstrumentedBenchmark {
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureConcurrentValidationWithJfr() {
         // Rotate through token pool to simulate different tokens
-        String token = tokenPool[tokenIndex++ % TOKEN_POOL_SIZE];
+        String token = tokenRepository.getToken(tokenIndex++);
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureConcurrentValidationWithJfr", "validation")) {
-            recorder.withTokenSize(token.getBytes(StandardCharsets.UTF_8).length)
-                    .withIssuer(tokenToIssuer.get(token));
+            recorder.withTokenSize(token.length())
+                    .withIssuer(tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = tokenValidator.createAccessToken(token);
             recorder.withSuccess(true);
