@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
@@ -42,6 +43,8 @@ import java.io.File;
  * @see de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer
  */
 public class JfrBenchmarkRunner {
+
+    private static final CuiLogger log = new CuiLogger(JfrBenchmarkRunner.class);
 
     /**
      * Main method to run JFR-instrumented benchmarks.
@@ -78,15 +81,13 @@ public class JfrBenchmarkRunner {
         Options options = builder.build();
 
         // Run the benchmarks
-        System.out.println("Running JFR-instrumented benchmarks...");
-        System.out.println("JFR recording will be saved to: target/benchmark-results/jfr-benchmark.jfr");
+        log.info("Running JFR-instrumented benchmarks...");
+        log.info("JFR recording will be saved to: target/benchmark-results/jfr-benchmark.jfr");
 
         new Runner(options).run();
 
-        System.out.println("\nBenchmark completed. To analyze variance:");
-        System.out.println("java -cp \"target/classes:target/dependency/*\" \\");
-        System.out.println("  de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \\");
-        System.out.println("  target/benchmark-results/jfr-benchmark.jfr");
+        log.info("Benchmark completed. To analyze variance:");
+        log.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer target/benchmark-results/jfr-benchmark.jfr");
     }
 
     /**

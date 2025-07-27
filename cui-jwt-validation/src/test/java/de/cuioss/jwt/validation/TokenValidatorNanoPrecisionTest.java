@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
@@ -29,6 +30,8 @@ import java.time.Duration;
  * Demonstrates nanosecond precision issues that cause metrics to appear as 0.
  */
 class TokenValidatorNanoPrecisionTest {
+
+    private static final CuiLogger log = new CuiLogger(TokenValidatorNanoPrecisionTest.class);
 
     private TokenValidator tokenValidator;
     private TestTokenHolder testTokenHolder;
@@ -48,7 +51,7 @@ class TokenValidatorNanoPrecisionTest {
         // When - validate just once to see individual operation times
         tokenValidator.createAccessToken(tokenString);
 
-        System.out.println("\n=== SINGLE VALIDATION RUN ===");
+        log.info("\n=== SINGLE VALIDATION RUN ===");
         printMetrics(monitor);
 
         // When - validate many times to see averaging effect
@@ -56,11 +59,11 @@ class TokenValidatorNanoPrecisionTest {
             tokenValidator.createAccessToken(tokenString);
         }
 
-        System.out.println("\n=== AFTER 1000 RUNS (AVERAGED) ===");
+        log.info("\n=== AFTER 1000 RUNS (AVERAGED) ===");
         printMetrics(monitor);
 
         // Demonstrate the issue
-        System.out.println("\n=== NANOSECOND PRECISION ISSUE ===");
+        log.info("\n=== NANOSECOND PRECISION ISSUE ===");
 
         // These operations are so fast they often measure < 1000 ns
         Duration tokenFormatCheck = monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
@@ -68,24 +71,24 @@ class TokenValidatorNanoPrecisionTest {
         Duration issuerExtraction = monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
-        System.out.println("Fast operations that might round to 0:");
-        System.out.printf("TOKEN_FORMAT_CHECK: %d ns - String.isBlank() check%n", tokenFormatCheck.toNanos());
-        System.out.printf("ISSUER_EXTRACTION: %d ns - Optional.get() from decoded JWT%n", issuerExtraction.toNanos());
+        log.info("Fast operations that might round to 0:");
+        log.info("TOKEN_FORMAT_CHECK: %d ns - String.isBlank() check%n", tokenFormatCheck.toNanos());
+        log.info("ISSUER_EXTRACTION: %d ns - Optional.get() from decoded JWT%n", issuerExtraction.toNanos());
 
         // The issue: when converted to milliseconds for JSON export, these become 0.000ms → 0
-        System.out.println("\nWhen converted to milliseconds for JSON:");
-        System.out.printf("TOKEN_FORMAT_CHECK: %.3f ms → appears as empty/0 in JSON%n",
+        log.info("\nWhen converted to milliseconds for JSON:");
+        log.info("TOKEN_FORMAT_CHECK: %.3f ms → appears as empty/0 in JSON%n",
                 tokenFormatCheck.toNanos() / 1_000_000.0);
-        System.out.printf("ISSUER_EXTRACTION: %.3f ms → appears as empty/0 in JSON%n",
+        log.info("ISSUER_EXTRACTION: %.3f ms → appears as empty/0 in JSON%n",
                 issuerExtraction.toNanos() / 1_000_000.0);
 
         // JWKS operations are only measured during signature validation
-        System.out.println("\nJWKS_OPERATIONS issue:");
+        log.info("\nJWKS_OPERATIONS issue:");
         Duration jwksOps = monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
-        System.out.printf("JWKS_OPERATIONS: %d ns%n", jwksOps.toNanos());
-        System.out.println("This is 0 because JwksLoader creation is not the actual JWKS fetch.");
-        System.out.println("The actual JWKS operations happen inside signature validation.");
+        log.info("JWKS_OPERATIONS: %d ns%n", jwksOps.toNanos());
+        log.info("This is 0 because JwksLoader creation is not the actual JWKS fetch.");
+        log.info("The actual JWKS operations happen inside signature validation.");
     }
 
     private void printMetrics(TokenValidatorMonitor monitor) {
@@ -94,7 +97,7 @@ class TokenValidatorNanoPrecisionTest {
                     .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             long nanos = duration.toNanos();
             if (nanos > 0) {
-                System.out.printf("%-30s: %10d ns (%.6f ms)%n",
+                log.info("%-30s: %10d ns (%.6f ms)%n",
                         type, nanos, nanos / 1_000_000.0);
             }
         }

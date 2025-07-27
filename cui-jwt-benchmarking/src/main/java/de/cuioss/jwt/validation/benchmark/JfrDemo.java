@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer;
 
@@ -25,6 +26,8 @@ import java.nio.file.Path;
  * Demonstration of JFR instrumentation and variance analysis.
  */
 public class JfrDemo {
+
+    private static final CuiLogger log = new CuiLogger(JfrDemo.class);
 
     public static void main(String[] args) throws Exception {
         Path outputPath = Path.of("target/benchmark-results/demo-jfr.jfr");
@@ -37,17 +40,17 @@ public class JfrDemo {
             recording.setDestination(outputPath);
             recording.start();
 
-            System.out.println("Starting JFR Demo - simulating JWT validation operations...\n");
+            log.info("Starting JFR Demo - simulating JWT validation operations...\n");
 
             // Run the demo
             runDemo();
 
             recording.stop();
-            System.out.println("\nJFR Recording completed: " + outputPath);
+            log.info("\nJFR Recording completed: " + outputPath);
         }
 
         // Analyze the recording
-        System.out.println("\nAnalyzing JFR data...");
+        log.info("\nAnalyzing JFR data...");
         JfrVarianceAnalyzer analyzer = new JfrVarianceAnalyzer();
         JfrVarianceAnalyzer.VarianceReport report = analyzer.analyze(outputPath);
         report.printSummary();
@@ -60,7 +63,7 @@ public class JfrDemo {
         instrumentation.recordPhase("JfrDemo", "setup", 1, 1, 1, 1);
 
         // Simulate single-threaded operations
-        System.out.println("Phase 1: Single-threaded operations");
+        log.info("Phase 1: Single-threaded operations");
         for (int i = 0; i < 50; i++) {
             simulateOperation(instrumentation, "single-thread", i);
         }
@@ -71,7 +74,7 @@ public class JfrDemo {
         instrumentation.recordPhase("JfrDemo", "concurrent", 1, 1, 1, 4);
 
         // Simulate concurrent operations
-        System.out.println("Phase 2: Multi-threaded operations");
+        log.info("Phase 2: Multi-threaded operations");
         Thread[] threads = new Thread[4];
         for (int t = 0; t < 4; t++) {
             final int threadId = t;

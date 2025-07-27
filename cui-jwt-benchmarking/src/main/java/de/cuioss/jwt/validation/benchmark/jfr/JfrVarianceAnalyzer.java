@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr;
 
+import de.cuioss.tools.logging.CuiLogger;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
@@ -43,6 +44,8 @@ import java.util.*;
  * }</pre>
  */
 public class JfrVarianceAnalyzer {
+
+    private static final CuiLogger log = new CuiLogger(JfrVarianceAnalyzer.class);
 
     /**
      * Analyzes a JFR recording file and generates a variance report.
@@ -117,30 +120,30 @@ public class JfrVarianceAnalyzer {
          * Prints a summary of the variance analysis to stdout.
          */
         public void printSummary() {
-            System.out.println("\n=== JFR Variance Analysis Report ===\n");
+            log.info("\n=== JFR Variance Analysis Report ===\n");
 
             operationMetrics.values().stream()
                     .sorted(Comparator.comparing(m -> m.benchmarkName))
                     .forEach(metrics -> {
-                        System.out.printf("Benchmark: %s - Operation: %s%n",
+                        log.info("Benchmark: %s - Operation: %s%n",
                                 metrics.benchmarkName, metrics.operationType);
-                        System.out.printf("  Total Operations: %d (Success: %d, Failed: %d)%n",
+                        log.info("  Total Operations: %d (Success: %d, Failed: %d)%n",
                                 metrics.totalOperations, metrics.successfulOperations, metrics.failedOperations);
-                        System.out.printf("  Latency (μs) - P50: %.2f, P95: %.2f, P99: %.2f, Max: %.2f%n",
+                        log.info("  Latency (μs) - P50: %.2f, P95: %.2f, P99: %.2f, Max: %.2f%n",
                                 metrics.p50Latency / 1000.0, metrics.p95Latency / 1000.0,
                                 metrics.p99Latency / 1000.0, metrics.maxLatency / 1000.0);
-                        System.out.printf("  Variance: %.2e ns² (StdDev: %.2f μs)%n",
+                        log.info("  Variance: %.2e ns² (StdDev: %.2f μs)%n",
                                 metrics.variance, metrics.standardDeviation / 1000.0);
-                        System.out.printf("  Coefficient of Variation: %.2f%%%n", metrics.coefficientOfVariation);
-                        System.out.printf("  Max Concurrent Operations: %d%n", metrics.maxConcurrentOperations);
+                        log.info("  Coefficient of Variation: %.2f%%%n", metrics.coefficientOfVariation);
+                        log.info("  Max Concurrent Operations: %d%n", metrics.maxConcurrentOperations);
 
                         if (!metrics.statisticsSnapshots.isEmpty()) {
-                            System.out.println("  Periodic Statistics:");
-                            System.out.printf("    Average CV over time: %.2f%%%n", metrics.averageCV);
-                            System.out.printf("    CV Range: %.2f%% - %.2f%%%n", metrics.minCV, metrics.maxCV);
+                            log.info("  Periodic Statistics:");
+                            log.info("    Average CV over time: %.2f%%%n", metrics.averageCV);
+                            log.info("    CV Range: %.2f%% - %.2f%%%n", metrics.minCV, metrics.maxCV);
                         }
 
-                        System.out.println();
+                        log.info("");
                     });
         }
 
@@ -291,7 +294,7 @@ public class JfrVarianceAnalyzer {
      */
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
-            System.err.println("Usage: JfrVarianceAnalyzer <path-to-jfr-file>");
+            log.error("Usage: JfrVarianceAnalyzer <path-to-jfr-file>");
             System.exit(1);
         }
 

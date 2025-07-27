@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -44,6 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @EnableGeneratorController
 @EnableTestLogger
 class TokenValidatorMetricsTest {
+
+    private static final CuiLogger log = new CuiLogger(TokenValidatorMetricsTest.class);
 
     private TokenValidator tokenValidator;
     private TestTokenHolder testTokenHolder;
@@ -85,8 +88,8 @@ class TokenValidatorMetricsTest {
         Set<MeasurementType> expectedMetrics = new HashSet<>(Arrays.asList(MeasurementType.values()));
         expectedMetrics.removeAll(recordedMetrics);
 
-        System.out.println("Recorded metrics: " + recordedMetrics);
-        System.out.println("Missing metrics: " + expectedMetrics);
+        log.info("Recorded metrics: " + recordedMetrics);
+        log.info("Missing metrics: " + expectedMetrics);
 
         // Check specific metrics that were missing in benchmark
         assertTrue(recordedMetrics.contains(MeasurementType.COMPLETE_VALIDATION),
@@ -97,11 +100,11 @@ class TokenValidatorMetricsTest {
                 "SIGNATURE_VALIDATION should be recorded");
 
         // These might be missing or have zero duration
-        System.out.println("TOKEN_FORMAT_CHECK duration: " + monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
+        log.info("TOKEN_FORMAT_CHECK duration: " + monitor.getValidationMetrics(MeasurementType.TOKEN_FORMAT_CHECK)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() + " ns");
-        System.out.println("ISSUER_EXTRACTION duration: " + monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
+        log.info("ISSUER_EXTRACTION duration: " + monitor.getValidationMetrics(MeasurementType.ISSUER_EXTRACTION)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() + " ns");
-        System.out.println("JWKS_OPERATIONS duration: " + monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
+        log.info("JWKS_OPERATIONS duration: " + monitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() + " ns");
     }
 
@@ -129,17 +132,17 @@ class TokenValidatorMetricsTest {
         long completeValidationTime = monitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos();
 
-        System.out.println("Complete validation time: " + completeValidationTime + " ns (" + completeValidationTime / 1_000_000.0 + " ms)");
-        System.out.println("Sum of individual steps: " + sumOfSteps + " ns (" + sumOfSteps / 1_000_000.0 + " ms)");
-        System.out.println("Unaccounted time: " + (completeValidationTime - sumOfSteps) + " ns (" + (completeValidationTime - sumOfSteps) / 1_000_000.0 + " ms)");
+        log.info("Complete validation time: " + completeValidationTime + " ns (" + completeValidationTime / 1_000_000.0 + " ms)");
+        log.info("Sum of individual steps: " + sumOfSteps + " ns (" + sumOfSteps / 1_000_000.0 + " ms)");
+        log.info("Unaccounted time: " + (completeValidationTime - sumOfSteps) + " ns (" + (completeValidationTime - sumOfSteps) / 1_000_000.0 + " ms)");
 
         // Print breakdown
-        System.out.println("\nDetailed breakdown:");
+        log.info("\nDetailed breakdown:");
         for (MeasurementType type : MeasurementType.values()) {
             Duration duration = monitor.getValidationMetrics(type)
                     .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             if (duration.toNanos() > 0) {
-                System.out.printf("%s: %d ns (%.3f ms)%n",
+                log.info("%s: %d ns (%.3f ms)%n",
                         type,
                         duration.toNanos(),
                         duration.toNanos() / 1_000_000.0);
@@ -169,16 +172,16 @@ class TokenValidatorMetricsTest {
         Duration headerValidation = monitor.getValidationMetrics(MeasurementType.HEADER_VALIDATION)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
-        System.out.println("\nFast operations analysis:");
-        System.out.printf("TOKEN_FORMAT_CHECK: %d ns (%.6f ms) - %s%n",
+        log.info("\nFast operations analysis:");
+        log.info("TOKEN_FORMAT_CHECK: %d ns (%.6f ms) - %s%n",
                 tokenFormatCheck.toNanos(),
                 tokenFormatCheck.toNanos() / 1_000_000.0,
                 tokenFormatCheck.toNanos() == 0 ? "MISSING!" : "OK");
-        System.out.printf("ISSUER_EXTRACTION: %d ns (%.6f ms) - %s%n",
+        log.info("ISSUER_EXTRACTION: %d ns (%.6f ms) - %s%n",
                 issuerExtraction.toNanos(),
                 issuerExtraction.toNanos() / 1_000_000.0,
                 issuerExtraction.toNanos() == 0 ? "MISSING!" : "OK");
-        System.out.printf("HEADER_VALIDATION: %d ns (%.6f ms) - %s%n",
+        log.info("HEADER_VALIDATION: %d ns (%.6f ms) - %s%n",
                 headerValidation.toNanos(),
                 headerValidation.toNanos() / 1_000_000.0,
                 headerValidation.toNanos() < 1000 ? "SUSPICIOUSLY FAST!" : "OK");
@@ -204,11 +207,11 @@ class TokenValidatorMetricsTest {
         Duration signatureValidation = monitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION)
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
-        System.out.println("\nJWKS operations analysis:");
-        System.out.printf("JWKS_OPERATIONS: %d ns (%.3f ms)%n",
+        log.info("\nJWKS operations analysis:");
+        log.info("JWKS_OPERATIONS: %d ns (%.3f ms)%n",
                 jwksOperations.toNanos(),
                 jwksOperations.toNanos() / 1_000_000.0);
-        System.out.printf("SIGNATURE_VALIDATION: %d ns (%.3f ms)%n",
+        log.info("SIGNATURE_VALIDATION: %d ns (%.3f ms)%n",
                 signatureValidation.toNanos(),
                 signatureValidation.toNanos() / 1_000_000.0);
 

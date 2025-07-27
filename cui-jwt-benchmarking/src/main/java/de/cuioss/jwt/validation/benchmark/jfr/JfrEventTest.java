@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr;
 
+import de.cuioss.tools.logging.CuiLogger;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
@@ -31,6 +32,8 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class JfrEventTest {
 
+    private static final CuiLogger log = new CuiLogger(JfrEventTest.class);
+
     public static void main(String[] args) throws Exception {
         Path outputPath = Path.of("target/benchmark-results/test-jfr.jfr");
 
@@ -42,7 +45,7 @@ public class JfrEventTest {
             recording.setDestination(outputPath);
             recording.start();
 
-            System.out.println("JFR Recording started...");
+            log.info("JFR Recording started...");
 
             // Create instrumentation
             JfrInstrumentation instrumentation = new JfrInstrumentation();
@@ -85,11 +88,11 @@ public class JfrEventTest {
             instrumentation.shutdown();
 
             recording.stop();
-            System.out.println("JFR Recording stopped.");
+            log.info("JFR Recording stopped.");
         }
 
         // Verify the recording
-        System.out.println("\nAnalyzing JFR recording...");
+        log.info("\nAnalyzing JFR recording...");
         analyzeRecording(outputPath);
     }
 
@@ -107,39 +110,39 @@ public class JfrEventTest {
                     case "de.cuioss.jwt.Operation":
                         operationCount++;
                         if (operationCount == 1) {
-                            System.out.println("\nFirst Operation Event:");
-                            System.out.println("  Operation Type: " + event.getString("operationType"));
-                            System.out.println("  Benchmark: " + event.getString("benchmarkName"));
-                            System.out.println("  Duration: " + event.getDuration().toMillis() + " ms");
-                            System.out.println("  Success: " + event.getBoolean("success"));
+                            log.info("\nFirst Operation Event:");
+                            log.info("  Operation Type: %s", event.getString("operationType"));
+                            log.info("  Benchmark: %s", event.getString("benchmarkName"));
+                            log.info("  Duration: %s ms", event.getDuration().toMillis());
+                            log.info("  Success: %s", event.getBoolean("success"));
                         }
                         break;
                     case "de.cuioss.jwt.OperationStatistics":
                         statisticsCount++;
                         if (statisticsCount == 1) {
-                            System.out.println("\nFirst Statistics Event:");
-                            System.out.println("  Sample Count: " + event.getLong("sampleCount"));
-                            System.out.println("  P50 Latency: " + event.getDuration("p50Latency").toMillis() + " ms");
-                            System.out.println("  CV: " + event.getDouble("coefficientOfVariation") + "%");
+                            log.info("\nFirst Statistics Event:");
+                            log.info("  Sample Count: %s", event.getLong("sampleCount"));
+                            log.info("  P50 Latency: %s ms", event.getDuration("p50Latency").toMillis());
+                            log.info("  CV: %s%%", event.getDouble("coefficientOfVariation"));
                         }
                         break;
                     case "de.cuioss.jwt.BenchmarkPhase":
                         phaseCount++;
-                        System.out.println("\nPhase Event:");
-                        System.out.println("  Phase: " + event.getString("phase"));
-                        System.out.println("  Benchmark: " + event.getString("benchmarkName"));
+                        log.info("\nPhase Event:");
+                        log.info("  Phase: %s", event.getString("phase"));
+                        log.info("  Benchmark: %s", event.getString("benchmarkName"));
                         break;
                 }
             }
         }
 
-        System.out.println("\nSummary:");
-        System.out.println("  Operation Events: " + operationCount);
-        System.out.println("  Statistics Events: " + statisticsCount);
-        System.out.println("  Phase Events: " + phaseCount);
+        log.info("\nSummary:");
+        log.info("  Operation Events: %s", operationCount);
+        log.info("  Statistics Events: %s", statisticsCount);
+        log.info("  Phase Events: %s", phaseCount);
 
         if (operationCount == 0 && statisticsCount == 0) {
-            System.err.println("\nWARNING: No JWT events found in recording!");
+            log.error("\nWARNING: No JWT events found in recording!");
         }
     }
 }
