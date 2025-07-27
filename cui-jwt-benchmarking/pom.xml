@@ -191,12 +191,6 @@
             <properties>
                 <skip.benchmark>false</skip.benchmark>
                 <benchmark.runner>de.cuioss.jwt.validation.benchmark.JfrBenchmarkRunner</benchmark.runner>
-                <!-- Extended settings for JFR benchmarks -->
-                <jmh.iterations>5</jmh.iterations>
-                <jmh.warmupIterations>3</jmh.warmupIterations>
-                <jmh.threads>8</jmh.threads>
-                <jmh.time>5s</jmh.time>
-                <jmh.warmupTime>3s</jmh.warmupTime>
             </properties>
         </profile>
     </profiles>

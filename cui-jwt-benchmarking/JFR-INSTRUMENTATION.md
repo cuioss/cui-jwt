@@ -125,7 +125,7 @@ Map<String, Object> metrics = report.toJson();
 
 ### JFR Profile (`benchmark-jfr`)
 - Runs only JFR-instrumented benchmarks
-- Extended duration for variance analysis (5s measurements, 8 threads)
+- Uses the same JMH settings as the standard profile
 - Captures detailed timing and variance metrics
 - Automatic JFR recording generation
 - Use when: You need to analyze performance variance or debug inconsistent performance

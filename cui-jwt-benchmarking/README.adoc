@@ -94,7 +94,7 @@ The JFR profile:
 * Runs only JFR-instrumented benchmarks (`JfrInstrumentedBenchmark`)
 * Captures detailed timing and variance metrics
 * Generates JFR recording at `target/benchmark-results/jfr-benchmark.jfr`
-* Extended default settings: 8 threads, 5s measurements, 3 warmup iterations
+* Uses the same JMH settings as the standard benchmark profile
 
 To analyze the JFR data:
 
