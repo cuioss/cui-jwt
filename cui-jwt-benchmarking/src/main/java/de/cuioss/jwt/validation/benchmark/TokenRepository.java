@@ -124,6 +124,7 @@ public class TokenRepository {
                     .issuerIdentifier(issuer.getIssuerIdentifier())
                     .jwksContent(issuer.getJwks())
                     .expectedAudience(config.expectedAudience)
+                    .expectedClientId(config.expectedAudience) // azp claim validation
                     .build();
             
             configs.add(issuerConfig);
