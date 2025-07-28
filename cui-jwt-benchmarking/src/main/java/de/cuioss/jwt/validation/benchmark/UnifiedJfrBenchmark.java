@@ -104,13 +104,20 @@ public class UnifiedJfrBenchmark {
                 if (metricsOpt.isPresent()) {
                     StripedRingBufferStatistics metrics = metricsOpt.get();
                     if (metrics.sampleCount() > 0) {
-                        // Aggregate metrics for each sample
-                        // Note: This is a simplified approach - we're reporting the median value
-                        // for each sample as an approximation
-                        long medianNanos = metrics.p50().toNanos();
-                        for (int i = 0; i < metrics.sampleCount(); i++) {
-                            BenchmarkMetricsAggregator.aggregateMetrics(benchmarkName, type, medianNanos);
-                        }
+                        // Use the pre-calculated percentiles from StripedRingBufferStatistics
+                        long p50Nanos = metrics.p50().toNanos();
+                        long p95Nanos = metrics.p95().toNanos();
+                        long p99Nanos = metrics.p99().toNanos();
+                        
+                        // Aggregate the actual percentile values
+                        BenchmarkMetricsAggregator.aggregatePreCalculatedMetrics(
+                            benchmarkName, 
+                            type, 
+                            metrics.sampleCount(),
+                            p50Nanos,
+                            p95Nanos,
+                            p99Nanos
+                        );
                     }
                 }
             }

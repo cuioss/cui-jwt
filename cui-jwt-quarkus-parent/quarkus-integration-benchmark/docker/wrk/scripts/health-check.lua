@@ -11,18 +11,18 @@ function done(summary, latency, requests)
     local throughput = summary.requests / (summary.duration / 1000000)
     local total_errors = summary.errors.connect + summary.errors.read + summary.errors.write + summary.errors.timeout
     
-    -- Convert latency from microseconds to milliseconds
-    local latency_p95_ms = latency:percentile(95) / 1000
-    local latency_p99_ms = latency:percentile(99) / 1000
+    -- Keep latency in microseconds (no conversion needed)
+    local latency_p95_us = latency:percentile(95)
+    local latency_p99_us = latency:percentile(99)
     
     print("Results: " .. string.format("%.0f", throughput) .. " req/sec")
-    print("Latency P95: " .. string.format("%.1f", latency_p95_ms) .. "ms")
-    print("Latency P99: " .. string.format("%.1f", latency_p99_ms) .. "ms")
+    print("Latency P95: " .. string.format("%.1f", latency_p95_us) .. "μs")
+    print("Latency P99: " .. string.format("%.1f", latency_p99_us) .. "μs")
     print("Errors: " .. total_errors)
     
     -- Write results file for health check baseline
-    local results = string.format('{"throughput_rps":%.0f,"latency_p95_ms":%.1f,"latency_p99_ms":%.1f,"errors":%d,"test_type":"health_check"}',
-                                  throughput, latency_p95_ms, latency_p99_ms, total_errors)
+    local results = string.format('{"throughput_rps":%.0f,"latency_p95_us":%.1f,"latency_p99_us":%.1f,"errors":%d,"test_type":"health_check"}',
+                                  throughput, latency_p95_us, latency_p99_us, total_errors)
     
     local file = io.open("/tmp/health-check-results.json", "w")
     if file then

@@ -106,7 +106,9 @@ public final class BenchmarkMetricsAggregator {
      * @param benchmarkName Name of the benchmark method
      * @param type Type of measurement (e.g., TOKEN_PARSING, SIGNATURE_VALIDATION)
      * @param durationNanos Duration of the operation in nanoseconds
+     * @deprecated Use {@link #aggregatePreCalculatedMetrics} instead for accurate percentiles
      */
+    @Deprecated
     public static void aggregateMetrics(String benchmarkName, MeasurementType type, long durationNanos) {
         Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
         if (benchmarkMetrics != null) {
@@ -121,6 +123,34 @@ public final class BenchmarkMetricsAggregator {
                 typeMetrics.get("p50_sum").addAndGet(durationNanos);
                 typeMetrics.get("p95_sum").addAndGet(durationNanos);
                 typeMetrics.get("p99_sum").addAndGet(durationNanos);
+            }
+        }
+    }
+    
+    /**
+     * Aggregate pre-calculated percentile metrics from TokenValidatorMonitor.
+     * This method uses actual percentile values instead of trying to reconstruct them.
+     * 
+     * @param benchmarkName Name of the benchmark method
+     * @param type Type of measurement (e.g., TOKEN_PARSING, SIGNATURE_VALIDATION)
+     * @param sampleCount Number of samples in this aggregation
+     * @param p50Nanos 50th percentile (median) in nanoseconds
+     * @param p95Nanos 95th percentile in nanoseconds
+     * @param p99Nanos 99th percentile in nanoseconds
+     */
+    public static void aggregatePreCalculatedMetrics(String benchmarkName, MeasurementType type, 
+                                                     long sampleCount, long p50Nanos, long p95Nanos, long p99Nanos) {
+        Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
+        if (benchmarkMetrics != null) {
+            ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
+            if (typeMetrics != null) {
+                // Add sample count
+                typeMetrics.get("sampleCount").addAndGet(sampleCount);
+                
+                // Accumulate weighted percentiles
+                typeMetrics.get("p50_sum").addAndGet(p50Nanos * sampleCount);
+                typeMetrics.get("p95_sum").addAndGet(p95Nanos * sampleCount);
+                typeMetrics.get("p99_sum").addAndGet(p99Nanos * sampleCount);
             }
         }
     }
@@ -147,14 +177,15 @@ public final class BenchmarkMetricsAggregator {
                         Map<String, Object> stepMetrics = new LinkedHashMap<>();
                         stepMetrics.put("sample_count", sampleCount);
 
-                        // Calculate averages from accumulated sums
-                        double p50Ms = (typeMetrics.get("p50_sum").get() / (double) sampleCount) / 1_000_000.0;
-                        double p95Ms = (typeMetrics.get("p95_sum").get() / (double) sampleCount) / 1_000_000.0;
-                        double p99Ms = (typeMetrics.get("p99_sum").get() / (double) sampleCount) / 1_000_000.0;
+                        // Calculate averages from accumulated sums (convert nanos to microseconds)
+                        double p50Us = (typeMetrics.get("p50_sum").get() / (double) sampleCount) / 1_000.0;
+                        double p95Us = (typeMetrics.get("p95_sum").get() / (double) sampleCount) / 1_000.0;
+                        double p99Us = (typeMetrics.get("p99_sum").get() / (double) sampleCount) / 1_000.0;
 
-                        stepMetrics.put("p50_ms", Math.round(p50Ms * 1000) / 1000.0);
-                        stepMetrics.put("p95_ms", Math.round(p95Ms * 1000) / 1000.0);
-                        stepMetrics.put("p99_ms", Math.round(p99Ms * 1000) / 1000.0);
+                        // Round appropriately: integers for >= 1, one decimal for < 1
+                        stepMetrics.put("p50_us", roundMicroseconds(p50Us));
+                        stepMetrics.put("p95_us", roundMicroseconds(p95Us));
+                        stepMetrics.put("p99_us", roundMicroseconds(p99Us));
 
                         benchmarkResults.put(type.name().toLowerCase(), stepMetrics);
                     }
@@ -190,6 +221,24 @@ public final class BenchmarkMetricsAggregator {
             for (ConcurrentHashMap<String, AtomicLong> typeMetrics : benchmarkMetrics.values()) {
                 typeMetrics.values().forEach(counter -> counter.set(0));
             }
+        }
+    }
+    
+    /**
+     * Round microseconds appropriately:
+     * - Values >= 1: round to integer
+     * - Values < 1: round to 1 decimal place
+     * 
+     * @param microseconds value in microseconds
+     * @return appropriately rounded value
+     */
+    private static double roundMicroseconds(double microseconds) {
+        if (microseconds >= 1.0) {
+            // Round to integer for values >= 1
+            return Math.round(microseconds);
+        } else {
+            // Round to 1 decimal place for values < 1
+            return Math.round(microseconds * 10) / 10.0;
         }
     }
 }

@@ -48,7 +48,7 @@ function response(status, headers, body)
         first_failure_detected = true
         
         -- Immediately write failure results and exit - don't wait for done()
-        local results = '{"throughput_rps":0,"latency_p95_ms":0,"latency_p99_ms":0,"errors":1,"connection_errors":0,"fail_fast_triggered":true,"success_rate":0.0}'
+        local results = '{"throughput_rps":0,"latency_p95_us":0,"latency_p99_us":0,"errors":1,"connection_errors":0,"fail_fast_triggered":true,"success_rate":0.0}'
         local file = io.open("/tmp/jwt-validation-results.json", "w")
         if file then
             file:write(results)
@@ -91,18 +91,18 @@ function done(summary, latency, requests)
     local throughput = summary.requests / (summary.duration / 1000000)
     local connection_errors = summary.errors.connect + summary.errors.read + summary.errors.write + summary.errors.timeout
     
-    -- Convert latency from microseconds to milliseconds
-    local latency_p95_ms = latency:percentile(95) / 1000
-    local latency_p99_ms = latency:percentile(99) / 1000
+    -- Keep latency in microseconds (no conversion needed)
+    local latency_p95_us = latency:percentile(95)
+    local latency_p99_us = latency:percentile(99)
     
     print("Results: " .. string.format("%.0f", throughput) .. " req/sec")
-    print("Latency P95: " .. string.format("%.1f", latency_p95_ms) .. "ms")
-    print("Latency P99: " .. string.format("%.1f", latency_p99_ms) .. "ms")
+    print("Latency P95: " .. string.format("%.1f", latency_p95_us) .. "μs")
+    print("Latency P99: " .. string.format("%.1f", latency_p99_us) .. "μs")
     print("Connection Errors: " .. connection_errors)
     
     -- Assume 100% success rate if no fail-fast was triggered
-    local results = string.format('{"throughput_rps":%.0f,"latency_p95_ms":%.1f,"latency_p99_ms":%.1f,"errors":%d,"connection_errors":%d,"fail_fast_triggered":false,"success_rate":100.0}',
-                                  throughput, latency_p95_ms, latency_p99_ms, connection_errors, connection_errors)
+    local results = string.format('{"throughput_rps":%.0f,"latency_p95_us":%.1f,"latency_p99_us":%.1f,"errors":%d,"connection_errors":%d,"fail_fast_triggered":false,"success_rate":100.0}',
+                                  throughput, latency_p95_us, latency_p99_us, connection_errors, connection_errors)
     
     local file = io.open("/tmp/jwt-validation-results.json", "w")
     if file then

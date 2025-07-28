@@ -118,8 +118,8 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
     if command -v jq >/dev/null 2>&1 && [ -s "$RESULTS_DIR/$RESULTS_FILE" ]; then
         jq -r '
             "Throughput: " + (.throughput_rps | floor | tostring) + " req/sec",
-            "Latency P95: " + (.latency_p95_ms | tostring) + "ms", 
-            "Latency P99: " + (.latency_p99_ms | tostring) + "ms",
+            "Latency P95: " + (.latency_p95_us | tostring) + "μs", 
+            "Latency P99: " + (.latency_p99_us | tostring) + "μs",
             "Errors: " + (.errors | tostring)
         ' "$RESULTS_DIR/$RESULTS_FILE" 2>/dev/null || echo "Results file format issue"
     fi
@@ -162,27 +162,27 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
             # Get sum for this step and calculate average
             SUM=$(grep "cui_jwt_validation_duration_seconds_sum{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
             if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ]; then
-                AVG=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
-                echo "  Average: ${AVG}ms"
+                AVG=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.1f", sum * 1000000 / count}' 2>/dev/null || echo "0.0")
+                echo "  Average: ${AVG}μs"
             fi
             
             # Get percentiles
             P50=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.5\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
             if [ -n "$P50" ]; then
-                P50_MS=$(awk -v p50="$P50" 'BEGIN {printf "%.3f", p50 * 1000}' 2>/dev/null || echo "0.000")
-                echo "  P50: ${P50_MS}ms"
+                P50_US=$(awk -v p50="$P50" 'BEGIN {printf "%.1f", p50 * 1000000}' 2>/dev/null || echo "0.0")
+                echo "  P50: ${P50_US}μs"
             fi
             
             P95=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.95\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
             if [ -n "$P95" ]; then
-                P95_MS=$(awk -v p95="$P95" 'BEGIN {printf "%.3f", p95 * 1000}' 2>/dev/null || echo "0.000")
-                echo "  P95: ${P95_MS}ms"
+                P95_US=$(awk -v p95="$P95" 'BEGIN {printf "%.1f", p95 * 1000000}' 2>/dev/null || echo "0.0")
+                echo "  P95: ${P95_US}μs"
             fi
             
             P99=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
             if [ -n "$P99" ]; then
-                P99_MS=$(awk -v p99="$P99" 'BEGIN {printf "%.3f", p99 * 1000}' 2>/dev/null || echo "0.000")
-                echo "  P99: ${P99_MS}ms"
+                P99_US=$(awk -v p99="$P99" 'BEGIN {printf "%.1f", p99 * 1000000}' 2>/dev/null || echo "0.0")
+                echo "  P99: ${P99_US}μs"
             fi
         done
         
@@ -213,28 +213,28 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
             # Start with empty JSON object, add fields as available
             FIRST_FIELD=true
             
-            # Add average_ms field if we have both sum and count
+            # Add average_us field if we have both sum and count
             if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ] && [ "$COUNT" != "0.0" ]; then
-                AVG_JSON=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
-                echo -n "\"average_ms\": $AVG_JSON" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                AVG_JSON=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.1f", sum * 1000000 / count}' 2>/dev/null || echo "0.0")
+                echo -n "\"average_us\": $AVG_JSON" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
             if [ -n "$P50" ]; then
                 [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
-                echo -n "\"p50_ms\": $(awk -v p50="$P50" 'BEGIN {printf "%.3f", p50 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"p50_us\": $(awk -v p50="$P50" 'BEGIN {printf "%.1f", p50 * 1000000}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
             if [ -n "$P95" ]; then
                 [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
-                echo -n "\"p95_ms\": $(awk -v p95="$P95" 'BEGIN {printf "%.3f", p95 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"p95_us\": $(awk -v p95="$P95" 'BEGIN {printf "%.1f", p95 * 1000000}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
             if [ -n "$P99" ]; then
                 [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
-                echo -n "\"p99_ms\": $(awk -v p99="$P99" 'BEGIN {printf "%.3f", p99 * 1000}' 2>/dev/null || echo "0.000")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"p99_us\": $(awk -v p99="$P99" 'BEGIN {printf "%.1f", p99 * 1000000}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
@@ -264,10 +264,10 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
                 
                 echo -n "    \"$step\": " >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 
-                # Add average_ms only if there were actual requests
+                # Add average_us only if there were actual requests
                 if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ] && [ "$COUNT" != "0.0" ]; then
-                    AVG_JSON=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.3f", sum * 1000 / count}' 2>/dev/null || echo "0.000")
-                    echo -n "{\"average_ms\": $AVG_JSON}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                    AVG_JSON=$(awk -v sum="$SUM" -v count="$COUNT" 'BEGIN {printf "%.1f", sum * 1000000 / count}' 2>/dev/null || echo "0.0")
+                    echo -n "{\"average_us\": $AVG_JSON}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 else
                     # No requests for this type, output empty object
                     echo -n "{}" >> "$RESULTS_DIR/jwt-validation-metrics.json"

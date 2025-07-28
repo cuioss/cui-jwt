@@ -66,16 +66,16 @@ public class BenchmarkMetricsCollector {
 
                 // Aggregate each metric
                 Long sampleCount = (Long) stepMetrics.get("sample_count");
-                Double p50Ms = (Double) stepMetrics.get("p50_ms");
-                Double p95Ms = (Double) stepMetrics.get("p95_ms");
-                Double p99Ms = (Double) stepMetrics.get("p99_ms");
+                Double p50Us = (Double) stepMetrics.get("p50_us");
+                Double p95Us = (Double) stepMetrics.get("p95_us");
+                Double p99Us = (Double) stepMetrics.get("p99_us");
 
                 if (sampleCount != null && sampleCount > 0) {
                     // Weight metrics by sample count
                     aggregated.merge("sample_count", sampleCount.doubleValue(), Double::sum);
-                    aggregated.merge("p50_sum", p50Ms * sampleCount, Double::sum);
-                    aggregated.merge("p95_sum", p95Ms * sampleCount, Double::sum);
-                    aggregated.merge("p99_sum", p99Ms * sampleCount, Double::sum);
+                    aggregated.merge("p50_sum", p50Us * sampleCount, Double::sum);
+                    aggregated.merge("p95_sum", p95Us * sampleCount, Double::sum);
+                    aggregated.merge("p99_sum", p99Us * sampleCount, Double::sum);
                 }
             }
         }
@@ -89,9 +89,15 @@ public class BenchmarkMetricsCollector {
             if (totalSamples != null && totalSamples > 0) {
                 Map<String, Object> stepMetrics = new LinkedHashMap<>();
                 stepMetrics.put("sample_count", totalSamples.longValue());
-                stepMetrics.put("p50_ms", Math.round((metrics.get("p50_sum") / totalSamples) * 1000) / 1000.0);
-                stepMetrics.put("p95_ms", Math.round((metrics.get("p95_sum") / totalSamples) * 1000) / 1000.0);
-                stepMetrics.put("p99_ms", Math.round((metrics.get("p99_sum") / totalSamples) * 1000) / 1000.0);
+                
+                // Calculate and round microsecond values
+                double p50 = metrics.get("p50_sum") / totalSamples;
+                double p95 = metrics.get("p95_sum") / totalSamples;
+                double p99 = metrics.get("p99_sum") / totalSamples;
+                
+                stepMetrics.put("p50_us", roundMicroseconds(p50));
+                stepMetrics.put("p95_us", roundMicroseconds(p95));
+                stepMetrics.put("p99_us", roundMicroseconds(p99));
                 steps.put(stepName, stepMetrics);
             }
         }
@@ -112,8 +118,8 @@ public class BenchmarkMetricsCollector {
         }
 
         jwtValidation.put("request_count", totalSampleCount);
-        jwtValidation.put("total_duration_ms", 0.0);
-        jwtValidation.put("average_duration_ms", 0.0);
+        jwtValidation.put("total_duration_us", 0.0);
+        jwtValidation.put("average_duration_us", 0.0);
         httpMetrics.put("jwt_validation", jwtValidation);
         metricsJson.put("http_metrics", httpMetrics);
 
@@ -165,6 +171,24 @@ public class BenchmarkMetricsCollector {
                 sb.append(",");
             }
             sb.append("\n");
+        }
+    }
+    
+    /**
+     * Round microseconds appropriately:
+     * - Values >= 1: round to integer
+     * - Values < 1: round to 1 decimal place
+     * 
+     * @param microseconds value in microseconds
+     * @return appropriately rounded value
+     */
+    private static double roundMicroseconds(double microseconds) {
+        if (microseconds >= 1.0) {
+            // Round to integer for values >= 1
+            return Math.round(microseconds);
+        } else {
+            // Round to 1 decimal place for values < 1
+            return Math.round(microseconds * 10) / 10.0;
         }
     }
 }
