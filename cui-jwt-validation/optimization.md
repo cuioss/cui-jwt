@@ -5,35 +5,40 @@ Always comply with the project rules: [CLAUDE.md]
 
 ## ⚠️ Breaking Changes Notice (Pre-1.0)
 
-Since this library is in pre-1.0 state, these optimizations may introduce breaking changes without deprecation warnings or migration paths or transitionary comments Changes include:
+Since this library is in pre-1.0 state, these optimizations may introduce breaking changes without deprecation warnings or migration paths. Changes include:
 
-- Package reorganization: Moving classes to `de.cuioss.jwt.validation.pipeline.signature`
-- New classes: `ScopedSignatureVerifier`, `CachedProviderSignatureFactory` in pipeline package
-- API modifications in `SignatureTemplateManager`-> move to `de.cuioss.jwt.validation.pipeline.signature`
-- Behavioral changes in thread management and caching strategies
+- Architecture change: `TokenSignatureValidator` becomes a field in `TokenValidator`
+- API modification: `SignatureTemplateManager` constructor now requires `SignatureAlgorithmPreferences`
+- Enhancement: `SignatureTemplateManager` includes Provider bypass logic
+- Package movement: Classes may move to `de.cuioss.jwt.validation.pipeline.signature` if not already there
 
 ## Executive Summary
 
-This document outlines a comprehensive optimization strategy for improving JWT signature validation performance in the CUI-JWT library. The plan focuses on four key optimization areas: thread-safe verifier reuse, provider caching to eliminate contention, virtual thread optimization using Scoped Values, and elimination of virtual thread-incompatible concurrency patterns.
+This document outlines a streamlined optimization strategy for improving JWT signature validation performance in the CUI-JWT library. The plan focuses on the critical architecture fix (making TokenSignatureValidator a field), enhancing SignatureTemplateManager with Provider bypass, and ensuring virtual thread compatibility.
 
 ## 🚀 Actionable Tasks (Priority Order)
 
-### Phase 1: Immediate Actions (Week 1-2)
+### Phase 1: Critical Architecture Fix (MUST DO FIRST)
+- [ ] **Refactor TokenValidator** to make TokenSignatureValidator a field instead of creating new instances
+- [ ] **Update TokenSignatureValidator constructor** to accept SignatureAlgorithmPreferences
+- [ ] **Pass SignatureAlgorithmPreferences** through the initialization chain
+
+### Phase 2: Core Optimizations  
+- [ ] **Enhance SignatureTemplateManager** with Provider bypass logic and SignatureAlgorithmPreferences
+- [ ] **Update SignatureTemplateManager constructor** to accept SignatureAlgorithmPreferences
+- [ ] **Add Provider pre-discovery logic** to SignatureTemplateManager initialization
+- [ ] **Move SignatureTemplateManager** to `de.cuioss.jwt.validation.pipeline.signature` package if not already there
+- [ ] **Add unit tests** for enhanced SignatureTemplateManager
+
+### Phase 3: Virtual Thread Compatibility
 - [ ] **Audit Concurrency Patterns** - Run comprehensive scan for virtual thread anti-patterns
   - [ ] Search for ThreadLocal usage: `grep -r "ThreadLocal" cui-jwt-validation/src/`
   - [ ] Identify synchronized blocks: `grep -r "synchronized" cui-jwt-validation/src/`
   - [ ] Check external dependencies for virtual thread compatibility
   - [ ] Add pinning detection: `-Djdk.tracePinnedThreads=full` to [quarkus-integration-benchmark](../cui-jwt-quarkus-parent/quarkus-integration-benchmark)
-- [ ] **Implement ScopedSignatureVerifier** - Replace current signature management with Scoped Values
-- [ ] **Add unit tests** for new ScopedSignatureVerifier class
-
-### Phase 2: Core Optimizations  
-- [ ] **Implement Provider Caching** - Cache Provider.Service instances per algorithm
 - [ ] **Replace problematic synchronized blocks** with ReentrantLock (Java 21-23 compatibility)
-- [ ] **Add unit tests** for CachedProviderSignatureFactory
-- [ ] **Move SignatureTemplateManager** to `de.cuioss.jwt.validation.pipeline.signature` package
 
-### Phase 3: Integration & Final Validation
+### Phase 4: Integration & Final Validation
 - [ ] **Integration testing** with existing TokenSignatureValidator
 - [ ] **Thread safety validation** under high concurrency using existing JMH benchmarks
 - [ ] **Update package imports** throughout codebase
@@ -47,387 +52,254 @@ This document outlines a comprehensive optimization strategy for improving JWT s
 - **Efficient algorithm mapping**: Switch expressions for O(1) algorithm lookups
 
 ### Performance Bottlenecks Identified
-1. **Provider.getService() contention**: Each Signature.getInstance() call triggers Provider lookups
-2. **Signature instance creation overhead**: Creating new instances for each validation
-3. **Per-request instance creation**: Creating new Signature instances for each validation
+1. **Provider.getService() contention**: Each Signature.getInstance() call triggers Provider lookups with lock contention
+2. **Signature instance creation overhead**: Creating new instances for each validation without any reuse
 
-## Optimization 1: Thread-Safe Verifier Reuse Implementation
-
-### Technical Analysis
-
-#### Auth0's Approach (Thread-Safe JWTVerifier)
-```java
-// Auth0 Pattern - Immutable, thread-safe verifier
-public class JWTVerifier {
-    private final Algorithm algorithm;
-    private final Map<String, Object> claims;
-    
-    // Thread-safe verification method
-    public synchronized DecodedJWT verify(String token) {
-        // Verification logic
-    }
-}
-```
-
-**Pros:**
-- Simple API for users
-- Thread-safe by design
-- Single instance can be shared
-
-**Cons:**
-- Synchronization bottleneck under high concurrency
-- Not optimal for virtual threads
-- Monolithic design
-
-#### Tomitribe's Approach (Immutable Signer)
-```java
-// Tomitribe Pattern - Functional, immutable approach
-public class Signer {
-    private final Key key;
-    private final Algorithm algorithm;
-    
-    // Creates new Signature instance per operation
-    public byte[] sign(byte[] data) {
-        Signature sig = Signature.getInstance(algorithm);
-        sig.initSign((PrivateKey) key);
-        sig.update(data);
-        return sig.sign();
-    }
-}
-```
-
-**Pros:**
-- No shared mutable state
-- Naturally thread-safe
-- Works well with virtual threads
-
-**Cons:**
-- Instance creation overhead
-- No reuse of expensive objects
-
-### Proposed Implementation for CUI-JWT
-
-We'll implement a modern approach using Scoped Values for optimal virtual thread performance:
-
-```java
-/**
- * Signature verifier using Scoped Values for thread-safe operation.
- * Works with both virtual threads and platform threads.
- * Eliminates manual resource management overhead.
- */
-public class ScopedSignatureVerifier {
-    private static final ScopedValue<Signature> SIGNATURE_SCOPE = ScopedValue.newInstance();
-    private final String algorithm;
-    private final SignatureTemplate template;
-    
-    public ScopedSignatureVerifier(String algorithm) {
-        this.algorithm = algorithm;
-        this.template = SignatureTemplate.forAlgorithm(algorithm);
-    }
-    
-    /**
-     * Verifies signature using scoped Signature instance.
-     * Works efficiently with both virtual and platform threads.
-     */
-    public boolean verify(PublicKey key, byte[] data, byte[] signature) {
-        // Create signature instance for this scope
-        Signature sig = template.createSignature();
-        
-        return ScopedValue.where(SIGNATURE_SCOPE, sig)
-            .call(() -> {
-                try {
-                    Signature scopedSig = SIGNATURE_SCOPE.get();
-                    scopedSig.initVerify(key);
-                    scopedSig.update(data);
-                    return scopedSig.verify(signature);
-                } catch (InvalidKeyException | SignatureException e) {
-                    throw new VerificationException("Signature verification failed", e);
-                }
-            });
-        // Automatic cleanup - no explicit resource management needed
-    }
-}
-```
-
-### Implementation Steps
-
-1. **Create ScopedSignatureVerifier class** in `de.cuioss.jwt.validation.pipeline.signature`
-   - Implement Scoped Value-based signature management
-   - Add proper error handling with automatic cleanup
-   - Include unit tests for thread safety
-
-2. **Move and modify SignatureTemplateManager** to `de.cuioss.jwt.validation.pipeline.signature`
-   ```java
-   package de.cuioss.jwt.validation.pipeline;
-   
-   public class SignatureTemplateManager {
-       private final ConcurrentHashMap<String, ScopedSignatureVerifier> verifierCache;
-       
-       public ScopedSignatureVerifier getVerifier(String algorithm) {
-           return verifierCache.computeIfAbsent(algorithm, 
-               alg -> new ScopedSignatureVerifier(alg));
-       }
-   }
-   ```
-
-3. **Update TokenSignatureValidator**
-   ```java
-   private void verifySignature(DecodedJwt jwt, PublicKey key, String algorithm) {
-       ThreadSafeSignatureVerifier verifier = signatureTemplateManager.getVerifier(algorithm);
-       
-       byte[] data = jwt.getDataToVerify().getBytes(StandardCharsets.UTF_8);
-       byte[] signature = convertSignatureIfNeeded(jwt.getSignatureAsDecodedBytes(), algorithm);
-       
-       if (!verifier.verify(key, data, signature)) {
-           throw new TokenValidationException("Invalid signature");
-       }
-   }
-   ```
-
-## Optimization 2: Provider Caching Implementation
+## Optimization 1: Enhanced SignatureTemplateManager with Provider Bypass
 
 ### Technical Analysis
 
-Based on SmallRye JWT issue #179, Provider.getService() is a significant bottleneck:
+Based on SmallRye JWT issue #179, the real bottleneck is the synchronized `Provider.getService()` lookup that occurs inside every `Signature.getInstance()` call:
 
 ```java
-// Current bottleneck in Signature.getInstance()
+// The actual bottleneck - synchronized Provider lookup
 public static Signature getInstance(String algorithm) {
-    // This call causes contention
+    // Internally calls Provider.getService() with global synchronization
     Provider.Service service = Provider.getService("Signature", algorithm);
     return (Signature) service.newInstance();
 }
 ```
 
+### The Real Problem
+- **NOT** the cost of creating Signature instances (they're lightweight)
+- **BUT** the synchronized global Provider registry lookup
+- Under high concurrency, threads block waiting for this lock
+
+### Why NOT to Pool Signature Instances
+- **Signature objects are stateful** - they maintain internal state during operations
+- **Not thread-safe** - cannot be shared between concurrent operations
+- **Lightweight creation** - the actual object instantiation is fast
+- **The bottleneck is elsewhere** - in the Provider lookup, not object creation
+
 ### Proposed Implementation
+
+Enhance the existing SignatureTemplateManager to include Provider bypass:
 
 ```java
 /**
- * Caches Provider.Service instances to eliminate getService() contention.
- * This optimization is based on findings from production deployments showing
- * significant contention on Provider locks.
+ * Enhanced SignatureTemplateManager that bypasses synchronized Provider lookups.
+ * Combines template caching with provider pre-configuration for optimal performance.
  */
-public class CachedProviderSignatureFactory {
-    private static final ConcurrentHashMap<String, Provider.Service> SERVICE_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<>();
+public class SignatureTemplateManager {
+    private static final CuiLogger LOGGER = new CuiLogger(SignatureTemplateManager.class);
+    
+    // Existing template cache
+    private final ConcurrentHashMap<String, SignatureTemplate> signatureTemplateCache;
+    
+    // NEW: Pre-configured providers to bypass synchronized lookup
+    private final Map<String, Provider> algorithmProviders;
     
     /**
-     * Gets a Signature instance using cached Provider.Service and Constructor.
-     * This eliminates the Provider.getService() bottleneck entirely.
+     * Initializes the manager with runtime algorithm preferences.
+     * Pre-discovers providers for configured algorithms to bypass Provider.getService().
      */
-    public static Signature getInstance(String jdkAlgorithm) throws NoSuchAlgorithmException {
-        try {
-            Constructor<?> constructor = CONSTRUCTOR_CACHE.computeIfAbsent(jdkAlgorithm, alg -> {
-                Provider.Service service = SERVICE_CACHE.computeIfAbsent(alg, algorithm -> {
-                    // One-time lookup per algorithm
-                    for (Provider provider : Security.getProviders()) {
-                        Provider.Service svc = provider.getService("Signature", algorithm);
-                        if (svc != null) {
-                            return svc;
-                        }
-                    }
-                    return null;
-                });
-                
-                if (service == null) {
-                    throw new IllegalStateException("No provider for: " + alg);
-                }
-                
-                try {
-                    Class<?> clazz = Class.forName(service.getClassName());
-                    return clazz.getDeclaredConstructor();
-                } catch (Exception e) {
-                    throw new IllegalStateException("Cannot load signature class", e);
-                }
-            });
+    public SignatureTemplateManager(SignatureAlgorithmPreferences preferences) {
+        this.signatureTemplateCache = new ConcurrentHashMap<>();
+        this.algorithmProviders = new HashMap<>();
+        
+        // Pre-discover providers for all configured algorithms
+        for (String jwtAlgorithm : preferences.getPreferredAlgorithms()) {
+            SignatureTemplate template = createSignatureTemplate(jwtAlgorithm);
+            signatureTemplateCache.put(jwtAlgorithm, template);
             
-            constructor.setAccessible(true);
-            return (Signature) constructor.newInstance();
-            
-        } catch (Exception e) {
-            throw new NoSuchAlgorithmException("Algorithm not available: " + jdkAlgorithm, e);
+            // Pre-configure provider for this algorithm
+            String jdkAlgorithm = template.jdkAlgorithm();
+            for (Provider provider : Security.getProviders()) {
+                if (provider.getService("Signature", jdkAlgorithm) != null) {
+                    algorithmProviders.put(jdkAlgorithm, provider);
+                    LOGGER.debug("Pre-configured provider %s for algorithm %s", 
+                                provider.getName(), jdkAlgorithm);
+                    break;
+                }
+            }
         }
     }
+    
+    /**
+     * Creates a Signature instance using pre-configured provider to bypass
+     * synchronized Provider.getService() lookup.
+     */
+    Signature getSignatureInstance(String algorithm) {
+        SignatureTemplate template = signatureTemplateCache.computeIfAbsent(
+            algorithm, this::createSignatureTemplate);
+        
+        try {
+            // Use pre-configured provider if available
+            Provider provider = algorithmProviders.get(template.jdkAlgorithm());
+            Signature signature = (provider != null) 
+                ? Signature.getInstance(template.jdkAlgorithm(), provider)
+                : Signature.getInstance(template.jdkAlgorithm());
+                
+            // Apply PSS parameters if needed
+            if (template.pssParams() != null) {
+                signature.setParameter(template.pssParams());
+            }
+            
+            return signature;
+            
+        } catch (NoSuchAlgorithmException e) {
+            throw new UnsupportedAlgorithmException(
+                "Algorithm no longer supported: " + template.jdkAlgorithm(), e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new UnsupportedAlgorithmException(
+                "Invalid PSS parameters: " + template.jdkAlgorithm(), e);
+        }
+    }
+    
+    // Existing SignatureTemplate record and createSignatureTemplate method remain unchanged
 }
 ```
 
 ### Implementation Steps
 
-1. **Create CachedProviderSignatureFactory** in `de.cuioss.jwt.validation.pipeline.signature`
-   - Implement provider service caching
-   - Add constructor caching for direct instantiation
-   - Include monitoring for cache effectiveness
+1. **Enhance SignatureTemplateManager** in `de.cuioss.jwt.validation.pipeline.signature`
+   - Modify constructor to accept SignatureAlgorithmPreferences
+   - Add Provider pre-discovery logic in constructor
+   - Update getSignatureInstance() to use pre-configured providers
+   - Maintain backward compatibility for existing template logic
 
-2. **Integrate with SignatureTemplate**
+2. **Performance monitoring**
    ```java
-   private record SignatureTemplate(String jdkAlgorithm, PSSParameterSpec pssParams) {
-       Signature createSignature() {
-           try {
-               // Use cached provider factory
-               Signature signature = CachedProviderSignatureFactory.getInstance(jdkAlgorithm);
-               if (pssParams != null) {
-                   signature.setParameter(pssParams);
-               }
-               return signature;
-           } catch (Exception e) {
-               // Log error and rethrow
-               throw new SignatureException("Failed to create cached signature", e);
-           }
+   public class ProviderBypassMetrics {
+       private final AtomicLong optimizedCreations = new AtomicLong();
+       private final AtomicLong fallbackCreations = new AtomicLong();
+       private final Map<String, AtomicLong> algorithmCounts = new ConcurrentHashMap<>();
+       
+       public double getOptimizationRate() {
+           long total = optimizedCreations.get() + fallbackCreations.get();
+           return total > 0 ? (double) optimizedCreations.get() / total : 0.0;
        }
    }
    ```
 
-3. **Add monitoring and metrics**
-   ```java
-   public class ProviderCacheMetrics {
-       private final AtomicLong cacheHits = new AtomicLong();
-       private final AtomicLong cacheMisses = new AtomicLong();
-       private final AtomicLong errors = new AtomicLong();
-       
-       public void recordCacheHit() { cacheHits.incrementAndGet(); }
-       public void recordCacheMiss() { cacheMisses.incrementAndGet(); }
-       public void recordError() { errors.incrementAndGet(); }
-   }
-   ```
-
-## Optimization 3: Scoped Values for Thread-Safe Signature Management
+## Optimization 2: Simplified Architecture Without Unnecessary Complexity
 
 ### Technical Analysis
 
-Scoped Values (JEP 429, standard since Java 21) provide a modern approach that works efficiently with both virtual and platform threads:
+After careful analysis, we've determined that:
 
-#### Thread Compatibility
-- **Virtual Threads**: Optimal performance due to lightweight scoped value binding
-- **Platform Threads**: Works correctly with traditional thread pools
-- **Mixed Environments**: Can handle both thread types seamlessly
-- **No Thread Detection**: Implementation doesn't need to detect thread type
+1. **Scoped Values are unnecessary** for Signature instances because:
+   - Signature objects are NOT thread-safe and cannot be shared
+   - They're lightweight to create (the bottleneck is Provider lookup, not instantiation)
+   - No expensive resources to manage or cleanup required
+   - Each operation needs a fresh instance anyway
 
-#### Performance Characteristics
-- **Virtual Threads**: Near-zero overhead for scope creation/cleanup
-- **Platform Threads**: Similar performance to ThreadLocal but with better memory management
-- **Automatic Cleanup**: No manual resource management needed for either thread type
+2. **The real optimization** is simply:
+   - Make TokenSignatureValidator a field (not recreated on every validation)
+   - Enhance SignatureTemplateManager with Provider bypass
+   - That's it - no complex patterns needed
 
-```java
-// Scoped Values for virtual thread optimization
-static final ScopedValue<Signature> SIGNATURE = ScopedValue.newInstance();
+### Clean Implementation
 
-// Usage pattern - automatic cleanup
-ScopedValue.where(SIGNATURE, signature)
-           .call(() -> {
-               Signature sig = SIGNATURE.get();
-               // Use signature in this scope
-               return sig.verify(data);
-           });
-```
-
-### Proposed Implementation
+The TokenSignatureValidator simply uses the enhanced SignatureTemplateManager:
 
 ```java
-/**
- * Signature verifier using Scoped Values for optimal thread performance.
- * Works with both virtual threads and platform threads.
- * Requires Java 24+ for Scoped Values support.
- */
-public class ScopedSignatureVerifier {
-    private static final ScopedValue<Signature> SIGNATURE_VALUE = ScopedValue.newInstance();
-    private final SignatureTemplate template;
-    private final String algorithm;
+public class TokenSignatureValidator {
+    private final JwksLoader jwksLoader;
+    private final SecurityEventCounter securityEventCounter;
+    private final SignatureTemplateManager templateManager;
     
-    public ScopedSignatureVerifier(String algorithm) {
-        this.algorithm = algorithm;
-        this.template = SignatureTemplateManager.getTemplate(algorithm);
+    public TokenSignatureValidator(JwksLoader jwksLoader, 
+                                   SecurityEventCounter securityEventCounter,
+                                   SignatureAlgorithmPreferences algorithmPreferences) {
+        this.jwksLoader = jwksLoader;
+        this.securityEventCounter = securityEventCounter;
+        // Initialize enhanced template manager with Provider bypass
+        this.templateManager = new SignatureTemplateManager(algorithmPreferences);
     }
     
-    /**
-     * Execute signature operation with scoped value binding.
-     * Works efficiently with both virtual and platform threads.
-     */
-    public <T> T executeWithSignature(SignatureOperation<T> operation, PublicKey key) 
-            throws Exception {
-        // Create fresh signature instance for this scope
-        Signature signature = template.createSignature();
+    public void validateSignature(DecodedJwt jwt) throws TokenValidationException {
+        String algorithm = jwt.getHeader().getAlgorithm();
+        PublicKey publicKey = jwksLoader.getKey(jwt.getHeader().getKeyId());
         
-        // Bind signature to this virtual thread's scope
-        return ScopedValue.where(SIGNATURE_VALUE, signature)
-            .call(() -> {
-                Signature sig = SIGNATURE_VALUE.get();
-                sig.initVerify(key);
-                return operation.execute(sig);
-            });
+        try {
+            // Get optimized Signature instance (bypasses Provider lookup)
+            Signature signature = templateManager.getSignatureInstance(algorithm);
+            
+            // Standard signature verification - no complex patterns needed
+            signature.initVerify(publicKey);
+            signature.update(jwt.getDataToVerify().getBytes(StandardCharsets.UTF_8));
+            
+            byte[] signatureBytes = convertSignatureIfNeeded(
+                jwt.getSignatureAsDecodedBytes(), algorithm);
+            
+            if (!signature.verify(signatureBytes)) {
+                securityEventCounter.increment(INVALID_SIGNATURE);
+                throw new TokenValidationException("Invalid signature");
+            }
+            
+        } catch (InvalidKeyException | SignatureException e) {
+            securityEventCounter.increment(SIGNATURE_VERIFICATION_ERROR);
+            throw new TokenValidationException("Signature verification failed", e);
+        }
     }
-} 
- ```
+}
 
 ### Implementation Steps
 
-1. **Implement Scoped Value patterns**
+1. **Update TokenValidator** to make TokenSignatureValidator a field:
    ```java
-   public class ScopedSignaturePatterns {
-       private static final ScopedValue<Signature> SIGNATURE = ScopedValue.newInstance();
+   public class TokenValidator {
+       private final TokenSignatureValidator signatureValidator;
        
-       /**
-        * Pattern 1: Simple operation with fresh signature
-        */
-       public static boolean verifyToken(String token, PublicKey key, String algorithm) 
-               throws Exception {
-           Signature sig = Signature.getInstance(algorithm);
-           return ScopedValue.where(SIGNATURE, sig)
-               .call(() -> {
-                   Signature s = SIGNATURE.get();
-                   s.initVerify(key);
-                   s.update(token.getBytes(StandardCharsets.UTF_8));
-                   return s.verify(extractSignature(token));
-               });
-       }
-       
-       /**
-        * Pattern 2: Reusable carrier for batch operations
-        */
-       public static class BatchProcessor {
-           private final ScopedValue.Carrier carrier;
-           
-           public BatchProcessor(Signature signature) {
-               this.carrier = ScopedValue.where(SIGNATURE, signature);
-           }
-           
-           public void processBatch(List<Operation> operations) {
-               carrier.run(() -> {
-                   Signature sig = SIGNATURE.get();
-                   operations.forEach(op -> op.execute(sig));
-               });
-           }
-       }
-   }
-   ```
-
-3. **Update TokenSignatureValidator integration**
-   ```java
-   package de.cuioss.jwt.validation.pipeline;
-   
-   public class TokenSignatureValidator {
-       private final ScopedSignatureVerifier verifier;
-       
-       public TokenSignatureValidator(String algorithm) {
-           this.verifier = new ScopedSignatureVerifier(algorithm);
-       }
-       
-       private void verifySignature(DecodedJwt jwt, PublicKey key) throws Exception {
-           boolean isValid = verifier.executeWithSignature(
-               signature -> {
-                   signature.update(jwt.getDataBytes());
-                   return signature.verify(jwt.getSignatureBytes());
-               },
-               key
+       public TokenValidator(IssuerConfig issuerConfig, 
+                            SignatureAlgorithmPreferences algorithmPreferences,
+                            SecurityEventCounter securityEventCounter) {
+           // Initialize once in constructor
+           this.signatureValidator = new TokenSignatureValidator(
+               issuerConfig.getJwksLoader(), 
+               securityEventCounter,
+               algorithmPreferences
            );
-           
-           if (!isValid) {
-               throw new TokenValidationException("Invalid signature");
-           }
        }
+       
+       // In validate method (line 425), replace:
+       // TokenSignatureValidator signatureValidator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+       // With:
+       signatureValidator.validateSignature(decodedJwt);
    }
    ```
 
-## Optimization 4: Virtual Thread Concurrency Pattern Audit & Migration
+2. **Enhance SignatureTemplateManager** with Provider bypass logic (as shown in Optimization 1)
+
+3. **Key Architecture Changes**:
+   - **TokenSignatureValidator** becomes a field in TokenValidator (created once)
+   - **SignatureTemplateManager** enhanced with Provider bypass capability
+   - No complex patterns like Scoped Values needed
+   - Simple, clean, and effective
+
+### Why This Architecture Change is Critical
+
+The current implementation creates a new `TokenSignatureValidator` instance for every validation (line 425 in TokenValidator.java). This completely defeats any caching or optimization because:
+- SignatureTemplateManager's cache is recreated every time
+- No Provider lookup optimization can be effective
+- Every validation pays the full cost of Provider.getService() synchronization
+
+By making `TokenSignatureValidator` a field in `TokenValidator`, we enable:
+- One-time Provider discovery at startup
+- Effective caching of SignatureTemplate instances
+- Amortization of initialization costs across all validations
+
+### Key Benefits of Simplified Approach
+
+1. **Eliminates Provider Contention**: Enhanced SignatureTemplateManager bypasses synchronized lookups
+2. **Architecture Fix**: TokenSignatureValidator as a field enables effective caching
+3. **Virtual Thread Optimized**: No ThreadLocal, no unnecessary complexity
+4. **Clean and Simple**: Straightforward implementation without overengineering
+5. **Measurable Performance Gains**: Addresses the 73.7% signature validation bottleneck
+6. **Respects Runtime Configuration**: Uses SignatureAlgorithmPreferences instead of hardcoded algorithms
+
+## Optimization 3: Virtual Thread Concurrency Pattern Audit & Migration
 
 ### Technical Analysis
 
@@ -503,8 +375,8 @@ Traditional connection pools like HikariCP may have internal synchronization tha
    -Djdk.tracePinnedThreads=full
    ```
 
-4. **Migration Checklist**
-   - [ ] **Replace ThreadLocal patterns** with Scoped Values (already done)
+3. **Migration Checklist**
+   - [ ] **Audit for ThreadLocal patterns** (none found - ✅ good)
    - [ ] **Convert synchronized methods** to ReentrantLock where needed
    - [ ] **Audit external dependencies** for virtual thread compatibility
    - [ ] **Add pinning detection** in development/testing environments
@@ -536,6 +408,23 @@ Traditional connection pools like HikariCP may have internal synchronization tha
 ### Integration with Existing Optimizations
 
 This audit complements the other optimizations:
-- **Optimization 1**: Ensures verifier reuse patterns are virtual thread compatible
-- **Optimization 2**: Validates provider caching doesn't introduce pinning
-- **Optimization 3**: Scoped Values are inherently virtual thread optimized
+- **Optimization 1**: Enhanced SignatureTemplateManager eliminates Provider contention
+- **Optimization 2**: Simplified architecture avoids overengineering and complexity
+- Both ensure clean patterns that work well with virtual threads
+
+## Summary
+
+This optimization plan addresses the critical performance bottleneck in JWT signature validation, which currently consumes 73.7% of validation time. The streamlined approach includes:
+1. **Enhanced SignatureTemplateManager** with Provider bypass to eliminate the synchronized getService() bottleneck
+2. **Architecture fix** making TokenSignatureValidator a field instead of recreating it on every validation
+3. **Virtual thread compatibility** audit to ensure optimal performance across all patterns
+
+Key outcomes:
+- **Critical architecture fix**: TokenSignatureValidator must be a field, not recreated on every validation
+- **Eliminated contention**: Provider.getService() bottleneck bypassed through pre-configured providers
+- **Simplified solution**: No unnecessary complexity like Scoped Values or object pooling
+- **Virtual thread ready**: Clean patterns that work well with both platform and virtual threads
+- **Runtime configuration**: Respects SignatureAlgorithmPreferences instead of hardcoded algorithms
+- **Production-ready**: Based on real-world findings from SmallRye JWT issue #179
+
+The implementation is clean, simple, and effective. By avoiding overengineering and focusing on the real bottlenecks, we achieve significant performance improvements with minimal code changes. **The architecture change in Phase 1 is mandatory** - without it, all other optimizations are ineffective.
