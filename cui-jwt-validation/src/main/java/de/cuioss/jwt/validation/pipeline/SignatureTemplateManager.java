@@ -23,7 +23,6 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Enhanced manager for caching and creating Signature instances with Provider bypass optimization.
@@ -62,7 +61,7 @@ final class SignatureTemplateManager {
      * Key: algorithm name (e.g., "ES256", "RS256")
      * Value: Template Signature instance for that algorithm
      */
-    private final ConcurrentHashMap<String, SignatureTemplate> signatureTemplateCache = new ConcurrentHashMap<>();
+    private final Map<String, SignatureTemplate> signatureTemplateCache;
 
     /**
      * Pre-configured providers to bypass synchronized Provider.getService() lookup.
@@ -78,24 +77,28 @@ final class SignatureTemplateManager {
      * @param algorithmPreferences the signature algorithm preferences for provider optimization
      */
     SignatureTemplateManager(SignatureAlgorithmPreferences algorithmPreferences) {
-        this.algorithmProviders = new HashMap<>();
+        Map<String, Provider> providers = new HashMap<>();
+        Map<String, SignatureTemplate> templates = new HashMap<>();
 
         // Pre-discover providers for all configured algorithms
         for (String jwtAlgorithm : algorithmPreferences.getPreferredAlgorithms()) {
             SignatureTemplate template = createSignatureTemplate(jwtAlgorithm);
-            signatureTemplateCache.put(jwtAlgorithm, template);
+            templates.put(jwtAlgorithm, template);
 
             // Pre-configure provider for this algorithm
             String jdkAlgorithm = template.jdkAlgorithm();
             for (Provider provider : Security.getProviders()) {
                 if (provider.getService("Signature", jdkAlgorithm) != null) {
-                    algorithmProviders.put(jdkAlgorithm, provider);
+                    providers.put(jdkAlgorithm, provider);
                     LOGGER.debug("Pre-configured provider %s for algorithm %s",
                             provider.getName(), jdkAlgorithm);
                     break;
                 }
             }
         }
+
+        this.signatureTemplateCache = Map.copyOf(templates);
+        this.algorithmProviders = Map.copyOf(providers);
     }
 
     /**
@@ -109,7 +112,10 @@ final class SignatureTemplateManager {
      */
     Signature getSignatureInstance(String algorithm) {
         // Use cached template to create signature instance
-        SignatureTemplate template = signatureTemplateCache.computeIfAbsent(algorithm, this::createSignatureTemplate);
+        SignatureTemplate template = signatureTemplateCache.get(algorithm);
+        if (template == null) {
+            template = createSignatureTemplate(algorithm);
+        }
 
         return template.createSignature(algorithmProviders);
     }
