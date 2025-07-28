@@ -38,10 +38,10 @@ public class OptimizedEcdsaConverter {
 }
 ```
 
-#### 1.2 Reduce Cryptographic Operation Overhead
-- The actual RSA/ECDSA verify operations are CPU-intensive and cause spikes
-- Consider batching verifications where possible
-- Investigate hardware acceleration options (native crypto libraries)
+#### 1.2 Accept Cryptographic Operation Reality
+- The actual RSA/ECDSA verify operations are inherently CPU-intensive
+- These operations cannot be optimized further within JCA constraints
+- Focus optimization efforts on reducing overhead around crypto operations
 
 #### 1.3 Memory Allocation Reduction
 **Location**: `TokenSignatureValidator.java:170,174,185`
