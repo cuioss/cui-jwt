@@ -1,8 +1,8 @@
-# JWT Validation Performance Optimization Implementation Plan
+# JWT Validation Performance Optimization Tasks
 
-## Executive Summary
+## Current Performance Issues
 
-Following the successful resolution of setup contamination issues in benchmark testing, the JWT validation pipeline has revealed its true performance bottlenecks. This implementation plan addresses the three critical p99 latency spikes identified through JFR profiling:
+Following the setup isolation fix, true performance bottlenecks are revealed:
 
 1. **Signature Validation**: 17.9ms p99 spikes (262x p50 ratio)
 2. **Token Building**: 3.7ms p99 spikes (335x p50 ratio)  
@@ -10,234 +10,154 @@ Following the successful resolution of setup contamination issues in benchmark t
 
 **Current Baseline**: 102,956 ops/s throughput with p99 latencies reaching 32.3ms
 
-## Critical Performance Issues Identified
+## Prioritized Optimization Tasks
 
-### 1. Signature Validation Bottleneck (Highest Priority)
+### 1. Signature Validation Optimization (Highest Priority)
 
 **Location**: `TokenSignatureValidator.java:189-201` - `verifySignature()` method
-**Impact**: 17.9ms p99 (68μs p50) - 262x variance ratio
-**Root Cause Analysis**:
+**Issue**: Each validation calls `signatureTemplateManager.getSignatureInstance(algorithm)` which may have internal synchronization
 
-- **JCA Provider Contention**: Despite pre-cached `TokenSignatureValidator` instances, each validation still calls `signatureTemplateManager.getSignatureInstance(algorithm)` 
-- **Cryptographic Operations**: RSA verification operations inherently expensive under high concurrency
-- **Memory Allocation**: New `Signature` instances created per validation request
-- **ECDSA Conversion Overhead**: Format conversion from IEEE P1363 to ASN.1/DER for ECDSA algorithms
+**Alternative Optimization Approaches**:
+- **Provider Pre-resolution**: Cache JCA Provider instances to avoid Provider.getService() lookups
+- **Algorithm String Interning**: Ensure algorithm strings are interned to speed up map lookups
+- **ECDSA Conversion Optimization**: Pre-compute ECDSA signature format conversion tables
+- **Direct Provider Access**: Use provider-specific APIs to bypass JCA abstraction layer
 
-**Technical Hotspots**:
 ```java
-// Line 189-191: High-cost operations per request
-Signature verifier = signatureTemplateManager.getSignatureInstance(algorithm);
-verifier.initVerify(publicKey);
-verifier.update(dataBytes);
+// Example: Direct provider access for common algorithms
+private static final Provider SUN_RSA_SIGN = Security.getProvider("SunRsaSign");
+private static final Provider SUN_EC = Security.getProvider("SunEC");
+
+// In verifySignature method - use direct provider
+Signature verifier = algorithm.startsWith("RS") || algorithm.startsWith("PS") 
+    ? Signature.getInstance(algorithm, SUN_RSA_SIGN)
+    : Signature.getInstance(algorithm, SUN_EC);
 ```
 
-**Optimization Strategy**:
-1. **Signature Instance Pooling**: Implement per-algorithm object pools for `Signature` instances
-2. **Result Caching**: Cache signature verification results with token signature as key
-3. **Algorithm-Specific Optimizations**: Pre-initialize signature templates per issuer
-4. **Native Crypto Libraries**: Evaluate BouncyCastle or native crypto providers
+### 2. Token Building Field-Based Architecture (High Priority)
 
-### 2. Token Building Performance Issues (High Priority)
+**Location**: `TokenBuilder.java:110-136` - `extractClaims()` method  
+**Issue**: New `TokenBuilder` instance created per request in `TokenValidator.java:232,254`
 
-**Location**: `TokenBuilder.java:110-136` - `extractClaims()` method
-**Impact**: 3.7ms p99 (11μs p50) - 335x variance ratio
-**Root Cause Analysis**:
+**Task**: Cache TokenBuilder Instances (Check for Sharing Opportunities)
+- Check if claim mappers are actually different per issuer
+- If claim mappers are identical across issuers, use single shared instance
+- Otherwise, cache per unique claim mapper configuration, not per issuer
 
-- **Map Allocation**: New `HashMap<String, ClaimValue>` created per token (line 111)
-- **Claim Mapper Lookups**: Repeated `issuerConfig.getClaimMappers().containsKey(key)` calls (line 116)
-- **ClaimName Resolution**: `ClaimName.fromString(key)` performs expensive lookups (line 122)
-- **Object Creation**: Multiple `ClaimValue` instances per token
-
-**Technical Hotspots**:
 ```java
-// Line 111: New HashMap allocation per token
-Map<String, ClaimValue> claims = new HashMap<>();
+// In TokenValidator constructor - deduplicate by configuration
+Map<Map<String, ClaimMapper>, TokenBuilder> uniqueBuilders = new HashMap<>();
+Map<String, TokenBuilder> tokenBuilders = new HashMap<>();
 
-// Line 116-117: Repeated map lookups and object creation
-ClaimMapper customMapper = issuerConfig.getClaimMappers().get(key);
-ClaimValue claimValue = customMapper.map(jsonObject, key);
+for (IssuerConfig issuerConfig : issuerConfigs) {
+    Map<String, ClaimMapper> mappers = issuerConfig.getClaimMappers();
+    TokenBuilder builder = uniqueBuilders.computeIfAbsent(
+        mappers, 
+        k -> new TokenBuilder(issuerConfig)
+    );
+    tokenBuilders.put(issuerConfig.getIssuerIdentifier(), builder);
+}
+this.tokenBuilders = Map.copyOf(tokenBuilders);
 ```
 
-**Optimization Strategy**:
-1. **Object Pooling**: Pool `HashMap` instances and `ClaimValue` objects
-2. **Claim Mapper Caching**: Pre-resolve claim mappers during issuer config initialization
-3. **Bulk Claim Processing**: Process standard claims in batches rather than individually
-4. **Immutable Claim Maps**: Pre-build claim structures for common token patterns
-
-### 3. Claims Validation Latency (Medium Priority)
+### 3. Claims Validation Field-Based Architecture (High Priority)
 
 **Location**: `TokenClaimValidator.java:118-127` - `validate()` method
-**Impact**: 1.3ms p99 (6μs p50) - 217x variance ratio
-**Root Cause Analysis**:
+**Issue**: New `TokenClaimValidator` instance created per request in `TokenValidator.java:492`
 
-- **Validator Delegation**: Sequential calls to 5 different validator instances
-- **Audience Validation**: Set operations in `AudienceValidator` potentially expensive
-- **Time-based Validation**: `ExpirationValidator` operations with clock skew calculations
-- **Mandatory Claims Validation**: Iterative claim existence checks
+**Task**: Cache TokenClaimValidator Instances (Deduplicate by Configuration)
+- TokenClaimValidator uses expectedAudience and expectedClientId from IssuerConfig
+- Cache by unique combination of these values, not necessarily per issuer
+- Share instances where audience/clientId requirements are identical
 
-**Technical Hotspots**:
 ```java
-// Lines 120-124: Sequential validator calls
-mandatoryClaimsValidator.validateMandatoryClaims(token);
-audienceValidator.validateAudience(token);
-authorizedPartyValidator.validateAuthorizedParty(token);
-expirationValidator.validateNotBefore(token, context);
-expirationValidator.validateNotExpired(token, context);
+// In TokenValidator constructor - deduplicate by validation requirements
+record ValidationConfig(Set<String> expectedAudience, Set<String> expectedClientId) {}
+Map<ValidationConfig, TokenClaimValidator> uniqueValidators = new HashMap<>();
+Map<String, TokenClaimValidator> claimValidators = new HashMap<>();
+
+for (IssuerConfig issuerConfig : issuerConfigs) {
+    ValidationConfig config = new ValidationConfig(
+        issuerConfig.getExpectedAudience(),
+        issuerConfig.getExpectedClientId()
+    );
+    TokenClaimValidator validator = uniqueValidators.computeIfAbsent(
+        config,
+        k -> new TokenClaimValidator(issuerConfig, securityEventCounter)
+    );
+    claimValidators.put(issuerConfig.getIssuerIdentifier(), validator);
+}
+this.claimValidators = Map.copyOf(claimValidators);
 ```
 
-**Optimization Strategy**:
-1. **Validation Pipelining**: Combine related validations to reduce method call overhead
-2. **Lazy Validation**: Skip expensive validations when earlier ones fail
-3. **Audience Set Optimization**: Use optimized data structures for audience lookup
-4. **Cached Validation Context**: Extend context caching beyond time to include validation state
+### 4. Header Validation Field-Based Architecture (Medium Priority)
 
-## Implementation Roadmap
+**Location**: `TokenValidator.java:428` - `validateTokenHeader()` method
+**Issue**: New `TokenHeaderValidator` instance created per request
 
-### Phase 1: Signature Validation Optimization (1-2 weeks)
+**Task**: Cache TokenHeaderValidator Instances
+- Add `TokenHeaderValidator` as field per issuer
+- Follow same pattern as other validators
 
-#### 1.1 Signature Instance Pooling
-**Target**: Reduce 70% of signature validation p99 spikes
-**Implementation**:
+### 5. Claim Processing Optimization (Medium Priority)
+
+**Location**: `TokenBuilder.java:111-136` - `extractClaims()` method
+**Issue**: Repeated map lookups and claim name resolution per token
+
+**Task**: Pre-resolve Claim Mappers
+- Cache claim mapper lookups during TokenBuilder construction
+- Pre-build ClaimName resolution maps
+- Eliminate `ClaimName.fromString(key)` expensive lookups
+
 ```java
-// Add to TokenSignatureValidator
-private final Map<String, ObjectPool<Signature>> signaturePoolsPerAlgorithm;
+// In TokenBuilder constructor
+private final Map<String, ClaimMapper> resolvedMappers;
+private final Map<String, ClaimName> resolvedClaimNames;
 
-// Pool configuration per algorithm
-ObjectPool<Signature> rsaPool = new GenericObjectPool<>(
-    new SignaturePooledObjectFactory("SHA256withRSA"), 
-    poolConfig.setMaxTotal(100).setMaxIdle(20)
-);
-```
-
-#### 1.2 Signature Result Caching
-**Target**: 30-50% reduction in cryptographic operations
-**Implementation**:
-```java
-// 5-minute TTL cache for signature results
-Cache<String, SignatureResult> signatureCache = Caffeine.newBuilder()
-    .maximumSize(10_000)
-    .expireAfterWrite(5, TimeUnit.MINUTES)
-    .build();
-```
-
-#### 1.3 Algorithm-Specific Pre-initialization
-**Target**: Eliminate template lookup overhead
-**Implementation**:
-- Pre-create signature templates per issuer during `TokenValidator` construction
-- Cache algorithm-provider combinations in immutable maps
-
-### Phase 2: Token Building Optimization (1 week)
-
-#### 2.1 Object Pool Implementation
-**Target**: Reduce 60% of token building p99 spikes
-**Implementation**:
-```java
-// Pooled HashMap for claims
-private final ObjectPool<Map<String, ClaimValue>> claimMapPool;
-
-// Pooled ClaimValue instances by type
-private final Map<Class<?>, ObjectPool<ClaimValue>> claimValuePools;
-```
-
-#### 2.2 Claim Processing Pipeline
-**Target**: Batch process standard claims
-**Implementation**:
-- Pre-resolve claim mappers during issuer configuration
-- Implement claim extraction pipelines for common token patterns
-- Use array-based claim processing for standard JWT claims
-
-### Phase 3: Claims Validation Optimization (1 week)
-
-#### 3.1 Validation Pipeline Consolidation
-**Target**: Reduce method call overhead by 40%
-**Implementation**:
-```java
-// Single validation method with early termination
-public TokenContent validateEfficient(TokenContent token, ValidationContext context) {
-    // Combine related validations into single operations
-    validateClaimsAndAudience(token);
-    validateTimeBasedClaims(token, context);
-    return token;
+public TokenBuilder(IssuerConfig issuerConfig) {
+    // Pre-resolve all claim mappers and names during construction
+    this.resolvedMappers = preResolveMappers(issuerConfig);
+    this.resolvedClaimNames = preResolveClaimNames();
 }
 ```
 
-#### 3.2 Audience Validation Optimization
-**Target**: Optimize set operations
-**Implementation**:
-- Use `HashSet` instead of generic `Set` implementations
-- Pre-compute audience validation state during issuer config
+### 6. Enhanced Validation Context (Medium Priority)
 
-### Phase 4: System-Level Optimizations (1 week)
+**Location**: `TokenValidator.java:490` - `validateTokenClaims()` method
+**Current Issue**: ValidationContext only caches current time, but could cache more validation state
 
-#### 4.1 Memory Management
-**Target**: Reduce GC pressure causing p99 spikes
-**Implementation**:
-- Object lifecycle analysis and pooling strategy
-- Escape analysis for stack allocation opportunities
-- G1GC tuning for low-latency requirements
+**Task**: Extend ValidationContext for Pipeline State
+- Store already validated information during token processing
+- Pass context through entire pipeline to avoid repeated work
+- Cache expensive computations like algorithm lookups, key resolutions
 
-#### 4.2 JIT Compilation Optimization
-**Target**: Reduce JIT-induced latency spikes
-**Implementation**:
-- Warmup strategy for critical paths
-- Method inlining optimization hints
-- Profile-guided optimization setup
-
-## Success Metrics and Validation
-
-### Performance Targets
-| Metric | Current | Target | Improvement |
-|--------|---------|--------|-------------|
-| **Signature Validation P99** | 17.9ms | <2ms | 90% reduction |
-| **Token Building P99** | 3.7ms | <500μs | 86% reduction |
-| **Claims Validation P99** | 1.3ms | <200μs | 85% reduction |
-| **Complete Validation P99** | 32.3ms | <5ms | 85% reduction |
-| **Overall Throughput** | 102,956 ops/s | >150k ops/s | 45% increase |
-
-### Validation Methodology
-1. **Benchmark Verification**: Run both `-Pbenchmark` and `-Pbenchmark-jfr` profiles
-2. **Load Testing**: Sustained load testing with realistic JWT payloads
-3. **Memory Analysis**: JFR-based allocation profiling
-4. **Regression Testing**: Automated performance regression detection
-
-### Rollback Strategy
-- Maintain feature flags for each optimization phase
-- Performance baseline preservation for comparison
-- Automated rollback triggers on regression detection
-
-## Risk Assessment
-
-### High Risk
-- **Signature Caching Security**: Ensure cache invalidation doesn't create security vulnerabilities
-- **Object Pool Thread Safety**: Verify thread-safe pool operations under high concurrency
-
-### Medium Risk  
-- **Memory Consumption**: Object pools may increase baseline memory usage
-- **Complexity Increase**: Additional code paths may introduce bugs
-
-### Mitigation Strategies
-- Comprehensive security review of caching mechanisms
-- Load testing with memory pressure scenarios
-- Gradual rollout with monitoring at each phase
-
-## Monitoring and Observability
-
-### JFR Event Integration
 ```java
-@Name("cui.jwt.validation.signature.pool")
-@Category("CUI JWT Validation")
-public class SignaturePoolEvent extends Event {
-    @Label("Algorithm") public String algorithm;
-    @Label("Pool Hit Rate") public double hitRate;
-    @Label("Active Instances") public int activeCount;
+// Enhanced ValidationContext
+public class ValidationContext {
+    private final OffsetDateTime currentTime;
+    private final long clockSkewSeconds;
+    
+    // Add pipeline state caching
+    private String resolvedAlgorithm;
+    private PublicKey resolvedKey;
+    private Map<String, Object> validationCache = new HashMap<>();
+    
+    public void cacheValidation(String key, Object result) {
+        validationCache.put(key, result);
+    }
+    
+    public Optional<Object> getCachedValidation(String key) {
+        return Optional.ofNullable(validationCache.get(key));
+    }
 }
 ```
 
-### Key Metrics
-- Signature validation latency distribution (p50, p95, p99)
-- Object pool utilization and hit rates  
-- Token building allocation rate
-- Claims validation throughput
-- Overall pipeline latency consistency
+### 7. Algorithm String Optimization (Low Priority)
 
-This implementation plan directly addresses the root causes of the identified p99 latency spikes while maintaining the security and correctness of JWT validation. The phased approach allows for incremental optimization with validation at each step.
+**Location**: Throughout signature validation and header validation
+**Issue**: String comparisons and lookups for algorithm names
+
+**Task**: Intern Algorithm Strings
+- Use String.intern() for all algorithm constants
+- Convert to enum where possible for faster comparisons
+- Pre-compute algorithm type flags (isRSA, isECDSA, etc.)
