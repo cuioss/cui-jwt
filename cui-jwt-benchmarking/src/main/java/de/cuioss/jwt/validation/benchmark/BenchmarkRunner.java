@@ -46,6 +46,8 @@ public class BenchmarkRunner {
         Options options = new OptionsBuilder()
                 // Include all benchmark classes in this package
                 .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\..+Benchmark")
+                // Exclude JFR benchmarks (they should only run with -Pbenchmark-jfr profile)
+                .exclude("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.UnifiedJfrBenchmark")
                 // Set number of forks
                 .forks(BenchmarkOptionsHelper.getForks(1))
                 // Set warmup iterations
