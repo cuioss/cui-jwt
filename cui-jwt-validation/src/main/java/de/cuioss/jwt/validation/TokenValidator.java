@@ -154,7 +154,7 @@ public class TokenValidator {
 
     /**
      * Immutable map of signature validators per issuer to avoid creating new instances on every validation.
-     * This optimization addresses the critical performance bottleneck identified in optimization.md.
+     * This optimization addresses the critical performance bottleneck in JWT signature validation.
      * Key: issuer identifier, Value: cached TokenSignatureValidator instance
      */
     private final Map<String, TokenSignatureValidator> signatureValidators;
