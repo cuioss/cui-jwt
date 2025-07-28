@@ -442,17 +442,9 @@ public class TokenValidator {
             // Get pre-created TokenSignatureValidator for this issuer
             String issuerIdentifier = issuerConfig.getIssuerIdentifier();
             TokenSignatureValidator signatureValidator = signatureValidators.get(issuerIdentifier);
-            
+
             if (signatureValidator == null) {
                 throw new IllegalStateException("No signature validator found for issuer: " + issuerIdentifier);
-            }
-            
-            // Measure JWKS operations separately if loader access involves network/cache operations  
-            if (recordMetrics) {
-                long jwksStartTime = System.nanoTime();
-                // The validator lookup is now just a Map.get() operation - very fast
-                long jwksEndTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.JWKS_OPERATIONS, jwksEndTime - jwksStartTime);
             }
 
             // Use the cached signature validator for validation
