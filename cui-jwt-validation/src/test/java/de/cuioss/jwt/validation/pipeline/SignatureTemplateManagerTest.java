@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,7 +40,7 @@ class SignatureTemplateManagerTest {
 
     @BeforeEach
     void setUp() {
-        manager = new SignatureTemplateManager();
+        manager = new SignatureTemplateManager(new SignatureAlgorithmPreferences());
     }
 
     @ParameterizedTest

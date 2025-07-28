@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.util.EcdsaSignatureFormatConverter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
@@ -69,15 +70,18 @@ public class TokenSignatureValidator {
     private final SignatureTemplateManager signatureTemplateManager;
 
     /**
-     * Constructs a TokenSignatureValidator with the specified JwksLoader and SecurityEventCounter.
+     * Constructs a TokenSignatureValidator with the specified JwksLoader, SecurityEventCounter, and SignatureAlgorithmPreferences.
      *
-     * @param jwksLoader           the JWKS loader to use for key retrieval
-     * @param securityEventCounter the counter for security events
+     * @param jwksLoader             the JWKS loader to use for key retrieval
+     * @param securityEventCounter   the counter for security events
+     * @param algorithmPreferences   the signature algorithm preferences for provider optimization
      */
-    public TokenSignatureValidator(@NonNull JwksLoader jwksLoader, @NonNull SecurityEventCounter securityEventCounter) {
+    public TokenSignatureValidator(@NonNull JwksLoader jwksLoader,
+            @NonNull SecurityEventCounter securityEventCounter,
+            @NonNull SignatureAlgorithmPreferences algorithmPreferences) {
         this.jwksLoader = jwksLoader;
         this.securityEventCounter = securityEventCounter;
-        this.signatureTemplateManager = new SignatureTemplateManager();
+        this.signatureTemplateManager = new SignatureTemplateManager(algorithmPreferences);
     }
 
     /**

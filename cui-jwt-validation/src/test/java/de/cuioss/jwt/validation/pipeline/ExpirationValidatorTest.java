@@ -146,10 +146,10 @@ class ExpirationValidatorTest {
         // Use a fixed time for both the context and the token to avoid timing issues
         OffsetDateTime fixedTime = OffsetDateTime.now();
         OffsetDateTime exactBoundaryNotBefore = fixedTime.plusSeconds(60);
-        
+
         // Create a context with the fixed time
         ValidationContext testContext = new ValidationContext(fixedTime, 60);
-        
+
         tokenHolder.withClaim(ClaimName.NOT_BEFORE.getName(),
                 ClaimValue.forDateTime(String.valueOf(exactBoundaryNotBefore.toEpochSecond()), exactBoundaryNotBefore));
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");

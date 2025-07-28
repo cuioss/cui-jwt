@@ -15,31 +15,33 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
+import java.security.*;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manager for caching and creating Signature instances to improve JWT validation performance.
+ * Enhanced manager for caching and creating Signature instances with Provider bypass optimization.
  * <p>
- * This class addresses the performance bottleneck in ES256 validation by caching signature
- * templates and reusing them instead of calling expensive {@code Signature.getInstance()}
- * operations on every validation.
- * <p>
- * The manager uses a template pattern where:
+ * This class addresses the critical performance bottleneck in JWT signature validation by:
  * <ul>
- *   <li>Templates are cached per algorithm (ES256, RS256, etc.)</li>
- *   <li>Each request gets a fresh Signature instance created from the template</li>
- *   <li>PSS parameters are properly applied for PS256/PS384/PS512 algorithms</li>
+ *   <li>Caching signature templates to avoid expensive algorithm name mapping</li>
+ *   <li>Pre-discovering JDK providers to bypass synchronized {@code Provider.getService()} calls</li>
+ *   <li>Using runtime algorithm preferences for provider optimization</li>
  * </ul>
  * <p>
- * This optimization provides significant performance improvements:
+ * The enhanced manager provides dramatic performance improvements by eliminating the synchronized
+ * global Provider registry lookup that occurs inside every {@code Signature.getInstance()} call.
+ * Under high concurrency, this eliminates thread blocking on Provider lock contention.
+ * <p>
+ * Performance improvements:
  * <ul>
+ *   <li>Eliminates Provider.getService() contention under high concurrency</li>
  *   <li>37% throughput improvement for ES256</li>
  *   <li>12% latency reduction for ES256</li>
  *   <li>Thread-safe caching with ConcurrentHashMap</li>
@@ -63,15 +65,42 @@ final class SignatureTemplateManager {
     private final ConcurrentHashMap<String, SignatureTemplate> signatureTemplateCache = new ConcurrentHashMap<>();
 
     /**
-     * Constructor for creating a new SignatureTemplateManager instance.
+     * Pre-configured providers to bypass synchronized Provider.getService() lookup.
+     * Key: JDK algorithm name (e.g., "SHA256withECDSA", "RSASSA-PSS")
+     * Value: Provider instance that supports the algorithm
      */
-    SignatureTemplateManager() {
-        // Instance-based manager
+    private final Map<String, Provider> algorithmProviders;
+
+    /**
+     * Constructor that initializes the manager with runtime algorithm preferences.
+     * Pre-discovers providers for configured algorithms to bypass Provider.getService().
+     *
+     * @param algorithmPreferences the signature algorithm preferences for provider optimization
+     */
+    SignatureTemplateManager(SignatureAlgorithmPreferences algorithmPreferences) {
+        this.algorithmProviders = new HashMap<>();
+
+        // Pre-discover providers for all configured algorithms
+        for (String jwtAlgorithm : algorithmPreferences.getPreferredAlgorithms()) {
+            SignatureTemplate template = createSignatureTemplate(jwtAlgorithm);
+            signatureTemplateCache.put(jwtAlgorithm, template);
+
+            // Pre-configure provider for this algorithm
+            String jdkAlgorithm = template.jdkAlgorithm();
+            for (Provider provider : Security.getProviders()) {
+                if (provider.getService("Signature", jdkAlgorithm) != null) {
+                    algorithmProviders.put(jdkAlgorithm, provider);
+                    LOGGER.debug("Pre-configured provider %s for algorithm %s",
+                            provider.getName(), jdkAlgorithm);
+                    break;
+                }
+            }
+        }
     }
 
     /**
-     * Gets a Signature instance for the specified algorithm using cached templates for performance.
-     * This method significantly improves ES256 performance by avoiding expensive getInstance() calls.
+     * Gets a Signature instance for the specified algorithm using cached templates and pre-configured providers.
+     * This method significantly improves performance by avoiding expensive getInstance() calls and Provider lookups.
      *
      * @param algorithm the algorithm to use (e.g., "ES256", "RS256", "PS256")
      * @return a fresh Signature instance for the algorithm
@@ -82,7 +111,7 @@ final class SignatureTemplateManager {
         // Use cached template to create signature instance
         SignatureTemplate template = signatureTemplateCache.computeIfAbsent(algorithm, this::createSignatureTemplate);
 
-        return template.createSignature();
+        return template.createSignature(algorithmProviders);
     }
 
     /**
@@ -125,7 +154,7 @@ final class SignatureTemplateManager {
     }
 
     /**
-     * Template holder for JDK algorithm names and PSS parameters.
+     * Template holder for JDK algorithm names and PSS parameters with Provider bypass optimization.
      * <p>
      * This record caches the expensive-to-determine JDK algorithm name and pre-created
      * PSS parameters to avoid repeated algorithm mapping and parameter object creation.
@@ -137,15 +166,21 @@ final class SignatureTemplateManager {
     private record SignatureTemplate(String jdkAlgorithm, PSSParameterSpec pssParams) {
 
         /**
-         * Creates a new Signature instance using the cached algorithm name and parameters.
-         * This avoids the overhead of algorithm name mapping and PSS parameter creation.
+         * Creates a new Signature instance using the cached algorithm name and pre-configured provider.
+         * This avoids the overhead of algorithm name mapping, PSS parameter creation, and Provider lookups.
          *
+         * @param algorithmProviders map of pre-configured providers to bypass synchronized Provider.getService()
          * @return a fresh Signature instance
          * @throws UnsupportedAlgorithmException if the algorithm is no longer supported or PSS parameters are invalid
          */
-        Signature createSignature() {
+        Signature createSignature(Map<String, Provider> algorithmProviders) {
             try {
-                Signature signature = Signature.getInstance(jdkAlgorithm);
+                // Use pre-configured provider if available to bypass synchronized Provider.getService()
+                Provider provider = algorithmProviders.get(jdkAlgorithm);
+                Signature signature = (provider != null)
+                        ? Signature.getInstance(jdkAlgorithm, provider)
+                        : Signature.getInstance(jdkAlgorithm);
+
                 if (pssParams != null) {
                     signature.setParameter(pssParams);
                 }

@@ -26,6 +26,7 @@ import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
@@ -205,7 +206,7 @@ class TokenClaimValidatorEdgeCaseTest {
             issuerConfig.initSecurityEventCounter(securityEventCounter);
 
             // Create a TokenSignatureValidator with a custom JwksLoader that simulates network failure
-            var signatureValidator = new TokenSignatureValidator(new FailingJwksKeyLoader(), securityEventCounter);
+            var signatureValidator = new TokenSignatureValidator(new FailingJwksKeyLoader(), securityEventCounter, new SignatureAlgorithmPreferences());
 
             // Create a valid validation
             TokenContent validToken = createValidToken();

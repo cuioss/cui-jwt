@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation;
 
-import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -24,6 +23,7 @@ import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

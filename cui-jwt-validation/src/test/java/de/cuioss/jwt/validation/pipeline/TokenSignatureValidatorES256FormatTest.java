@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
@@ -54,7 +55,7 @@ class TokenSignatureValidatorES256FormatTest {
                 InMemoryKeyMaterialHandler.DEFAULT_KEY_ID,
                 securityEventCounter
         );
-        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
     }
 
     @Test

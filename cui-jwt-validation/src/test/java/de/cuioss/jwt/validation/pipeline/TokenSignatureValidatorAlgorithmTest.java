@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.JwtTokenTamperingUtil;
@@ -63,7 +64,7 @@ class TokenSignatureValidatorAlgorithmTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
     }
 
     /**

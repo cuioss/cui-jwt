@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
@@ -58,7 +59,7 @@ class TokenSignatureValidatorEdgeCasesTest {
         JwksLoader jwksLoader = JwksLoaderFactory.createInMemoryLoader(jwksContent);
         jwksLoader.initJWKSLoader(securityEventCounter);
 
-        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
     }
 
     @Test

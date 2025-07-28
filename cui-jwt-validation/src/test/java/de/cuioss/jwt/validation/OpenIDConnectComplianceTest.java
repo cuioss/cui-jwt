@@ -70,7 +70,7 @@ class OpenIDConnectComplianceTest {
 
         // Create validation factory
         tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
-        
+
         // Initialize validation context
         validationContext = new ValidationContext(60);
     }

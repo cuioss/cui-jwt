@@ -23,6 +23,7 @@ import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
@@ -90,7 +91,7 @@ class TokenSignatureValidatorTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
 
         // Validate the signature - should not throw an exception
         assertDoesNotThrow(() -> validator.validateSignature(decodedJwt));
@@ -128,7 +129,7 @@ class TokenSignatureValidatorTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
 
         // Validate the signature - should throw an exception
         TokenValidationException exception = assertThrows(TokenValidationException.class,
@@ -163,7 +164,7 @@ class TokenSignatureValidatorTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
 
         // Validate the signature - should throw an exception
         TokenValidationException exception = assertThrows(TokenValidationException.class,
@@ -195,7 +196,7 @@ class TokenSignatureValidatorTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
 
         // Kid validation is now a precondition - should be validated by TokenHeaderValidator first
         IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -225,7 +226,7 @@ class TokenSignatureValidatorTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
 
         // Validate the signature - should throw an exception
         TokenValidationException exception = assertThrows(TokenValidationException.class,
@@ -288,7 +289,7 @@ class TokenSignatureValidatorTest {
         };
 
         // Create the validator with the custom JwksLoader and security event counter
-        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        TokenSignatureValidator validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
 
         // Validate the signature - should throw an exception
         TokenValidationException exception = assertThrows(TokenValidationException.class,

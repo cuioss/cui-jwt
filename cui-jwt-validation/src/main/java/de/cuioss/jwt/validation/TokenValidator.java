@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
@@ -44,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Main entry point for creating and validating JWT tokens.
@@ -152,6 +152,13 @@ public class TokenValidator {
     @NonNull
     private final TokenValidatorMonitor performanceMonitor;
 
+    /**
+     * Thread-safe map of signature validators per issuer to avoid creating new instances on every validation.
+     * This optimization addresses the critical performance bottleneck identified in optimization.md.
+     * Key: issuer identifier, Value: cached TokenSignatureValidator instance
+     */
+    private final ConcurrentHashMap<String, TokenSignatureValidator> signatureValidators;
+
 
     /**
      * Private constructor used by builder.
@@ -191,6 +198,10 @@ public class TokenValidator {
 
         // Let the IssuerConfigResolver handle all issuer config processing
         this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
+
+        // Initialize thread-safe map for lazy-created TokenSignatureValidator instances
+        // This eliminates the performance bottleneck of creating new instances on every validation
+        this.signatureValidators = new ConcurrentHashMap<>();
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
@@ -417,19 +428,42 @@ public class TokenValidator {
     private void validateTokenSignature(DecodedJwt decodedJwt, IssuerConfig issuerConfig, boolean recordMetrics) {
         long startTime = recordMetrics ? System.nanoTime() : 0;
         try {
-            JwksLoader jwksLoader = issuerConfig.getJwksLoader();
-
-            // Measure JWKS operations separately if loader access involves network/cache operations
+            // Get or create cached TokenSignatureValidator for this issuer
+            String issuerIdentifier = issuerConfig.getIssuerIdentifier();
+            
+            // Measure JWKS operations separately if loader access involves network/cache operations  
+            TokenSignatureValidator signatureValidator;
             if (recordMetrics) {
                 long jwksStartTime = System.nanoTime();
-                TokenSignatureValidator signatureValidator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+                signatureValidator = signatureValidators.computeIfAbsent(
+                        issuerIdentifier,
+                        issuerId -> {
+                            LOGGER.debug("Creating new TokenSignatureValidator for issuer: %s", issuerId);
+                            return new TokenSignatureValidator(
+                                    issuerConfig.getJwksLoader(),
+                                    securityEventCounter,
+                                    issuerConfig.getAlgorithmPreferences()
+                            );
+                        }
+                );
                 long jwksEndTime = System.nanoTime();
                 performanceMonitor.recordMeasurement(MeasurementType.JWKS_OPERATIONS, jwksEndTime - jwksStartTime);
-                signatureValidator.validateSignature(decodedJwt);
             } else {
-                TokenSignatureValidator signatureValidator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
-                signatureValidator.validateSignature(decodedJwt);
+                signatureValidator = signatureValidators.computeIfAbsent(
+                        issuerIdentifier,
+                        issuerId -> {
+                            LOGGER.debug("Creating new TokenSignatureValidator for issuer: %s", issuerId);
+                            return new TokenSignatureValidator(
+                                    issuerConfig.getJwksLoader(),
+                                    securityEventCounter,
+                                    issuerConfig.getAlgorithmPreferences()
+                            );
+                        }
+                );
             }
+
+            // Use the cached signature validator for validation
+            signatureValidator.validateSignature(decodedJwt);
         } finally {
             if (recordMetrics) {
                 long endTime = System.nanoTime();
@@ -470,7 +504,7 @@ public class TokenValidator {
             // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
             // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
             ValidationContext context = new ValidationContext(60);
-            
+
             TokenClaimValidator claimValidator = new TokenClaimValidator(issuerConfig, securityEventCounter);
             TokenContent validatedContent = claimValidator.validate(token, context);
             return (T) validatedContent;
