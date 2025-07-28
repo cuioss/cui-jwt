@@ -40,10 +40,10 @@ import lombok.NonNull;
 import lombok.Singular;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Main entry point for creating and validating JWT tokens.
@@ -153,11 +153,11 @@ public class TokenValidator {
     private final TokenValidatorMonitor performanceMonitor;
 
     /**
-     * Thread-safe map of signature validators per issuer to avoid creating new instances on every validation.
+     * Immutable map of signature validators per issuer to avoid creating new instances on every validation.
      * This optimization addresses the critical performance bottleneck identified in optimization.md.
      * Key: issuer identifier, Value: cached TokenSignatureValidator instance
      */
-    private final ConcurrentHashMap<String, TokenSignatureValidator> signatureValidators;
+    private final Map<String, TokenSignatureValidator> signatureValidators;
 
 
     /**
@@ -199,9 +199,20 @@ public class TokenValidator {
         // Let the IssuerConfigResolver handle all issuer config processing
         this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
 
-        // Initialize thread-safe map for lazy-created TokenSignatureValidator instances
+        // Initialize immutable map of TokenSignatureValidator instances for each issuer
         // This eliminates the performance bottleneck of creating new instances on every validation
-        this.signatureValidators = new ConcurrentHashMap<>();
+        Map<String, TokenSignatureValidator> validators = new HashMap<>();
+        for (IssuerConfig issuerConfig : issuerConfigs) {
+            String issuerIdentifier = issuerConfig.getIssuerIdentifier();
+            TokenSignatureValidator validator = new TokenSignatureValidator(
+                    issuerConfig.getJwksLoader(),
+                    this.securityEventCounter,
+                    issuerConfig.getAlgorithmPreferences()
+            );
+            validators.put(issuerIdentifier, validator);
+            LOGGER.debug("Pre-created TokenSignatureValidator for issuer: %s", issuerIdentifier);
+        }
+        this.signatureValidators = Collections.unmodifiableMap(validators);
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
@@ -428,38 +439,20 @@ public class TokenValidator {
     private void validateTokenSignature(DecodedJwt decodedJwt, IssuerConfig issuerConfig, boolean recordMetrics) {
         long startTime = recordMetrics ? System.nanoTime() : 0;
         try {
-            // Get or create cached TokenSignatureValidator for this issuer
+            // Get pre-created TokenSignatureValidator for this issuer
             String issuerIdentifier = issuerConfig.getIssuerIdentifier();
+            TokenSignatureValidator signatureValidator = signatureValidators.get(issuerIdentifier);
+            
+            if (signatureValidator == null) {
+                throw new IllegalStateException("No signature validator found for issuer: " + issuerIdentifier);
+            }
             
             // Measure JWKS operations separately if loader access involves network/cache operations  
-            TokenSignatureValidator signatureValidator;
             if (recordMetrics) {
                 long jwksStartTime = System.nanoTime();
-                signatureValidator = signatureValidators.computeIfAbsent(
-                        issuerIdentifier,
-                        issuerId -> {
-                            LOGGER.debug("Creating new TokenSignatureValidator for issuer: %s", issuerId);
-                            return new TokenSignatureValidator(
-                                    issuerConfig.getJwksLoader(),
-                                    securityEventCounter,
-                                    issuerConfig.getAlgorithmPreferences()
-                            );
-                        }
-                );
+                // The validator lookup is now just a Map.get() operation - very fast
                 long jwksEndTime = System.nanoTime();
                 performanceMonitor.recordMeasurement(MeasurementType.JWKS_OPERATIONS, jwksEndTime - jwksStartTime);
-            } else {
-                signatureValidator = signatureValidators.computeIfAbsent(
-                        issuerIdentifier,
-                        issuerId -> {
-                            LOGGER.debug("Creating new TokenSignatureValidator for issuer: %s", issuerId);
-                            return new TokenSignatureValidator(
-                                    issuerConfig.getJwksLoader(),
-                                    securityEventCounter,
-                                    issuerConfig.getAlgorithmPreferences()
-                            );
-                        }
-                );
             }
 
             // Use the cached signature validator for validation
