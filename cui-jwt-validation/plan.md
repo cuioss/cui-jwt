@@ -10,169 +10,169 @@ Following the setup isolation fix, true performance bottlenecks are revealed:
 
 **Current Baseline**: 102,956 ops/s throughput with p99 latencies reaching 32.3ms
 
-## Prioritized Optimization Tasks
+## Prioritized Optimization Tasks with Action Items
 
-### 1. Signature Validation Optimization (Highest Priority)
+### 1. Signature Validation Optimization 
 
 **Location**: `TokenSignatureValidator.java:189-201` - `verifySignature()` method
-**Real Issue**: The 17.9ms p99 spikes are from actual cryptographic operations and ECDSA conversion overhead
+**Real Issue**: The 17.9ms p99 spikes are from actual cryptographic operations that cannot be optimized further within JCA constraints
 
-**Remaining Optimization Opportunities**:
+**Analysis**: 
+- RSA/ECDSA signature verification is inherently CPU-intensive
+- SignatureTemplateManager already optimizes provider lookups
+- ECDSA conversion overhead is necessary for JCA compatibility
 
-#### 1.1 ECDSA Signature Format Conversion Optimization
-**Location**: `EcdsaSignatureFormatConverter.java` - called for every ECDSA signature
-**Issue**: Complex ASN.1/DER encoding performed on every ECDSA verification
-
-```java
-// Pre-compute common ECDSA conversions
-public class OptimizedEcdsaConverter {
-    // Cache for common R,S values in P1363 -> DER format
-    private static final Map<ByteArrayWrapper, byte[]> CONVERSION_CACHE = 
-        new ConcurrentHashMap<>(10000);
-    
-    public static byte[] toJCACompatibleSignature(byte[] ieeeP1363, String algo) {
-        ByteArrayWrapper key = new ByteArrayWrapper(ieeeP1363);
-        return CONVERSION_CACHE.computeIfAbsent(key, 
-            k -> performConversion(ieeeP1363, algo));
-    }
-}
-```
-
-#### 1.2 Accept Cryptographic Operation Reality
-- The actual RSA/ECDSA verify operations are inherently CPU-intensive
-- These operations cannot be optimized further within JCA constraints
-- Focus optimization efforts on reducing overhead around crypto operations
-
-#### 1.3 Memory Allocation Reduction
-**Location**: `TokenSignatureValidator.java:170,174,185`
-- `decodedJwt.getDataToVerify()` creates new String
-- `getSignatureAsDecodedBytes()` may allocate new arrays
-- Reduce temporary object creation in hot path
+**Decision**: Accept that signature validation is the primary bottleneck and focus optimization efforts on other areas
 
 ### 2. Token Building Field-Based Architecture (High Priority)
 
-**Location**: `TokenBuilder.java:110-136` - `extractClaims()` method  
-**Issue**: New `TokenBuilder` instance created per request in `TokenValidator.java:232,254`
+**Location**: `TokenBuilder.java` - instance created per request at `TokenValidator.java:232,254`
+**Issue**: New `TokenBuilder` instance created for every token validation
+**Impact**: 3.7ms p99 spikes from object allocation
 
-**Task**: Cache TokenBuilder Instances (Check for Sharing Opportunities)
-- Check if claim mappers are actually different per issuer
-- If claim mappers are identical across issuers, use single shared instance
-- Otherwise, cache per unique claim mapper configuration, not per issuer
-
-```java
-// In TokenValidator constructor - deduplicate by configuration
-Map<Map<String, ClaimMapper>, TokenBuilder> uniqueBuilders = new HashMap<>();
-Map<String, TokenBuilder> tokenBuilders = new HashMap<>();
-
-for (IssuerConfig issuerConfig : issuerConfigs) {
-    Map<String, ClaimMapper> mappers = issuerConfig.getClaimMappers();
-    TokenBuilder builder = uniqueBuilders.computeIfAbsent(
-        mappers, 
-        k -> new TokenBuilder(issuerConfig)
-    );
-    tokenBuilders.put(issuerConfig.getIssuerIdentifier(), builder);
-}
-this.tokenBuilders = Map.copyOf(tokenBuilders);
-```
+**Action Items:**
+- [ ] Add `tokenBuilders` field to `TokenValidator`:
+  ```java
+  private final Map<String, TokenBuilder> tokenBuilders;
+  ```
+- [ ] In `TokenValidator` constructor, initialize token builders:
+  ```java
+  Map<String, TokenBuilder> builders = new HashMap<>();
+  for (IssuerConfig issuerConfig : issuerConfigs) {
+      builders.put(
+          issuerConfig.getIssuerIdentifier(), 
+          new TokenBuilder(issuerConfig)
+      );
+  }
+  this.tokenBuilders = Map.copyOf(builders);
+  ```
+- [ ] Modify `createAccessToken` method to use cached builder:
+  ```java
+  TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
+  return cachedBuilder.createAccessToken(decodedJwt);
+  ```
+- [ ] Modify `createIdToken` method to use cached builder
+- [ ] Update `processTokenPipeline` method signature to accept cached builder
+- [ ] Write unit tests to verify thread safety of shared TokenBuilder instances
+- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
+- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
+- [ ] Commit changes to git
 
 ### 3. Claims Validation Field-Based Architecture (High Priority)
 
-**Location**: `TokenClaimValidator.java:118-127` - `validate()` method
-**Issue**: New `TokenClaimValidator` instance created per request in `TokenValidator.java:492`
+**Location**: `TokenClaimValidator.java` - instance created per request at `TokenValidator.java:492`
+**Issue**: New `TokenClaimValidator` instance created for every token validation
+**Impact**: 1.3ms p99 spikes from object allocation
 
-**Task**: Cache TokenClaimValidator Instances (Deduplicate by Configuration)
-- TokenClaimValidator uses expectedAudience and expectedClientId from IssuerConfig
-- Cache by unique combination of these values, not necessarily per issuer
-- Share instances where audience/clientId requirements are identical
-
-```java
-// In TokenValidator constructor - deduplicate by validation requirements
-record ValidationConfig(Set<String> expectedAudience, Set<String> expectedClientId) {}
-Map<ValidationConfig, TokenClaimValidator> uniqueValidators = new HashMap<>();
-Map<String, TokenClaimValidator> claimValidators = new HashMap<>();
-
-for (IssuerConfig issuerConfig : issuerConfigs) {
-    ValidationConfig config = new ValidationConfig(
-        issuerConfig.getExpectedAudience(),
-        issuerConfig.getExpectedClientId()
-    );
-    TokenClaimValidator validator = uniqueValidators.computeIfAbsent(
-        config,
-        k -> new TokenClaimValidator(issuerConfig, securityEventCounter)
-    );
-    claimValidators.put(issuerConfig.getIssuerIdentifier(), validator);
-}
-this.claimValidators = Map.copyOf(claimValidators);
-```
+**Action Items:**
+- [ ] Add `claimValidators` field to `TokenValidator`:
+  ```java
+  private final Map<String, TokenClaimValidator> claimValidators;
+  ```
+- [ ] In `TokenValidator` constructor, initialize claim validators:
+  ```java
+  Map<String, TokenClaimValidator> validators = new HashMap<>();
+  for (IssuerConfig issuerConfig : issuerConfigs) {
+      validators.put(
+          issuerConfig.getIssuerIdentifier(),
+          new TokenClaimValidator(issuerConfig, securityEventCounter)
+      );
+  }
+  this.claimValidators = Map.copyOf(validators);
+  ```
+- [ ] Modify `validateTokenClaims` method to use cached validator:
+  ```java
+  TokenClaimValidator cachedValidator = claimValidators.get(issuerConfig.getIssuerIdentifier());
+  TokenContent validatedContent = cachedValidator.validate(token, context);
+  ```
+- [ ] Remove line creating new TokenClaimValidator instance
+- [ ] Write unit tests to verify thread safety of shared validators
+- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
+- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
+- [ ] Commit changes to git
 
 ### 4. Header Validation Field-Based Architecture (Medium Priority)
 
 **Location**: `TokenValidator.java:428` - `validateTokenHeader()` method
 **Issue**: New `TokenHeaderValidator` instance created per request
 
-**Task**: Cache TokenHeaderValidator Instances
-- Add `TokenHeaderValidator` as field per issuer
-- Follow same pattern as other validators
+**Action Items:**
+- [ ] Add `headerValidators` field to `TokenValidator`:
+  ```java
+  private final Map<String, TokenHeaderValidator> headerValidators;
+  ```
+- [ ] In `TokenValidator` constructor, initialize header validators:
+  ```java
+  Map<String, TokenHeaderValidator> validators = new HashMap<>();
+  for (IssuerConfig issuerConfig : issuerConfigs) {
+      validators.put(
+          issuerConfig.getIssuerIdentifier(),
+          new TokenHeaderValidator(issuerConfig, securityEventCounter)
+      );
+  }
+  this.headerValidators = Map.copyOf(validators);
+  ```
+- [ ] Modify `validateTokenHeader` method to use cached validator:
+  ```java
+  TokenHeaderValidator cachedValidator = headerValidators.get(issuerConfig.getIssuerIdentifier());
+  cachedValidator.validate(decodedJwt);
+  ```
+- [ ] Remove line creating new TokenHeaderValidator instance
+- [ ] Write unit tests to verify thread safety
+- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
+- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
+- [ ] Commit changes to git
 
 ### 5. Claim Processing Optimization (Medium Priority)
 
 **Location**: `TokenBuilder.java:111-136` - `extractClaims()` method
-**Issue**: Repeated map lookups and claim name resolution per token
+**Issue**: Map lookups and claim resolution per token
 
-**Task**: Pre-resolve Claim Mappers
-- Cache claim mapper lookups during TokenBuilder construction
-- Pre-build ClaimName resolution maps
-- Eliminate `ClaimName.fromString(key)` expensive lookups
+**Analysis**: 
+- `ClaimName.fromString()` already uses `ConcurrentHashMap` cache (line 273)
+- Main overhead is from repeated `issuerConfig.getClaimMappers()` calls and map lookups
 
-```java
-// In TokenBuilder constructor
-private final Map<String, ClaimMapper> resolvedMappers;
-private final Map<String, ClaimName> resolvedClaimNames;
+**Action Items:**
+- [ ] Add `customMappers` field to `TokenBuilder`:
+  ```java
+  private final Map<String, ClaimMapper> customMappers;
+  ```
+- [ ] Update `TokenBuilder` constructor to cache custom mappers:
+  ```java
+  public TokenBuilder(IssuerConfig issuerConfig) {
+      this.issuerConfig = issuerConfig;
+      this.customMappers = issuerConfig.getClaimMappers() != null 
+          ? Map.copyOf(issuerConfig.getClaimMappers()) 
+          : Map.of();
+  }
+  ```
+- [ ] Modify `extractClaims` method to use cached mappers:
+  ```java
+  ClaimMapper customMapper = customMappers.get(key);
+  if (customMapper != null) {
+      claims.put(key, customMapper.map(jsonObject, key));
+  } else {
+      // Continue with ClaimName resolution...
+  }
+  ```
+- [ ] Remove redundant null check and map access in extractClaims
+- [ ] Write unit tests to verify correct claim extraction
+- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
+- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
+- [ ] Commit changes to git
 
-public TokenBuilder(IssuerConfig issuerConfig) {
-    // Pre-resolve all claim mappers and names during construction
-    this.resolvedMappers = preResolveMappers(issuerConfig);
-    this.resolvedClaimNames = preResolveClaimNames();
-}
-```
+### 6. Enhanced Validation Context (Low Priority)
 
-### 6. Enhanced Validation Context (Medium Priority)
+**Location**: `ValidationContext.java` - currently only caches time
+**Current State**: Already caches current time to avoid multiple `OffsetDateTime.now()` calls
+**Analysis**: Further enhancement may not provide significant benefit
 
-**Location**: `TokenValidator.java:490` - `validateTokenClaims()` method
-**Current Issue**: ValidationContext only caches current time, but could cache more validation state
+**Decision**: No action required - current implementation is sufficient
 
-**Task**: Extend ValidationContext for Pipeline State
-- Store already validated information during token processing
-- Pass context through entire pipeline to avoid repeated work
-- Cache expensive computations like algorithm lookups, key resolutions
+## Summary
 
-```java
-// Enhanced ValidationContext
-public class ValidationContext {
-    private final OffsetDateTime currentTime;
-    private final long clockSkewSeconds;
-    
-    // Add pipeline state caching
-    private String resolvedAlgorithm;
-    private PublicKey resolvedKey;
-    private Map<String, Object> validationCache = new HashMap<>();
-    
-    public void cacheValidation(String key, Object result) {
-        validationCache.put(key, result);
-    }
-    
-    public Optional<Object> getCachedValidation(String key) {
-        return Optional.ofNullable(validationCache.get(key));
-    }
-}
-```
+The optimization plan focuses on:
+1. **Field-based architecture** - Eliminate object allocation overhead for validators and builders (High Priority)
+2. **Claim mapper caching** - Minor optimization to reduce repeated map lookups (Medium Priority)
 
-### 7. Algorithm String Optimization (Low Priority)
-
-**Location**: Throughout signature validation and header validation
-**Issue**: String comparisons and lookups for algorithm names
-
-**Task**: Intern Algorithm Strings
-- Use String.intern() for all algorithm constants
-- Convert to enum where possible for faster comparisons
-- Pre-compute algorithm type flags (isRSA, isECDSA, etc.)
+These optimizations follow the existing patterns in the codebase and target the reducible bottlenecks identified through benchmark analysis. The signature validation p99 spikes are accepted as inherent to cryptographic operations.
