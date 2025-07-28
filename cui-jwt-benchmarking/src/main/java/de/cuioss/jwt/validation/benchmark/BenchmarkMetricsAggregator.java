@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.metrics.MeasurementType;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -47,9 +48,9 @@ public final class BenchmarkMetricsAggregator {
     private static final Map<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> GLOBAL_METRICS = new ConcurrentHashMap<>();
     
     /**
-     * Flag to ensure shutdown hook is only registered once
+     * Atomic flag to ensure shutdown hook is only registered once
      */
-    private static volatile boolean shutdownHookRegistered = false;
+    private static final AtomicBoolean shutdownHookRegistered = new AtomicBoolean(false);
     
     /**
      * Private constructor to prevent instantiation
@@ -61,34 +62,32 @@ public final class BenchmarkMetricsAggregator {
     /**
      * Register benchmark methods for metrics collection.
      * This method is thread-safe and can be called multiple times.
+     * Uses lock-free initialization to avoid thread contention.
      * 
      * @param benchmarkNames Array of benchmark method names to track
      */
-    public static synchronized void registerBenchmarks(String... benchmarkNames) {
+    public static void registerBenchmarks(String... benchmarkNames) {
         for (String benchmarkName : benchmarkNames) {
-            // Skip if already registered
-            if (GLOBAL_METRICS.containsKey(benchmarkName)) {
-                continue;
-            }
-            
-            Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = new ConcurrentHashMap<>();
+            // Use computeIfAbsent for thread-safe, lock-free initialization
+            GLOBAL_METRICS.computeIfAbsent(benchmarkName, k -> {
+                Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = new ConcurrentHashMap<>();
 
-            // Initialize metrics for each measurement type
-            for (MeasurementType type : MeasurementType.values()) {
-                ConcurrentHashMap<String, AtomicLong> typeMetrics = new ConcurrentHashMap<>();
-                typeMetrics.put("sampleCount", new AtomicLong(0));
-                typeMetrics.put("p50_sum", new AtomicLong(0));
-                typeMetrics.put("p95_sum", new AtomicLong(0));
-                typeMetrics.put("p99_sum", new AtomicLong(0));
-                benchmarkMetrics.put(type, typeMetrics);
-            }
+                // Initialize metrics for each measurement type
+                for (MeasurementType type : MeasurementType.values()) {
+                    ConcurrentHashMap<String, AtomicLong> typeMetrics = new ConcurrentHashMap<>();
+                    typeMetrics.put("sampleCount", new AtomicLong(0));
+                    typeMetrics.put("p50_sum", new AtomicLong(0));
+                    typeMetrics.put("p95_sum", new AtomicLong(0));
+                    typeMetrics.put("p99_sum", new AtomicLong(0));
+                    benchmarkMetrics.put(type, typeMetrics);
+                }
 
-            GLOBAL_METRICS.put(benchmarkName, benchmarkMetrics);
+                return benchmarkMetrics;
+            });
         }
         
-        // Register shutdown hook only once
-        if (!shutdownHookRegistered) {
-            shutdownHookRegistered = true;
+        // Register shutdown hook only once using compareAndSet
+        if (shutdownHookRegistered.compareAndSet(false, true)) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     exportGlobalMetrics();
@@ -215,13 +214,15 @@ public final class BenchmarkMetricsAggregator {
     /**
      * Clear all metrics. Useful for testing.
      * WARNING: This will clear metrics from all benchmarks!
+     * Thread-safe implementation without synchronization.
      */
-    public static synchronized void clearMetrics() {
-        for (Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics : GLOBAL_METRICS.values()) {
-            for (ConcurrentHashMap<String, AtomicLong> typeMetrics : benchmarkMetrics.values()) {
+    public static void clearMetrics() {
+        // Iterate through all metrics and reset atomically
+        GLOBAL_METRICS.values().parallelStream().forEach(benchmarkMetrics -> {
+            benchmarkMetrics.values().forEach(typeMetrics -> {
                 typeMetrics.values().forEach(counter -> counter.set(0));
-            }
-        }
+            });
+        });
     }
     
     /**

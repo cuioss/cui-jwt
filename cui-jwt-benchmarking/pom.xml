@@ -30,7 +30,8 @@
         <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>1</jmh.forks>
-        <jmh.threads>200</jmh.threads>
+        <!-- Reduced from 200 to 100 threads to avoid contention and improve P99 latency -->
+        <jmh.threads>100</jmh.threads>
         <jmh.time>4s</jmh.time>
         <jmh.warmupTime>1s</jmh.warmupTime>
     </properties>
