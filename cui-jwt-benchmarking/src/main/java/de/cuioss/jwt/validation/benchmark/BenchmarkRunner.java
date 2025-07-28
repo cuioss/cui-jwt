@@ -28,8 +28,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  * <p>
  * Optimized benchmark classes:
  * <ul>
- *   <li><strong>PerformanceIndicatorBenchmark</strong>: Essential validation performance metrics</li>
- *   <li><strong>ErrorLoadBenchmark</strong>: Streamlined error handling scenarios</li>
+ *   <li><strong>SimpleCoreValidationBenchmark</strong>: Essential validation performance metrics</li>
+ *   <li><strong>SimpleErrorLoadBenchmark</strong>: Streamlined error handling scenarios</li>
  * </ul>
  */
 public class BenchmarkRunner {
@@ -41,17 +41,22 @@ public class BenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
+        
+        // Initialize key cache before benchmarks start
+        System.out.println("Initializing benchmark key cache...");
+        BenchmarkKeyCache.initialize();
+        System.out.println("Key cache initialized. Starting benchmarks...\n");
 
         // Configure JMH options
         Options options = new OptionsBuilder()
-                // Include all benchmark classes in this package
-                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\..+Benchmark")
-                // Exclude JFR benchmarks (they should only run with -Pbenchmark-jfr profile)
-                .exclude("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.UnifiedJfrBenchmark")
+                // Include only standard benchmark classes
+                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*")
+                // Exclude JFR benchmarks
+                .exclude(".*Jfr.*")
                 // Set number of forks
                 .forks(BenchmarkOptionsHelper.getForks(1))
                 // Set warmup iterations
-                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(3))
+                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(5))
                 // Set measurement iterations
                 .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(5))
                 // Set measurement time
@@ -59,7 +64,7 @@ public class BenchmarkRunner {
                 // Set warmup time
                 .warmupTime(BenchmarkOptionsHelper.getWarmupTime("2s"))
                 // Set number of threads
-                .threads(BenchmarkOptionsHelper.getThreadCount(2))
+                .threads(BenchmarkOptionsHelper.getThreadCount(8))
                 // Use benchmark mode specified in individual benchmark annotations
                 // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
                 // Configure result output - create a combined report for all benchmarks

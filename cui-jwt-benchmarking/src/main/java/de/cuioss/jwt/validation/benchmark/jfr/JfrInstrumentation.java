@@ -49,6 +49,28 @@ public class JfrInstrumentation {
         // Schedule periodic statistics reporting
         scheduler.scheduleAtFixedRate(this::reportStatistics, 1, 1, TimeUnit.SECONDS);
     }
+    
+    /**
+     * Pre-initializes statistics for all benchmark/operation combinations to avoid
+     * ConcurrentHashMap.computeIfAbsent contention during benchmark execution.
+     * 
+     * @param benchmarkNames array of benchmark method names
+     */
+    public void preInitializeStats(String[] benchmarkNames) {
+        String[] operationTypes = {
+            "validation", "error-validation", "mixed-validation",
+            "complete-validation", "token-parsing", "header-validation",
+            "signature-validation", "claims-validation", "token-format-check",
+            "issuer-extraction", "issuer-config-resolution", "token-building"
+        };
+        
+        for (String benchmark : benchmarkNames) {
+            for (String operation : operationTypes) {
+                String key = benchmark + ":" + operation;
+                operationStats.put(key, new OperationStats());
+            }
+        }
+    }
 
     /**
      * Records the start of a JWT operation.
@@ -146,8 +168,10 @@ public class JfrInstrumentation {
             event.concurrentOperations = concurrent;
 
             // Update max concurrent threads
-            operationStats.computeIfAbsent(statsKey, k -> new OperationStats())
-                    .maxConcurrentThreads.updateAndGet(current -> Math.max(current, concurrent));
+            OperationStats stats = operationStats.get(statsKey);
+            if (stats != null) {
+                stats.maxConcurrentThreads.updateAndGet(current -> Math.max(current, concurrent));
+            }
         }
 
         public OperationRecorder withTokenSize(long size) {

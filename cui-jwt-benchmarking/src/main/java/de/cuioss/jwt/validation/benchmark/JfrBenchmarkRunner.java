@@ -37,7 +37,9 @@ import java.io.File;
  * <p>
  * JFR data is automatically saved to: {@code target/benchmark-results/}
  *
- * @see UnifiedJfrBenchmark
+ * @see CoreJfrBenchmark
+ * @see ErrorJfrBenchmark
+ * @see MixedJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer
  */
 public class JfrBenchmarkRunner {
@@ -51,15 +53,20 @@ public class JfrBenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
+        
+        // Initialize key cache before benchmarks start
+        log.info("Initializing benchmark key cache...");
+        BenchmarkKeyCache.initialize();
+        log.info("Key cache initialized. Starting JFR benchmarks...\n");
 
         // Configure JMH options
         ChainedOptionsBuilder builder = new OptionsBuilder()
-                // Include only JFR instrumented benchmarks
-                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.UnifiedJfrBenchmark")
+                // Include only JFR benchmarks from jfr.benchmarks package
+                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.jfr\\.benchmarks\\..*")
                 // Set number of forks
                 .forks(BenchmarkOptionsHelper.getForks(1))
                 // Set warmup iterations
-                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(3))
+                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(5))
                 // Set measurement iterations
                 .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(5))
                 // Set measurement time
@@ -67,7 +74,7 @@ public class JfrBenchmarkRunner {
                 // Set warmup time
                 .warmupTime(BenchmarkOptionsHelper.getWarmupTime("3s"))
                 // Set number of threads
-                .threads(BenchmarkOptionsHelper.getThreadCount(8))
+                .threads(BenchmarkOptionsHelper.getThreadCount(16))
                 // Configure result output
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
                 .result(getJfrResultFile())

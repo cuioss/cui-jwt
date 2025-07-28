@@ -15,6 +15,10 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.jwt.validation.metrics.MeasurementType;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,15 +29,85 @@ import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Collects and exports JWT validation metrics in the same format as integration tests.
  * This allows direct comparison between microbenchmark and integration test performance.
+ * 
+ * Also provides utility methods to reduce code duplication across benchmark classes.
  */
 public class BenchmarkMetricsCollector {
 
     private static final String OUTPUT_DIR = "target/benchmark-results";
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+    
+    /**
+     * Collects metrics from a TokenValidatorMonitor and aggregates them.
+     * This is a utility method to avoid code duplication across benchmark classes.
+     * 
+     * @param monitor The TokenValidatorMonitor to collect metrics from
+     * @param currentBenchmarkName The name of the current benchmark being executed
+     */
+    public static void collectIterationMetrics(TokenValidatorMonitor monitor, String currentBenchmarkName) {
+        if (currentBenchmarkName != null && monitor != null) {
+            // Collect metrics for each measurement type
+            for (MeasurementType type : monitor.getEnabledTypes()) {
+                Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
+
+                if (metricsOpt.isPresent()) {
+                    StripedRingBufferStatistics metrics = metricsOpt.get();
+                    if (metrics.sampleCount() > 0) {
+                        // Use the pre-calculated percentiles from StripedRingBufferStatistics
+                        long p50Nanos = metrics.p50().toNanos();
+                        long p95Nanos = metrics.p95().toNanos();
+                        long p99Nanos = metrics.p99().toNanos();
+                        
+                        // Aggregate the actual percentile values
+                        BenchmarkMetricsAggregator.aggregatePreCalculatedMetrics(
+                            currentBenchmarkName, 
+                            type, 
+                            metrics.sampleCount(),
+                            p50Nanos,
+                            p95Nanos,
+                            p99Nanos
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Determines the current benchmark name from the thread name or stack trace.
+     * This is a utility method to avoid code duplication across benchmark classes.
+     * 
+     * @param validBenchmarkNames Array of valid benchmark method names to check for
+     * @return The current benchmark name or null if not found
+     */
+    public static String getCurrentBenchmarkName(String[] validBenchmarkNames) {
+        // JMH typically includes the benchmark method name in the thread name
+        String threadName = Thread.currentThread().getName();
+
+        for (String name : validBenchmarkNames) {
+            if (threadName.contains(name)) {
+                return name;
+            }
+        }
+
+        // Fallback: check stack trace
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTrace) {
+            String methodName = element.getMethodName();
+            for (String name : validBenchmarkNames) {
+                if (name.equals(methodName)) {
+                    return methodName;
+                }
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Exports aggregated metrics collected from benchmarks

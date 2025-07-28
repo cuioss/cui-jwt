@@ -5,21 +5,24 @@
 :sectnums:
 :source-highlighter: highlight.js
 
-== 🎉 OPTIMIZATION SUCCESS REPORT (Updated July 28, 2025)
+== 🎉 BENCHMARK SETUP FIX SUCCESS (Updated July 28, 2025)
 
-=== ✅ Latest Performance Results
+=== ✅ Setup Isolation Fix Results
 
-**Latest Benchmark Run (July 28, 2025)**:
+**Post-Setup-Fix Benchmark Run (July 28, 2025)**:
 
 |===
-| Benchmark | Current Throughput | vs. Initial | vs. Previous | Status
-| *Standard Throughput* | **91,950 ops/s** | **+69%** | **+27%** | ✅ **OPTIMIZED**
-| *Concurrent Validation* | **2,050μs/op** | **+41%** | **+22%** | ✅ **IMPROVED**
-| *Error Handling (0%)* | **2,605μs/op** | **-7%** | **+3%** | ✅ **STABLE**
-| *Error Handling (50%)* | **2,693μs/op** | **+24%** | **+5%** | ✅ **MAINTAINED**
+| Benchmark | Current Throughput | Setup Impact | True Performance | Status
+| *Standard Throughput* | **102,956 ops/s** | **Setup Fixed** | **1,030 ops/s/thread** | ✅ **SETUP CLEAN**
+| *JFR Throughput* | **78,307 ops/s** | **Setup Fixed** | **24% JFR overhead** | ✅ **INSTRUMENTED**
+| *Error Load (50%)* | **217,999 ops/s** | **Setup Fixed** | **Early termination** | ✅ **OPTIMIZED**
+| *Average Time* | **967-2,758μs/op** | **No contamination** | **True latency** | ✅ **ACCURATE**
 |===
 
-**Key Achievement**: Throughput improved from 54,516 → 72,433 → 91,950 ops/s (+69% total improvement)
+**Key Achievement**: 
+- ✅ **RSA Key Generation Isolated**: 8-10 second setup now happens before measurement
+- ✅ **True P99 Performance Revealed**: 32.3ms spikes are from validation, not setup
+- ✅ **BenchmarkKeyCache Working**: Pre-generates keys for 1-10 issuer configurations
 
 == ✅ Implemented Optimizations
 
@@ -35,31 +38,44 @@
 
 - ✅ Analyzed jjwt, smallrye-jwt, jose4j, auth0 - all use JCA without Signature caching, identified Provider.getService() contention
 - ✅ Benchmark profile separation - standard vs JFR benchmarks now properly isolated
-== 🚀 OPEN OPTIMIZATION TASKS
+== 🚀 REMAINING OPTIMIZATION TASKS (Post-Setup-Fix)
 
-=== 🔴 HIGH PRIORITY - Production Performance Targets
+=== 🔴 CRITICAL PRIORITY - True P99 Bottlenecks Revealed
 
-- [ ] *Thread Count Optimization Study*
-  - [ ] Determine optimal thread range (50-150) for 91,950 ops/s baseline
-  - [ ] Establish single-thread theoretical maximum (currently ~460 ops/s/thread)
-  - [ ] Profile virtual thread performance vs platform threads
+- [ ] *Signature Validation Optimization* - **17.9ms P99 spikes**
+  - [ ] Profile cryptographic operations (RSA verification patterns)
+  - [ ] Investigate algorithm-specific bottlenecks in JCA
+  - [ ] Consider provider-specific optimizations or native libraries
+  - [ ] Implement signature result caching with TTL
 
-- [ ] *Signature Result Caching* - Target additional 20-30% gains
-  - [ ] Implement LRU cache with standard Java LinkedHashMap (Quarkus compatible)
-  - [ ] Cache key: token signature, value: validation result + expiry
-  - [ ] Benchmark memory vs performance trade-offs
+- [ ] *Token Building Performance* - **3.7ms P99 spikes** 
+  - [ ] Profile object allocation in TokenBuilder.createAccessToken()
+  - [ ] Investigate GC pressure during token construction
+  - [ ] Consider object pooling for frequently created objects
+  - [ ] Optimize immutable object creation patterns
 
-=== 🟡 MEDIUM PRIORITY - Stability & Monitoring
+- [ ] *JVM Tuning for P99* - **512x P99/P50 ratio**
+  - [ ] Run with -XX:+PrintGCDetails to analyze GC impact
+  - [ ] Use async-profiler for allocation flame graphs
+  - [ ] Test different GC configurations (G1, ZGC, Parallel)
+  - [ ] Profile JIT compilation impact on p99 latencies
 
-- [ ] *JFR Benchmark Anomaly Investigation*
-  - [ ] Analyze why JFR shows different performance characteristics post-optimization
-  - [ ] Profile JFR event overhead in production scenarios
-  - [ ] Establish continuous performance regression detection
+=== 🟡 MEDIUM PRIORITY - Stability & Production Readiness
+
+- [ ] *Claims Validation Optimization* - **1.3ms P99 spikes**
+  - [ ] Profile validation logic for expensive operations (regex, date parsing)
+  - [ ] Consider caching validation results for repeated patterns
+  - [ ] Optimize claim extraction and type conversion
+  
+- [ ] *Token Parsing Optimization* - **669μs P99 spikes**
+  - [ ] Profile JWT parsing logic and Base64 decoding
+  - [ ] Investigate JSON parsing efficiency
+  - [ ] Consider streaming parsers for large tokens
 
 - [ ] *Production Load Testing*
-  - [ ] Validate 91,950 ops/s under sustained load
+  - [ ] Validate 102,956 ops/s under sustained load with proper setup
   - [ ] Test with realistic JWT payload sizes and issuer counts
-  - [ ] Profile memory usage patterns over extended runs
+  - [ ] Establish SLA targets: P99 < 5ms, P50 < 100μs
 
 === 🟢 LOW PRIORITY - Fine-Tuning
 

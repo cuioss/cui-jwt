@@ -57,17 +57,15 @@ public class PerformanceIndicatorBenchmark {
     private TokenValidator tokenValidator;
     private CoreValidationDelegate validationDelegate;
 
-    static {
-        // Register benchmarks for metrics collection
+    @Setup(Level.Trial)
+    public void setup() {
+        // Register benchmarks for metrics collection (moved from static initializer to avoid contention)
         BenchmarkMetricsAggregator.registerBenchmarks(
             "measureAverageTime", 
             "measureThroughput", 
             "measureConcurrentValidation"
         );
-    }
-
-    @Setup(Level.Trial)
-    public void setup() {
+        
         TokenRepository tokenRepository;
         // Initialize token repository with default configuration
         tokenRepository = new TokenRepository();

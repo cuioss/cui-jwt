@@ -111,8 +111,8 @@ public class TokenRepository {
         this.random = new Random(config.randomSeed);
         this.tokenMetadata = new HashMap<>();
         
-        // Generate multiple issuer key materials for benchmarking
-        this.issuers = InMemoryKeyMaterialHandler.createMultipleIssuers(config.issuerCount);
+        // Use pre-generated keys from cache to avoid RSA generation during benchmarks
+        this.issuers = BenchmarkKeyCache.getPreGeneratedIssuers(config.issuerCount);
         
         List<IssuerConfig> configs = new ArrayList<>();
         List<String> allTokens = new ArrayList<>();

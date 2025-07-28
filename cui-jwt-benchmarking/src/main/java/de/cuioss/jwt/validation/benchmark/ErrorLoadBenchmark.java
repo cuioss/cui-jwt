@@ -71,10 +71,6 @@ public class ErrorLoadBenchmark {
     private List<String> validTokens;
     private List<String> invalidTokens;
 
-    // Reduced error percentage variants: baseline (0%) and balanced (50%)
-    @Param({"0", "50"})
-    private int errorPercentage;
-
     // Reduced token count for faster setup
     private static final int TOKEN_COUNT = 20;
 
@@ -201,17 +197,11 @@ public class ErrorLoadBenchmark {
     }
 
     /**
-     * Benchmarks mixed error load scenarios with optimized error percentages.
-     * <p>
-     * Tests two scenarios:
-     * <ul>
-     *   <li><strong>0% errors</strong>: Baseline performance with only valid tokens</li>
-     *   <li><strong>50% errors</strong>: Balanced mix of valid and invalid tokens</li>
-     * </ul>
+     * Benchmarks mixed error load scenarios with 0% error rate (baseline performance).
      */
     @Benchmark
-    public Object validateMixedTokens(Blackhole blackhole) {
-        String token = selectToken();
+    public Object validateMixedTokens0(Blackhole blackhole) {
+        String token = selectValidToken();
         try {
             AccessTokenContent result = tokenValidator.createAccessToken(token);
             blackhole.consume(result);
@@ -223,19 +213,37 @@ public class ErrorLoadBenchmark {
     }
 
     /**
-     * Selects a token based on the configured error percentage.
+     * Benchmarks mixed error load scenarios with 50% error rate (balanced mix).
+     */
+    @Benchmark
+    public Object validateMixedTokens50(Blackhole blackhole) {
+        String token = selectMixedToken();
+        try {
+            AccessTokenContent result = tokenValidator.createAccessToken(token);
+            blackhole.consume(result);
+            return result;
+        } catch (TokenValidationException e) {
+            blackhole.consume(e);
+            return e;
+        }
+    }
+
+    /**
+     * Selects a valid token for 0% error rate benchmarks.
      */
     @SuppressWarnings("java:S2245") // Random usage is acceptable for benchmarks
-    private String selectToken() {
-        if (errorPercentage == 0) {
-            // Always return valid token for baseline measurement
-            int index = ThreadLocalRandom.current().nextInt(validTokens.size());
-            return validTokens.get(index);
-        }
+    private String selectValidToken() {
+        int index = ThreadLocalRandom.current().nextInt(validTokens.size());
+        return validTokens.get(index);
+    }
 
-        // 50% error scenario - balanced mix
+    /**
+     * Selects a token with 50% error rate for mixed error benchmarks.
+     */
+    @SuppressWarnings("java:S2245") // Random usage is acceptable for benchmarks
+    private String selectMixedToken() {
         int randomValue = ThreadLocalRandom.current().nextInt(100);
-        if (randomValue < errorPercentage) {
+        if (randomValue < 50) {
             int index = ThreadLocalRandom.current().nextInt(invalidTokens.size());
             return invalidTokens.get(index);
         } else {

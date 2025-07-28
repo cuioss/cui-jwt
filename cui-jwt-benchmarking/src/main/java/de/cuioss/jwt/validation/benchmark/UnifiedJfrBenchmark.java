@@ -47,23 +47,19 @@ public class UnifiedJfrBenchmark {
     private TokenRepository tokenRepository;
     private TokenValidator tokenValidator;
     private CoreValidationDelegate coreValidationDelegate;
-    private ErrorLoadDelegate errorLoadDelegate;
+    private ErrorLoadDelegate errorLoadDelegate0;
+    private ErrorLoadDelegate errorLoadDelegate50;
     private JfrInstrumentation jfrInstrumentation;
     
-    @Param({"0", "50"})
-    private int errorPercentage;
-    
-    static {
-        // Register benchmarks for metrics collection
+    @Setup(Level.Trial)
+    public void setup() {
+        // Register benchmarks for metrics collection (moved from static initializer to avoid contention)
         BenchmarkMetricsAggregator.registerBenchmarks(
             "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
             "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
-            "validateMalformedTokenWithJfr", "validateMixedTokensWithJfr"
+            "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
         );
-    }
-
-    @Setup(Level.Trial)
-    public void setup() {
+        
         // Initialize JFR instrumentation
         jfrInstrumentation = new JfrInstrumentation();
         
@@ -75,7 +71,8 @@ public class UnifiedJfrBenchmark {
         
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
-        errorLoadDelegate = new ErrorLoadDelegate(tokenValidator, tokenRepository, errorPercentage);
+        errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
+        errorLoadDelegate50 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 50);
     }
 
     @Setup(Level.Iteration)
@@ -143,7 +140,7 @@ public class UnifiedJfrBenchmark {
         String[] benchmarkNames = {
             "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
             "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
-            "validateMalformedTokenWithJfr", "validateMixedTokensWithJfr"
+            "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
         };
         
         for (String name : benchmarkNames) {
@@ -239,7 +236,7 @@ public class UnifiedJfrBenchmark {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = errorLoadDelegate.validateValid();
+            AccessTokenContent result = errorLoadDelegate0.validateValid();
             recorder.withSuccess(true);
             return result;
         }
@@ -257,7 +254,7 @@ public class UnifiedJfrBenchmark {
                     .withIssuer("benchmark-issuer")
                     .withError("expired");
 
-            Object result = errorLoadDelegate.validateExpired();
+            Object result = errorLoadDelegate0.validateExpired();
             recorder.withSuccess(false);
             return result;
         }
@@ -275,7 +272,7 @@ public class UnifiedJfrBenchmark {
                     .withIssuer("unknown")
                     .withError("malformed");
 
-            Object result = errorLoadDelegate.validateMalformed();
+            Object result = errorLoadDelegate0.validateMalformed();
             recorder.withSuccess(false);
             return result;
         }
@@ -293,24 +290,24 @@ public class UnifiedJfrBenchmark {
                     .withIssuer("benchmark-issuer")
                     .withError("invalid_signature");
 
-            Object result = errorLoadDelegate.validateInvalidSignature();
+            Object result = errorLoadDelegate0.validateInvalidSignature();
             recorder.withSuccess(false);
             return result;
         }
     }
 
     /**
-     * Measures validation performance with mixed valid/invalid tokens with JFR instrumentation.
+     * Measures validation performance with mixed valid/invalid tokens (0% error rate) with JFR instrumentation.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public Object validateMixedTokensWithJfr(Blackhole blackhole) {
-        String token = errorLoadDelegate.selectToken();
-        String errorType = errorLoadDelegate.getErrorType(token);
+    public Object validateMixedTokens0WithJfr(Blackhole blackhole) {
+        String token = errorLoadDelegate0.selectToken();
+        String errorType = errorLoadDelegate0.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokensWithJfr", "mixed-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", "mixed-validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
             
@@ -318,7 +315,32 @@ public class UnifiedJfrBenchmark {
                 recorder.withError(errorType);
             }
 
-            Object result = errorLoadDelegate.validateMixed(blackhole);
+            Object result = errorLoadDelegate0.validateMixed(blackhole);
+            recorder.withSuccess(isValid);
+            return result;
+        }
+    }
+
+    /**
+     * Measures validation performance with mixed valid/invalid tokens (50% error rate) with JFR instrumentation.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public Object validateMixedTokens50WithJfr(Blackhole blackhole) {
+        String token = errorLoadDelegate50.selectToken();
+        String errorType = errorLoadDelegate50.getErrorType(token);
+        boolean isValid = "valid".equals(errorType);
+
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", "mixed-validation")) {
+            recorder.withTokenSize(token.length())
+                    .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
+            
+            if (!isValid) {
+                recorder.withError(errorType);
+            }
+
+            Object result = errorLoadDelegate50.validateMixed(blackhole);
             recorder.withSuccess(isValid);
             return result;
         }

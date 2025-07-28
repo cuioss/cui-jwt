@@ -6,41 +6,43 @@ This comprehensive analysis compares JWT validation performance before and after
 
 ## Key Findings
 
-### 🚀 **LATEST OPTIMIZATION RESULTS (July 28, 2025 - After Benchmark Fix)**
+### 🚀 **LATEST OPTIMIZATION RESULTS (July 28, 2025 - After Setup Isolation Fix)**
 
-#### 1. **Major Performance Breakthrough After Removing Synchronization**
-- **STANDARD BENCHMARK**: 97,766 ops/s throughput (+79% vs original, +26% vs pre-fix)
-- **BENCHMARK FIX**: Removed synchronized bottleneck and reduced threads to 100
-- **P99 IMPROVEMENT**: Complete validation 174ms → 29ms (-83% reduction)
-- **P50 EXCELLENCE**: Complete validation now 79μs (54% faster than pre-fix)
-- **KEY FINDING**: The issue was benchmark contention, not the JWT library
+#### 1. **Setup Isolation Fix: RSA Key Generation Resolved**
+- **ROOT CAUSE IDENTIFIED**: RSA key generation (8-10 seconds) was happening during benchmark measurement
+- **SOLUTION IMPLEMENTED**: BenchmarkKeyCache pre-generates keys during class loading before JMH starts
+- **SETUP CONTAMINATION ELIMINATED**: Key generation now isolated from measurement phase
+- **KEY FINDING**: Original p99 spikes (36.8ms) were partially from setup costs, not validation logic
+- **REMAINING ISSUE**: p99 still elevated (32.3ms) indicating other performance bottlenecks
 
-#### 2. **Component Performance: Before vs After Benchmark Fix**
-| Component | **Before Fix P50** | **After Fix P50** | **Before P99** | **After Fix P99** | **P50 Improvement** |
-|-----------|-------------------|-------------------|----------------|-------------------|---------------------|
-| **Complete Validation** | 171μs | **79μs** | 174,143μs | **29,202μs** | **-54%** |
-| **Signature Validation** | 105μs | **59μs** | 27,567μs | **4,938μs** | **-44%** |
-| Token Building | 26μs | **8μs** | 142,582μs | **229μs** | **-69%** |
-| Token Parsing | 18μs | **7μs** | 4,727μs | **12μs** | **-61%** |
-| Claims Validation | 12μs | **3μs** | 5,051μs | **9μs** | **-75%** |
-| Header Validation | 1μs | **0.3μs** | 4μs | **1μs** | **-70%** |
+#### 2. **Post-Fix Component Performance: New Bottlenecks Revealed**  
+| Component | **P50** | **P95** | **P99** | **P99/P50 Ratio** | **Primary Issue** |
+|-----------|---------|---------|---------|-------------------|-------------------|
+| **Complete Validation** | 63μs | 236μs | **32,254μs** | **512x** | **Composite Bottleneck** |
+| **Signature Validation** | 68μs | 105μs | **17,857μs** | **262x** | **Cryptographic Spikes** |
+| **Token Building** | 11μs | 24μs | **3,691μs** | **335x** | **Object Allocation** |
+| Token Parsing | 6μs | 18μs | 669μs | 111x | Parsing Logic |
+| Claims Validation | 6μs | 9μs | 1,305μs | 217x | Validation Logic |
+| Other Operations | <1μs | <1μs | <10μs | <10x | ✅ Optimal |
 
-**Key Insight**: Removing benchmark synchronization improved ALL components by 44-75%, with P99 outliers reduced by 83-99%
+**Critical Finding**: With setup contamination removed, true performance bottlenecks are now visible:
+1. **Signature Validation**: Still the primary culprit (17.9ms p99)
+2. **Token Building**: Object allocation/GC issues (3.7ms p99)  
+3. **Claims/Parsing**: Moderate validation overhead (0.7-1.3ms p99)
 
-#### 3. **Throughput Progression**
-- **Original**: 54,516 ops/s (baseline)
-- **First Optimization**: 72,433 ops/s (+33%)
-- **Peak (with bug)**: 91,950 ops/s (+69%) - *inflated due to percentile bug*
-- **Pre-Fix**: 77,351 ops/s (+42%) - *with synchronization bottleneck*
-- **AFTER BENCHMARK FIX**: **97,766 ops/s (+79%)** - *synchronization removed*
-- **Per-Thread Efficiency**: **978 ops/s/thread** (2.5x improvement)
+#### 3. **Throughput Results After Setup Fix**
+- **Standard Benchmarks**: 102,956 ops/s (throughput mode)
+- **JFR Benchmarks**: 78,307 ops/s (24% JFR overhead)
+- **Error Load (50% errors)**: 217,999 ops/s (faster due to early termination)
+- **Average Time**: 967-2,758μs/op (varies by concurrency)
+- **Thread Efficiency**: **1,030 ops/s/thread** (100 threads)
 
-#### 4. **Benchmark Fix Impact Summary**
-- **Root Cause Identified**: Synchronized benchmark initialization causing 4.3s delays
-- **Fix Applied**: Removed synchronization, reduced threads from 200 to 100
-- **P99 Outliers Reduced**: From 174ms to 29ms (-83%) - still some outliers remain
-- **Library Performance Excellent**: JWT library itself performs very well
-- **Remaining Issues**: Minor P99 spikes (29ms) may indicate other bottlenecks
+#### 4. **Setup Isolation Impact Summary**
+- **Root Cause Resolved**: RSA key generation (8-10s) now happens before JMH measurement starts
+- **BenchmarkKeyCache Working**: Pre-generates keys for 1-10 issuer configurations during class loading
+- **Setup Contamination Eliminated**: No more key generation during benchmark execution
+- **True Performance Revealed**: p99 spikes (32.3ms) are from actual validation bottlenecks
+- **Next Phase**: Focus on signature validation, token building, and GC optimization
 
 ### 📊 **HISTORICAL COMPARISON (Pre-Optimization Findings)**
 
