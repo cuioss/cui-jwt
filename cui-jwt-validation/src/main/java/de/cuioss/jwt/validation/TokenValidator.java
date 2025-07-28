@@ -39,7 +39,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,7 +211,7 @@ public class TokenValidator {
             validators.put(issuerIdentifier, validator);
             LOGGER.debug("Pre-created TokenSignatureValidator for issuer: %s", issuerIdentifier);
         }
-        this.signatureValidators = Collections.unmodifiableMap(validators);
+        this.signatureValidators = Map.copyOf(validators);
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
@@ -282,7 +281,7 @@ public class TokenValidator {
                     "Token is empty or null"
             );
         }
-        Map<String, ClaimValue> claims = Collections.emptyMap();
+        Map<String, ClaimValue> claims = Map.of();
         try {
             DecodedJwt decoded = jwtParser.decode(tokenString, false);
             if (decoded.getBody().isPresent()) {
