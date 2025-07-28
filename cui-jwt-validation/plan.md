@@ -15,24 +15,39 @@ Following the setup isolation fix, true performance bottlenecks are revealed:
 ### 1. Signature Validation Optimization (Highest Priority)
 
 **Location**: `TokenSignatureValidator.java:189-201` - `verifySignature()` method
-**Issue**: Each validation calls `signatureTemplateManager.getSignatureInstance(algorithm)` which may have internal synchronization
+**Real Issue**: The 17.9ms p99 spikes are from actual cryptographic operations and ECDSA conversion overhead
 
-**Alternative Optimization Approaches**:
-- **Provider Pre-resolution**: Cache JCA Provider instances to avoid Provider.getService() lookups
-- **Algorithm String Interning**: Ensure algorithm strings are interned to speed up map lookups
-- **ECDSA Conversion Optimization**: Pre-compute ECDSA signature format conversion tables
-- **Direct Provider Access**: Use provider-specific APIs to bypass JCA abstraction layer
+**Remaining Optimization Opportunities**:
+
+#### 1.1 ECDSA Signature Format Conversion Optimization
+**Location**: `EcdsaSignatureFormatConverter.java` - called for every ECDSA signature
+**Issue**: Complex ASN.1/DER encoding performed on every ECDSA verification
 
 ```java
-// Example: Direct provider access for common algorithms
-private static final Provider SUN_RSA_SIGN = Security.getProvider("SunRsaSign");
-private static final Provider SUN_EC = Security.getProvider("SunEC");
-
-// In verifySignature method - use direct provider
-Signature verifier = algorithm.startsWith("RS") || algorithm.startsWith("PS") 
-    ? Signature.getInstance(algorithm, SUN_RSA_SIGN)
-    : Signature.getInstance(algorithm, SUN_EC);
+// Pre-compute common ECDSA conversions
+public class OptimizedEcdsaConverter {
+    // Cache for common R,S values in P1363 -> DER format
+    private static final Map<ByteArrayWrapper, byte[]> CONVERSION_CACHE = 
+        new ConcurrentHashMap<>(10000);
+    
+    public static byte[] toJCACompatibleSignature(byte[] ieeeP1363, String algo) {
+        ByteArrayWrapper key = new ByteArrayWrapper(ieeeP1363);
+        return CONVERSION_CACHE.computeIfAbsent(key, 
+            k -> performConversion(ieeeP1363, algo));
+    }
+}
 ```
+
+#### 1.2 Reduce Cryptographic Operation Overhead
+- The actual RSA/ECDSA verify operations are CPU-intensive and cause spikes
+- Consider batching verifications where possible
+- Investigate hardware acceleration options (native crypto libraries)
+
+#### 1.3 Memory Allocation Reduction
+**Location**: `TokenSignatureValidator.java:170,174,185`
+- `decodedJwt.getDataToVerify()` creates new String
+- `getSignatureAsDecodedBytes()` may allocate new arrays
+- Reduce temporary object creation in hot path
 
 ### 2. Token Building Field-Based Architecture (High Priority)
 
