@@ -73,7 +73,7 @@ class AccessTokenCacheTest {
                 OffsetDateTime.now().plusHours(1));
 
         // When
-        AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
+        AccessTokenContent result = cache.computeIfAbsent(token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
         }, performanceMonitor);
@@ -97,13 +97,13 @@ class AccessTokenCacheTest {
                 OffsetDateTime.now().plusHours(1));
 
         // First access - cache miss
-        cache.computeIfAbsent(issuer, token, t -> {
+        cache.computeIfAbsent(token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
         }, performanceMonitor);
 
         // When - second access should be cache hit
-        AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
+        AccessTokenContent result = cache.computeIfAbsent(token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
         }, performanceMonitor);
@@ -134,7 +134,7 @@ class AccessTokenCacheTest {
                 testToken
         );
         
-        AccessTokenContent result1 = cache.computeIfAbsent(issuer, testToken, t -> {
+        AccessTokenContent result1 = cache.computeIfAbsent(testToken, t -> {
             validationCount.incrementAndGet();
             return expiredContent;
         }, performanceMonitor);
@@ -153,7 +153,7 @@ class AccessTokenCacheTest {
         // When - second access should detect expiration and throw exception
         de.cuioss.jwt.validation.exception.TokenValidationException exception = 
             assertThrows(de.cuioss.jwt.validation.exception.TokenValidationException.class, () -> {
-                cache.computeIfAbsent(issuer, testToken, t -> {
+                cache.computeIfAbsent(testToken, t -> {
                     validationCount.incrementAndGet();
                     fail("Validation function should not be called for expired cached token");
                     return null;
@@ -186,7 +186,7 @@ class AccessTokenCacheTest {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
+                    AccessTokenContent result = cache.computeIfAbsent(token, t -> {
                         validationCount.incrementAndGet();
                         // Simulate some processing time
                         try {
@@ -224,7 +224,7 @@ class AccessTokenCacheTest {
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT));
         
         // Now access the token again - this should be a true cache hit
-        AccessTokenContent cachedResult = cache.computeIfAbsent(issuer, token, t -> {
+        AccessTokenContent cachedResult = cache.computeIfAbsent(token, t -> {
             validationCount.incrementAndGet();
             fail("Validation function should not be called for cached token");
             return null;

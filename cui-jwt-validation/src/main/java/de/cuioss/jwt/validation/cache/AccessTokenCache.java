@@ -27,11 +27,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
 import lombok.NonNull;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
-import java.util.Base64;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -47,12 +43,12 @@ import java.util.function.Function;
  * Thread-safe cache for validated access tokens.
  * <p>
  * This cache stores successfully validated access tokens to avoid redundant validation
- * of the same tokens. It uses SHA-256 hashing for cache keys to minimize memory usage
+ * of the same tokens. It uses integer hashCode for cache keys to optimize performance
  * while maintaining security through raw token verification on cache hits.
  * <p>
  * Features:
  * <ul>
- *   <li>SHA-256 hashing of tokens for cache keys</li>
+ *   <li>Integer hashCode of tokens for cache keys</li>
  *   <li>Configurable maximum cache size with LRU eviction</li>
  *   <li>Automatic expiration checking on retrieval</li>
  *   <li>Background thread for periodic expired token cleanup</li>
@@ -60,8 +56,7 @@ import java.util.function.Function;
  *   <li>No external dependencies (Quarkus compatible)</li>
  * </ul>
  * <p>
- * The cache respects issuer boundaries by including the issuer in the cache key.
- * This prevents tokens from different issuers with the same content from colliding.
+ * The cache verifies token content on each hit to handle potential hash collisions.
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -87,16 +82,16 @@ public class AccessTokenCache {
 
     /**
      * The main cache storage using ConcurrentHashMap for thread safety.
-     * Key: SHA-256 hash of (issuer + token)
+     * Key: hashCode of token string
      * Value: CachedToken wrapper
      */
-    private final Map<String, CachedToken> cache;
+    private final Map<Integer, CachedToken> cache;
 
     /**
      * LRU tracking map protected by read-write lock.
      * This separate map tracks access order for LRU eviction.
      */
-    private final LinkedHashMap<String, Long> lruMap;
+    private final LinkedHashMap<Integer, Long> lruMap;
 
     /**
      * Read-write lock for protecting LRU operations.
@@ -136,7 +131,7 @@ public class AccessTokenCache {
             this.cache = new ConcurrentHashMap<>(this.maxSize);
             this.lruMap = new LinkedHashMap<>(this.maxSize, 0.75f, true) {
                 @Override
-                protected boolean removeEldestEntry(Map.Entry<String, Long> eldest) {
+                protected boolean removeEldestEntry(Map.Entry<Integer, Long> eldest) {
                     return size() > AccessTokenCache.this.maxSize;
                 }
             };
@@ -177,7 +172,6 @@ public class AccessTokenCache {
      * only the first thread performs validation while others wait for the result. These
      * waiting threads are not counted as cache hits since no pre-existing value was found.
      *
-     * @param issuer the issuer of the token (used in cache key)
      * @param tokenString the raw JWT token string
      * @param validationFunction the function to validate the token if not cached
      * @param performanceMonitor the monitor for recording cache metrics
@@ -186,7 +180,6 @@ public class AccessTokenCache {
      * @throws InternalCacheException if an internal cache error occurs
      */
     public AccessTokenContent computeIfAbsent(
-            @NonNull String issuer,
             @NonNull String tokenString,
             @NonNull Function<String, AccessTokenContent> validationFunction,
             @NonNull TokenValidatorMonitor performanceMonitor) {
@@ -199,12 +192,8 @@ public class AccessTokenCache {
         // Create metrics ticker for cache lookup
         MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createTicker(performanceMonitor, true);
 
-        // Generate cache key
-        String cacheKey = generateCacheKey(issuer, tokenString);
-        if (cacheKey == null) {
-            // Failed to generate key, skip caching
-            return validationFunction.apply(tokenString);
-        }
+        // Generate cache key from token string
+        int cacheKey = tokenString.hashCode();
 
         // First, try to get existing cached value
         lookupTicker.startRecording();
@@ -295,28 +284,11 @@ public class AccessTokenCache {
         );
     }
 
-    /**
-     * Generates a cache key using SHA-256 hash of issuer + token.
-     *
-     * @return the base64-encoded hash, or null if hashing fails
-     */
-    private String generateCacheKey(String issuer, String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(issuer.getBytes(StandardCharsets.UTF_8));
-            digest.update(token.getBytes(StandardCharsets.UTF_8));
-            byte[] hash = digest.digest();
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            LOGGER.error(e, "Failed to create SHA-256 digest");
-            return null;
-        }
-    }
 
     /**
      * Updates LRU tracking for a cache key.
      */
-    private void updateLru(String key) {
+    private void updateLru(int key) {
         if (lruMap != null) {
             lruLock.writeLock().lock();
             try {
@@ -330,7 +302,7 @@ public class AccessTokenCache {
     /**
      * Removes a key from LRU tracking.
      */
-    private void removeLru(String key) {
+    private void removeLru(int key) {
         if (lruMap != null) {
             lruLock.writeLock().lock();
             try {
@@ -350,7 +322,7 @@ public class AccessTokenCache {
             try {
                 // Find oldest entry
                 if (lruMap != null && !lruMap.isEmpty()) {
-                    String oldestKey = lruMap.entrySet().iterator().next().getKey();
+                    Integer oldestKey = lruMap.entrySet().iterator().next().getKey();
                     cache.remove(oldestKey);
                     lruMap.remove(oldestKey);
                     LOGGER.debug("Evicted oldest token from cache due to size limit");
@@ -373,9 +345,9 @@ public class AccessTokenCache {
             OffsetDateTime now = OffsetDateTime.now();
             int evicted = 0;
 
-            Iterator<Map.Entry<String, CachedToken>> iterator = cache.entrySet().iterator();
+            Iterator<Map.Entry<Integer, CachedToken>> iterator = cache.entrySet().iterator();
             while (iterator.hasNext()) {
-                Map.Entry<String, CachedToken> entry = iterator.next();
+                Map.Entry<Integer, CachedToken> entry = iterator.next();
                 if (entry.getValue().isExpired(now)) {
                     iterator.remove();
                     removeLru(entry.getKey());

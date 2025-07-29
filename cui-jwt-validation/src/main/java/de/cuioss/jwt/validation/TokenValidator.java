@@ -444,7 +444,6 @@ public class TokenValidator {
 
         // Use transparent cache - handles enabled/disabled states internally
         return accessTokenCache.computeIfAbsent(
-                issuer,
                 tokenString,
                 token -> {
                     // Continue with expensive validation steps
