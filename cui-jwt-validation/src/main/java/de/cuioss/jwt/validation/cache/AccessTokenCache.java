@@ -28,8 +28,9 @@ import lombok.Builder;
 import lombok.NonNull;
 
 import java.time.OffsetDateTime;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -343,20 +344,28 @@ public class AccessTokenCache {
 
         try {
             OffsetDateTime now = OffsetDateTime.now();
-            int evicted = 0;
+            List<Integer> expiredKeys = new ArrayList<>();
 
-            Iterator<Map.Entry<Integer, CachedToken>> iterator = cache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<Integer, CachedToken> entry = iterator.next();
+            // Phase 1: Collect expired keys (no locking needed, ConcurrentHashMap is thread-safe for iteration)
+            for (Map.Entry<Integer, CachedToken> entry : cache.entrySet()) {
                 if (entry.getValue().isExpired(now)) {
-                    iterator.remove();
-                    removeLru(entry.getKey());
-                    evicted++;
+                    expiredKeys.add(entry.getKey());
                 }
             }
 
-            if (evicted > 0) {
-                LOGGER.debug("Evicted %s expired tokens from cache", evicted);
+            if (!expiredKeys.isEmpty()) {
+                // Phase 2: Batch remove from cache (thread-safe operations)
+                expiredKeys.forEach(cache::remove);
+
+                // Phase 3: Batch remove from LRU with single lock acquisition
+                lruLock.writeLock().lock();
+                try {
+                    expiredKeys.forEach(lruMap::remove);
+                } finally {
+                    lruLock.writeLock().unlock();
+                }
+
+                LOGGER.debug("Evicted %s expired tokens from cache", expiredKeys.size());
             }
         } catch (Exception e) {
             LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.format());

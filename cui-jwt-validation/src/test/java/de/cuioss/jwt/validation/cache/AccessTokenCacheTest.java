@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger
@@ -435,6 +436,50 @@ class AccessTokenCacheTest {
 
         // Cache should remain empty
         assertEquals(0, cache.size());
+    }
+
+    @Test
+    void evictionExecutorRemovesExpiredTokens() {
+        // Given - cache with eviction interval of 1 second
+        cache.shutdown();
+        cache = AccessTokenCache.builder()
+                .maxSize(30) // Enough space for all tokens
+                .evictionIntervalSeconds(1L) // Run eviction every second
+                .securityEventCounter(securityEventCounter)
+                .build();
+
+        // When - add 20 tokens that will expire in 5 seconds
+        OffsetDateTime expirationTime = OffsetDateTime.now().plusSeconds(5);
+        for (int i = 0; i < 20; i++) {
+            String token = "eviction-test-token-" + i;
+            String rawToken = "raw-token-" + i; // Unique raw token for each entry
+            AccessTokenContent content = createAccessTokenWithRawToken(
+                    "https://example.com",
+                    expirationTime,
+                    rawToken
+            );
+
+            cache.computeIfAbsent(rawToken, t -> content, performanceMonitor);
+        }
+
+        // Then - verify all 20 tokens are in cache
+        assertEquals(20, cache.size());
+
+        // Use awaitility to verify that after max 10 seconds all entries are evicted
+        await()
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .untilAsserted(() ->
+                    assertEquals(0, cache.size(), "All expired tokens should be evicted"));
+
+        // Verify we can still add new tokens after eviction
+        String newToken = "new-token-after-eviction";
+        AccessTokenContent newContent = createAccessToken("https://example.com",
+                OffsetDateTime.now().plusHours(1));
+        AccessTokenContent result = cache.computeIfAbsent(newToken, t -> newContent, performanceMonitor);
+
+        assertNotNull(result);
+        assertEquals(1, cache.size());
     }
 
 

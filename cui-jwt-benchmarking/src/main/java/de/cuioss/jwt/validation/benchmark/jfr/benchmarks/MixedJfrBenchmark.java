@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
-
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -37,27 +36,27 @@ import java.util.concurrent.TimeUnit;
 public class MixedJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String[] BENCHMARK_NAMES = {
-        "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
+            "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
     };
-    
+
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
-    
+
     @Override
     protected String[] getBenchmarkMethodNames() {
         return BENCHMARK_NAMES;
     }
-    
+
     @Override
     protected String getJfrPhase() {
         return "mixed-measurement";
     }
-    
+
     @Setup(Level.Trial)
     public void setup() {
         // Use base class setup with our benchmark names
         setupJfrBase(BENCHMARK_NAMES);
-        
+
         // Initialize delegates for different error rates
         errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
         errorLoadDelegate50 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 50);
@@ -79,7 +78,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", "mixed-validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
-            
+
             if (!isValid) {
                 recorder.withError(errorType);
             }
@@ -104,7 +103,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", "mixed-validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
-            
+
             if (!isValid) {
                 recorder.withError(errorType);
             }

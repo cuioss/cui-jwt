@@ -16,9 +16,9 @@
 package de.cuioss.jwt.validation.benchmark.base;
 
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.TearDown;
-import org.openjdk.jmh.annotations.Level;
 
 /**
  * Abstract base class for JFR-instrumented benchmarks.
@@ -28,9 +28,9 @@ import org.openjdk.jmh.annotations.Level;
  * @since 1.0
  */
 public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
-    
+
     protected JfrInstrumentation jfrInstrumentation;
-    
+
     /**
      * Get the phase name for JFR recording.
      * Subclasses can override this to provide specific phase names.
@@ -40,7 +40,7 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     protected String getJfrPhase() {
         return "measurement";
     }
-    
+
     /**
      * Setup method for JFR benchmark initialization.
      * Subclasses should call this from their @Setup method.
@@ -50,14 +50,14 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     protected void setupJfrBase(String... benchmarkNames) {
         // Call parent setup
         setupBase(benchmarkNames);
-        
+
         // Initialize JFR instrumentation
         jfrInstrumentation = new JfrInstrumentation();
-        
+
         // Pre-initialize stats to avoid contention
         jfrInstrumentation.preInitializeStats(benchmarkNames);
     }
-    
+
     /**
      * Records JFR phase information at the start of each iteration.
      */
@@ -66,10 +66,10 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
         // Record benchmark phase event at iteration start
         String benchmarkName = this.getClass().getSimpleName();
         int threads = Thread.activeCount();
-        
+
         jfrInstrumentation.recordPhase(benchmarkName, getJfrPhase(), 0, 0, 1, threads);
     }
-    
+
     /**
      * Shuts down JFR instrumentation at the end of the trial.
      */

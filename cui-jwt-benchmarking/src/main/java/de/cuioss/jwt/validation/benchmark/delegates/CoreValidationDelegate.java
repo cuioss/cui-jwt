@@ -29,13 +29,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 1.0
  */
 public class CoreValidationDelegate extends BenchmarkDelegate {
-    
+
     private final AtomicInteger tokenIndex = new AtomicInteger(0);
-    
+
     public CoreValidationDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository) {
         super(tokenValidator, tokenRepository);
     }
-    
+
     /**
      * Performs a single token validation using the primary token.
      * Used for average time and throughput benchmarks.
@@ -51,7 +51,7 @@ public class CoreValidationDelegate extends BenchmarkDelegate {
             throw new RuntimeException("Unexpected validation failure during primary token validation", e);
         }
     }
-    
+
     /**
      * Performs concurrent validation with token rotation.
      * Rotates through the token pool to simulate different tokens being validated.
@@ -68,7 +68,7 @@ public class CoreValidationDelegate extends BenchmarkDelegate {
             throw new RuntimeException("Unexpected validation failure during concurrent validation", e);
         }
     }
-    
+
     /**
      * Gets the current token for the given operation type.
      * 

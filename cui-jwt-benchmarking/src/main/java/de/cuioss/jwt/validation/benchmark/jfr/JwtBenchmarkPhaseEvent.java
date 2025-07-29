@@ -15,12 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr;
 
-import jdk.jfr.Category;
-import jdk.jfr.Description;
-import jdk.jfr.Event;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
-import jdk.jfr.StackTrace;
+import jdk.jfr.*;
 
 /**
  * JFR event to mark benchmark phases (warmup, measurement, etc).

@@ -34,24 +34,24 @@ import java.util.concurrent.ThreadLocalRandom;
  * @since 1.0
  */
 public class ErrorLoadDelegate extends BenchmarkDelegate {
-    
+
     private final String validToken;
     private final String expiredToken;
     private final String malformedToken;
     private final String invalidSignatureToken;
     private final int errorPercentage;
-    
+
     public ErrorLoadDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository, int errorPercentage) {
         super(tokenValidator, tokenRepository);
         this.errorPercentage = errorPercentage;
-        
+
         // Initialize tokens
         this.validToken = tokenRepository.getPrimaryToken();
         this.expiredToken = createExpiredToken();
         this.malformedToken = "not.a.valid.jwt.token";
         this.invalidSignatureToken = createInvalidSignatureToken();
     }
-    
+
     /**
      * Validates a valid token.
      * 
@@ -65,7 +65,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             throw new RuntimeException("Unexpected validation failure for valid token", e);
         }
     }
-    
+
     /**
      * Validates an expired token.
      * 
@@ -78,7 +78,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             return e; // Expected
         }
     }
-    
+
     /**
      * Validates a malformed token.
      * 
@@ -91,7 +91,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             return e; // Expected - could be various exceptions
         }
     }
-    
+
     /**
      * Validates a token with invalid signature.
      * 
@@ -104,7 +104,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             return e; // Expected
         }
     }
-    
+
     /**
      * Validates mixed tokens based on error percentage.
      * 
@@ -126,7 +126,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             return e;
         }
     }
-    
+
     /**
      * Selects a token based on the error percentage.
      * 
@@ -134,7 +134,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
      */
     public String selectToken() {
         int random = ThreadLocalRandom.current().nextInt(100);
-        
+
         if (random < errorPercentage) {
             // Select an error token based on distribution
             int errorType = ThreadLocalRandom.current().nextInt(3);
@@ -147,10 +147,10 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
                     return invalidSignatureToken;
             }
         }
-        
+
         return validToken;
     }
-    
+
     /**
      * Gets the error type for a given token.
      * 
@@ -167,10 +167,10 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
         }
         return "valid";
     }
-    
+
     private String createExpiredToken() {
         Instant past = Instant.now().minusSeconds(3600);
-        
+
         return Jwts.builder()
                 .issuer("benchmark-issuer")
                 .subject("benchmark-user")
@@ -184,7 +184,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
                 .signWith(Jwts.SIG.HS256.key().build())
                 .compact();
     }
-    
+
     private String createInvalidSignatureToken() {
         // Take the valid token and corrupt the signature
         String[] parts = validToken.split("\\.");

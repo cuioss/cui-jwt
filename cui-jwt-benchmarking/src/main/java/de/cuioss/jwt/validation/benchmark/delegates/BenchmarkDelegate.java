@@ -28,15 +28,15 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
  * @since 1.0
  */
 public abstract class BenchmarkDelegate {
-    
+
     protected final TokenValidator tokenValidator;
     protected final TokenRepository tokenRepository;
-    
+
     protected BenchmarkDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository) {
         this.tokenValidator = tokenValidator;
         this.tokenRepository = tokenRepository;
     }
-    
+
     /**
      * Validates a token and returns the result.
      * 
@@ -47,7 +47,7 @@ public abstract class BenchmarkDelegate {
     protected AccessTokenContent validateToken(String token) throws TokenValidationException {
         return tokenValidator.createAccessToken(token);
     }
-    
+
     /**
      * Gets metadata about a token for instrumentation purposes.
      * 
@@ -57,18 +57,18 @@ public abstract class BenchmarkDelegate {
     public TokenMetadata getTokenMetadata(String token) {
         TokenRepository.TokenMetadata repoMetadata = tokenRepository.getTokenMetadata(token);
         return new TokenMetadata(
-            token.length(),
-            repoMetadata != null ? repoMetadata.getIssuerIdentifier() : "unknown"
+                token.length(),
+                repoMetadata != null ? repoMetadata.getIssuerIdentifier() : "unknown"
         );
     }
-    
+
     /**
      * Simple metadata class for token information.
      */
     public static class TokenMetadata {
         public final int tokenSize;
         public final String issuer;
-        
+
         public TokenMetadata(int tokenSize, String issuer) {
             this.tokenSize = tokenSize;
             this.issuer = issuer;

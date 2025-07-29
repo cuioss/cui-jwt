@@ -28,11 +28,11 @@ import java.io.File;
  * @since 1.0
  */
 public final class BenchmarkOptionsHelper {
-    
+
     private BenchmarkOptionsHelper() {
         // Utility class
     }
-    
+
     /**
      * Gets the result format from system property or defaults to JSON.
      * 
@@ -46,7 +46,7 @@ public final class BenchmarkOptionsHelper {
             return ResultFormatType.JSON;
         }
     }
-    
+
     /**
      * Gets the result file path from system property or returns the default.
      * Ensures parent directory exists.
@@ -68,7 +68,7 @@ public final class BenchmarkOptionsHelper {
         }
         return defaultFileName;
     }
-    
+
     /**
      * Gets the measurement time from system property or uses the provided default.
      * 
@@ -79,7 +79,7 @@ public final class BenchmarkOptionsHelper {
         String time = System.getProperty("jmh.time", defaultTime);
         return parseTimeValue(time);
     }
-    
+
     /**
      * Gets the warmup time from system property or uses the provided default.
      * 
@@ -90,7 +90,7 @@ public final class BenchmarkOptionsHelper {
         String time = System.getProperty("jmh.warmupTime", defaultTime);
         return parseTimeValue(time);
     }
-    
+
     /**
      * Gets the thread count from system property or uses the provided default.
      * Supports "MAX" to use all available processors.
@@ -109,7 +109,7 @@ public final class BenchmarkOptionsHelper {
             return defaultCount;
         }
     }
-    
+
     /**
      * Gets the number of forks from system property or uses the provided default.
      * 
@@ -119,7 +119,7 @@ public final class BenchmarkOptionsHelper {
     public static int getForks(int defaultForks) {
         return Integer.getInteger("jmh.forks", defaultForks);
     }
-    
+
     /**
      * Gets the number of warmup iterations from system property or uses the provided default.
      * 
@@ -129,7 +129,7 @@ public final class BenchmarkOptionsHelper {
     public static int getWarmupIterations(int defaultIterations) {
         return Integer.getInteger("jmh.warmupIterations", defaultIterations);
     }
-    
+
     /**
      * Gets the number of measurement iterations from system property or uses the provided default.
      * 
@@ -139,7 +139,7 @@ public final class BenchmarkOptionsHelper {
     public static int getMeasurementIterations(int defaultIterations) {
         return Integer.getInteger("jmh.iterations", defaultIterations);
     }
-    
+
     /**
      * Parses a time value string (e.g., "2s", "1000ms") into a TimeValue object.
      * 

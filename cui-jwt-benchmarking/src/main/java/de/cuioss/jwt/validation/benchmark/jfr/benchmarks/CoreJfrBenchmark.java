@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -37,21 +36,21 @@ import java.util.concurrent.TimeUnit;
 public class CoreJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String[] BENCHMARK_NAMES = {
-        "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr"
+            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr"
     };
-    
+
     private CoreValidationDelegate coreValidationDelegate;
 
     @Override
     protected String[] getBenchmarkMethodNames() {
         return BENCHMARK_NAMES;
     }
-    
+
     @Setup(Level.Trial)
     public void setup() {
         // Use base class setup with our benchmark names
         setupJfrBase(BENCHMARK_NAMES);
-        
+
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
     }

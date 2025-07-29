@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
+
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.Test;

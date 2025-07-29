@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -37,27 +36,27 @@ import java.util.concurrent.TimeUnit;
 public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String[] BENCHMARK_NAMES = {
-        "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", 
-        "validateInvalidSignatureTokenWithJfr", "validateMalformedTokenWithJfr"
+            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr",
+            "validateInvalidSignatureTokenWithJfr", "validateMalformedTokenWithJfr"
     };
-    
+
     private ErrorLoadDelegate errorLoadDelegate;
-    
+
     @Override
     protected String[] getBenchmarkMethodNames() {
         return BENCHMARK_NAMES;
     }
-    
+
     @Override
     protected String getJfrPhase() {
         return "error-measurement";
     }
-    
+
     @Setup(Level.Trial)
     public void setup() {
         // Use base class setup with our benchmark names
         setupJfrBase(BENCHMARK_NAMES);
-        
+
         // Initialize delegates (using 0% error rate for error scenario testing)
         errorLoadDelegate = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
     }

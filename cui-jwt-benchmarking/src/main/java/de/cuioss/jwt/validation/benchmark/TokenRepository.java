@@ -174,7 +174,7 @@ public class TokenRepository {
         return TokenValidator.builder()
                 .issuerConfigs(issuerConfigs)
                 .monitorConfig(monitorConfig)
-               .cacheConfig(AccessTokenCacheConfig.builder().maxSize(100).build())
+                .cacheConfig(AccessTokenCacheConfig.builder().maxSize(100).build())
                 .build();
     }
 

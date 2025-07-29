@@ -61,11 +61,11 @@ public class PerformanceIndicatorBenchmark {
     public void setup() {
         // Register benchmarks for metrics collection (moved from static initializer to avoid contention)
         BenchmarkMetricsAggregator.registerBenchmarks(
-            "measureAverageTime", 
-            "measureThroughput", 
-            "measureConcurrentValidation"
+                "measureAverageTime",
+                "measureThroughput",
+                "measureConcurrentValidation"
         );
-        
+
         TokenRepository tokenRepository;
         // Initialize token repository with default configuration
         tokenRepository = new TokenRepository();
@@ -98,15 +98,15 @@ public class PerformanceIndicatorBenchmark {
                         long p50Nanos = metrics.p50().toNanos();
                         long p95Nanos = metrics.p95().toNanos();
                         long p99Nanos = metrics.p99().toNanos();
-                        
+
                         // Aggregate the actual percentile values
                         BenchmarkMetricsAggregator.aggregatePreCalculatedMetrics(
-                            benchmarkName, 
-                            type, 
-                            metrics.sampleCount(),
-                            p50Nanos,
-                            p95Nanos,
-                            p99Nanos
+                                benchmarkName,
+                                type,
+                                metrics.sampleCount(),
+                                p50Nanos,
+                                p95Nanos,
+                                p99Nanos
                         );
                     }
                 }
@@ -134,8 +134,8 @@ public class PerformanceIndicatorBenchmark {
         for (StackTraceElement element : stackTrace) {
             String methodName = element.getMethodName();
             if ("measureAverageTime".equals(methodName) ||
-                "measureThroughput".equals(methodName) ||
-                "measureConcurrentValidation".equals(methodName)) {
+                    "measureThroughput".equals(methodName) ||
+                    "measureConcurrentValidation".equals(methodName)) {
                 return methodName;
             }
         }

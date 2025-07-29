@@ -32,38 +32,38 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0
  */
 public final class BenchmarkKeyCache {
-    
+
     /**
      * Cache of pre-generated issuer key materials by count
      */
     private static final Map<Integer, IssuerKeyMaterial[]> ISSUER_CACHE = new ConcurrentHashMap<>();
-    
+
     /**
      * Maximum number of issuers to pre-generate
      */
     private static final int MAX_CACHED_ISSUERS = 10;
-    
+
     static {
         // Pre-generate key materials for common issuer counts
         long startTime = System.currentTimeMillis();
         System.out.println("BenchmarkKeyCache: Starting RSA key pre-generation...");
-        
+
         for (int count = 1; count <= MAX_CACHED_ISSUERS; count++) {
             ISSUER_CACHE.put(count, InMemoryKeyMaterialHandler.createMultipleIssuers(count));
         }
-        
+
         long duration = System.currentTimeMillis() - startTime;
-        System.out.printf("BenchmarkKeyCache: Pre-generated keys for %d issuer configurations in %d ms%n", 
+        System.out.printf("BenchmarkKeyCache: Pre-generated keys for %d issuer configurations in %d ms%n",
                 MAX_CACHED_ISSUERS, duration);
     }
-    
+
     /**
      * Private constructor to prevent instantiation
      */
     private BenchmarkKeyCache() {
         throw new AssertionError("Utility class - do not instantiate");
     }
-    
+
     /**
      * Gets pre-generated issuer key materials for the specified count.
      * If the count exceeds the pre-generated cache, generates new keys (with a warning).
@@ -75,20 +75,20 @@ public final class BenchmarkKeyCache {
         if (count <= 0) {
             throw new IllegalArgumentException("Issuer count must be positive");
         }
-        
+
         IssuerKeyMaterial[] cached = ISSUER_CACHE.get(count);
         if (cached != null) {
             // Return the cached array directly - no cloning needed as IssuerKeyMaterial is immutable
             return cached;
         }
-        
+
         // Generate on demand if not cached (this should be rare in benchmarks)
         System.err.printf("WARNING: BenchmarkKeyCache miss for count=%d. Generating keys during benchmark!%n", count);
         IssuerKeyMaterial[] generated = InMemoryKeyMaterialHandler.createMultipleIssuers(count);
         ISSUER_CACHE.put(count, generated);
         return generated;
     }
-    
+
     /**
      * Checks if keys for the specified issuer count are already cached.
      * 
@@ -98,7 +98,7 @@ public final class BenchmarkKeyCache {
     public static boolean isCached(int count) {
         return ISSUER_CACHE.containsKey(count);
     }
-    
+
     /**
      * Gets the maximum number of issuers that have been pre-generated.
      * 
@@ -107,7 +107,7 @@ public final class BenchmarkKeyCache {
     public static int getMaxCachedIssuers() {
         return MAX_CACHED_ISSUERS;
     }
-    
+
     /**
      * Forces initialization of the key cache.
      * This method can be called explicitly to ensure keys are generated

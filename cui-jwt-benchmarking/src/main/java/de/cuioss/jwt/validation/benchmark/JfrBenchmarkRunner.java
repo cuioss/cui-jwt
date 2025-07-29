@@ -53,7 +53,7 @@ public class JfrBenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
-        
+
         // Initialize key cache before benchmarks start
         log.info("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
@@ -116,7 +116,7 @@ public class JfrBenchmarkRunner {
         }
         return getBenchmarkResultsDir() + "/jfr-benchmark-result.json";
     }
-    
+
     /**
      * Gets the benchmark results directory from system property or defaults to target/benchmark-jfr-results.
      * 

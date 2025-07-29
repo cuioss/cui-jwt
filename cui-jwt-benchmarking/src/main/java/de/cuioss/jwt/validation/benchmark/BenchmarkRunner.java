@@ -41,7 +41,7 @@ public class BenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
-        
+
         // Initialize key cache before benchmarks start
         System.out.println("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
@@ -80,7 +80,7 @@ public class BenchmarkRunner {
 
         // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
     }
-    
+
     /**
      * Gets the benchmark results directory from system property or defaults to target/benchmark-results.
      * 

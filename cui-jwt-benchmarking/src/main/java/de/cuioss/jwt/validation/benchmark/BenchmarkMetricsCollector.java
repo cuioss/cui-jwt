@@ -42,7 +42,7 @@ public class BenchmarkMetricsCollector {
     private static String getOutputDir() {
         return System.getProperty("benchmark.results.dir", "target/benchmark-results");
     }
-    
+
     /**
      * Get output directory, using cached value from BenchmarkMetricsAggregator if available.
      * This ensures the shutdown hook uses the correct directory path.
@@ -55,7 +55,7 @@ public class BenchmarkMetricsCollector {
         return getOutputDir();
     }
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
-    
+
     /**
      * Collects metrics from a TokenValidatorMonitor and aggregates them.
      * This is a utility method to avoid code duplication across benchmark classes.
@@ -76,15 +76,15 @@ public class BenchmarkMetricsCollector {
                         long p50Nanos = metrics.p50().toNanos();
                         long p95Nanos = metrics.p95().toNanos();
                         long p99Nanos = metrics.p99().toNanos();
-                        
+
                         // Aggregate the actual percentile values
                         BenchmarkMetricsAggregator.aggregatePreCalculatedMetrics(
-                            currentBenchmarkName, 
-                            type, 
-                            metrics.sampleCount(),
-                            p50Nanos,
-                            p95Nanos,
-                            p99Nanos
+                                currentBenchmarkName,
+                                type,
+                                metrics.sampleCount(),
+                                p50Nanos,
+                                p95Nanos,
+                                p99Nanos
                         );
                     }
                 }
@@ -178,12 +178,12 @@ public class BenchmarkMetricsCollector {
             if (totalSamples != null && totalSamples > 0) {
                 Map<String, Object> stepMetrics = new LinkedHashMap<>();
                 stepMetrics.put("sample_count", totalSamples.longValue());
-                
+
                 // Calculate and round microsecond values
                 double p50 = metrics.get("p50_sum") / totalSamples;
                 double p95 = metrics.get("p95_sum") / totalSamples;
                 double p99 = metrics.get("p99_sum") / totalSamples;
-                
+
                 stepMetrics.put("p50_us", roundMicroseconds(p50));
                 stepMetrics.put("p95_us", roundMicroseconds(p95));
                 stepMetrics.put("p99_us", roundMicroseconds(p99));
@@ -241,7 +241,7 @@ public class BenchmarkMetricsCollector {
             sb.append("\n");
         }
     }
-    
+
     /**
      * Round microseconds appropriately:
      * - Values >= 1: round to integer

@@ -20,8 +20,8 @@ import de.cuioss.jwt.validation.benchmark.BenchmarkMetricsAggregator;
 import de.cuioss.jwt.validation.benchmark.BenchmarkMetricsCollector;
 import de.cuioss.jwt.validation.benchmark.TokenRepository;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.TearDown;
 
 /**
  * Abstract base class for all JWT benchmarks.
@@ -31,10 +31,10 @@ import org.openjdk.jmh.annotations.Level;
  * @since 1.0
  */
 public abstract class AbstractBenchmark {
-    
+
     protected TokenRepository tokenRepository;
     protected TokenValidator tokenValidator;
-    
+
     /**
      * Get the array of benchmark method names for this benchmark class.
      * Subclasses must implement this to provide their benchmark method names.
@@ -42,7 +42,7 @@ public abstract class AbstractBenchmark {
      * @return Array of benchmark method names
      */
     protected abstract String[] getBenchmarkMethodNames();
-    
+
     /**
      * Setup method for benchmark initialization.
      * Subclasses should call this from their @Setup method.
@@ -52,14 +52,14 @@ public abstract class AbstractBenchmark {
     protected void setupBase(String... benchmarkNames) {
         // Register benchmarks for metrics collection
         BenchmarkMetricsAggregator.registerBenchmarks(benchmarkNames);
-        
+
         // Initialize token repository
         tokenRepository = new TokenRepository();
-        
+
         // Create token validator
         tokenValidator = tokenRepository.createTokenValidator();
     }
-    
+
     /**
      * Common metrics collection method.
      * Called automatically at the end of each iteration.

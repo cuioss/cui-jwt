@@ -40,31 +40,31 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0
  */
 public final class BenchmarkMetricsAggregator {
-    
+
     /**
      * Thread-safe metrics aggregator for collecting measurements across all threads
      * Stores comprehensive metrics: sample count, p50, p95, p99
      */
     private static final Map<String, Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>>> GLOBAL_METRICS = new ConcurrentHashMap<>();
-    
+
     /**
      * Atomic flag to ensure shutdown hook is only registered once
      */
     private static final AtomicBoolean shutdownHookRegistered = new AtomicBoolean(false);
-    
+
     /**
      * Cache the output directory when the shutdown hook is registered to ensure 
      * we use the correct system property value from the main thread context
      */
     private static volatile String cachedOutputDir = null;
-    
+
     /**
      * Private constructor to prevent instantiation
      */
     private BenchmarkMetricsAggregator() {
         // Utility class
     }
-    
+
     /**
      * Register benchmark methods for metrics collection.
      * This method is thread-safe and can be called multiple times.
@@ -91,14 +91,14 @@ public final class BenchmarkMetricsAggregator {
                 return benchmarkMetrics;
             });
         }
-        
+
         // Register shutdown hook only once using compareAndSet
         if (shutdownHookRegistered.compareAndSet(false, true)) {
             // Capture the output directory from the main thread context before creating the shutdown hook
             // This ensures the shutdown hook uses the correct directory even if system properties
             // are not properly inherited in the shutdown thread context
             cachedOutputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
-            
+
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     exportGlobalMetrics();
@@ -108,7 +108,7 @@ public final class BenchmarkMetricsAggregator {
             }));
         }
     }
-    
+
     /**
      * Aggregate metrics for later export.
      * Thread-safe method to accumulate metrics from benchmark executions.
@@ -126,7 +126,7 @@ public final class BenchmarkMetricsAggregator {
             if (typeMetrics != null) {
                 // Increment sample count
                 typeMetrics.get("sampleCount").incrementAndGet();
-                
+
                 // For simplified percentiles, we'll use the duration directly
                 // In a real implementation, you would use HdrHistogram or similar
                 // This is a simplification that assumes all values are equal to the average
@@ -136,7 +136,7 @@ public final class BenchmarkMetricsAggregator {
             }
         }
     }
-    
+
     /**
      * Aggregate pre-calculated percentile metrics from TokenValidatorMonitor.
      * This method uses actual percentile values instead of trying to reconstruct them.
@@ -148,15 +148,15 @@ public final class BenchmarkMetricsAggregator {
      * @param p95Nanos 95th percentile in nanoseconds
      * @param p99Nanos 99th percentile in nanoseconds
      */
-    public static void aggregatePreCalculatedMetrics(String benchmarkName, MeasurementType type, 
-                                                     long sampleCount, long p50Nanos, long p95Nanos, long p99Nanos) {
+    public static void aggregatePreCalculatedMetrics(String benchmarkName, MeasurementType type,
+            long sampleCount, long p50Nanos, long p95Nanos, long p99Nanos) {
         Map<MeasurementType, ConcurrentHashMap<String, AtomicLong>> benchmarkMetrics = GLOBAL_METRICS.get(benchmarkName);
         if (benchmarkMetrics != null) {
             ConcurrentHashMap<String, AtomicLong> typeMetrics = benchmarkMetrics.get(type);
             if (typeMetrics != null) {
                 // Add sample count
                 typeMetrics.get("sampleCount").addAndGet(sampleCount);
-                
+
                 // Accumulate weighted percentiles
                 typeMetrics.get("p50_sum").addAndGet(p50Nanos * sampleCount);
                 typeMetrics.get("p95_sum").addAndGet(p95Nanos * sampleCount);
@@ -164,7 +164,7 @@ public final class BenchmarkMetricsAggregator {
             }
         }
     }
-    
+
     /**
      * Export aggregated metrics to jwt-validation-metrics.json.
      * This method is called automatically via shutdown hook.
@@ -213,7 +213,7 @@ public final class BenchmarkMetricsAggregator {
             // Silent failure - metrics export is optional
         }
     }
-    
+
     /**
      * Force export of metrics. Useful for testing or manual triggers.
      * This method is idempotent and thread-safe.
@@ -221,7 +221,7 @@ public final class BenchmarkMetricsAggregator {
     public static void forceExport() {
         exportGlobalMetrics();
     }
-    
+
     /**
      * Clear all metrics. Useful for testing.
      * WARNING: This will clear metrics from all benchmarks!
@@ -235,7 +235,7 @@ public final class BenchmarkMetricsAggregator {
             });
         });
     }
-    
+
     /**
      * Get the cached output directory path. Used by BenchmarkMetricsCollector 
      * to ensure consistent directory usage between main thread and shutdown hook.
@@ -245,7 +245,7 @@ public final class BenchmarkMetricsAggregator {
     static String getCachedOutputDir() {
         return cachedOutputDir;
     }
-    
+
     /**
      * Round microseconds appropriately:
      * - Values >= 1: round to integer

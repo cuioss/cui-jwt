@@ -24,12 +24,10 @@ import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
-
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.Optional;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,25 +48,25 @@ public class UnifiedJfrBenchmark {
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
     private JfrInstrumentation jfrInstrumentation;
-    
+
     @Setup(Level.Trial)
     public void setup() {
         // Register benchmarks for metrics collection (moved from static initializer to avoid contention)
         BenchmarkMetricsAggregator.registerBenchmarks(
-            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
-            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
-            "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
+                "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
+                "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
+                "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
         );
-        
+
         // Initialize JFR instrumentation
         jfrInstrumentation = new JfrInstrumentation();
-        
+
         // Initialize token repository
         tokenRepository = new TokenRepository();
-        
+
         // Create token validator
         tokenValidator = tokenRepository.createTokenValidator();
-        
+
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
         errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
@@ -81,7 +79,7 @@ public class UnifiedJfrBenchmark {
         String benchmarkName = this.getClass().getSimpleName();
         String phase = "measurement";
         int threads = Thread.activeCount();
-        
+
         jfrInstrumentation.recordPhase(benchmarkName, phase, 0, 0, 1, threads);
     }
 
@@ -105,22 +103,22 @@ public class UnifiedJfrBenchmark {
                         long p50Nanos = metrics.p50().toNanos();
                         long p95Nanos = metrics.p95().toNanos();
                         long p99Nanos = metrics.p99().toNanos();
-                        
+
                         // Aggregate the actual percentile values
                         BenchmarkMetricsAggregator.aggregatePreCalculatedMetrics(
-                            benchmarkName, 
-                            type, 
-                            metrics.sampleCount(),
-                            p50Nanos,
-                            p95Nanos,
-                            p99Nanos
+                                benchmarkName,
+                                type,
+                                metrics.sampleCount(),
+                                p50Nanos,
+                                p95Nanos,
+                                p99Nanos
                         );
                     }
                 }
             }
         }
     }
-    
+
     @TearDown(Level.Trial)
     public void tearDown() {
         // Shutdown JFR instrumentation
@@ -128,7 +126,7 @@ public class UnifiedJfrBenchmark {
             jfrInstrumentation.shutdown();
         }
     }
-    
+
     /**
      * Determines the current benchmark name from the thread name or stack trace
      */
@@ -138,11 +136,11 @@ public class UnifiedJfrBenchmark {
 
         // Check all registered benchmark names
         String[] benchmarkNames = {
-            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
-            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
-            "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
+                "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
+                "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
+                "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
         };
-        
+
         for (String name : benchmarkNames) {
             if (threadName.contains(name)) {
                 return name;
@@ -310,7 +308,7 @@ public class UnifiedJfrBenchmark {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", "mixed-validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
-            
+
             if (!isValid) {
                 recorder.withError(errorType);
             }
@@ -335,7 +333,7 @@ public class UnifiedJfrBenchmark {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", "mixed-validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
-            
+
             if (!isValid) {
                 recorder.withError(errorType);
             }
@@ -345,5 +343,5 @@ public class UnifiedJfrBenchmark {
             return result;
         }
     }
-    
+
 }

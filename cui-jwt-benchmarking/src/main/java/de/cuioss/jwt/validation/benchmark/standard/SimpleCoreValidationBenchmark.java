@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.benchmark.standard;
 import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -36,9 +35,9 @@ import java.util.concurrent.TimeUnit;
 public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
 
     private static final String[] BENCHMARK_NAMES = {
-        "measureAverageTime", "measureThroughput", "measureConcurrentValidation"
+            "measureAverageTime", "measureThroughput", "measureConcurrentValidation"
     };
-    
+
     private CoreValidationDelegate validationDelegate;
 
     @Override
@@ -50,7 +49,7 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
     public void setup() {
         // Use base class setup with our benchmark names
         setupBase(BENCHMARK_NAMES);
-        
+
         // Initialize validation delegate
         validationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
     }

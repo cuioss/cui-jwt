@@ -49,7 +49,7 @@ public class JfrInstrumentation {
         // Schedule periodic statistics reporting
         scheduler.scheduleAtFixedRate(this::reportStatistics, 1, 1, TimeUnit.SECONDS);
     }
-    
+
     /**
      * Pre-initializes statistics for all benchmark/operation combinations to avoid
      * ConcurrentHashMap.computeIfAbsent contention during benchmark execution.
@@ -58,12 +58,12 @@ public class JfrInstrumentation {
      */
     public void preInitializeStats(String[] benchmarkNames) {
         String[] operationTypes = {
-            "validation", "error-validation", "mixed-validation",
-            "complete-validation", "token-parsing", "header-validation",
-            "signature-validation", "claims-validation", "token-format-check",
-            "issuer-extraction", "issuer-config-resolution", "token-building"
+                "validation", "error-validation", "mixed-validation",
+                "complete-validation", "token-parsing", "header-validation",
+                "signature-validation", "claims-validation", "token-format-check",
+                "issuer-extraction", "issuer-config-resolution", "token-building"
         };
-        
+
         for (String benchmark : benchmarkNames) {
             for (String operation : operationTypes) {
                 String key = benchmark + ":" + operation;

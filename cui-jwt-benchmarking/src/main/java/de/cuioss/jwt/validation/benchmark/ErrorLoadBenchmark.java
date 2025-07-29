@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

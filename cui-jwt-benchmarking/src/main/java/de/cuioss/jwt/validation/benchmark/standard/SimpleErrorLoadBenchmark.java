@@ -15,26 +15,23 @@
  */
 package de.cuioss.jwt.validation.benchmark.standard;
 
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.BenchmarkMetricsAggregator;
+import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import io.jsonwebtoken.Jwts;
-
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.time.Instant;
-import java.util.Date;
-import java.util.UUID;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -47,12 +44,12 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @State(Scope.Thread)
 @SuppressWarnings("java:S112")
-public class SimpleErrorLoadBenchmark extends de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark {
+public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
 
     private static final String[] BENCHMARK_NAMES = {
-        "validateMixedTokens0", "validateMixedTokens50"
+            "validateMixedTokens0", "validateMixedTokens50"
     };
-    
+
     // Pre-generated tokens for specific error scenarios
     private String validAccessToken;
     private String expiredToken;
@@ -107,7 +104,7 @@ public class SimpleErrorLoadBenchmark extends de.cuioss.jwt.validation.benchmark
                 invalidTokens.add("malformed.token." + i);
             }
         }
-        
+
         // Register benchmarks for metrics collection
         BenchmarkMetricsAggregator.registerBenchmarks(BENCHMARK_NAMES);
     }
@@ -169,13 +166,13 @@ public class SimpleErrorLoadBenchmark extends de.cuioss.jwt.validation.benchmark
             return validTokens.get(index);
         }
     }
-    
+
     /**
      * Creates an expired JWT token for testing.
      */
     private String createExpiredToken() {
         Instant past = Instant.now().minusSeconds(3600);
-        
+
         return Jwts.builder()
                 .issuer("benchmark-issuer")
                 .subject("benchmark-user")
@@ -187,7 +184,7 @@ public class SimpleErrorLoadBenchmark extends de.cuioss.jwt.validation.benchmark
                 .signWith(Jwts.SIG.HS256.key().build())
                 .compact();
     }
-    
+
     /**
      * Creates a token with invalid signature for testing.
      */
