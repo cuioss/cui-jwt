@@ -70,6 +70,14 @@ cui.jwt.issuers.default.jwks.http.max-retries=3
 |cui.jwt.parser.max-depth
 |int (default: 10)
 |Maximum depth for JSON parsing.
+
+|cui.jwt.cache.access-token.max-size
+|int (default: 1000)
+|Maximum number of validated access tokens to cache. Set to 0 to disable caching completely.
+
+|cui.jwt.cache.access-token.eviction-interval-seconds
+|long (default: 10)
+|Interval in seconds between cache eviction runs. Controls how frequently the cache checks for and removes expired tokens.
 |===
 
 == Issuer Configuration
@@ -220,6 +228,12 @@ For quick reference, here are all the default values in one place:
 |64
 
 |cui.jwt.parser.max-depth
+|10
+
+|cui.jwt.cache.access-token.max-size
+|1000
+
+|cui.jwt.cache.access-token.eviction-interval-seconds
 |10
 
 |cui.jwt.issuers.<issuer-name>.enabled

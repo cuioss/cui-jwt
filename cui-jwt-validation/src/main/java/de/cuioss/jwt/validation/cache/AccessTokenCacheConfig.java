@@ -31,18 +31,18 @@ import lombok.NonNull;
  * <pre>
  * // Default configuration
  * AccessTokenCacheConfig config = AccessTokenCacheConfig.defaultConfig();
- * 
+ *
  * // Custom configuration
  * AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
  *     .maxSize(500)
  *     .evictionIntervalSeconds(600L)
  *     .build();
- * 
+ *
  * // Disabled cache
  * AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
  *     .maxSize(0)
  *     .build();
- * 
+ *
  * // Create cache instance
  * AccessTokenCache cache = config.createCache(securityEventCounter);
  * </pre>
@@ -62,7 +62,7 @@ public class AccessTokenCacheConfig {
     /**
      * Default interval for background eviction in seconds.
      */
-    public static final long DEFAULT_EVICTION_INTERVAL_SECONDS = 300; // 5 minutes
+    public static final long DEFAULT_EVICTION_INTERVAL_SECONDS = 10;
 
     /**
      * The maximum number of tokens to cache.

@@ -15,12 +15,14 @@
  */
 package de.cuioss.jwt.quarkus.producer;
 
+import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
 import de.cuioss.jwt.quarkus.config.TokenValidatorMonitorConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -115,10 +117,15 @@ public class TokenValidatorProducer {
         TokenValidatorMonitorConfigResolver monitorConfigResolver = new TokenValidatorMonitorConfigResolver(config);
         TokenValidatorMonitorConfig monitorConfig = monitorConfigResolver.resolveMonitorConfig();
 
+        // Resolve cache config using the dedicated resolver
+        AccessTokenCacheConfigResolver cacheConfigResolver = new AccessTokenCacheConfigResolver(config);
+        AccessTokenCacheConfig cacheConfig = cacheConfigResolver.resolveCacheConfig();
+
         // Create TokenValidator using builder pattern - it handles internal initialization
         TokenValidator.TokenValidatorBuilder builder = TokenValidator.builder()
                 .parserConfig(parserConfig)
-                .monitorConfig(monitorConfig);
+                .monitorConfig(monitorConfig)
+                .cacheConfig(cacheConfig);
 
         // Add each issuer config to the builder
         for (IssuerConfig issuerConfig : issuerConfigs) {

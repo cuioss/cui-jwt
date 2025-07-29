@@ -537,4 +537,47 @@ public final class JwtPropertyKeys {
         }
     }
 
+    /**
+     * Properties related to access token caching configuration.
+     */
+    @UtilityClass
+    public static final class CACHE {
+        /**
+         * Base path for cache configurations.
+         */
+        public static final String BASE = PREFIX + ".cache.access-token";
+
+        /**
+         * Maximum number of access tokens to cache.
+         * Template: "cui.jwt.cache.access-token.max-size"
+         * <p>
+         * Controls the maximum number of validated access tokens that will be cached
+         * to improve performance by avoiding redundant validations.
+         * Set to 0 to disable caching completely.
+         * </p>
+         * <p>
+         * Default value is {@code 1000}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.cache.AccessTokenCacheConfig
+         */
+        public static final String MAX_SIZE = BASE + ".max-size";
+
+        /**
+         * Interval in seconds between cache eviction runs.
+         * Template: "cui.jwt.cache.access-token.eviction-interval-seconds"
+         * <p>
+         * Controls how frequently the cache checks for and removes expired tokens.
+         * This helps maintain cache size and ensures expired tokens are not served
+         * from the cache.
+         * </p>
+         * <p>
+         * Default value is {@code 10} seconds.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.cache.AccessTokenCacheConfig
+         */
+        public static final String EVICTION_INTERVAL_SECONDS = BASE + ".eviction-interval-seconds";
+    }
+
 }

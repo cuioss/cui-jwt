@@ -123,6 +123,26 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(31)
                 .build();
+
+        // Cache Messages (041-050)
+        
+        public static final LogRecord RESOLVING_ACCESS_TOKEN_CACHE_CONFIG = LogRecordModel.builder()
+                .template("Resolving access token cache configuration from properties")
+                .prefix(PREFIX)
+                .identifier(41)
+                .build();
+
+        public static final LogRecord ACCESS_TOKEN_CACHE_DISABLED = LogRecordModel.builder()
+                .template("Access token cache disabled (maxSize=0)")
+                .prefix(PREFIX)
+                .identifier(42)
+                .build();
+
+        public static final LogRecord ACCESS_TOKEN_CACHE_CONFIGURED = LogRecordModel.builder()
+                .template("Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s")
+                .prefix(PREFIX)
+                .identifier(43)
+                .build();
     }
 
     /**

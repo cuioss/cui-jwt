@@ -109,10 +109,10 @@ The library includes built-in caching for validated access tokens to improve per
 
 [source,java]
 ----
-// Configure access token cache (default: maxSize=1000, evictionIntervalSeconds=300)
+// Configure access token cache (default: maxSize=1000, evictionIntervalSeconds=10)
 AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
         .maxSize(500)  // Cache up to 500 tokens
-        .evictionIntervalSeconds(300L)  // Clean up expired tokens every 5 minutes
+        .evictionIntervalSeconds(60L)  // Clean up expired tokens every minute
         .build();
 
 // Create validator with custom cache configuration
