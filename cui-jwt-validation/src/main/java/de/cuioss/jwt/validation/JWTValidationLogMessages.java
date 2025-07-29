@@ -96,6 +96,12 @@ public final class JWTValidationLogMessages {
                 .identifier(507)
                 .template("Successfully fetched discovery document: %s")
                 .build();
+
+        public static final LogRecord ACCESS_TOKEN_CACHE_HIT = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(508)
+                .template("Access token retrieved from cache")
+                .build();
     }
 
     /**

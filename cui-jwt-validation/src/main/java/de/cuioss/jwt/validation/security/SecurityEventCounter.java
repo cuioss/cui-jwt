@@ -99,7 +99,8 @@ public class SecurityEventCounter {
         // Successful operations
         ACCESS_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED, null),
         ID_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED, null),
-        REFRESH_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.REFRESH_TOKEN_CREATED, null);
+        REFRESH_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.REFRESH_TOKEN_CREATED, null),
+        ACCESS_TOKEN_CACHE_HIT(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT, null);
 
         private final LogRecord logRecord;
         private final EventCategory category;

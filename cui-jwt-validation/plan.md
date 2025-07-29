@@ -115,7 +115,7 @@ Consider
 5. This ensures all security logging and monitoring happens correctly without duplication
 
 **Action Items:**
-- [ ] Create `AccessTokenCache` class with configuration:
+- [x] Create `AccessTokenCache` class with configuration:
   ```java
   public class AccessTokenCache {
       private final int maxSize;
@@ -124,7 +124,7 @@ Consider
       // configuration for eviction thread timing
   }
   ```
-- [ ] Design `CachedToken` wrapper:
+- [x] Design `CachedToken` wrapper:
   ```java
   public class CachedToken {
       private final String rawToken;
@@ -132,27 +132,27 @@ Consider
       private final OffsetDateTime expirationTime;
   }
   ```
-- [ ] Implement main cache method using Map's computeIfAbsent pattern:
+- [x] Implement main cache method using Map's computeIfAbsent pattern:
   ```java
   public AccessTokenContent computeIfAbsent(
       String tokenKey, 
       Function<String, AccessTokenContent> validationFunction
   )
   ```
-- [ ] Key design considerations:
+- [x] Key design considerations:
   - Use token hash (e.g., SHA-256) as key instead of full string
   - Length validation already handled by jwtParser.decode() before cache check
   - Compare actual raw token string on cache hit to prevent hash collisions
-- [ ] Implement cache validation on retrieval:
+- [x] Implement cache validation on retrieval:
   - Verify raw token matches the cached entry
   - Check if token is not expired using `TokenContent#isExpired`
   - Return null if validation fails, triggering revalidation
   - Increment security event counter on cache hit for monitoring
-- [ ] Create background eviction thread:
+- [x] Create background eviction thread:
   - Configurable execution interval
   - Remove all expired tokens from cache
   - Use ScheduledExecutorService for periodic cleanup
-- [ ] Performance and security validation:
+- [x] Performance and security validation:
   - Ensure thread-safe implementation using ConcurrentHashMap
   - Implement size-based eviction (LRU or similar)
   - No external dependencies (no Caffeine due to Quarkus constraints)
@@ -163,7 +163,7 @@ Consider
   - Cache key should include issuer to respect issuer boundaries
   - Only cache successful validations of AccessTokenContent
   - Pass SecurityEventCounter to cache for event tracking
-- [ ] Add new security events to JWTValidationLogMessages.DEBUG:
+- [x] Add new security events to JWTValidationLogMessages.DEBUG:
   ```java
   public static final LogRecord ACCESS_TOKEN_CACHE_HIT = LogRecordModel.builder()
       .prefix(PREFIX)
@@ -171,7 +171,7 @@ Consider
       .template("Access token retrieved from cache")
       .build();
   ```
-- [ ] Add corresponding EventType to SecurityEventCounter:
+- [x] Add corresponding EventType to SecurityEventCounter:
   ```java
   ACCESS_TOKEN_CACHE_HIT(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT, null)
   ```

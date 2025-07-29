@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.jwt.validation.cache.AccessTokenCache;
+import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
@@ -79,11 +81,17 @@ import java.util.Optional;
  *     .httpJwksLoaderConfig(httpConfig)
  *     .build(); // Validation happens automatically
  *
- * // Create the token validator with custom metrics configuration
+ * // Create the token validator with custom metrics and cache configuration
  * TokenValidatorMonitorConfig metricsConfig = TokenValidatorMonitorConfig.builder()
  *     .windowSize(200)
  *     .measurementType(MeasurementType.SIGNATURE_VALIDATION)
  *     .measurementType(MeasurementType.COMPLETE_VALIDATION)
+ *     .build();
+ *
+ * // Configure access token caching
+ * AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
+ *     .maxSize(500)  // Set to 0 to disable caching
+ *     .evictionIntervalSeconds(300L)
  *     .build();
  *
  * // The validator creates a SecurityEventCounter internally and passes it to all components
@@ -91,6 +99,7 @@ import java.util.Optional;
  *     .parserConfig(ParserConfig.builder().build())
  *     .issuerConfig(issuerConfig)
  *     .monitorConfig(metricsConfig)  // Optional: null means all types monitored
+ *     .cacheConfig(cacheConfig)      // Optional: null means default caching enabled
  *     .build();
  *
  * // Parse an access token
@@ -180,6 +189,12 @@ public class TokenValidator {
      */
     private final Map<String, TokenHeaderValidator> headerValidators;
 
+    /**
+     * Optional cache for validated access tokens to avoid redundant validation.
+     * This cache significantly improves performance for repeated token validations.
+     */
+    private final AccessTokenCache accessTokenCache;
+
 
     /**
      * Private constructor used by builder.
@@ -188,7 +203,8 @@ public class TokenValidator {
     private TokenValidator(
             ParserConfig parserConfig,
             @Singular @NonNull List<IssuerConfig> issuerConfigs,
-            TokenValidatorMonitorConfig monitorConfig) {
+            TokenValidatorMonitorConfig monitorConfig,
+            AccessTokenCacheConfig cacheConfig) {
 
         if (issuerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one issuer configuration must be provided");
@@ -260,6 +276,15 @@ public class TokenValidator {
         this.claimValidators = Map.copyOf(claimValidatorsMap);
         this.headerValidators = Map.copyOf(headerValidatorsMap);
 
+        // Initialize access token cache based on configuration
+        if (cacheConfig == null) {
+            cacheConfig = AccessTokenCacheConfig.defaultConfig();
+        }
+
+        this.accessTokenCache = cacheConfig.createCache(this.securityEventCounter);
+        LOGGER.debug("AccessTokenCache initialized with maxSize=%d, evictionInterval=%ds",
+                cacheConfig.getMaxSize(), cacheConfig.getEvictionIntervalSeconds());
+
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }
 
@@ -274,14 +299,9 @@ public class TokenValidator {
     @NonNull
     public AccessTokenContent createAccessToken(@NonNull String tokenString) {
         LOGGER.debug("Creating access token");
-        AccessTokenContent result = processTokenPipeline(
-                tokenString,
-                (decodedJwt, issuerConfig) -> {
-                    TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-                    return cachedBuilder.createAccessToken(decodedJwt);
-                },
-                true
-        );
+
+        // Use cache-aware processing for access tokens
+        AccessTokenContent result = processAccessTokenWithCache(tokenString);
 
         LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED::format);
         securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
@@ -399,6 +419,51 @@ public class TokenValidator {
             // Record complete validation time (including error scenarios)
             pipelineTicker.stopAndRecord();
         }
+    }
+
+    /**
+     * Process access token with cache support.
+     * This method integrates caching into the validation pipeline for access tokens.
+     *
+     * @param tokenString the JWT token string
+     * @return the validated access token
+     * @throws TokenValidationException if validation fails
+     */
+    private AccessTokenContent processAccessTokenWithCache(@NonNull String tokenString) {
+        // Perform minimal validation to get issuer for cache key
+        validateTokenFormat(tokenString, MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor, true));
+        DecodedJwt decodedJwt = decodeToken(tokenString, MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor, true));
+        String issuer = validateAndExtractIssuer(decodedJwt, MeasurementType.ISSUER_EXTRACTION.createTicker(performanceMonitor, true));
+
+        // Use transparent cache - handles enabled/disabled states internally
+        return accessTokenCache.computeIfAbsent(
+                issuer,
+                tokenString,
+                token -> {
+                    // Continue with expensive validation steps
+                    // We already have the decodedJwt and issuer, so continue from issuer config resolution
+                    MetricsTicker pipelineTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, true);
+                    pipelineTicker.startRecording();
+                    try {
+                        IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor, true));
+                        validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor, true));
+                        validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor, true));
+                        
+                        TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
+                        AccessTokenContent accessToken = buildToken(decodedJwt, issuerConfig, 
+                                (jwt, config) -> cachedBuilder.createAccessToken(jwt),
+                                MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor, true));
+                        
+                        AccessTokenContent validatedToken = validateTokenClaims(accessToken, issuerConfig, 
+                                MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor, true));
+                        
+                        LOGGER.debug("Token successfully validated");
+                        return validatedToken;
+                    } finally {
+                        pipelineTicker.stopAndRecord();
+                    }
+                }
+        );
     }
 
     private void validateTokenFormat(String tokenString, MetricsTicker ticker) {

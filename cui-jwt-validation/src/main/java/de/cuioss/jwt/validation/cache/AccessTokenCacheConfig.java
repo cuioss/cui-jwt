@@ -1,0 +1,126 @@
+/*
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.jwt.validation.cache;
+
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+
+/**
+ * Configuration for AccessTokenCache that provides all defaults and factory methods.
+ * <p>
+ * This configuration class encapsulates all cache settings and provides a convenient
+ * way to create configured cache instances. When cache size is set to 0, caching
+ * is effectively disabled.
+ * <p>
+ * Usage example:
+ * <pre>
+ * // Default configuration
+ * AccessTokenCacheConfig config = AccessTokenCacheConfig.defaultConfig();
+ * 
+ * // Custom configuration
+ * AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
+ *     .maxSize(500)
+ *     .evictionIntervalSeconds(600L)
+ *     .build();
+ * 
+ * // Disabled cache
+ * AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
+ *     .maxSize(0)
+ *     .build();
+ * 
+ * // Create cache instance
+ * AccessTokenCache cache = config.createCache(securityEventCounter);
+ * </pre>
+ *
+ * @author Oliver Wolff
+ * @since 1.0
+ */
+@Builder
+@Getter
+public class AccessTokenCacheConfig {
+
+    /**
+     * Default maximum number of tokens to cache.
+     */
+    public static final int DEFAULT_MAX_SIZE = 1000;
+
+    /**
+     * Default interval for background eviction in seconds.
+     */
+    public static final long DEFAULT_EVICTION_INTERVAL_SECONDS = 300; // 5 minutes
+
+    /**
+     * The maximum number of tokens to cache.
+     * When set to 0, caching is disabled and createCache returns null.
+     */
+    @Builder.Default
+    private final int maxSize = DEFAULT_MAX_SIZE;
+
+    /**
+     * The interval in seconds between background eviction runs.
+     * Only relevant when maxSize > 0.
+     */
+    @Builder.Default
+    private final long evictionIntervalSeconds = DEFAULT_EVICTION_INTERVAL_SECONDS;
+
+    /**
+     * Creates a default configuration with standard settings.
+     *
+     * @return a default AccessTokenCacheConfig with maxSize=1000 and evictionInterval=300s
+     */
+    public static AccessTokenCacheConfig defaultConfig() {
+        return AccessTokenCacheConfig.builder().build();
+    }
+
+    /**
+     * Creates a disabled cache configuration.
+     *
+     * @return a configuration that will create no cache (maxSize=0)
+     */
+    public static AccessTokenCacheConfig disabled() {
+        return AccessTokenCacheConfig.builder()
+                .maxSize(0)
+                .build();
+    }
+
+    /**
+     * Creates an AccessTokenCache instance based on this configuration.
+     * <p>
+     * Always returns a cache instance. When maxSize is 0, the cache will
+     * immediately return null from computeIfAbsent without any caching behavior.
+     *
+     * @param securityEventCounter the security event counter for tracking cache hits
+     * @return the configured AccessTokenCache (never null)
+     */
+    public AccessTokenCache createCache(@NonNull SecurityEventCounter securityEventCounter) {
+        return AccessTokenCache.builder()
+                .maxSize(maxSize)
+                .evictionIntervalSeconds(evictionIntervalSeconds)
+                .securityEventCounter(securityEventCounter)
+                .build();
+    }
+
+    /**
+     * Checks if caching is enabled based on the configuration.
+     *
+     * @return true if caching is enabled (maxSize > 0), false otherwise
+     */
+    public boolean isCachingEnabled() {
+        return maxSize > 0;
+    }
+}
