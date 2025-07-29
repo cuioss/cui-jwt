@@ -122,4 +122,8 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-208 |WELLKNOWN |Malformed URL for field '%s': %s from %s - %s |Logged when a URL field in the discovery document is malformed
 |JWTValidation-209 |WELLKNOWN |Failed to parse JSON from %s: %s |Logged when JSON parsing fails for a well-known discovery document
 |JWTValidation-210 |WELLKNOWN |Issuer URL from discovery document is malformed: %s - %s |Logged when the issuer URL in the discovery document is malformed
+|JWTValidation-211 |CACHE |Token passed validation but has no expiration time - this indicates a validation bug |Logged when a validated token unexpectedly has no expiration time, indicating a validation pipeline bug
+|JWTValidation-212 |CACHE |Unexpected error while caching token |Logged when an unexpected error occurs while storing a validated token in the cache
+|JWTValidation-213 |CACHE |Validation function returned null instead of throwing exception |Logged when a validation function unexpectedly returns null instead of throwing an exception on failure
+|JWTValidation-214 |CACHE |Error during cache eviction |Logged when an error occurs during background cache eviction operations
 |===

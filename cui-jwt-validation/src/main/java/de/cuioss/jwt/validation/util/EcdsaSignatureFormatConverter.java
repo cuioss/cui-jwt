@@ -75,7 +75,7 @@ public class EcdsaSignatureFormatConverter {
         int expectedLength = componentSize * 2;
 
         if (ieeeP1363Signature.length != expectedLength) {
-            throw new SignatureException("Invalid %s signature length: expected %d bytes, got %d bytes".formatted(
+            throw new SignatureException("Invalid %s signature length: expected %s bytes, got %s bytes".formatted(
                     algorithm, expectedLength, ieeeP1363Signature.length));
         }
 
@@ -159,7 +159,7 @@ public class EcdsaSignatureFormatConverter {
 
         byte[] result = sequence.toByteArray();
 
-        LOGGER.debug("Converted IEEE P1363 signature to ASN.1/DER format (length: %d bytes)", result.length);
+        LOGGER.debug("Converted IEEE P1363 signature to ASN.1/DER format (length: %s bytes)", result.length);
 
         return result;
     }

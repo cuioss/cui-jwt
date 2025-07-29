@@ -140,7 +140,7 @@ public class AccessTokenCache {
                 evictionIntervalSeconds1,
                     TimeUnit.SECONDS);
 
-            LOGGER.debug("AccessTokenCache initialized with maxSize=%d, evictionInterval=%ds",
+            LOGGER.debug("AccessTokenCache initialized with maxSize=%s, evictionInterval=%ss",
                     this.maxSize, evictionIntervalSeconds1);
         } else {
             // Cache disabled - no cache structures or background threads needed
@@ -240,18 +240,18 @@ public class AccessTokenCache {
                             .build();
 
                     updateLru(cacheKey);
-                    LOGGER.debug("Token cached, current size: %d", cache.size());
+                    LOGGER.debug("Token cached, current size: %s", cache.size());
                     return newCachedToken;
                 } catch (IllegalStateException e) {
                     // This should not happen as TokenContent.getExpirationTime() throws
                     // IllegalStateException only when expiration claim is missing,
                     // which should have been caught during token validation
-                    LOGGER.error(e, "Token passed validation but has no expiration time - this indicates a validation bug");
+                    LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
                     throw new InternalCacheException(
                             "Token passed validation but has no expiration time", e);
                 } catch (Exception e) {
                     // Any other unexpected exception
-                    LOGGER.error(e, "Unexpected error while caching token");
+                    LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
                     throw new InternalCacheException(
                             "Failed to cache validated token", e);
                 } finally {
@@ -269,7 +269,7 @@ public class AccessTokenCache {
         
         // If we reach here, the validation function returned null.
         // This should not happen as validation functions should throw on failure.
-        LOGGER.error("Validation function returned null instead of throwing exception");
+        LOGGER.error(JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
         throw new InternalCacheException(
                 "Validation function returned null - expected exception on failure"
         );
@@ -323,7 +323,7 @@ public class AccessTokenCache {
                         evicted++;
                     }
                     
-                    LOGGER.debug("Evicted %d oldest tokens from cache due to size limit", evicted);
+                    LOGGER.debug("Evicted %s oldest tokens from cache due to size limit", evicted);
                 }
             } finally {
                 lruLock.writeLock().unlock();
@@ -354,10 +354,10 @@ public class AccessTokenCache {
             }
 
             if (evicted > 0) {
-                LOGGER.debug("Evicted %d expired tokens from cache", evicted);
+                LOGGER.debug("Evicted %s expired tokens from cache", evicted);
             }
         } catch (Exception e) {
-            LOGGER.error(e, "Error during cache eviction");
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.format());
         }
     }
 
