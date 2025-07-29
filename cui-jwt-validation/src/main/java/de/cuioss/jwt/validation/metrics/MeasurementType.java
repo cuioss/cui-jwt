@@ -167,4 +167,24 @@ public enum MeasurementType {
         }
         return new ActiveMetricsTicker(monitor, this);
     }
+
+    /**
+     * Creates a started {@link MetricsTicker} for this measurement type.
+     * <p>
+     * This is a convenience method that creates a ticker and immediately calls
+     * {@link MetricsTicker#startRecording()} on it. This simplifies the common
+     * pattern of creating a ticker and immediately starting it.
+     * <p>
+     * If {@code recordMetrics} is {@code false}, returns a no-op ticker with zero overhead.
+     * Otherwise, returns an active ticker that is already started.
+     *
+     * @param monitor the monitor to record measurements to (ignored if recordMetrics is false)
+     * @param recordMetrics whether to create an active ticker or a no-op ticker
+     * @return a started MetricsTicker instance appropriate for the recording configuration
+     */
+    public MetricsTicker createStartedTicker(TokenValidatorMonitor monitor, boolean recordMetrics) {
+        MetricsTicker ticker = createTicker(monitor, recordMetrics);
+        ticker.startRecording();
+        return ticker;
+    }
 }

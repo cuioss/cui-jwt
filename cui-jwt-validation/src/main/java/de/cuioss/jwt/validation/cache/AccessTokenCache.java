@@ -181,13 +181,12 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache lookup
-        MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createTicker(performanceMonitor, true);
+        MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createStartedTicker(performanceMonitor, true);
 
         // Generate cache key from token string
         int cacheKey = tokenString.hashCode();
 
         // First, try to get existing cached value
-        lookupTicker.startRecording();
         CachedToken existing = cache.get(cacheKey);
         lookupTicker.stopAndRecord();
         

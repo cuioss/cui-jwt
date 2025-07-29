@@ -301,8 +301,7 @@ public class TokenValidator {
         LOGGER.debug("Creating access token");
 
         // Record complete validation time
-        MetricsTicker completeTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, true);
-        completeTicker.startRecording();
+        MetricsTicker completeTicker = MeasurementType.COMPLETE_VALIDATION.createStartedTicker(performanceMonitor, true);
         try {
             // Use cache-aware processing for access tokens
             AccessTokenContent result = processAccessTokenWithCache(tokenString);
@@ -407,8 +406,7 @@ public class TokenValidator {
             TokenBuilderFunction<T> tokenBuilder,
             boolean recordMetrics) {
 
-        MetricsTicker pipelineTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, recordMetrics);
-        pipelineTicker.startRecording();
+        MetricsTicker pipelineTicker = MeasurementType.COMPLETE_VALIDATION.createStartedTicker(performanceMonitor, recordMetrics);
         try {
             validateTokenFormat(tokenString, MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor, recordMetrics));
             DecodedJwt decodedJwt = decodeToken(tokenString, MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor, recordMetrics));
