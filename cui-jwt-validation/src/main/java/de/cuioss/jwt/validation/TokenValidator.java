@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
+import de.cuioss.jwt.validation.metrics.MetricsTicker;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
@@ -379,31 +380,29 @@ public class TokenValidator {
             TokenBuilderFunction<T> tokenBuilder,
             boolean recordMetrics) {
 
-        long pipelineStartTime = recordMetrics ? System.nanoTime() : 0;
+        MetricsTicker pipelineTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, recordMetrics);
+        pipelineTicker.startRecording();
         try {
-            validateTokenFormat(tokenString, recordMetrics);
-            DecodedJwt decodedJwt = decodeToken(tokenString, recordMetrics);
-            String issuer = validateAndExtractIssuer(decodedJwt, recordMetrics);
-            IssuerConfig issuerConfig = resolveIssuerConfig(issuer, recordMetrics);
+            validateTokenFormat(tokenString, MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor, recordMetrics));
+            DecodedJwt decodedJwt = decodeToken(tokenString, MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor, recordMetrics));
+            String issuer = validateAndExtractIssuer(decodedJwt, MeasurementType.ISSUER_EXTRACTION.createTicker(performanceMonitor, recordMetrics));
+            IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor, recordMetrics));
 
-            validateTokenHeader(decodedJwt, issuerConfig, recordMetrics);
-            validateTokenSignature(decodedJwt, issuerConfig, recordMetrics);
-            T token = buildToken(decodedJwt, issuerConfig, tokenBuilder, recordMetrics);
-            T validatedToken = validateTokenClaims(token, issuerConfig, recordMetrics);
+            validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor, recordMetrics));
+            validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor, recordMetrics));
+            T token = buildToken(decodedJwt, issuerConfig, tokenBuilder, MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor, recordMetrics));
+            T validatedToken = validateTokenClaims(token, issuerConfig, MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor, recordMetrics));
 
             LOGGER.debug("Token successfully validated");
             return validatedToken;
         } finally {
             // Record complete validation time (including error scenarios)
-            if (recordMetrics) {
-                long pipelineEndTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.COMPLETE_VALIDATION, pipelineEndTime - pipelineStartTime);
-            }
+            pipelineTicker.stopAndRecord();
         }
     }
 
-    private void validateTokenFormat(String tokenString, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private void validateTokenFormat(String tokenString, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             if (MoreStrings.isBlank(tokenString)) {
                 LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
@@ -414,27 +413,21 @@ public class TokenValidator {
                 );
             }
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.TOKEN_FORMAT_CHECK, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
-    private DecodedJwt decodeToken(String tokenString, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private DecodedJwt decodeToken(String tokenString, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             return jwtParser.decode(tokenString);
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.TOKEN_PARSING, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
-    private String validateAndExtractIssuer(DecodedJwt decodedJwt, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private String validateAndExtractIssuer(DecodedJwt decodedJwt, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             Optional<String> issuer = decodedJwt.getIssuer();
             if (issuer.isEmpty()) {
@@ -447,10 +440,7 @@ public class TokenValidator {
             }
             return issuer.get();
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.ISSUER_EXTRACTION, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
@@ -462,33 +452,27 @@ public class TokenValidator {
      * @return the issuer configuration if healthy and available
      * @throws TokenValidationException if no configuration found or issuer is unhealthy
      */
-    private IssuerConfig resolveIssuerConfig(String issuer, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private IssuerConfig resolveIssuerConfig(String issuer, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             return issuerConfigResolver.resolveConfig(issuer);
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.ISSUER_CONFIG_RESOLUTION, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
-    private void validateTokenHeader(DecodedJwt decodedJwt, IssuerConfig issuerConfig, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private void validateTokenHeader(DecodedJwt decodedJwt, IssuerConfig issuerConfig, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             TokenHeaderValidator cachedValidator = headerValidators.get(issuerConfig.getIssuerIdentifier());
             cachedValidator.validate(decodedJwt);
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.HEADER_VALIDATION, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
-    private void validateTokenSignature(DecodedJwt decodedJwt, IssuerConfig issuerConfig, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private void validateTokenSignature(DecodedJwt decodedJwt, IssuerConfig issuerConfig, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             // Get pre-created TokenSignatureValidator for this issuer
             String issuerIdentifier = issuerConfig.getIssuerIdentifier();
@@ -501,10 +485,7 @@ public class TokenValidator {
             // Use the cached signature validator for validation
             signatureValidator.validateSignature(decodedJwt);
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
@@ -513,8 +494,8 @@ public class TokenValidator {
             DecodedJwt decodedJwt,
             IssuerConfig issuerConfig,
             TokenBuilderFunction<T> tokenBuilder,
-            boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+            MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             Optional<T> token = tokenBuilder.apply(decodedJwt, issuerConfig);
             if (token.isEmpty()) {
@@ -526,16 +507,13 @@ public class TokenValidator {
             }
             return token.get();
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.TOKEN_BUILDING, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends TokenContent> T validateTokenClaims(TokenContent token, IssuerConfig issuerConfig, boolean recordMetrics) {
-        long startTime = recordMetrics ? System.nanoTime() : 0;
+    private <T extends TokenContent> T validateTokenClaims(TokenContent token, IssuerConfig issuerConfig, MetricsTicker ticker) {
+        ticker.startRecording();
         try {
             // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
             // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
@@ -545,10 +523,7 @@ public class TokenValidator {
             TokenContent validatedContent = cachedValidator.validate(token, context);
             return (T) validatedContent;
         } finally {
-            if (recordMetrics) {
-                long endTime = System.nanoTime();
-                performanceMonitor.recordMeasurement(MeasurementType.CLAIMS_VALIDATION, endTime - startTime);
-            }
+            ticker.stopAndRecord();
         }
     }
 

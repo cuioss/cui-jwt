@@ -11,168 +11,184 @@ Following the setup isolation fix, true performance bottlenecks are revealed:
 **Current Baseline**: 102,956 ops/s throughput with p99 latencies reaching 32.3ms
 
 ## Prioritized Optimization Tasks with Action Items
+Consider
+### 1. Metrics Recording Optimization with Ticker Object (High Priority)
 
-### 1. Signature Validation Optimization 
-
-**Location**: `TokenSignatureValidator.java:189-201` - `verifySignature()` method
-**Real Issue**: The 17.9ms p99 spikes are from actual cryptographic operations that cannot be optimized further within JCA constraints
-
-**Analysis**: 
-- RSA/ECDSA signature verification is inherently CPU-intensive
-- SignatureTemplateManager already optimizes provider lookups
-- ECDSA conversion overhead is necessary for JCA compatibility
-
-**Decision**: Accept that signature validation is the primary bottleneck and focus optimization efforts on other areas
-
-### 2. Token Building Field-Based Architecture (High Priority)
-
-**Location**: `TokenBuilder.java` - instance created per request at `TokenValidator.java:232,254`
-**Issue**: New `TokenBuilder` instance created for every token validation
-**Impact**: 3.7ms p99 spikes from object allocation
+**Location**: `TokenValidator.java` - multiple methods with metrics recording pattern
+**Issue**: Repetitive pattern of `long startTime = recordMetrics ? System.nanoTime() : 0;` followed by `if (recordMetrics) { ... }`
+**Impact**: Code duplication and potential overhead from conditional checks
 
 **Action Items:**
-- [ ] Add `tokenBuilders` field to `TokenValidator`:
+- [x] Create a new `MetricsTicker` class that encapsulates timing logic:
   ```java
-  private final Map<String, TokenBuilder> tokenBuilders;
-  ```
-- [ ] In `TokenValidator` constructor, initialize token builders:
-  ```java
-  Map<String, TokenBuilder> builders = new HashMap<>();
-  for (IssuerConfig issuerConfig : issuerConfigs) {
-      builders.put(
-          issuerConfig.getIssuerIdentifier(), 
-          new TokenBuilder(issuerConfig)
-      );
+  public interface MetricsTicker {
+      void startRecording();
+      void stopAndRecord();
   }
-  this.tokenBuilders = Map.copyOf(builders);
   ```
-- [ ] Modify `createAccessToken` method to use cached builder:
+- [x] Implement two versions:
+  - `NoOpMetricsTicker` - does nothing when `recordMetrics` is false
+  - `ActiveMetricsTicker` - tracks timing and records to `TokenValidatorMonitor`
+- [x] Create a single ActiveMetricsTicker that encapsulates the MeasurementType:
   ```java
-  TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-  return cachedBuilder.createAccessToken(decodedJwt);
+  public class ActiveMetricsTicker implements MetricsTicker {
+      private final TokenValidatorMonitor monitor;
+      private final MeasurementType measurementType;
+      private long startTime;
+      
+      public void stopAndRecord() {
+          monitor.recordMeasurement(measurementType, 
+                                   System.nanoTime() - startTime);
+      }
+  }
   ```
-- [ ] Modify `createIdToken` method to use cached builder
-- [ ] Update `processTokenPipeline` method signature to accept cached builder
-- [ ] Write unit tests to verify thread safety of shared TokenBuilder instances
-- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
-- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
+- [x] Add factory method to MeasurementType enum to create appropriate ticker:
+  ```java
+  public MetricsTicker createTicker(TokenValidatorMonitor monitor, boolean recordMetrics) {
+      if (!recordMetrics) {
+          return NoOpMetricsTicker.INSTANCE;
+      }
+      return new ActiveMetricsTicker(monitor, this);
+  }
+  ```
+- [x] Update method signatures to accept MetricsTicker instead of boolean recordMetrics:
+  ```java
+  private void validateTokenFormat(String tokenString, MetricsTicker ticker)
+  private DecodedJwt decodeToken(String tokenString, MetricsTicker ticker)
+  private String validateAndExtractIssuer(DecodedJwt decodedJwt, MetricsTicker ticker)
+  // ... other validation methods
+  ```
+- [x] Update processTokenPipeline to create tickers and pass them to methods:
+  ```java
+  private <T extends TokenContent> T processTokenPipeline(
+          String tokenString,
+          TokenType tokenType,
+          TokenBuilderFunction<T> tokenBuilder,
+          boolean recordMetrics) {
+      
+      // Create all tickers at the beginning
+      MetricsTicker formatTicker = MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor, recordMetrics);
+      MetricsTicker decodeTicker = MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor, recordMetrics);
+      MetricsTicker issuerTicker = MeasurementType.ISSUER_EXTRACTION.createTicker(performanceMonitor, recordMetrics);
+      // ... other tickers
+      
+      MetricsTicker pipelineTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, recordMetrics);
+      pipelineTicker.startRecording();
+      try {
+          validateTokenFormat(tokenString, formatTicker);
+          DecodedJwt decodedJwt = decodeToken(tokenString, decodeTicker);
+          String issuer = validateAndExtractIssuer(decodedJwt, issuerTicker);
+          // ... rest of pipeline
+      } finally {
+          pipelineTicker.stopAndRecord();
+      }
+  }
+  ```
+- [x] Update individual methods to use ticker pattern:
+  ```java
+  private void validateTokenFormat(String tokenString, MetricsTicker ticker) {
+      ticker.startRecording();
+      try {
+          // existing validation logic
+      } finally {
+          ticker.stopAndRecord();
+      }
+  }
+  ```
+- [x] Ensure NOOP implementation has zero overhead
+- [ ] Write unit tests for both ticker implementations
+- [x] Run `./mvnw -Ppre-commit clean verify -DskipTests -pl cui-jwt-validation`
+- [x] Run `./mvnw clean install -pl cui-jwt-validation`
 - [ ] Commit changes to git
 
-### 3. Claims Validation Field-Based Architecture (High Priority)
+### 2. Access Token Cache Implementation (High Priority)
 
-**Location**: `TokenClaimValidator.java` - instance created per request at `TokenValidator.java:492`
-**Issue**: New `TokenClaimValidator` instance created for every token validation
-**Impact**: 1.3ms p99 spikes from object allocation
+**Location**: New `AccessTokenCache` class to be created
+**Issue**: Currently validating the same access tokens repeatedly
+**Impact**: Redundant cryptographic operations and validation overhead
+
+**Integration Strategy**: Place cache check AFTER initial format validation to leverage existing length and format checks:
+1. Token enters `processTokenPipeline` method
+2. `validateTokenFormat` is called first - handles empty token validation
+3. Token is decoded by `jwtParser.decode()` - handles length validation (maxTokenSize) and format validation
+4. THEN check cache before expensive operations (signature validation, claim validation)
+5. This ensures all security logging and monitoring happens correctly without duplication
 
 **Action Items:**
-- [ ] Add `claimValidators` field to `TokenValidator`:
+- [ ] Create `AccessTokenCache` class with configuration:
   ```java
-  private final Map<String, TokenClaimValidator> claimValidators;
-  ```
-- [ ] In `TokenValidator` constructor, initialize claim validators:
-  ```java
-  Map<String, TokenClaimValidator> validators = new HashMap<>();
-  for (IssuerConfig issuerConfig : issuerConfigs) {
-      validators.put(
-          issuerConfig.getIssuerIdentifier(),
-          new TokenClaimValidator(issuerConfig, securityEventCounter)
-      );
+  public class AccessTokenCache {
+      private final int maxSize;
+      private final Map<String, CachedToken> cache;
+      private final SecurityEventCounter securityEventCounter;
+      // configuration for eviction thread timing
   }
-  this.claimValidators = Map.copyOf(validators);
   ```
-- [ ] Modify `validateTokenClaims` method to use cached validator:
+- [ ] Design `CachedToken` wrapper:
   ```java
-  TokenClaimValidator cachedValidator = claimValidators.get(issuerConfig.getIssuerIdentifier());
-  TokenContent validatedContent = cachedValidator.validate(token, context);
+  public class CachedToken {
+      private final String rawToken;
+      private final AccessTokenContent content;
+      private final OffsetDateTime expirationTime;
+  }
   ```
-- [ ] Remove line creating new TokenClaimValidator instance
-- [ ] Write unit tests to verify thread safety of shared validators
-- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
+- [ ] Implement main cache method using Map's computeIfAbsent pattern:
+  ```java
+  public AccessTokenContent computeIfAbsent(
+      String tokenKey, 
+      Function<String, AccessTokenContent> validationFunction
+  )
+  ```
+- [ ] Key design considerations:
+  - Use token hash (e.g., SHA-256) as key instead of full string
+  - Length validation already handled by jwtParser.decode() before cache check
+  - Compare actual raw token string on cache hit to prevent hash collisions
+- [ ] Implement cache validation on retrieval:
+  - Verify raw token matches the cached entry
+  - Check if token is not expired using `TokenContent#isExpired`
+  - Return null if validation fails, triggering revalidation
+  - Increment security event counter on cache hit for monitoring
+- [ ] Create background eviction thread:
+  - Configurable execution interval
+  - Remove all expired tokens from cache
+  - Use ScheduledExecutorService for periodic cleanup
+- [ ] Performance and security validation:
+  - Ensure thread-safe implementation using ConcurrentHashMap
+  - Implement size-based eviction (LRU or similar)
+  - No external dependencies (no Caffeine due to Quarkus constraints)
+  - Verify no sensitive data leakage in cache keys
+- [ ] Integration with TokenValidator:
+  - Add AccessTokenCache field to TokenValidator
+  - Modify `processTokenPipeline` to check cache after `decodeToken` but before `validateTokenSignature`
+  - Cache key should include issuer to respect issuer boundaries
+  - Only cache successful validations of AccessTokenContent
+  - Pass SecurityEventCounter to cache for event tracking
+- [ ] Add new security events to JWTValidationLogMessages.DEBUG:
+  ```java
+  public static final LogRecord ACCESS_TOKEN_CACHE_HIT = LogRecordModel.builder()
+      .prefix(PREFIX)
+      .identifier(508)
+      .template("Access token retrieved from cache")
+      .build();
+  ```
+- [ ] Add corresponding EventType to SecurityEventCounter:
+  ```java
+  ACCESS_TOKEN_CACHE_HIT(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT, null)
+  ```
+- [ ] Write comprehensive unit tests:
+  - Test cache hit/miss scenarios
+  - Test expiration handling
+  - Test concurrent access
+  - Test eviction policies
+  - Test security event counter increments on cache hits
+- [ ] Run `./mvnw -Ppre-commit clean verify -DskipTests -pl cui-jwt-validation`
 - [ ] Run `./mvnw clean install -pl cui-jwt-validation`
 - [ ] Commit changes to git
-
-### 4. Header Validation Field-Based Architecture (Medium Priority)
-
-**Location**: `TokenValidator.java:428` - `validateTokenHeader()` method
-**Issue**: New `TokenHeaderValidator` instance created per request
-
-**Action Items:**
-- [ ] Add `headerValidators` field to `TokenValidator`:
-  ```java
-  private final Map<String, TokenHeaderValidator> headerValidators;
-  ```
-- [ ] In `TokenValidator` constructor, initialize header validators:
-  ```java
-  Map<String, TokenHeaderValidator> validators = new HashMap<>();
-  for (IssuerConfig issuerConfig : issuerConfigs) {
-      validators.put(
-          issuerConfig.getIssuerIdentifier(),
-          new TokenHeaderValidator(issuerConfig, securityEventCounter)
-      );
-  }
-  this.headerValidators = Map.copyOf(validators);
-  ```
-- [ ] Modify `validateTokenHeader` method to use cached validator:
-  ```java
-  TokenHeaderValidator cachedValidator = headerValidators.get(issuerConfig.getIssuerIdentifier());
-  cachedValidator.validate(decodedJwt);
-  ```
-- [ ] Remove line creating new TokenHeaderValidator instance
-- [ ] Write unit tests to verify thread safety
-- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
-- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
-- [ ] Commit changes to git
-
-### 5. Claim Processing Optimization (Medium Priority)
-
-**Location**: `TokenBuilder.java:111-136` - `extractClaims()` method
-**Issue**: Map lookups and claim resolution per token
-
-**Analysis**: 
-- `ClaimName.fromString()` already uses `ConcurrentHashMap` cache (line 273)
-- Main overhead is from repeated `issuerConfig.getClaimMappers()` calls and map lookups
-
-**Action Items:**
-- [ ] Add `customMappers` field to `TokenBuilder`:
-  ```java
-  private final Map<String, ClaimMapper> customMappers;
-  ```
-- [ ] Update `TokenBuilder` constructor to cache custom mappers:
-  ```java
-  public TokenBuilder(IssuerConfig issuerConfig) {
-      this.issuerConfig = issuerConfig;
-      this.customMappers = issuerConfig.getClaimMappers() != null 
-          ? Map.copyOf(issuerConfig.getClaimMappers()) 
-          : Map.of();
-  }
-  ```
-- [ ] Modify `extractClaims` method to use cached mappers:
-  ```java
-  ClaimMapper customMapper = customMappers.get(key);
-  if (customMapper != null) {
-      claims.put(key, customMapper.map(jsonObject, key));
-  } else {
-      // Continue with ClaimName resolution...
-  }
-  ```
-- [ ] Remove redundant null check and map access in extractClaims
-- [ ] Write unit tests to verify correct claim extraction
-- [ ] Run `./mvnw -Ppre-commit clean install -DskipTests -pl cui-jwt-validation`
-- [ ] Run `./mvnw clean install -pl cui-jwt-validation`
-- [ ] Commit changes to git
-
-### 6. Enhanced Validation Context (Low Priority)
-
-**Location**: `ValidationContext.java` - currently only caches time
-**Current State**: Already caches current time to avoid multiple `OffsetDateTime.now()` calls
-**Analysis**: Further enhancement may not provide significant benefit
-
-**Decision**: No action required - current implementation is sufficient
 
 ## Summary
 
 The optimization plan focuses on:
-1. **Field-based architecture** - Eliminate object allocation overhead for validators and builders (High Priority)
-2. **Claim mapper caching** - Minor optimization to reduce repeated map lookups (Medium Priority)
+1. **Metrics recording optimization** - Eliminate code duplication and conditional overhead with ticker pattern
+2. **Token caching** - Avoid redundant validation of the same access tokens
 
-These optimizations follow the existing patterns in the codebase and target the reducible bottlenecks identified through benchmark analysis. The signature validation p99 spikes are accepted as inherent to cryptographic operations.
+These optimizations follow the existing patterns in the codebase and target performance improvements through reduced redundancy and cleaner code structure.

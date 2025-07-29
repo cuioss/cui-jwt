@@ -134,4 +134,21 @@ public enum MeasurementType {
      * Human-readable description of this measurement type for logging and monitoring.
      */
     private final String description;
+
+    /**
+     * Creates a {@link MetricsTicker} for this measurement type.
+     * <p>
+     * If {@code recordMetrics} is {@code false}, returns a no-op ticker with zero overhead.
+     * Otherwise, returns an active ticker that will record measurements to the provided monitor.
+     *
+     * @param monitor the monitor to record measurements to (ignored if recordMetrics is false)
+     * @param recordMetrics whether to create an active ticker or a no-op ticker
+     * @return a MetricsTicker instance appropriate for the recording configuration
+     */
+    public MetricsTicker createTicker(TokenValidatorMonitor monitor, boolean recordMetrics) {
+        if (!recordMetrics) {
+            return NoOpMetricsTicker.INSTANCE;
+        }
+        return new ActiveMetricsTicker(monitor, this);
+    }
 }
