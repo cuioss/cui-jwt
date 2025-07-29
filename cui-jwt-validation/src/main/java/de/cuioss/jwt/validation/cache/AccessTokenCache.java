@@ -287,45 +287,52 @@ public class AccessTokenCache {
 
     /**
      * Updates LRU tracking for a cache key.
+     * Only called when caching is enabled (maxSize > 0).
      */
     private void updateLru(int key) {
-        if (lruMap != null) {
-            lruLock.writeLock().lock();
-            try {
-                lruMap.put(key, System.currentTimeMillis());
-            } finally {
-                lruLock.writeLock().unlock();
-            }
+        lruLock.writeLock().lock();
+        try {
+            lruMap.put(key, System.currentTimeMillis());
+        } finally {
+            lruLock.writeLock().unlock();
         }
     }
 
     /**
      * Removes a key from LRU tracking.
+     * Only called when caching is enabled (maxSize > 0).
      */
     private void removeLru(int key) {
-        if (lruMap != null) {
-            lruLock.writeLock().lock();
-            try {
-                lruMap.remove(key);
-            } finally {
-                lruLock.writeLock().unlock();
-            }
+        lruLock.writeLock().lock();
+        try {
+            lruMap.remove(key);
+        } finally {
+            lruLock.writeLock().unlock();
         }
     }
 
     /**
      * Enforces cache size limit using LRU eviction.
+     * Evicts oldest 10% of entries when cache is full to reduce eviction frequency.
      */
     private void enforceSize() {
         if (cache != null && cache.size() >= maxSize) {
             lruLock.writeLock().lock();
             try {
-                // Find oldest entry
-                if (lruMap != null && !lruMap.isEmpty()) {
-                    Integer oldestKey = lruMap.entrySet().iterator().next().getKey();
-                    cache.remove(oldestKey);
-                    lruMap.remove(oldestKey);
-                    LOGGER.debug("Evicted oldest token from cache due to size limit");
+                if (!lruMap.isEmpty()) {
+                    // Calculate batch size: evict 10% or at least 1 entry
+                    int batchSize = Math.max(1, maxSize / 10);
+                    int evicted = 0;
+                    
+                    var iterator = lruMap.entrySet().iterator();
+                    while (iterator.hasNext() && evicted < batchSize) {
+                        Integer keyToEvict = iterator.next().getKey();
+                        cache.remove(keyToEvict);
+                        iterator.remove();
+                        evicted++;
+                    }
+                    
+                    LOGGER.debug("Evicted %d oldest tokens from cache due to size limit", evicted);
                 }
             } finally {
                 lruLock.writeLock().unlock();
