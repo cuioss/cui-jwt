@@ -300,13 +300,20 @@ public class TokenValidator {
     public AccessTokenContent createAccessToken(@NonNull String tokenString) {
         LOGGER.debug("Creating access token");
 
-        // Use cache-aware processing for access tokens
-        AccessTokenContent result = processAccessTokenWithCache(tokenString);
+        // Record complete validation time
+        MetricsTicker completeTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, true);
+        completeTicker.startRecording();
+        try {
+            // Use cache-aware processing for access tokens
+            AccessTokenContent result = processAccessTokenWithCache(tokenString);
 
-        LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED::format);
-        securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
+            LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED::format);
+            securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
 
-        return result;
+            return result;
+        } finally {
+            completeTicker.stopAndRecord();
+        }
     }
 
     /**
@@ -442,26 +449,20 @@ public class TokenValidator {
                 token -> {
                     // Continue with expensive validation steps
                     // We already have the decodedJwt and issuer, so continue from issuer config resolution
-                    MetricsTicker pipelineTicker = MeasurementType.COMPLETE_VALIDATION.createTicker(performanceMonitor, true);
-                    pipelineTicker.startRecording();
-                    try {
-                        IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor, true));
-                        validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor, true));
-                        validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor, true));
-                        
-                        TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-                        AccessTokenContent accessToken = buildToken(decodedJwt, issuerConfig, 
-                                (jwt, config) -> cachedBuilder.createAccessToken(jwt),
-                                MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor, true));
-                        
-                        AccessTokenContent validatedToken = validateTokenClaims(accessToken, issuerConfig, 
-                                MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor, true));
-                        
-                        LOGGER.debug("Token successfully validated");
-                        return validatedToken;
-                    } finally {
-                        pipelineTicker.stopAndRecord();
-                    }
+                    IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor, true));
+                    validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor, true));
+                    validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor, true));
+                    
+                    TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
+                    AccessTokenContent accessToken = buildToken(decodedJwt, issuerConfig, 
+                            (jwt, config) -> cachedBuilder.createAccessToken(jwt),
+                            MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor, true));
+                    
+                    AccessTokenContent validatedToken = validateTokenClaims(accessToken, issuerConfig, 
+                            MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor, true));
+                    
+                    LOGGER.debug("Token successfully validated");
+                    return validatedToken;
                 }
         );
     }

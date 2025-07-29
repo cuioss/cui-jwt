@@ -50,15 +50,17 @@ class TokenValidatorMetricsTest {
 
     private TokenValidator tokenValidator;
     private TestTokenHolder testTokenHolder;
-    private IssuerConfig issuerConfig;
 
     @BeforeEach
     void setUp() {
         testTokenHolder = TestTokenGenerators.accessTokens().next();
 
-        issuerConfig = testTokenHolder.getIssuerConfig();
+        IssuerConfig issuerConfig = testTokenHolder.getIssuerConfig();
 
-        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+        tokenValidator = TokenValidator.builder()
+                .issuerConfig(issuerConfig)
+                .cacheConfig(de.cuioss.jwt.validation.cache.AccessTokenCacheConfig.disabled())
+                .build();
     }
 
     @Test
