@@ -81,19 +81,19 @@ public class JfrBenchmarkRunner {
                 // Add JVM args for better JFR profiling and logging configuration
                 .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
                         "-XX:+DebugNonSafepoints",
-                        "-XX:StartFlightRecording=filename=target/benchmark-results/jfr-benchmark.jfr,settings=profile",
+                        "-XX:StartFlightRecording=filename=" + getBenchmarkResultsDir() + "/jfr-benchmark.jfr,settings=profile",
                         "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties");
 
         Options options = builder.build();
 
         // Run the benchmarks
         log.info("Running JFR-instrumented benchmarks...");
-        log.info("JFR recording will be saved to: target/benchmark-results/jfr-benchmark.jfr");
+        log.info("JFR recording will be saved to: " + getBenchmarkResultsDir() + "/jfr-benchmark.jfr");
 
         new Runner(options).run();
 
         log.info("Benchmark completed. To analyze variance:");
-        log.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer target/benchmark-results/jfr-benchmark.jfr");
+        log.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer " + getBenchmarkResultsDir() + "/jfr-benchmark.jfr");
     }
 
 
@@ -113,6 +113,15 @@ public class JfrBenchmarkRunner {
             }
             return resultFile;
         }
-        return "target/benchmark-results/jfr-benchmark-result.json";
+        return getBenchmarkResultsDir() + "/jfr-benchmark-result.json";
+    }
+    
+    /**
+     * Gets the benchmark results directory from system property or defaults to target/benchmark-jfr-results.
+     * 
+     * @return the benchmark results directory path
+     */
+    private static String getBenchmarkResultsDir() {
+        return System.getProperty("benchmark.results.dir", "target/benchmark-jfr-results");
     }
 }

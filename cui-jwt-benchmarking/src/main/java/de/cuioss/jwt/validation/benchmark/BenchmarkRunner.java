@@ -69,7 +69,7 @@ public class BenchmarkRunner {
                 // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
                 // Configure result output - create a combined report for all benchmarks
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile("target/benchmark-results/micro-benchmark-result.json"))
+                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json"))
                 // Add logging configuration to suppress verbose logs
                 .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties")
                 .build();
@@ -78,5 +78,14 @@ public class BenchmarkRunner {
         new Runner(options).run();
 
         // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
+    }
+    
+    /**
+     * Gets the benchmark results directory from system property or defaults to target/benchmark-results.
+     * 
+     * @return the benchmark results directory path
+     */
+    private static String getBenchmarkResultsDir() {
+        return System.getProperty("benchmark.results.dir", "target/benchmark-results");
     }
 }

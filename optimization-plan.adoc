@@ -28,20 +28,21 @@
 
 === Performance Gap Analysis
 
-**Integration vs Microbenchmarks**:
-- **Microbenchmarks**: 2.6ms average (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
+**Integration vs Microbenchmarks (Updated July 29, 2025)**:
+- **Microbenchmarks**: 57μs P50, 27.3ms P99 (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
 - **Integration Tests**: 186.6ms P95 latency
-- **Gap**: 66x difference indicates infrastructure dominates performance
+- **Gap**: 3,270x difference (P50) indicates infrastructure dominates performance
+- **Note**: Microbenchmarks achieved 66% improvement (90,347 ops/s) with thread optimization
 
 === Latency Breakdown (186.6ms P95 Total)
 
 ```
 Total P95 Latency:           186.6ms (100%)
 ├─ Infrastructure (Echo):     59.0ms (32%) - CDI + Virtual Threads
-├─ JWT Library:               17.7ms (9%)  - Core validation logic  
+├─ JWT Library:               27.3ms (15%) - Core validation logic (P99 from microbenchmarks)
 ├─ Issuer Resolution:         21.5ms (12%) - Config lookup/caching
 ├─ HTTP Processing:           26.7ms (14%) - Request/response handling
-└─ Untracked Overhead:       ~61.7ms (33%) - Thread pools, GC, contention
+└─ Untracked Overhead:       ~52.1ms (28%) - Thread pools, GC, contention
 ```
 
 == Critical Integration Test Bottlenecks
@@ -276,7 +277,8 @@ Total P95 Latency:           186.6ms (100%)
 
 == Related Documentation
 
-- **Microbenchmark Optimization**: xref:optimization-plan-mb.adoc[Core Library Performance Plan] - Focus on 2.6ms library-level optimizations
+- **Microbenchmark Optimization**: xref:optimization-plan-mb.adoc[Core Library Performance Plan] - Updated July 29, 2025 with 57μs P50, 27.3ms P99 results
+- **Benchmark Analysis**: xref:cui-jwt-benchmarking/analysis.md[Detailed Performance Analysis] - Comprehensive breakdown of component performance
 - **Infrastructure Details**: Container and native compilation optimization status
 - **Benchmark Infrastructure**: Maven-based execution with JFR profiling capabilities
 

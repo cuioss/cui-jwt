@@ -39,7 +39,7 @@ import java.util.Optional;
  */
 public class BenchmarkMetricsCollector {
 
-    private static final String OUTPUT_DIR = "target/benchmark-results";
+    private static final String OUTPUT_DIR = System.getProperty("benchmark.results.dir", "target/benchmark-results");
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
     
     /**
