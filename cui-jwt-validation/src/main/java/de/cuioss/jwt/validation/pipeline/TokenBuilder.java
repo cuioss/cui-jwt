@@ -56,12 +56,21 @@ public class TokenBuilder {
     private final IssuerConfig issuerConfig;
 
     /**
+     * Cached custom claim mappers to avoid repeated map lookups during claim extraction.
+     * This optimization reduces overhead in the extractClaims method.
+     */
+    private final Map<String, ClaimMapper> customMappers;
+
+    /**
      * Constructs a TokenBuilder with the specified IssuerConfig.
      *
      * @param issuerConfig the issuer configuration
      */
     public TokenBuilder(@NonNull IssuerConfig issuerConfig) {
         this.issuerConfig = issuerConfig;
+        this.customMappers = issuerConfig.getClaimMappers() != null
+                ? Map.copyOf(issuerConfig.getClaimMappers())
+                : Map.of();
     }
 
     /**
@@ -112,11 +121,10 @@ public class TokenBuilder {
 
         // Process all keys in the JSON object
         for (String key : jsonObject.keySet()) {
-            // Check if there's a custom mapper for this claim
-            if (issuerConfig.getClaimMappers() != null && issuerConfig.getClaimMappers().containsKey(key)) {
-                ClaimMapper customMapper = issuerConfig.getClaimMappers().get(key);
-                ClaimValue claimValue = customMapper.map(jsonObject, key);
-                claims.put(key, claimValue);
+            // Check if there's a custom mapper for this claim using cached mappers
+            ClaimMapper customMapper = customMappers.get(key);
+            if (customMapper != null) {
+                claims.put(key, customMapper.map(jsonObject, key));
             } else {
                 // Try to map using known ClaimName
                 Optional<ClaimName> claimNameOption = ClaimName.fromString(key);
