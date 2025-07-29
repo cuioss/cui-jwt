@@ -196,27 +196,6 @@ public class BenchmarkMetricsCollector {
         // Add benchmark-specific metrics
         metricsJson.put("benchmark_metrics", aggregatedMetrics);
 
-        // Add http_metrics section for compatibility
-        Map<String, Map<String, Object>> httpMetrics = new LinkedHashMap<>();
-        Map<String, Object> jwtValidation = new LinkedHashMap<>();
-
-        // Calculate total sample count from all steps
-        long totalSampleCount = 0;
-        for (Map<String, Object> stepMetrics : steps.values()) {
-            totalSampleCount += (Long) stepMetrics.get("sample_count");
-        }
-
-        jwtValidation.put("request_count", totalSampleCount);
-        jwtValidation.put("total_duration_us", 0.0);
-        jwtValidation.put("average_duration_us", 0.0);
-        httpMetrics.put("jwt_validation", jwtValidation);
-        metricsJson.put("http_metrics", httpMetrics);
-
-        // Add http_status_counts section
-        Map<String, Integer> statusCounts = new LinkedHashMap<>();
-        statusCounts.put("200", 0);
-        metricsJson.put("http_status_counts", statusCounts);
-
         // Write JSON file - use dynamic output directory
         Path outputFile = Path.of(outputDirPath, "jwt-validation-metrics.json");
         try (FileWriter writer = new FileWriter(outputFile.toFile())) {
