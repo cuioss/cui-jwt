@@ -15,13 +15,18 @@
  */
 package de.cuioss.jwt.validation.cache;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@EnableTestLogger
 class AccessTokenCacheTest {
 
     private AccessTokenCache cache;
@@ -264,4 +270,20 @@ class AccessTokenCacheTest {
         // Create a new instance with our specified raw token
         return new AccessTokenContent(generated.getClaims(), rawToken, TokenType.ACCESS_TOKEN.getTypeClaimName());
     }
+
+    @Test
+    void validationFunctionReturnsNull() {
+        // Given
+        String token = "test-token";
+        
+        // When & Then
+        InternalCacheException exception = assertThrows(InternalCacheException.class, () -> {
+            cache.computeIfAbsent(token, t -> null, performanceMonitor);
+        });
+        
+        assertEquals("Validation function returned null - expected exception on failure", exception.getMessage());
+        LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR, 
+            JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
+    }
+
 }

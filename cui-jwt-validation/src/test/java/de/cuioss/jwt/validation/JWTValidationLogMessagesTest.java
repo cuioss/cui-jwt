@@ -57,6 +57,23 @@ class JWTValidationLogMessagesTest {
         assertNotNull(JWTValidationLogMessages.ERROR.ISSUER_VALIDATION_FAILED);
         assertLogRecordProperties(JWTValidationLogMessages.ERROR.ISSUER_VALIDATION_FAILED,
                 "JWTValidation", 203);
+
+        // Test the new cache-related ERROR messages
+        assertNotNull(JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION);
+        assertLogRecordProperties(JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION,
+                "JWTValidation", 211, "Token passed validation but has no expiration time - this indicates a validation bug");
+
+        assertNotNull(JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED);
+        assertLogRecordProperties(JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED,
+                "JWTValidation", 212, "Unexpected error while caching token");
+
+        assertNotNull(JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL);
+        assertLogRecordProperties(JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL,
+                "JWTValidation", 213, "Validation function returned null instead of throwing exception");
+
+        assertNotNull(JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED);
+        assertLogRecordProperties(JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED,
+                "JWTValidation", 214, "Error during cache eviction");
     }
 
     @Test
