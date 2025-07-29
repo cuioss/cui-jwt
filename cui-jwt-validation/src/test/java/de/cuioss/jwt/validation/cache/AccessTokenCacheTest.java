@@ -161,11 +161,11 @@ class AccessTokenCacheTest {
         // When - second access should detect expiration and throw exception
         TokenValidationException exception =
                 assertThrows(TokenValidationException.class, () ->
-                    cache.computeIfAbsent(testToken, t -> {
-                        validationCount.incrementAndGet();
-                        fail("Validation function should not be called for expired cached token");
-                        return null;
-                    }, performanceMonitor));
+                        cache.computeIfAbsent(testToken, t -> {
+                            validationCount.incrementAndGet();
+                            fail("Validation function should not be called for expired cached token");
+                            return null;
+                        }, performanceMonitor));
 
         // Then
         assertEquals(SecurityEventCounter.EventType.TOKEN_EXPIRED, exception.getEventType());
@@ -279,7 +279,7 @@ class AccessTokenCacheTest {
 
         // When & Then
         InternalCacheException exception = assertThrows(InternalCacheException.class, () ->
-            cache.computeIfAbsent(token, t -> null, performanceMonitor));
+                cache.computeIfAbsent(token, t -> null, performanceMonitor));
 
         assertEquals("Validation function returned null - expected exception on failure", exception.getMessage());
         LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR,

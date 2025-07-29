@@ -301,7 +301,7 @@ public class TokenValidator {
         LOGGER.debug("Creating access token");
 
         // Record complete validation time
-        MetricsTicker completeTicker = MeasurementType.COMPLETE_VALIDATION.createStartedTicker(performanceMonitor, true);
+        MetricsTicker completeTicker = MeasurementType.COMPLETE_VALIDATION.createStartedTicker(performanceMonitor);
         try {
             // Use cache-aware processing for access tokens
             AccessTokenContent result = processAccessTokenWithCache(tokenString);
@@ -392,9 +392,9 @@ public class TokenValidator {
      */
     private AccessTokenContent processAccessTokenWithCache(@NonNull String tokenString) {
         // Perform minimal validation to get issuer for cache key
-        validateTokenFormat(tokenString, MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor, true));
-        DecodedJwt decodedJwt = decodeToken(tokenString, MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor, true));
-        String issuer = validateAndExtractIssuer(decodedJwt, MeasurementType.ISSUER_EXTRACTION.createTicker(performanceMonitor, true));
+        validateTokenFormat(tokenString, MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor));
+        DecodedJwt decodedJwt = decodeToken(tokenString, MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor));
+        String issuer = validateAndExtractIssuer(decodedJwt, MeasurementType.ISSUER_EXTRACTION.createTicker(performanceMonitor));
 
         // Use transparent cache - handles enabled/disabled states internally
         return accessTokenCache.computeIfAbsent(
@@ -402,16 +402,16 @@ public class TokenValidator {
                 token -> {
                     // Continue with expensive validation steps
                     // We already have the decodedJwt and issuer, so continue from issuer config resolution
-                    IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor, true));
-                    validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor, true));
-                    validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor, true));
+                    IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor));
+                    validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor));
+                    validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor));
 
                     TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
                     AccessTokenContent accessToken = buildAccessToken(decodedJwt, cachedBuilder,
-                            MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor, true));
+                            MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor));
 
                     AccessTokenContent validatedToken = validateTokenClaims(accessToken, issuerConfig,
-                            MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor, true));
+                            MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor));
 
                     LOGGER.debug("Token successfully validated");
                     return validatedToken;

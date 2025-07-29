@@ -201,4 +201,14 @@ public class TokenValidatorMonitor {
         }
     }
 
+    /**
+     * Checks if the specified measurement type is enabled for recording.
+     *
+     * @param measurementType the measurement type to check
+     * @return true if the measurement type is enabled and will record metrics, false otherwise
+     */
+    public boolean isEnabled(@NonNull MeasurementType measurementType) {
+        return enabledTypes.contains(measurementType);
+    }
+
 }

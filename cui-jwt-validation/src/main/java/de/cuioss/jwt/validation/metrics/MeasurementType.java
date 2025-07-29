@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.metrics;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -154,15 +155,16 @@ public enum MeasurementType {
     /**
      * Creates a {@link MetricsTicker} for this measurement type.
      * <p>
-     * If {@code recordMetrics} is {@code false}, returns a no-op ticker with zero overhead.
+     * The recording decision is derived from the monitor's enabled types configuration.
+     * If this measurement type is not enabled in the monitor, returns a no-op ticker with zero overhead.
      * Otherwise, returns an active ticker that will record measurements to the provided monitor.
      *
-     * @param monitor the monitor to record measurements to (ignored if recordMetrics is false)
-     * @param recordMetrics whether to create an active ticker or a no-op ticker
-     * @return a MetricsTicker instance appropriate for the recording configuration
+     * @param monitor the monitor to record measurements to (or check for enabled status)
+     * @return a MetricsTicker instance appropriate for the monitor's configuration
      */
-    public MetricsTicker createTicker(TokenValidatorMonitor monitor, boolean recordMetrics) {
-        if (!recordMetrics) {
+    @NonNull
+    public MetricsTicker createTicker(@NonNull TokenValidatorMonitor monitor) {
+        if (!monitor.isEnabled(this)) {
             return NoOpMetricsTicker.INSTANCE;
         }
         return new ActiveMetricsTicker(monitor, this);
@@ -175,15 +177,16 @@ public enum MeasurementType {
      * {@link MetricsTicker#startRecording()} on it. This simplifies the common
      * pattern of creating a ticker and immediately starting it.
      * <p>
-     * If {@code recordMetrics} is {@code false}, returns a no-op ticker with zero overhead.
+     * The recording decision is derived from the monitor's enabled types configuration.
+     * If this measurement type is not enabled in the monitor, returns a no-op ticker with zero overhead.
      * Otherwise, returns an active ticker that is already started.
      *
-     * @param monitor the monitor to record measurements to (ignored if recordMetrics is false)
-     * @param recordMetrics whether to create an active ticker or a no-op ticker
-     * @return a started MetricsTicker instance appropriate for the recording configuration
+     * @param monitor the monitor to record measurements to (or check for enabled status)
+     * @return a started MetricsTicker instance appropriate for the monitor's configuration
      */
-    public MetricsTicker createStartedTicker(TokenValidatorMonitor monitor, boolean recordMetrics) {
-        MetricsTicker ticker = createTicker(monitor, recordMetrics);
+    @NonNull
+    public MetricsTicker createStartedTicker(@NonNull TokenValidatorMonitor monitor) {
+        MetricsTicker ticker = createTicker(monitor);
         ticker.startRecording();
         return ticker;
     }

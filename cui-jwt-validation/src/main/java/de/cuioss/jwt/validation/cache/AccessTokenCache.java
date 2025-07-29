@@ -182,7 +182,7 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache lookup
-        MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createStartedTicker(performanceMonitor, true);
+        MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createStartedTicker(performanceMonitor);
 
         // Generate cache key from token string
         int cacheKey = tokenString.hashCode();
@@ -218,7 +218,7 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache store
-        MetricsTicker storeTicker = MeasurementType.CACHE_STORE.createTicker(performanceMonitor, true);
+        MetricsTicker storeTicker = MeasurementType.CACHE_STORE.createTicker(performanceMonitor);
 
         // Cache miss - use computeIfAbsent to ensure only one thread validates
         CachedToken newCached = cache.computeIfAbsent(cacheKey, key -> {
