@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AccessTokenCacheTest {
 
@@ -111,9 +112,8 @@ class AccessTokenCacheTest {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("Test has issues with mock token generation - needs proper JWT token creation")
     void expiredTokenNotReturned() {
-        // This test verifies that expired tokens are detected and revalidated
+        // This test verifies that expired tokens are detected and throw exception
         
         // Given
         String issuer = "https://example.com";
@@ -122,10 +122,10 @@ class AccessTokenCacheTest {
         // Create test data with consistent token
         String testToken = "test-jwt-token";
         
-        // First access - cache an expired token
+        // First access - cache a token that will expire soon
         AccessTokenContent expiredContent = createAccessTokenWithRawToken(
                 "https://example.com",
-                OffsetDateTime.now().minusSeconds(1),
+                OffsetDateTime.now().plusSeconds(1), // Will expire in 1 second
                 testToken
         );
         
@@ -136,20 +136,31 @@ class AccessTokenCacheTest {
         
         assertEquals(expiredContent, result1);
         assertEquals(1, validationCount.get());
-        assertEquals(1, cache.size()); // Should be cached even if expired
+        assertEquals(1, cache.size());
 
-        // When - second access should detect expiration and revalidate
-        AccessTokenContent result2 = cache.computeIfAbsent(issuer, testToken, t -> {
-            validationCount.incrementAndGet();
-            // Simulate that revalidation fails for expired token
-            return null;
-        });
+        // Wait for token to expire
+        try {
+            Thread.sleep(1100); // Wait 1.1 seconds
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // When - second access should detect expiration and throw exception
+        de.cuioss.jwt.validation.exception.TokenValidationException exception = 
+            assertThrows(de.cuioss.jwt.validation.exception.TokenValidationException.class, () -> {
+                cache.computeIfAbsent(issuer, testToken, t -> {
+                    validationCount.incrementAndGet();
+                    fail("Validation function should not be called for expired cached token");
+                    return null;
+                });
+            });
 
         // Then
-        assertNull(result2); // Validation failed
-        assertEquals(2, validationCount.get()); // Validation function called twice
-        assertEquals(0, cache.size()); // Cache cleared since validation returned null
+        assertEquals(SecurityEventCounter.EventType.TOKEN_EXPIRED, exception.getEventType());
+        assertEquals(1, validationCount.get()); // Validation function called only once
+        assertEquals(0, cache.size()); // Cache cleared after detecting expiration
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT));
+        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EXPIRED));
     }
 
     @Test
@@ -200,9 +211,24 @@ class AccessTokenCacheTest {
         // Then - validation should happen only once despite concurrent access
         assertEquals(1, validationCount.get());
         assertEquals(1, cache.size());
-        // All but one should be cache hits
-        assertEquals(threadCount - 1,
-                securityEventCounter.getCount(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT));
+        
+        // Cache hits are only counted for pre-existing cached values.
+        // When multiple threads concurrently compute the same key, only the first
+        // thread actually performs validation. The other threads wait for the result
+        // but this is not counted as a cache hit since the value wasn't pre-existing.
+        assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT));
+        
+        // Now access the token again - this should be a true cache hit
+        AccessTokenContent cachedResult = cache.computeIfAbsent(issuer, token, t -> {
+            validationCount.incrementAndGet();
+            fail("Validation function should not be called for cached token");
+            return null;
+        });
+        
+        assertNotNull(cachedResult);
+        assertEquals(content, cachedResult);
+        assertEquals(1, validationCount.get()); // Still only called once
+        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT));
     }
 
     private AccessTokenContent createAccessToken(String issuer, OffsetDateTime expiration) {

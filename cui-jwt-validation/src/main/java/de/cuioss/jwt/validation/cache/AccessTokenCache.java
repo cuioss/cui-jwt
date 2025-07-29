@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.cache;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
@@ -166,11 +167,17 @@ public class AccessTokenCache {
      * This method first checks if a valid cached token exists. If found and still valid,
      * it returns the cached token and increments the cache hit counter. Otherwise, it
      * calls the validation function to validate the token and caches the result.
+     * <p>
+     * Note on cache hit counting: Cache hits are only counted when a pre-existing cached
+     * value is found. When multiple threads concurrently request the same uncached token,
+     * only the first thread performs validation while others wait for the result. These
+     * waiting threads are not counted as cache hits since no pre-existing value was found.
      *
      * @param issuer the issuer of the token (used in cache key)
      * @param tokenString the raw JWT token string
      * @param validationFunction the function to validate the token if not cached
-     * @return the cached or newly validated access token content, or null if validation fails
+     * @return the cached or newly validated access token content, never null
+     * @throws TokenValidationException if the cached token is expired or validation fails
      */
     public AccessTokenContent computeIfAbsent(
             @NonNull String issuer,
@@ -189,22 +196,46 @@ public class AccessTokenCache {
             return validationFunction.apply(tokenString);
         }
 
-        // Track if the validation function was called (indicates cache miss)
-        final boolean[] functionWasCalled = {false};
+        // First, try to get existing cached value
+        CachedToken existing = cache.get(cacheKey);
+        if (existing != null) {
+            OffsetDateTime now = OffsetDateTime.now();
+            if (existing.verifyToken(tokenString) && !existing.isExpired(now)) {
+                // True cache hit - valid cached token
+                LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT::format);
+                securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT);
+                updateLru(cacheKey);
+                return existing.getContent();
+            } else if (existing.isExpired(now)) {
+                // Token is expired - remove from cache and throw exception
+                cache.remove(cacheKey, existing);
+                removeLru(cacheKey);
+                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED::format);
+                securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EXPIRED);
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.TOKEN_EXPIRED,
+                        "Cached token is expired"
+                );
+            } else {
+                // Token verification failed - different token with same hash (unlikely but possible)
+                cache.remove(cacheKey, existing);
+                removeLru(cacheKey);
+                LOGGER.debug("Cached token verification failed - hash collision detected");
+            }
+        }
 
-        // Use ConcurrentHashMap's atomic computeIfAbsent for thread-safe operation
-        CachedToken cachedResult = cache.computeIfAbsent(cacheKey, key -> {
-            // This function is called atomically only if the key is not present
-            functionWasCalled[0] = true;
-
+        // Cache miss - use computeIfAbsent to ensure only one thread validates
+        CachedToken newCached = cache.computeIfAbsent(cacheKey, key -> {
             // Validate the token (only happens once for concurrent requests)
             AccessTokenContent validated = validationFunction.apply(tokenString);
             if (validated != null) {
                 try {
+                    // Only cache tokens with expiration time
                     OffsetDateTime expirationTime = validated.getExpirationTime();
+                    
                     // Enforce size before adding
                     enforceSize();
-
+                    
                     CachedToken newCachedToken = CachedToken.builder()
                             .rawToken(tokenString)
                             .content(validated)
@@ -222,41 +253,23 @@ public class AccessTokenCache {
                     LOGGER.error(e, "Unexpected error while caching token");
                 }
             }
-
             // Don't cache - return null
             return null;
         });
 
-        // Check if we got a cached result
-        if (cachedResult != null) {
-            OffsetDateTime now = OffsetDateTime.now();
-            if (cachedResult.verifyToken(tokenString) && !cachedResult.isExpired(now)) {
-                // Only increment cache hit if the function was NOT called (true cache hit)
-                if (!functionWasCalled[0]) {
-                    LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT::format);
-                    securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT);
-                }
-                updateLru(cacheKey);
-                return cachedResult.getContent();
-            } else {
-                // Cached entry is invalid, remove and fallback to validation
-                cache.remove(cacheKey, cachedResult);
-                removeLru(cacheKey);
-                return validationFunction.apply(tokenString);
-            }
-        } else {
-            // The lambda was executed but returned null (no expiration or validation failed)
-            // Check if the validation function was already called inside computeIfAbsent
-            if (functionWasCalled[0]) {
-                // Validation already happened inside the lambda, return null
-                return null;
-            } else {
-                // This case shouldn't happen with ConcurrentHashMap.computeIfAbsent
-                // but if it does, call the validation function
-                LOGGER.debug("Unexpected: cachedResult is null but function was not called");
-                return validationFunction.apply(tokenString);
-            }
+        // Return the content if we got a valid cached token
+        if (newCached != null) {
+            return newCached.getContent();
         }
+        
+        // If we reach here, it means the validation function returned null or
+        // the token had no expiration time. This should not happen in normal flow
+        // as validation functions should throw exceptions on failure.
+        LOGGER.error("Unexpected null result from token validation - validation function should throw on failure");
+        throw new TokenValidationException(
+                SecurityEventCounter.EventType.INVALID_JWT_FORMAT,
+                "Token validation returned null"
+        );
     }
 
     /**
