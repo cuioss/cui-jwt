@@ -104,7 +104,7 @@ class AccessTokenCacheConfigTest {
         assertNotNull(cache);
         
         // Verify it calls validation function and returns result (transparent behavior)
-        AccessTokenContent result = cache.computeIfAbsent("issuer", "token", token -> expectedContent);
+        AccessTokenContent result = cache.computeIfAbsent("issuer", "token", token -> expectedContent, null);
         assertEquals(expectedContent, result);
         
         // Verify cache remains empty (no caching occurred)

@@ -128,7 +128,23 @@ public enum MeasurementType {
      * IdTokenContent) from the validated JWT claims. This includes claim extraction,
      * type conversion, and object instantiation.
      */
-    TOKEN_BUILDING("Token building");
+    TOKEN_BUILDING("Token building"),
+
+    /**
+     * Cache lookup operation.
+     * <p>
+     * Measures time to look up a token in the cache, including key generation
+     * and hash computation. This metric helps identify cache lookup overhead.
+     */
+    CACHE_LOOKUP("Cache lookup operation"),
+
+    /**
+     * Cache store operation.
+     * <p>
+     * Measures time to store a validated token in the cache, including
+     * serialization and LRU management. This metric helps identify caching overhead.
+     */
+    CACHE_STORE("Cache store operation");
 
     /**
      * Human-readable description of this measurement type for logging and monitoring.

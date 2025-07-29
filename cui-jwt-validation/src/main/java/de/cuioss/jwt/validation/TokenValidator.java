@@ -463,7 +463,8 @@ public class TokenValidator {
                     
                     LOGGER.debug("Token successfully validated");
                     return validatedToken;
-                }
+                },
+                performanceMonitor
         );
     }
 

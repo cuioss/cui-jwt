@@ -71,7 +71,7 @@ class AccessTokenCacheTest {
         AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
-        });
+        }, null);
 
         // Then
         assertNotNull(result);
@@ -95,13 +95,13 @@ class AccessTokenCacheTest {
         cache.computeIfAbsent(issuer, token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
-        });
+        }, null);
 
         // When - second access should be cache hit
         AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
-        });
+        }, null);
 
         // Then
         assertNotNull(result);
@@ -132,7 +132,7 @@ class AccessTokenCacheTest {
         AccessTokenContent result1 = cache.computeIfAbsent(issuer, testToken, t -> {
             validationCount.incrementAndGet();
             return expiredContent;
-        });
+        }, null);
         
         assertEquals(expiredContent, result1);
         assertEquals(1, validationCount.get());
@@ -152,7 +152,7 @@ class AccessTokenCacheTest {
                     validationCount.incrementAndGet();
                     fail("Validation function should not be called for expired cached token");
                     return null;
-                });
+                }, null);
             });
 
         // Then
@@ -190,7 +190,7 @@ class AccessTokenCacheTest {
                             Thread.currentThread().interrupt();
                         }
                         return content;
-                    });
+                    }, null);
                     assertNotNull(result);
                     assertEquals(content, result);
                 } catch (InterruptedException e) {
@@ -223,7 +223,7 @@ class AccessTokenCacheTest {
             validationCount.incrementAndGet();
             fail("Validation function should not be called for cached token");
             return null;
-        });
+        }, null);
         
         assertNotNull(cachedResult);
         assertEquals(content, cachedResult);

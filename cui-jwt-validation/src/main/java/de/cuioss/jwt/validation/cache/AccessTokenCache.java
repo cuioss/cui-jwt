@@ -17,7 +17,12 @@ package de.cuioss.jwt.validation.cache;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.metrics.MeasurementType;
+import de.cuioss.jwt.validation.metrics.MetricsTicker;
+import de.cuioss.jwt.validation.metrics.NoOpMetricsTicker;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
@@ -176,18 +181,26 @@ public class AccessTokenCache {
      * @param issuer the issuer of the token (used in cache key)
      * @param tokenString the raw JWT token string
      * @param validationFunction the function to validate the token if not cached
+     * @param performanceMonitor the monitor for recording cache metrics (may be null)
      * @return the cached or newly validated access token content, never null
-     * @throws TokenValidationException if the cached token is expired or validation fails
+     * @throws TokenValidationException if the cached token is expired
+     * @throws InternalCacheException if an internal cache error occurs
      */
     public AccessTokenContent computeIfAbsent(
             @NonNull String issuer,
             @NonNull String tokenString,
-            @NonNull Function<String, AccessTokenContent> validationFunction) {
+            @NonNull Function<String, AccessTokenContent> validationFunction,
+            TokenValidatorMonitor performanceMonitor) {
 
         // If cache size is 0, caching is disabled - call validation function directly without caching
         if (maxSize == 0) {
             return validationFunction.apply(tokenString);
         }
+
+        // Create metrics ticker for cache lookup
+        MetricsTicker lookupTicker = performanceMonitor != null ? 
+                MeasurementType.CACHE_LOOKUP.createTicker(performanceMonitor, true) : 
+                NoOpMetricsTicker.INSTANCE;
 
         // Generate cache key
         String cacheKey = generateCacheKey(issuer, tokenString);
@@ -197,7 +210,10 @@ public class AccessTokenCache {
         }
 
         // First, try to get existing cached value
+        lookupTicker.startRecording();
         CachedToken existing = cache.get(cacheKey);
+        lookupTicker.stopAndRecord();
+        
         if (existing != null) {
             OffsetDateTime now = OffsetDateTime.now();
             if (existing.verifyToken(tokenString) && !existing.isExpired(now)) {
@@ -224,13 +240,19 @@ public class AccessTokenCache {
             }
         }
 
+        // Create metrics ticker for cache store
+        MetricsTicker storeTicker = performanceMonitor != null ? 
+                MeasurementType.CACHE_STORE.createTicker(performanceMonitor, true) : 
+                NoOpMetricsTicker.INSTANCE;
+
         // Cache miss - use computeIfAbsent to ensure only one thread validates
         CachedToken newCached = cache.computeIfAbsent(cacheKey, key -> {
             // Validate the token (only happens once for concurrent requests)
             AccessTokenContent validated = validationFunction.apply(tokenString);
             if (validated != null) {
+                storeTicker.startRecording();
                 try {
-                    // Only cache tokens with expiration time
+                    // Get expiration time - this should always be present for valid tokens
                     OffsetDateTime expirationTime = validated.getExpirationTime();
                     
                     // Enforce size before adding
@@ -246,14 +268,22 @@ public class AccessTokenCache {
                     LOGGER.debug("Token cached, current size: %d", cache.size());
                     return newCachedToken;
                 } catch (IllegalStateException e) {
-                    // No expiration claim, don't cache
-                    LOGGER.debug("Token has no expiration time, not caching: %s", e.getMessage());
+                    // This should not happen as TokenContent.getExpirationTime() throws
+                    // IllegalStateException only when expiration claim is missing,
+                    // which should have been caught during token validation
+                    LOGGER.error(e, "Token passed validation but has no expiration time - this indicates a validation bug");
+                    throw new InternalCacheException(
+                            "Token passed validation but has no expiration time", e);
                 } catch (Exception e) {
-                    // Any other exception
+                    // Any other unexpected exception
                     LOGGER.error(e, "Unexpected error while caching token");
+                    throw new InternalCacheException(
+                            "Failed to cache validated token", e);
+                } finally {
+                    storeTicker.stopAndRecord();
                 }
             }
-            // Don't cache - return null
+            // Validation returned null - don't cache
             return null;
         });
 
@@ -262,13 +292,11 @@ public class AccessTokenCache {
             return newCached.getContent();
         }
         
-        // If we reach here, it means the validation function returned null or
-        // the token had no expiration time. This should not happen in normal flow
-        // as validation functions should throw exceptions on failure.
-        LOGGER.error("Unexpected null result from token validation - validation function should throw on failure");
-        throw new TokenValidationException(
-                SecurityEventCounter.EventType.INVALID_JWT_FORMAT,
-                "Token validation returned null"
+        // If we reach here, the validation function returned null.
+        // This should not happen as validation functions should throw on failure.
+        LOGGER.error("Validation function returned null instead of throwing exception");
+        throw new InternalCacheException(
+                "Validation function returned null - expected exception on failure"
         );
     }
 
