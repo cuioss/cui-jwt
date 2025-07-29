@@ -230,9 +230,6 @@ public class AccessTokenCache {
                     // Get expiration time - this should always be present for valid tokens
                     OffsetDateTime expirationTime = validated.getExpirationTime();
 
-                    // Enforce size before adding
-                    enforceSize();
-
                     CachedToken newCachedToken = CachedToken.builder()
                             .rawToken(tokenString)
                             .content(validated)
@@ -261,6 +258,11 @@ public class AccessTokenCache {
             // Validation returned null - don't cache
             return null;
         });
+
+        // Enforce size limit after computeIfAbsent completes to avoid recursive update
+        if (newCached != null && cache.size() > maxSize) {
+            enforceSize();
+        }
 
         // Return the content if we got a valid cached token
         if (newCached != null) {

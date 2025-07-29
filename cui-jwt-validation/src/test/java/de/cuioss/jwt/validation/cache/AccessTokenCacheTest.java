@@ -286,5 +286,156 @@ class AccessTokenCacheTest {
                 JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
     }
 
+    @Test
+    void cacheEvictionUnderLoad() {
+        // Given - cache with maxSize 10
+        assertEquals(0, cache.size());
+
+        // When - fill cache to capacity
+        for (int i = 0; i < 10; i++) {
+            String token = "token-" + i;
+            AccessTokenContent content = createAccessToken("https://example.com",
+                    OffsetDateTime.now().plusHours(1));
+            AccessTokenContent result = cache.computeIfAbsent(token, t -> content, performanceMonitor);
+            assertNotNull(result);
+        }
+
+        // Then - cache should be at capacity
+        assertEquals(10, cache.size());
+
+        // When - add 11th token to trigger eviction
+        String overflowToken = "token-10";
+        AccessTokenContent overflowContent = createAccessToken("https://example.com",
+                OffsetDateTime.now().plusHours(1));
+        AccessTokenContent result = cache.computeIfAbsent(overflowToken, t -> overflowContent, performanceMonitor);
+
+        // Then - should not throw ConcurrentModificationException
+        assertNotNull(result);
+        assertEquals(overflowContent, result);
+        // Cache size should still be 10 (one token was evicted)
+        assertEquals(10, cache.size());
+    }
+
+    @Test
+    void concurrentCacheEviction() throws InterruptedException {
+        // Given - smaller cache to make eviction more likely
+        cache.shutdown();
+        cache = AccessTokenCache.builder()
+                .maxSize(5)
+                .evictionIntervalSeconds(300L)
+                .securityEventCounter(securityEventCounter)
+                .build();
+
+        int threadCount = 10;
+        int tokensPerThread = 5;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+
+        // When - multiple threads add different tokens concurrently
+        for (int i = 0; i < threadCount; i++) {
+            final int threadId = i;
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    for (int j = 0; j < tokensPerThread; j++) {
+                        String token = "thread-" + threadId + "-token-" + j;
+                        try {
+                            AccessTokenContent content = createAccessToken("https://example.com",
+                                    OffsetDateTime.now().plusHours(1));
+                            AccessTokenContent result = cache.computeIfAbsent(token, t -> content, performanceMonitor);
+                            assertNotNull(result);
+                            successCount.incrementAndGet();
+                        } catch (Exception e) {
+                            errorCount.incrementAndGet();
+                            e.printStackTrace();
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        // Start all threads at once
+        startLatch.countDown();
+
+        // Wait for completion
+        assertTrue(doneLatch.await(10, TimeUnit.SECONDS));
+        executor.shutdown();
+
+        // Then - no errors should occur
+        assertEquals(0, errorCount.get());
+        assertEquals(threadCount * tokensPerThread, successCount.get());
+        // Cache size should be at max
+        assertTrue(cache.size() <= 5);
+        assertTrue(cache.size() > 0);
+    }
+
+    @Test
+    void cacheEvictionBatchRemoval() {
+        // Given - cache that evicts 10% when full
+        cache.shutdown();
+        cache = AccessTokenCache.builder()
+                .maxSize(100)
+                .evictionIntervalSeconds(300L)
+                .securityEventCounter(securityEventCounter)
+                .build();
+
+        // When - fill cache to capacity
+        for (int i = 0; i < 100; i++) {
+            String token = "token-" + i;
+            AccessTokenContent content = createAccessToken("https://example.com",
+                    OffsetDateTime.now().plusHours(1));
+            cache.computeIfAbsent(token, t -> content, performanceMonitor);
+        }
+
+        assertEquals(100, cache.size());
+
+        // When - add one more token to trigger batch eviction
+        cache.computeIfAbsent("overflow-token", t ->
+                        createAccessToken("https://example.com", OffsetDateTime.now().plusHours(1)),
+                performanceMonitor);
+
+        // Then - should have evicted ~10% of entries
+        assertTrue(cache.size() <= 91); // Should have evicted at least 10 entries
+        assertTrue(cache.size() >= 90); // But not too many
+    }
+
+    @Test
+    void cacheDisabledNoEvictionLogic() {
+        // Given - cache with size 0 (disabled)
+        cache.shutdown();
+        cache = AccessTokenCache.builder()
+                .maxSize(0)
+                .evictionIntervalSeconds(300L)
+                .securityEventCounter(securityEventCounter)
+                .build();
+
+        // When - try to cache tokens
+        for (int i = 0; i < 10; i++) {
+            String token = "token-" + i;
+            AtomicInteger validationCount = new AtomicInteger(0);
+            AccessTokenContent content = createAccessToken("https://example.com",
+                    OffsetDateTime.now().plusHours(1));
+
+            AccessTokenContent result = cache.computeIfAbsent(token, t -> {
+                validationCount.incrementAndGet();
+                return content;
+            }, performanceMonitor);
+
+            // Then - validation happens every time (no caching)
+            assertNotNull(result);
+            assertEquals(1, validationCount.get());
+        }
+
+        // Cache should remain empty
+        assertEquals(0, cache.size());
+    }
+
 
 }
