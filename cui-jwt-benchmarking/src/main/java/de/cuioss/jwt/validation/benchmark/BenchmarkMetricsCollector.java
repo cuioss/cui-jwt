@@ -39,7 +39,21 @@ import java.util.Optional;
  */
 public class BenchmarkMetricsCollector {
 
-    private static final String OUTPUT_DIR = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+    private static String getOutputDir() {
+        return System.getProperty("benchmark.results.dir", "target/benchmark-results");
+    }
+    
+    /**
+     * Get output directory, using cached value from BenchmarkMetricsAggregator if available.
+     * This ensures the shutdown hook uses the correct directory path.
+     */
+    static String getOutputDirForExport() {
+        String cachedDir = BenchmarkMetricsAggregator.getCachedOutputDir();
+        if (cachedDir != null) {
+            return cachedDir;
+        }
+        return getOutputDir();
+    }
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
     
     /**
@@ -113,8 +127,9 @@ public class BenchmarkMetricsCollector {
      * Exports aggregated metrics collected from benchmarks
      */
     public static void exportAggregatedMetrics(Map<String, Map<String, Object>> aggregatedMetrics) throws IOException {
-        // Create output directory
-        Path outputDir = Path.of(OUTPUT_DIR);
+        // Create output directory - use cached value if available (for shutdown hook context)
+        String outputDirPath = getOutputDirForExport();
+        Path outputDir = Path.of(outputDirPath);
         Files.createDirectories(outputDir);
 
         Map<String, Object> metricsJson = new LinkedHashMap<>();
@@ -202,8 +217,8 @@ public class BenchmarkMetricsCollector {
         statusCounts.put("200", 0);
         metricsJson.put("http_status_counts", statusCounts);
 
-        // Write JSON file
-        Path outputFile = Path.of(OUTPUT_DIR, "jwt-validation-metrics.json");
+        // Write JSON file - use dynamic output directory
+        Path outputFile = Path.of(outputDirPath, "jwt-validation-metrics.json");
         try (FileWriter writer = new FileWriter(outputFile.toFile())) {
             writer.write(formatJson(metricsJson));
         }

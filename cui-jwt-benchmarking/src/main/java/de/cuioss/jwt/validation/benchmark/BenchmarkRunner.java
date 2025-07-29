@@ -71,7 +71,8 @@ public class BenchmarkRunner {
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
                 .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json"))
                 // Add logging configuration to suppress verbose logs
-                .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties")
+                .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
+                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir())
                 .build();
 
         // Run the benchmarks

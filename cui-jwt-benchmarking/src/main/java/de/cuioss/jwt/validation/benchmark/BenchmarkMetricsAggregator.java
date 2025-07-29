@@ -53,6 +53,12 @@ public final class BenchmarkMetricsAggregator {
     private static final AtomicBoolean shutdownHookRegistered = new AtomicBoolean(false);
     
     /**
+     * Cache the output directory when the shutdown hook is registered to ensure 
+     * we use the correct system property value from the main thread context
+     */
+    private static volatile String cachedOutputDir = null;
+    
+    /**
      * Private constructor to prevent instantiation
      */
     private BenchmarkMetricsAggregator() {
@@ -88,6 +94,11 @@ public final class BenchmarkMetricsAggregator {
         
         // Register shutdown hook only once using compareAndSet
         if (shutdownHookRegistered.compareAndSet(false, true)) {
+            // Capture the output directory from the main thread context before creating the shutdown hook
+            // This ensures the shutdown hook uses the correct directory even if system properties
+            // are not properly inherited in the shutdown thread context
+            cachedOutputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+            
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     exportGlobalMetrics();
@@ -223,6 +234,16 @@ public final class BenchmarkMetricsAggregator {
                 typeMetrics.values().forEach(counter -> counter.set(0));
             });
         });
+    }
+    
+    /**
+     * Get the cached output directory path. Used by BenchmarkMetricsCollector 
+     * to ensure consistent directory usage between main thread and shutdown hook.
+     * 
+     * @return cached output directory path, or null if not cached
+     */
+    static String getCachedOutputDir() {
+        return cachedOutputDir;
     }
     
     /**

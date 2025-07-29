@@ -82,7 +82,8 @@ public class JfrBenchmarkRunner {
                 .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
                         "-XX:+DebugNonSafepoints",
                         "-XX:StartFlightRecording=filename=" + getBenchmarkResultsDir() + "/jfr-benchmark.jfr,settings=profile",
-                        "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties");
+                        "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
+                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir());
 
         Options options = builder.build();
 
