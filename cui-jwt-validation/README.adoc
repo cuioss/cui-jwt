@@ -109,26 +109,26 @@ The library includes built-in caching for validated access tokens to improve per
 
 [source,java]
 ----
-// Configure access token cache
+// Configure access token cache (default: maxSize=1000, evictionIntervalSeconds=300)
 AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
         .maxSize(500)  // Cache up to 500 tokens
         .evictionIntervalSeconds(300L)  // Clean up expired tokens every 5 minutes
         .build();
 
-// Create validator with caching
+// Create validator with custom cache configuration
 TokenValidator validator = TokenValidator.builder()
         .issuerConfig(issuerConfig)
-        .cacheConfig(cacheConfig)  // Optional, defaults to maxSize=1000
+        .cacheConfig(cacheConfig)
         .build();
 
 // Or disable caching entirely
 TokenValidator validatorNoCache = TokenValidator.builder()
         .issuerConfig(issuerConfig)
-        .cacheConfig(AccessTokenCacheConfig.disabled())  // No caching
+        .cacheConfig(AccessTokenCacheConfig.disabled())  // maxSize=0
         .build();
 ----
 
-NOTE: Setting `maxSize` to 0 or using `AccessTokenCacheConfig.disabled()` disables the cache completely.
+NOTE: Setting `maxSize` to 0 or using `AccessTokenCacheConfig.disabled()` disables the cache completely. The default configuration caches up to 1000 tokens.
 
 === Multi-Issuer Configuration
 

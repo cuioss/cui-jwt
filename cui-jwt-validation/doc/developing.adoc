@@ -119,36 +119,7 @@ The library provides comprehensive test utilities via the `generators` artifact.
 * Signature validation typically consumes 90%+ of validation time
 * Use `TokenValidatorMonitor` to identify bottlenecks
 * Configure appropriate JWKS refresh intervals (300-3600 seconds)
-* Consider token caching for frequently validated tokens
-
-=== Access Token Cache
-
-The library provides built-in caching for validated access tokens to improve performance:
-
-[source,java]
-----
-// Configure access token caching
-AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
-    .maxSize(500)  // Maximum number of tokens to cache
-    .evictionIntervalSeconds(300L)  // Time between cache cleanups
-    .build();
-
-// Or disable caching entirely
-AccessTokenCacheConfig disabledCache = AccessTokenCacheConfig.disabled();
-
-// Use with TokenValidator
-TokenValidator validator = TokenValidator.builder()
-    .issuerConfig(issuerConfig)
-    .cacheConfig(cacheConfig)  // Optional, defaults to maxSize=1000
-    .build();
-----
-
-Cache behavior:
-
-* Set `maxSize` to 0 or use `AccessTokenCacheConfig.disabled()` to disable caching
-* Default configuration caches up to 1000 tokens with 300-second eviction interval
-* LRU eviction when cache reaches capacity
-* Automatic cleanup of expired tokens
+* Consider using the built-in access token cache (see README for configuration)
 
 == Memory Management
 
