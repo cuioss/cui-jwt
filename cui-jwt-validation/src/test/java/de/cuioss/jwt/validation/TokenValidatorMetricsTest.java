@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -59,7 +60,7 @@ class TokenValidatorMetricsTest {
 
         tokenValidator = TokenValidator.builder()
                 .issuerConfig(issuerConfig)
-                .cacheConfig(de.cuioss.jwt.validation.cache.AccessTokenCacheConfig.disabled())
+                .cacheConfig(AccessTokenCacheConfig.disabled())
                 .build();
     }
 

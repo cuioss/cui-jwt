@@ -16,12 +16,15 @@
 package de.cuioss.jwt.validation.cache;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.InternalCacheException;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.test.juli.LogAsserts;
@@ -39,20 +42,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @EnableTestLogger
 class AccessTokenCacheTest {
 
     private AccessTokenCache cache;
     private SecurityEventCounter securityEventCounter;
-    private de.cuioss.jwt.validation.metrics.TokenValidatorMonitor performanceMonitor;
+    private TokenValidatorMonitor performanceMonitor;
 
     @BeforeEach
     void setUp() {
         securityEventCounter = new SecurityEventCounter();
-        performanceMonitor = de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.builder()
-                .measurementTypes(de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+        performanceMonitor = TokenValidatorMonitorConfig.builder()
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
                 .build()
                 .createMonitor();
         cache = AccessTokenCache.builder()
@@ -129,22 +131,22 @@ class AccessTokenCacheTest {
         // Given
         String issuer = "https://example.com";
         AtomicInteger validationCount = new AtomicInteger(0);
-        
+
         // Create test data with consistent token
         String testToken = "test-jwt-token";
-        
+
         // First access - cache a token that will expire soon
         AccessTokenContent expiredContent = createAccessTokenWithRawToken(
                 "https://example.com",
                 OffsetDateTime.now().plusSeconds(1), // Will expire in 1 second
                 testToken
         );
-        
+
         AccessTokenContent result1 = cache.computeIfAbsent(testToken, t -> {
             validationCount.incrementAndGet();
             return expiredContent;
         }, performanceMonitor);
-        
+
         assertEquals(expiredContent, result1);
         assertEquals(1, validationCount.get());
         assertEquals(1, cache.size());
@@ -157,14 +159,13 @@ class AccessTokenCacheTest {
         }
 
         // When - second access should detect expiration and throw exception
-        de.cuioss.jwt.validation.exception.TokenValidationException exception = 
-            assertThrows(de.cuioss.jwt.validation.exception.TokenValidationException.class, () -> {
-                cache.computeIfAbsent(testToken, t -> {
-                    validationCount.incrementAndGet();
-                    fail("Validation function should not be called for expired cached token");
-                    return null;
-                }, performanceMonitor);
-            });
+        TokenValidationException exception =
+                assertThrows(TokenValidationException.class, () ->
+                    cache.computeIfAbsent(testToken, t -> {
+                        validationCount.incrementAndGet();
+                        fail("Validation function should not be called for expired cached token");
+                        return null;
+                    }, performanceMonitor));
 
         // Then
         assertEquals(SecurityEventCounter.EventType.TOKEN_EXPIRED, exception.getEventType());
@@ -222,20 +223,20 @@ class AccessTokenCacheTest {
         // Then - validation should happen only once despite concurrent access
         assertEquals(1, validationCount.get());
         assertEquals(1, cache.size());
-        
+
         // Cache hits are only counted for pre-existing cached values.
         // When multiple threads concurrently compute the same key, only the first
         // thread actually performs validation. The other threads wait for the result
         // but this is not counted as a cache hit since the value wasn't pre-existing.
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT));
-        
+
         // Now access the token again - this should be a true cache hit
         AccessTokenContent cachedResult = cache.computeIfAbsent(token, t -> {
             validationCount.incrementAndGet();
             fail("Validation function should not be called for cached token");
             return null;
         }, performanceMonitor);
-        
+
         assertNotNull(cachedResult);
         assertEquals(content, cachedResult);
         assertEquals(1, validationCount.get()); // Still only called once
@@ -252,7 +253,7 @@ class AccessTokenCacheTest {
         tokenHolder.withClaim(ClaimName.TOKEN_ID.getName(), ClaimValue.forPlainString("jti-" + System.nanoTime()));
         return tokenHolder.asAccessTokenContent();
     }
-    
+
     private AccessTokenContent createAccessTokenWithRawToken(String issuer, OffsetDateTime expiration, String rawToken) {
         // Create a simple AccessTokenContent with the specified raw token
         // This simulates what would happen in real JWT validation where the raw token matches the input
@@ -263,10 +264,10 @@ class AccessTokenCacheTest {
         }
         tokenHolder.withClaim(ClaimName.ISSUED_AT.getName(), ClaimValue.forDateTime(String.valueOf(OffsetDateTime.now().minusMinutes(5).toEpochSecond()), OffsetDateTime.now().minusMinutes(5)));
         tokenHolder.withClaim(ClaimName.TOKEN_ID.getName(), ClaimValue.forPlainString("jti-" + System.nanoTime()));
-        
+
         // Get the generated content
         AccessTokenContent generated = tokenHolder.asAccessTokenContent();
-        
+
         // Create a new instance with our specified raw token
         return new AccessTokenContent(generated.getClaims(), rawToken, TokenType.ACCESS_TOKEN.getTypeClaimName());
     }
@@ -275,15 +276,14 @@ class AccessTokenCacheTest {
     void validationFunctionReturnsNull() {
         // Given
         String token = "test-token";
-        
+
         // When & Then
-        InternalCacheException exception = assertThrows(InternalCacheException.class, () -> {
-            cache.computeIfAbsent(token, t -> null, performanceMonitor);
-        });
-        
+        InternalCacheException exception = assertThrows(InternalCacheException.class, () ->
+            cache.computeIfAbsent(token, t -> null, performanceMonitor));
+
         assertEquals("Validation function returned null - expected exception on failure", exception.getMessage());
-        LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR, 
-            JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
+        LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
     }
 
 

@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.validation.exception;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when internal cache operations fail unexpectedly.
  * <p>
@@ -26,6 +28,7 @@ package de.cuioss.jwt.validation.exception;
  */
 public class InternalCacheException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

@@ -136,8 +136,8 @@ public class AccessTokenCache {
 
             this.evictionExecutor.scheduleWithFixedDelay(
                     this::evictExpiredTokens,
-                evictionIntervalSeconds1,
-                evictionIntervalSeconds1,
+                    evictionIntervalSeconds1,
+                    evictionIntervalSeconds1,
                     TimeUnit.SECONDS);
 
             LOGGER.debug("AccessTokenCache initialized with maxSize=%s, evictionInterval=%ss",
@@ -170,6 +170,7 @@ public class AccessTokenCache {
      * @throws TokenValidationException if the cached token is expired
      * @throws InternalCacheException if an internal cache error occurs
      */
+    @SuppressWarnings("java:S3776") // owolff: 16 instead of 15 is acceptable here due to complexity of cache logic
     public AccessTokenContent computeIfAbsent(
             @NonNull String tokenString,
             @NonNull Function<String, AccessTokenContent> validationFunction,
@@ -189,7 +190,7 @@ public class AccessTokenCache {
         // First, try to get existing cached value
         CachedToken existing = cache.get(cacheKey);
         lookupTicker.stopAndRecord();
-        
+
         if (existing != null) {
             OffsetDateTime now = OffsetDateTime.now();
             if (existing.verifyToken(tokenString) && !existing.isExpired(now)) {
@@ -228,10 +229,10 @@ public class AccessTokenCache {
                 try {
                     // Get expiration time - this should always be present for valid tokens
                     OffsetDateTime expirationTime = validated.getExpirationTime();
-                    
+
                     // Enforce size before adding
                     enforceSize();
-                    
+
                     CachedToken newCachedToken = CachedToken.builder()
                             .rawToken(tokenString)
                             .content(validated)
@@ -265,7 +266,7 @@ public class AccessTokenCache {
         if (newCached != null) {
             return newCached.getContent();
         }
-        
+
         // If we reach here, the validation function returned null.
         // This should not happen as validation functions should throw on failure.
         LOGGER.error(JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
@@ -313,7 +314,7 @@ public class AccessTokenCache {
                     // Calculate batch size: evict 10% or at least 1 entry
                     int batchSize = Math.max(1, maxSize / 10);
                     int evicted = 0;
-                    
+
                     var iterator = lruMap.entrySet().iterator();
                     while (iterator.hasNext() && evicted < batchSize) {
                         Integer keyToEvict = iterator.next().getKey();
@@ -321,7 +322,7 @@ public class AccessTokenCache {
                         iterator.remove();
                         evicted++;
                     }
-                    
+
                     LOGGER.debug("Evicted %s oldest tokens from cache due to size limit", evicted);
                 }
             } finally {

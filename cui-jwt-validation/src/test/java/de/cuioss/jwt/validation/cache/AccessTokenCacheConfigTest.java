@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.cache;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
@@ -82,7 +83,7 @@ class AccessTokenCacheConfigTest {
 
         // Then
         assertNotNull(cache);
-        
+
         // Cleanup
         cache.shutdown();
     }
@@ -102,22 +103,22 @@ class AccessTokenCacheConfigTest {
 
         // Then - cache is created but calls validation function directly (no caching)
         assertNotNull(cache);
-        
+
         // Verify it calls validation function and returns result (transparent behavior)
-        var performanceMonitor = de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.builder()
-                .measurementTypes(de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+        var performanceMonitor = TokenValidatorMonitorConfig.builder()
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
                 .build()
                 .createMonitor();
         AccessTokenContent result = cache.computeIfAbsent("token", token -> expectedContent, performanceMonitor);
         assertEquals(expectedContent, result);
-        
+
         // Verify cache remains empty (no caching occurred)
         assertEquals(0, cache.size());
-        
+
         // Cleanup
         cache.shutdown();
     }
-    
+
     private static AccessTokenContent createAccessToken(String issuer, OffsetDateTime expirationTime) {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.ISSUER.getName(), ClaimValue.forPlainString(issuer));
