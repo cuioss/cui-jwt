@@ -65,15 +65,6 @@ public class AccessTokenCache {
 
     private static final CuiLogger LOGGER = new CuiLogger(AccessTokenCache.class);
 
-    /**
-     * Default maximum number of tokens to cache.
-     */
-    public static final int DEFAULT_MAX_SIZE = 1000;
-
-    /**
-     * Default interval for background eviction in seconds.
-     */
-    public static final long DEFAULT_EVICTION_INTERVAL_SECONDS = 300; // 5 minutes
 
     /**
      * The maximum number of tokens to cache.
@@ -122,8 +113,8 @@ public class AccessTokenCache {
             Long evictionIntervalSeconds,
             @NonNull SecurityEventCounter securityEventCounter) {
 
-        this.maxSize = maxSize != null ? maxSize : DEFAULT_MAX_SIZE;
-        long evictionIntervalSeconds1 = evictionIntervalSeconds != null ? evictionIntervalSeconds : DEFAULT_EVICTION_INTERVAL_SECONDS;
+        this.maxSize = maxSize != null ? maxSize : AccessTokenCacheConfig.DEFAULT_MAX_SIZE;
+        long evictionIntervalSeconds1 = evictionIntervalSeconds != null ? evictionIntervalSeconds : AccessTokenCacheConfig.DEFAULT_EVICTION_INTERVAL_SECONDS;
         this.securityEventCounter = securityEventCounter;
 
         if (this.maxSize > 0) {
@@ -401,27 +392,13 @@ public class AccessTokenCache {
 
     /**
      * Gets the current cache size.
+     * Package-private for testing purposes.
      *
      * @return the number of tokens currently cached
      */
-    public int size() {
+    int size() {
         return cache != null ? cache.size() : 0;
     }
 
 
-    /**
-     * Clears all tokens from the cache.
-     */
-    public void clear() {
-        if (cache != null) {
-            cache.clear();
-            lruLock.writeLock().lock();
-            try {
-                lruMap.clear();
-            } finally {
-                lruLock.writeLock().unlock();
-            }
-            LOGGER.debug("AccessTokenCache cleared");
-        }
-    }
 }
