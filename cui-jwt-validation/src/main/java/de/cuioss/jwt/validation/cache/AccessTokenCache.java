@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.MetricsTicker;
-import de.cuioss.jwt.validation.metrics.NoOpMetricsTicker;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
@@ -181,7 +180,7 @@ public class AccessTokenCache {
      * @param issuer the issuer of the token (used in cache key)
      * @param tokenString the raw JWT token string
      * @param validationFunction the function to validate the token if not cached
-     * @param performanceMonitor the monitor for recording cache metrics (may be null)
+     * @param performanceMonitor the monitor for recording cache metrics
      * @return the cached or newly validated access token content, never null
      * @throws TokenValidationException if the cached token is expired
      * @throws InternalCacheException if an internal cache error occurs
@@ -190,7 +189,7 @@ public class AccessTokenCache {
             @NonNull String issuer,
             @NonNull String tokenString,
             @NonNull Function<String, AccessTokenContent> validationFunction,
-            TokenValidatorMonitor performanceMonitor) {
+            @NonNull TokenValidatorMonitor performanceMonitor) {
 
         // If cache size is 0, caching is disabled - call validation function directly without caching
         if (maxSize == 0) {
@@ -198,9 +197,7 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache lookup
-        MetricsTicker lookupTicker = performanceMonitor != null ? 
-                MeasurementType.CACHE_LOOKUP.createTicker(performanceMonitor, true) : 
-                NoOpMetricsTicker.INSTANCE;
+        MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createTicker(performanceMonitor, true);
 
         // Generate cache key
         String cacheKey = generateCacheKey(issuer, tokenString);
@@ -241,9 +238,7 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache store
-        MetricsTicker storeTicker = performanceMonitor != null ? 
-                MeasurementType.CACHE_STORE.createTicker(performanceMonitor, true) : 
-                NoOpMetricsTicker.INSTANCE;
+        MetricsTicker storeTicker = MeasurementType.CACHE_STORE.createTicker(performanceMonitor, true);
 
         // Cache miss - use computeIfAbsent to ensure only one thread validates
         CachedToken newCached = cache.computeIfAbsent(cacheKey, key -> {

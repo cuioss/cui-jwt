@@ -104,7 +104,11 @@ class AccessTokenCacheConfigTest {
         assertNotNull(cache);
         
         // Verify it calls validation function and returns result (transparent behavior)
-        AccessTokenContent result = cache.computeIfAbsent("issuer", "token", token -> expectedContent, null);
+        var performanceMonitor = de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.builder()
+                .measurementTypes(de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
+        AccessTokenContent result = cache.computeIfAbsent("issuer", "token", token -> expectedContent, performanceMonitor);
         assertEquals(expectedContent, result);
         
         // Verify cache remains empty (no caching occurred)

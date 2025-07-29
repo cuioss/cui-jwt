@@ -40,10 +40,15 @@ class AccessTokenCacheTest {
 
     private AccessTokenCache cache;
     private SecurityEventCounter securityEventCounter;
+    private de.cuioss.jwt.validation.metrics.TokenValidatorMonitor performanceMonitor;
 
     @BeforeEach
     void setUp() {
         securityEventCounter = new SecurityEventCounter();
+        performanceMonitor = de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.builder()
+                .measurementTypes(de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
         cache = AccessTokenCache.builder()
                 .maxSize(10)
                 .evictionIntervalSeconds(300L) // Use longer interval to avoid race conditions in tests
@@ -71,7 +76,7 @@ class AccessTokenCacheTest {
         AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
-        }, null);
+        }, performanceMonitor);
 
         // Then
         assertNotNull(result);
@@ -95,13 +100,13 @@ class AccessTokenCacheTest {
         cache.computeIfAbsent(issuer, token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
-        }, null);
+        }, performanceMonitor);
 
         // When - second access should be cache hit
         AccessTokenContent result = cache.computeIfAbsent(issuer, token, t -> {
             validationCount.incrementAndGet();
             return expectedContent;
-        }, null);
+        }, performanceMonitor);
 
         // Then
         assertNotNull(result);
@@ -132,7 +137,7 @@ class AccessTokenCacheTest {
         AccessTokenContent result1 = cache.computeIfAbsent(issuer, testToken, t -> {
             validationCount.incrementAndGet();
             return expiredContent;
-        }, null);
+        }, performanceMonitor);
         
         assertEquals(expiredContent, result1);
         assertEquals(1, validationCount.get());
@@ -152,7 +157,7 @@ class AccessTokenCacheTest {
                     validationCount.incrementAndGet();
                     fail("Validation function should not be called for expired cached token");
                     return null;
-                }, null);
+                }, performanceMonitor);
             });
 
         // Then
@@ -190,7 +195,7 @@ class AccessTokenCacheTest {
                             Thread.currentThread().interrupt();
                         }
                         return content;
-                    }, null);
+                    }, performanceMonitor);
                     assertNotNull(result);
                     assertEquals(content, result);
                 } catch (InterruptedException e) {
@@ -223,7 +228,7 @@ class AccessTokenCacheTest {
             validationCount.incrementAndGet();
             fail("Validation function should not be called for cached token");
             return null;
-        }, null);
+        }, performanceMonitor);
         
         assertNotNull(cachedResult);
         assertEquals(content, cachedResult);
