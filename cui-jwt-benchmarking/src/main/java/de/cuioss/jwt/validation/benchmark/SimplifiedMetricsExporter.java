@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.benchmark;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
@@ -71,9 +72,24 @@ public class SimplifiedMetricsExporter {
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
 
-        Map<String, Object> metricsJson = new LinkedHashMap<>();
-        metricsJson.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
-        metricsJson.put("benchmark", benchmarkName);
+        // Single file for all metrics
+        Path outputFile = outputPath.resolve("jwt-validation-metrics.json");
+        
+        // Read existing data if file exists
+        Map<String, Object> allMetrics = new LinkedHashMap<>();
+        if (Files.exists(outputFile)) {
+            try {
+                String existingContent = Files.readString(outputFile);
+                TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
+                allMetrics = GSON.fromJson(existingContent, typeToken.getType());
+            } catch (Exception e) {
+                log.warn("Failed to read existing metrics file, starting fresh", e);
+            }
+        }
+
+        // Create metrics for current benchmark
+        Map<String, Object> benchmarkMetrics = new LinkedHashMap<>();
+        benchmarkMetrics.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
 
         Map<String, Map<String, Object>> steps = new LinkedHashMap<>();
 
@@ -97,13 +113,15 @@ public class SimplifiedMetricsExporter {
             }
         }
 
-        metricsJson.put("steps", steps);
+        benchmarkMetrics.put("steps", steps);
+        
+        // Add or update benchmark data using benchmark name as top-level element
+        allMetrics.put(benchmarkName, benchmarkMetrics);
 
-        // Write JSON file - one per benchmark
-        Path outputFile = outputPath.resolve("jwt-validation-metrics-" + benchmarkName + ".json");
+        // Write all metrics to single JSON file
         try (FileWriter writer = new FileWriter(outputFile.toFile())) {
-            GSON.toJson(metricsJson, writer);
-            log.info("Exported metrics to {}", outputFile);
+            GSON.toJson(allMetrics, writer);
+            log.info("Exported metrics for {} to {}", benchmarkName, outputFile);
         } catch (IOException e) {
             log.error("Failed to export metrics to {}", outputFile, e);
             throw e;

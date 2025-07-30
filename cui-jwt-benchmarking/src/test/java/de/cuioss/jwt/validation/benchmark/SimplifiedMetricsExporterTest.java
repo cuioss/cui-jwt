@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.benchmark;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
@@ -69,16 +70,24 @@ class SimplifiedMetricsExporterTest {
                 .toArray(Path[]::new);
 
         assertEquals(1, jsonFiles.length);
+        assertTrue(jsonFiles[0].getFileName().toString().equals("jwt-validation-metrics.json"));
         
         String jsonContent = Files.readString(jsonFiles[0]);
-        Map<String, Object> metricsJson = gson.fromJson(jsonContent, Map.class);
+        TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
+        Map<String, Object> allMetrics = gson.fromJson(jsonContent, typeToken.getType());
 
-        // Verify JSON structure
-        assertNotNull(metricsJson.get("timestamp"));
-        assertNotNull(metricsJson.get("benchmark"));
-        assertNotNull(metricsJson.get("steps"));
+        // Verify we have at least one benchmark entry (unknown_benchmark since no specific benchmark name is set)
+        assertFalse(allMetrics.isEmpty());
+        
+        // Get the first benchmark entry (should be "unknown_benchmark")
+        String benchmarkName = allMetrics.keySet().iterator().next();
+        Map<String, Object> benchmarkMetrics = (Map<String, Object>) allMetrics.get(benchmarkName);
 
-        Map<String, Map<String, Object>> steps = (Map<String, Map<String, Object>>) metricsJson.get("steps");
+        // Verify JSON structure for the benchmark
+        assertNotNull(benchmarkMetrics.get("timestamp"));
+        assertNotNull(benchmarkMetrics.get("steps"));
+
+        Map<String, Map<String, Object>> steps = (Map<String, Map<String, Object>>) benchmarkMetrics.get("steps");
         assertTrue(steps.containsKey("token_parsing"));
         assertTrue(steps.containsKey("header_validation"));
 
