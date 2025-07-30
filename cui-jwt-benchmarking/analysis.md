@@ -1,105 +1,98 @@
-# JWT Benchmark Analysis - Performance Changes (July 29, 2025)
+# JWT Benchmark Analysis - Baseline Performance (July 30, 2025)
 
 ## Executive Summary
 
-This analysis documents the performance changes between the previous benchmark run and the latest results from July 29, 2025 (evening run). The tests were run with updated configuration: increased token pool size (600 tokens), reduced cache size (100 entries), and more realistic token variations.
+This analysis documents the baseline performance metrics for the JWT validation library as of July 30, 2025. These results establish the current performance standards for optimization efforts.
 
-## Test Configuration Changes
-- **Token Pool**: Increased from default to 600 tokens (200 per issuer)
-- **Cache Size**: Reduced to 100 entries (from default)
-- **Token Variation**: Added custom data claims (50-250 chars) for realistic sizes
+## Test Configuration
+- **Token Pool**: 600 tokens (200 per issuer)
+- **Cache Size**: 60 entries (10% of token pool)
+- **Token Variation**: Custom data claims (50-250 chars)
 - **JVM**: OpenJDK 64-Bit Server VM 21.0.7+6-LTS  
 - **Threads**: 100 concurrent threads
 - **Iterations**: 3 measurement, 1 warmup
 
-## Performance Changes Summary
+## Baseline Performance Metrics
 
-### 📊 Throughput Performance Changes
+### 📊 Throughput Performance
 
-| Benchmark Type | Previous (ops/s) | Current (ops/s) | Change % | Current Per-Thread |
-|----------------|------------------|-----------------|----------|-------------------|
-| **Standard** | 90,347 | 617,686 | **+584%** | 6,177 ops/s/thread |
-| **Error Handling (0%)** | 100,534 | 1,416,444 | **+1,309%** | 14,164 ops/s/thread |
-| **Error Handling (50%)** | 155,032 | 824,806 | **+432%** | 8,248 ops/s/thread |
-| **JFR Throughput** | 32,098 | 187,784 | **+485%** | 1,878 ops/s/thread |
+| Benchmark Type | Throughput (ops/s) | Per-Thread |
+|----------------|-------------------|-------------|
+| **Standard** | 100,672 | 1,007 ops/s/thread |
+| **Error Handling (0%)** | 113,581 | 1,136 ops/s/thread |
+| **Error Handling (50%)** | 178,651 | 1,787 ops/s/thread |
 
-### 📈 Response Time Changes
+### 📈 Response Time Metrics
 
-| Benchmark Type | Previous (μs) | Current (μs) | Change % |
-|----------------|---------------|--------------|----------|
-| **Standard Avg** | 1,056 | 94.4 | **-91%** |
-| **JFR Core Avg** | 2,836 | 372.1 | **-87%** |
-| **JFR Concurrent** | 2,597 | 2,664.9 | **+3%** |
-| **JFR Error Cases** | 346-423 | 248-458 | **-28% to +8%** |
-| **JFR Malformed** | 124 | 85.0 | **-31%** |
+| Benchmark Type | Latency (μs) | Notes |
+|----------------|--------------|-------|
+| **Standard Average** | 860.66 | Average response time |
+| **Concurrent** | 883.40 | Under concurrent load |
 
-### 🎯 Component-Level Performance Changes (JFR Metrics)
+### 🎯 Component-Level Performance
 
-| Operation | Previous P50 (μs) | Current P50 (μs) | Change % | Previous P99 (μs) | Current P99 (μs) | Change % |
-|-----------|-------------------|------------------|----------|-------------------|------------------|----------|
-| **Complete Validation** | 57 | 22 | **-61%** | 27,299 | 6,956 | **-75%** |
-| **Signature Validation** | 61 | 10 | **-84%** | 15,559 | 848 | **-95%** |
-| **Token Parsing** | 7 | 15 | **+114%** | 1,122 | 2,610 | **+133%** |
-| **Claims Validation** | 5 | 11,162 | **+223,140%** | 2,598 | 11,162 | **+330%** |
-| **Token Building** | 12 | 151,262 | **+1,260,417%** | 3,737 | 151,262 | **+3,946%** |
-| **Header Validation** | 0.7 | 0.6 | **-14%** | 20 | 8 | **-60%** |
-| **Issuer Operations** | 0.4 | 2.2 | **+450%** | 7 | 50.8 | **+626%** |
+| Operation | P50 (μs) | P95 (μs) | P99 (μs) | P99/P50 Ratio |
+|-----------|----------|----------|----------|---------------|
+| **Complete Validation** | 52-84 | 82-101 | 112-31,675 | 2.2x-377x |
+| **Signature Validation** | 45-62 | 69-71 | 130-10,195 | 2.9x-164x |
+| **Token Parsing** | 3.7-6.1 | 6.0-7.8 | 6.5-14.0 | 1.8x-2.3x |
+| **Claims Validation** | 0.7-4.0 | 1.2-5.7 | 1.3-7.2 | 1.9x-1.8x |
+| **Token Building** | 2.0-7.8 | 3.7-11.0 | 4.7-14.0 | 2.4x-1.8x |
+| **Header Validation** | 0.1-0.5 | 0.4-1.1 | 0.5-1.6 | 5.0x-3.2x |
+| **Cache Operations** | 0.0-0.4 | 0.2-0.8 | 0.3-1.1 | ∞-2.8x |
 
-**Note on Performance Changes**: 
-- The extreme changes in Claims Validation and Token Building metrics (+223,140% and +1,260,417%) are due to different measurement contexts
-- Previous run: These operations were measured in the full validation flow context
-- Current run: Limited samples (400) measured in isolation, likely during error scenarios
-- The overall validation performance (Complete Validation: -61% P50, -75% P99) is the accurate indicator
+### 📊 Variance Analysis
 
-### 📊 Variance and Stability Analysis
+The benchmark results show varying P99 latencies across different workloads:
+- **Complete Validation**: P99 ranges from 112μs to 31,675μs depending on workload
+- **Signature Validation**: P99 spikes up to 10,195μs in mixed token scenarios
+- **Most Stable**: Token parsing and claims validation maintain consistent P99/P50 ratios < 3x
 
-| Metric | Previous CV | Current CV | Stability Change |
-|--------|-------------|------------|------------------|
-| Standard Throughput | 335% | 39% | **Much more stable** |
-| JFR Throughput | 289% | 97% | **More stable** |
-| Response Times | 64-318% | 28-98% | **Significantly improved** |
+## Key Performance Characteristics
 
-## Key Findings
+1. **Throughput Baseline**: 
+   - Standard: 100,672 ops/s
+   - Error 0%: 113,581 ops/s
+   - Error 50%: 178,651 ops/s (best performance)
 
-1. **Massive Throughput Gains**: Standard benchmarks show 584% improvement, likely due to:
-   - Reduced cache size (100 vs default) forcing more realistic cache behavior
-   - Larger token pool (600 tokens) reducing cache hit rate
-   - More diverse token sizes adding realistic processing variance
+2. **Latency Profile**: 
+   - Average: 860.66μs
+   - Concurrent: 883.40μs
+   - P50 range: 52-84μs (good median performance)
 
-2. **Latency Improvements**: 91% reduction in average response time demonstrates:
-   - Better thread utilization with realistic workload
-   - Reduced contention with varied token processing
-   - More efficient cache eviction with smaller cache size
+3. **P99 Variance**: 
+   - Complete validation P99: 112μs to 31.7ms
+   - Signature validation P99: up to 10.2ms
+   - High P99/P50 ratios indicate optimization opportunities
 
-3. **Component Performance**: 
-   - Signature validation improved 84% (P50) and 95% (P99)
-   - Token parsing shows increased latency (+114%) but still fast at 15μs
-   - Overall validation pipeline improved 61% (P50) despite individual variations
+4. **Component Performance**: 
+   - Signature validation: Dominant component (45-62μs P50)
+   - Token parsing: Consistent performance (3.7-6.1μs P50)
+   - Cache operations: Minimal overhead (0.0-0.4μs P50)
 
-4. **JFR Overhead**: Reduced from 65% to ~40% with current configuration
+## Optimization Opportunities
 
-5. **Stability**: Coefficient of variation dramatically improved, indicating more predictable performance
+### High Priority
+1. **P99 Latency Spikes**: Address 31.7ms spikes in complete validation
+2. **Signature Validation**: Reduce 10ms+ P99 spikes
+3. **P99/P50 Ratios**: Target < 50x for predictable performance
 
-## Recommendations
+### Medium Priority
+1. **Throughput Enhancement**: Target >200k ops/s baseline
+2. **Thread Efficiency**: Improve from 1,007 to >2,000 ops/s/thread
+3. **Average Latency**: Reduce from 860μs to <500μs
 
-### Configuration Impact Analysis
-The significant performance improvements appear to be driven by the more realistic benchmark configuration:
-- **Smaller cache (100 entries)**: Forces more frequent cache misses and evictions
-- **Larger token pool (600 tokens)**: Reduces artificial cache hit rates
-- **Variable token sizes**: More realistic processing patterns
-
-### Next Steps
-1. **Validate Results**: Run benchmarks with original configuration to confirm changes are due to configuration
-2. **Production Configuration**: Use similar realistic settings (small cache, diverse tokens) in production
-3. **Cache Tuning**: Experiment with cache sizes between 50-200 for optimal performance
-4. **Thread Pool Sizing**: Current 100 threads showing excellent efficiency (6,177 ops/s/thread)
+### Low Priority
+1. **Cache Optimization**: Already performing well
+2. **Token Parsing**: Stable performance, minor optimization potential
+3. **Header Validation**: Small absolute times despite high ratios
 
 ## Conclusion
 
-The latest benchmark results show exceptional performance improvements:
-- **584% throughput increase** for standard benchmarks
-- **91% latency reduction** in average response time  
-- **Significantly improved stability** (CV reduced from 335% to 39%)
-- **Better component performance** especially for signature validation (-84% P50)
+The JWT validation library baseline performance shows:
+- **Solid throughput**: 100-178k ops/s depending on workload
+- **Good median latency**: 52-84μs P50
+- **High P99 variance**: Primary optimization target
+- **Component bottlenecks**: Signature validation dominates
 
-These improvements appear to be driven by the more realistic test configuration that better reflects production workloads. The library demonstrates excellent performance characteristics with the updated settings.
+These baseline metrics establish the foundation for future optimization efforts, with focus areas clearly identified in P99 latency reduction and signature validation optimization.

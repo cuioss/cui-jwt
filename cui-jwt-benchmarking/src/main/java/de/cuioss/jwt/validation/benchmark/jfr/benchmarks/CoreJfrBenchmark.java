@@ -58,38 +58,38 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     // ========== Core Validation Benchmarks ==========
 
     /**
-     * Measures average validation time for single-threaded token validation with JFR instrumentation.
+     * Measures average validation time for single-threaded token validation with JFR instrumentation using full token spectrum.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTimeWithJfr() {
-        String token = tokenRepository.getPrimaryToken();
+        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", "validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = coreValidationDelegate.validatePrimaryToken();
+            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
             return result;
         }
     }
 
     /**
-     * Measures token validation throughput under concurrent load with JFR instrumentation.
+     * Measures token validation throughput under concurrent load with JFR instrumentation using full token spectrum.
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughputWithJfr() {
-        String token = tokenRepository.getPrimaryToken();
+        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", "validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = coreValidationDelegate.validatePrimaryToken();
+            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
             return result;
         }

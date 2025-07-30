@@ -28,21 +28,21 @@
 
 === Performance Gap Analysis
 
-**Integration vs Microbenchmarks (Updated July 29, 2025)**:
-- **Microbenchmarks**: 57μs P50, 27.3ms P99 (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
+**Integration vs Microbenchmarks (Updated July 30, 2025)**:
+- **Microbenchmarks**: 52-84μs P50, 31.7ms P99 (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
 - **Integration Tests**: 186.6ms P95 latency
-- **Gap**: 3,270x difference (P50) indicates infrastructure dominates performance
-- **Note**: Microbenchmarks achieved 66% improvement (90,347 ops/s) with thread optimization
+- **Gap**: 2,222-3,589x difference (P50) indicates infrastructure dominates performance
+- **Note**: Current microbenchmark baseline: 100,672 ops/s standard throughput
 
 === Latency Breakdown (186.6ms P95 Total)
 
 ```
 Total P95 Latency:           186.6ms (100%)
 ├─ Infrastructure (Echo):     59.0ms (32%) - CDI + Virtual Threads
-├─ JWT Library:               27.3ms (15%) - Core validation logic (P99 from microbenchmarks)
+├─ JWT Library:               31.7ms (17%) - Core validation logic (P99 from microbenchmarks)
 ├─ Issuer Resolution:         21.5ms (12%) - Config lookup/caching
 ├─ HTTP Processing:           26.7ms (14%) - Request/response handling
-└─ Untracked Overhead:       ~52.1ms (28%) - Thread pools, GC, contention
+└─ Untracked Overhead:       ~47.7ms (26%) - Thread pools, GC, contention
 ```
 
 == Critical Integration Test Bottlenecks
@@ -277,7 +277,7 @@ Total P95 Latency:           186.6ms (100%)
 
 == Related Documentation
 
-- **Microbenchmark Optimization**: xref:optimization-plan-mb.adoc[Core Library Performance Plan] - Updated July 29, 2025 with 57μs P50, 27.3ms P99 results
+- **Microbenchmark Optimization**: xref:optimization-plan-mb.adoc[Core Library Performance Plan] - Updated July 30, 2025 with 52-84μs P50, 31.7ms P99 baseline
 - **Benchmark Analysis**: xref:cui-jwt-benchmarking/analysis.md[Detailed Performance Analysis] - Comprehensive breakdown of component performance
 - **Infrastructure Details**: Container and native compilation optimization status
 - **Benchmark Infrastructure**: Maven-based execution with JFR profiling capabilities
@@ -291,6 +291,6 @@ Total P95 Latency:           186.6ms (100%)
 3. **Untracked overhead investigation** (33% of total latency)
 4. **HTTP processing streamlining** (14% of total latency)
 
-**Library optimization** (9% of latency) is addressed separately in the microbenchmark optimization plan.
+**Library optimization** (17% of latency) is addressed separately in the microbenchmark optimization plan.
 
 **Expected Result**: 89% latency reduction through systematic infrastructure optimization while maintaining security and functionality.

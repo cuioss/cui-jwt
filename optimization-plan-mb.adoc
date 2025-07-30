@@ -5,116 +5,112 @@
 :sectnums:
 :source-highlighter: highlight.js
 
-== 🎉 BENCHMARK OPTIMIZATION UPDATE (July 29, 2025)
+== 🎯 BASELINE PERFORMANCE METRICS (July 30, 2025)
 
-=== ✅ Latest Performance Results
+=== Current Performance Baseline
 
 **Thread-Optimized Benchmark Run (100 threads)**:
 
 |===
-| Benchmark | Current Throughput | vs Previous | Per-Thread | Status
-| *Standard Throughput* | **90,347 ops/s** | **+66%** | **903 ops/s/thread** | ✅ **OPTIMIZED**
-| *JFR Throughput* | **32,098 ops/s** | **-65% overhead** | **321 ops/s/thread** | ⚠️ **HIGH OVERHEAD**
-| *Error Load (0%)* | **100,534 ops/s** | **+84%** | **1,005 ops/s/thread** | ✅ **EXCELLENT**
-| *Error Load (50%)* | **155,032 ops/s** | **+185%** | **1,550 ops/s/thread** | ✅ **SUPERIOR**
-| *Average Time* | **1,056-1,149μs/op** | **-69%** | **Standard benchmarks** | ✅ **FAST**
+| Benchmark | Baseline Throughput | Per-Thread | Status
+| *Standard Throughput* | **100,672 ops/s** | **1,007 ops/s/thread** | 📊 **BASELINE**
+| *Error Load (0%)* | **113,581 ops/s** | **1,136 ops/s/thread** | 📊 **BASELINE**
+| *Error Load (50%)* | **178,651 ops/s** | **1,787 ops/s/thread** | 📊 **BEST PERFORMER**
+| *Average Time* | **860.66μs/op** | **Standard benchmarks** | 📊 **BASELINE**
+| *Concurrent* | **883.40μs/op** | **Concurrent workload** | 📊 **BASELINE**
 |===
 
-**Key Achievements**: 
-- ✅ **Thread Optimization Success**: 100 threads outperform 200 threads by 133% per-thread efficiency
-- ✅ **Excellent Median Performance**: 57μs complete validation (P50)
-- ✅ **RSA Key Generation Isolated**: 8-15 second setup confirmed working
-- ⚠️ **P99 Still Elevated**: 27.3ms spikes require attention
-- ⚠️ **JFR Overhead Significant**: 65% performance penalty needs optimization
+**Key Performance Characteristics**: 
+- ✅ **Solid Median Performance**: 52-84μs complete validation (P50)
+- ⚠️ **High P99 Variance**: Up to 31.7ms spikes (377x P99/P50 ratio)
+- ✅ **Error Handling Efficiency**: 50% error rate shows best throughput
+- ⚠️ **Thread Efficiency**: 1,007 ops/s/thread needs improvement
 
 == ✅ Implemented Optimizations
 
-=== Completed Tasks (Compressed Summary)
+=== Completed Tasks
 
-**Architecture & Performance (Phases 1-3)**:
-
-- ✅ Field-based TokenSignatureValidator with Provider bypass optimization - eliminated 73.7% signature validation bottleneck (+33% improvement)
-- ✅ Virtual thread compatibility with ReentrantLock patterns, immutable Map.copyOf() throughout - zero ThreadLocal usage
-- ✅ JFR instrumentation with variance analysis, ValidationContext time caching - eliminated 27+ system calls
-- ✅ Thread count optimization - reduced from 200 to 100 threads, improving efficiency by 133%
-- ✅ Benchmark profile separation with distinct output directories - `target/benchmark-results` vs `target/benchmark-jfr-results`
+**Architecture & Performance**:
+- ✅ Field-based TokenSignatureValidator with Provider bypass optimization
+- ✅ Virtual thread compatibility with ReentrantLock patterns, immutable Map.copyOf()
+- ✅ JFR instrumentation with variance analysis, ValidationContext time caching
+- ✅ Thread count optimization - 100 threads configuration
+- ✅ Benchmark profile separation with distinct output directories
 
 **Library Analysis**:
+- ✅ Analyzed jjwt, smallrye-jwt, jose4j, auth0 - all use JCA without Signature caching
+- ✅ Component performance breakdown completed
 
-- ✅ Analyzed jjwt, smallrye-jwt, jose4j, auth0 - all use JCA without Signature caching, identified Provider.getService() contention
-- ✅ Component performance breakdown - signature validation (61μs), token building (12μs), parsing (7μs), claims (5μs)
-== 🚀 REMAINING OPTIMIZATION TASKS (July 29, 2025 Update)
+== 🚀 OPTIMIZATION ROADMAP
 
-=== 🔴 CRITICAL PRIORITY - P99 Latency Reduction
+=== 🔴 HIGH PRIORITY - P99 Latency Reduction
 
 ==== Phase 1: Signature Validation Caching (1-2 weeks)
-- [ ] *Signature Validation Optimization* - **15.6ms P99 spikes (255x P99/P50)**
+- [ ] *Signature Validation Optimization* - **10.2ms P99 spikes (164x P99/P50)**
   - [ ] Implement bounded LRU signature cache (Caffeine, 10k entries, 5min TTL)
-  - [ ] Expected impact: 30-40% reduction in signature validation time
-  - [ ] Target: P99 from 15.6ms to ~10ms
+  - [ ] Expected impact: Reduce P99 from 10.2ms to <3ms
   - [ ] Cache key: (token signature, public key) → boolean result
+  - [ ] Target throughput improvement: +20-30%
 
-- [ ] *Token Building Object Pooling* - **3.7ms P99 spikes (311x P99/P50)** 
+- [ ] *Complete Validation Stabilization* - **31.7ms P99 spikes (377x P99/P50)** 
+  - [ ] Profile validation hotspots causing extreme spikes
+  - [ ] Implement circuit breaker for pathological cases
+  - [ ] Target: P99 from 31.7ms to <5ms
+  - [ ] Expected P99/P50 ratio: <50x
+
+==== Phase 2: Component Optimization (2-3 weeks)
+- [ ] *Token Building Object Pooling* - **14.0μs P99 spikes**
   - [ ] Implement Apache Commons Pool for TokenBuilder instances
   - [ ] Pool configuration: 200 max, 100 idle, 50 min
-  - [ ] Expected impact: P99 from 3.7ms to <1ms
+  - [ ] Expected impact: P99 from 14.0μs to <10μs
   - [ ] Monitor pool metrics for sizing optimization
 
-==== Phase 2: JFR Overhead Optimization (2-3 weeks)
-- [ ] *Conditional JFR Recording* - **65% overhead reduction needed**
-  - [ ] Only record operations >100μs threshold
-  - [ ] Add jwt.jfr.enabled system property for control
-  - [ ] Batch event recording in thread-local buffers
-  - [ ] Target: JFR overhead from 65% to <20%
-
-=== 🟡 MEDIUM PRIORITY - Architecture Improvements
-
-==== Phase 3: Async Validation Pipeline (1 month)
-- [ ] *Async Architecture* - **Potential 20-30% throughput gain**
-  - [ ] Implement CompletableFuture-based validation pipeline
-  - [ ] Separate executors for parsing, signature, and claims validation
-  - [ ] Non-blocking I/O for issuer configuration resolution
-  - [ ] Target: 100k+ ops/s throughput
-
-- [ ] *Claims Validation Optimization* - **2.6ms P99 spikes (520x ratio)**
+- [ ] *Claims Validation Optimization* - **7.2μs P99 spikes**
   - [ ] Profile validation logic for expensive operations
   - [ ] Cache validation results for repeated claim patterns
   - [ ] Optimize date/time claim validation
-  
-- [ ] *Token Parsing Optimization* - **1.1ms P99 spikes (160x ratio)**
-  - [ ] Profile JWT parsing and Base64 decoding
-  - [ ] Investigate faster JSON parsing libraries
-  - [ ] Consider SIMD acceleration for Base64
+  - [ ] Target: Reduce P99 to <5μs
 
-==== Phase 4: Production Hardening (2 weeks)
-- [ ] *Adaptive Thread Pool*
-  - [ ] Dynamic thread pool sizing based on load
-  - [ ] Circuit breaker for overload protection
-  - [ ] Graceful degradation under pressure
-  
-- [ ] *Production Metrics*
-  - [ ] P99 < 5ms validation time
-  - [ ] >100k ops/s sustained throughput
-  - [ ] <20% JFR profiling overhead
-  - [ ] >1000 ops/s per thread efficiency
+=== 🟡 MEDIUM PRIORITY - Throughput Enhancement
 
-=== 🟢 LOW PRIORITY - Fine-Tuning
+==== Phase 3: Architecture Improvements (1 month)
+- [ ] *Throughput Optimization* - **Current: 100k ops/s baseline**
+  - [ ] Target: >200k ops/s standard throughput
+  - [ ] Optimize synchronization points
+  - [ ] Reduce allocation rates
+  - [ ] Implement zero-copy token handling where possible
 
-- [ ] *SIMD/Hardware Acceleration*
-  - [ ] Investigate Java Vector API for batch operations
-  - [ ] Native crypto libraries (OpenSSL integration)
-  - [ ] Hardware security module (HSM) support
+- [ ] *Thread Efficiency* - **Current: 1,007 ops/s/thread**
+  - [ ] Target: >2,000 ops/s/thread
+  - [ ] Reduce thread contention
+  - [ ] Optimize work distribution
+  - [ ] Consider work-stealing patterns
+
+==== Phase 4: Async Pipeline (4-6 weeks)
+- [ ] *Async Architecture* - **Potential 2x throughput gain**
+  - [ ] Implement CompletableFuture-based validation pipeline
+  - [ ] Separate executors for parsing, signature, and claims validation
+  - [ ] Non-blocking I/O for issuer configuration resolution
+  - [ ] Target: 200k+ ops/s throughput
+
+=== 🟢 LOW PRIORITY - Production Hardening
+
+==== Phase 5: Advanced Optimizations (2-3 months)
+- [ ] *JFR Overhead Reduction*
+  - [ ] Conditional recording (>100μs threshold)
+  - [ ] Batch event recording
+  - [ ] Target: <20% overhead with profiling enabled
 
 - [ ] *Memory & GC Optimization*
-  - [ ] Reduce allocation rate for better P99 consistency
-  - [ ] Profile and optimize hot allocation sites
-  - [ ] Test with G1GC low-pause configurations
-  
-- [ ] *Monitoring & Observability*
-  - [ ] Production JFR profiles with <20% overhead
-  - [ ] Custom MicroProfile metrics
-  - [ ] Performance regression detection
+  - [ ] Reduce allocation rate
+  - [ ] Optimize hot allocation sites
+  - [ ] Test with different GC configurations
+  - [ ] Target: <500μs average latency
 
+- [ ] *Hardware Acceleration*
+  - [ ] Java Vector API for batch operations
+  - [ ] Native crypto libraries (OpenSSL)
+  - [ ] Hardware security module (HSM) support
 
 == Validation Methodology
 
@@ -122,10 +118,10 @@
 
 [source,bash]
 ----
-# Standard benchmarks (current: 91,950 ops/s)
+# Standard benchmarks (baseline: 100,672 ops/s)
 mvn verify -Pbenchmark
 
-# JFR instrumented benchmarks
+# Component-level analysis
 mvn verify -Pbenchmark-jfr
 
 # Thread scaling analysis
@@ -135,35 +131,45 @@ mvn verify -Pbenchmark -Djmh.threads=1,50,100,150,200
 === Success Metrics
 
 |===
-| Metric | Current (July 29) | Target | Gap | Priority
-| **Throughput** | 90,347 ops/s | 100,000 ops/s | 10% | 🟡 Medium
-| **P50 Latency** | 57μs | <100μs | ✅ Met | -
-| **P99 Latency** | 27.3ms | <5ms | 446% | 🔴 Critical
-| **Thread Efficiency** | 903 ops/s/thread | >1,000 | 10% | 🟢 Low
-| **JFR Overhead** | 65% | <20% | 225% | 🔴 High
-| **Signature P50** | 61μs | <40μs | 53% | 🟡 Medium
-| **P99/P50 Ratio** | 479x | <50x | 858% | 🔴 Critical
+| Metric | Current Baseline | Target | Improvement | Priority
+| **Throughput** | 100,672 ops/s | 200,000 ops/s | 2x | 🟡 Medium
+| **P50 Latency** | 52-84μs | <100μs | ✅ Met | -
+| **P99 Latency** | 31.7ms | <5ms | 6x | 🔴 High
+| **Thread Efficiency** | 1,007 ops/s/thread | >2,000 | 2x | 🟡 Medium
+| **Average Latency** | 860μs | <500μs | 1.7x | 🟡 Medium
+| **P99/P50 Ratio** | 377x | <50x | 7.5x | 🔴 High
+|===
+
+=== Component Performance Targets
+
+|===
+| Component | Current P50 | Current P99 | Target P99 | Priority
+| **Complete Validation** | 52-84μs | 31,675μs | <5,000μs | 🔴 High
+| **Signature Validation** | 45-62μs | 10,195μs | <3,000μs | 🔴 High
+| **Token Parsing** | 3.7-6.1μs | 14.0μs | <10μs | 🟢 Low
+| **Claims Validation** | 0.7-4.0μs | 7.2μs | <5μs | 🟢 Low
+| **Token Building** | 2.0-7.8μs | 14.0μs | <10μs | 🟡 Medium
 |===
 
 == Summary
 
-The JWT validation library has achieved **66% throughput improvement** (90,347 ops/s) with excellent median performance (57μs) through architectural optimizations and thread tuning.
+The JWT validation library baseline performance (July 30, 2025) shows:
 
-**Key Results**:
-1. **Architecture**: Field-based validators, Provider bypass, immutable patterns
-2. **Thread Optimization**: 100 threads optimal (903 ops/s/thread vs 387 with 200 threads)
-3. **Component Performance**: Signature (61μs), Building (12μs), Parsing (7μs), Claims (5μs)
-4. **Error Handling**: Superior performance with 155k ops/s at 50% error rate
+**Current Strengths**:
+1. **Good median latency**: 52-84μs P50 for complete validation
+2. **Error handling efficiency**: 178k ops/s with 50% error rate
+3. **Stable components**: Token parsing and claims validation show low variance
 
-**Critical Issues**:
-- P99 latency (27.3ms) needs reduction to <5ms
-- JFR overhead (65%) unsuitable for production
-- High variance ratios (255-520x) indicate instability
+**Optimization Priorities**:
+1. **P99 latency reduction**: From 31.7ms to <5ms (High Priority)
+2. **Throughput doubling**: From 100k to 200k ops/s (Medium Priority)
+3. **Thread efficiency**: From 1,007 to 2,000+ ops/s/thread (Medium Priority)
+4. **P99/P50 ratio**: From 377x to <50x for predictability (High Priority)
 
 **Next Steps**: 
-1. Implement signature caching (Phase 1) - expected 30-40% improvement
-2. Add object pooling for token builders - reduce P99 from 3.7ms to <1ms
-3. Optimize JFR instrumentation - reduce overhead from 65% to <20%
-4. Consider async architecture for 100k+ ops/s target
+1. Implement signature caching - expected 20-30% throughput improvement
+2. Add object pooling for token builders - reduce GC pressure
+3. Profile and optimize P99 hotspots - achieve <5ms P99 target
+4. Consider async architecture for 2x throughput gain
 
-**Production Readiness**: Conditionally ready - suitable for standard web applications but requires optimization for stringent SLAs (<5ms P99).
+**Production Readiness**: The library is suitable for standard web applications with current performance. High-throughput or low-latency applications will benefit from the planned optimizations.
