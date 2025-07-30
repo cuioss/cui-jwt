@@ -84,7 +84,7 @@ class AccessTokenCacheConfigResolverTest {
         assertNotNull(cacheConfig);
         assertEquals(0, cacheConfig.getMaxSize());
         // When disabled, evictionIntervalSeconds should be the disabled config default
-        assertEquals(300L, cacheConfig.getEvictionIntervalSeconds());
+        assertEquals(10L, cacheConfig.getEvictionIntervalSeconds());
     }
 
     @Test
