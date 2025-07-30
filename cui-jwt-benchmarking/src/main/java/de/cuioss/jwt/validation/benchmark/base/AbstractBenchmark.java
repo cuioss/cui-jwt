@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.benchmark.base;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.benchmark.TokenRepository;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Setup;
@@ -52,11 +53,19 @@ public abstract class AbstractBenchmark {
      * @param benchmarkNames Names to register (kept for compatibility)
      */
     protected void setupBase(String... benchmarkNames) {
-        // Initialize token repository
-        tokenRepository = new TokenRepository();
+        // Initialize token repository with cache size configured for 10% of tokens
+        TokenRepository.Config config = TokenRepository.Config.builder()
+                .cacheSize(60) // 10% of default 600 tokens
+                .build();
+        tokenRepository = new TokenRepository(config);
 
-        // Create token validator
-        tokenValidator = tokenRepository.createTokenValidator();
+        // Create token validator with cache configuration
+        tokenValidator = tokenRepository.createTokenValidator(
+                TokenValidatorMonitorConfig.builder()
+                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                        .windowSize(10000)
+                        .build(),
+                config);
     }
 
     /**

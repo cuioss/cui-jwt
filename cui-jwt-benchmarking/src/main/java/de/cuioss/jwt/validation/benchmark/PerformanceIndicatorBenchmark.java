@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.benchmark;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -56,11 +57,19 @@ public class PerformanceIndicatorBenchmark {
     @Setup(Level.Trial)
     public void setup() {
         TokenRepository tokenRepository;
-        // Initialize token repository with default configuration
-        tokenRepository = new TokenRepository();
+        // Initialize token repository with cache size configured for 10% of tokens
+        TokenRepository.Config config = TokenRepository.Config.builder()
+                .cacheSize(60) // 10% of default 600 tokens
+                .build();
+        tokenRepository = new TokenRepository(config);
 
-        // Create pre-configured token validator
-        tokenValidator = tokenRepository.createTokenValidator();
+        // Create pre-configured token validator with cache configuration
+        tokenValidator = tokenRepository.createTokenValidator(
+                TokenValidatorMonitorConfig.builder()
+                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                        .windowSize(10000)
+                        .build(),
+                config);
 
         // Initialize validation delegate
         validationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
@@ -110,10 +119,10 @@ public class PerformanceIndicatorBenchmark {
 
 
     /**
-     * Measures average validation time for single-threaded token validation.
+     * Measures average validation time for single-threaded token validation using full token spectrum.
      * <p>
-     * This benchmark measures the baseline latency for validating a single
-     * access token without concurrent load. Lower values indicate better performance.
+     * This benchmark measures the baseline latency for validating tokens while rotating
+     * through all 600 tokens to test cache effectiveness. Lower values indicate better performance.
      *
      * @return validated access token content
      */
@@ -121,14 +130,15 @@ public class PerformanceIndicatorBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTime() {
-        return validationDelegate.validatePrimaryToken();
+        return validationDelegate.validateWithFullSpectrum();
     }
 
     /**
-     * Measures token validation throughput under concurrent load.
+     * Measures token validation throughput under concurrent load using full token spectrum.
      * <p>
      * This benchmark uses 8 threads to measure how many token validations
-     * can be performed per second under concurrent load. Higher values indicate better throughput.
+     * can be performed per second under concurrent load, rotating through all 600 tokens
+     * to test cache effectiveness. Higher values indicate better throughput.
      *
      * @return validated access token content
      */
@@ -136,7 +146,7 @@ public class PerformanceIndicatorBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughput() {
-        return validationDelegate.validatePrimaryToken();
+        return validationDelegate.validateWithFullSpectrum();
     }
 
     /**

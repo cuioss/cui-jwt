@@ -96,6 +96,9 @@ public class TokenRepository {
 
         @Builder.Default
         long randomSeed = 42L; // Fixed seed for reproducibility
+
+        @Builder.Default
+        int cacheSize = 100;
     }
 
     /**
@@ -171,10 +174,21 @@ public class TokenRepository {
      * @return A new TokenValidator instance
      */
     public TokenValidator createTokenValidator(TokenValidatorMonitorConfig monitorConfig) {
+        return createTokenValidator(monitorConfig, Config.builder().build());
+    }
+
+    /**
+     * Creates a pre-configured TokenValidator with the specified monitor configuration and config
+     *
+     * @param monitorConfig The monitor configuration to use
+     * @param config The TokenRepository config to use for cache size
+     * @return A new TokenValidator instance
+     */
+    public TokenValidator createTokenValidator(TokenValidatorMonitorConfig monitorConfig, Config config) {
         return TokenValidator.builder()
                 .issuerConfigs(issuerConfigs)
                 .monitorConfig(monitorConfig)
-                .cacheConfig(AccessTokenCacheConfig.builder().maxSize(100).build())
+                .cacheConfig(AccessTokenCacheConfig.builder().maxSize(config.cacheSize).build())
                 .build();
     }
 

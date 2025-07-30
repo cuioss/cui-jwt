@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -50,11 +51,19 @@ public class UnifiedJfrBenchmark {
         // Initialize JFR instrumentation
         jfrInstrumentation = new JfrInstrumentation();
 
-        // Initialize token repository
-        tokenRepository = new TokenRepository();
+        // Initialize token repository with cache size configured for 10% of tokens
+        TokenRepository.Config config = TokenRepository.Config.builder()
+                .cacheSize(60) // 10% of default 600 tokens
+                .build();
+        tokenRepository = new TokenRepository(config);
 
-        // Create token validator
-        tokenValidator = tokenRepository.createTokenValidator();
+        // Create token validator with cache configuration
+        tokenValidator = tokenRepository.createTokenValidator(
+                TokenValidatorMonitorConfig.builder()
+                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                        .windowSize(10000)
+                        .build(),
+                config);
 
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
@@ -127,38 +136,38 @@ public class UnifiedJfrBenchmark {
     // ========== Core Validation Benchmarks ==========
 
     /**
-     * Measures average validation time for single-threaded token validation with JFR instrumentation.
+     * Measures average validation time for single-threaded token validation with JFR instrumentation using full token spectrum.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTimeWithJfr() {
-        String token = tokenRepository.getPrimaryToken();
+        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", "validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = coreValidationDelegate.validatePrimaryToken();
+            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
             return result;
         }
     }
 
     /**
-     * Measures token validation throughput under concurrent load with JFR instrumentation.
+     * Measures token validation throughput under concurrent load with JFR instrumentation using full token spectrum.
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughputWithJfr() {
-        String token = tokenRepository.getPrimaryToken();
+        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
 
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", "validation")) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = coreValidationDelegate.validatePrimaryToken();
+            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
             return result;
         }
@@ -186,18 +195,18 @@ public class UnifiedJfrBenchmark {
     // ========== Error Load Benchmarks ==========
 
     /**
-     * Measures validation performance for valid tokens with JFR instrumentation.
+     * Measures validation performance for valid tokens with JFR instrumentation using full token spectrum.
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent validateValidTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", "validation")) {
-            String token = tokenRepository.getPrimaryToken();
+            String token = coreValidationDelegate.getCurrentToken("full_spectrum");
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = errorLoadDelegate0.validateValid();
+            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
             return result;
         }

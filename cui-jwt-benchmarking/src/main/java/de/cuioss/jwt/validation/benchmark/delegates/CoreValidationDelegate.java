@@ -53,6 +53,23 @@ public class CoreValidationDelegate extends BenchmarkDelegate {
     }
 
     /**
+     * Performs token validation using the full token spectrum with rotation.
+     * Rotates through all tokens in the pool for maximum cache testing.
+     * 
+     * @return the validated access token content
+     * @throws RuntimeException if validation fails unexpectedly
+     */
+    public AccessTokenContent validateWithFullSpectrum() {
+        try {
+            // Use rotation through entire token pool for full spectrum testing
+            String token = tokenRepository.getToken(tokenIndex.getAndIncrement());
+            return validateToken(token);
+        } catch (TokenValidationException e) {
+            throw new RuntimeException("Unexpected validation failure during full spectrum validation", e);
+        }
+    }
+
+    /**
      * Performs concurrent validation with token rotation.
      * Rotates through the token pool to simulate different tokens being validated.
      * 
@@ -72,11 +89,11 @@ public class CoreValidationDelegate extends BenchmarkDelegate {
     /**
      * Gets the current token for the given operation type.
      * 
-     * @param operationType the type of operation (e.g., "primary", "rotation")
+     * @param operationType the type of operation (e.g., "primary", "rotation", "full_spectrum")
      * @return the token to use for validation
      */
     public String getCurrentToken(String operationType) {
-        if ("rotation".equals(operationType)) {
+        if ("rotation".equals(operationType) || "full_spectrum".equals(operationType)) {
             return tokenRepository.getToken(tokenIndex.get());
         }
         return tokenRepository.getPrimaryToken();

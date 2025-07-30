@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Delegate for error load benchmarks that test validation behavior under various error conditions.
@@ -35,32 +36,32 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class ErrorLoadDelegate extends BenchmarkDelegate {
 
-    private final String validToken;
     private final String expiredToken;
     private final String malformedToken;
     private final String invalidSignatureToken;
     private final int errorPercentage;
+    private final AtomicInteger tokenIndex = new AtomicInteger(0);
 
     public ErrorLoadDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository, int errorPercentage) {
         super(tokenValidator, tokenRepository);
         this.errorPercentage = errorPercentage;
 
-        // Initialize tokens
-        this.validToken = tokenRepository.getPrimaryToken();
+        // Initialize error tokens
         this.expiredToken = createExpiredToken();
         this.malformedToken = "not.a.valid.jwt.token";
         this.invalidSignatureToken = createInvalidSignatureToken();
     }
 
     /**
-     * Validates a valid token.
+     * Validates a valid token using full spectrum rotation.
      * 
      * @return the validated access token content
      * @throws RuntimeException if validation fails unexpectedly
      */
     public AccessTokenContent validateValid() {
         try {
-            return validateToken(validToken);
+            String token = tokenRepository.getToken(tokenIndex.getAndIncrement());
+            return validateToken(token);
         } catch (TokenValidationException e) {
             throw new RuntimeException("Unexpected validation failure for valid token", e);
         }
@@ -128,7 +129,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
     }
 
     /**
-     * Selects a token based on the error percentage.
+     * Selects a token based on the error percentage, using full spectrum for valid tokens.
      * 
      * @return the selected token
      */
@@ -148,7 +149,8 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             }
         }
 
-        return validToken;
+        // Return a token from the full spectrum for valid tokens
+        return tokenRepository.getToken(tokenIndex.getAndIncrement());
     }
 
     /**
@@ -186,8 +188,9 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
     }
 
     private String createInvalidSignatureToken() {
-        // Take the valid token and corrupt the signature
-        String[] parts = validToken.split("\\.");
+        // Take a primary token and corrupt the signature
+        String primaryToken = tokenRepository.getPrimaryToken();
+        String[] parts = primaryToken.split("\\.");
         if (parts.length == 3) {
             // Modify the signature part
             return parts[0] + "." + parts[1] + ".invalidSignature123";

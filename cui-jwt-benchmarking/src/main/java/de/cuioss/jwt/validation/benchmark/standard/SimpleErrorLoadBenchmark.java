@@ -15,23 +15,14 @@
  */
 package de.cuioss.jwt.validation.benchmark.standard;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
+import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-import io.jsonwebtoken.Jwts;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simplified error load benchmark - split from ErrorLoadBenchmark.
@@ -49,18 +40,8 @@ public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
             "validateMixedTokens0", "validateMixedTokens50"
     };
 
-    // Pre-generated tokens for specific error scenarios
-    private String validAccessToken;
-    private String expiredToken;
-    private String malformedToken;
-    private String invalidSignatureToken;
-
-    // Optimized token pools for mixed error testing
-    private List<String> validTokens;
-    private List<String> invalidTokens;
-
-    // Reduced token count for faster setup
-    private static final int TOKEN_COUNT = 20;
+    private ErrorLoadDelegate errorLoadDelegate0;
+    private ErrorLoadDelegate errorLoadDelegate50;
 
     @Override
     protected String[] getBenchmarkMethodNames() {
@@ -69,42 +50,12 @@ public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-        // Create base token holder and validator
-        TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
-        IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
-        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+        // Use base class setup with our benchmark names
+        setupBase(BENCHMARK_NAMES);
 
-        // Generate primary tokens for basic error scenarios
-        validAccessToken = baseTokenHolder.getRawToken();
-        expiredToken = createExpiredToken();
-        malformedToken = "invalid.jwt.token";
-        invalidSignatureToken = createInvalidSignatureToken(validAccessToken);
-
-        // Pre-generate token pools for mixed scenarios
-        validTokens = new ArrayList<>(TOKEN_COUNT);
-        invalidTokens = new ArrayList<>(TOKEN_COUNT);
-
-        // Generate valid token pool
-        for (int i = 0; i < TOKEN_COUNT; i++) {
-            TestTokenHolder validTokenHolder = TestTokenGenerators.accessTokens().next();
-            validTokens.add(validTokenHolder.getRawToken());
-        }
-
-        // Generate invalid token pool (mixed error types)
-        for (int i = 0; i < TOKEN_COUNT; i++) {
-            if (i < TOKEN_COUNT / 3) {
-                // Expired tokens
-                invalidTokens.add(createExpiredToken());
-            } else if (i < 2 * TOKEN_COUNT / 3) {
-                // Invalid signature tokens
-                invalidTokens.add(createInvalidSignatureToken(validAccessToken));
-            } else {
-                // Malformed tokens
-                invalidTokens.add("malformed.token." + i);
-            }
-        }
-
-        // No longer needed - metrics are exported via shutdown hook
+        // Initialize error load delegates
+        errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
+        errorLoadDelegate50 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 50);
     }
 
     // ========== Simple Error Load Benchmarks ==========
@@ -113,86 +64,20 @@ public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
      * Benchmarks mixed error load scenarios with 0% error rate (baseline performance).
      */
     @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     public Object validateMixedTokens0(Blackhole blackhole) {
-        String token = selectValidToken();
-        try {
-            AccessTokenContent result = tokenValidator.createAccessToken(token);
-            blackhole.consume(result);
-            return result;
-        } catch (TokenValidationException e) {
-            blackhole.consume(e);
-            return e;
-        }
+        return errorLoadDelegate0.validateMixed(blackhole);
     }
 
     /**
      * Benchmarks mixed error load scenarios with 50% error rate (balanced mix).
      */
     @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     public Object validateMixedTokens50(Blackhole blackhole) {
-        String token = selectMixedToken();
-        try {
-            AccessTokenContent result = tokenValidator.createAccessToken(token);
-            blackhole.consume(result);
-            return result;
-        } catch (TokenValidationException e) {
-            blackhole.consume(e);
-            return e;
-        }
+        return errorLoadDelegate50.validateMixed(blackhole);
     }
 
-    /**
-     * Selects a valid token for 0% error rate benchmarks.
-     */
-    @SuppressWarnings("java:S2245") // Random usage is acceptable for benchmarks
-    private String selectValidToken() {
-        int index = ThreadLocalRandom.current().nextInt(validTokens.size());
-        return validTokens.get(index);
-    }
-
-    /**
-     * Selects a token with 50% error rate for mixed error benchmarks.
-     */
-    @SuppressWarnings("java:S2245") // Random usage is acceptable for benchmarks
-    private String selectMixedToken() {
-        int randomValue = ThreadLocalRandom.current().nextInt(100);
-        if (randomValue < 50) {
-            int index = ThreadLocalRandom.current().nextInt(invalidTokens.size());
-            return invalidTokens.get(index);
-        } else {
-            int index = ThreadLocalRandom.current().nextInt(validTokens.size());
-            return validTokens.get(index);
-        }
-    }
-
-    /**
-     * Creates an expired JWT token for testing.
-     */
-    private String createExpiredToken() {
-        Instant past = Instant.now().minusSeconds(3600);
-
-        return Jwts.builder()
-                .issuer("benchmark-issuer")
-                .subject("benchmark-user")
-                .audience().add("benchmark-client").and()
-                .expiration(Date.from(past)) // Already expired
-                .notBefore(Date.from(past.minusSeconds(60)))
-                .issuedAt(Date.from(past.minusSeconds(120)))
-                .id(UUID.randomUUID().toString())
-                .signWith(Jwts.SIG.HS256.key().build())
-                .compact();
-    }
-
-    /**
-     * Creates a token with invalid signature for testing.
-     */
-    private String createInvalidSignatureToken(String validToken) {
-        // Take the valid token and corrupt the signature
-        String[] parts = validToken.split("\\.");
-        if (parts.length == 3) {
-            // Modify the signature part
-            return parts[0] + "." + parts[1] + ".invalidSignature123";
-        }
-        return "invalid.signature.token";
-    }
 }

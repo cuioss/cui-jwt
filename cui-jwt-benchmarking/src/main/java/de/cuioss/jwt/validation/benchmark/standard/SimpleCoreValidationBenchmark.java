@@ -55,9 +55,9 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
     }
 
     /**
-     * Measures average validation time for single-threaded token validation.
-     * This benchmark measures the baseline latency for validating a single
-     * access token without concurrent load. Lower values indicate better performance.
+     * Measures average validation time for single-threaded token validation using full token spectrum.
+     * This benchmark measures the baseline latency for validating tokens while rotating
+     * through all 600 tokens to test cache effectiveness. Lower values indicate better performance.
      *
      * @return validated access token content
      */
@@ -65,13 +65,14 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTime() {
-        return validationDelegate.validatePrimaryToken();
+        return validationDelegate.validateWithFullSpectrum();
     }
 
     /**
-     * Measures token validation throughput under concurrent load.
+     * Measures token validation throughput under concurrent load using full token spectrum.
      * This benchmark uses multiple threads to measure how many token validations
-     * can be performed per second under concurrent load. Higher values indicate better throughput.
+     * can be performed per second under concurrent load, rotating through all 600 tokens
+     * to test cache effectiveness. Higher values indicate better throughput.
      *
      * @return validated access token content
      */
@@ -79,7 +80,7 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughput() {
-        return validationDelegate.validatePrimaryToken();
+        return validationDelegate.validateWithFullSpectrum();
     }
 
     /**
