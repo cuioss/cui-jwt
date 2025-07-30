@@ -58,11 +58,11 @@ class AccessTokenCacheTest {
                 .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
                 .build()
                 .createMonitor();
-        cache = AccessTokenCache.builder()
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
                 .maxSize(10)
                 .evictionIntervalSeconds(300L) // Use longer interval to avoid race conditions in tests
-                .securityEventCounter(securityEventCounter)
                 .build();
+        cache = new AccessTokenCache(config, securityEventCounter);
     }
 
     @AfterEach
@@ -321,11 +321,11 @@ class AccessTokenCacheTest {
     void concurrentCacheEviction() throws InterruptedException {
         // Given - smaller cache to make eviction more likely
         cache.shutdown();
-        cache = AccessTokenCache.builder()
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
                 .maxSize(5)
                 .evictionIntervalSeconds(300L)
-                .securityEventCounter(securityEventCounter)
                 .build();
+        cache = new AccessTokenCache(config, securityEventCounter);
 
         int threadCount = 10;
         int tokensPerThread = 5;
@@ -381,11 +381,11 @@ class AccessTokenCacheTest {
     void cacheEvictionBatchRemoval() {
         // Given - cache that evicts 10% when full
         cache.shutdown();
-        cache = AccessTokenCache.builder()
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
                 .maxSize(100)
                 .evictionIntervalSeconds(300L)
-                .securityEventCounter(securityEventCounter)
                 .build();
+        cache = new AccessTokenCache(config, securityEventCounter);
 
         // When - fill cache to capacity
         for (int i = 0; i < 100; i++) {
@@ -411,11 +411,11 @@ class AccessTokenCacheTest {
     void cacheDisabledNoEvictionLogic() {
         // Given - cache with size 0 (disabled)
         cache.shutdown();
-        cache = AccessTokenCache.builder()
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
                 .maxSize(0)
                 .evictionIntervalSeconds(300L)
-                .securityEventCounter(securityEventCounter)
                 .build();
+        cache = new AccessTokenCache(config, securityEventCounter);
 
         // When - try to cache tokens
         for (int i = 0; i < 10; i++) {
@@ -442,11 +442,11 @@ class AccessTokenCacheTest {
     void evictionExecutorRemovesExpiredTokens() {
         // Given - cache with eviction interval of 1 second
         cache.shutdown();
-        cache = AccessTokenCache.builder()
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
                 .maxSize(30) // Enough space for all tokens
                 .evictionIntervalSeconds(1L) // Run eviction every second
-                .securityEventCounter(securityEventCounter)
                 .build();
+        cache = new AccessTokenCache(config, securityEventCounter);
 
         // When - add 20 tokens that will expire in 5 seconds
         OffsetDateTime expirationTime = OffsetDateTime.now().plusSeconds(5);
@@ -470,7 +470,7 @@ class AccessTokenCacheTest {
                 .atMost(10, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .untilAsserted(() ->
-                    assertEquals(0, cache.size(), "All expired tokens should be evicted"));
+                        assertEquals(0, cache.size(), "All expired tokens should be evicted"));
 
         // Verify we can still add new tokens after eviction
         String newToken = "new-token-after-eviction";

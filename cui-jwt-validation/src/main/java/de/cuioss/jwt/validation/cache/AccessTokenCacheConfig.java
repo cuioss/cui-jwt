@@ -17,8 +17,12 @@ package de.cuioss.jwt.validation.cache;
 
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Configuration for AccessTokenCache that provides all defaults and factory methods.
@@ -79,6 +83,14 @@ public class AccessTokenCacheConfig {
     private final long evictionIntervalSeconds = DEFAULT_EVICTION_INTERVAL_SECONDS;
 
     /**
+     * The scheduled executor service for background tasks.
+     * If not provided, a default executor will be created when maxSize > 0.
+     */
+    @Getter
+    @EqualsAndHashCode.Exclude
+    private final ScheduledExecutorService scheduledExecutorService;
+
+    /**
      * Creates a default configuration with standard settings.
      *
      * @return a default AccessTokenCacheConfig with maxSize=1000 and evictionInterval=300s
@@ -108,11 +120,7 @@ public class AccessTokenCacheConfig {
      * @return the configured AccessTokenCache (never null)
      */
     public AccessTokenCache createCache(@NonNull SecurityEventCounter securityEventCounter) {
-        return AccessTokenCache.builder()
-                .maxSize(maxSize)
-                .evictionIntervalSeconds(evictionIntervalSeconds)
-                .securityEventCounter(securityEventCounter)
-                .build();
+        return new AccessTokenCache(this, securityEventCounter);
     }
 
     /**
@@ -122,5 +130,26 @@ public class AccessTokenCacheConfig {
      */
     public boolean isCachingEnabled() {
         return maxSize > 0;
+    }
+
+    /**
+     * Gets the configured or default scheduled executor service.
+     * Creates a default executor if none was provided and caching is enabled.
+     *
+     * @return the scheduled executor service or null if caching is disabled
+     */
+    public ScheduledExecutorService getOrCreateScheduledExecutorService() {
+        if (maxSize == 0) {
+            return null;
+        }
+        if (scheduledExecutorService != null) {
+            return scheduledExecutorService;
+        }
+        // Create default executor
+        return Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "AccessTokenCache-Eviction");
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 }

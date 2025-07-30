@@ -25,6 +25,8 @@ import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -150,5 +152,76 @@ class AccessTokenCacheConfigTest {
         assertEquals(AccessTokenCacheConfig.DEFAULT_MAX_SIZE, config.getMaxSize());
         assertEquals(AccessTokenCacheConfig.DEFAULT_EVICTION_INTERVAL_SECONDS, config.getEvictionIntervalSeconds());
         assertTrue(config.isCachingEnabled());
+        assertNull(config.getScheduledExecutorService());
+    }
+
+    @Test
+    void getOrCreateScheduledExecutorServiceWhenCachingDisabled() {
+        // Given
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
+                .maxSize(0)
+                .build();
+
+        // When
+        ScheduledExecutorService executor = config.getOrCreateScheduledExecutorService();
+
+        // Then
+        assertNull(executor);
+    }
+
+    @Test
+    void getOrCreateScheduledExecutorServiceWithDefault() {
+        // Given
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
+                .maxSize(100)
+                .build();
+
+        // When
+        ScheduledExecutorService executor = config.getOrCreateScheduledExecutorService();
+
+        // Then
+        assertNotNull(executor);
+        // Cleanup
+        executor.shutdown();
+    }
+
+    @Test
+    void getOrCreateScheduledExecutorServiceWithProvided() {
+        // Given
+        ScheduledExecutorService providedExecutor = Executors.newSingleThreadScheduledExecutor();
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
+                .maxSize(100)
+                .scheduledExecutorService(providedExecutor)
+                .build();
+
+        // When
+        ScheduledExecutorService executor = config.getOrCreateScheduledExecutorService();
+
+        // Then
+        assertSame(providedExecutor, executor);
+        // Cleanup
+        providedExecutor.shutdown();
+    }
+
+    @Test
+    void createCacheWithProvidedExecutor() {
+        // Given
+        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
+        ScheduledExecutorService providedExecutor = Executors.newSingleThreadScheduledExecutor();
+        AccessTokenCacheConfig config = AccessTokenCacheConfig.builder()
+                .maxSize(100)
+                .evictionIntervalSeconds(300L)
+                .scheduledExecutorService(providedExecutor)
+                .build();
+
+        // When
+        AccessTokenCache cache = config.createCache(securityEventCounter);
+
+        // Then
+        assertNotNull(cache);
+
+        // Cleanup
+        cache.shutdown();
+        providedExecutor.shutdown();
     }
 }

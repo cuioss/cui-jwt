@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.metrics.MetricsTicker;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.Builder;
 import lombok.NonNull;
 
 import java.time.OffsetDateTime;
@@ -33,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -66,6 +64,12 @@ public class AccessTokenCache {
 
     private static final CuiLogger LOGGER = new CuiLogger(AccessTokenCache.class);
 
+
+    /**
+     * The configuration for this cache.
+     */
+    @NonNull
+    private final AccessTokenCacheConfig config;
 
     /**
      * The maximum number of tokens to cache.
@@ -104,18 +108,15 @@ public class AccessTokenCache {
     /**
      * Creates a new AccessTokenCache with the specified configuration.
      *
-     * @param maxSize the maximum number of tokens to cache
-     * @param evictionIntervalSeconds the interval between eviction runs in seconds
+     * @param config the cache configuration
      * @param securityEventCounter the security event counter for tracking cache hits
      */
-    @Builder
-    private AccessTokenCache(
-            Integer maxSize,
-            Long evictionIntervalSeconds,
+    public AccessTokenCache(
+            @NonNull AccessTokenCacheConfig config,
             @NonNull SecurityEventCounter securityEventCounter) {
 
-        this.maxSize = maxSize != null ? maxSize : AccessTokenCacheConfig.DEFAULT_MAX_SIZE;
-        long evictionIntervalSeconds1 = evictionIntervalSeconds != null ? evictionIntervalSeconds : AccessTokenCacheConfig.DEFAULT_EVICTION_INTERVAL_SECONDS;
+        this.config = config;
+        this.maxSize = config.getMaxSize();
         this.securityEventCounter = securityEventCounter;
 
         if (this.maxSize > 0) {
@@ -128,21 +129,19 @@ public class AccessTokenCache {
                 }
             };
 
-            // Start background eviction thread only when caching is enabled
-            this.evictionExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread thread = new Thread(r, "AccessTokenCache-Eviction");
-                thread.setDaemon(true);
-                return thread;
-            });
+            // Use provided executor or create default
+            this.evictionExecutor = config.getOrCreateScheduledExecutorService();
 
-            this.evictionExecutor.scheduleWithFixedDelay(
-                    this::evictExpiredTokens,
-                    evictionIntervalSeconds1,
-                    evictionIntervalSeconds1,
-                    TimeUnit.SECONDS);
+            if (this.evictionExecutor != null) {
+                this.evictionExecutor.scheduleWithFixedDelay(
+                        this::evictExpiredTokens,
+                        config.getEvictionIntervalSeconds(),
+                        config.getEvictionIntervalSeconds(),
+                        TimeUnit.SECONDS);
+            }
 
             LOGGER.debug("AccessTokenCache initialized with maxSize=%s, evictionInterval=%ss",
-                    this.maxSize, evictionIntervalSeconds1);
+                    this.maxSize, config.getEvictionIntervalSeconds());
         } else {
             // Cache disabled - no cache structures or background threads needed
             this.cache = null;
