@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import de.cuioss.tools.logging.CuiLogger;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,7 +55,7 @@ public class SimplifiedMetricsExporter {
      * @param monitor The monitor containing the metrics
      * @throws IOException if writing fails
      */
-    public static void exportMetrics(TokenValidatorMonitor monitor) throws IOException {
+    public static synchronized void exportMetrics(TokenValidatorMonitor monitor) throws IOException {
         if (monitor == null) {
             log.debug("No monitor provided, skipping metrics export");
             return;
@@ -80,10 +79,21 @@ public class SimplifiedMetricsExporter {
         if (Files.exists(outputFile)) {
             try {
                 String existingContent = Files.readString(outputFile);
-                TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
-                allMetrics = GSON.fromJson(existingContent, typeToken.getType());
+                if (existingContent != null && !existingContent.trim().isEmpty()) {
+                    TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
+                    Map<String, Object> parsedMetrics = GSON.fromJson(existingContent, typeToken.getType());
+                    if (parsedMetrics != null) {
+                        allMetrics = parsedMetrics;
+                    }
+                }
             } catch (Exception e) {
-                log.warn("Failed to read existing metrics file, starting fresh", e);
+                log.warn("Failed to read existing metrics file, starting fresh: {}", e.getMessage());
+                // Delete corrupted file to start fresh
+                try {
+                    Files.deleteIfExists(outputFile);
+                } catch (IOException deleteException) {
+                    log.warn("Failed to delete corrupted metrics file", deleteException);
+                }
             }
         }
 
@@ -119,8 +129,9 @@ public class SimplifiedMetricsExporter {
         allMetrics.put(benchmarkName, benchmarkMetrics);
 
         // Write all metrics to single JSON file
-        try (FileWriter writer = new FileWriter(outputFile.toFile())) {
-            GSON.toJson(allMetrics, writer);
+        try {
+            String jsonContent = GSON.toJson(allMetrics);
+            Files.writeString(outputFile, jsonContent);
             log.info("Exported metrics for {} to {}", benchmarkName, outputFile);
         } catch (IOException e) {
             log.error("Failed to export metrics to {}", outputFile, e);
