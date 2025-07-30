@@ -21,6 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -142,14 +143,10 @@ public class AccessTokenCacheConfig {
         if (maxSize == 0) {
             return null;
         }
-        if (scheduledExecutorService != null) {
-            return scheduledExecutorService;
-        }
-        // Create default executor
-        return Executors.newSingleThreadScheduledExecutor(r -> {
+        return Objects.requireNonNullElseGet(scheduledExecutorService, () -> Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "AccessTokenCache-Eviction");
             thread.setDaemon(true);
             return thread;
-        });
+        }));
     }
 }
