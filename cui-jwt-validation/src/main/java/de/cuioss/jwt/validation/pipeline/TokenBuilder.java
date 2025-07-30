@@ -52,14 +52,14 @@ import java.util.Optional;
  */
 public class TokenBuilder {
 
-    @NonNull
-    private final IssuerConfig issuerConfig;
+    // Typical JWT claim count for pre-sizing
+    private static final int TYPICAL_CLAIM_COUNT = 15;
 
-    /**
-     * Cached custom claim mappers to avoid repeated map lookups during claim extraction.
-     * This optimization reduces overhead in the extractClaims method.
-     */
-    private final Map<String, ClaimMapper> customMappers;
+    // Singleton mapper for unknown claims
+    private final IdentityMapper identityMapper = new IdentityMapper();
+
+    // Combined mapper lookup to avoid runtime checks
+    private final Map<String, ClaimMapper> allMappers;
 
     /**
      * Constructs a TokenBuilder with the specified IssuerConfig.
@@ -67,10 +67,23 @@ public class TokenBuilder {
      * @param issuerConfig the issuer configuration
      */
     public TokenBuilder(@NonNull IssuerConfig issuerConfig) {
-        this.issuerConfig = issuerConfig;
-        this.customMappers = issuerConfig.getClaimMappers() != null
+        Map<String, ClaimMapper> customMappers = issuerConfig.getClaimMappers() != null
                 ? Map.copyOf(issuerConfig.getClaimMappers())
                 : Map.of();
+
+        // Build standard mappers from ClaimName enum
+        Map<String, ClaimMapper> tempMappers = new HashMap<>();
+
+        // Iterate over all ClaimName values and get their mappers
+        for (ClaimName claimName : ClaimName.values()) {
+            tempMappers.put(claimName.getName(), claimName.getClaimMapper());
+        }
+
+        // Add custom mappers, which override standard ones
+        tempMappers.putAll(customMappers);
+
+        // Create immutable map for thread-safety and performance
+        this.allMappers = Map.copyOf(tempMappers);
     }
 
     /**
@@ -117,27 +130,15 @@ public class TokenBuilder {
      * @return a map of claim names to claim values
      */
     private Map<String, ClaimValue> extractClaims(JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = new HashMap<>();
+        // Pre-size HashMap based on typical JWT size to avoid resizing
+        int claimCount = jsonObject.size();
+        Map<String, ClaimValue> claims = new HashMap<>(Math.max(claimCount, TYPICAL_CLAIM_COUNT));
 
         // Process all keys in the JSON object
         for (String key : jsonObject.keySet()) {
-            // Check if there's a custom mapper for this claim using cached mappers
-            ClaimMapper customMapper = customMappers.get(key);
-            if (customMapper != null) {
-                claims.put(key, customMapper.map(jsonObject, key));
-            } else {
-                // Try to map using known ClaimName
-                Optional<ClaimName> claimNameOption = ClaimName.fromString(key);
-                if (claimNameOption.isPresent()) {
-                    ClaimName claimName = claimNameOption.get();
-                    ClaimValue claimValue = claimName.map(jsonObject);
-                    claims.put(key, claimValue);
-                } else {
-                    // Use IdentityMapper for unknown claims
-                    ClaimValue claimValue = new IdentityMapper().map(jsonObject, key);
-                    claims.put(key, claimValue);
-                }
-            }
+            // Single lookup for mapper (combines custom and standard)
+            ClaimMapper mapper = allMappers.getOrDefault(key, identityMapper);
+            claims.put(key, mapper.map(jsonObject, key));
         }
 
         return claims;
@@ -150,12 +151,17 @@ public class TokenBuilder {
      * @return a map of claim names to claim values
      */
     public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = new HashMap<>();
+        int claimCount = jsonObject.size();
+        Map<String, ClaimValue> claims = new HashMap<>(Math.max(claimCount, TYPICAL_CLAIM_COUNT));
+
+        // Create a single IdentityMapper instance for this static method
+        IdentityMapper mapper = new IdentityMapper();
+
         for (String key : jsonObject.keySet()) {
-            // Use IdentityMapper for unknown claims
-            ClaimValue claimValue = new IdentityMapper().map(jsonObject, key);
-            claims.put(key, claimValue);
+            // Use singleton IdentityMapper
+            claims.put(key, mapper.map(jsonObject, key));
         }
+
         return claims;
     }
 }
