@@ -52,11 +52,8 @@ import java.util.Optional;
  */
 public class TokenBuilder {
 
-    // Typical JWT claim count for pre-sizing
-    private static final int TYPICAL_CLAIM_COUNT = 15;
-
     // Singleton mapper for unknown claims
-    private final IdentityMapper identityMapper = new IdentityMapper();
+    private static final IdentityMapper IDENTITY_MAPPER = new IdentityMapper();
 
     // Combined mapper lookup to avoid runtime checks
     private final Map<String, ClaimMapper> allMappers;
@@ -71,10 +68,8 @@ public class TokenBuilder {
                 ? Map.copyOf(issuerConfig.getClaimMappers())
                 : Map.of();
 
-        // Build standard mappers from ClaimName enum
         Map<String, ClaimMapper> tempMappers = new HashMap<>();
 
-        // Iterate over all ClaimName values and get their mappers
         for (ClaimName claimName : ClaimName.values()) {
             tempMappers.put(claimName.getName(), claimName.getClaimMapper());
         }
@@ -82,7 +77,6 @@ public class TokenBuilder {
         // Add custom mappers, which override standard ones
         tempMappers.putAll(customMappers);
 
-        // Create immutable map for thread-safety and performance
         this.allMappers = Map.copyOf(tempMappers);
     }
 
@@ -130,14 +124,10 @@ public class TokenBuilder {
      * @return a map of claim names to claim values
      */
     private Map<String, ClaimValue> extractClaims(JsonObject jsonObject) {
-        // Pre-size HashMap based on typical JWT size to avoid resizing
-        int claimCount = jsonObject.size();
-        Map<String, ClaimValue> claims = new HashMap<>(Math.max(claimCount, TYPICAL_CLAIM_COUNT));
+        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
 
-        // Process all keys in the JSON object
         for (String key : jsonObject.keySet()) {
-            // Single lookup for mapper (combines custom and standard)
-            ClaimMapper mapper = allMappers.getOrDefault(key, identityMapper);
+            ClaimMapper mapper = allMappers.getOrDefault(key, IDENTITY_MAPPER);
             claims.put(key, mapper.map(jsonObject, key));
         }
 
@@ -151,15 +141,10 @@ public class TokenBuilder {
      * @return a map of claim names to claim values
      */
     public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull JsonObject jsonObject) {
-        int claimCount = jsonObject.size();
-        Map<String, ClaimValue> claims = new HashMap<>(Math.max(claimCount, TYPICAL_CLAIM_COUNT));
-
-        // Create a single IdentityMapper instance for this static method
-        IdentityMapper mapper = new IdentityMapper();
+        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
 
         for (String key : jsonObject.keySet()) {
-            // Use singleton IdentityMapper
-            claims.put(key, mapper.map(jsonObject, key));
+            claims.put(key, IDENTITY_MAPPER.map(jsonObject, key));
         }
 
         return claims;

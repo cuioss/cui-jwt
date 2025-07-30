@@ -28,6 +28,7 @@ import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.test.generator.junit.GeneratorSeed;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -56,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableTestLogger
 @EnableGeneratorController
 @DisplayName("Token Validation Security Tests")
+@GeneratorSeed(2268699925648863142L)
 class TokenValidationSecurityTest {
 
     private TokenValidator tokenValidator;
@@ -103,7 +105,7 @@ class TokenValidationSecurityTest {
 
         assertThrows(TokenValidationException.class, () ->
                         tokenValidator.createAccessToken(tamperedToken),
-                "Should reject token with tampered signature");
+                "Should reject token with tampered signature: " +  tamperedToken);
     }
 
     @ParameterizedTest
