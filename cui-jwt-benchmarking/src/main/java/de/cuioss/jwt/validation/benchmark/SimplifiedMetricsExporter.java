@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
@@ -40,6 +42,7 @@ public class SimplifiedMetricsExporter {
 
     private static final CuiLogger log = new CuiLogger(SimplifiedMetricsExporter.class);
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private SimplifiedMetricsExporter() {
         // Utility class
@@ -99,7 +102,7 @@ public class SimplifiedMetricsExporter {
         // Write JSON file - one per benchmark
         Path outputFile = outputPath.resolve("jwt-validation-metrics-" + benchmarkName + ".json");
         try (FileWriter writer = new FileWriter(outputFile.toFile())) {
-            writer.write(formatJson(metricsJson));
+            GSON.toJson(metricsJson, writer);
             log.info("Exported metrics to {}", outputFile);
         } catch (IOException e) {
             log.error("Failed to export metrics to {}", outputFile, e);
@@ -146,41 +149,4 @@ public class SimplifiedMetricsExporter {
         }
     }
 
-    /**
-     * Simple JSON formatter for readable output
-     */
-    private static String formatJson(Map<String, Object> json) {
-        StringBuilder sb = new StringBuilder();
-        formatJsonObject(json, sb, 0);
-        return sb.toString();
-    }
-
-    private static void formatJsonObject(Map<String, Object> map, StringBuilder sb, int indent) {
-        sb.append("{\n");
-        int count = 0;
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            appendIndent(sb, indent + 2);
-            sb.append("\"").append(entry.getKey()).append("\": ");
-
-            Object value = entry.getValue();
-            if (value instanceof Map) {
-                formatJsonObject((Map<String, Object>) value, sb, indent + 2);
-            } else if (value instanceof String) {
-                sb.append("\"").append(value).append("\"");
-            } else {
-                sb.append(value);
-            }
-
-            if (++count < map.size()) {
-                sb.append(",");
-            }
-            sb.append("\n");
-        }
-        appendIndent(sb, indent);
-        sb.append("}");
-    }
-
-    private static void appendIndent(StringBuilder sb, int spaces) {
-        sb.append(" ".repeat(Math.max(0, spaces)));
-    }
 }
