@@ -17,7 +17,6 @@ package de.cuioss.jwt.validation.benchmark.standard;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.BenchmarkMetricsAggregator;
 import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
@@ -105,8 +104,7 @@ public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
             }
         }
 
-        // Register benchmarks for metrics collection
-        BenchmarkMetricsAggregator.registerBenchmarks(BENCHMARK_NAMES);
+        // No longer needed - metrics are exported via shutdown hook
     }
 
     // ========== Simple Error Load Benchmarks ==========

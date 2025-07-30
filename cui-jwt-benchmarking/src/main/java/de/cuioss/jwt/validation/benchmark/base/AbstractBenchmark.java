@@ -16,11 +16,11 @@
 package de.cuioss.jwt.validation.benchmark.base;
 
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.BenchmarkMetricsAggregator;
-import de.cuioss.jwt.validation.benchmark.BenchmarkMetricsCollector;
+import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.benchmark.TokenRepository;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.TearDown;
 
 /**
@@ -31,6 +31,8 @@ import org.openjdk.jmh.annotations.TearDown;
  * @since 1.0
  */
 public abstract class AbstractBenchmark {
+    
+    private static final CuiLogger log = new CuiLogger(AbstractBenchmark.class);
 
     protected TokenRepository tokenRepository;
     protected TokenValidator tokenValidator;
@@ -47,12 +49,9 @@ public abstract class AbstractBenchmark {
      * Setup method for benchmark initialization.
      * Subclasses should call this from their @Setup method.
      * 
-     * @param benchmarkNames Names to register with BenchmarkMetricsAggregator
+     * @param benchmarkNames Names to register (kept for compatibility)
      */
     protected void setupBase(String... benchmarkNames) {
-        // Register benchmarks for metrics collection
-        BenchmarkMetricsAggregator.registerBenchmarks(benchmarkNames);
-
         // Initialize token repository
         tokenRepository = new TokenRepository();
 
@@ -61,15 +60,17 @@ public abstract class AbstractBenchmark {
     }
 
     /**
-     * Common metrics collection method.
-     * Called automatically at the end of each iteration.
+     * Export metrics directly from this benchmark's monitor.
+     * Called at the end of each benchmark trial.
      */
-    @TearDown(Level.Iteration)
-    public void collectMetrics() {
-        if (tokenValidator != null) {
-            TokenValidatorMonitor monitor = tokenValidator.getPerformanceMonitor();
-            String currentBenchmarkName = BenchmarkMetricsCollector.getCurrentBenchmarkName(getBenchmarkMethodNames());
-            BenchmarkMetricsCollector.collectIterationMetrics(monitor, currentBenchmarkName);
+    @TearDown(Level.Trial)
+    public void exportBenchmarkMetrics() {
+        if (tokenValidator != null && tokenValidator.getPerformanceMonitor() != null) {
+            try {
+                SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+            } catch (Exception e) {
+                log.error("Failed to export benchmark metrics", e);
+            }
         }
     }
 }

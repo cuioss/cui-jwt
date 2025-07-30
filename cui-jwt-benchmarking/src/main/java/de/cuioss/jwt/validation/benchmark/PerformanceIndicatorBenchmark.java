@@ -18,12 +18,8 @@ package de.cuioss.jwt.validation.benchmark;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
-import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import org.openjdk.jmh.annotations.*;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,13 +55,6 @@ public class PerformanceIndicatorBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-        // Register benchmarks for metrics collection (moved from static initializer to avoid contention)
-        BenchmarkMetricsAggregator.registerBenchmarks(
-                "measureAverageTime",
-                "measureThroughput",
-                "measureConcurrentValidation"
-        );
-
         TokenRepository tokenRepository;
         // Initialize token repository with default configuration
         tokenRepository = new TokenRepository();
@@ -78,38 +67,14 @@ public class PerformanceIndicatorBenchmark {
     }
 
 
-    @TearDown(Level.Iteration)
-    public void collectMetrics() {
-        // Get the performance monitor from the validator
-        TokenValidatorMonitor monitor = tokenValidator.getPerformanceMonitor();
-
-        // Determine which benchmark is running based on thread name
-        String benchmarkName = getCurrentBenchmarkName();
-
-        if (benchmarkName != null) {
-            // Collect metrics for each measurement type
-            for (MeasurementType type : monitor.getEnabledTypes()) {
-                Optional<StripedRingBufferStatistics> metricsOpt = monitor.getValidationMetrics(type);
-
-                if (metricsOpt.isPresent()) {
-                    StripedRingBufferStatistics metrics = metricsOpt.get();
-                    if (metrics.sampleCount() > 0) {
-                        // Use the pre-calculated percentiles from StripedRingBufferStatistics
-                        long p50Nanos = metrics.p50().toNanos();
-                        long p95Nanos = metrics.p95().toNanos();
-                        long p99Nanos = metrics.p99().toNanos();
-
-                        // Aggregate the actual percentile values
-                        BenchmarkMetricsAggregator.aggregatePreCalculatedMetrics(
-                                benchmarkName,
-                                type,
-                                metrics.sampleCount(),
-                                p50Nanos,
-                                p95Nanos,
-                                p99Nanos
-                        );
-                    }
-                }
+    @TearDown(Level.Trial)
+    public void exportMetrics() {
+        // Export metrics using SimplifiedMetricsExporter
+        if (tokenValidator != null && tokenValidator.getPerformanceMonitor() != null) {
+            try {
+                SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+            } catch (Exception e) {
+                // Ignore errors during metrics export
             }
         }
     }
