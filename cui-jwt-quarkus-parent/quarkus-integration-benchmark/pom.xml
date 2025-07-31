@@ -218,6 +218,42 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
+                            <!-- Fetch multiple JWT tokens for rotation testing -->
+                            <execution>
+                                <id>fetch-multiple-jwt-tokens</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/fetch-tokens-multiple.sh</executable>
+                                    <arguments>
+                                        <argument>benchmark</argument>           <!-- realm -->
+                                        <argument>10</argument>                  <!-- token count -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Run JWT validation benchmark with token rotation for cache testing -->
+                            <execution>
+                                <id>run-jwt-rotating-benchmark</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./docker/wrk/run-wrk-benchmark.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.threads}</argument>      <!-- threads -->
+                                        <argument>${wrk.connections}</argument>  <!-- connections -->
+                                        <argument>${wrk.duration}</argument>     <!-- duration -->
+                                        <argument>${wrk.error.rate}</argument>   <!-- error rate -->
+                                        <argument>benchmark</argument>           <!-- realm -->
+                                        <argument>jwt-rotating</argument>        <!-- benchmark type: rotating tokens -->
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-integration-containers</id>

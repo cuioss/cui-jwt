@@ -72,6 +72,29 @@ if [ "$BENCHMARK_TYPE" = "echo" ]; then
     ENDPOINT="/jwt/echo"
     RESULTS_FILE="echo-benchmark-results.json"
     echo "🔊 Running Echo endpoint benchmark (infrastructure overhead measurement)"
+elif [ "$BENCHMARK_TYPE" = "jwt-rotating" ]; then
+    SCRIPT_NAME="jwt-benchmark-rotating.lua"
+    ENDPOINT="/jwt/validate"
+    RESULTS_FILE="jwt-validation-results.json"
+    echo "🔄 Running JWT validation benchmark with token rotation (cache testing)"
+    
+    # Load multiple tokens if available
+    ROTATING_TOKEN_ENV_VARS=""
+    for i in {1..10}; do
+        TOKEN_FILE="$REALM_TOKENS_DIR/multiple/access_token_$i.txt"
+        if [ -f "$TOKEN_FILE" ]; then
+            TOKEN_VALUE=$(cat "$TOKEN_FILE" | tr -d '\n')
+            ROTATING_TOKEN_ENV_VARS="$ROTATING_TOKEN_ENV_VARS -e ACCESS_TOKEN_$i=$TOKEN_VALUE"
+            echo "  ✅ Loaded ACCESS_TOKEN_$i"
+        fi
+    done
+    
+    # Add rotating tokens to environment
+    if [ -n "$ROTATING_TOKEN_ENV_VARS" ]; then
+        TOKEN_ENV_VARS="$TOKEN_ENV_VARS $ROTATING_TOKEN_ENV_VARS"
+    else
+        echo "  ⚠️  No rotating tokens found - using single token (100% cache ratio)"
+    fi
 else
     SCRIPT_NAME="jwt-benchmark.lua"
     ENDPOINT="/jwt/validate"
