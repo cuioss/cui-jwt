@@ -114,8 +114,10 @@ The benchmark results show varying P99 latencies across different workloads:
   - [x] Analyze correlation between concurrent operations and P99 spikes
   - [x] Compare throughput vs average-time mode behavior under identical load
 
-- [ ] **Signature Validation Optimization** - **67ms P99 spikes (1,290x P99/P50)**
-  - [ ] Cache key: (token signature, public key) → boolean result
+- [ ] **JCA Bottleneck Mitigation** - **67ms P99 spikes on cache misses**
+  - [ ] Implement semaphore to limit concurrent JCA operations
+  - [ ] Evaluate alternative JCA providers (Conscrypt, native crypto)
+  - [ ] Add metrics for cache miss rate vs validation latency correlation
 
 - [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
   - [ ] Profile validation hotspots causing extreme spikes
@@ -294,23 +296,39 @@ The 262ms monitor waits in JFR are a symptom, not the cause:
 - JVM internal synchronization during high CPU contention
 - Not related to application-level locks
 
+### Context: Token Caching Already Implemented
+
+The system already caches validated tokens effectively:
+- Token cache provides 90%+ hit rate in typical scenarios
+- Cache hits are fast: 0.3-1.2μs for lookup/store operations
+- **Problem occurs on cache misses**: New tokens require full validation
+
+### The JCA Bottleneck on Cache Misses
+
+When a token is not in cache (new token, cache eviction, or rotation):
+1. Full validation pipeline executes, including signature verification
+2. JCA's `Signature.verify()` performs expensive RSA operations
+3. With 100 concurrent threads hitting cache misses, CPU saturates
+4. P99 latency spikes to 67ms due to thread scheduling delays
+
 ### Recommendations
 
-1. **Signature Validation Caching** (High Priority)
-   - Cache validated signatures: (token_signature, public_key) → boolean
-   - Eliminates redundant RSA operations
-   - Expected 90%+ cache hit rate with token rotation
+1. **Optimize Cache Miss Handling**
+   - Increase cache size to reduce miss rate
+   - Implement cache warming for known token patterns
+   - Use larger TTLs where security permits
 
-2. **Thread Pool Optimization**
-   - Reduce thread count to match CPU cores
-   - Use separate pools for I/O vs CPU-intensive operations
-   - Consider virtual threads for I/O-bound tasks
+2. **JCA Performance Optimization**
+   - Use hardware crypto acceleration (e.g., Intel AES-NI, RSA offload)
+   - Consider alternative JCA providers (e.g., Conscrypt for faster crypto)
+   - Pre-warm JCA provider initialization
 
-3. **Algorithm Optimization**
-   - Prefer ES256 over RS256 (ECDSA is faster than RSA)
-   - Pre-validate token expiration before signature check
-   - Batch signature validations where possible
+3. **Concurrency Management**
+   - Limit concurrent signature validations with semaphore
+   - Queue cache miss validations to prevent CPU overload
+   - Separate thread pools for cache hits vs misses
 
-4. **Hardware Acceleration**
-   - Enable RSA hardware acceleration if available
-   - Consider crypto offloading for high-volume scenarios
+4. **Algorithm Strategy**
+   - Negotiate ES256 over RS256 where possible (ECDSA is 5-10x faster)
+   - Consider EdDSA (Ed25519) for even better performance
+   - Batch validate multiple tokens in single operation where feasible
