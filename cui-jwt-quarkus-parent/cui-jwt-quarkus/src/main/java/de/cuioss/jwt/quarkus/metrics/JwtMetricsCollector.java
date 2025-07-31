@@ -25,6 +25,7 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
@@ -37,7 +38,6 @@ import jakarta.inject.Inject;
 import lombok.NonNull;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
@@ -106,6 +106,9 @@ public class JwtMetricsCollector {
 
     // Caching of timers to avoid lookups
     private final Map<String, Timer> timers = new ConcurrentHashMap<>();
+    
+    // Caching of distribution summaries for percentiles
+    private final Map<String, DistributionSummary> summaries = new ConcurrentHashMap<>();
 
     // Track last known counts to calculate deltas
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
@@ -157,7 +160,7 @@ public class JwtMetricsCollector {
             lastKnownHttpStatusCounts.putAll(currentHttpStatusCounts);
         }
 
-        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size()));
+        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size() + summaries.size()));
 
         // Force initial update to ensure metrics are visible immediately
         updateCounters();
@@ -212,7 +215,7 @@ public class JwtMetricsCollector {
                     Tag.of(TAG_STEP, measurementType.name().toLowerCase())
             );
 
-            // Register the timer
+            // Register the timer for basic timing metrics
             Timer timer = Timer.builder(VALIDATION_DURATION)
                     .tags(tags)
                     .description("Duration of JWT validation pipeline steps: " + measurementType.getDescription())
@@ -220,11 +223,22 @@ public class JwtMetricsCollector {
 
             // Store the timer for later updates
             timers.put(measurementType.name(), timer);
+            
+            // Register distribution summary for percentile metrics
+            DistributionSummary summary = DistributionSummary.builder(VALIDATION_DURATION + ".percentiles")
+                    .tags(tags)
+                    .description("Percentile distribution of JWT validation pipeline steps: " + measurementType.getDescription())
+                    .baseUnit("microseconds")
+                    .publishPercentiles(0.5, 0.95, 0.99) // p50, p95, p99
+                    .register(registry);
+                    
+            // Store the summary for later updates
+            summaries.put(measurementType.name(), summary);
 
-            LOGGER.debug("Registered timer for enabled measurement type %s", measurementType.name());
+            LOGGER.debug("Registered timer and distribution summary for enabled measurement type %s", measurementType.name());
         }
 
-        LOGGER.debug("Registered %s performance timers for enabled measurement types", timers.size());
+        LOGGER.debug("Registered %s performance timers and distribution summaries for enabled measurement types", timers.size());
     }
 
     /**
@@ -236,7 +250,7 @@ public class JwtMetricsCollector {
             return;
         }
 
-        // Register timers for HTTP measurement types
+        // Register timers and distribution summaries for HTTP measurement types
         for (HttpMetricsMonitor.HttpMeasurementType measurementType : HttpMetricsMonitor.HttpMeasurementType.values()) {
             Tags tags = Tags.of(Tag.of(TAG_TYPE, measurementType.name().toLowerCase()));
 
@@ -246,7 +260,18 @@ public class JwtMetricsCollector {
                     .register(registry);
 
             timers.put("HTTP_" + measurementType.name(), timer);
-            LOGGER.debug("Registered HTTP timer for measurement type %s", measurementType.name());
+            
+            // Register distribution summary for percentile metrics
+            DistributionSummary summary = DistributionSummary.builder(HTTP_REQUEST_DURATION + ".percentiles")
+                    .tags(tags)
+                    .description("Percentile distribution of HTTP-level JWT processing: " + measurementType.getDescription())
+                    .baseUnit("microseconds")
+                    .publishPercentiles(0.5, 0.95, 0.99) // p50, p95, p99
+                    .register(registry);
+                    
+            summaries.put("HTTP_" + measurementType.name(), summary);
+            
+            LOGGER.debug("Registered HTTP timer and distribution summary for measurement type %s", measurementType.name());
         }
 
         // Register counters for HTTP request statuses
@@ -324,19 +349,35 @@ public class JwtMetricsCollector {
         // Only process measurement types that are enabled and have registered timers
         for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
             Timer timer = timers.get(measurementType.name());
-            if (timer != null) {
+            DistributionSummary summary = summaries.get(measurementType.name());
+            
+            if (timer != null && summary != null) {
                 // Get the current metrics from the monitor
                 var metricsOpt = tokenValidatorMonitor.getValidationMetrics(measurementType);
 
-                // Record the duration in the timer (we use a sample with the P50 duration)
-                // Note: This is a simplified approach - in practice, we might want to record individual measurements
                 if (metricsOpt.isPresent()) {
-                    var averageDuration = metricsOpt.get().p50();
-                    if (!averageDuration.isZero()) {
-                        timer.record(averageDuration);
-                        LOGGER.debug("Updated timer for measurement type %s with average %s",
-                                measurementType.name(), averageDuration);
+                    var metrics = metricsOpt.get();
+                    
+                    // Record p50 duration in both timer and summary
+                    var p50 = metrics.p50();
+                    if (!p50.isZero()) {
+                        timer.record(p50);
+                        summary.record(p50.toNanos() / 1000.0); // Convert to microseconds
                     }
+                    
+                    // Also record p95 and p99 to get accurate percentile distribution
+                    var p95 = metrics.p95();
+                    if (!p95.isZero()) {
+                        summary.record(p95.toNanos() / 1000.0); // Convert to microseconds
+                    }
+                    
+                    var p99 = metrics.p99();
+                    if (!p99.isZero()) {
+                        summary.record(p99.toNanos() / 1000.0); // Convert to microseconds
+                    }
+                    
+                    LOGGER.debug("Updated timer and percentiles for measurement type %s with p50=%s, p95=%s, p99=%s",
+                            measurementType.name(), p50, p95, p99);
                 }
             }
         }
@@ -350,14 +391,17 @@ public class JwtMetricsCollector {
             return;
         }
 
-        // Update HTTP performance timers
+        // Update HTTP performance timers and distribution summaries
         for (HttpMetricsMonitor.HttpMeasurementType measurementType : HttpMetricsMonitor.HttpMeasurementType.values()) {
             Timer timer = timers.get("HTTP_" + measurementType.name());
-            if (timer != null) {
+            DistributionSummary summary = summaries.get("HTTP_" + measurementType.name());
+            
+            if (timer != null && summary != null) {
                 var averageDuration = httpMetricsMonitor.getAverageDuration(measurementType);
                 if (!averageDuration.isZero()) {
                     timer.record(averageDuration);
-                    LOGGER.debug("Updated HTTP timer for measurement type %s with average %s",
+                    summary.record(averageDuration.toNanos() / 1000.0); // Convert to microseconds
+                    LOGGER.debug("Updated HTTP timer and distribution summary for measurement type %s with average %s",
                             measurementType.name(), averageDuration);
                 }
             }

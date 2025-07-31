@@ -190,10 +190,11 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
         echo ""
         echo "Saving JWT metrics to: $RESULTS_DIR/jwt-validation-metrics.json"
         
-        # Create JSON from metrics (simplified version)
+        # Create JSON from metrics with benchmark structure similar to JMH output
         echo "{" > "$RESULTS_DIR/jwt-validation-metrics.json"
-        echo "  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," >> "$RESULTS_DIR/jwt-validation-metrics.json"
-        echo "  \"steps\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "  \"quarkusIntegrationBenchmark\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)\"," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    \"steps\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
         FIRST_STEP=true
         for step in $STEPS; do
@@ -202,13 +203,32 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
             fi
             FIRST_STEP=false
             
+            # Extract count from timer or distribution summary
             COUNT=$(grep "cui_jwt_validation_duration_seconds_count{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
-            SUM=$(grep "cui_jwt_validation_duration_seconds_sum{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
-            P50=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.5\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
-            P95=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.95\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
-            P99=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            if [ -z "$COUNT" ]; then
+                COUNT=$(grep "cui_jwt_validation_duration_percentiles_microseconds_count{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            fi
             
-            echo -n "    \"$step\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+            # Extract sum from timer
+            SUM=$(grep "cui_jwt_validation_duration_seconds_sum{step=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            
+            # Extract percentiles from distribution summary (already in microseconds)
+            P50=$(grep "cui_jwt_validation_duration_percentiles_microseconds{step=\"$step\".*quantile=\"0.5\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            P95=$(grep "cui_jwt_validation_duration_percentiles_microseconds{step=\"$step\".*quantile=\"0.95\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            P99=$(grep "cui_jwt_validation_duration_percentiles_microseconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
+            
+            # Fall back to timer quantiles if distribution summary not available (convert seconds to microseconds)
+            if [ -z "$P50" ]; then
+                P50=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.5\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2 * 1000000}' | head -1 || echo "")
+            fi
+            if [ -z "$P95" ]; then
+                P95=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.95\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2 * 1000000}' | head -1 || echo "")
+            fi
+            if [ -z "$P99" ]; then
+                P99=$(grep "cui_jwt_validation_duration_seconds{step=\"$step\".*quantile=\"0.99\"" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2 * 1000000}' | head -1 || echo "")
+            fi
+            
+            echo -n "      \"$step\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
             
             # Start with empty JSON object, add fields as available
             FIRST_FIELD=true
@@ -220,21 +240,31 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
                 FIRST_FIELD=false
             fi
             
+            # Add sample_count if available
+            if [ -n "$COUNT" ] && [ "$COUNT" != "0" ] && [ "$COUNT" != "0.0" ]; then
+                [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "\"sample_count\": $COUNT" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                FIRST_FIELD=false
+            fi
+            
             if [ -n "$P50" ]; then
                 [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
-                echo -n "\"p50_us\": $(awk -v p50="$P50" 'BEGIN {printf "%.1f", p50 * 1000000}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                # P50 is already in microseconds from distribution summary, no conversion needed
+                echo -n "\"p50_us\": $(awk -v p50="$P50" 'BEGIN {printf "%.1f", p50}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
             if [ -n "$P95" ]; then
                 [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
-                echo -n "\"p95_us\": $(awk -v p95="$P95" 'BEGIN {printf "%.1f", p95 * 1000000}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                # P95 is already in microseconds from distribution summary, no conversion needed
+                echo -n "\"p95_us\": $(awk -v p95="$P95" 'BEGIN {printf "%.1f", p95}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
             if [ -n "$P99" ]; then
                 [ "$FIRST_FIELD" = false ] && echo -n ", " >> "$RESULTS_DIR/jwt-validation-metrics.json"
-                echo -n "\"p99_us\": $(awk -v p99="$P99" 'BEGIN {printf "%.1f", p99 * 1000000}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                # P99 is already in microseconds from distribution summary, no conversion needed
+                echo -n "\"p99_us\": $(awk -v p99="$P99" 'BEGIN {printf "%.1f", p99}' 2>/dev/null || echo "0.0")" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 FIRST_FIELD=false
             fi
             
@@ -242,10 +272,10 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
         done
         
         echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-        echo "  }," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    }," >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
         # Add HTTP metrics section
-        echo "  \"http_metrics\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    \"http_metrics\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
         # Process HTTP request duration metrics
         HTTP_STEPS=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_duration_seconds" | grep -oE 'type="[^"]+' | sed 's/type="//' | sort -u)
@@ -262,7 +292,7 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
                 COUNT=$(grep "cui_jwt_http_request_duration_seconds_count{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
                 SUM=$(grep "cui_jwt_http_request_duration_seconds_sum{type=\"$step\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
                 
-                echo -n "    \"$step\": " >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                echo -n "      \"$step\": " >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 
                 # Add average_us only if there were actual requests
                 if [ -n "$SUM" ] && [ -n "$COUNT" ] && [ "$COUNT" != "0" ] && [ "$COUNT" != "0.0" ]; then
@@ -276,10 +306,10 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
         fi
         
         echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
-        echo "  }," >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    }," >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
         # Add HTTP status counts
-        echo "  \"http_status_counts\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    \"http_status_counts\": {" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
         HTTP_STATUSES=$(cat "$RESULTS_DIR/jwt-metrics-raw.txt" | grep "cui_jwt_http_request_count_requests_total" | grep -oE 'status="[^"]+' | sed 's/status="//' | sort -u)
         
@@ -293,14 +323,15 @@ if [ -f "$RESULTS_DIR/$RESULTS_FILE" ]; then
                 
                 COUNT=$(grep "cui_jwt_http_request_count_requests_total{status=\"$status\"}" "$RESULTS_DIR/jwt-metrics-raw.txt" | awk '{print $2}' | head -1 || echo "")
                 if [ -n "$COUNT" ]; then
-                    echo -n "    \"$status\": $COUNT" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                    echo -n "      \"$status\": $COUNT" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 else
-                    echo -n "    \"$status\": 0" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+                    echo -n "      \"$status\": 0" >> "$RESULTS_DIR/jwt-validation-metrics.json"
                 fi
             done
         fi
         
         echo "" >> "$RESULTS_DIR/jwt-validation-metrics.json"
+        echo "    }" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         echo "  }" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         echo "}" >> "$RESULTS_DIR/jwt-validation-metrics.json"
         
