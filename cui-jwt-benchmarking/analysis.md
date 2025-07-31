@@ -114,10 +114,15 @@ The benchmark results show varying P99 latencies across different workloads:
   - [x] Analyze correlation between concurrent operations and P99 spikes
   - [x] Compare throughput vs average-time mode behavior under identical load
 
+- [ ] **Add Entropy Optimization Flags to Benchmarks**
+  - [ ] Add `-Djava.security.egd=file:/dev/./urandom` to regular benchmark profile
+  - [ ] Add `-Djava.security.egd=file:/dev/./urandom` to JFR benchmark profile
+  - [ ] Run complete benchmark suite with entropy flags
+  - [ ] Compare P99 results before/after entropy optimization
+  - [ ] Validate that Docker entropy blocking is eliminated
+
 - [ ] **P99 Scheduler Fairness Issue** - **67ms spikes affect 1% of operations**
   - [ ] Measure production impact vs benchmark synthetic load
-  - [ ] Add JVM flag: `-Djava.security.egd=file:/dev/./urandom` (JVM mode only)
-  - [ ] For native: Add `--initialize-at-run-time=sun.security.provider.SecureRandom`
   - [ ] Monitor Virtual Thread carrier pool under load
   - [ ] Accept current performance - RSA is optimal algorithm for this workload
 
