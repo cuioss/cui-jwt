@@ -138,11 +138,11 @@ public abstract class AbstractIntegrationBenchmark {
 
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl(keycloakUrl)
-                .realm("integration")
-                .clientId("cuijwt-client")
-                .clientSecret("client-secret")
-                .username("testuser")
-                .password("testpass")
+                .realm("benchmark")
+                .clientId("benchmark-client")
+                .clientSecret("benchmark-secret")
+                .username("benchmark-user")
+                .password("benchmark-password")
                 .tokenPoolSize(100)  // Configure for ~10% cache hit ratio
                 .connectionTimeoutMs(5000)
                 .requestTimeoutMs(10000)
