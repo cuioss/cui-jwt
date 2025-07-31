@@ -115,11 +115,11 @@ The benchmark results show varying P99 latencies across different workloads:
   - [x] Compare throughput vs average-time mode behavior under identical load
 
 - [ ] **JCA Bottleneck Mitigation** - **67ms P99 spikes on cache misses**
-  - [ ] Add JVM flag: `-Djava.security.egd=file:/dev/./urandom` (prevents entropy blocking)
-  - [ ] Implement ThreadLocal<Signature> to avoid thread contention (NOT thread-safe!)
-  - [ ] Reduce thread count from 100 to 2x CPU cores
-  - [ ] For native: Add `--initialize-at-run-time` for SecureRandom classes
-  - [ ] Add metrics for cache miss rate vs validation latency correlation
+  - [ ] Implement semaphore to limit concurrent RSA operations (e.g., 8-16 max)
+  - [ ] Add JVM flag: `-Djava.security.egd=file:/dev/./urandom` (JVM mode only)
+  - [ ] For native: Add `--initialize-at-run-time=sun.security.provider.SecureRandom`
+  - [ ] Monitor CPU saturation during cache miss bursts
+  - [ ] Consider ES256 over RS256 for better performance
 
 - [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
   - [ ] Profile validation hotspots causing extreme spikes
@@ -315,104 +315,85 @@ When a token is not in cache (new token, cache eviction, or rotation):
 
 ### Recommendations
 
-1. **Optimize Cache Miss Handling**
-   - Increase cache size to reduce miss rate
-   - Implement cache warming for known token patterns
-   - Use larger TTLs where security permits
+1. **Concurrency Management** (Primary Solution)
+   - Implement semaphore to limit concurrent RSA operations
+   - Target 8-16 max concurrent validations (match CPU cores)
+   - Queue excess requests to prevent CPU saturation
+   - Monitor actual CPU usage during cache miss bursts
 
-2. **JCA Performance Optimization**
-   - Use hardware crypto acceleration (e.g., Intel AES-NI, RSA offload)
-   - Consider alternative JCA providers (e.g., Conscrypt for faster crypto)
-   - Pre-warm JCA provider initialization
+2. **Entropy Optimization** (Secondary)
+   - JVM mode: Add `-Djava.security.egd=file:/dev/./urandom`
+   - Native mode: Configure `--initialize-at-run-time` for SecureRandom
+   - Prevents blocking on entropy gathering in Docker
 
-3. **Concurrency Management**
-   - Limit concurrent signature validations with semaphore
-   - Queue cache miss validations to prevent CPU overload
-   - Separate thread pools for cache hits vs misses
-
-4. **Algorithm Strategy**
+3. **Algorithm Strategy** (Long-term)
    - Negotiate ES256 over RS256 where possible (ECDSA is 5-10x faster)
-   - Consider EdDSA (Ed25519) for even better performance
-   - Batch validate multiple tokens in single operation where feasible
+   - Reduces CPU load per validation
+   - Compatible with existing infrastructure
 
-## JCA Optimization for Quarkus Native on Docker (July 31, 2025)
+## JCA Performance Analysis - Final Findings (July 31, 2025)
 
-### Critical Finding: Entropy Blocking in Docker
+### The Real Problem: JCA Thread Safety with Virtual Threads
 
-1. **The Core Problem**
-   - Docker containers often have **insufficient entropy**
-   - Default `/dev/random` blocks waiting for entropy
-   - Can take **21+ seconds** to generate a single random byte
-   - Manifests as hanging during `SecureRandom.generateSeed()`
+1. **Signature Instances are NOT Thread-Safe**
+   - JCA `Signature.getInstance()` maintains internal state
+   - Cannot be shared between threads
+   - ThreadLocal is **not an option** with Virtual Threads
+   - Must create new instance for each operation
 
-2. **Solution for Quarkus JVM Mode**
+2. **Performance Impact with 100 Threads**
+   - Each thread creates new Signature instance
+   - RSA operations are CPU-intensive
+   - 100 concurrent RSA validations saturate CPU
+   - Result: 67ms P99 spikes on cache misses
+
+### Secondary Issue: Entropy Blocking in Docker
+
+1. **Docker Container Entropy Starvation**
+   - Default `/dev/random` can block for 21+ seconds
+   - Waiting for entropy in containerized environments
+   - Affects SecureRandom initialization
+
+2. **Solution for JVM Mode Only**
    ```
    -Djava.security.egd=file:/dev/./urandom
    ```
-   - Uses non-blocking `/dev/urandom` 
-   - The `./` syntax prevents Java from overriding to `/dev/random`
-   - Still cryptographically secure for most purposes
+   - Non-blocking entropy source
+   - The `./` syntax is required (Java quirk)
+   - **Note**: May not work in Quarkus native mode
 
-3. **Quarkus Native Image Challenges**
-   - SecureRandom instances **cannot be initialized at build time**
-   - They cache seed values, breaking randomness
-   - Must use `--initialize-at-run-time` for affected classes
-   - Example error: "Detected an instance of Random/SplittableRandom class in the image heap"
+### What DOESN'T Work
 
-### Thread Safety: The Real Bottleneck
+1. **ThreadLocal** - Incompatible with Virtual Threads
+2. **Alternative JCA Providers** - Break Quarkus native compilation
+3. **Hardware Acceleration** - Not available in Docker containers
+4. **Caching Optimizations** - Token cache already exists and works well
 
-1. **Signature.getInstance() is NOT Thread-Safe**
-   - JCA Signature instances maintain internal state
-   - Sharing between threads causes undefined behavior
-   - With 100 threads, contention is severe
+### Viable Solutions
 
-2. **Solutions for Thread Safety**
-   - **Option 1**: Create new instance per operation (safest)
-   - **Option 2**: Use `ThreadLocal<Signature>` (memory efficient)
-   - **Option 3**: Pool with semaphore (complex but efficient)
+1. **Reduce Concurrent Load**
+   - Limit concurrent signature validations with semaphore
+   - Queue requests to prevent CPU saturation
+   - Match concurrency to available CPU cores
 
-3. **Performance Impact**
-   - Creating new instances: Higher GC pressure
-   - ThreadLocal: Best balance of safety and performance
-   - Synchronized access: Serializes operations, defeating concurrency
-
-### Quarkus Native-Specific Optimizations
-
-1. **Build-Time Configuration**
+2. **For Quarkus Native Mode**
    ```
    quarkus.native.additional-build-args=--initialize-at-run-time=sun.security.provider.SecureRandom
    ```
+   - Prevents build-time initialization of SecureRandom
+   - Required for proper entropy handling
 
-2. **Runtime Initialization Required**
-   - JCA security providers
-   - SecureRandom instances
-   - RSA key pair generators
+3. **Architectural Changes**
+   - Consider algorithm switch (ES256 faster than RS256)
+   - Increase token cache size to reduce miss rate
+   - Monitor actual cache miss patterns
 
-3. **Alternative: Defer Crypto Operations**
-   - Consider terminating TLS at ingress/load balancer
-   - Reduces cryptographic load on application
-   - Better separation of concerns
+### Summary
 
-### Practical Recommendations
+The P99 spikes are caused by:
+1. **CPU saturation** from 100 concurrent RSA operations
+2. **Thread safety requirement** forcing new Signature instances
+3. **Virtual Threads** preventing ThreadLocal optimization
+4. **Entropy blocking** in Docker containers (secondary issue)
 
-1. **For JVM Mode**
-   - Always use `-Djava.security.egd=file:/dev/./urandom`
-   - Implement ThreadLocal for Signature instances
-   - Monitor entropy availability in container
-
-2. **For Native Mode**
-   - Configure runtime initialization for security classes
-   - Test thoroughly with your specific crypto operations
-   - Consider architectural changes to minimize crypto in app
-
-3. **Thread Pool Management**
-   - Reduce from 100 to reasonable count (2x CPU cores)
-   - Use semaphore to limit concurrent validations
-   - Monitor actual CPU utilization, not just thread count
-
-### Why Alternative Providers Won't Help
-
-- **Quarkus native compatibility** is paramount
-- Alternative JCA providers often break native compilation
-- Provider switching adds complexity without solving core issue
-- The bottleneck is thread contention, not crypto implementation
+The only practical solution is to **limit concurrent RSA operations** to prevent CPU saturation.
