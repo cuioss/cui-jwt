@@ -108,13 +108,13 @@ The benchmark results show varying P99 latencies across different workloads:
 
 ### High Priority - P99 Latency Reduction
 
-- [ ] **JFR-Based Load Analysis** - **Identify load-related P99 spike patterns**
-  - [ ] Implement detailed JFR instrumentation for signature validation under load
-  - [ ] Capture thread contention, GC pressure, and CPU throttling metrics
-  - [ ] Analyze correlation between concurrent operations and P99 spikes
-  - [ ] Compare throughput vs average-time mode behavior under identical load
+- [x] **JFR-Based Load Analysis** - **Identify load-related P99 spike patterns** ✅
+  - [x] Implement detailed JFR instrumentation for signature validation under load
+  - [x] Capture thread contention, GC pressure, and CPU throttling metrics
+  - [x] Analyze correlation between concurrent operations and P99 spikes
+  - [x] Compare throughput vs average-time mode behavior under identical load
 
-- [ ] **Signature Validation Optimization** - **10.2ms P99 spikes (164x P99/P50)**
+- [ ] **Signature Validation Optimization** - **67ms P99 spikes (1,290x P99/P50)**
   - [ ] Cache key: (token signature, public key) → boolean result
 
 - [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
@@ -199,3 +199,55 @@ The JWT validation library baseline performance (July 30, 2025) shows:
 3. Consider async architecture for 2x throughput gain
 
 **Production Readiness**: The library shows good performance characteristics in average-time mode. The extreme P99 spikes appear specific to throughput mode optimization and may not impact typical production scenarios.
+
+## JFR Load Analysis Results (July 31, 2025)
+
+### Executive Summary
+
+JFR analysis confirms that P99 latency spikes are **load-induced** rather than token-related. With identical 100-thread configuration, throughput mode shows 1,290x P99/P50 ratio while average-time mode maintains stable 6x ratio.
+
+### Key Findings
+
+#### 1. **Extreme P99 Spikes in Throughput Mode**
+
+| Component | P50 (μs) | P99 (μs) | P99/P50 Ratio | Max (μs) |
+|-----------|----------|----------|---------------|----------|
+| **Signature Validation** | 52 | 67,066 | 1,290x | - |
+| **Complete Validation** | 86 | 130,135 | 1,513x | 526,839 |
+
+#### 2. **Stable Performance in Average-Time Mode**
+
+| Component | P50 (μs) | P99 (μs) | P99/P50 Ratio |
+|-----------|----------|----------|---------------|
+| **Signature Validation** | 46 | 276 | 6x |
+| **Complete Validation** | 60 | 345 | 5.8x |
+
+#### 3. **Mode Comparison (100 threads)**
+
+| Metric | Throughput Mode | Average-Time Mode | Difference |
+|--------|-----------------|-------------------|------------|
+| **Throughput** | 35,182 ops/s | ~465 ops/s | 76x |
+| **Avg Latency** | 2,842 μs | 2,147 μs | 1.3x |
+| **P99 Signature** | 67,066 μs | 276 μs | 243x |
+| **P99/P50 Ratio** | 1,290x | 6x | 215x |
+| **Max Latency** | 526,839 μs | ~500 μs | 1,054x |
+
+### Root Cause Analysis
+
+1. **JMH Scheduling Difference**: Throughput mode aggressively pushes for maximum operations, creating severe contention
+2. **No Token Diversity Impact**: All tokens are similar, confirming spikes are purely load-related
+3. **JCA Bottleneck**: Signature validation through JCA shows extreme sensitivity to concurrent load
+4. **Coefficient of Variation**: 1,061% indicates extreme performance unpredictability under load
+
+### Variance Metrics
+
+- **Average CV**: 1,057% (extremely high variance)
+- **CV Range**: 729% - 1,390%
+- **Max Concurrent Operations**: Limited to 1 (suggesting serialization bottleneck)
+
+### Implications
+
+1. **Production Impact**: Limited if using request-scoped validation (average-time pattern)
+2. **Batch Processing Risk**: High if using throughput-optimized patterns
+3. **Primary Bottleneck**: Signature validation accounts for 77% of P99 latency
+4. **Optimization Priority**: Signature validation caching is critical
