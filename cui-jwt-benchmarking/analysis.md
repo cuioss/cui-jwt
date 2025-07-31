@@ -119,7 +119,7 @@ The benchmark results show varying P99 latencies across different workloads:
   - [ ] Add JVM flag: `-Djava.security.egd=file:/dev/./urandom` (JVM mode only)
   - [ ] For native: Add `--initialize-at-run-time=sun.security.provider.SecureRandom`
   - [ ] Monitor Virtual Thread carrier pool under load
-  - [ ] Consider ES256 over RS256 for faster operations
+  - [ ] Accept current performance - RSA is optimal algorithm for this workload
 
 - [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
   - [ ] Profile validation hotspots causing extreme spikes
@@ -330,10 +330,10 @@ When a token is not in cache (new token, cache eviction, or rotation):
    - Native mode: Configure `--initialize-at-run-time` for SecureRandom
    - Prevents blocking on entropy gathering in Docker
 
-4. **Long-term Optimizations**
-   - Switch to ES256 from RS256 (5-10x faster, smaller keys)
-   - Increases cache hit rates due to faster validation
-   - Better scheduler behavior with shorter operations
+4. **Algorithm Analysis Complete**
+   - ES256 tested and found to be slower than RS256
+   - Current RSA implementation is optimal for this workload
+   - No viable algorithm alternatives available
 
 ## JCA Performance Analysis - Final Findings (July 31, 2025)
 
@@ -387,10 +387,10 @@ When a token is not in cache (new token, cache eviction, or rotation):
    - Prevents build-time initialization of SecureRandom
    - Required for proper entropy handling
 
-3. **Architectural Changes**
-   - Consider algorithm switch (ES256 faster than RS256)
-   - Increase token cache size to reduce miss rate
-   - Monitor actual cache miss patterns
+3. **Architectural Review**
+   - ES256 tested and found slower than current RSA implementation
+   - Token cache size already optimized (good hit rates)
+   - Monitor actual cache miss patterns vs production load
 
 ### Critical Analysis: Why Semaphores Won't Help
 
