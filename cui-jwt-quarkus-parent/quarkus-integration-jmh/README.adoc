@@ -122,7 +122,7 @@ To force a complete container rebuild, use:
 
 [source,bash]
 ----
-mvn clean verify -Pbenchmark-testing -DrebuildContainer=true
+mvn clean verify -Pbenchmark-testing,rebuild-container
 ----
 
 === JFR-Enabled Benchmarks
@@ -153,7 +153,7 @@ Force container rebuild when needed:
 
 [source,bash]
 ----
-mvn clean verify -Pbenchmark-testing -DrebuildContainer=true \
+mvn clean verify -Pbenchmark-testing,rebuild-container \
   -Djmh.threads=100 \
   -Djmh.time=60s
 ----

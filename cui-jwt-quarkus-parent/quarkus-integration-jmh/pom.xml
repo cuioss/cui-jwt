@@ -20,9 +20,6 @@
         <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
         
-        <!-- Container rebuild flag - set to true to force container rebuild -->
-        <rebuildContainer>false</rebuildContainer>
-        
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.BenchmarkRunner</benchmark.runner>
         
@@ -183,12 +180,6 @@
         
         <profile>
             <id>rebuild-container</id>
-            <activation>
-                <property>
-                    <name>rebuildContainer</name>
-                    <value>true</value>
-                </property>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
