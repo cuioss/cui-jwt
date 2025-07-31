@@ -115,8 +115,10 @@ The benchmark results show varying P99 latencies across different workloads:
   - [x] Compare throughput vs average-time mode behavior under identical load
 
 - [ ] **JCA Bottleneck Mitigation** - **67ms P99 spikes on cache misses**
-  - [ ] Implement semaphore to limit concurrent JCA operations
-  - [ ] Evaluate alternative JCA providers (Conscrypt, native crypto)
+  - [ ] Add JVM flag: `-Djava.security.egd=file:/dev/./urandom`
+  - [ ] Implement semaphore to limit concurrent JCA operations to CPU core count
+  - [ ] Evaluate ACCP (Amazon Corretto Crypto Provider) for RSA performance
+  - [ ] Use ThreadLocal<Signature> to avoid thread contention
   - [ ] Add metrics for cache miss rate vs validation latency correlation
 
 - [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
@@ -332,3 +334,87 @@ When a token is not in cache (new token, cache eviction, or rotation):
    - Negotiate ES256 over RS256 where possible (ECDSA is 5-10x faster)
    - Consider EdDSA (Ed25519) for even better performance
    - Batch validate multiple tokens in single operation where feasible
+
+## JCA Performance Optimization Research (July 31, 2025)
+
+### Critical JVM Flags for RSA Performance
+
+1. **Entropy Source Optimization** (Most Important)
+   ```
+   -Djava.security.egd=file:/dev/./urandom
+   ```
+   - Default `/dev/random` can block waiting for entropy, causing severe delays
+   - The `./` syntax is required to bypass Java's override behavior
+   - Critical for containerized environments with limited entropy
+
+2. **General JVM Performance Flags**
+   ```
+   -server
+   -XX:+AlwaysPreTouch
+   -Xms4g -Xmx4g (same values to avoid heap resizing)
+   ```
+
+3. **Security Properties**
+   - Can override via: `-Djava.security.properties=/path/to/custom.security`
+   - Or set environment: `export JAVA_TOOL_OPTIONS='-Djava.security.egd=file:/dev/urandom'`
+
+### Alternative JCA Providers
+
+1. **Amazon Corretto Crypto Provider (ACCP)** ⭐ Recommended
+   - **28x faster** for AES-GCM operations
+   - **260% improvement** in ECDSA signature verification
+   - Native-backed using AWS-LC (BoringSSL fork)
+   - Drop-in replacement via JCA
+   - Significant RSA improvements on ARM/Graviton
+
+2. **Google Conscrypt**
+   - Based on BoringSSL
+   - Native performance for TLS and crypto operations
+   - Standard on Android P+
+   - Good for cross-platform compatibility
+
+3. **Default SunJCE Optimizations**
+   - Hardware AES-NI enabled by default since Java 8
+   - Use RSAPrivateCrtKeySpec for 2-4x speedup (CRT optimization)
+   - Provider pre-discovery avoids synchronized lookups
+
+### Key Performance Insights
+
+1. **First Operation Overhead**
+   - Initial RSA operation: 50-100ms (class loading + JIT)
+   - Subsequent operations: 1-2ms
+   - Warm-up critical for benchmarks
+
+2. **Thread Safety Considerations**
+   - Signature instances are NOT thread-safe
+   - Use ThreadLocal<Signature> to avoid contention
+   - Or create separate instances per thread
+
+3. **RSA Performance Characteristics**
+   - Verification: 10K-40K ops/sec (fast)
+   - Generation: 300-2K ops/sec (slow)
+   - CPU-bound operation, benefits from fewer threads
+
+### Java 24 Updates
+
+- **No specific RSA improvements** found in Java 24
+- SHA3 performance improved 6-27% (up to 40% on AVX-512)
+- Quantum-resistant ML-KEM algorithm support
+- Virtual thread improvements may help I/O operations
+
+### Recommendations for 100-Thread Scenario
+
+1. **Immediate Actions**
+   - Add `-Djava.security.egd=file:/dev/./urandom`
+   - Reduce thread count to match CPU cores (e.g., 8-16)
+   - Implement semaphore to limit concurrent validations
+
+2. **Provider Switch**
+   - Evaluate ACCP for significant performance gains
+   - Benchmark with your specific workload
+   - Consider native crypto acceleration
+
+3. **Application-Level**
+   - Use ThreadLocal<Signature> instances
+   - Implement validation queue with bounded concurrency
+   - Pre-warm JCA operations during startup
