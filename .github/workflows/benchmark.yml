@@ -70,13 +70,9 @@ jobs:
 
       - name: Run Integration Benchmarks
         run: |
-          # Build native image first for integration tests
-          echo "🔨 Building native image for integration tests..."
-          ./mvnw --no-transfer-progress clean package -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -DskipTests
-
           # Run integration benchmarks with native image using profile
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pbenchmark-testing -DskipTests
 
           # Move integration benchmark results to expected location for upload
           if [ -d "cui-jwt-quarkus-parent/quarkus-integration-benchmark/target/benchmark-results" ]; then
