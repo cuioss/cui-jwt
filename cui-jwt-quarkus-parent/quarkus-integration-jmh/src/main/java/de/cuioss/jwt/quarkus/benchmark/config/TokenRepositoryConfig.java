@@ -31,45 +31,45 @@ public class TokenRepositoryConfig {
 
     /**
      * The base URL of the Keycloak server.
-     * Example: http://localhost:8080
+     * Example: https://localhost:1443
      */
     @Builder.Default
-    String keycloakBaseUrl = "http://localhost:8080";
+    String keycloakBaseUrl = "https://localhost:1443";
 
     /**
      * The Keycloak realm name.
-     * Default: cuijwt-realm
+     * Default: benchmark (matches docker-compose setup)
      */
     @Builder.Default
-    String realm = "cuijwt-realm";
+    String realm = "benchmark";
 
     /**
      * The client ID for token requests.
-     * Default: cuijwt-client
+     * Default: benchmark-client (matches docker-compose setup)
      */
     @Builder.Default
-    String clientId = "cuijwt-client";
+    String clientId = "benchmark-client";
 
     /**
      * The client secret for token requests.
-     * Default: client-secret (should be configurable in real deployments)
+     * Default: benchmark-secret (should match realm configuration)
      */
     @Builder.Default
-    String clientSecret = "client-secret";
+    String clientSecret = "benchmark-secret";
 
     /**
      * The username for token requests.
-     * Default: testuser
+     * Default: benchmark-user (matches realm configuration)
      */
     @Builder.Default
-    String username = "testuser";
+    String username = "benchmark-user";
 
     /**
      * The password for token requests.
-     * Default: testpass
+     * Default: benchmark-password (matches realm configuration)
      */
     @Builder.Default
-    String password = "testpass";
+    String password = "benchmark-password";
 
     /**
      * Number of tokens to fetch and cache for rotation.

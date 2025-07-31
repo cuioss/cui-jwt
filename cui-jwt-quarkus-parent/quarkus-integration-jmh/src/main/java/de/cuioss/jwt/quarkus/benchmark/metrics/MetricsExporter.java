@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import de.cuioss.tools.logging.CuiLogger;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
@@ -24,8 +25,10 @@ import io.restassured.response.Response;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -94,7 +97,7 @@ public class MetricsExporter {
             saveMetricsToFile(metrics, benchmarkName);
             
             // Also save as jwt-validation-metrics.json for standardized access
-            saveJwtValidationMetrics(metrics);
+            saveJwtValidationMetrics(metrics, benchmarkName);
             
             LOGGER.info("Metrics exported successfully for benchmark: {}", benchmarkName);
             return metrics;
@@ -236,12 +239,61 @@ public class MetricsExporter {
         }
     }
     
-    private void saveJwtValidationMetrics(BenchmarkMetrics metrics) {
+    private void saveJwtValidationMetrics(BenchmarkMetrics metrics, String benchmarkName) {
         String filename = outputDirectory + "/jwt-validation-metrics.json";
         
-        try (FileWriter writer = new FileWriter(filename)) {
-            GSON.toJson(metrics, writer);
-            LOGGER.info("JWT validation metrics saved to: {}", filename);
+        try {
+            // Read existing data if file exists
+            Map<String, Object> allMetrics = new LinkedHashMap<>();
+            File file = new File(filename);
+            if (file.exists()) {
+                try {
+                    String existingContent = Files.readString(file.toPath());
+                    if (existingContent != null && !existingContent.trim().isEmpty()) {
+                        TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
+                        Map<String, Object> parsedMetrics = GSON.fromJson(existingContent, typeToken.getType());
+                        if (parsedMetrics != null) {
+                            allMetrics = parsedMetrics;
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to read existing jwt-validation-metrics.json, starting fresh: {}", e.getMessage());
+                    // Delete corrupted file to start fresh
+                    try {
+                        Files.deleteIfExists(file.toPath());
+                    } catch (IOException deleteException) {
+                        LOGGER.warn("Failed to delete corrupted jwt-validation-metrics.json", deleteException);
+                    }
+                }
+            }
+            
+            // Use the actual benchmark name as the key
+            String benchmarkKey = benchmarkName;
+            
+            // Create metrics entry with system metrics and JWT step metrics
+            Map<String, Object> benchmarkMetrics = new LinkedHashMap<>();
+            benchmarkMetrics.put("timestamp", metrics.getTimestamp());
+            
+            // Add JWT validation step metrics if available
+            Map<String, Object> jwtStepMetrics = collectJwtValidationStepMetrics();
+            if (!jwtStepMetrics.isEmpty()) {
+                benchmarkMetrics.put("steps", jwtStepMetrics);
+            }
+            
+            // Add system metrics for debugging
+            benchmarkMetrics.put("systemMetrics", Map.of(
+                "jvmMetrics", metrics.getJvmMetrics(),
+                "applicationMetrics", metrics.getApplicationMetrics()
+            ));
+            
+            // Add to aggregated metrics
+            allMetrics.put(benchmarkKey, benchmarkMetrics);
+            
+            // Write aggregated metrics
+            try (FileWriter writer = new FileWriter(filename)) {
+                GSON.toJson(allMetrics, writer);
+                LOGGER.info("JWT validation metrics saved to: {}", filename);
+            }
         } catch (IOException e) {
             LOGGER.error("Failed to save jwt-validation-metrics.json", e);
         }
@@ -298,5 +350,94 @@ public class MetricsExporter {
                 .filter(entry -> entry.getKey().startsWith(metricName) && entry.getKey().contains("result=\"" + result + "\""))
                 .mapToLong(entry -> entry.getValue().longValue())
                 .sum();
+    }
+    
+    /**
+     * Collect JWT validation step metrics from Quarkus and map them to the reference format
+     */
+    private Map<String, Object> collectJwtValidationStepMetrics() {
+        LOGGER.debug("Collecting JWT validation step metrics from Quarkus");
+        
+        try {
+            Map<String, Double> allMetrics = queryQuarkusMetrics();
+            Map<String, Object> stepMetrics = new LinkedHashMap<>();
+            
+            // Map available CUI JWT metrics to step format
+            // Extract duration metrics for HTTP-level JWT processing
+            Map<String, Double> durationMetrics = allMetrics.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith("cui_jwt_http_request_duration_seconds"))
+                    .collect(HashMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), HashMap::putAll);
+            
+            if (!durationMetrics.isEmpty()) {
+                // Map HTTP-level metrics to JWT validation steps
+                addStepMetric(stepMetrics, durationMetrics, "token_extraction", "token_parsing");
+                addStepMetric(stepMetrics, durationMetrics, "header_extraction", "header_validation");
+                addStepMetric(stepMetrics, durationMetrics, "authorization_check", "signature_validation");
+                addStepMetric(stepMetrics, durationMetrics, "request_processing", "claims_validation");
+                
+                // Add synthetic complete validation metric
+                double totalDuration = durationMetrics.entrySet().stream()
+                        .filter(entry -> entry.getKey().contains("_sum"))
+                        .mapToDouble(Map.Entry::getValue)
+                        .sum();
+                
+                long totalCount = durationMetrics.entrySet().stream()
+                        .filter(entry -> entry.getKey().contains("_count"))
+                        .mapToLong(entry -> entry.getValue().longValue())
+                        .sum();
+                
+                if (totalCount > 0) {
+                    stepMetrics.put("complete_validation", createStepMetric(totalCount, totalDuration / totalCount * 1_000_000)); // Convert to microseconds
+                }
+            }
+            
+            return stepMetrics;
+            
+        } catch (Exception e) {
+            LOGGER.warn("Failed to collect JWT validation step metrics", e);
+            return new LinkedHashMap<>();
+        }
+    }
+    
+    /**
+     * Add a step metric based on Quarkus HTTP-level metrics
+     */
+    private void addStepMetric(Map<String, Object> stepMetrics, Map<String, Double> durationMetrics, String quarkusType, String stepName) {
+        // Look for count and sum metrics for this type
+        String countKey = durationMetrics.keySet().stream()
+                .filter(key -> key.contains("type=\"" + quarkusType + "\"") && key.contains("_count"))
+                .findFirst().orElse(null);
+        
+        String sumKey = durationMetrics.keySet().stream()
+                .filter(key -> key.contains("type=\"" + quarkusType + "\"") && key.contains("_sum"))
+                .findFirst().orElse(null);
+        
+        if (countKey != null && sumKey != null) {
+            long count = durationMetrics.get(countKey).longValue();
+            double sumSeconds = durationMetrics.get(sumKey);
+            
+            if (count > 0) {
+                double avgMicros = (sumSeconds / count) * 1_000_000; // Convert to microseconds
+                stepMetrics.put(stepName, createStepMetric(count, avgMicros));
+            }
+        }
+    }
+    
+    /**
+     * Create a step metric in the format matching the reference
+     */
+    private Map<String, Object> createStepMetric(long sampleCount, double avgMicros) {
+        Map<String, Object> metric = new LinkedHashMap<>();
+        metric.put("sample_count", (double) sampleCount);
+        
+        // For now, use average for all percentiles (we don't have detailed percentile data from Quarkus)
+        // Apply the same rounding logic as the reference format
+        Number roundedValue = avgMicros > 10.0 ? Math.round(avgMicros) : Math.round(avgMicros * 10) / 10.0;
+        
+        metric.put("p50_us", roundedValue);
+        metric.put("p95_us", roundedValue);
+        metric.put("p99_us", roundedValue);
+        
+        return metric;
     }
 }

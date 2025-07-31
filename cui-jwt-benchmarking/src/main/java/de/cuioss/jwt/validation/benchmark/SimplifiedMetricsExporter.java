@@ -167,11 +167,11 @@ public class SimplifiedMetricsExporter {
      * Convert Duration to microseconds with appropriate rounding.
      *
      * @param duration The duration to convert
-     * @return Number (Long for values >= 10, Double for values < 10)
+     * @return Number (Long for values > 10, Double for values <= 10)
      */
     private static Number durationToRoundedMicros(Duration duration) {
         double micros = duration.toNanos() / 1000.0;
-        if (micros >= 10.0) {
+        if (micros > 10.0) {
             return Math.round(micros);
         } else {
             return Math.round(micros * 10) / 10.0;
