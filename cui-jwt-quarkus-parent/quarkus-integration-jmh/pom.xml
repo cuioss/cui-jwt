@@ -115,7 +115,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <!-- Build integration tests (without running containers) -->
+                            <!-- Build integration tests (using smart native build script) -->
                             <execution>
                                 <id>maven-build-integration-tests</id>
                                 <phase>pre-integration-test</phase>
@@ -126,7 +126,7 @@
                                     <executable>../../mvnw</executable>
                                     <arguments>
                                         <argument>compile</argument>
-                                        <argument>quarkus:build</argument>
+                                        <argument>exec:exec@build-native-if-needed</argument>
                                         <argument>exec:exec@docker-build-distroless</argument>
                                         <argument>-Pintegration-tests</argument>
                                         <argument>-DskipTests</argument>
@@ -189,7 +189,7 @@
                             <!-- Clean integration tests to force container rebuild -->
                             <execution>
                                 <id>clean-integration-tests-for-rebuild</id>
-                                <phase>pre-integration-test</phase>
+                                <phase>clean</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
