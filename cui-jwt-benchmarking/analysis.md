@@ -256,30 +256,41 @@ JFR analysis confirms that P99 latency spikes are **load-induced** rather than t
 
 ### Key Findings
 
-#### 1. **Critical Lock Contention Discovery**
+#### 1. **Critical Lock Contention in Cache LRU Management**
 
-JFR analysis reveals massive monitor wait times (200-263ms) in token construction:
+JFR analysis reveals massive monitor wait times (200-263ms) in the cache access path:
 
-| Location | Wait Time | Impact |
-|----------|-----------|---------|
-| **AccessTokenContent Constructor** | 262ms | Major P99 contributor |
-| **Stack Location** | Line 83 | `super(claims, rawToken, TokenType.ACCESS_TOKEN)` |
-| **Affected Threads** | Multiple | 100+ worker threads blocked |
+| Component | Wait Time | Root Cause |
+|-----------|-----------|------------|
+| **AccessTokenCache** | 262ms | LRU lock contention |
+| **Lock Type** | ReentrantReadWriteLock | Write lock for LRU updates |
+| **Affected Threads** | 100+ | All threads blocked on same lock |
 
-#### 2. **Root Cause**
+#### 2. **Stack Trace Analysis**
 
-The monitor waits occur in the `BaseTokenContent` constructor chain, likely due to:
-- Lombok's `@SuperBuilder` or `@EqualsAndHashCode` generating synchronized code
-- Contention on shared resources during object construction
-- All threads blocking on the same monitor (address: 0x600003D63B50)
+The monitor waits occur during cache operations:
+```
+AccessTokenCache.lambda$computeIfAbsent$2 (line 226)
+TokenValidator.lambda$processAccessTokenWithCache$4 (line 410)
+TokenValidator.buildAccessToken (line 533)
+TokenBuilder.createAccessToken (line 98)
+AccessTokenContent.<init> (line 83)
+```
 
-#### 3. **Performance Impact**
+#### 3. **Root Cause Explanation**
 
-- **Monitor Wait Pattern**: Multiple threads waiting for the same notifier thread
-- **Cascade Effect**: One thread holds lock while 99 others wait
-- **P99 Correlation**: 262ms wait times directly correlate with observed P99 spikes
+- **Token Building is Fast**: Metrics show 2-21μs for token construction
+- **Cache Contention is Slow**: LRU tracking requires write lock acquisition
+- **Lock Implementation**: `LinkedHashMap` protected by `ReentrantReadWriteLock`
+- **Contention Pattern**: All 100 threads compete for write lock on every cache access
 
-#### 4. **GC Contribution**
+#### 4. **Why Metrics Seem Contradictory**
+
+- **token_building**: Measures only object creation (2-21μs) ✓
+- **complete_validation**: Includes cache access with lock contention (67ms P99) ✗
+- **Monitor Class**: `int[]` indicates internal JVM lock structures
+
+#### 5. **GC Contribution**
 
 Minor contributor compared to lock contention:
 - G1 Young GC pauses: 1.3-2.9ms
@@ -288,14 +299,14 @@ Minor contributor compared to lock contention:
 
 ### Recommendations
 
-1. **Immediate Action**: Remove Lombok annotations from token classes
-   - Replace `@SuperBuilder` with regular constructors
-   - Replace `@EqualsAndHashCode` with manual implementations
-   - Ensure no synchronization in token construction path
+1. **Immediate Fix**: Replace LRU implementation
+   - Use lock-free data structure (e.g., Caffeine cache)
+   - Implement striped locks for LRU tracking
+   - Consider removing LRU in favor of TTL-only eviction
 
-2. **Alternative Design**: Consider immutable builder pattern without Lombok
-   - Manual builder implementation
-   - Copy-on-write for thread safety
-   - No synchronization required
+2. **Alternative Approaches**:
+   - **Striped Locks**: Partition LRU map by hash buckets
+   - **Lock-Free LRU**: Use ConcurrentLinkedHashMap or similar
+   - **Async LRU Updates**: Queue LRU updates for background processing
 
-3. **Validation**: After fix, verify with JFR that monitor waits are eliminated
+3. **Validation**: After fix, verify lock contention is eliminated with JFR
