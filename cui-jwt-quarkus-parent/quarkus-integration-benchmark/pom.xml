@@ -138,6 +138,9 @@
                                 <configuration>
                                     <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
+                                    <environmentVariables>
+                                        <ENABLE_BENCHMARK_PROFILE>true</ENABLE_BENCHMARK_PROFILE>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
                             <!-- Fetch real JWT tokens from Keycloak -->

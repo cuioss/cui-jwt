@@ -54,6 +54,12 @@ else
     exit 1
 fi
 
+# Check if benchmark profile is requested
+if [[ "${ENABLE_BENCHMARK_PROFILE:-false}" == "true" ]]; then
+    echo "🎯 Benchmark profile enabled - disabling JWT cache for accurate metrics"
+    export QUARKUS_PROFILE=benchmark
+fi
+
 # Start with Docker Compose (includes Keycloak)
 echo "🐳 Starting Docker containers (Quarkus $MODE + Keycloak)..."
 (cd "${PROJECT_DIR}" && docker compose -f "$COMPOSE_FILE" up -d)
