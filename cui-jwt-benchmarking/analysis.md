@@ -114,12 +114,12 @@ The benchmark results show varying P99 latencies across different workloads:
   - [x] Analyze correlation between concurrent operations and P99 spikes
   - [x] Compare throughput vs average-time mode behavior under identical load
 
-- [ ] **JCA Bottleneck Mitigation** - **67ms P99 spikes on cache misses**
-  - [ ] Implement semaphore to limit concurrent RSA operations (e.g., 8-16 max)
+- [ ] **P99 Scheduler Fairness Issue** - **67ms spikes affect 1% of operations**
+  - [ ] Measure production impact vs benchmark synthetic load
   - [ ] Add JVM flag: `-Djava.security.egd=file:/dev/./urandom` (JVM mode only)
   - [ ] For native: Add `--initialize-at-run-time=sun.security.provider.SecureRandom`
-  - [ ] Monitor CPU saturation during cache miss bursts
-  - [ ] Consider ES256 over RS256 for better performance
+  - [ ] Monitor Virtual Thread carrier pool under load
+  - [ ] Consider ES256 over RS256 for faster operations
 
 - [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
   - [ ] Profile validation hotspots causing extreme spikes
@@ -315,21 +315,25 @@ When a token is not in cache (new token, cache eviction, or rotation):
 
 ### Recommendations
 
-1. **Concurrency Management** (Primary Solution)
-   - Implement semaphore to limit concurrent RSA operations
-   - Target 8-16 max concurrent validations (match CPU cores)
-   - Queue excess requests to prevent CPU saturation
-   - Monitor actual CPU usage during cache miss bursts
+1. **Accept Current Performance** (Primary)
+   - 99% of operations complete in ≤71μs (excellent)
+   - 1% tail latency may be acceptable for the workload
+   - Measure actual production impact vs synthetic benchmarks
 
-2. **Entropy Optimization** (Secondary)
+2. **Virtual Thread Tuning** (If needed)
+   - Monitor carrier thread behavior under load
+   - Tune Virtual Thread carrier pool size
+   - Consider platform thread comparison for CPU-intensive work
+
+3. **Entropy Optimization** (For startup)
    - JVM mode: Add `-Djava.security.egd=file:/dev/./urandom`
    - Native mode: Configure `--initialize-at-run-time` for SecureRandom
    - Prevents blocking on entropy gathering in Docker
 
-3. **Algorithm Strategy** (Long-term)
-   - Negotiate ES256 over RS256 where possible (ECDSA is 5-10x faster)
-   - Reduces CPU load per validation
-   - Compatible with existing infrastructure
+4. **Long-term Optimizations**
+   - Switch to ES256 from RS256 (5-10x faster, smaller keys)
+   - Increases cache hit rates due to faster validation
+   - Better scheduler behavior with shorter operations
 
 ## JCA Performance Analysis - Final Findings (July 31, 2025)
 
@@ -388,12 +392,27 @@ When a token is not in cache (new token, cache eviction, or rotation):
    - Increase token cache size to reduce miss rate
    - Monitor actual cache miss patterns
 
-### Summary
+### Critical Analysis: Why Semaphores Won't Help
+
+**The Data Shows:**
+- P50: 52μs, P95: 71μs, P99: 67,066μs
+- 99% of operations complete normally (≤71μs)
+- Only 1% experience extreme delays (67ms = 1,000x slower)
+
+**This is NOT CPU saturation** - it's **thread scheduling unfairness**.
+
+**Why Semaphores Are Wrong:**
+1. **Same total work**: 100 RSA operations still need 100 operations worth of CPU
+2. **Added overhead**: Semaphore synchronization reduces performance  
+3. **Doesn't fix root cause**: OS scheduler fairness issues remain
+4. **Modern CPUs**: Designed to handle thread oversubscription efficiently
+
+### Revised Analysis
 
 The P99 spikes are caused by:
-1. **CPU saturation** from 100 concurrent RSA operations
-2. **Thread safety requirement** forcing new Signature instances
-3. **Virtual Threads** preventing ThreadLocal optimization
-4. **Entropy blocking** in Docker containers (secondary issue)
+1. **OS scheduler starvation** - Some threads get delayed while others run
+2. **Thread safety requirement** - New Signature instances per operation
+3. **Virtual Threads coordination** - Platform thread carrier scheduling
+4. **Entropy blocking** in Docker (secondary, affects startup)
 
-The only practical solution is to **limit concurrent RSA operations** to prevent CPU saturation.
+**The issue is scheduler fairness, not CPU capacity.**
