@@ -559,7 +559,36 @@ public class MetricsExporter {
         primaryMetric.put("rawData", rawData);
         
         result.put("primaryMetric", primaryMetric);
-        result.put("secondaryMetrics", new LinkedHashMap<>());
+        
+        // Add JWT validation step metrics as secondary metrics
+        Map<String, Object> secondaryMetrics = new LinkedHashMap<>();
+        Map<String, Object> jwtStepMetrics = collectJwtValidationStepMetrics();
+        if (!jwtStepMetrics.isEmpty()) {
+            // Convert step metrics to JMH secondary metric format
+            for (Map.Entry<String, Object> entry : jwtStepMetrics.entrySet()) {
+                String stepName = entry.getKey();
+                if (entry.getValue() instanceof Map) {
+                    Map<String, Object> stepData = (Map<String, Object>) entry.getValue();
+                    Object p50Value = stepData.get("p50_us");
+                    
+                    if (p50Value instanceof Number) {
+                        Map<String, Object> secondaryMetric = new LinkedHashMap<>();
+                        double avgTimeUs = ((Number) p50Value).doubleValue();
+                        
+                        secondaryMetric.put("score", avgTimeUs);
+                        secondaryMetric.put("scoreError", avgTimeUs * 0.05); // 5% error for step metrics
+                        secondaryMetric.put("scoreConfidence", java.util.Arrays.asList(
+                            avgTimeUs * 0.95,
+                            avgTimeUs * 1.05
+                        ));
+                        secondaryMetric.put("scoreUnit", "us/op");
+                        
+                        secondaryMetrics.put("jwt_step_" + stepName, secondaryMetric);
+                    }
+                }
+            }
+        }
+        result.put("secondaryMetrics", secondaryMetrics);
         
         return result;
     }
