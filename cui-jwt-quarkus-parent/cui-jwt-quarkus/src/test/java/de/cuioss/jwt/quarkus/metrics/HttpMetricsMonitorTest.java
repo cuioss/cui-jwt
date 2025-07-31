@@ -15,8 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.metrics;
 
-import de.cuioss.jwt.quarkus.metrics.HttpMetricsMonitor.HttpMeasurementType;
-import de.cuioss.jwt.quarkus.metrics.HttpMetricsMonitor.HttpRequestStatus;
+import de.cuioss.jwt.validation.metrics.NoOpMetricsTicker;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
@@ -60,6 +59,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests HttpMetricsMonitor functionality")
 class HttpMetricsMonitorTest {
 
+    private HttpMetricsMonitor createMonitorWithEnabledTypes(HttpMeasurementType... types) {
+        var config = HttpMetricsMonitorConfig.builder();
+        for (HttpMeasurementType type : types) {
+            config.measurementType(type);
+        }
+        return config.build().createMonitor();
+    }
+
     private static final CuiLogger log = new CuiLogger(HttpMetricsMonitorTest.class);
 
     @Test
@@ -67,6 +74,10 @@ class HttpMetricsMonitorTest {
     void shouldCreateMonitorWithInitialState() {
         var monitor = new HttpMetricsMonitor();
         assertNotNull(monitor, "Monitor should be created");
+
+        // Verify all measurement types are enabled by default
+        assertEquals(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES, monitor.getEnabledTypes(),
+                "All measurement types should be enabled by default");
 
         // Verify initial state - no measurements recorded
         for (HttpMeasurementType type : HttpMeasurementType.values()) {
@@ -521,5 +532,100 @@ class HttpMetricsMonitorTest {
         assertNotNull(HttpRequestStatus.INVALID_TOKEN);
         assertNotNull(HttpRequestStatus.INSUFFICIENT_PERMISSIONS);
         assertNotNull(HttpRequestStatus.ERROR);
+    }
+
+    @Test
+    @DisplayName("Should create monitor with selective measurement types enabled")
+    void shouldCreateMonitorWithSelectiveMeasurementTypes() {
+        var monitor = createMonitorWithEnabledTypes(
+                HttpMeasurementType.REQUEST_PROCESSING,
+                HttpMeasurementType.TOKEN_EXTRACTION
+        );
+
+        // Verify only selected types are enabled
+        assertTrue(monitor.isEnabled(HttpMeasurementType.REQUEST_PROCESSING));
+        assertTrue(monitor.isEnabled(HttpMeasurementType.TOKEN_EXTRACTION));
+        assertFalse(monitor.isEnabled(HttpMeasurementType.HEADER_EXTRACTION));
+        assertFalse(monitor.isEnabled(HttpMeasurementType.AUTHORIZATION_CHECK));
+        assertFalse(monitor.isEnabled(HttpMeasurementType.RESPONSE_FORMATTING));
+    }
+
+    @Test
+    @DisplayName("Should ignore measurements for disabled types")
+    void shouldIgnoreMeasurementsForDisabledTypes() {
+        var monitor = createMonitorWithEnabledTypes(HttpMeasurementType.REQUEST_PROCESSING);
+
+        // Record measurement for enabled type
+        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 1_000_000);
+        assertEquals(1, monitor.getSampleCount(HttpMeasurementType.REQUEST_PROCESSING));
+        assertEquals(Duration.ofMillis(1), monitor.getAverageDuration(HttpMeasurementType.REQUEST_PROCESSING));
+
+        // Record measurement for disabled type (should be ignored)
+        monitor.recordMeasurement(HttpMeasurementType.TOKEN_EXTRACTION, 5_000_000);
+        assertEquals(0, monitor.getSampleCount(HttpMeasurementType.TOKEN_EXTRACTION));
+        assertEquals(Duration.ZERO, monitor.getAverageDuration(HttpMeasurementType.TOKEN_EXTRACTION));
+    }
+
+    @Test
+    @DisplayName("Should test clear method alias")
+    void shouldTestClearMethodAlias() {
+        var monitor = new HttpMetricsMonitor();
+
+        // Record some data
+        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 1_000_000);
+        monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
+
+        // Clear using the alias method
+        monitor.clear();
+
+        // Verify everything is cleared
+        assertEquals(Duration.ZERO, monitor.getAverageDuration(HttpMeasurementType.REQUEST_PROCESSING));
+        assertEquals(0, monitor.getSampleCount(HttpMeasurementType.REQUEST_PROCESSING));
+        assertEquals(0, monitor.getRequestStatusCount(HttpRequestStatus.SUCCESS));
+    }
+
+    @Test
+    @DisplayName("Should test HttpMetricsMonitorConfig builders")
+    void shouldTestHttpMetricsMonitorConfigBuilders() {
+        // Test default enabled config
+        var defaultConfig = HttpMetricsMonitorConfig.defaultEnabled();
+        assertEquals(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES, defaultConfig.getMeasurementTypes());
+
+        // Test disabled config
+        var disabledConfig = HttpMetricsMonitorConfig.disabled();
+        assertTrue(disabledConfig.getMeasurementTypes().isEmpty());
+
+        // Test custom config
+        var customConfig = HttpMetricsMonitorConfig.builder()
+                .measurementType(HttpMeasurementType.REQUEST_PROCESSING)
+                .measurementType(HttpMeasurementType.TOKEN_EXTRACTION)
+                .build();
+        assertEquals(2, customConfig.getMeasurementTypes().size());
+        assertTrue(customConfig.getMeasurementTypes().contains(HttpMeasurementType.REQUEST_PROCESSING));
+        assertTrue(customConfig.getMeasurementTypes().contains(HttpMeasurementType.TOKEN_EXTRACTION));
+    }
+
+    @Test
+    @DisplayName("Should test MetricsTicker creation")
+    void shouldTestMetricsTickerCreation() {
+        var enabledMonitor = new HttpMetricsMonitor();
+        var disabledMonitor = createMonitorWithEnabledTypes(); // Empty = all disabled
+
+        // Test ticker creation for enabled type
+        var enabledTicker = HttpMeasurementType.REQUEST_PROCESSING.createTicker(enabledMonitor);
+        assertNotNull(enabledTicker);
+        assertInstanceOf(ActiveMetricsTicker.class, enabledTicker);
+
+        // Test ticker creation for disabled type
+        var disabledTicker = HttpMeasurementType.REQUEST_PROCESSING.createTicker(disabledMonitor);
+        assertNotNull(disabledTicker);
+        assertSame(NoOpMetricsTicker.INSTANCE, disabledTicker);
+
+        // Test started ticker creation
+        var startedTicker = HttpMeasurementType.TOKEN_EXTRACTION.createStartedTicker(enabledMonitor);
+        assertNotNull(startedTicker);
+        // Can't easily verify it's started, but we can verify it records
+        startedTicker.stopAndRecord();
+        assertEquals(1, enabledMonitor.getSampleCount(HttpMeasurementType.TOKEN_EXTRACTION));
     }
 }

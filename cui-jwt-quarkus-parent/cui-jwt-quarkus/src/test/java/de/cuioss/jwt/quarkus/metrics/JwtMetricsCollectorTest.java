@@ -154,4 +154,46 @@ class JwtMetricsCollectorTest {
 
         assertTrue(hasTimer, "Should have timer for the measurement type");
     }
+
+    @Test
+    @DisplayName("Should clear all metrics when clear method is called")
+    void shouldClearAllMetrics() {
+        // Get the monitors and counters
+        SecurityEventCounter securityEventCounter = tokenValidator.getSecurityEventCounter();
+        TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();
+        assertNotNull(securityEventCounter);
+        assertNotNull(performanceMonitor);
+
+        // Record some events and measurements
+        EventType testEventType = EventType.SIGNATURE_VALIDATION_FAILED;
+        securityEventCounter.increment(testEventType);
+        securityEventCounter.increment(testEventType);
+
+        MeasurementType testMeasurementType = MeasurementType.SIGNATURE_VALIDATION;
+        performanceMonitor.recordMeasurement(testMeasurementType, 1000000); // 1ms
+        performanceMonitor.recordMeasurement(testMeasurementType, 2000000); // 2ms
+
+        // Verify data is recorded
+        assertTrue(securityEventCounter.getCount(testEventType) > 0, "Should have recorded security events");
+        assertTrue(performanceMonitor.getSampleCount(testMeasurementType) > 0, "Should have recorded performance measurements");
+
+        // Clear all metrics
+        metricsCollector.clear();
+
+        // Verify all metrics are cleared
+        assertEquals(0, securityEventCounter.getCount(testEventType), "Security event counter should be cleared");
+        assertEquals(0, performanceMonitor.getSampleCount(testMeasurementType), "Performance monitor should be cleared");
+
+        // Verify the tracking maps are cleared by recording new events and checking delta calculation
+        securityEventCounter.increment(testEventType);
+        metricsCollector.updateCounters();
+
+        // The counter should only reflect the new increment, not the old ones
+        Counter metricCounter = registry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS)
+                .tag("event_type", testEventType.name())
+                .counter();
+        assertNotNull(metricCounter, "Counter should exist");
+        // Note: We can't directly check the counter value as it's cumulative in Micrometer,
+        // but we've verified the underlying monitors are cleared
+    }
 }

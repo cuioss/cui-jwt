@@ -86,6 +86,16 @@ public abstract class AbstractIntegrationBenchmark {
     }
 
     /**
+     * Setup method called before each benchmark iteration.
+     * Clears all JWT metrics to ensure clean state for accurate measurements.
+     */
+    @Setup(Level.Iteration)
+    public void setupIteration() {
+        LOGGER.debug("Setting up benchmark iteration - clearing metrics");
+        clearMetrics();
+    }
+
+    /**
      * Teardown method called once after all benchmark iterations.
      * Exports final metrics for analysis.
      */
@@ -234,6 +244,27 @@ public abstract class AbstractIntegrationBenchmark {
                           System.getProperty("os.arch") + 
                           " (Processors: " + Runtime.getRuntime().availableProcessors() + ")")
                 .build();
+    }
+
+    /**
+     * Clears all JWT metrics by calling the metric_clear endpoint.
+     * This ensures each benchmark iteration starts with a clean state.
+     */
+    protected void clearMetrics() {
+        try {
+            io.restassured.response.Response response = createBaseRequest()
+                    .post("/jwt/metric_clear");
+            
+            if (response.getStatusCode() != 200) {
+                LOGGER.warn("Failed to clear metrics - Status: {}, Response: {}", 
+                    response.getStatusCode(), response.getBody().asString());
+            } else {
+                LOGGER.debug("Metrics cleared successfully");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to clear metrics", e);
+            // Don't fail the benchmark if metrics clearing fails
+        }
     }
 
     /**

@@ -92,7 +92,7 @@ public class UnifiedJfrBenchmark {
                 // Ignore errors during metrics export
             }
         }
-        
+
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {
             jfrInstrumentation.shutdown();

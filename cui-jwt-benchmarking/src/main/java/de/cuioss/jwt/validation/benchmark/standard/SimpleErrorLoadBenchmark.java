@@ -17,8 +17,6 @@ package de.cuioss.jwt.validation.benchmark.standard;
 
 import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

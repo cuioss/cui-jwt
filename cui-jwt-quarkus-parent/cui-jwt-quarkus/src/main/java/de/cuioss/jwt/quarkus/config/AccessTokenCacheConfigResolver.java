@@ -33,7 +33,6 @@ import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.CACHE;
  *   <li>Maximum cache size (maxSize)</li>
  *   <li>Eviction interval in seconds</li>
  * </ul>
- * </p>
  *
  * @since 1.0
  */

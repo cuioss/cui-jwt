@@ -60,7 +60,7 @@ public class SimplifiedMetricsExporter {
             log.debug("No monitor provided, skipping metrics export");
             return;
         }
-        
+
         // Get current benchmark name from thread or stack trace
         String benchmarkName = getCurrentBenchmarkName();
         if (benchmarkName == null) {
@@ -73,14 +73,15 @@ public class SimplifiedMetricsExporter {
 
         // Single file for all metrics
         Path outputFile = outputPath.resolve("jwt-validation-metrics.json");
-        
+
         // Read existing data if file exists
         Map<String, Object> allMetrics = new LinkedHashMap<>();
         if (Files.exists(outputFile)) {
             try {
                 String existingContent = Files.readString(outputFile);
                 if (existingContent != null && !existingContent.trim().isEmpty()) {
-                    TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
+                    TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {
+                    };
                     Map<String, Object> parsedMetrics = GSON.fromJson(existingContent, typeToken.getType());
                     if (parsedMetrics != null) {
                         allMetrics = parsedMetrics;
@@ -124,7 +125,7 @@ public class SimplifiedMetricsExporter {
         }
 
         benchmarkMetrics.put("steps", steps);
-        
+
         // Add or update benchmark data using benchmark name as top-level element
         allMetrics.put(benchmarkName, benchmarkMetrics);
 
@@ -138,7 +139,7 @@ public class SimplifiedMetricsExporter {
             throw e;
         }
     }
-    
+
     /**
      * Get current benchmark name from thread or stack trace
      */
@@ -150,7 +151,7 @@ public class SimplifiedMetricsExporter {
         if (threadName.contains("measureConcurrentValidation")) return "measureConcurrentValidation";
         if (threadName.contains("validateMixedTokens0")) return "validateMixedTokens0";
         if (threadName.contains("validateMixedTokens50")) return "validateMixedTokens50";
-        
+
         // Fallback: check stack trace
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (StackTraceElement element : stackTrace) {
@@ -159,7 +160,7 @@ public class SimplifiedMetricsExporter {
                 return methodName;
             }
         }
-        
+
         return null;
     }
 

@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.TearDown;
  * @since 1.0
  */
 public abstract class AbstractBenchmark {
-    
+
     private static final CuiLogger log = new CuiLogger(AbstractBenchmark.class);
 
     protected TokenRepository tokenRepository;

@@ -15,11 +15,13 @@
  */
 package de.cuioss.jwt.quarkus.metrics;
 
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -86,10 +88,29 @@ public class HttpMetricsMonitor {
     private final AtomicLong[] requestStatusCounts;
 
     /**
-     * Creates a new HTTP metrics monitor.
+     * Set of enabled measurement types. Only measurements for these types
+     * will be recorded; others will be no-op operations.
+     */
+    @Getter
+    private final Set<HttpMeasurementType> enabledTypes;
+
+    /**
+     * Creates a new HTTP metrics monitor with all measurement types enabled.
+     */
+    public HttpMetricsMonitor() {
+        this(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES);
+    }
+
+    /**
+     * Creates a new HTTP metrics monitor with specified enabled measurement types.
+     * <p>
+     * Package-private constructor to be used from HttpMetricsMonitorConfig.
+     *
+     * @param enabledTypes set of measurement types to monitor (others will be no-op)
      */
     @SuppressWarnings("unchecked")
-    public HttpMetricsMonitor() {
+    HttpMetricsMonitor(@NonNull Set<HttpMeasurementType> enabledTypes) {
+        this.enabledTypes = enabledTypes;
         // Initialize average durations
         this.averageDurations = new AtomicReference[HttpMeasurementType.values().length];
         for (int i = 0; i < averageDurations.length; i++) {
@@ -110,15 +131,31 @@ public class HttpMetricsMonitor {
     }
 
     /**
+     * Checks if the specified measurement type is enabled for recording.
+     *
+     * @param measurementType the type to check
+     * @return true if this measurement type will be recorded, false otherwise
+     */
+    public boolean isEnabled(@NonNull HttpMeasurementType measurementType) {
+        return enabledTypes.contains(measurementType);
+    }
+
+    /**
      * Records a metrics measurement for the specified HTTP processing step.
      * <p>
      * This method updates a running average using an exponential moving average algorithm
      * for minimal overhead and good responsiveness to recent measurements.
+     * <p>
+     * If the measurement type is not enabled, this method does nothing.
      *
      * @param measurementType the type of measurement being recorded
      * @param durationNanos   the duration in nanoseconds
      */
     public void recordMeasurement(@NonNull HttpMeasurementType measurementType, long durationNanos) {
+        if (!isEnabled(measurementType)) {
+            return;
+        }
+
         int index = measurementType.ordinal();
         Duration newDuration = Duration.ofNanos(Math.max(0, durationNanos));
 
@@ -223,72 +260,13 @@ public class HttpMetricsMonitor {
     }
 
     /**
-     * Defines the types of HTTP-level measurements tracked by this monitor.
+     * Clears all measurements and counters.
+     * This is an alias for {@link #resetAll()} to match the naming convention
+     * used in the rest of the system.
      */
-    public enum HttpMeasurementType {
-        /**
-         * Total request processing time from start to finish.
-         */
-        REQUEST_PROCESSING("Total HTTP request processing"),
-
-        /**
-         * Time to extract Authorization header from request.
-         */
-        HEADER_EXTRACTION("Authorization header extraction"),
-
-        /**
-         * Time to extract bearer token from Authorization header.
-         */
-        TOKEN_EXTRACTION("Bearer token extraction"),
-
-        /**
-         * Time to check scopes, roles, and groups after validation.
-         */
-        AUTHORIZATION_CHECK("Authorization requirements check"),
-
-        /**
-         * Time to format error responses.
-         */
-        RESPONSE_FORMATTING("Error response formatting");
-
-        private final String description;
-
-        HttpMeasurementType(String description) {
-            this.description = description;
-        }
-
-        public String getDescription() {
-            return description;
-        }
+    public void clear() {
+        resetAll();
     }
 
-    /**
-     * Defines the possible statuses of HTTP requests for JWT validation.
-     */
-    public enum HttpRequestStatus {
-        /**
-         * Request succeeded with fully verified token.
-         */
-        SUCCESS,
 
-        /**
-         * Request failed due to missing token.
-         */
-        MISSING_TOKEN,
-
-        /**
-         * Request failed due to invalid token format or validation error.
-         */
-        INVALID_TOKEN,
-
-        /**
-         * Request failed due to missing required scopes/roles/groups.
-         */
-        INSUFFICIENT_PERMISSIONS,
-
-        /**
-         * Request failed due to infrastructure or unexpected error.
-         */
-        ERROR
-    }
 }

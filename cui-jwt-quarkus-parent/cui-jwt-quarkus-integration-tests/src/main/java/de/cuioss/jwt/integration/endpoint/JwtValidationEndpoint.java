@@ -16,10 +16,13 @@
 package de.cuioss.jwt.integration.endpoint;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -50,6 +53,7 @@ public class JwtValidationEndpoint {
     private static final CuiLogger LOGGER = new CuiLogger(JwtValidationEndpoint.class);
 
     private final TokenValidator tokenValidator;
+    private final JwtMetricsCollector jwtMetricsCollector;
     private final BearerTokenResult basicToken;
     private final BearerTokenResult tokenWithScopes;
     private final BearerTokenResult tokenWithRoles;
@@ -58,12 +62,14 @@ public class JwtValidationEndpoint {
 
     public JwtValidationEndpoint(
             TokenValidator tokenValidator,
+            JwtMetricsCollector jwtMetricsCollector,
             @BearerToken BearerTokenResult basicToken,
             @BearerToken(requiredScopes = {"read"}) BearerTokenResult tokenWithScopes,
             @BearerToken(requiredRoles = {"user"}) BearerTokenResult tokenWithRoles,
             @BearerToken(requiredGroups = {"test-group"}) BearerTokenResult tokenWithGroups,
             @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"}) BearerTokenResult tokenWithAll) {
         this.tokenValidator = tokenValidator;
+        this.jwtMetricsCollector = jwtMetricsCollector;
         this.basicToken = basicToken;
         this.tokenWithScopes = tokenWithScopes;
         this.tokenWithRoles = tokenWithRoles;
@@ -219,6 +225,46 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/basic")
     public Response testBasicToken() {
         return processBearerTokenResult(basicToken, "Basic token");
+    }
+
+    /**
+     * Clears all JWT metrics including TokenValidator metrics and JwtMetricsCollector metrics.
+     * This endpoint is primarily used for benchmarking to ensure a clean state between test runs.
+     *
+     * @return Response indicating success
+     */
+    @POST
+    @Path("/metric_clear")
+    public Response clearMetrics() {
+        LOGGER.info("Clearing all JWT metrics");
+        
+        // Clear TokenValidatorMonitor
+        TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();
+        if (performanceMonitor != null) {
+            performanceMonitor.resetAll();
+            LOGGER.debug("TokenValidatorMonitor cleared");
+        }
+        
+        // Clear SecurityEventCounter
+        SecurityEventCounter securityEventCounter = tokenValidator.getSecurityEventCounter();
+        if (securityEventCounter != null) {
+            securityEventCounter.reset();
+            LOGGER.debug("SecurityEventCounter cleared");
+        }
+        
+        // Clear JwtMetricsCollector (which also clears HTTP metrics)
+        if (jwtMetricsCollector != null) {
+            jwtMetricsCollector.clear();
+            LOGGER.debug("JwtMetricsCollector cleared");
+        }
+        
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("tokenValidatorMonitor", "cleared");
+        responseData.put("securityEventCounter", "cleared");
+        responseData.put("jwtMetricsCollector", "cleared");
+        
+        LOGGER.info("All JWT metrics cleared successfully");
+        return Response.ok(new ValidationResponse(true, "All JWT metrics cleared successfully", responseData)).build();
     }
 
     /**

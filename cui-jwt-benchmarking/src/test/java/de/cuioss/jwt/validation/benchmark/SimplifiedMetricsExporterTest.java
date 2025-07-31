@@ -70,15 +70,16 @@ class SimplifiedMetricsExporterTest {
                 .toArray(Path[]::new);
 
         assertEquals(1, jsonFiles.length);
-        assertTrue(jsonFiles[0].getFileName().toString().equals("jwt-validation-metrics.json"));
-        
+        assertEquals("jwt-validation-metrics.json", jsonFiles[0].getFileName().toString());
+
         String jsonContent = Files.readString(jsonFiles[0]);
-        TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {};
+        TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {
+        };
         Map<String, Object> allMetrics = gson.fromJson(jsonContent, typeToken.getType());
 
         // Verify we have at least one benchmark entry (unknown_benchmark since no specific benchmark name is set)
         assertFalse(allMetrics.isEmpty());
-        
+
         // Get the first benchmark entry (should be "unknown_benchmark")
         String benchmarkName = allMetrics.keySet().iterator().next();
         Map<String, Object> benchmarkMetrics = (Map<String, Object>) allMetrics.get(benchmarkName);

@@ -143,6 +143,20 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(43)
                 .build();
+
+        // Metrics Clear Messages (051-060)
+        
+        public static final LogRecord CLEARING_JWT_METRICS = LogRecordModel.builder()
+                .template("Clearing all JWT metrics")
+                .prefix(PREFIX)
+                .identifier(51)
+                .build();
+
+        public static final LogRecord JWT_METRICS_CLEARED = LogRecordModel.builder()
+                .template("JWT metrics cleared successfully")
+                .prefix(PREFIX)
+                .identifier(52)
+                .build();
     }
 
     /**

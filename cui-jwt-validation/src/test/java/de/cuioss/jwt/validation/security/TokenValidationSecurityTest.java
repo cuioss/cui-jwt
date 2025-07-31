@@ -64,10 +64,10 @@ class TokenValidationSecurityTest {
     void setUp() {
         // Create issuer config with JWKS content
         IssuerConfig issuerConfig = IssuerConfig.builder()
-            .issuerIdentifier("Token-Test-testIssuer")
-            .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
-            .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
-            .build();
+                .issuerIdentifier("Token-Test-testIssuer")
+                .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
+                .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                .build();
 
         // Create validation factory
         ParserConfig config = ParserConfig.builder().build();
@@ -90,8 +90,8 @@ class TokenValidationSecurityTest {
         String tamperedToken = parts[0] + "." + tamperedPayload + ".";
 
         assertThrows(TokenValidationException.class, () ->
-                tokenValidator.createAccessToken(tamperedToken),
-            "Should reject token with tampered payload");
+                        tokenValidator.createAccessToken(tamperedToken),
+                "Should reject token with tampered payload");
     }
 
     @ParameterizedTest
@@ -105,8 +105,8 @@ class TokenValidationSecurityTest {
         assertNotEquals(validToken, tamperedToken, "Tampered token should be different from valid token");
 
         assertThrows(TokenValidationException.class, () ->
-                tokenValidator.createAccessToken(tamperedToken),
-            "Should reject token with tampered signature: " + tamperedToken);
+                        tokenValidator.createAccessToken(tamperedToken),
+                "Should reject token with tampered signature: " + tamperedToken);
     }
 
     @ParameterizedTest
@@ -117,8 +117,8 @@ class TokenValidationSecurityTest {
         String tamperedToken = JwtTokenTamperingUtil.applyTamperingStrategy(validToken, TamperingStrategy.ALGORITHM_NONE);
 
         assertThrows(TokenValidationException.class, () ->
-                tokenValidator.createAccessToken(tamperedToken),
-            "Should reject token with 'none' algorithm");
+                        tokenValidator.createAccessToken(tamperedToken),
+                "Should reject token with 'none' algorithm");
     }
 
     @Test
@@ -146,7 +146,7 @@ class TokenValidationSecurityTest {
 
         // Verify that the tampered token is rejected
         assertThrows(TokenValidationException.class, () ->
-            tokenValidator.createAccessToken(tamperedToken));
+                tokenValidator.createAccessToken(tamperedToken));
     }
 
     @ParameterizedTest
@@ -168,8 +168,8 @@ class TokenValidationSecurityTest {
         String tamperedToken = JwtTokenTamperingUtil.applyTamperingStrategy(validToken, TamperingStrategy.ALGORITHM_DOWNGRADE);
 
         assertThrows(TokenValidationException.class, () ->
-                tokenValidator.createAccessToken(tamperedToken),
-            "Should reject token with downgraded algorithm");
+                        tokenValidator.createAccessToken(tamperedToken),
+                "Should reject token with downgraded algorithm");
     }
 
     @ParameterizedTest
@@ -180,7 +180,7 @@ class TokenValidationSecurityTest {
         String tamperedToken = JwtTokenTamperingUtil.applyTamperingStrategy(validToken, TamperingStrategy.INVALID_KID);
 
         assertThrows(TokenValidationException.class, () ->
-                tokenValidator.createAccessToken(tamperedToken),
-            "Should reject token with invalid key ID");
+                        tokenValidator.createAccessToken(tamperedToken),
+                "Should reject token with invalid key ID");
     }
 }
