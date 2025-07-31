@@ -87,12 +87,138 @@ The benchmark results show varying P99 latencies across different workloads:
 2. **Token Parsing**: Stable performance, minor optimization potential
 3. **Header Validation**: Small absolute times despite high ratios
 
+## ✅ Implemented Optimizations
+
+### Completed Tasks
+
+**Architecture & Performance**:
+- ✅ Field-based TokenSignatureValidator with Provider bypass optimization
+- ✅ Virtual thread compatibility with ReentrantLock patterns, immutable Map.copyOf()
+- ✅ JFR instrumentation with variance analysis, ValidationContext time caching
+- ✅ Thread count optimization - 100 threads configuration
+- ✅ Benchmark profile separation with distinct output directories
+
+**Library Analysis**:
+- ✅ Analyzed jjwt, smallrye-jwt, jose4j, auth0 - all use JCA without Signature caching
+- ✅ Component performance breakdown completed
+
+## 🚀 Optimization Roadmap
+
+### 🔴 HIGH PRIORITY - P99 Latency Reduction
+
+#### Phase 1: Signature Validation Caching (1-2 weeks)
+- [ ] **Signature Validation Optimization** - **10.2ms P99 spikes (164x P99/P50)**
+  - [ ] Cache key: (token signature, public key) → boolean result
+  - [ ] Target throughput improvement: +20-30%
+
+- [ ] **Complete Validation Stabilization** - **31.7ms P99 spikes (377x P99/P50)**
+  - [ ] Profile validation hotspots causing extreme spikes
+  - [ ] Implement circuit breaker for pathological cases
+  - [ ] Target: P99 from 31.7ms to <5ms
+  - [ ] Expected P99/P50 ratio: <50x
+
+#### Phase 2: Component Optimization (2-3 weeks)
+- [ ] **Token Building Object Pooling** - **14.0μs P99 spikes**
+  - [ ] Implement Apache Commons Pool for TokenBuilder instances
+  - [ ] Pool configuration: 200 max, 100 idle, 50 min
+  - [ ] Expected impact: P99 from 14.0μs to <10μs
+  - [ ] Monitor pool metrics for sizing optimization
+
+- [ ] **Claims Validation Optimization** - **7.2μs P99 spikes**
+  - [ ] Profile validation logic for expensive operations
+  - [ ] Cache validation results for repeated claim patterns
+  - [ ] Optimize date/time claim validation
+  - [ ] Target: Reduce P99 to <5μs
+
+### 🟡 MEDIUM PRIORITY - Throughput Enhancement
+
+#### Phase 3: Architecture Improvements (1 month)
+- [ ] **Throughput Optimization** - **Current: 100k ops/s baseline**
+  - [ ] Target: >200k ops/s standard throughput
+  - [ ] Optimize synchronization points
+  - [ ] Reduce allocation rates
+  - [ ] Implement zero-copy token handling where possible
+
+- [ ] **Thread Efficiency** - **Current: 1,007 ops/s/thread**
+  - [ ] Target: >2,000 ops/s/thread
+  - [ ] Reduce thread contention
+  - [ ] Optimize work distribution
+  - [ ] Consider work-stealing patterns
+
+#### Phase 4: Async Pipeline (4-6 weeks)
+- [ ] **Async Architecture** - **Potential 2x throughput gain**
+  - [ ] Implement CompletableFuture-based validation pipeline
+  - [ ] Separate executors for parsing, signature, and claims validation
+  - [ ] Non-blocking I/O for issuer configuration resolution
+  - [ ] Target: 200k+ ops/s throughput
+
+### 🟢 LOW PRIORITY - Production Hardening
+
+#### Phase 5: Advanced Optimizations (2-3 months)
+- [ ] **JFR Overhead Reduction**
+  - [ ] Conditional recording (>100μs threshold)
+  - [ ] Batch event recording
+  - [ ] Target: <20% overhead with profiling enabled
+
+- [ ] **Memory & GC Optimization**
+  - [ ] Reduce allocation rate
+  - [ ] Optimize hot allocation sites
+  - [ ] Test with different GC configurations
+  - [ ] Target: <500μs average latency
+
+## Validation Methodology
+
+### Benchmark Commands
+
+```bash
+# Standard benchmarks (baseline: 100,672 ops/s)
+mvn verify -Pbenchmark
+
+# Component-level analysis
+mvn verify -Pbenchmark-jfr
+
+# Thread scaling analysis
+mvn verify -Pbenchmark -Djmh.threads=1,50,100,150,200
+```
+
+### Success Metrics Targets
+
+| Metric | Current Baseline | Target | Improvement | Priority |
+|--------|------------------|--------|-------------|----------|
+| **Throughput** | 100,672 ops/s | 200,000 ops/s | 2x | 🟡 Medium |
+| **P50 Latency** | 52-84μs | <100μs | ✅ Met | - |
+| **P99 Latency** | 31.7ms | <5ms | 6x | 🔴 High |
+| **Thread Efficiency** | 1,007 ops/s/thread | >2,000 | 2x | 🟡 Medium |
+| **Average Latency** | 860μs | <500μs | 1.7x | 🟡 Medium |
+| **P99/P50 Ratio** | 377x | <50x | 7.5x | 🔴 High |
+
+### Component Performance Targets
+
+| Component | Current P50 | Current P99 | Target P99 | Priority |
+|-----------|-------------|-------------|------------|----------|
+| **Complete Validation** | 52-84μs | 31,675μs | <5,000μs | 🔴 High |
+| **Signature Validation** | 45-62μs | 10,195μs | <3,000μs | 🔴 High |
+| **Token Parsing** | 3.7-6.1μs | 14.0μs | <10μs | 🟢 Low |
+| **Claims Validation** | 0.7-4.0μs | 7.2μs | <5μs | 🟢 Low |
+| **Token Building** | 2.0-7.8μs | 14.0μs | <10μs | 🟡 Medium |
+
 ## Conclusion
 
-The JWT validation library baseline performance shows:
-- **Solid throughput**: 100-178k ops/s depending on workload
-- **Good median latency**: 52-84μs P50
-- **High P99 variance**: Primary optimization target
-- **Component bottlenecks**: Signature validation dominates
+The JWT validation library baseline performance (July 30, 2025) shows:
 
-These baseline metrics establish the foundation for future optimization efforts, with focus areas clearly identified in P99 latency reduction and signature validation optimization.
+**Current Strengths**:
+1. **Good median latency**: 52-84μs P50 for complete validation
+2. **Error handling efficiency**: 178k ops/s with 50% error rate
+3. **Stable components**: Token parsing and claims validation show low variance
+
+**Optimization Priorities**:
+1. **P99 latency reduction**: From 31.7ms to <5ms (High Priority)
+2. **Throughput doubling**: From 100k to 200k ops/s (Medium Priority)
+3. **Thread efficiency**: From 1,007 to 2,000+ ops/s/thread (Medium Priority)
+4. **P99/P50 ratio**: From 377x to <50x for predictability (High Priority)
+
+**Next Steps**:
+1. Profile and optimize P99 hotspots - achieve <5ms P99 target
+2. Consider async architecture for 2x throughput gain
+
+**Production Readiness**: The library is suitable for standard web applications with current performance. High-throughput or low-latency applications will benefit from the planned optimizations.
