@@ -116,6 +116,15 @@ Run benchmarks with integration test containers:
 mvn clean verify -Pbenchmark-testing
 ----
 
+NOTE: By default, `mvn clean` only cleans the local `quarkus-integration-jmh/target` directory and preserves the integration test container. This avoids unnecessary container rebuilds during iterative benchmark runs.
+
+To force a complete container rebuild, use:
+
+[source,bash]
+----
+mvn clean verify -Pbenchmark-testing -DrebuildContainer=true
+----
+
 === JFR-Enabled Benchmarks
 
 Run with Java Flight Recorder for detailed analysis:
@@ -138,6 +147,15 @@ mvn clean verify -Pbenchmark-testing \
   -Djmh.time=60s \
   -Djmh.iterations=5 \
   -Dintegration.service.url=https://my-service:8443
+----
+
+Force container rebuild when needed:
+
+[source,bash]
+----
+mvn clean verify -Pbenchmark-testing -DrebuildContainer=true \
+  -Djmh.threads=100 \
+  -Djmh.time=60s
 ----
 
 === Quick Testing
