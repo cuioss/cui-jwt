@@ -20,7 +20,8 @@
 | *Concurrent* | **883.40μs/op** | **Concurrent workload** | 📊 **BASELINE**
 |===
 
-**Key Performance Characteristics**: 
+**Key Performance Characteristics**:
+
 - ✅ **Solid Median Performance**: 52-84μs complete validation (P50)
 - ⚠️ **High P99 Variance**: Up to 31.7ms spikes (377x P99/P50 ratio)
 - ✅ **Error Handling Efficiency**: 50% error rate shows best throughput
@@ -31,6 +32,7 @@
 === Completed Tasks
 
 **Architecture & Performance**:
+
 - ✅ Field-based TokenSignatureValidator with Provider bypass optimization
 - ✅ Virtual thread compatibility with ReentrantLock patterns, immutable Map.copyOf()
 - ✅ JFR instrumentation with variance analysis, ValidationContext time caching
@@ -38,6 +40,7 @@
 - ✅ Benchmark profile separation with distinct output directories
 
 **Library Analysis**:
+
 - ✅ Analyzed jjwt, smallrye-jwt, jose4j, auth0 - all use JCA without Signature caching
 - ✅ Component performance breakdown completed
 
@@ -47,12 +50,10 @@
 
 ==== Phase 1: Signature Validation Caching (1-2 weeks)
 - [ ] *Signature Validation Optimization* - **10.2ms P99 spikes (164x P99/P50)**
-  - [ ] Implement bounded LRU signature cache (Caffeine, 10k entries, 5min TTL)
-  - [ ] Expected impact: Reduce P99 from 10.2ms to <3ms
   - [ ] Cache key: (token signature, public key) → boolean result
-  - [ ] Target throughput improvement: +20-30%
+    - [ ] Target throughput improvement: +20-30%
 
-- [ ] *Complete Validation Stabilization* - **31.7ms P99 spikes (377x P99/P50)** 
+- [ ] *Complete Validation Stabilization* - **31.7ms P99 spikes (377x P99/P50)**
   - [ ] Profile validation hotspots causing extreme spikes
   - [ ] Implement circuit breaker for pathological cases
   - [ ] Target: P99 from 31.7ms to <5ms
@@ -96,6 +97,7 @@
 === 🟢 LOW PRIORITY - Production Hardening
 
 ==== Phase 5: Advanced Optimizations (2-3 months)
+
 - [ ] *JFR Overhead Reduction*
   - [ ] Conditional recording (>100μs threshold)
   - [ ] Batch event recording
@@ -106,11 +108,6 @@
   - [ ] Optimize hot allocation sites
   - [ ] Test with different GC configurations
   - [ ] Target: <500μs average latency
-
-- [ ] *Hardware Acceleration*
-  - [ ] Java Vector API for batch operations
-  - [ ] Native crypto libraries (OpenSSL)
-  - [ ] Hardware security module (HSM) support
 
 == Validation Methodology
 
@@ -156,20 +153,21 @@ mvn verify -Pbenchmark -Djmh.threads=1,50,100,150,200
 The JWT validation library baseline performance (July 30, 2025) shows:
 
 **Current Strengths**:
+
 1. **Good median latency**: 52-84μs P50 for complete validation
 2. **Error handling efficiency**: 178k ops/s with 50% error rate
 3. **Stable components**: Token parsing and claims validation show low variance
 
 **Optimization Priorities**:
+
 1. **P99 latency reduction**: From 31.7ms to <5ms (High Priority)
 2. **Throughput doubling**: From 100k to 200k ops/s (Medium Priority)
 3. **Thread efficiency**: From 1,007 to 2,000+ ops/s/thread (Medium Priority)
 4. **P99/P50 ratio**: From 377x to <50x for predictability (High Priority)
 
-**Next Steps**: 
-1. Implement signature caching - expected 20-30% throughput improvement
-2. Add object pooling for token builders - reduce GC pressure
-3. Profile and optimize P99 hotspots - achieve <5ms P99 target
-4. Consider async architecture for 2x throughput gain
+**Next Steps**:
+
+1. Profile and optimize P99 hotspots - achieve <5ms P99 target
+2. Consider async architecture for 2x throughput gain
 
 **Production Readiness**: The library is suitable for standard web applications with current performance. High-throughput or low-latency applications will benefit from the planned optimizations.

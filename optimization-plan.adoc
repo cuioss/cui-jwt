@@ -29,6 +29,7 @@
 === Performance Gap Analysis
 
 **Integration vs Microbenchmarks (Updated July 30, 2025)**:
+
 - **Microbenchmarks**: 52-84μs P50, 31.7ms P99 (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
 - **Integration Tests**: 186.6ms P95 latency
 - **Gap**: 2,222-3,589x difference (P50) indicates infrastructure dominates performance
@@ -51,11 +52,13 @@ Total P95 Latency:           186.6ms (100%)
 
 **Problem**: 54.3ms latency increase from virtual thread scheduling and CDI RequestScoped instantiation
 
-**Impact**: 
+**Impact**:
+
 - 69% throughput reduction (32,392 → 9,988 req/sec)
 - Single largest controllable overhead source
 
 **Root Causes**:
+
 - CDI RequestScoped bean instantiation per request
 - Virtual thread scheduling latency under load
 - Dependency injection overhead in request context
@@ -65,6 +68,7 @@ Total P95 Latency:           186.6ms (100%)
 **Problem**: 21.5ms average for issuer config lookup
 
 **Analysis**:
+
 - Largest JWT-specific performance impact (12% of total latency)
 - May involve HTTP calls to issuer endpoints
 - Potential caching inefficiencies under concurrent load
@@ -74,6 +78,7 @@ Total P95 Latency:           186.6ms (100%)
 **Problem**: 61.7ms (33%) of request time unaccounted for
 
 **Likely Sources**:
+
 - Thread pool queuing delays
 - GC pause accumulation  
 - Network/TLS overhead
@@ -82,38 +87,101 @@ Total P95 Latency:           186.6ms (100%)
 
 == Priority Action Plan
 
-=== Priority 1: CDI and Virtual Thread Optimization 🚀 **IMMEDIATE ACTION**
+=== Priority 1: CDI and Virtual Thread Optimization 🚀
 
 **Goal**: Reduce framework overhead from 54.3ms to <10ms
 
-**Investigation Tasks**:
+==== Sub-task 1: Deep Web Research on Quarkus Virtual Thread + CDI Performance
 
-1. **CDI Scope Optimization**:
-   ```java
-   // Investigate changing from RequestScoped to ApplicationScoped
-   @ApplicationScoped  // vs @RequestScoped
-   public class JwtValidationService {
-   ```
+**Research Areas**:
+- Quarkus virtual thread implementation and performance characteristics
+- CDI RequestScoped vs ApplicationScoped performance implications
+- Virtual thread scheduling behavior under high concurrent load
+- Known performance issues and solutions in Quarkus community
+- Benchmarks comparing virtual threads vs platform threads with CDI
+- Best practices for CDI scope selection in high-performance scenarios
 
-2. **Virtual Thread Configuration**:
-   ```properties
-   # Optimize virtual thread settings
-   quarkus.virtual-threads.name-prefix=jwt-worker
-   quarkus.virtual-threads.shutdown-timeout=5s
-   ```
+**Research Sources**:
+- Quarkus GitHub issues and discussions
+- Red Hat performance guides and documentation
+- JEP 444 (Virtual Threads) performance analysis
+- Academic papers on virtual thread scheduling
+- Community benchmarks and case studies
 
-3. **Bean Instantiation Profiling**:
-   - Profile CDI bean creation overhead
-   - Identify expensive dependency injections
-   - Consider bean pre-instantiation strategies
+==== Sub-task 2: CDI Scope Performance Analysis
 
-**Expected Impact**: 30-40ms latency reduction (20-25% improvement)
+**Activities**:
+- Profile RequestScoped bean instantiation overhead
+- Measure memory allocation patterns for different scopes
+- Analyze proxy generation costs for CDI beans
+- Compare ApplicationScoped vs RequestScoped performance
+- Investigate Singleton scope as alternative
 
-=== Priority 2: Issuer Resolution Optimization 📊 **HIGH PRIORITY**
+**Code Investigation Points**:
+```java
+// Current implementation to analyze
+@RequestScoped
+public class JwtValidationService {
+    // Measure instantiation cost per request
+}
+
+// Alternative approaches to test
+@ApplicationScoped  // Shared instance
+@Singleton         // True singleton
+```
+
+==== Sub-task 3: Virtual Thread Scheduling Optimization
+
+**Investigation Areas**:
+- Virtual thread carrier thread pool sizing
+- Pinning detection and mitigation
+- Scheduling latency under concurrent load
+- Thread-local usage analysis
+
+**Configuration Experiments**:
+```properties
+# Virtual thread tuning parameters
+quarkus.virtual-threads.name-prefix=jwt-worker
+jdk.virtualThreadScheduler.parallelism=<experiment>
+jdk.virtualThreadScheduler.maxPoolSize=<experiment>
+```
+
+==== Sub-task 4: Bean Instantiation Optimization
+
+**Profiling Focus**:
+- Identify expensive constructor operations
+- Analyze dependency injection chains
+- Measure proxy creation overhead
+- Find unnecessary bean creations
+
+**Optimization Strategies**:
+- Lazy initialization where appropriate
+- Producer methods for expensive beans
+- Bean pooling for stateless components
+- Injection point optimization
+
+==== Sub-task 5: Alternative Architecture Patterns
+
+**Evaluate**:
+- Direct instantiation vs CDI for critical path
+- Hybrid approach: CDI for configuration, direct for hot path
+- Custom scopes for specific use cases
+- Event-driven alternatives to reduce coupling
+
+==== Sub-task 6: Performance Validation
+
+**Metrics to Track**:
+- Bean instantiation time per request
+- Virtual thread scheduling latency
+- Memory allocation rate
+- GC pressure reduction
+- Overall request latency improvement
+
+=== Priority 2: Issuer Resolution Optimization 📊
 
 **Goal**: Reduce issuer config resolution from 21.5ms to <2ms
 
-**Action Items**:
+**Investigation Focus**:
 
 1. **Caching Analysis**:
    - Profile issuer config cache hit/miss rates
@@ -125,21 +193,19 @@ Total P95 Latency:           186.6ms (100%)
    - Implement connection pooling optimizations
    - Add timeout configurations for issuer lookups
 
-3. **Config Resolution Async Pattern**:
+3. **Config Resolution Patterns**:
    ```java
    // Consider async issuer resolution
    CompletableFuture<IssuerConfig> resolveIssuerAsync(String issuer)
    ```
 
-**Expected Impact**: 15-20ms latency reduction (10-12% improvement)
+=== Priority 3: Untracked Overhead Investigation 🔍
 
-=== Priority 3: Untracked Overhead Investigation 🔍 **INVESTIGATION FOCUS**
+**Goal**: Identify and optimize the unaccounted overhead
 
-**Goal**: Identify and optimize the 61.7ms unaccounted overhead
+**Investigation Areas**:
 
-**Investigation Strategy**:
-
-1. **JFR Profiling for Integration Tests**:
+1. **JFR Profiling**:
    ```bash
    # Run integration benchmarks with comprehensive JFR
    ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
@@ -161,9 +227,7 @@ Total P95 Latency:           186.6ms (100%)
    - Profile HTTP connection reuse
    - Analyze network latency patterns
 
-**Expected Impact**: 30-40ms latency reduction (20-25% improvement)
-
-=== Priority 4: HTTP Processing Optimization ⚠️ **MEDIUM PRIORITY**
+=== Priority 4: HTTP Processing Optimization ⚠️
 
 **Goal**: Reduce HTTP processing overhead from 26.7ms to <10ms
 
@@ -179,8 +243,6 @@ Total P95 Latency:           186.6ms (100%)
    - Optimize content-type handling
    - Reduce response header generation
 
-**Expected Impact**: 10-15ms latency reduction (5-8% improvement)
-
 == Success Metrics and Timeline
 
 === Target Performance Goals
@@ -193,31 +255,6 @@ Total P95 Latency:           186.6ms (100%)
 | **Issuer Resolution** | 21.5ms | <2ms | 91% reduction
 |===
 
-=== Implementation Timeline
-
-==== Week 1: CDI and Virtual Thread Focus
-- Profile CDI RequestScoped overhead
-- Experiment with ApplicationScoped alternatives
-- Optimize virtual thread configuration
-- Measure framework overhead reduction
-
-==== Week 2: Issuer Resolution and Caching
-- Deep-dive issuer config resolution profiling
-- Implement advanced caching strategies  
-- Optimize network operations in issuer lookup
-- Add async patterns where beneficial
-
-==== Week 3: Untracked Overhead Investigation
-- Comprehensive JFR profiling of integration tests
-- GC and memory allocation optimization
-- Thread pool and contention analysis
-- Infrastructure tuning based on findings
-
-==== Week 4: Validation and Final Optimization
-- Run complete integration benchmark suite
-- Validate target metrics achievement
-- Fine-tune based on results
-- Document optimization techniques
 
 === Validation Protocol
 
@@ -228,6 +265,7 @@ Total P95 Latency:           186.6ms (100%)
 ```
 
 **Success Criteria**:
+
 - P95 latency: <20ms (from 186.6ms)
 - Throughput: >5,000 req/sec (from 1,314)
 - Framework overhead: <10ms (from 54.3ms)
