@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
-import de.cuioss.jwt.quarkus.benchmark.AbstractIntegrationBenchmark;
+import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
 import io.restassured.response.Response;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -28,7 +28,7 @@ import org.openjdk.jmh.annotations.Mode;
  * @author Generated
  * @since 1.0
  */
-public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
+public class JwtHealthBenchmark extends AbstractBaseBenchmark {
 
     /**
      * Benchmark for Quarkus health endpoint throughput.
@@ -40,7 +40,7 @@ public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .get("/q/health");
-        
+
         validateResponse(response, 200);
     }
 
@@ -54,7 +54,7 @@ public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .get("/q/health");
-        
+
         validateResponse(response, 200);
     }
 
@@ -68,7 +68,7 @@ public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .get("/q/health/live");
-        
+
         validateResponse(response, 200);
     }
 
@@ -82,7 +82,7 @@ public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .get("/q/health/ready");
-        
+
         validateResponse(response, 200);
     }
 
@@ -96,7 +96,7 @@ public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .get("/q/health/started");
-        
+
         validateResponse(response, 200);
     }
 
@@ -110,7 +110,7 @@ public class JwtHealthBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .get("/q/health");
-        
+
         validateResponse(response, 200);
     }
 

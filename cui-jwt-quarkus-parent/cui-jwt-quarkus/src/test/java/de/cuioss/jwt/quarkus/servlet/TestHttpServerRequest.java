@@ -26,7 +26,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Set;
 

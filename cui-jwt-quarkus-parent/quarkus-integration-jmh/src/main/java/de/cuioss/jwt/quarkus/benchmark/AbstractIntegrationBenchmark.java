@@ -16,128 +16,49 @@
 package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
-import de.cuioss.jwt.quarkus.benchmark.metrics.BenchmarkMetrics;
-import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsExporter;
 import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
 import de.cuioss.tools.logging.CuiLogger;
-import io.restassured.RestAssured;
-import io.restassured.config.HttpClientConfig;
-import io.restassured.config.RestAssuredConfig;
-import io.restassured.config.SSLConfig;
 import io.restassured.specification.RequestSpecification;
 import org.openjdk.jmh.annotations.*;
 
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.TimeUnit;
-
 /**
- * Abstract base class for all Quarkus integration benchmarks.
- * Provides common setup, configuration, and utility methods.
+ * Abstract base class for Quarkus integration benchmarks that require JWT authentication.
+ * Extends {@link AbstractBaseBenchmark} and adds token repository support.
+ * 
+ * <p>Use this class for benchmarks that need authenticated requests.
+ * For benchmarks that don't require authentication, use {@link AbstractBaseBenchmark} directly.</p>
  * 
  * @author Generated
  * @since 1.0
  */
-@BenchmarkMode(Mode.All)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 2, time = 5, timeUnit = TimeUnit.SECONDS)
-@Fork(1)
-@Threads(10)
-public abstract class AbstractIntegrationBenchmark {
+public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractIntegrationBenchmark.class);
 
-    protected String serviceUrl;
     protected String keycloakUrl;
-    protected String quarkusMetricsUrl;
     protected TokenRepository tokenRepository;
-    protected MetricsExporter metricsExporter;
-    protected String benchmarkResultsDir;
 
     /**
      * Setup method called once before all benchmark iterations.
-     * Initializes RestAssured configuration, token repository, and metrics exporter.
+     * Extends parent setup and adds token repository initialization.
      */
+    @Override
     @Setup(Level.Trial)
     public void setupBenchmark() {
-        LOGGER.info("Setting up integration benchmark");
+        // Call parent setup first
+        super.setupBenchmark();
+        
+        LOGGER.info("Setting up integration benchmark with token repository");
 
-        // Get configuration from system properties with correct docker-compose ports
-        serviceUrl = BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:10443");
+        // Get Keycloak configuration
         keycloakUrl = BenchmarkOptionsHelper.getKeycloakUrl("https://localhost:1443");
-        quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:10443");
-        benchmarkResultsDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
-
-        LOGGER.info("Service URL: {}", serviceUrl);
         LOGGER.info("Keycloak URL: {}", keycloakUrl);
-        LOGGER.info("Quarkus Metrics URL: {}", quarkusMetricsUrl);
-
-        // Configure RestAssured for high-throughput testing
-        configureRestAssured();
 
         // Initialize token repository
         initializeTokenRepository();
 
-        // Initialize metrics exporter
-        metricsExporter = new MetricsExporter(quarkusMetricsUrl, benchmarkResultsDir);
-
-        LOGGER.info("Benchmark setup completed");
-    }
-
-    /**
-     * Setup method called before each benchmark iteration.
-     * Clears all JWT metrics to ensure clean state for accurate measurements.
-     */
-    @Setup(Level.Iteration)
-    public void setupIteration() {
-        LOGGER.debug("Setting up benchmark iteration - clearing metrics");
-        clearMetrics();
-    }
-
-    /**
-     * Teardown method called once after all benchmark iterations.
-     * Exports final metrics for analysis.
-     */
-    @TearDown(Level.Trial)
-    public void teardownBenchmark() {
-        LOGGER.info("Tearing down integration benchmark");
-
-        try {
-            // Export final metrics
-            exportMetrics();
-        } catch (Exception e) {
-            LOGGER.error("Failed to export metrics during teardown", e);
-        }
-
-        LOGGER.info("Benchmark teardown completed");
-    }
-
-    /**
-     * Configures RestAssured with optimized settings for high-throughput testing.
-     * Includes connection pooling and SSL configuration for self-signed certificates.
-     */
-    private void configureRestAssured() {
-        LOGGER.debug("Configuring RestAssured for high-throughput testing");
-
-        RestAssuredConfig config = RestAssuredConfig.config()
-                .httpClient(HttpClientConfig.httpClientConfig()
-                        // Connection pool configuration for high-throughput
-                        .setParam("http.connection-manager.max-total", 200)
-                        .setParam("http.connection-manager.max-per-route", 100)
-                        // Connection timeouts
-                        .setParam("http.connection.timeout", 5000)
-                        .setParam("http.socket.timeout", 30000)
-                        // Keep-alive strategy
-                        .setParam("http.connection.stalecheck", true)
-                        .setParam("http.keepalive.timeout", 30000))
-                // SSL configuration for self-signed certificates
-                .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation());
-
-        RestAssured.config = config;
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-
-        LOGGER.debug("RestAssured configured successfully");
+        LOGGER.info("Integration benchmark setup completed");
     }
 
     /**
@@ -165,18 +86,6 @@ public abstract class AbstractIntegrationBenchmark {
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
     }
 
-    /**
-     * Creates a basic REST request specification with common headers.
-     * 
-     * @return configured request specification
-     */
-    protected RequestSpecification createBaseRequest() {
-        return RestAssured
-                .given()
-                .baseUri(serviceUrl)
-                .contentType("application/json")
-                .accept("application/json");
-    }
 
     /**
      * Creates an authenticated REST request with a JWT token.
@@ -198,87 +107,4 @@ public abstract class AbstractIntegrationBenchmark {
         return createAuthenticatedRequest(tokenRepository.getNextToken());
     }
 
-    /**
-     * Exports metrics for the current benchmark.
-     * Subclasses should override getBenchmarkName() to provide specific names.
-     */
-    protected void exportMetrics() {
-        try {
-            String benchmarkName = getBenchmarkName();
-            BenchmarkMetrics.BenchmarkMetadata metadata = createBenchmarkMetadata();
-            
-            metricsExporter.exportMetrics(benchmarkName, metadata);
-            LOGGER.info("Metrics exported for benchmark: {}", benchmarkName);
-        } catch (Exception e) {
-            LOGGER.error("Failed to export metrics", e);
-        }
-    }
-
-    /**
-     * Returns the name of this benchmark for metrics identification.
-     * Subclasses should override this method.
-     * 
-     * @return the benchmark name
-     */
-    protected String getBenchmarkName() {
-        return this.getClass().getSimpleName();
-    }
-
-    /**
-     * Creates benchmark metadata for metrics export.
-     * 
-     * @return metadata about the benchmark execution
-     */
-    private BenchmarkMetrics.BenchmarkMetadata createBenchmarkMetadata() {
-        return BenchmarkMetrics.BenchmarkMetadata.builder()
-                .threadCount(BenchmarkOptionsHelper.getThreadCount(10))
-                .warmupDurationSeconds(1) // Based on @Warmup annotation
-                .measurementDurationSeconds(5) // Based on @Measurement annotation
-                .iterations(2) // Based on @Measurement annotation
-                .serviceUrl(serviceUrl)
-                .jvmInfo(System.getProperty("java.version") + " " + 
-                        System.getProperty("java.vm.name") + " " + 
-                        System.getProperty("java.vm.version"))
-                .systemInfo(System.getProperty("os.name") + " " + 
-                          System.getProperty("os.version") + " " + 
-                          System.getProperty("os.arch") + 
-                          " (Processors: " + Runtime.getRuntime().availableProcessors() + ")")
-                .build();
-    }
-
-    /**
-     * Clears all JWT metrics by calling the metric_clear endpoint.
-     * This ensures each benchmark iteration starts with a clean state.
-     */
-    protected void clearMetrics() {
-        try {
-            io.restassured.response.Response response = createBaseRequest()
-                    .post("/jwt/metric_clear");
-            
-            if (response.getStatusCode() != 200) {
-                LOGGER.warn("Failed to clear metrics - Status: {}, Response: {}", 
-                    response.getStatusCode(), response.getBody().asString());
-            } else {
-                LOGGER.debug("Metrics cleared successfully");
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to clear metrics", e);
-            // Don't fail the benchmark if metrics clearing fails
-        }
-    }
-
-    /**
-     * Utility method to handle common error scenarios in benchmarks.
-     * 
-     * @param response the response to check
-     * @param expectedStatus the expected HTTP status code
-     * @throws RuntimeException if the response status doesn't match expected
-     */
-    protected void validateResponse(io.restassured.response.Response response, int expectedStatus) {
-        if (response.getStatusCode() != expectedStatus) {
-            throw new RuntimeException(String.format(
-                    "Expected status %d but got %d. Response: %s", 
-                    expectedStatus, response.getStatusCode(), response.getBody().asString()));
-        }
-    }
 }

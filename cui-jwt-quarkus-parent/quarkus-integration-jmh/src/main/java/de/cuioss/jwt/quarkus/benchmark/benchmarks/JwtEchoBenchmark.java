@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
-import de.cuioss.jwt.quarkus.benchmark.AbstractIntegrationBenchmark;
+import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
 import io.restassured.response.Response;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -28,7 +28,7 @@ import org.openjdk.jmh.annotations.Mode;
  * @author Generated
  * @since 1.0
  */
-public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
+public class JwtEchoBenchmark extends AbstractBaseBenchmark {
 
     /**
      * Simple echo benchmark for network baseline throughput.
@@ -38,12 +38,12 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @BenchmarkMode(Mode.Throughput)
     public void echoGetThroughput() {
         String jsonPayload = "{\"data\": {\"message\": \"benchmark-test\"}}";
-        
+
         Response response = createBaseRequest()
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -55,12 +55,12 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     public void echoGetLatency() {
         String jsonPayload = "{\"data\": {\"message\": \"benchmark-test\"}}";
-        
+
         Response response = createBaseRequest()
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -71,21 +71,23 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void echoPostJsonThroughput() {
-        String jsonPayload = "{\n" +
-                "  \"data\": {\n" +
-                "    \"message\": \"benchmark-test\",\n" +
-                "    \"timestamp\": \"2025-01-01T00:00:00Z\",\n" +
-                "    \"key1\": \"value1\",\n" +
-                "    \"key2\": \"value2\",\n" +
-                "    \"numbers\": [1, 2, 3, 4, 5]\n" +
-                "  }\n" +
-                "}";
+        String jsonPayload = """
+                {
+                  "data": {
+                    "message": "benchmark-test",
+                    "timestamp": "2025-01-01T00:00:00Z",
+                    "key1": "value1",
+                    "key2": "value2",
+                    "numbers": [1, 2, 3, 4, 5]
+                  }
+                }\
+                """;
 
         Response response = createBaseRequest()
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -96,18 +98,20 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     public void echoPostJsonLatency() {
-        String jsonPayload = "{\n" +
-                "  \"data\": {\n" +
-                "    \"message\": \"benchmark-test\",\n" +
-                "    \"timestamp\": \"2025-01-01T00:00:00Z\"\n" +
-                "  }\n" +
-                "}";
+        String jsonPayload = """
+                {
+                  "data": {
+                    "message": "benchmark-test",
+                    "timestamp": "2025-01-01T00:00:00Z"
+                  }
+                }\
+                """;
 
         Response response = createBaseRequest()
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -119,12 +123,12 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @BenchmarkMode(Mode.Throughput)
     public void echoLargePayloadThroughput() {
         String jsonPayload = "{\"data\": {\"message\": \"hello\"}}";
-        
+
         Response response = createBaseRequest()
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -136,7 +140,7 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @BenchmarkMode(Mode.Throughput)
     public void echoWithHeadersThroughput() {
         String jsonPayload = "{\"data\": {\"message\": \"header-test\"}}";
-        
+
         Response response = createBaseRequest()
                 .header("X-Benchmark-Test", "true")
                 .header("X-Request-ID", "benchmark-" + System.nanoTime())
@@ -144,7 +148,7 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -156,12 +160,12 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @BenchmarkMode(Mode.All)
     public void echoComprehensive() {
         String jsonPayload = "{\"data\": {\"message\": \"comprehensive-test\"}}";
-        
+
         Response response = createBaseRequest()
                 .body(jsonPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 
@@ -172,31 +176,33 @@ public class JwtEchoBenchmark extends AbstractIntegrationBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void echoRealisticPayloadThroughput() {
-        String realisticPayload = "{\n" +
-                "  \"user\": {\n" +
-                "    \"id\": \"user-12345\",\n" +
-                "    \"name\": \"Test User\",\n" +
-                "    \"email\": \"test@example.com\"\n" +
-                "  },\n" +
-                "  \"request\": {\n" +
-                "    \"operation\": \"validate\",\n" +
-                "    \"timestamp\": \"2025-01-01T00:00:00Z\",\n" +
-                "    \"clientId\": \"benchmark-client\",\n" +
-                "    \"version\": \"1.0.0\"\n" +
-                "  },\n" +
-                "  \"metadata\": {\n" +
-                "    \"source\": \"benchmark\",\n" +
-                "    \"environment\": \"test\"\n" +
-                "  }\n" +
-                "}";
+        String realisticPayload = """
+                {
+                  "user": {
+                    "id": "user-12345",
+                    "name": "Test User",
+                    "email": "test@example.com"
+                  },
+                  "request": {
+                    "operation": "validate",
+                    "timestamp": "2025-01-01T00:00:00Z",
+                    "clientId": "benchmark-client",
+                    "version": "1.0.0"
+                  },
+                  "metadata": {
+                    "source": "benchmark",
+                    "environment": "test"
+                  }
+                }\
+                """;
 
         String wrappedPayload = "{\"data\": " + realisticPayload + "}";
-        
+
         Response response = createBaseRequest()
                 .body(wrappedPayload)
                 .when()
                 .post("/jwt/echo");
-        
+
         validateResponse(response, 200);
     }
 

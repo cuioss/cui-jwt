@@ -237,32 +237,32 @@ public class JwtValidationEndpoint {
     @Path("/metric_clear")
     public Response clearMetrics() {
         LOGGER.info("Clearing all JWT metrics");
-        
+
         // Clear TokenValidatorMonitor
         TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();
         if (performanceMonitor != null) {
             performanceMonitor.resetAll();
             LOGGER.debug("TokenValidatorMonitor cleared");
         }
-        
+
         // Clear SecurityEventCounter
         SecurityEventCounter securityEventCounter = tokenValidator.getSecurityEventCounter();
         if (securityEventCounter != null) {
             securityEventCounter.reset();
             LOGGER.debug("SecurityEventCounter cleared");
         }
-        
+
         // Clear JwtMetricsCollector (which also clears HTTP metrics)
         if (jwtMetricsCollector != null) {
             jwtMetricsCollector.clear();
             LOGGER.debug("JwtMetricsCollector cleared");
         }
-        
+
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("tokenValidatorMonitor", "cleared");
         responseData.put("securityEventCounter", "cleared");
         responseData.put("jwtMetricsCollector", "cleared");
-        
+
         LOGGER.info("All JWT metrics cleared successfully");
         return Response.ok(new ValidationResponse(true, "All JWT metrics cleared successfully", responseData)).build();
     }

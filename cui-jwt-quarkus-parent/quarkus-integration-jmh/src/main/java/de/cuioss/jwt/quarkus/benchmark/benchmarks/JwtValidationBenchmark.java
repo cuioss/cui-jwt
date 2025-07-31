@@ -40,7 +40,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         Response response = createAuthenticatedRequest()
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 200);
     }
 
@@ -54,7 +54,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         Response response = createAuthenticatedRequest()
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 200);
     }
 
@@ -70,7 +70,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
                 .body(tokenPayload)
                 .when()
                 .post("/jwt/validate-explicit");
-        
+
         validateResponse(response, 200);
     }
 
@@ -86,7 +86,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
                 .body(tokenPayload)
                 .when()
                 .post("/jwt/validate/id-token");
-        
+
         validateResponse(response, 200);
     }
 
@@ -102,7 +102,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
                 .body(tokenPayload)
                 .when()
                 .post("/jwt/validate/refresh-token");
-        
+
         validateResponse(response, 200);
     }
 
@@ -116,7 +116,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         Response response = createBaseRequest()
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 401);
     }
 
@@ -130,7 +130,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         Response response = createAuthenticatedRequest(tokenRepository.getInvalidToken())
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 401);
     }
 
@@ -144,7 +144,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         Response response = createAuthenticatedRequest(tokenRepository.getExpiredToken())
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 401);
     }
 
@@ -157,11 +157,11 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
     public void validateWrongSignatureToken() {
         // Use an invalid token with wrong signature
         String wrongSignatureToken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrZXkifQ.eyJleHAiOjk5OTk5OTk5OTksImlhdCI6MTY3MDAwMDAwMCwianRpIjoidGVzdC10b2tlbiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvY3Vpand0LXJlYWxtIiwiYXVkIjoiY3Vpand0LWNsaWVudCIsInN1YiI6InRlc3R1c2VyIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiY3Vpand0LWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiJzZXNzaW9uLXN0YXRlIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1c2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoic2Vzc2lvbi1pZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciJ9.wrong_signature_here";
-        
+
         Response response = createAuthenticatedRequest(wrongSignatureToken)
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 401);
     }
 
@@ -176,7 +176,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         Response response = createAuthenticatedRequest(token)
                 .when()
                 .post("/jwt/validate");
-        
+
         validateResponse(response, 200);
     }
 

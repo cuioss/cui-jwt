@@ -84,30 +84,30 @@ public class BenchmarkRunner {
             LOGGER.info("Starting JMH runner...");
             // Run the benchmarks
             Collection<RunResult> results = new Runner(options).run();
-            
+
             LOGGER.info("JMH runner completed, checking results...");
-            
+
             // Check if any benchmarks actually ran
             if (results.isEmpty()) {
                 LOGGER.error("No benchmark results were produced - all benchmarks failed");
                 throw new RuntimeException("Benchmark execution failed: No results produced");
             }
-            
+
             LOGGER.info("Found {} benchmark results", results.size());
-            
+
             // Check if all benchmarks have valid primary results
             long benchmarksWithoutResults = results.stream()
-                    .filter(result -> result.getPrimaryResult() == null || 
-                                    result.getPrimaryResult().getStatistics() == null ||
-                                    result.getPrimaryResult().getStatistics().getN() == 0)
+                    .filter(result -> result.getPrimaryResult() == null ||
+                            result.getPrimaryResult().getStatistics() == null ||
+                            result.getPrimaryResult().getStatistics().getN() == 0)
                     .count();
-            
+
             if (benchmarksWithoutResults > 0) {
-                LOGGER.error("Benchmark execution failed: {} out of {} benchmarks produced no valid results", 
-                           benchmarksWithoutResults, results.size());
+                LOGGER.error("Benchmark execution failed: {} out of {} benchmarks produced no valid results",
+                        benchmarksWithoutResults, results.size());
                 throw new RuntimeException("Benchmark execution failed: " + benchmarksWithoutResults + " benchmarks produced no valid results");
             }
-            
+
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"));
         } catch (Exception e) {

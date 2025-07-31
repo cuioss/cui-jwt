@@ -58,10 +58,10 @@ public class TokenRepository {
         this.tokenPool = new ArrayList<>(config.getTokenPoolSize());
         this.tokenIndex = new AtomicInteger(0);
         this.lastRefresh = Instant.EPOCH;
-        
+
         // Configure RestAssured for Keycloak connections
         configureRestAssured();
-        
+
         // Initialize token pool
         refreshTokenPool();
     }
@@ -84,7 +84,7 @@ public class TokenRepository {
 
         int index = tokenIndex.getAndIncrement() % tokenPool.size();
         TokenInfo tokenInfo = tokenPool.get(index);
-        
+
         // Check if this specific token needs refresh
         if (tokenInfo.isExpiringSoon(config.getTokenRefreshThresholdSeconds())) {
             LOGGER.debug("Token at index {} is expiring soon, refreshing", index);
@@ -156,8 +156,8 @@ public class TokenRepository {
     }
 
     private boolean shouldRefreshTokens() {
-        return tokenPool.isEmpty() || 
-               lastRefresh.isBefore(Instant.now().minusSeconds(config.getTokenRefreshThresholdSeconds()));
+        return tokenPool.isEmpty() ||
+                lastRefresh.isBefore(Instant.now().minusSeconds(config.getTokenRefreshThresholdSeconds()));
     }
 
     private void refreshTokenPool() {
@@ -179,7 +179,7 @@ public class TokenRepository {
     }
 
     private String fetchSingleToken() {
-        String tokenEndpoint = String.format("%s/realms/%s/protocol/openid-connect/token", 
+        String tokenEndpoint = "%s/realms/%s/protocol/openid-connect/token".formatted(
                 config.getKeycloakBaseUrl(), config.getRealm());
 
         try {
@@ -198,7 +198,7 @@ public class TokenRepository {
                 JsonObject jsonResponse = GSON.fromJson(response.getBody().asString(), JsonObject.class);
                 return jsonResponse.get("access_token").getAsString();
             } else {
-                LOGGER.error("Failed to fetch token. Status: {}, Body: {}", 
+                LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
                         response.getStatusCode(), response.getBody().asString());
                 throw new RuntimeException("Failed to fetch token from Keycloak");
             }
