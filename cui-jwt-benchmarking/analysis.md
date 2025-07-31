@@ -251,3 +251,51 @@ JFR analysis confirms that P99 latency spikes are **load-induced** rather than t
 2. **Batch Processing Risk**: High if using throughput-optimized patterns
 3. **Primary Bottleneck**: Signature validation accounts for 77% of P99 latency
 4. **Optimization Priority**: Signature validation caching is critical
+
+## JFR Hotspot Analysis (July 31, 2025)
+
+### Key Findings
+
+#### 1. **Critical Lock Contention Discovery**
+
+JFR analysis reveals massive monitor wait times (200-263ms) in token construction:
+
+| Location | Wait Time | Impact |
+|----------|-----------|---------|
+| **AccessTokenContent Constructor** | 262ms | Major P99 contributor |
+| **Stack Location** | Line 83 | `super(claims, rawToken, TokenType.ACCESS_TOKEN)` |
+| **Affected Threads** | Multiple | 100+ worker threads blocked |
+
+#### 2. **Root Cause**
+
+The monitor waits occur in the `BaseTokenContent` constructor chain, likely due to:
+- Lombok's `@SuperBuilder` or `@EqualsAndHashCode` generating synchronized code
+- Contention on shared resources during object construction
+- All threads blocking on the same monitor (address: 0x600003D63B50)
+
+#### 3. **Performance Impact**
+
+- **Monitor Wait Pattern**: Multiple threads waiting for the same notifier thread
+- **Cascade Effect**: One thread holds lock while 99 others wait
+- **P99 Correlation**: 262ms wait times directly correlate with observed P99 spikes
+
+#### 4. **GC Contribution**
+
+Minor contributor compared to lock contention:
+- G1 Young GC pauses: 1.3-2.9ms
+- Not significant enough to explain 67ms P99 spikes
+- GC is well-tuned and not the primary issue
+
+### Recommendations
+
+1. **Immediate Action**: Remove Lombok annotations from token classes
+   - Replace `@SuperBuilder` with regular constructors
+   - Replace `@EqualsAndHashCode` with manual implementations
+   - Ensure no synchronization in token construction path
+
+2. **Alternative Design**: Consider immutable builder pattern without Lombok
+   - Manual builder implementation
+   - Copy-on-write for thread safety
+   - No synchronization required
+
+3. **Validation**: After fix, verify with JFR that monitor waits are eliminated
