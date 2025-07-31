@@ -256,57 +256,61 @@ JFR analysis confirms that P99 latency spikes are **load-induced** rather than t
 
 ### Key Findings
 
-#### 1. **Critical Lock Contention in Cache LRU Management**
+#### 1. **RSA Signature Validation CPU Bottleneck**
 
-JFR analysis reveals massive monitor wait times (200-263ms) in the cache access path:
+Component metrics clearly show signature validation as the bottleneck:
 
-| Component | Wait Time | Root Cause |
-|-----------|-----------|------------|
-| **AccessTokenCache** | 262ms | LRU lock contention |
-| **Lock Type** | ReentrantReadWriteLock | Write lock for LRU updates |
-| **Affected Threads** | 100+ | All threads blocked on same lock |
+| Benchmark | Component | P50 | P99 | P99/P50 Ratio |
+|-----------|-----------|-----|------|---------------|
+| **measureThroughput** | signature_validation | 52μs | **67,066μs** | 1,290x |
+| **measureAverageTime** | signature_validation | 46μs | 276μs | 6x |
+| **measureConcurrent** | signature_validation | 66μs | 1,297μs | 20x |
+| **validateMixedTokens50** | signature_validation | 51μs | **16,989μs** | 333x |
 
-#### 2. **Stack Trace Analysis**
+Cache operations remain consistently fast (P99: 0.3-1.2μs), confirming the issue is NOT cache-related.
 
-The monitor waits occur during cache operations:
-```
-AccessTokenCache.lambda$computeIfAbsent$2 (line 226)
-TokenValidator.lambda$processAccessTokenWithCache$4 (line 410)
-TokenValidator.buildAccessToken (line 533)
-TokenBuilder.createAccessToken (line 98)
-AccessTokenContent.<init> (line 83)
-```
+#### 2. **Root Cause: CPU Saturation from RSA Operations**
 
-#### 3. **Root Cause Explanation**
+JFR execution samples show:
+- `RSASignature.engineVerify()` dominating CPU time
+- `RSACore.rsa()` performing expensive modular exponentiation
+- Multiple threads executing RSA operations concurrently
 
-- **Token Building is Fast**: Metrics show 2-21μs for token construction
-- **Cache Contention is Slow**: LRU tracking requires write lock acquisition
-- **Lock Implementation**: `LinkedHashMap` protected by `ReentrantReadWriteLock`
-- **Contention Pattern**: All 100 threads compete for write lock on every cache access
+With 100 threads performing RSA signature verification:
+- CPU becomes saturated
+- Thread scheduling delays cause P99 spikes
+- Some threads wait 67ms+ for CPU time
 
-#### 4. **Why Metrics Seem Contradictory**
+#### 3. **Why Throughput Mode Shows Extreme Spikes**
 
-- **token_building**: Measures only object creation (2-21μs) ✓
-- **complete_validation**: Includes cache access with lock contention (67ms P99) ✗
-- **Monitor Class**: `int[]` indicates internal JVM lock structures
+- **Average-time mode**: Coordinated thread execution, stable scheduling
+- **Throughput mode**: Maximum pressure, thread starvation occurs
+- **100 threads**: Far exceeds available CPU cores for RSA operations
 
-#### 5. **GC Contribution**
+#### 4. **Monitor Wait Analysis**
 
-Minor contributor compared to lock contention:
-- G1 Young GC pauses: 1.3-2.9ms
-- Not significant enough to explain 67ms P99 spikes
-- GC is well-tuned and not the primary issue
+The 262ms monitor waits in JFR are a symptom, not the cause:
+- Threads waiting for CPU to complete RSA operations
+- JVM internal synchronization during high CPU contention
+- Not related to application-level locks
 
 ### Recommendations
 
-1. **Immediate Fix**: Replace LRU implementation
-   - Use lock-free data structure (e.g., Caffeine cache)
-   - Implement striped locks for LRU tracking
-   - Consider removing LRU in favor of TTL-only eviction
+1. **Signature Validation Caching** (High Priority)
+   - Cache validated signatures: (token_signature, public_key) → boolean
+   - Eliminates redundant RSA operations
+   - Expected 90%+ cache hit rate with token rotation
 
-2. **Alternative Approaches**:
-   - **Striped Locks**: Partition LRU map by hash buckets
-   - **Lock-Free LRU**: Use ConcurrentLinkedHashMap or similar
-   - **Async LRU Updates**: Queue LRU updates for background processing
+2. **Thread Pool Optimization**
+   - Reduce thread count to match CPU cores
+   - Use separate pools for I/O vs CPU-intensive operations
+   - Consider virtual threads for I/O-bound tasks
 
-3. **Validation**: After fix, verify lock contention is eliminated with JFR
+3. **Algorithm Optimization**
+   - Prefer ES256 over RS256 (ECDSA is faster than RSA)
+   - Pre-validate token expiration before signature check
+   - Batch signature validations where possible
+
+4. **Hardware Acceleration**
+   - Enable RSA hardware acceleration if available
+   - Consider crypto offloading for high-volume scenarios
