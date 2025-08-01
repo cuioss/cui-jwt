@@ -14,3 +14,6 @@
 **/jmh-result*.json
 /META-INF/MANIFEST.MF
 /cui-jwt-quarkus-parent/cui-jwt-quarkus-deployment/node_modules/
+
+# Exclude test data files from benchmarking templates
+/cui-jwt-benchmarking/doc/templates/data/
