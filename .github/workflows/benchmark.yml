@@ -116,20 +116,20 @@ jobs:
             cp benchmark-results/micro-benchmark-result.json benchmark-results/jmh-result.json
 
             # Prepare GitHub Pages structure using script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/prepare-github-pages.sh benchmark-results cui-jwt-benchmarking/doc/templates gh-pages
+            bash cui-jwt-benchmarking/scripts/prepare-github-pages.sh benchmark-results cui-jwt-benchmarking/doc/templates gh-pages
 
             # Create performance badge using unified script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-performance-badge.sh micro gh-pages/jmh-result.json gh-pages/badges
+            bash cui-jwt-benchmarking/scripts/create-unified-performance-badge.sh micro gh-pages/jmh-result.json gh-pages/badges
 
             # Create simple badges using script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/create-simple-badge.sh gh-pages/jmh-result.json gh-pages/badges "$TIMESTAMP" "$TIMESTAMP_WITH_TIME"
+            bash cui-jwt-benchmarking/scripts/create-simple-badge.sh gh-pages/jmh-result.json gh-pages/badges "$TIMESTAMP" "$TIMESTAMP_WITH_TIME"
 
             # Performance Tracking System for micro benchmarks
             echo "Setting up micro benchmark performance tracking..."
             COMMIT_HASH="${{ github.sha }}"
 
             # Create performance tracking data using script
-            TRACKING_OUTPUT=$(bash cui-jwt-benchmarking/doc/templates/scripts/create-performance-tracking.sh gh-pages/jmh-result.json cui-jwt-benchmarking/doc/templates gh-pages "$COMMIT_HASH" 2>&1)
+            TRACKING_OUTPUT=$(bash cui-jwt-benchmarking/scripts/create-performance-tracking.sh gh-pages/jmh-result.json cui-jwt-benchmarking/doc/templates gh-pages "$COMMIT_HASH" 2>&1)
             echo "$TRACKING_OUTPUT"
 
             # Extract metrics from tracking script output
@@ -140,7 +140,7 @@ jobs:
 
             if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ]; then
               # Update consolidated tracking and create trend badge using script
-              bash cui-jwt-benchmarking/doc/templates/scripts/update-performance-trends.sh cui-jwt-benchmarking/doc/templates gh-pages "$COMMIT_HASH" "$PERF_SCORE" "$PERF_THROUGHPUT" "$PERF_LATENCY" "$PERF_RESILIENCE"
+              bash cui-jwt-benchmarking/scripts/update-performance-trends.sh cui-jwt-benchmarking/doc/templates gh-pages "$COMMIT_HASH" "$PERF_SCORE" "$PERF_THROUGHPUT" "$PERF_LATENCY" "$PERF_RESILIENCE"
             else
               echo "Warning: Could not extract valid performance metrics for trend tracking"
               echo "{\"schemaVersion\":1,\"label\":\"Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/badges/trend-badge.json"
@@ -154,7 +154,6 @@ jobs:
           # Process integration benchmarks (new structure with two files)
           if [ -f "benchmark-results/health-check-results.json" ] && [ -f "benchmark-results/jwt-validation-results.json" ]; then
             echo "Processing integration benchmark results..."
-            mkdir -p gh-pages/integration/badges
 
             # Create combined integration results file for compatibility
             jq -n --slurpfile health benchmark-results/health-check-results.json --slurpfile jwt benchmark-results/jwt-validation-results.json '
@@ -166,11 +165,11 @@ jobs:
                 "jwt_overhead_ms": ($jwt[0].latency_p95_ms - $health[0].latency_p95_ms)
               }' > benchmark-results/integration-benchmark-result.json
 
-            # Copy integration results to dedicated location
-            cp benchmark-results/integration-benchmark-result.json gh-pages/integration/jmh-result.json
+            # Copy integration results to unified data location
+            cp benchmark-results/integration-benchmark-result.json gh-pages/data/integration-result.json
 
-            # Copy integration template
-            cp cui-jwt-benchmarking/doc/templates/integration-index.html gh-pages/integration/index.html
+            # Copy integration template to unified structure
+            cp cui-jwt-benchmarking/doc/templates/integration-index.html gh-pages/integration-index.html
 
             # Extract metrics from new structure
             HEALTH_LATENCY=$(jq -r '.health_check.latency_p95_ms' benchmark-results/integration-benchmark-result.json)
@@ -184,19 +183,17 @@ jobs:
             echo "  JWT Throughput: ${JWT_THROUGHPUT} ops/s"
             echo "  JWT Overhead: ${JWT_OVERHEAD}ms"
 
-            # Create integration performance badge
-            mkdir -p gh-pages/integration/badges
-            echo "{\"schemaVersion\":1,\"label\":\"JWT P95 Latency\",\"message\":\"${JWT_LATENCY}ms\",\"color\":\"blue\"}" > "gh-pages/integration/badges/performance-badge.json"
-            echo "{\"schemaVersion\":1,\"label\":\"JWT Throughput\",\"message\":\"${JWT_THROUGHPUT} ops/s\",\"color\":\"green\"}" > "gh-pages/integration/badges/throughput-badge.json"
-            echo "{\"schemaVersion\":1,\"label\":\"JWT Overhead\",\"message\":\"${JWT_OVERHEAD}ms\",\"color\":\"orange\"}" > "gh-pages/integration/badges/overhead-badge.json"
+            # Create integration performance badges in unified badges directory
+            echo "{\"schemaVersion\":1,\"label\":\"JWT P95 Latency\",\"message\":\"${JWT_LATENCY}ms\",\"color\":\"blue\"}" > "gh-pages/badges/integration-performance-badge.json"
+            echo "{\"schemaVersion\":1,\"label\":\"JWT Throughput\",\"message\":\"${JWT_THROUGHPUT} ops/s\",\"color\":\"green\"}" > "gh-pages/badges/integration-throughput-badge.json"
+            echo "{\"schemaVersion\":1,\"label\":\"JWT Overhead\",\"message\":\"${JWT_OVERHEAD}ms\",\"color\":\"orange\"}" > "gh-pages/badges/integration-overhead-badge.json"
 
             # Add integration benchmark link to main page
-            echo "- [Integration Benchmark Results](integration/index.html)" >> gh-pages/badge-markdown.txt
+            echo "- [Integration Benchmark Results](integration-index.html)" >> gh-pages/badge-markdown.txt
           else
             echo "Warning: health-check-results.json or jwt-validation-results.json not found"
-            mkdir -p gh-pages/integration/badges
-            echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"No Data\",\"color\":\"red\"}" > "gh-pages/integration/badges/performance-badge.json"
-            echo "{\"schemaVersion\":1,\"label\":\"Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/integration/badges/trend-badge.json"
+            echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"No Data\",\"color\":\"red\"}" > "gh-pages/badges/integration-performance-badge.json"
+            echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/badges/integration-trend-badge.json"
           fi
 
       - name: Deploy to cuioss.github.io
