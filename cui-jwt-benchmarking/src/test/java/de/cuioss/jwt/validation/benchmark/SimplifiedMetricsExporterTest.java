@@ -105,4 +105,38 @@ class SimplifiedMetricsExporterTest {
         // Should not throw exception
         SimplifiedMetricsExporter.exportMetrics(null);
     }
+
+    @Test
+    void shouldFormatNumbersCorrectly() throws IOException, InterruptedException {
+        // Given
+        TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
+                .measurementType(MeasurementType.TOKEN_PARSING)
+                .measurementType(MeasurementType.SIGNATURE_VALIDATION)
+                .build()
+                .createMonitor();
+
+        // Simulate measurements with values that would result in < 10 and >= 10 microseconds
+        // Small measurement < 10 microseconds (e.g., 7.6)
+        monitor.recordMeasurement(MeasurementType.TOKEN_PARSING, 7600); // 7.6 microseconds
+
+        // Large measurement >= 10 microseconds (e.g., 13)
+        monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, 13000); // 13 microseconds
+
+        // Set up test directory
+        System.setProperty("benchmark.results.dir", tempDir.toString());
+
+        // When
+        SimplifiedMetricsExporter.exportMetrics(monitor);
+
+        // Then
+        Path jsonFile = tempDir.resolve("jwt-validation-metrics.json");
+        String jsonContent = Files.readString(jsonFile);
+
+        // Verify that values < 10 have one decimal place
+        assertTrue(jsonContent.contains("7.6"), "Values < 10 should have one decimal place");
+
+        // Verify that values >= 10 are integers without decimal point
+        assertTrue(jsonContent.contains("\"p50_us\": 13"), "Values >= 10 should be integers without decimal");
+        assertFalse(jsonContent.contains("13.0"), "Values >= 10 should not have .0 suffix");
+    }
 }

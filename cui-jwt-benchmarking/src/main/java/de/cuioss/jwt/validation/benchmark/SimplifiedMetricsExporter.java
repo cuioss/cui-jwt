@@ -17,6 +17,10 @@ package de.cuioss.jwt.validation.benchmark;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -42,7 +46,18 @@ public class SimplifiedMetricsExporter {
 
     private static final CuiLogger log = new CuiLogger(SimplifiedMetricsExporter.class);
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapter(Double.class, new JsonSerializer<Double>() {
+                @Override
+                public JsonElement serialize(Double src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+                    if (src == src.longValue()) {
+                        return new JsonPrimitive(src.longValue());
+                    }
+                    return new JsonPrimitive(src);
+                }
+            })
+            .create();
 
     private SimplifiedMetricsExporter() {
         // Utility class
@@ -168,11 +183,11 @@ public class SimplifiedMetricsExporter {
      * Convert Duration to microseconds with appropriate rounding.
      *
      * @param duration The duration to convert
-     * @return Number (Long for values > 10, Double for values <= 10)
+     * @return Number (Long for values >= 10, Double for values < 10)
      */
     private static Number durationToRoundedMicros(Duration duration) {
         double micros = duration.toNanos() / 1000.0;
-        if (micros > 10.0) {
+        if (micros >= 10.0) {
             return Math.round(micros);
         } else {
             return Math.round(micros * 10) / 10.0;
