@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,10 +33,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for comprehensive MetricsPostProcessor functionality
- * Testing integration of both HTTP metrics and Quarkus metrics processing
- */
 class ComprehensiveMetricsPostProcessorTest {
 
     @TempDir
@@ -49,44 +46,42 @@ class ComprehensiveMetricsPostProcessorTest {
     }
 
     @Test
+    @DisplayName("Should process both HTTP and Quarkus metrics")
     void shouldProcessBothHttpAndQuarkusMetrics() throws IOException {
-        // Given - complete test directory structure with both benchmark and metrics data
-        String baseDirectory = createCompleteTestStructure();
-        
-        String benchmarkFile = baseDirectory + "/integration-benchmark-result.json";
-        MetricsPostProcessor processor = new MetricsPostProcessor(benchmarkFile, baseDirectory);
-        
-        // When - process all metrics
+        // Arrange
+        String benchmarkResultsDir = createCompleteTestStructure();
+        String benchmarkFile = benchmarkResultsDir + "/integration-benchmark-result.json";
+        MetricsPostProcessor processor = new MetricsPostProcessor(benchmarkFile, benchmarkResultsDir);
         Instant testTimestamp = Instant.parse("2025-08-01T15:00:00.000Z");
+        
+        // Act
         processor.parseAndExportAllMetrics(testTimestamp);
 
-        // Then - should create both output files
-        File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
-        File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
+        // Assert
+        File httpMetricsFile = new File(benchmarkResultsDir, "http-metrics.json");
+        File quarkusMetricsFile = new File(benchmarkResultsDir, "quarkus-metrics.json");
         
         assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json");
         assertTrue(quarkusMetricsFile.exists(), "Should create quarkus-metrics.json");
 
-        // Verify HTTP metrics content
         try (FileReader reader = new FileReader(httpMetricsFile)) {
             Map<String, Object> httpMetrics = gson.fromJson(reader, Map.class);
             
-            assertTrue(httpMetrics.containsKey("echo"), "HTTP metrics should contain echo endpoint");
-            assertTrue(httpMetrics.containsKey("health"), "HTTP metrics should contain health endpoint");
-            assertTrue(httpMetrics.containsKey("jwt_validation"), "HTTP metrics should contain JWT validation endpoint");
+            assertTrue(httpMetrics.containsKey("echo"));
+            assertTrue(httpMetrics.containsKey("health"));
+            assertTrue(httpMetrics.containsKey("jwt_validation"));
             
             Map<String, Object> echoData = (Map<String, Object>) httpMetrics.get("echo");
             assertEquals(testTimestamp.toString(), echoData.get("timestamp"));
             assertTrue(echoData.containsKey("percentiles"));
         }
 
-        // Verify Quarkus metrics content
         try (FileReader reader = new FileReader(quarkusMetricsFile)) {
             Map<String, Object> quarkusMetrics = gson.fromJson(reader, Map.class);
             
-            assertTrue(quarkusMetrics.containsKey("cpu"), "Quarkus metrics should contain CPU data");
-            assertTrue(quarkusMetrics.containsKey("memory"), "Quarkus metrics should contain memory data");
-            assertTrue(quarkusMetrics.containsKey("metadata"), "Quarkus metrics should contain metadata");
+            assertTrue(quarkusMetrics.containsKey("cpu"));
+            assertTrue(quarkusMetrics.containsKey("memory"));
+            assertTrue(quarkusMetrics.containsKey("metadata"));
             
             Map<String, Object> cpuData = (Map<String, Object>) quarkusMetrics.get("cpu");
             assertTrue(cpuData.containsKey("system_cpu_usage_avg"));
@@ -99,79 +94,77 @@ class ComprehensiveMetricsPostProcessorTest {
     }
 
     @Test
+    @DisplayName("Should handle partial failures gracefully")
     void shouldHandlePartialFailures() throws IOException {
-        // Given - directory structure with only HTTP benchmark data (no Quarkus metrics)
+        // Arrange
         String baseDirectory = createHttpOnlyTestStructure();
-        
         String benchmarkFile = baseDirectory + "/integration-benchmark-result.json";
         MetricsPostProcessor processor = new MetricsPostProcessor(benchmarkFile, baseDirectory);
         
-        // When - process all metrics (should handle missing Quarkus metrics gracefully)
+        // Act
         processor.parseAndExportAllMetrics(Instant.now());
 
-        // Then - should create HTTP metrics but not fail on missing Quarkus metrics
+        // Assert
         File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
         File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
         
         assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json even if Quarkus metrics fail");
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json if metrics-download missing");
 
-        // Verify HTTP metrics are still valid
         try (FileReader reader = new FileReader(httpMetricsFile)) {
             Map<String, Object> httpMetrics = gson.fromJson(reader, Map.class);
-            assertFalse(httpMetrics.isEmpty(), "HTTP metrics should be processed successfully");
+            assertFalse(httpMetrics.isEmpty());
         }
     }
 
     @Test
+    @DisplayName("Should use comprehensive convenience method for both metrics")
     void shouldUseComprehensiveConvenienceMethod() throws IOException {
-        // Given - complete test directory structure
-        String baseDirectory = createCompleteTestStructure();
+        // Arrange
+        String benchmarkResultsDir = createCompleteTestStructure();
         
-        // When - use static convenience method
-        MetricsPostProcessor.parseAndExport(baseDirectory);
+        // Act
+        MetricsPostProcessor.parseAndExport(benchmarkResultsDir);
 
-        // Then - should create both metrics files
-        File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
-        File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
+        // Assert
+        File httpMetricsFile = new File(benchmarkResultsDir, "http-metrics.json");
+        File quarkusMetricsFile = new File(benchmarkResultsDir, "quarkus-metrics.json");
         
         assertTrue(httpMetricsFile.exists(), "Convenience method should create http-metrics.json");
         assertTrue(quarkusMetricsFile.exists(), "Convenience method should create quarkus-metrics.json");
 
-        // Verify both files contain valid data
         try (FileReader httpReader = new FileReader(httpMetricsFile);
              FileReader quarkusReader = new FileReader(quarkusMetricsFile)) {
             
             Map<String, Object> httpMetrics = gson.fromJson(httpReader, Map.class);
             Map<String, Object> quarkusMetrics = gson.fromJson(quarkusReader, Map.class);
             
-            assertFalse(httpMetrics.isEmpty(), "HTTP metrics should be populated");
-            assertFalse(quarkusMetrics.isEmpty(), "Quarkus metrics should be populated");
+            assertFalse(httpMetrics.isEmpty());
+            assertFalse(quarkusMetrics.isEmpty());
             
-            // Both should have the same timestamp (approximately)
             String httpTimestamp = (String) ((Map<String, Object>) httpMetrics.get("echo")).get("timestamp");
             String quarkusTimestamp = (String) ((Map<String, Object>) quarkusMetrics.get("metadata")).get("timestamp");
             
-            assertNotNull(httpTimestamp, "HTTP metrics should have timestamp");
-            assertNotNull(quarkusTimestamp, "Quarkus metrics should have timestamp");
+            assertNotNull(httpTimestamp);
+            assertNotNull(quarkusTimestamp);
             
-            // Timestamps should be within a few seconds of each other
             Instant httpTime = Instant.parse(httpTimestamp);
             Instant quarkusTime = Instant.parse(quarkusTimestamp);
             long timeDiff = Math.abs(httpTime.toEpochMilli() - quarkusTime.toEpochMilli());
-            assertTrue(timeDiff < 5000, "Timestamps should be within 5 seconds: " + timeDiff + "ms");
+            assertTrue(timeDiff < 5000);
         }
     }
 
     @Test
+    @DisplayName("Should provide backward compatibility with HTTP-only method")
     void shouldProvideBackwardCompatibility() throws IOException {
-        // Given - directory with HTTP benchmark data
+        // Arrange
         String baseDirectory = createHttpOnlyTestStructure();
         
-        // When - use deprecated HTTP-only method
+        // Act
         MetricsPostProcessor.parseAndExportHttpOnly(baseDirectory);
 
-        // Then - should only create HTTP metrics (backward compatibility)
+        // Assert
         File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
         File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
         
@@ -179,30 +172,28 @@ class ComprehensiveMetricsPostProcessorTest {
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json with HTTP-only method");
     }
 
-    /**
-     * Create a complete test structure with both HTTP benchmark and Quarkus metrics data
-     */
     private String createCompleteTestStructure() throws IOException {
         File baseDir = new File(tempDir.toFile(), "complete-test");
         baseDir.mkdirs();
         
-        // Create HTTP benchmark data
-        createHttpBenchmarkFile(baseDir);
+        // Create target directory structure as expected by MetricsPostProcessor
+        File targetDir = new File(tempDir.toFile(), "complete-test-target");
+        targetDir.mkdirs();
         
-        // Create Quarkus metrics data
-        createQuarkusMetricsData(baseDir);
+        // Create benchmark-results directory in target
+        File benchmarkResultsDir = new File(targetDir, "benchmark-results");
+        benchmarkResultsDir.mkdirs();
         
-        return baseDir.getAbsolutePath();
+        createHttpBenchmarkFile(benchmarkResultsDir);
+        createQuarkusMetricsData(targetDir);
+        
+        return benchmarkResultsDir.getAbsolutePath();
     }
 
-    /**
-     * Create test structure with only HTTP benchmark data
-     */
     private String createHttpOnlyTestStructure() throws IOException {
         File baseDir = new File(tempDir.toFile(), "http-only-test");
         baseDir.mkdirs();
         
-        // Create only HTTP benchmark data
         createHttpBenchmarkFile(baseDir);
         
         return baseDir.getAbsolutePath();
@@ -275,8 +266,8 @@ class ComprehensiveMetricsPostProcessorTest {
         }
     }
 
-    private void createQuarkusMetricsData(File baseDir) throws IOException {
-        File metricsDir = new File(baseDir, "metrics-download");
+    private void createQuarkusMetricsData(File targetDir) throws IOException {
+        File metricsDir = new File(targetDir, "metrics-download");
         metricsDir.mkdirs();
         
         File metricsFile = new File(metricsDir, "jwt-validation-metrics.txt");

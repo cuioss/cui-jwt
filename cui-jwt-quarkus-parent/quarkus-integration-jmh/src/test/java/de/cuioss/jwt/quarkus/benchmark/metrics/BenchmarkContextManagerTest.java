@@ -17,113 +17,78 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for BenchmarkContextManager
- */
 class BenchmarkContextManagerTest {
 
     @BeforeEach
     void setUp() {
-        // Reset context before each test
         BenchmarkContextManager.resetContext();
     }
 
     @AfterEach
     void tearDown() {
-        // Clean up after tests
         BenchmarkContextManager.resetContext();
     }
 
     @Test
+    @DisplayName("Should derive reasonable benchmark context")
     void shouldDeriveReasonableBenchmarkContext() {
-        // When - get benchmark context
+        // Act
         String context = BenchmarkContextManager.getBenchmarkContext();
 
-        // Then - should be non-empty and contain reasonable values
+        // Assert
         assertNotNull(context, "Benchmark context should not be null");
         assertFalse(context.isEmpty(), "Benchmark context should not be empty");
-        
-        // Should contain some recognizable benchmark-related content
         assertTrue(context.contains("-"), "Context should contain timestamp separator");
-        
-        System.out.println("Derived benchmark context: " + context);
     }
 
     @Test
+    @DisplayName("Should cache benchmark context for consistency")
     void shouldCacheBenchmarkContext() {
-        // When - get context multiple times
+        // Act
         String context1 = BenchmarkContextManager.getBenchmarkContext();
         String context2 = BenchmarkContextManager.getBenchmarkContext();
 
-        // Then - should return same cached value
+        // Assert
         assertEquals(context1, context2, "Context should be cached and consistent");
     }
 
-    @Test
-    void shouldCreateMetricsDirectory() {
-        // This test is for the old directory-based approach
-        // Skip it since we now use files instead of directories
-    }
+
 
     @Test
-    void shouldCreateNumberedDirectories() {
-        // This test is for the old directory-based approach
-        // Skip it since we now use files instead of directories
-    }
-
-    @Test
+    @DisplayName("Should generate valid metrics filename with timestamp")
     void shouldGenerateValidMetricsFilename() {
-        // When - get metrics filename
+        // Act
         String filename = BenchmarkContextManager.getMetricsFilename();
 
-        // Then - should be valid filename format
+        // Assert
         assertNotNull(filename, "Filename should not be null");
         assertTrue(filename.startsWith("quarkus-metrics-"), "Should start with quarkus-metrics-");
         assertTrue(filename.endsWith(".txt"), "Should end with .txt");
         assertTrue(filename.contains("-"), "Should contain timestamp separators");
-        
-        // Should not contain invalid filename characters
         assertFalse(filename.contains(":"), "Should not contain colons (replaced in timestamp)");
-        
-        System.out.println("Generated filename: " + filename);
     }
 
     @Test
+    @DisplayName("Should reset context properly and generate new context")
     void shouldResetContextProperly() throws InterruptedException {
-        // Given - context has been derived
+        // Arrange
         String originalContext = BenchmarkContextManager.getBenchmarkContext();
 
-        // When - reset context (with small delay to ensure timestamp difference)
-        Thread.sleep(1100); // Wait for timestamp to change (timestamps are second-based)
+        // Act
+        Thread.sleep(1100);
         BenchmarkContextManager.resetContext();
-        
-        // Then - new context should be different (due to new timestamp)
         String newContext = BenchmarkContextManager.getBenchmarkContext();
         
-        // Context will be different due to timestamp
+        // Assert
         assertNotEquals(originalContext, newContext, "Context should be reset and regenerated");
-        
-        System.out.println("Original context: " + originalContext);
-        System.out.println("New context: " + newContext);
     }
     
-    @Test
-    void shouldCreateDirectoriesWithCorrectNamingPattern() {
-        // This test is for the old directory-based approach
-        // Skip it since we now use files instead of directories
-        // The actual file-based tests are in BenchmarkContextManagerFileTest
-    }
     
-    @Test
-    void shouldHandleExplicitBenchmarkNamesCorrectly() {
-        // This test is for the old directory-based approach
-        // Skip it since we now use files instead of directories
-        // The actual file-based tests are in BenchmarkContextManagerFileTest
-    }
 }

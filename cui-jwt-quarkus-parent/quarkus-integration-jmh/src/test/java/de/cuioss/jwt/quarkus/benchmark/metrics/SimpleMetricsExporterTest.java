@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,9 +32,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for SimpleMetricsExporter
- */
 class SimpleMetricsExporterTest {
 
     @TempDir
@@ -44,20 +42,18 @@ class SimpleMetricsExporterTest {
 
     @BeforeEach
     void setUp() {
-        // Use test metrics fetcher that loads from test resource file
         MetricsFetcher testFetcher = new TestMetricsFetcher();
         exporter = new SimpleMetricsExporter(tempDir.toString(), testFetcher);
         gson = new GsonBuilder().create();
     }
 
     @Test
+    @DisplayName("Should export real JWT validation metrics")
     void shouldExportRealJwtValidationMetrics() throws Exception {
-        // Given - exporter is already configured with test data in setUp
-        
-        // When - export metrics using real test data
+        // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
-        // Then - verify real metrics were extracted
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
@@ -71,12 +67,10 @@ class SimpleMetricsExporterTest {
             
             Map<String, Object> steps = (Map<String, Object>) benchmarkData.get("steps");
             
-            // Should have JWT validation steps from real data
-            assertTrue(steps.containsKey("token_parsing"), "Should contain token_parsing step from real metrics");
-            assertTrue(steps.containsKey("signature_validation"), "Should contain signature_validation step from real metrics");
-            assertTrue(steps.containsKey("complete_validation"), "Should contain complete_validation step from real metrics");
+            assertTrue(steps.containsKey("token_parsing"));
+            assertTrue(steps.containsKey("signature_validation"));
+            assertTrue(steps.containsKey("complete_validation"));
             
-            // Verify structure of a real step
             if (steps.containsKey("token_parsing")) {
                 Map<String, Object> tokenParsing = (Map<String, Object>) steps.get("token_parsing");
                 assertTrue(tokenParsing.containsKey("sample_count"));
@@ -84,34 +78,30 @@ class SimpleMetricsExporterTest {
                 assertTrue(tokenParsing.containsKey("p95_us"));
                 assertTrue(tokenParsing.containsKey("p99_us"));
                 
-                // Sample count should be > 0 from real data (not the synthetic 1000)
                 Double sampleCount = (Double) tokenParsing.get("sample_count");
-                assertTrue(sampleCount > 0 && sampleCount < 100, "Sample count should be small real value from test data, not synthetic 1000");
+                assertTrue(sampleCount > 0 && sampleCount < 100);
             }
         }
     }
 
     @Test
+    @DisplayName("Should handle multiple benchmarks correctly")
     void shouldHandleMultipleBenchmarks() throws Exception {
-        // Given - exporter is already configured with test data in setUp
-        
-        // When - export metrics for multiple benchmarks
+        // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
-        Thread.sleep(10); // Ensure different timestamp
+        Thread.sleep(10);
         exporter.exportJwtValidationMetrics("validateJwtLatency", Instant.now());
 
-        // Then - check aggregated file contains both benchmarks
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
             Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
             
-            // Should have entries for both benchmarks
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
             assertTrue(aggregatedData.containsKey("validateJwtLatency"));
             
-            // Each should have the expected structure
             for (String benchmarkKey : aggregatedData.keySet()) {
                 Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get(benchmarkKey);
                 assertTrue(benchmarkData.containsKey("timestamp"));
@@ -121,141 +111,124 @@ class SimpleMetricsExporterTest {
     }
 
     @Test
+    @DisplayName("Should format numbers correctly in JSON output")
     void shouldFormatNumbersCorrectly() throws Exception {
-        // Given - exporter is already configured with test data in setUp
-        
-        // When - export metrics
+        // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
-        // Then - check number formatting in JSON
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
-        // Read the JSON content as a string to verify number formatting
         String jsonContent = java.nio.file.Files.readString(aggregatedFile.toPath());
 
-        // Verify formatting based on real data from our test file
-        // Values < 10 should have one decimal place, values >= 10 should be integers
-        assertTrue(jsonContent.contains("\"sample_count\": 9") || jsonContent.contains("\"sample_count\": 11") || jsonContent.contains("\"sample_count\": 12"), 
-                   "Should contain real sample counts from test data");
-        
-        // Check that we don't have the synthetic 1000 sample count
-        assertFalse(jsonContent.contains("\"sample_count\": 1000"), 
-                    "Should not contain synthetic sample count of 1000");
+        assertTrue(jsonContent.contains("\"sample_count\": 9") || jsonContent.contains("\"sample_count\": 11") || jsonContent.contains("\"sample_count\": 12"));
+        assertFalse(jsonContent.contains("\"sample_count\": 1000"));
     }
 
     @Test
+    @DisplayName("Should format numbers with correct decimal rules")
     void shouldFormatNumbersCorrectlyWithDecimalRules() throws Exception {
-        // Given - exporter with test data containing various number ranges
+        // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
-        // Then - check number formatting follows rules: 1 decimal for <10, no decimal for >=10
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
 
-        // Values < 10 should have exactly 1 decimal place
-        System.out.println("JSON Content for debug:\n" + jsonContent);
-        assertTrue(jsonContent.contains("\"p50_us\": 0.4"), "Values < 10 should have 1 decimal (not 0.419921875)");
-        assertTrue(jsonContent.contains("\"p50_us\": 2.2"), "Values < 10 should have 1 decimal (not 2.21875)");
-        assertTrue(jsonContent.contains("\"p50_us\": 7.1"), "Values < 10 should have 1 decimal (not 7.125)");
+        assertTrue(jsonContent.contains("\"p50_us\": 0.4"));
+        assertTrue(jsonContent.contains("\"p50_us\": 2.2"));
+        assertTrue(jsonContent.contains("\"p50_us\": 7.1"));
         
-        // Values >= 10 should have no decimal places
-        assertTrue(jsonContent.contains("\"p50_us\": 13"), "Values >= 10 should have no decimal (not 13.375)");
-        assertTrue(jsonContent.contains("\"p95_us\": 38"), "Values >= 10 should have no decimal (not 37.875)");
-        assertTrue(jsonContent.contains("\"p50_us\": 184"), "Values >= 10 should have no decimal (not 184.0)");
+        assertTrue(jsonContent.contains("\"p50_us\": 13"));
+        assertTrue(jsonContent.contains("\"p95_us\": 38"));
+        assertTrue(jsonContent.contains("\"p50_us\": 184"));
         
-        // Should not contain these incorrectly formatted values
-        assertFalse(jsonContent.contains("0.419921875"), "Should not contain unformatted decimal");
-        assertFalse(jsonContent.contains("16.75"), "Should not contain decimal for value >= 10");
-        assertFalse(jsonContent.contains("192.0"), "Should not contain .0 for whole numbers >= 10");
+        assertFalse(jsonContent.contains("0.419921875"));
+        assertFalse(jsonContent.contains("16.75"));
+        assertFalse(jsonContent.contains("192.0"));
     }
 
     @Test
+    @DisplayName("Should only include JWT validation benchmarks")
     void shouldOnlyIncludeJwtValidationBenchmarks() throws Exception {
-        // Given - Create test exporter that returns metrics for various benchmark types
+        // Arrange
         MetricsFetcher multiTypeFetcher = new TestMetricsFetcher();
         SimpleMetricsExporter filteringExporter = new SimpleMetricsExporter(tempDir.toString(), multiTypeFetcher);
         
-        // When - export metrics for different benchmark types
+        // Act
         filteringExporter.exportJwtValidationMetrics("JwtEchoBenchmark.echoGetThroughput", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtHealthBenchmark.healthCheckLatency", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateJwtThroughput", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateAccessTokenLatency", Instant.now());
-        // Also test the actual benchmark name returned by getBenchmarkName()
         filteringExporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtEcho", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtHealth", Instant.now());
         
-        // Then - only JWT validation benchmarks should be in the output
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
         
-        // Should only contain JWT validation benchmarks
-        assertTrue(jsonContent.contains("\"validateJwtThroughput\""), "Should include JWT validation benchmark");
-        assertTrue(jsonContent.contains("\"validateAccessTokenLatency\""), "Should include access token validation");
+        assertTrue(jsonContent.contains("\"validateJwtThroughput\""));
+        assertTrue(jsonContent.contains("\"validateAccessTokenLatency\""));
         
-        // Should NOT contain echo or health benchmarks
-        assertFalse(jsonContent.contains("\"JwtEcho\""), "Should not include JwtEcho benchmarks");
-        assertFalse(jsonContent.contains("\"JwtHealth\""), "Should not include JwtHealth benchmarks");
-        assertFalse(jsonContent.contains("\"echoGetThroughput\""), "Should not include echo methods");
-        assertFalse(jsonContent.contains("\"healthCheckLatency\""), "Should not include health check methods");
+        assertFalse(jsonContent.contains("\"JwtEcho\""));
+        assertFalse(jsonContent.contains("\"JwtHealth\""));
+        assertFalse(jsonContent.contains("\"echoGetThroughput\""));
+        assertFalse(jsonContent.contains("\"healthCheckLatency\""));
         
-        // Verify file only has 3 benchmarks (the validation ones)
         Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
-        assertEquals(3, aggregatedData.size(), "Should only have 3 JWT validation benchmarks (2 method names + 1 class name)");
+        assertEquals(3, aggregatedData.size());
     }
 
     @Test
+    @DisplayName("Should include HTTP metrics in output")
     void shouldIncludeHttpMetricsInOutput() throws Exception {
-        // Given - exporter with test data that includes HTTP metrics
+        // Act
         exporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateJwtThroughput", Instant.now());
 
-        // Then - check HTTP metrics are included
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
         
         Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
-        assertNotNull(benchmarkData.get("bearer_token_producer_metrics"), "Should include bearer_token_producer_metrics section");
+        assertNotNull(benchmarkData.get("bearer_token_producer_metrics"));
         
         Map<String, Object> httpMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
         
-        // Should have all HTTP measurement types
-        assertTrue(httpMetrics.containsKey("token_extraction"), "Should include token_extraction");
-        assertTrue(httpMetrics.containsKey("header_extraction"), "Should include header_extraction");
-        assertTrue(httpMetrics.containsKey("authorization_check"), "Should include authorization_check");
-        assertTrue(httpMetrics.containsKey("request_processing"), "Should include request_processing");
-        assertTrue(httpMetrics.containsKey("response_formatting"), "Should include response_formatting");
+        assertTrue(httpMetrics.containsKey("token_extraction"));
+        assertTrue(httpMetrics.containsKey("header_extraction"));
+        assertTrue(httpMetrics.containsKey("authorization_check"));
+        assertTrue(httpMetrics.containsKey("request_processing"));
+        assertTrue(httpMetrics.containsKey("response_formatting"));
         
-        // Verify structure of HTTP metrics
         Map<String, Object> tokenExtraction = (Map<String, Object>) httpMetrics.get("token_extraction");
         assertTrue(tokenExtraction.containsKey("sample_count"));
         assertTrue(tokenExtraction.containsKey("p50_us"));
         assertTrue(tokenExtraction.containsKey("p95_us"));
         assertTrue(tokenExtraction.containsKey("p99_us"));
         
-        // Verify formatting rules apply to HTTP metrics too
         Double p50Value = (Double) tokenExtraction.get("p50_us");
         if (p50Value < 10) {
             String jsonContent = Files.readString(aggregatedFile.toPath());
-            // Check that value has 1 decimal place
-            assertTrue(jsonContent.contains("\"p50_us\": 8.2") || jsonContent.contains("\"p50_us\": 2.1"), "HTTP metrics < 10 should have 1 decimal");
+            assertTrue(jsonContent.contains("\"p50_us\": 8.2") || jsonContent.contains("\"p50_us\": 2.1"));
         } else {
             String jsonContent = Files.readString(aggregatedFile.toPath());
-            // Check that value has no decimal
-            assertTrue(jsonContent.contains("\"p50_us\": 13") || jsonContent.contains("\"p50_us\": 34"), "HTTP metrics >= 10 should have no decimal");
+            assertTrue(jsonContent.contains("\"p50_us\": 13") || jsonContent.contains("\"p50_us\": 34"));
         }
     }
 
     @Test
+    @DisplayName("Should handle empty metrics data gracefully")
     void shouldHandleEmptyMetricsData() throws Exception {
-        // Given - exporter with empty metrics fetcher
+        // Arrange
         MetricsFetcher emptyFetcher = () -> new HashMap<>();
         SimpleMetricsExporter emptyExporter = new SimpleMetricsExporter(tempDir.toString(), emptyFetcher);
         
-        // When - export metrics with no data
+        // Act
         emptyExporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
-        // Then - should create file with empty steps
+        // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
@@ -266,14 +239,10 @@ class SimpleMetricsExporterTest {
             Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
             Map<String, Object> steps = (Map<String, Object>) benchmarkData.get("steps");
             
-            // Should have empty steps when no metrics data
-            assertTrue(steps.isEmpty(), "Steps should be empty when no metrics data available");
+            assertTrue(steps.isEmpty());
         }
     }
     
-    /**
-     * Test metrics fetcher that loads data from test resource files
-     */
     private static class TestMetricsFetcher implements MetricsFetcher {
         
         @Override

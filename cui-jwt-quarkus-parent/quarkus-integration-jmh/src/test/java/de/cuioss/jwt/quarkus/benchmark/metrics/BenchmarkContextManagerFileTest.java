@@ -17,35 +17,32 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for BenchmarkContextManager file naming functionality
- */
 class BenchmarkContextManagerFileTest {
 
     @BeforeEach
     void setUp() {
-        // Reset context before each test
         BenchmarkContextManager.resetForTesting();
     }
 
     @AfterEach
     void tearDown() {
-        // Clean up after tests
         BenchmarkContextManager.resetForTesting();
     }
 
     @Test
+    @DisplayName("Should create type-based metrics files for different benchmark contexts")
     void shouldCreateTypeBasedMetricsFiles() {
-        // Given - we simulate different benchmark contexts
+        // Arrange
         BenchmarkContextManager.resetForTesting();
         
-        // When - creating files for different benchmarks
+        // Act
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
         File file1 = BenchmarkContextManager.getMetricsFile();
         
@@ -55,12 +52,11 @@ class BenchmarkContextManagerFileTest {
         BenchmarkContextManager.setBenchmarkContext("jwt-health");
         File file3 = BenchmarkContextManager.getMetricsFile();
         
-        // Then - files should follow the type-based naming pattern
+        // Assert
         String file1Name = file1.getName();
         String file2Name = file2.getName();
         String file3Name = file3.getName();
         
-        // Should have no numbers in file names
         assertEquals("jwt-validation-metrics.txt", file1Name, 
             "Validation should be jwt-validation-metrics.txt");
         assertEquals("jwt-echo-metrics.txt", file2Name, 
@@ -68,30 +64,23 @@ class BenchmarkContextManagerFileTest {
         assertEquals("jwt-health-metrics.txt", file3Name, 
             "Health should be jwt-health-metrics.txt");
         
-        // When - creating second file for same benchmark type
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
         File file4 = BenchmarkContextManager.getMetricsFile();
         String file4Name = file4.getName();
         
-        // Then - should reuse the same file name
         assertEquals("jwt-validation-metrics.txt", file4Name, 
             "Same type should always get the same file name");
         
-        // All files should be in target/metrics-download directory
         assertTrue(file1.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
         assertTrue(file2.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
         assertTrue(file3.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
         assertTrue(file4.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
-        
-        System.out.println("File 1: " + file1Name);
-        System.out.println("File 2: " + file2Name);
-        System.out.println("File 3: " + file3Name);
-        System.out.println("File 4: " + file4Name);
     }
     
     @Test
+    @DisplayName("Should handle benchmark names from actual benchmark classes")
     void shouldHandleBenchmarkNamesFromClasses() {
-        // Given - benchmark names from actual benchmark classes
+        // Arrange
         String[] benchmarkNames = {
             "JwtValidation",
             "JwtEcho",
@@ -104,7 +93,7 @@ class BenchmarkContextManagerFileTest {
             "jwt-health-metrics.txt"
         };
         
-        // When/Then - test each benchmark name
+        // Act & Assert
         for (int i = 0; i < benchmarkNames.length; i++) {
             BenchmarkContextManager.setBenchmarkContext(benchmarkNames[i]);
             File file = BenchmarkContextManager.getMetricsFile();
@@ -115,26 +104,27 @@ class BenchmarkContextManagerFileTest {
     }
     
     @Test
+    @DisplayName("Should strip timestamp from context when creating metrics file")
     void shouldStripTimestampFromContext() {
-        // Given - a context with timestamp
+        // Arrange
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
         
-        // Force getting context which adds timestamp
         String contextWithTimestamp = BenchmarkContextManager.getBenchmarkContext();
         assertTrue(contextWithTimestamp.matches("jwt-validation-\\d{6}"), 
             "Context should have timestamp: " + contextWithTimestamp);
         
-        // When - creating a metrics file
+        // Act
         File file = BenchmarkContextManager.getMetricsFile();
         
-        // Then - filename should not include the timestamp
+        // Assert
         assertEquals("jwt-validation-metrics.txt", file.getName(),
             "File name should strip timestamp from context");
     }
     
     @Test
+    @DisplayName("Should use consistent file naming across resets")
     void shouldUseConsistentFileNaming() {
-        // Given - create files
+        // Arrange
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
         File file1 = BenchmarkContextManager.getMetricsFile();
         assertEquals("jwt-validation-metrics.txt", file1.getName());
@@ -143,16 +133,15 @@ class BenchmarkContextManagerFileTest {
         File file2 = BenchmarkContextManager.getMetricsFile();
         assertEquals("jwt-echo-metrics.txt", file2.getName());
         
-        // When - reset and create another file
+        // Act
         BenchmarkContextManager.resetForTesting();
         
-        // Then - same types should get same numbers (type-based, not sequential)
+        // Assert
         BenchmarkContextManager.setBenchmarkContext("jwt-health");
         File file3 = BenchmarkContextManager.getMetricsFile();
         assertEquals("jwt-health-metrics.txt", file3.getName(),
             "Health should always get same name, regardless of reset");
             
-        // Validation should still get 3
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
         File file4 = BenchmarkContextManager.getMetricsFile();
         assertEquals("jwt-validation-metrics.txt", file4.getName(),

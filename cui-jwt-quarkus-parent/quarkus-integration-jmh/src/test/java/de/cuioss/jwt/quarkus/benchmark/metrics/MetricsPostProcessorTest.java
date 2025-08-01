@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,9 +33,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for MetricsPostProcessor
- */
 class MetricsPostProcessorTest {
 
     @TempDir
@@ -50,44 +48,43 @@ class MetricsPostProcessorTest {
     }
 
     @Test
+    @DisplayName("Should parse all three endpoint types")
     void shouldParseAllThreeEndpointTypes() throws IOException {
-        // Given - test benchmark file with all three endpoint types
+        // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
-        
-        // When - parse and export metrics
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
+        
+        // Act
         parser.parseAndExportHttpMetrics(testTimestamp);
 
-        // Then - verify all three endpoint types are present
+        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             
-            // Should have all three endpoint types
-            assertTrue(metrics.containsKey("jwt_validation"), "Should contain JWT validation metrics");
-            assertTrue(metrics.containsKey("echo"), "Should contain echo metrics");
-            assertTrue(metrics.containsKey("health"), "Should contain health metrics");
-            
-            assertEquals(3, metrics.size(), "Should have exactly 3 endpoint types");
+            assertTrue(metrics.containsKey("jwt_validation"));
+            assertTrue(metrics.containsKey("echo"));
+            assertTrue(metrics.containsKey("health"));
+            assertEquals(3, metrics.size());
         }
     }
 
-    @Test 
+    @Test
+    @DisplayName("Should extract correct percentile data")
     void shouldExtractCorrectPercentileData() throws IOException {
-        // Given - parser with test data
+        // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         
-        // When - parse metrics
+        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Then - verify percentile data is correctly extracted
+        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             
-            // Check echo endpoint metrics (from test data)
             Map<String, Object> echoMetrics = (Map<String, Object>) metrics.get("echo");
             assertNotNull(echoMetrics);
             assertEquals("Echo", echoMetrics.get("name"));
@@ -95,12 +92,10 @@ class MetricsPostProcessorTest {
             Map<String, Object> percentiles = (Map<String, Object>) echoMetrics.get("percentiles");
             assertNotNull(percentiles);
             
-            // Verify percentiles are present and formatted correctly
             assertTrue(percentiles.containsKey("p50_us"));
             assertTrue(percentiles.containsKey("p95_us"));
             assertTrue(percentiles.containsKey("p99_us"));
             
-            // Values should be numbers (Double or Long)
             assertTrue(percentiles.get("p50_us") instanceof Number);
             assertTrue(percentiles.get("p95_us") instanceof Number);
             assertTrue(percentiles.get("p99_us") instanceof Number);
@@ -108,40 +103,35 @@ class MetricsPostProcessorTest {
     }
 
     @Test
+    @DisplayName("Should format numbers correctly according to rules")
     void shouldFormatNumbersCorrectly() throws IOException {
-        // Given - parser with test data containing various number ranges
+        // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         
-        // When - parse metrics
+        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Then - verify number formatting rules
+        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         String jsonContent = Files.readString(outputFile.toPath());
         
-        // Values < 10 should have 1 decimal place, values >= 10 should be integers
-        System.out.println("JSON Content for number formatting test:\n" + jsonContent);
+        assertFalse(jsonContent.contains(".0\""));
         
-        // The test data should contain values that test both formatting rules
-        // Values < 10 should appear as X.X format
-        // Values >= 10 should appear as integer format
-        assertFalse(jsonContent.contains(".0\""), "Should not contain .0 for integers >= 10");
-        
-        // Verify structure is valid JSON
         Map<String, Object> parsed = gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
-        assertTrue(parsed.size() >= 1, "Should contain at least one endpoint");
+        assertTrue(parsed.size() >= 1);
     }
 
     @Test
+    @DisplayName("Should include sample counts in metrics")
     void shouldIncludeSampleCounts() throws IOException {
-        // Given - parser with test data
+        // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         
-        // When - parse metrics
+        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Then - verify sample counts are included
+        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
@@ -149,29 +139,26 @@ class MetricsPostProcessorTest {
             for (String endpointType : metrics.keySet()) {
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
                 
-                assertTrue(endpointData.containsKey("sample_count"), 
-                    "Endpoint " + endpointType + " should have sample_count");
+                assertTrue(endpointData.containsKey("sample_count"));
                 
                 Object sampleCount = endpointData.get("sample_count");
-                assertTrue(sampleCount instanceof Number, 
-                    "Sample count should be a number for " + endpointType);
-                
-                assertTrue(((Number) sampleCount).intValue() > 0, 
-                    "Sample count should be > 0 for " + endpointType);
+                assertTrue(sampleCount instanceof Number);
+                assertTrue(((Number) sampleCount).intValue() > 0);
             }
         }
     }
 
     @Test
+    @DisplayName("Should include timestamp and source information")
     void shouldIncludeTimestampAndSource() throws IOException {
-        // Given - parser with specific timestamp
+        // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
         
-        // When - parse metrics
+        // Act
         parser.parseAndExportHttpMetrics(testTimestamp);
 
-        // Then - verify timestamp and source information
+        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
@@ -179,88 +166,76 @@ class MetricsPostProcessorTest {
             for (String endpointType : metrics.keySet()) {
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
                 
-                assertEquals(testTimestamp.toString(), endpointData.get("timestamp"),
-                    "Should have correct timestamp for " + endpointType);
-                
-                assertTrue(endpointData.containsKey("source"), 
-                    "Should have source information for " + endpointType);
+                assertEquals(testTimestamp.toString(), endpointData.get("timestamp"));
+                assertTrue(endpointData.containsKey("source"));
                 
                 String source = (String) endpointData.get("source");
-                assertTrue(source.contains("JMH benchmark"), 
-                    "Source should mention JMH benchmark for " + endpointType);
-                assertTrue(source.contains("sample mode"), 
-                    "Source should mention sample mode for " + endpointType);
+                assertTrue(source.contains("JMH benchmark"));
+                assertTrue(source.contains("sample mode"));
             }
         }
     }
 
     @Test
+    @DisplayName("Should only process sample mode benchmarks")
     void shouldOnlyProcessSampleModeBenchmarks() throws IOException {
-        // Given - parser with mixed mode benchmark file
+        // Arrange
         String mixedModeFile = createMixedModeBenchmarkFile();
         MetricsPostProcessor parser = new MetricsPostProcessor(mixedModeFile, tempDir.toString());
         
-        // When - parse metrics
+        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Then - should only include sample mode results
+        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         assertTrue(outputFile.exists());
         
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             
-            // Should still have metrics (from sample mode entries)
-            assertFalse(metrics.isEmpty(), "Should have metrics from sample mode benchmarks");
+            assertFalse(metrics.isEmpty());
             
-            // Verify source mentions sample mode
             for (String endpointType : metrics.keySet()) {
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
                 String source = (String) endpointData.get("source");
-                assertTrue(source.contains("sample mode"), 
-                    "Should only process sample mode for " + endpointType);
+                assertTrue(source.contains("sample mode"));
             }
         }
     }
 
     @Test
+    @DisplayName("Should handle file not found exception")
     void shouldHandleFileNotFound() {
-        // Given - parser with non-existent file
+        // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor("/non/existent/file.json", tempDir.toString());
         
-        // When/Then - should throw IOException
-        IOException exception = assertThrows(IOException.class, () -> {
-            parser.parseAndExportHttpMetrics(Instant.now());
-        });
+        // Act & Assert
+        IOException exception = assertThrows(IOException.class, () -> parser.parseAndExportHttpMetrics(Instant.now()));
         
         assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test
+    @DisplayName("Should use static convenience method")
     void shouldUseConvenienceMethod() throws IOException {
-        // Given - test file in results directory format
+        // Arrange
         File resultsDir = tempDir.toFile();
         File benchmarkFile = new File(resultsDir, "integration-benchmark-result.json");
-        
-        // Copy test benchmark file to expected location
         Files.copy(Path.of(testBenchmarkFile), benchmarkFile.toPath());
         
-        // When - use convenience method
+        // Act
         MetricsPostProcessor.parseAndExport(resultsDir.getAbsolutePath());
 
-        // Then - should create http-metrics.json
+        // Assert
         File outputFile = new File(resultsDir, "http-metrics.json");
         assertTrue(outputFile.exists());
         
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            assertFalse(metrics.isEmpty(), "Should have parsed metrics");
+            assertFalse(metrics.isEmpty());
         }
     }
 
-    /**
-     * Create a test benchmark file with sample mode data for all three endpoint types
-     */
     private String createTestBenchmarkFile() throws IOException {
         File testFile = new File(tempDir.toFile(), "test-benchmark-result.json");
         
@@ -363,9 +338,6 @@ class MetricsPostProcessorTest {
         return testFile.getAbsolutePath();
     }
 
-    /**
-     * Create a test file with mixed benchmark modes to test filtering
-     */
     private String createMixedModeBenchmarkFile() throws IOException {
         File testFile = new File(tempDir.toFile(), "mixed-mode-benchmark-result.json");
         
