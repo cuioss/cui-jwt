@@ -115,17 +115,17 @@ process_micro_benchmarks() {
     echo "Processing micro-benchmark results..."
     
     # Extract throughput data
-    local throughput_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.PerformanceIndicatorBenchmark.measureThroughput")' "$RESULT_FILE" 2>/dev/null)
+    local throughput_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureThroughput")' "$RESULT_FILE" 2>/dev/null)
     local throughput_score=$(echo "$throughput_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")
     local throughput_unit=$(echo "$throughput_entry" | jq -r '.primaryMetric.scoreUnit' 2>/dev/null || echo "")
     
     # Extract average time data
-    local avg_time_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.PerformanceIndicatorBenchmark.measureAverageTime")' "$RESULT_FILE" 2>/dev/null)
+    local avg_time_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureAverageTime")' "$RESULT_FILE" 2>/dev/null)
     local avg_time_score=$(echo "$avg_time_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")
     local avg_time_unit=$(echo "$avg_time_entry" | jq -r '.primaryMetric.scoreUnit' 2>/dev/null || echo "")
     
     # Extract error resilience data
-    local error_resilience_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.ErrorLoadBenchmark.validateMixedTokens" and .params.errorPercentage == "0")' "$RESULT_FILE" 2>/dev/null)
+    local error_resilience_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleErrorLoadBenchmark.validateMixedTokens0")' "$RESULT_FILE" 2>/dev/null)
     local error_resilience_score=$(echo "$error_resilience_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")
     local error_resilience_unit=$(echo "$error_resilience_entry" | jq -r '.primaryMetric.scoreUnit' 2>/dev/null || echo "")
     

@@ -43,6 +43,12 @@ fi
 cp "$TEMPLATES_DIR/index-visualizer.html" "$OUTPUT_DIR/index.html"
 echo "Copied JMH Visualizer template"
 
+# Copy step metrics visualizer if available
+if [ -f "$TEMPLATES_DIR/step-metrics-visualizer.html" ]; then
+  cp "$TEMPLATES_DIR/step-metrics-visualizer.html" "$OUTPUT_DIR/step-metrics.html"
+  echo "Copied step metrics visualizer template"
+fi
+
 # Create directory for badges
 mkdir -p "$OUTPUT_DIR/badges"
 

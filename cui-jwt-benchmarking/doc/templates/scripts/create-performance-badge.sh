@@ -14,18 +14,18 @@ fi
 
 echo "Creating performance indicator badge..."
 
-# Extract throughput data from PerformanceIndicatorBenchmark.measureThroughput
-throughput_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.PerformanceIndicatorBenchmark.measureThroughput")' "$JMH_RESULT_FILE" 2>/dev/null)
+# Extract throughput data from SimpleCoreValidationBenchmark.measureThroughput
+throughput_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureThroughput")' "$JMH_RESULT_FILE" 2>/dev/null)
 throughput_score=$(echo "$throughput_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")
 throughput_unit=$(echo "$throughput_entry" | jq -r '.primaryMetric.scoreUnit' 2>/dev/null || echo "")
 
-# Extract average time data from PerformanceIndicatorBenchmark.measureAverageTime  
-avg_time_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.PerformanceIndicatorBenchmark.measureAverageTime")' "$JMH_RESULT_FILE" 2>/dev/null)
+# Extract average time data from SimpleCoreValidationBenchmark.measureAverageTime  
+avg_time_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureAverageTime")' "$JMH_RESULT_FILE" 2>/dev/null)
 avg_time_score=$(echo "$avg_time_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")
 avg_time_unit=$(echo "$avg_time_entry" | jq -r '.primaryMetric.scoreUnit' 2>/dev/null || echo "")
 
-# Extract error resilience data from ErrorLoadBenchmark with 0% error percentage
-error_resilience_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.ErrorLoadBenchmark.validateMixedTokens" and .params.errorPercentage == "0")' "$JMH_RESULT_FILE" 2>/dev/null)
+# Extract error resilience data from SimpleErrorLoadBenchmark with 0% error (validateMixedTokens0)
+error_resilience_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleErrorLoadBenchmark.validateMixedTokens0")' "$JMH_RESULT_FILE" 2>/dev/null)
 error_resilience_score=$(echo "$error_resilience_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")
 error_resilience_unit=$(echo "$error_resilience_entry" | jq -r '.primaryMetric.scoreUnit' 2>/dev/null || echo "")
 
