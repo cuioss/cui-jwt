@@ -15,8 +15,8 @@ CURRENT_RESILIENCE="$7"
 echo "Updating consolidated performance tracking..."
 
 # Download existing tracking file if it exists
-TRACKING_FILE="$OUTPUT_DIR/performance-tracking.json"
-curl -f -s "https://cuioss.github.io/cui-jwt/benchmarks/performance-tracking.json" -o "$TRACKING_FILE" 2>/dev/null || echo '{"runs":[]}' > "$TRACKING_FILE"
+TRACKING_FILE="$OUTPUT_DIR/data/performance-tracking.json"
+curl -f -s "https://cuioss.github.io/cui-jwt/benchmarks/data/performance-tracking.json" -o "$TRACKING_FILE" 2>/dev/null || echo '{"runs":[]}' > "$TRACKING_FILE"
 
 # Add current run to tracking data
 CURRENT_RUN=$(cat <<EOF
@@ -46,7 +46,6 @@ fi
 # Calculate trends and create trend badge using unified script
 bash "$TEMPLATES_DIR/scripts/create-unified-trend-badge.sh" micro "$TRACKING_FILE" "$OUTPUT_DIR/badges"
 
-# Copy performance trends template
-cp "$TEMPLATES_DIR/performance-trends.html" "$OUTPUT_DIR/trends.html"
+# Performance trends template is copied by prepare-github-pages.sh script
 
 echo "Performance tracking updated successfully"

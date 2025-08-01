@@ -30,11 +30,11 @@ else
 fi
 
 # Create performance tracking directory
-mkdir -p "$OUTPUT_DIR/tracking"
+mkdir -p "$OUTPUT_DIR/data/tracking"
 mkdir -p "$OUTPUT_DIR/badges"
 
 # Run the performance badge script to get metrics and capture in a metrics file
-METRICS_FILE="$OUTPUT_DIR/tracking/metrics-temp.sh"
+METRICS_FILE="$OUTPUT_DIR/data/tracking/metrics-temp.sh"
 bash "$TEMPLATES_DIR/scripts/create-performance-badge.sh" "$JMH_RESULT_FILE" "$OUTPUT_DIR/badges" > "$METRICS_FILE.log" 2>&1
 
 # Read the badge output immediately after script execution
@@ -81,9 +81,9 @@ export JVM_ARGS="$JVM_ARGS_VALUE"
 export OS_NAME="$OS_NAME"
 
 TIMESTAMP_FILE=$(date -u +"%Y%m%d-%H%M%S")
-envsubst < "$TEMPLATES_DIR/performance-run.json" > "$OUTPUT_DIR/tracking/performance-$TIMESTAMP_FILE.json"
+envsubst < "$TEMPLATES_DIR/performance-run.json" > "$OUTPUT_DIR/data/tracking/performance-$TIMESTAMP_FILE.json"
 
-echo "Created performance tracking file: performance-$TIMESTAMP_FILE.json"
+echo "Created performance tracking file: data/tracking/performance-$TIMESTAMP_FILE.json"
 
 # Export metrics for use by calling script
 echo "PERF_SCORE=$PERFORMANCE_SCORE"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prepare step metrics visualization
+# Prepare step metrics visualization (integrated into prepare-github-pages.sh)
 # Usage: prepare-step-metrics.sh <benchmark-results-dir> <templates-dir> <output-dir>
 
 set -e
@@ -10,23 +10,21 @@ OUTPUT_DIR="$3"
 
 echo "Preparing step metrics visualization..."
 
-# Create output directory
-mkdir -p "$OUTPUT_DIR"
+# Create data directory
+mkdir -p "$OUTPUT_DIR/data"
 
-# Copy step metrics data if it exists
+# Copy step metrics data if it exists in benchmark results
 if [ -f "$BENCHMARK_RESULTS_DIR/jwt-validation-metrics.json" ]; then
-  cp "$BENCHMARK_RESULTS_DIR/jwt-validation-metrics.json" "$OUTPUT_DIR/"
-  echo "Copied jwt-validation-metrics.json"
+  cp "$BENCHMARK_RESULTS_DIR/jwt-validation-metrics.json" "$OUTPUT_DIR/data/"
+  echo "Copied jwt-validation-metrics.json to data directory"
 else
   echo "Warning: jwt-validation-metrics.json not found in $BENCHMARK_RESULTS_DIR"
 fi
 
-# Copy step metrics visualizer template
-if [ -f "$TEMPLATES_DIR/step-metrics-visualizer.html" ]; then
-  cp "$TEMPLATES_DIR/step-metrics-visualizer.html" "$OUTPUT_DIR/step-metrics.html"
-  echo "Copied step metrics visualizer template"
-else
-  echo "Warning: step-metrics-visualizer.html template not found"
+# Copy from templates data directory if available
+if [ -f "$TEMPLATES_DIR/data/jwt-validation-metrics.json" ]; then
+  cp "$TEMPLATES_DIR/data/jwt-validation-metrics.json" "$OUTPUT_DIR/data/"
+  echo "Copied jwt-validation-metrics.json from templates data directory"
 fi
 
-echo "Step metrics visualization prepared successfully"
+echo "Step metrics data prepared successfully"
