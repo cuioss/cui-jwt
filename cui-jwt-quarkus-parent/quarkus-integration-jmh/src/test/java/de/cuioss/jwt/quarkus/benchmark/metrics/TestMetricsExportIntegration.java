@@ -64,9 +64,9 @@ public class TestMetricsExportIntegration {
         }
         
         // Read and display the result
-        File resultFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File resultFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         if (resultFile.exists()) {
-            System.out.println("\nGenerated jwt-validation-metrics.json:");
+            System.out.println("\nGenerated integration-jwt-validation-metrics.json:");
             System.out.println("=====================================");
             String content = Files.readString(resultFile.toPath());
             System.out.println(content);
@@ -84,20 +84,20 @@ public class TestMetricsExportIntegration {
                 System.out.println("\nvalidateJwtThroughput structure:");
                 System.out.println("- Has timestamp: " + benchmark.has("timestamp"));
                 System.out.println("- Has steps: " + benchmark.has("steps"));
-                System.out.println("- Has http_metrics: " + benchmark.has("http_metrics"));
+                System.out.println("- Has bearer_token_producer_metrics: " + benchmark.has("bearer_token_producer_metrics"));
                 
                 if (benchmark.has("steps")) {
                     JsonObject steps = benchmark.getAsJsonObject("steps");
                     System.out.println("- Number of steps: " + steps.size());
                 }
                 
-                if (benchmark.has("http_metrics")) {
-                    JsonObject httpMetrics = benchmark.getAsJsonObject("http_metrics");
-                    System.out.println("- Number of HTTP metrics: " + httpMetrics.size());
+                if (benchmark.has("bearer_token_producer_metrics")) {
+                    JsonObject httpMetrics = benchmark.getAsJsonObject("bearer_token_producer_metrics");
+                    System.out.println("- Number of bearer token producer metrics: " + httpMetrics.size());
                 }
             }
         } else {
-            System.err.println("ERROR: jwt-validation-metrics.json was not created!");
+            System.err.println("ERROR: integration-jwt-validation-metrics.json was not created!");
         }
         
         // Clean up

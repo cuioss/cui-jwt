@@ -180,6 +180,36 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
         validateResponse(response, 200);
     }
 
+    /**
+     * Sample mode benchmark for JWT validation to capture HTTP roundtrip percentiles.
+     * This provides external view metrics for HTTP-level performance analysis.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.SampleTime)
+    public void validateJwtSample() {
+        Response response = createAuthenticatedRequest()
+                .when()
+                .post("/jwt/validate");
+
+        validateResponse(response, 200);
+    }
+
+    /**
+     * Sample mode benchmark for access token validation with explicit token payload.
+     * Captures HTTP roundtrip percentiles for access token validation endpoint.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.SampleTime)
+    public void validateAccessTokenSample() {
+        String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
+        Response response = createBaseRequest()
+                .body(tokenPayload)
+                .when()
+                .post("/jwt/validate");
+
+        validateResponse(response, 200);
+    }
+
     @Override
     protected String getBenchmarkName() {
         return "JwtValidation";

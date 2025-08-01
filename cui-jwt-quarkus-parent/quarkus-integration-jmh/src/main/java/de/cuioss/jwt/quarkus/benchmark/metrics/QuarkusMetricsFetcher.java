@@ -67,17 +67,12 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
     }
 
     /**
-     * Save raw metrics data for development purposes
+     * Save raw metrics data with intelligent benchmark context
      */
     private void saveRawMetricsData(String rawMetrics) {
         try {
-            File metricsDownloadDir = new File("target/metrics-download");
-            if (!metricsDownloadDir.exists()) {
-                metricsDownloadDir.mkdirs();
-            }
-            
-            String timestamp = Instant.now().toString().replace(":", "-");
-            File outputFile = new File(metricsDownloadDir, "quarkus-metrics-" + timestamp + ".txt");
+            // Use BenchmarkContextManager for file naming
+            File outputFile = BenchmarkContextManager.getMetricsFile();
             
             try (FileWriter writer = new FileWriter(outputFile)) {
                 writer.write(rawMetrics);

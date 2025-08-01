@@ -37,7 +37,7 @@ import java.util.Locale;
 
 /**
  * Simplified metrics exporter that processes JWT validation metrics.
- * Only creates jwt-validation-metrics.json with all JWT validation benchmark results.
+ * Only creates integration-jwt-validation-metrics.json with all JWT validation benchmark results.
  * Uses dependency injection pattern for metrics fetching to improve testability.
  *
  * @author Generated
@@ -67,38 +67,41 @@ public class SimpleMetricsExporter {
 
     /**
      * Export JWT validation metrics for a specific benchmark method.
-     * Updates the aggregated jwt-validation-metrics.json file.
+     * Updates the aggregated integration-jwt-validation-metrics.json file.
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
         LOGGER.info("Exporting JWT validation metrics for: {}", benchmarkMethodName);
         
-        // Filter out non-JWT validation benchmarks
-        if (!isJwtValidationBenchmark(benchmarkMethodName)) {
-            LOGGER.info("Skipping non-JWT validation benchmark: {}", benchmarkMethodName);
-            return;
-        }
+        // Set the benchmark context for proper directory naming
+        BenchmarkContextManager.setBenchmarkContext(benchmarkMethodName);
         
+        // Always save raw metrics for ALL benchmarks
         try {
             Map<String, Double> allMetrics = metricsFetcher.fetchMetrics();
             LOGGER.debug("Fetched {} metrics from Quarkus", allMetrics.size());
             
-            Map<String, Object> stepMetrics = extractStepMetrics(allMetrics);
-            Map<String, Object> httpMetrics = extractHttpMetrics(allMetrics);
-            
-            // Create benchmark data
-            Map<String, Object> benchmarkData = new LinkedHashMap<>();
-            benchmarkData.put("timestamp", timestamp.toString());
-            benchmarkData.put("steps", stepMetrics);
-            benchmarkData.put("http_metrics", httpMetrics);
-            
-            // Extract just the method name (remove class prefix)
-            String simpleBenchmarkName = benchmarkMethodName;
-            if (benchmarkMethodName.contains(".")) {
-                simpleBenchmarkName = benchmarkMethodName.substring(benchmarkMethodName.lastIndexOf('.') + 1);
+            // Process JWT validation specific metrics if applicable
+            if (isJwtValidationBenchmark(benchmarkMethodName)) {
+                Map<String, Object> stepMetrics = extractStepMetrics(allMetrics);
+                Map<String, Object> httpMetrics = extractHttpMetrics(allMetrics);
+                
+                // Create benchmark data
+                Map<String, Object> benchmarkData = new LinkedHashMap<>();
+                benchmarkData.put("timestamp", timestamp.toString());
+                benchmarkData.put("steps", stepMetrics);
+                benchmarkData.put("bearer_token_producer_metrics", httpMetrics);
+                
+                // Extract just the method name (remove class prefix)
+                String simpleBenchmarkName = benchmarkMethodName;
+                if (benchmarkMethodName.contains(".")) {
+                    simpleBenchmarkName = benchmarkMethodName.substring(benchmarkMethodName.lastIndexOf('.') + 1);
+                }
+                
+                // Update aggregated file
+                updateAggregatedMetrics(simpleBenchmarkName, benchmarkData);
+            } else {
+                LOGGER.info("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
             }
-            
-            // Update aggregated file
-            updateAggregatedMetrics(simpleBenchmarkName, benchmarkData);
             
         } catch (Exception e) {
             LOGGER.error("Failed to export metrics for {}", benchmarkMethodName, e);
@@ -106,7 +109,7 @@ public class SimpleMetricsExporter {
     }
 
     private void updateAggregatedMetrics(String benchmarkMethodName, Map<String, Object> benchmarkData) throws IOException {
-        String filename = outputDirectory + "/jwt-validation-metrics.json";
+        String filename = outputDirectory + "/integration-jwt-validation-metrics.json";
         
         // Read existing data
         Map<String, Object> allMetrics = new LinkedHashMap<>();
@@ -129,7 +132,7 @@ public class SimpleMetricsExporter {
         try (FileWriter writer = new FileWriter(outputFile)) {
             GSON.toJson(allMetrics, writer);
             writer.flush();
-            LOGGER.info("Updated jwt-validation-metrics.json with {} benchmarks at: {}", 
+            LOGGER.info("Updated integration-jwt-validation-metrics.json with {} benchmarks at: {}", 
                     allMetrics.size(), outputFile.getAbsolutePath());
         }
     }

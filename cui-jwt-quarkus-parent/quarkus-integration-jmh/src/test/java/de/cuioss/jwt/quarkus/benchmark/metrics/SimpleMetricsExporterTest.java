@@ -58,7 +58,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Then - verify real metrics were extracted
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
@@ -101,7 +101,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtLatency", Instant.now());
 
         // Then - check aggregated file contains both benchmarks
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
@@ -128,7 +128,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Then - check number formatting in JSON
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         // Read the JSON content as a string to verify number formatting
@@ -150,7 +150,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Then - check number formatting follows rules: 1 decimal for <10, no decimal for >=10
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
 
         // Values < 10 should have exactly 1 decimal place
@@ -187,7 +187,7 @@ class SimpleMetricsExporterTest {
         filteringExporter.exportJwtValidationMetrics("JwtHealth", Instant.now());
         
         // Then - only JWT validation benchmarks should be in the output
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
         
         // Should only contain JWT validation benchmarks
@@ -211,13 +211,13 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateJwtThroughput", Instant.now());
 
         // Then - check HTTP metrics are included
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
         
         Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
-        assertNotNull(benchmarkData.get("http_metrics"), "Should include http_metrics section");
+        assertNotNull(benchmarkData.get("bearer_token_producer_metrics"), "Should include bearer_token_producer_metrics section");
         
-        Map<String, Object> httpMetrics = (Map<String, Object>) benchmarkData.get("http_metrics");
+        Map<String, Object> httpMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
         
         // Should have all HTTP measurement types
         assertTrue(httpMetrics.containsKey("token_extraction"), "Should include token_extraction");
@@ -256,7 +256,7 @@ class SimpleMetricsExporterTest {
         emptyExporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Then - should create file with empty steps
-        File aggregatedFile = new File(tempDir.toFile(), "jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {

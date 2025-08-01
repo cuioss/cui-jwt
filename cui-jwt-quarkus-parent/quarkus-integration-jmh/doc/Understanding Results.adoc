@@ -14,7 +14,7 @@ Runs standard performance benchmarks without profiling.
 
 *Expected Results Location:* `target/benchmark-results/`
 - `integration-benchmark-result.json` - JMH benchmark results
-- `jwt-validation-metrics.json` - Application metrics (created when benchmarks complete successfully)
+- `integration-jwt-validation-metrics.json` - Application metrics (created when benchmarks complete successfully)
 - `metrics-*.json` - Timestamped metrics files per benchmark
 
 === `benchmark-jfr` Profile
@@ -25,7 +25,7 @@ Runs benchmarks with Java Flight Recorder profiling enabled.
 
 *Expected Results Location:* `target/benchmark-jfr-results/`
 - `integration-benchmark-result.json` - JMH benchmark results
-- `jwt-validation-metrics.json` - Application metrics (created when benchmarks complete successfully)
+- `integration-jwt-validation-metrics.json` - Application metrics (created when benchmarks complete successfully)
 - `metrics-*.json` - Timestamped metrics files per benchmark
 - `jfr-recordings/` - Directory containing JFR files copied from container (if container has JFR enabled)
 
@@ -33,7 +33,7 @@ Runs benchmarks with Java Flight Recorder profiling enabled.
 
 === Metrics Export
 
-The `jwt-validation-metrics.json` file is only created when:
+The `integration-jwt-validation-metrics.json` file is only created when:
 1. The benchmark runs successfully (at least one iteration completes)
 2. The teardown phase is executed
 3. Prometheus endpoint is accessible for metrics collection
@@ -76,7 +76,7 @@ docker ps --format "table {{.Names}}"
 
 === Missing Metrics
 
-If `jwt-validation-metrics.json` is missing:
+If `integration-jwt-validation-metrics.json` is missing:
 - Check that Prometheus is accessible at the configured URL
 - Verify at least one benchmark iteration completed successfully
 - Check logs for metric export errors
