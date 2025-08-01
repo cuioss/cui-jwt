@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.jwt.quarkus.benchmark.metrics.BenchmarkMetrics;
+import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import io.restassured.RestAssured;
@@ -26,6 +27,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.openjdk.jmh.annotations.*;
 
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,7 +36,6 @@ import java.util.concurrent.TimeUnit;
  * 
  * <p>For benchmarks that require JWT authentication, use {@link AbstractIntegrationBenchmark} instead.</p>
  * 
- * @author Generated
  * @since 1.0
  */
 @BenchmarkMode(Mode.All)
@@ -73,8 +74,8 @@ public abstract class AbstractBaseBenchmark {
         configureRestAssured();
 
         // Initialize metrics exporter
-        metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir, 
-                new de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher(quarkusMetricsUrl));
+        metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
+                new QuarkusMetricsFetcher(quarkusMetricsUrl));
 
         // Clear metrics once before starting the benchmark
         clearMetrics();
@@ -147,8 +148,8 @@ public abstract class AbstractBaseBenchmark {
     protected void exportMetrics() {
         try {
             String benchmarkName = getBenchmarkName();
-            
-            metricsExporter.exportJwtValidationMetrics(benchmarkName, java.time.Instant.now());
+
+            metricsExporter.exportJwtValidationMetrics(benchmarkName, Instant.now());
             LOGGER.info("Metrics exported for benchmark: {}", benchmarkName);
         } catch (Exception e) {
             LOGGER.error("Failed to export metrics", e);
@@ -177,13 +178,13 @@ public abstract class AbstractBaseBenchmark {
                 .measurementDurationSeconds(5) // Based on @Measurement annotation
                 .iterations(2) // Based on @Measurement annotation
                 .serviceUrl(serviceUrl)
-                .jvmInfo(System.getProperty("java.version") + " " + 
-                        System.getProperty("java.vm.name") + " " + 
+                .jvmInfo(System.getProperty("java.version") + " " +
+                        System.getProperty("java.vm.name") + " " +
                         System.getProperty("java.vm.version"))
-                .systemInfo(System.getProperty("os.name") + " " + 
-                          System.getProperty("os.version") + " " + 
-                          System.getProperty("os.arch") + 
-                          " (Processors: " + Runtime.getRuntime().availableProcessors() + ")")
+                .systemInfo(System.getProperty("os.name") + " " +
+                        System.getProperty("os.version") + " " +
+                        System.getProperty("os.arch") +
+                        " (Processors: " + Runtime.getRuntime().availableProcessors() + ")")
                 .build();
     }
 
@@ -195,10 +196,10 @@ public abstract class AbstractBaseBenchmark {
         try {
             Response response = createBaseRequest()
                     .post("/jwt/metric_clear");
-            
+
             if (response.getStatusCode() != 200) {
-                LOGGER.warn("Failed to clear metrics - Status: {}, Response: {}", 
-                    response.getStatusCode(), response.getBody().asString());
+                LOGGER.warn("Failed to clear metrics - Status: {}, Response: {}",
+                        response.getStatusCode(), response.getBody().asString());
             } else {
                 LOGGER.debug("Metrics cleared successfully");
             }

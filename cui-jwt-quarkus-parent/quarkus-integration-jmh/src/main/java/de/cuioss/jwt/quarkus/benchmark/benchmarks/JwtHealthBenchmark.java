@@ -25,7 +25,6 @@ import org.openjdk.jmh.annotations.Mode;
  * Benchmark class for health endpoints to establish baseline performance.
  * These benchmarks provide a baseline for comparison with JWT validation endpoints.
  * 
- * @author Generated
  * @since 1.0
  */
 public class JwtHealthBenchmark extends AbstractBaseBenchmark {

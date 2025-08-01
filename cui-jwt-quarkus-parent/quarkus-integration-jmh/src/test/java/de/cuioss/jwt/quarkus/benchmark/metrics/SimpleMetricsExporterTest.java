@@ -60,24 +60,24 @@ class SimpleMetricsExporterTest {
         try (FileReader reader = new FileReader(aggregatedFile)) {
             Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
-            
+
             Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
             assertNotNull(benchmarkData);
             assertTrue(benchmarkData.containsKey("steps"));
-            
+
             Map<String, Object> steps = (Map<String, Object>) benchmarkData.get("steps");
-            
+
             assertTrue(steps.containsKey("token_parsing"));
             assertTrue(steps.containsKey("signature_validation"));
             assertTrue(steps.containsKey("complete_validation"));
-            
+
             if (steps.containsKey("token_parsing")) {
                 Map<String, Object> tokenParsing = (Map<String, Object>) steps.get("token_parsing");
                 assertTrue(tokenParsing.containsKey("sample_count"));
                 assertTrue(tokenParsing.containsKey("p50_us"));
                 assertTrue(tokenParsing.containsKey("p95_us"));
                 assertTrue(tokenParsing.containsKey("p99_us"));
-                
+
                 Double sampleCount = (Double) tokenParsing.get("sample_count");
                 assertTrue(sampleCount > 0 && sampleCount < 100);
             }
@@ -98,10 +98,10 @@ class SimpleMetricsExporterTest {
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
             Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
-            
+
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
             assertTrue(aggregatedData.containsKey("validateJwtLatency"));
-            
+
             for (String benchmarkKey : aggregatedData.keySet()) {
                 Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get(benchmarkKey);
                 assertTrue(benchmarkData.containsKey("timestamp"));
@@ -120,7 +120,7 @@ class SimpleMetricsExporterTest {
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         assertTrue(aggregatedFile.exists());
 
-        String jsonContent = java.nio.file.Files.readString(aggregatedFile.toPath());
+        String jsonContent = Files.readString(aggregatedFile.toPath());
 
         assertTrue(jsonContent.contains("\"sample_count\": 9") || jsonContent.contains("\"sample_count\": 11") || jsonContent.contains("\"sample_count\": 12"));
         assertFalse(jsonContent.contains("\"sample_count\": 1000"));
@@ -139,11 +139,11 @@ class SimpleMetricsExporterTest {
         assertTrue(jsonContent.contains("\"p50_us\": 0.4"));
         assertTrue(jsonContent.contains("\"p50_us\": 2.2"));
         assertTrue(jsonContent.contains("\"p50_us\": 7.1"));
-        
+
         assertTrue(jsonContent.contains("\"p50_us\": 13"));
         assertTrue(jsonContent.contains("\"p95_us\": 38"));
         assertTrue(jsonContent.contains("\"p50_us\": 184"));
-        
+
         assertFalse(jsonContent.contains("0.419921875"));
         assertFalse(jsonContent.contains("16.75"));
         assertFalse(jsonContent.contains("192.0"));
@@ -155,7 +155,7 @@ class SimpleMetricsExporterTest {
         // Arrange
         MetricsFetcher multiTypeFetcher = new TestMetricsFetcher();
         SimpleMetricsExporter filteringExporter = new SimpleMetricsExporter(tempDir.toString(), multiTypeFetcher);
-        
+
         // Act
         filteringExporter.exportJwtValidationMetrics("JwtEchoBenchmark.echoGetThroughput", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtHealthBenchmark.healthCheckLatency", Instant.now());
@@ -164,19 +164,19 @@ class SimpleMetricsExporterTest {
         filteringExporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtEcho", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtHealth", Instant.now());
-        
+
         // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
-        
+
         assertTrue(jsonContent.contains("\"validateJwtThroughput\""));
         assertTrue(jsonContent.contains("\"validateAccessTokenLatency\""));
-        
+
         assertFalse(jsonContent.contains("\"JwtEcho\""));
         assertFalse(jsonContent.contains("\"JwtHealth\""));
         assertFalse(jsonContent.contains("\"echoGetThroughput\""));
         assertFalse(jsonContent.contains("\"healthCheckLatency\""));
-        
+
         Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
         assertEquals(3, aggregatedData.size());
     }
@@ -190,24 +190,24 @@ class SimpleMetricsExporterTest {
         // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
-        
+
         Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
         assertNotNull(benchmarkData.get("bearer_token_producer_metrics"));
-        
+
         Map<String, Object> httpMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
-        
+
         assertTrue(httpMetrics.containsKey("token_extraction"));
         assertTrue(httpMetrics.containsKey("header_extraction"));
         assertTrue(httpMetrics.containsKey("authorization_check"));
         assertTrue(httpMetrics.containsKey("request_processing"));
         assertTrue(httpMetrics.containsKey("response_formatting"));
-        
+
         Map<String, Object> tokenExtraction = (Map<String, Object>) httpMetrics.get("token_extraction");
         assertTrue(tokenExtraction.containsKey("sample_count"));
         assertTrue(tokenExtraction.containsKey("p50_us"));
         assertTrue(tokenExtraction.containsKey("p95_us"));
         assertTrue(tokenExtraction.containsKey("p99_us"));
-        
+
         Double p50Value = (Double) tokenExtraction.get("p50_us");
         if (p50Value < 10) {
             String jsonContent = Files.readString(aggregatedFile.toPath());
@@ -224,7 +224,7 @@ class SimpleMetricsExporterTest {
         // Arrange
         MetricsFetcher emptyFetcher = () -> new HashMap<>();
         SimpleMetricsExporter emptyExporter = new SimpleMetricsExporter(tempDir.toString(), emptyFetcher);
-        
+
         // Act
         emptyExporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
@@ -235,32 +235,32 @@ class SimpleMetricsExporterTest {
         try (FileReader reader = new FileReader(aggregatedFile)) {
             Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
-            
+
             Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
             Map<String, Object> steps = (Map<String, Object>) benchmarkData.get("steps");
-            
+
             assertTrue(steps.isEmpty());
         }
     }
-    
+
     private static class TestMetricsFetcher implements MetricsFetcher {
-        
+
         @Override
         public Map<String, Double> fetchMetrics() {
             try {
                 String testDataPath = "src/test/resources/sample-jwt-validation-metrics.txt";
-                String content = java.nio.file.Files.readString(java.nio.file.Paths.get(testDataPath));
-                
+                String content = Files.readString(Path.of(testDataPath));
+
                 Map<String, Double> metrics = new HashMap<>();
                 parseQuarkusMetrics(content, metrics);
                 return metrics;
-                
+
             } catch (Exception e) {
                 System.err.println("Failed to load test metrics: " + e.getMessage());
                 return new HashMap<>();
             }
         }
-        
+
         private void parseQuarkusMetrics(String responseBody, Map<String, Double> results) {
             String[] lines = responseBody.split("\n");
             for (String line : lines) {

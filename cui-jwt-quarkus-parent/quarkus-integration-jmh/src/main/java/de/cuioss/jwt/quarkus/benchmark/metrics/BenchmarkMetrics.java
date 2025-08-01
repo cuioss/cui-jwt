@@ -16,15 +16,16 @@
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.annotations.SerializedName;
-import lombok.Builder;
-import lombok.Value;
 
 import java.time.Instant;
+
+
+import lombok.Builder;
+import lombok.Value;
 
 /**
  * Complete metrics snapshot collected during benchmark execution.
  * 
- * @author Generated
  * @since 1.0
  */
 @Value

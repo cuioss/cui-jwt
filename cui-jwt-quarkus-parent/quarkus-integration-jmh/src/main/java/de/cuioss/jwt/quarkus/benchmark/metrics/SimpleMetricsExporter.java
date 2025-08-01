@@ -25,32 +25,31 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 
 /**
  * Simplified metrics exporter that processes JWT validation metrics.
  * Only creates integration-jwt-validation-metrics.json with all JWT validation benchmark results.
  * Uses dependency injection pattern for metrics fetching to improve testability.
  *
- * @author Generated
  * @since 1.0
  */
 public class SimpleMetricsExporter {
 
     private static final CuiLogger LOGGER = new CuiLogger(SimpleMetricsExporter.class);
-    
+
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
-            .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>) 
-                (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
+            .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>)
+                    (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
             .create();
 
     private final String outputDirectory;
@@ -61,7 +60,7 @@ public class SimpleMetricsExporter {
         this.metricsFetcher = metricsFetcher;
         File dir = new File(outputDirectory);
         dir.mkdirs();
-        LOGGER.info("SimpleMetricsExporter initialized with output directory: {} (exists: {})", 
+        LOGGER.info("SimpleMetricsExporter initialized with output directory: {} (exists: {})",
                 dir.getAbsolutePath(), dir.exists());
     }
 
@@ -71,38 +70,38 @@ public class SimpleMetricsExporter {
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
         LOGGER.info("Exporting JWT validation metrics for: {}", benchmarkMethodName);
-        
+
         // Set the benchmark context for proper directory naming
         BenchmarkContextManager.setBenchmarkContext(benchmarkMethodName);
-        
+
         // Always save raw metrics for ALL benchmarks
         try {
             Map<String, Double> allMetrics = metricsFetcher.fetchMetrics();
             LOGGER.debug("Fetched {} metrics from Quarkus", allMetrics.size());
-            
+
             // Process JWT validation specific metrics if applicable
             if (isJwtValidationBenchmark(benchmarkMethodName)) {
                 Map<String, Object> stepMetrics = extractStepMetrics(allMetrics);
                 Map<String, Object> httpMetrics = extractHttpMetrics(allMetrics);
-                
+
                 // Create benchmark data
                 Map<String, Object> benchmarkData = new LinkedHashMap<>();
                 benchmarkData.put("timestamp", timestamp.toString());
                 benchmarkData.put("steps", stepMetrics);
                 benchmarkData.put("bearer_token_producer_metrics", httpMetrics);
-                
+
                 // Extract just the method name (remove class prefix)
                 String simpleBenchmarkName = benchmarkMethodName;
                 if (benchmarkMethodName.contains(".")) {
                     simpleBenchmarkName = benchmarkMethodName.substring(benchmarkMethodName.lastIndexOf('.') + 1);
                 }
-                
+
                 // Update aggregated file
                 updateAggregatedMetrics(simpleBenchmarkName, benchmarkData);
             } else {
                 LOGGER.info("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
             }
-            
+
         } catch (Exception e) {
             LOGGER.error("Failed to export metrics for {}", benchmarkMethodName, e);
         }
@@ -110,7 +109,7 @@ public class SimpleMetricsExporter {
 
     private void updateAggregatedMetrics(String benchmarkMethodName, Map<String, Object> benchmarkData) throws IOException {
         String filename = outputDirectory + "/integration-jwt-validation-metrics.json";
-        
+
         // Read existing data
         Map<String, Object> allMetrics = new LinkedHashMap<>();
         File file = new File(filename);
@@ -120,19 +119,19 @@ public class SimpleMetricsExporter {
                 allMetrics = GSON.fromJson(content, Map.class);
             }
         }
-        
+
         // Add/update benchmark data
         allMetrics.put(benchmarkMethodName, benchmarkData);
-        
+
         // Write back
         File outputFile = new File(filename);
-        LOGGER.info("Writing metrics to: {} (parent exists: {})", 
+        LOGGER.info("Writing metrics to: {} (parent exists: {})",
                 outputFile.getAbsolutePath(), outputFile.getParentFile().exists());
-        
+
         try (FileWriter writer = new FileWriter(outputFile)) {
             GSON.toJson(allMetrics, writer);
             writer.flush();
-            LOGGER.info("Updated integration-jwt-validation-metrics.json with {} benchmarks at: {}", 
+            LOGGER.info("Updated integration-jwt-validation-metrics.json with {} benchmarks at: {}",
                     allMetrics.size(), outputFile.getAbsolutePath());
         }
     }
@@ -143,7 +142,7 @@ public class SimpleMetricsExporter {
     private Map<String, Object> extractStepMetrics(Map<String, Double> allMetrics) {
         Map<String, Object> stepMetrics = new LinkedHashMap<>();
         Map<String, StepPercentileData> stepData = new HashMap<>();
-        
+
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
@@ -153,7 +152,7 @@ public class SimpleMetricsExporter {
                 String stepName = extractStepName(metricName);
                 if (stepName != null && !metricName.contains("_max")) {
                     StepPercentileData data = stepData.computeIfAbsent(stepName, k -> new StepPercentileData());
-                    
+
                     if (metricName.contains("_count")) {
                         data.count = value.longValue();
                     } else if (metricName.contains("quantile=\"0.5\"")) {
@@ -171,7 +170,7 @@ public class SimpleMetricsExporter {
         for (Map.Entry<String, StepPercentileData> entry : stepData.entrySet()) {
             String stepName = entry.getKey();
             StepPercentileData data = entry.getValue();
-            
+
             if (data.count > 0) {
                 Map<String, Object> metric = new LinkedHashMap<>();
                 metric.put("sample_count", formatNumber(data.count));
@@ -214,11 +213,11 @@ public class SimpleMetricsExporter {
      * Check if a benchmark name represents a JWT validation benchmark
      */
     private boolean isJwtValidationBenchmark(String benchmarkMethodName) {
-        return benchmarkMethodName.contains("JwtValidationBenchmark") || 
-               benchmarkMethodName.equals("JwtValidation") ||  // getBenchmarkName() returns this
-               benchmarkMethodName.startsWith("validateJwt") ||
-               benchmarkMethodName.contains("validateAccessToken") ||
-               benchmarkMethodName.contains("validateIdToken");
+        return benchmarkMethodName.contains("JwtValidationBenchmark") ||
+                "JwtValidation".equals(benchmarkMethodName) ||  // getBenchmarkName() returns this
+                benchmarkMethodName.startsWith("validateJwt") ||
+                benchmarkMethodName.contains("validateAccessToken") ||
+                benchmarkMethodName.contains("validateIdToken");
     }
 
     /**
@@ -227,7 +226,7 @@ public class SimpleMetricsExporter {
     private Map<String, Object> extractHttpMetrics(Map<String, Double> allMetrics) {
         Map<String, Object> httpMetrics = new LinkedHashMap<>();
         Map<String, StepPercentileData> httpData = new HashMap<>();
-        
+
         // HTTP metrics pattern: cui_jwt_http_request_duration_percentiles_microseconds{type="token_extraction",quantile="0.5"}
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
@@ -237,7 +236,7 @@ public class SimpleMetricsExporter {
                 String measurementType = extractHttpMeasurementType(metricName);
                 if (measurementType != null && !metricName.contains("_max")) {
                     StepPercentileData data = httpData.computeIfAbsent(measurementType, k -> new StepPercentileData());
-                    
+
                     if (metricName.contains("_count")) {
                         data.count = value.longValue();
                     } else if (metricName.contains("quantile=\"0.5\"")) {
@@ -255,7 +254,7 @@ public class SimpleMetricsExporter {
         for (Map.Entry<String, StepPercentileData> entry : httpData.entrySet()) {
             String measurementType = entry.getKey();
             StepPercentileData data = entry.getValue();
-            
+
             // Include all metrics even if count is 0
             Map<String, Object> metric = new LinkedHashMap<>();
             metric.put("sample_count", formatNumber(data.count));
@@ -279,14 +278,14 @@ public class SimpleMetricsExporter {
         if (typeMatcher.find()) {
             return typeMatcher.group(1);
         }
-        
+
         // Fall back to measurement attribute
         Pattern measurementPattern = Pattern.compile("measurement=\"([^\"]+)\"");
         Matcher measurementMatcher = measurementPattern.matcher(metricName);
         if (measurementMatcher.find()) {
             return measurementMatcher.group(1);
         }
-        
+
         return null;
     }
 

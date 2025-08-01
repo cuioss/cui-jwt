@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -53,24 +52,24 @@ class ComprehensiveMetricsPostProcessorTest {
         String benchmarkFile = benchmarkResultsDir + "/integration-benchmark-result.json";
         MetricsPostProcessor processor = new MetricsPostProcessor(benchmarkFile, benchmarkResultsDir);
         Instant testTimestamp = Instant.parse("2025-08-01T15:00:00.000Z");
-        
+
         // Act
         processor.parseAndExportAllMetrics(testTimestamp);
 
         // Assert
         File httpMetricsFile = new File(benchmarkResultsDir, "http-metrics.json");
         File quarkusMetricsFile = new File(benchmarkResultsDir, "quarkus-metrics.json");
-        
+
         assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json");
         assertTrue(quarkusMetricsFile.exists(), "Should create quarkus-metrics.json");
 
         try (FileReader reader = new FileReader(httpMetricsFile)) {
             Map<String, Object> httpMetrics = gson.fromJson(reader, Map.class);
-            
+
             assertTrue(httpMetrics.containsKey("echo"));
             assertTrue(httpMetrics.containsKey("health"));
             assertTrue(httpMetrics.containsKey("jwt_validation"));
-            
+
             Map<String, Object> echoData = (Map<String, Object>) httpMetrics.get("echo");
             assertEquals(testTimestamp.toString(), echoData.get("timestamp"));
             assertTrue(echoData.containsKey("percentiles"));
@@ -78,15 +77,15 @@ class ComprehensiveMetricsPostProcessorTest {
 
         try (FileReader reader = new FileReader(quarkusMetricsFile)) {
             Map<String, Object> quarkusMetrics = gson.fromJson(reader, Map.class);
-            
+
             assertTrue(quarkusMetrics.containsKey("cpu"));
             assertTrue(quarkusMetrics.containsKey("memory"));
             assertTrue(quarkusMetrics.containsKey("metadata"));
-            
+
             Map<String, Object> cpuData = (Map<String, Object>) quarkusMetrics.get("cpu");
             assertTrue(cpuData.containsKey("system_cpu_usage_avg"));
             assertTrue(cpuData.containsKey("cpu_count"));
-            
+
             Map<String, Object> memoryData = (Map<String, Object>) quarkusMetrics.get("memory");
             assertTrue(memoryData.containsKey("heap"));
             assertTrue(memoryData.containsKey("nonheap"));
@@ -100,14 +99,14 @@ class ComprehensiveMetricsPostProcessorTest {
         String baseDirectory = createHttpOnlyTestStructure();
         String benchmarkFile = baseDirectory + "/integration-benchmark-result.json";
         MetricsPostProcessor processor = new MetricsPostProcessor(benchmarkFile, baseDirectory);
-        
+
         // Act
         processor.parseAndExportAllMetrics(Instant.now());
 
         // Assert
         File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
         File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
-        
+
         assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json even if Quarkus metrics fail");
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json if metrics-download missing");
 
@@ -122,32 +121,32 @@ class ComprehensiveMetricsPostProcessorTest {
     void shouldUseComprehensiveConvenienceMethod() throws IOException {
         // Arrange
         String benchmarkResultsDir = createCompleteTestStructure();
-        
+
         // Act
         MetricsPostProcessor.parseAndExport(benchmarkResultsDir);
 
         // Assert
         File httpMetricsFile = new File(benchmarkResultsDir, "http-metrics.json");
         File quarkusMetricsFile = new File(benchmarkResultsDir, "quarkus-metrics.json");
-        
+
         assertTrue(httpMetricsFile.exists(), "Convenience method should create http-metrics.json");
         assertTrue(quarkusMetricsFile.exists(), "Convenience method should create quarkus-metrics.json");
 
         try (FileReader httpReader = new FileReader(httpMetricsFile);
              FileReader quarkusReader = new FileReader(quarkusMetricsFile)) {
-            
+
             Map<String, Object> httpMetrics = gson.fromJson(httpReader, Map.class);
             Map<String, Object> quarkusMetrics = gson.fromJson(quarkusReader, Map.class);
-            
+
             assertFalse(httpMetrics.isEmpty());
             assertFalse(quarkusMetrics.isEmpty());
-            
+
             String httpTimestamp = (String) ((Map<String, Object>) httpMetrics.get("echo")).get("timestamp");
             String quarkusTimestamp = (String) ((Map<String, Object>) quarkusMetrics.get("metadata")).get("timestamp");
-            
+
             assertNotNull(httpTimestamp);
             assertNotNull(quarkusTimestamp);
-            
+
             Instant httpTime = Instant.parse(httpTimestamp);
             Instant quarkusTime = Instant.parse(quarkusTimestamp);
             long timeDiff = Math.abs(httpTime.toEpochMilli() - quarkusTime.toEpochMilli());
@@ -160,14 +159,14 @@ class ComprehensiveMetricsPostProcessorTest {
     void shouldProvideBackwardCompatibility() throws IOException {
         // Arrange
         String baseDirectory = createHttpOnlyTestStructure();
-        
+
         // Act
         MetricsPostProcessor.parseAndExportHttpOnly(baseDirectory);
 
         // Assert
         File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
         File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
-        
+
         assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json for backward compatibility");
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json with HTTP-only method");
     }
@@ -175,33 +174,33 @@ class ComprehensiveMetricsPostProcessorTest {
     private String createCompleteTestStructure() throws IOException {
         File baseDir = new File(tempDir.toFile(), "complete-test");
         baseDir.mkdirs();
-        
+
         // Create target directory structure as expected by MetricsPostProcessor
         File targetDir = new File(tempDir.toFile(), "complete-test-target");
         targetDir.mkdirs();
-        
+
         // Create benchmark-results directory in target
         File benchmarkResultsDir = new File(targetDir, "benchmark-results");
         benchmarkResultsDir.mkdirs();
-        
+
         createHttpBenchmarkFile(benchmarkResultsDir);
         createQuarkusMetricsData(targetDir);
-        
+
         return benchmarkResultsDir.getAbsolutePath();
     }
 
     private String createHttpOnlyTestStructure() throws IOException {
         File baseDir = new File(tempDir.toFile(), "http-only-test");
         baseDir.mkdirs();
-        
+
         createHttpBenchmarkFile(baseDir);
-        
+
         return baseDir.getAbsolutePath();
     }
 
     private void createHttpBenchmarkFile(File baseDir) throws IOException {
         File benchmarkFile = new File(baseDir, "integration-benchmark-result.json");
-        
+
         String benchmarkData = """
             [
                 {
@@ -260,7 +259,7 @@ class ComprehensiveMetricsPostProcessorTest {
                 }
             ]
             """;
-        
+
         try (FileWriter writer = new FileWriter(benchmarkFile)) {
             writer.write(benchmarkData);
         }
@@ -269,9 +268,9 @@ class ComprehensiveMetricsPostProcessorTest {
     private void createQuarkusMetricsData(File targetDir) throws IOException {
         File metricsDir = new File(targetDir, "metrics-download");
         metricsDir.mkdirs();
-        
+
         File metricsFile = new File(metricsDir, "jwt-validation-metrics.txt");
-        
+
         String metricsData = """
             system_cpu_usage 0.12
             process_cpu_usage 0.10
@@ -282,7 +281,7 @@ class ComprehensiveMetricsPostProcessorTest {
             jvm_memory_committed_bytes{area="heap",id="eden space"} 8388608.0
             jvm_memory_committed_bytes{area="heap",id="old generation space"} 12582912.0
             """;
-        
+
         try (FileWriter writer = new FileWriter(metricsFile)) {
             writer.write(metricsData);
         }

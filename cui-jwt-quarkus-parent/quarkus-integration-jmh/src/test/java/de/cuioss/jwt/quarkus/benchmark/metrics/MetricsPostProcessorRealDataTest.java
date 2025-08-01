@@ -180,7 +180,7 @@ class MetricsPostProcessorRealDataTest {
 
                 double numValue = ((Number) value).doubleValue();
                 assertTrue(numValue > 0,
-                    "Percentile " + percentile + " for " + endpointType + " should be > 0");
+                        "Percentile " + percentile + " for " + endpointType + " should be > 0");
             }
         }
     }
@@ -200,11 +200,11 @@ class MetricsPostProcessorRealDataTest {
 
             // HTTP roundtrip times should be in reasonable millisecond ranges
             assertTrue(echoMetrics.getP50() > 1.0 && echoMetrics.getP50() < 100.0,
-                "Echo p50 should be reasonable HTTP roundtrip time (1-100ms): " + echoMetrics.getP50());
+                    "Echo p50 should be reasonable HTTP roundtrip time (1-100ms): " + echoMetrics.getP50());
             assertTrue(echoMetrics.getP95() > echoMetrics.getP50(),
-                "Echo p95 should be > p50: p95=" + echoMetrics.getP95() + ", p50=" + echoMetrics.getP50());
+                    "Echo p95 should be > p50: p95=" + echoMetrics.getP95() + ", p50=" + echoMetrics.getP50());
             assertTrue(echoMetrics.getP99() > echoMetrics.getP95(),
-                "Echo p99 should be > p95: p99=" + echoMetrics.getP99() + ", p95=" + echoMetrics.getP95());
+                    "Echo p99 should be > p95: p99=" + echoMetrics.getP99() + ", p95=" + echoMetrics.getP95());
         }
 
         if (endpointMetrics.containsKey("health")) {
@@ -212,11 +212,11 @@ class MetricsPostProcessorRealDataTest {
 
             // Health checks should be fast
             assertTrue(healthMetrics.getP50() > 1.0 && healthMetrics.getP50() < 50.0,
-                "Health p50 should be reasonable health check time (1-50ms): " + healthMetrics.getP50());
+                    "Health p50 should be reasonable health check time (1-50ms): " + healthMetrics.getP50());
             assertTrue(healthMetrics.getP95() > healthMetrics.getP50(),
-                "Health p95 should be > p50");
+                    "Health p95 should be > p50");
             assertTrue(healthMetrics.getP99() > healthMetrics.getP95(),
-                "Health p99 should be > p95");
+                    "Health p99 should be > p95");
         }
     }
 
@@ -236,11 +236,11 @@ class MetricsPostProcessorRealDataTest {
 
             // Sample count should be > 0 for sample mode benchmarks
             assertTrue(metrics.getSampleCount() > 0,
-                "Sample count should be > 0 for " + endpointType + " from sample mode");
+                    "Sample count should be > 0 for " + endpointType + " from sample mode");
 
             // Percentiles should be reasonable values (not throughput ops/sec values)
             assertTrue(metrics.getP50() < 1000,
-                "P50 should be reasonable latency (ms), not throughput for " + endpointType);
+                    "P50 should be reasonable latency (ms), not throughput for " + endpointType);
         }
     }
 
@@ -264,9 +264,9 @@ class MetricsPostProcessorRealDataTest {
 
             // Sample counts should be realistic for JMH benchmarks
             assertTrue(metrics.getSampleCount() >= 10,
-                "Sample count should be >= 10 for " + endpointType + " but was " + metrics.getSampleCount());
+                    "Sample count should be >= 10 for " + endpointType + " but was " + metrics.getSampleCount());
             assertTrue(metrics.getSampleCount() <= 10000,
-                "Sample count should be <= 10000 for " + endpointType + " but was " + metrics.getSampleCount());
+                    "Sample count should be <= 10000 for " + endpointType + " but was " + metrics.getSampleCount());
         }
     }
 

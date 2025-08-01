@@ -24,7 +24,6 @@ import java.io.File;
  * Shared utility class for building JMH benchmark options for Quarkus integration benchmarks.
  * Consolidates common option parsing logic used by both standard and JFR benchmark runners.
  * 
- * @author Generated
  * @since 1.0
  */
 public final class BenchmarkOptionsHelper {

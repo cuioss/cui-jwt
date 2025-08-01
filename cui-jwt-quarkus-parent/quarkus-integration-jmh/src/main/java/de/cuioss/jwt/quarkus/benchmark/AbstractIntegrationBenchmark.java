@@ -28,7 +28,6 @@ import org.openjdk.jmh.annotations.*;
  * <p>Use this class for benchmarks that need authenticated requests.
  * For benchmarks that don't require authentication, use {@link AbstractBaseBenchmark} directly.</p>
  * 
- * @author Generated
  * @since 1.0
  */
 @State(Scope.Benchmark)
@@ -48,7 +47,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
     public void setupBenchmark() {
         // Call parent setup first
         super.setupBenchmark();
-        
+
         LOGGER.info("Setting up integration benchmark with token repository");
 
         // Get Keycloak configuration

@@ -27,7 +27,7 @@ class MetricsPostProcessorRunner {
     @Test
     void runParserOnActualResults() throws IOException {
         String resultsDirectory = "target/benchmark-results";
-        
+
         try {
             MetricsPostProcessor.parseAndExport(resultsDirectory);
             System.out.println("Successfully parsed and exported HTTP metrics from actual benchmark results");

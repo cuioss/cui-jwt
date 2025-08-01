@@ -53,7 +53,7 @@ class MetricsPostProcessorTest {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
-        
+
         // Act
         parser.parseAndExportHttpMetrics(testTimestamp);
 
@@ -63,7 +63,7 @@ class MetricsPostProcessorTest {
 
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            
+
             assertTrue(metrics.containsKey("jwt_validation"));
             assertTrue(metrics.containsKey("echo"));
             assertTrue(metrics.containsKey("health"));
@@ -76,7 +76,7 @@ class MetricsPostProcessorTest {
     void shouldExtractCorrectPercentileData() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
-        
+
         // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
@@ -84,18 +84,18 @@ class MetricsPostProcessorTest {
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            
+
             Map<String, Object> echoMetrics = (Map<String, Object>) metrics.get("echo");
             assertNotNull(echoMetrics);
             assertEquals("Echo", echoMetrics.get("name"));
-            
+
             Map<String, Object> percentiles = (Map<String, Object>) echoMetrics.get("percentiles");
             assertNotNull(percentiles);
-            
+
             assertTrue(percentiles.containsKey("p50_us"));
             assertTrue(percentiles.containsKey("p95_us"));
             assertTrue(percentiles.containsKey("p99_us"));
-            
+
             assertTrue(percentiles.get("p50_us") instanceof Number);
             assertTrue(percentiles.get("p95_us") instanceof Number);
             assertTrue(percentiles.get("p99_us") instanceof Number);
@@ -107,16 +107,16 @@ class MetricsPostProcessorTest {
     void shouldFormatNumbersCorrectly() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
-        
+
         // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         String jsonContent = Files.readString(outputFile.toPath());
-        
+
         assertFalse(jsonContent.contains(".0\""));
-        
+
         Map<String, Object> parsed = gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
         assertTrue(parsed.size() >= 1);
@@ -127,7 +127,7 @@ class MetricsPostProcessorTest {
     void shouldIncludeSampleCounts() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
-        
+
         // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
@@ -135,12 +135,12 @@ class MetricsPostProcessorTest {
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            
+
             for (String endpointType : metrics.keySet()) {
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
-                
+
                 assertTrue(endpointData.containsKey("sample_count"));
-                
+
                 Object sampleCount = endpointData.get("sample_count");
                 assertTrue(sampleCount instanceof Number);
                 assertTrue(((Number) sampleCount).intValue() > 0);
@@ -154,7 +154,7 @@ class MetricsPostProcessorTest {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
-        
+
         // Act
         parser.parseAndExportHttpMetrics(testTimestamp);
 
@@ -162,13 +162,13 @@ class MetricsPostProcessorTest {
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            
+
             for (String endpointType : metrics.keySet()) {
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
-                
+
                 assertEquals(testTimestamp.toString(), endpointData.get("timestamp"));
                 assertTrue(endpointData.containsKey("source"));
-                
+
                 String source = (String) endpointData.get("source");
                 assertTrue(source.contains("JMH benchmark"));
                 assertTrue(source.contains("sample mode"));
@@ -182,19 +182,19 @@ class MetricsPostProcessorTest {
         // Arrange
         String mixedModeFile = createMixedModeBenchmarkFile();
         MetricsPostProcessor parser = new MetricsPostProcessor(mixedModeFile, tempDir.toString());
-        
+
         // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         assertTrue(outputFile.exists());
-        
+
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            
+
             assertFalse(metrics.isEmpty());
-            
+
             for (String endpointType : metrics.keySet()) {
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
                 String source = (String) endpointData.get("source");
@@ -208,10 +208,10 @@ class MetricsPostProcessorTest {
     void shouldHandleFileNotFound() {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor("/non/existent/file.json", tempDir.toString());
-        
+
         // Act & Assert
         IOException exception = assertThrows(IOException.class, () -> parser.parseAndExportHttpMetrics(Instant.now()));
-        
+
         assertTrue(exception.getMessage().contains("not found"));
     }
 
@@ -222,14 +222,14 @@ class MetricsPostProcessorTest {
         File resultsDir = tempDir.toFile();
         File benchmarkFile = new File(resultsDir, "integration-benchmark-result.json");
         Files.copy(Path.of(testBenchmarkFile), benchmarkFile.toPath());
-        
+
         // Act
         MetricsPostProcessor.parseAndExport(resultsDir.getAbsolutePath());
 
         // Assert
         File outputFile = new File(resultsDir, "http-metrics.json");
         assertTrue(outputFile.exists());
-        
+
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             assertFalse(metrics.isEmpty());
@@ -238,7 +238,7 @@ class MetricsPostProcessorTest {
 
     private String createTestBenchmarkFile() throws IOException {
         File testFile = new File(tempDir.toFile(), "test-benchmark-result.json");
-        
+
         String testData = """
         [
             {
@@ -330,17 +330,17 @@ class MetricsPostProcessorTest {
             }
         ]
         """;
-        
+
         try (FileWriter writer = new FileWriter(testFile)) {
             writer.write(testData);
         }
-        
+
         return testFile.getAbsolutePath();
     }
 
     private String createMixedModeBenchmarkFile() throws IOException {
         File testFile = new File(tempDir.toFile(), "mixed-mode-benchmark-result.json");
-        
+
         String testData = """
         [
             {
@@ -373,11 +373,11 @@ class MetricsPostProcessorTest {
             }
         ]
         """;
-        
+
         try (FileWriter writer = new FileWriter(testFile)) {
             writer.write(testData);
         }
-        
+
         return testFile.getAbsolutePath();
     }
 }

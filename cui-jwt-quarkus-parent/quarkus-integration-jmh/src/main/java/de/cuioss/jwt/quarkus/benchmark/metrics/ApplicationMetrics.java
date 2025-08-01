@@ -16,13 +16,14 @@
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.annotations.SerializedName;
+
+
 import lombok.Builder;
 import lombok.Value;
 
 /**
  * Application-specific metrics collected from Prometheus.
  * 
- * @author Generated
  * @since 1.0
  */
 @Value

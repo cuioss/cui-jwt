@@ -25,7 +25,6 @@ import org.openjdk.jmh.annotations.Mode;
  * Benchmark class for echo endpoints to measure network and serialization baseline.
  * These benchmarks provide network overhead baseline for comparison with JWT operations.
  * 
- * @author Generated
  * @since 1.0
  */
 public class JwtEchoBenchmark extends AbstractBaseBenchmark {

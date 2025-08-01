@@ -20,8 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkContextManagerTest {
@@ -60,7 +58,6 @@ class BenchmarkContextManagerTest {
     }
 
 
-
     @Test
     @DisplayName("Should generate valid metrics filename with timestamp")
     void shouldGenerateValidMetricsFilename() {
@@ -85,10 +82,10 @@ class BenchmarkContextManagerTest {
         Thread.sleep(1100);
         BenchmarkContextManager.resetContext();
         String newContext = BenchmarkContextManager.getBenchmarkContext();
-        
+
         // Assert
         assertNotEquals(originalContext, newContext, "Context should be reset and regenerated");
     }
-    
-    
+
+
 }

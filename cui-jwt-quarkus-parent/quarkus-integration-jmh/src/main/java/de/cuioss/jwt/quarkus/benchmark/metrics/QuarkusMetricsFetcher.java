@@ -21,20 +21,18 @@ import io.restassured.response.Response;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Fetches metrics from Quarkus /q/metrics endpoint.
  * 
- * @author Generated
  * @since 1.0
  */
 public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusMetricsFetcher.class);
-    
+
     private final String quarkusUrl;
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
@@ -51,10 +49,10 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
             if (response.getStatusCode() == 200) {
                 String responseBody = response.getBody().asString();
-                
+
                 // Save raw metrics for development
                 saveRawMetricsData(responseBody);
-                
+
                 parseQuarkusMetrics(responseBody, results);
             } else {
                 LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.getStatusCode());
@@ -73,13 +71,13 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         try {
             // Use BenchmarkContextManager for file naming
             File outputFile = BenchmarkContextManager.getMetricsFile();
-            
+
             try (FileWriter writer = new FileWriter(outputFile)) {
                 writer.write(rawMetrics);
             }
-            
+
             LOGGER.info("✅ Saved raw Quarkus metrics to: {}", outputFile.getAbsolutePath());
-            
+
         } catch (Exception e) {
             LOGGER.warn("Failed to save raw metrics data", e);
         }

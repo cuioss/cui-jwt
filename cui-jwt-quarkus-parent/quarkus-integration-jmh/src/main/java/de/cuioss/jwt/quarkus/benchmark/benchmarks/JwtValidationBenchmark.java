@@ -25,7 +25,6 @@ import org.openjdk.jmh.annotations.Mode;
  * Benchmark class for JWT validation endpoints against live Quarkus service.
  * Tests various JWT validation scenarios including success and error cases.
  * 
- * @author Generated
  * @since 1.0
  */
 public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {

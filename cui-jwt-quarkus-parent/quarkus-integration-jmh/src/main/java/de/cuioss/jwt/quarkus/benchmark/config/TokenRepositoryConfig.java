@@ -22,7 +22,6 @@ import lombok.Value;
  * Configuration for TokenRepository to connect to Keycloak and fetch tokens
  * for benchmark testing.
  * 
- * @author Generated
  * @since 1.0
  */
 @Value

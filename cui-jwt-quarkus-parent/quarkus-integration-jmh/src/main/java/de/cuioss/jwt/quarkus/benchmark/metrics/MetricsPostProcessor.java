@@ -42,7 +42,6 @@ import java.util.Map;
  *
  * Generates http-metrics.json and quarkus-metrics.json files for performance analysis.
  *
- * @author Generated
  * @since 1.0
  */
 public class MetricsPostProcessor {
@@ -52,8 +51,13 @@ public class MetricsPostProcessor {
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>)
-                (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
+                    (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
             .create();
+
+    // Constants for magic numbers
+    private static final double MICROSECONDS_PER_MILLISECOND = 1000.0;
+    private static final double DECIMAL_THRESHOLD = 10.0;
+    private static final double DECIMAL_PRECISION = 10.0;
 
     private final String benchmarkResultsFile;
     private final String outputDirectory;
@@ -160,7 +164,7 @@ public class MetricsPostProcessor {
         int sampleCount = extractSampleCount(primaryMetric);
 
         HttpEndpointMetrics metrics = endpointMetrics.computeIfAbsent(endpointType,
-            k -> new HttpEndpointMetrics(getEndpointDisplayName(k), benchmarkName));
+                k -> new HttpEndpointMetrics(getEndpointDisplayName(k), benchmarkName));
 
         // Update metrics with percentile data (convert from ms to ms, keep as ms)
         double p50 = scorePercentiles.get("50.0").getAsDouble();
@@ -185,16 +189,12 @@ public class MetricsPostProcessor {
     }
 
     private String getEndpointDisplayName(String endpointType) {
-        switch (endpointType) {
-            case "jwt_validation":
-                return "JWT Validation";
-            case "echo":
-                return "Echo";
-            case "health":
-                return "Health Check";
-            default:
-                return endpointType;
-        }
+        return switch (endpointType) {
+            case "jwt_validation" -> "JWT Validation";
+            case "echo" -> "Echo";
+            case "health" -> "Health Check";
+            default -> endpointType;
+        };
     }
 
     private int extractSampleCount(JsonObject primaryMetric) {
@@ -237,9 +237,9 @@ public class MetricsPostProcessor {
             endpointData.put("sample_count", metrics.sampleCount);
 
             Map<String, Object> percentiles = new LinkedHashMap<>();
-            percentiles.put("p50_us", formatNumber(metrics.p50 * 1000)); // Convert ms to microseconds
-            percentiles.put("p95_us", formatNumber(metrics.p95 * 1000)); // Convert ms to microseconds
-            percentiles.put("p99_us", formatNumber(metrics.p99 * 1000)); // Convert ms to microseconds
+            percentiles.put("p50_us", formatNumber(metrics.p50 * MICROSECONDS_PER_MILLISECOND));
+            percentiles.put("p95_us", formatNumber(metrics.p95 * MICROSECONDS_PER_MILLISECOND));
+            percentiles.put("p99_us", formatNumber(metrics.p99 * MICROSECONDS_PER_MILLISECOND));
             endpointData.put("percentiles", percentiles);
 
             endpointData.put("source", "JMH benchmark - " + metrics.sourceBenchmark + " sample mode");
@@ -261,9 +261,9 @@ public class MetricsPostProcessor {
      * Format number according to rules: 1 decimal for <10, no decimal for >=10
      */
     private Object formatNumber(double value) {
-        if (value < 10) {
+        if (value < DECIMAL_THRESHOLD) {
             // Round to 1 decimal place for values < 10
-            return Math.round(value * 10.0) / 10.0;
+            return Math.round(value * DECIMAL_PRECISION) / DECIMAL_PRECISION;
         } else {
             // Return as integer for values >= 10
             return (long) Math.round(value);
@@ -296,12 +296,29 @@ public class MetricsPostProcessor {
         }
 
         // Getter methods for testing
-        public String getDisplayName() { return displayName; }
-        public String getSourceBenchmark() { return sourceBenchmark; }
-        public int getSampleCount() { return sampleCount; }
-        public double getP50() { return p50; }
-        public double getP95() { return p95; }
-        public double getP99() { return p99; }
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getSourceBenchmark() {
+            return sourceBenchmark;
+        }
+
+        public int getSampleCount() {
+            return sampleCount;
+        }
+
+        public double getP50() {
+            return p50;
+        }
+
+        public double getP95() {
+            return p95;
+        }
+
+        public double getP99() {
+            return p99;
+        }
     }
 
     /**
@@ -346,7 +363,7 @@ public class MetricsPostProcessor {
         String benchmarkFile;
         String outputDir;
 
-        if (resultsDirectory.equals(".")) {
+        if (".".equals(resultsDirectory)) {
             // Called from target directory - look for benchmark-results subdirectory
             benchmarkFile = "benchmark-results/integration-benchmark-result.json";
             outputDir = ".";

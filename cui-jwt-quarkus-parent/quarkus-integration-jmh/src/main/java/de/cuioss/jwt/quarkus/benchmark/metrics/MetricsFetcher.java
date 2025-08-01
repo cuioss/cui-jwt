@@ -20,11 +20,10 @@ import java.util.Map;
 /**
  * Interface for fetching metrics data from various sources.
  * 
- * @author Generated
  * @since 1.0
  */
 public interface MetricsFetcher {
-    
+
     /**
      * Fetch metrics data as key-value pairs.
      * 

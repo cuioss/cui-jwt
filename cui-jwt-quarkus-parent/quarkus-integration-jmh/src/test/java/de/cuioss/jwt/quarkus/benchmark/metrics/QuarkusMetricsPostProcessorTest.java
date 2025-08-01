@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
@@ -52,7 +53,7 @@ class QuarkusMetricsPostProcessorTest {
     void shouldParseQuarkusMetricsFiles() throws IOException {
         // Given - processor with test metrics directory
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
-        
+
         // When - parse and export Quarkus metrics
         Instant testTimestamp = Instant.parse("2025-08-01T14:00:00.000Z");
         processor.parseAndExportQuarkusMetrics(testTimestamp);
@@ -63,12 +64,12 @@ class QuarkusMetricsPostProcessorTest {
 
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            
+
             // Should have CPU, memory, and metadata sections
             assertTrue(metrics.containsKey("cpu"), "Should contain CPU metrics");
             assertTrue(metrics.containsKey("memory"), "Should contain memory metrics");
             assertTrue(metrics.containsKey("metadata"), "Should contain metadata");
-            
+
             // Verify CPU metrics structure
             Map<String, Object> cpuMetrics = (Map<String, Object>) metrics.get("cpu");
             assertTrue(cpuMetrics.containsKey("system_cpu_usage_avg"));
@@ -78,16 +79,16 @@ class QuarkusMetricsPostProcessorTest {
             assertTrue(cpuMetrics.containsKey("cpu_count"));
             assertTrue(cpuMetrics.containsKey("load_average_1m_avg"));
             assertTrue(cpuMetrics.containsKey("load_average_1m_max"));
-            
+
             // Verify memory metrics structure
             Map<String, Object> memoryMetrics = (Map<String, Object>) metrics.get("memory");
             assertTrue(memoryMetrics.containsKey("heap"));
             assertTrue(memoryMetrics.containsKey("nonheap"));
-            
+
             Map<String, Object> heapMetrics = (Map<String, Object>) memoryMetrics.get("heap");
             assertTrue(heapMetrics.containsKey("used_bytes"));
             assertTrue(heapMetrics.containsKey("committed_bytes"));
-            
+
             // Verify metadata
             Map<String, Object> metadata = (Map<String, Object>) metrics.get("metadata");
             assertEquals(testTimestamp.toString(), metadata.get("timestamp"));
@@ -99,7 +100,7 @@ class QuarkusMetricsPostProcessorTest {
     void shouldHandlePercentageFormatting() throws IOException {
         // Given - processor with test metrics
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
-        
+
         // When - parse metrics
         processor.parseAndExportQuarkusMetrics(Instant.now());
 
@@ -108,11 +109,11 @@ class QuarkusMetricsPostProcessorTest {
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             Map<String, Object> cpuMetrics = (Map<String, Object>) metrics.get("cpu");
-            
+
             // CPU usage values should be formatted as percentages
             Object systemCpuAvg = cpuMetrics.get("system_cpu_usage_avg");
             assertTrue(systemCpuAvg instanceof Number, "CPU usage should be a number");
-            
+
             double cpuValue = ((Number) systemCpuAvg).doubleValue();
             assertTrue(cpuValue >= 0 && cpuValue <= 100, "CPU usage should be in percentage range (0-100)");
         }
@@ -122,7 +123,7 @@ class QuarkusMetricsPostProcessorTest {
     void shouldHandleMemoryCalculations() throws IOException {
         // Given - processor with test metrics
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
-        
+
         // When - parse metrics
         processor.parseAndExportQuarkusMetrics(Instant.now());
 
@@ -132,12 +133,12 @@ class QuarkusMetricsPostProcessorTest {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             Map<String, Object> memoryMetrics = (Map<String, Object>) metrics.get("memory");
             Map<String, Object> heapMetrics = (Map<String, Object>) memoryMetrics.get("heap");
-            
+
             // Heap metrics should be present and positive
             Object usedBytes = heapMetrics.get("used_bytes");
             assertTrue(usedBytes instanceof Number, "Used bytes should be a number");
             assertTrue(((Number) usedBytes).longValue() > 0, "Used bytes should be positive");
-            
+
             Object committedBytes = heapMetrics.get("committed_bytes");
             assertTrue(committedBytes instanceof Number, "Committed bytes should be a number");
             assertTrue(((Number) committedBytes).longValue() > 0, "Committed bytes should be positive");
@@ -150,19 +151,19 @@ class QuarkusMetricsPostProcessorTest {
         String baseDir = tempDir.toString();
         File metricsDir = new File(baseDir, "metrics-download");
         metricsDir.mkdirs();
-        
+
         // Copy test metrics file to expected location
         File sourceFile = new File(metricsDownloadDir, "jwt-validation-metrics.txt");
         File targetFile = new File(metricsDir, "jwt-validation-metrics.txt");
-        java.nio.file.Files.copy(sourceFile.toPath(), targetFile.toPath());
-        
+        Files.copy(sourceFile.toPath(), targetFile.toPath());
+
         // When - use convenience method
         QuarkusMetricsPostProcessor.parseAndExport(baseDir);
 
         // Then - should create quarkus-metrics.json in base directory
         File outputFile = new File(baseDir, "quarkus-metrics.json");
         assertTrue(outputFile.exists());
-        
+
         try (FileReader reader = new FileReader(outputFile)) {
             Map<String, Object> metrics = gson.fromJson(reader, Map.class);
             assertFalse(metrics.isEmpty(), "Should have parsed metrics");
@@ -175,9 +176,9 @@ class QuarkusMetricsPostProcessorTest {
     private String createTestMetricsDirectory() throws IOException {
         File metricsDir = new File(tempDir.toFile(), "test-metrics");
         metricsDir.mkdirs();
-        
+
         File testMetricsFile = new File(metricsDir, "jwt-validation-metrics.txt");
-        
+
         String testMetricsContent = """
             # TYPE system_cpu_usage gauge
             # HELP system_cpu_usage The "recent cpu usage" of the system the application is running in
@@ -210,11 +211,11 @@ class QuarkusMetricsPostProcessorTest {
             jvm_memory_max_bytes{area="nonheap",id="runtime code cache (code and data)"} -1.0
             jvm_memory_max_bytes{area="heap",id="survivor space"} -1.0
             """;
-        
+
         try (FileWriter writer = new FileWriter(testMetricsFile)) {
             writer.write(testMetricsContent);
         }
-        
+
         return metricsDir.getAbsolutePath();
     }
 }
