@@ -1,0 +1,416 @@
+# TYPE cui_jwt_http_request_duration_seconds_max gauge
+# HELP cui_jwt_http_request_duration_seconds_max Duration of HTTP-level JWT processing: Total HTTP request processing
+cui_jwt_http_request_duration_seconds_max{type="token_extraction"} 1.7466E-5
+cui_jwt_http_request_duration_seconds_max{type="header_extraction"} 1.7057E-5
+cui_jwt_http_request_duration_seconds_max{type="authorization_check"} 2.269E-6
+cui_jwt_http_request_duration_seconds_max{type="request_processing"} 5.3932E-5
+cui_jwt_http_request_duration_seconds_max{type="response_formatting"} 0.0
+# TYPE cui_jwt_http_request_duration_seconds summary
+# HELP cui_jwt_http_request_duration_seconds Duration of HTTP-level JWT processing: Total HTTP request processing
+cui_jwt_http_request_duration_seconds_count{type="token_extraction"} 11.0
+cui_jwt_http_request_duration_seconds_sum{type="token_extraction"} 1.31935E-4
+cui_jwt_http_request_duration_seconds_count{type="header_extraction"} 11.0
+cui_jwt_http_request_duration_seconds_sum{type="header_extraction"} 1.26739E-4
+cui_jwt_http_request_duration_seconds_count{type="authorization_check"} 2.0
+cui_jwt_http_request_duration_seconds_sum{type="authorization_check"} 4.457E-6
+cui_jwt_http_request_duration_seconds_count{type="request_processing"} 11.0
+cui_jwt_http_request_duration_seconds_sum{type="request_processing"} 2.43156E-4
+cui_jwt_http_request_duration_seconds_count{type="response_formatting"} 0.0
+cui_jwt_http_request_duration_seconds_sum{type="response_formatting"} 0.0
+# TYPE jvm_memory_used_bytes gauge
+# HELP jvm_memory_used_bytes The amount of used memory
+jvm_memory_used_bytes{area="heap",id="old generation space"} 8912896.0
+jvm_memory_used_bytes{area="heap",id="eden space"} 8912896.0
+jvm_memory_used_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
+jvm_memory_used_bytes{area="nonheap",id="runtime code cache (native metadata)"} 0.0
+jvm_memory_used_bytes{area="heap",id="survivor space"} 0.0
+# TYPE jvm_memory_max_bytes gauge
+# HELP jvm_memory_max_bytes The maximum amount of memory in bytes that can be used for memory management
+jvm_memory_max_bytes{area="heap",id="old generation space"} -1.0
+jvm_memory_max_bytes{area="heap",id="eden space"} -1.0
+jvm_memory_max_bytes{area="nonheap",id="runtime code cache (code and data)"} -1.0
+jvm_memory_max_bytes{area="nonheap",id="runtime code cache (native metadata)"} -1.0
+jvm_memory_max_bytes{area="heap",id="survivor space"} -1.0
+# TYPE jvm_threads_live_threads gauge
+# HELP jvm_threads_live_threads The current number of live threads including both daemon and non-daemon threads
+jvm_threads_live_threads 14.0
+# TYPE process_cpu_time_ns counter
+# HELP process_cpu_time_ns The \"cpu time\" used by the Java Virtual Machine process
+process_cpu_time_ns_total 8.41E9
+# TYPE netty_allocator_memory_pinned gauge
+# HELP netty_allocator_memory_pinned  
+netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_type="heap",name="pooled"} 0.0
+netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_type="heap",name="vertx-pooled"} 0.0
+netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_type="direct",name="pooled"} 0.0
+netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_type="direct",name="vertx-pooled"} 0.0
+# TYPE system_cpu_usage gauge
+# HELP system_cpu_usage The \"recent cpu usage\" of the system the application is running in
+system_cpu_usage 0.10598695652173913
+# TYPE http_server_bytes_read summary
+# HELP http_server_bytes_read Number of bytes received by the server
+http_server_bytes_read_count 1002.0
+http_server_bytes_read_sum 479927.0
+# TYPE http_server_bytes_read_max gauge
+# HELP http_server_bytes_read_max Number of bytes received by the server
+http_server_bytes_read_max 990.0
+# TYPE cui_jwt_http_request_count_requests counter
+# HELP cui_jwt_http_request_count_requests Count of HTTP requests by status
+cui_jwt_http_request_count_requests_total{status="error"} 0.0
+cui_jwt_http_request_count_requests_total{status="insufficient_permissions"} 0.0
+cui_jwt_http_request_count_requests_total{status="success"} 1355.0
+cui_jwt_http_request_count_requests_total{status="missing_token"} 4560.0
+cui_jwt_http_request_count_requests_total{status="invalid_token"} 215.0
+# TYPE netty_allocator_pooled_arenas gauge
+# HELP netty_allocator_pooled_arenas  
+netty_allocator_pooled_arenas{allocator_type="PooledByteBufAllocator",memory_type="heap",name="pooled"} 20.0
+netty_allocator_pooled_arenas{allocator_type="PooledByteBufAllocator",memory_type="heap",name="vertx-pooled"} 20.0
+netty_allocator_pooled_arenas{allocator_type="PooledByteBufAllocator",memory_type="direct",name="pooled"} 20.0
+netty_allocator_pooled_arenas{allocator_type="PooledByteBufAllocator",memory_type="direct",name="vertx-pooled"} 20.0
+# TYPE cui_jwt_validation_duration_seconds_max gauge
+# HELP cui_jwt_validation_duration_seconds_max Duration of JWT validation pipeline steps: Token format validation
+cui_jwt_validation_duration_seconds_max{step="token_parsing"} 1.6562E-5
+cui_jwt_validation_duration_seconds_max{step="token_format_check"} 3.54E-7
+cui_jwt_validation_duration_seconds_max{step="cache_lookup"} 1.833E-6
+cui_jwt_validation_duration_seconds_max{step="complete_validation"} 2.26916E-4
+cui_jwt_validation_duration_seconds_max{step="header_validation"} 7.231E-6
+cui_jwt_validation_duration_seconds_max{step="issuer_config_resolution"} 1.292E-6
+cui_jwt_validation_duration_seconds_max{step="token_building"} 4.6387E-5
+cui_jwt_validation_duration_seconds_max{step="cache_store"} 2.459E-6
+cui_jwt_validation_duration_seconds_max{step="claims_validation"} 1.3795E-5
+cui_jwt_validation_duration_seconds_max{step="issuer_extraction"} 2.4964E-5
+cui_jwt_validation_duration_seconds_max{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_seconds_max{step="signature_validation"} 1.85799E-4
+# TYPE cui_jwt_validation_duration_seconds summary
+# HELP cui_jwt_validation_duration_seconds Duration of JWT validation pipeline steps: Token format validation
+cui_jwt_validation_duration_seconds_count{step="token_parsing"} 4.0
+cui_jwt_validation_duration_seconds_sum{step="token_parsing"} 3.8089E-5
+cui_jwt_validation_duration_seconds_count{step="token_format_check"} 4.0
+cui_jwt_validation_duration_seconds_sum{step="token_format_check"} 5.21E-7
+cui_jwt_validation_duration_seconds_count{step="cache_lookup"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="cache_lookup"} 4.959E-6
+cui_jwt_validation_duration_seconds_count{step="complete_validation"} 4.0
+cui_jwt_validation_duration_seconds_sum{step="complete_validation"} 2.80241E-4
+cui_jwt_validation_duration_seconds_count{step="header_validation"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="header_validation"} 1.3044E-5
+cui_jwt_validation_duration_seconds_count{step="issuer_config_resolution"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="issuer_config_resolution"} 2.834E-6
+cui_jwt_validation_duration_seconds_count{step="token_building"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="token_building"} 9.16E-5
+cui_jwt_validation_duration_seconds_count{step="cache_store"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="cache_store"} 4.48E-6
+cui_jwt_validation_duration_seconds_count{step="claims_validation"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="claims_validation"} 2.5775E-5
+cui_jwt_validation_duration_seconds_count{step="issuer_extraction"} 4.0
+cui_jwt_validation_duration_seconds_sum{step="issuer_extraction"} 2.5735E-5
+cui_jwt_validation_duration_seconds_count{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_seconds_sum{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_seconds_count{step="signature_validation"} 3.0
+cui_jwt_validation_duration_seconds_sum{step="signature_validation"} 5.18905E-4
+# TYPE worker_pool_idle gauge
+# HELP worker_pool_idle The number of resources from the pool currently used
+worker_pool_idle{pool_name="vert.x-internal-blocking",pool_type="worker"} 20.0
+worker_pool_idle{pool_name="vert.x-worker-thread",pool_type="worker"} 199.0
+# TYPE worker_pool_ratio gauge
+# HELP worker_pool_ratio Pool usage ratio
+worker_pool_ratio{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
+worker_pool_ratio{pool_name="vert.x-worker-thread",pool_type="worker"} 0.005
+# TYPE process_uptime_seconds gauge
+# HELP process_uptime_seconds The uptime of the Java virtual machine
+process_uptime_seconds 104.476
+# TYPE cui_jwt_validation_errors counter
+# HELP cui_jwt_validation_errors Number of JWT validation errors by type
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_SIZE_EXCEEDED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="MISSING_RECOMMENDED_ELEMENT",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="JWKS_FETCH_FAILED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="JWKS_JSON_PARSE_FAILED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="INVALID_JWT_FORMAT",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_EXPIRED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_JWT",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="AZP_MISMATCH",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="NO_ISSUER_CONFIG",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="MISSING_CLAIM",result="failure"} 215.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="UNSUPPORTED_ALGORITHM",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="ISSUER_MISMATCH",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="FAILED_TO_READ_JWKS_FILE",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_NOT_FOUND",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_EMPTY",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="AUDIENCE_MISMATCH",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="SIGNATURE_VALIDATION_FAILED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_PAYLOAD",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_ROTATION_DETECTED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="DECODED_PART_SIZE_EXCEEDED",result="failure"} 0.0
+cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_NBF_FUTURE",result="failure"} 0.0
+# TYPE http_server_requests_seconds summary
+# HELP http_server_requests_seconds HTTP server request processing time
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate-explicit"} 205.0
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate-explicit"} 0.154205335
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/metric_clear"} 25.0
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/metric_clear"} 0.03722591
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 371.0
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 0.292768989
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/echo"} 581.0
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/echo"} 0.594726292
+http_server_requests_seconds_count{method="POST",outcome="CLIENT_ERROR",status="401",uri="/jwt/validate"} 694.0
+http_server_requests_seconds_sum{method="POST",outcome="CLIENT_ERROR",status="401",uri="/jwt/validate"} 0.393074876
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate/id-token"} 216.0
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate/id-token"} 0.18366145
+# TYPE http_server_requests_seconds_max gauge
+# HELP http_server_requests_seconds_max HTTP server request processing time
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate-explicit"} 0.003371628
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/metric_clear"} 0.006501559
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 0.007369414
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/echo"} 0.010372418
+http_server_requests_seconds_max{method="POST",outcome="CLIENT_ERROR",status="401",uri="/jwt/validate"} 0.003844795
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate/id-token"} 0.01075352
+# TYPE process_files_max_files gauge
+# HELP process_files_max_files The maximum file descriptor count
+process_files_max_files 1048576.0
+# TYPE system_load_average_1m gauge
+# HELP system_load_average_1m The sum of the number of runnable entities queued to available processors and the number of runnable entities running on the available processors averaged over a period of time
+system_load_average_1m 0.82373046875
+# TYPE worker_pool_active gauge
+# HELP worker_pool_active The number of resources from the pool currently used
+worker_pool_active{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
+worker_pool_active{pool_name="vert.x-worker-thread",pool_type="worker"} 1.0
+# TYPE jvm_threads_daemon_threads gauge
+# HELP jvm_threads_daemon_threads The current number of live daemon threads
+jvm_threads_daemon_threads 8.0
+# TYPE worker_pool_rejected counter
+# HELP worker_pool_rejected Number of times submissions to the pool have been rejected
+worker_pool_rejected_total{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
+worker_pool_rejected_total{pool_name="vert.x-worker-thread",pool_type="worker"} 0.0
+# TYPE process_files_open_files gauge
+# HELP process_files_open_files The open file descriptor count
+process_files_open_files 78.0
+# TYPE cui_jwt_validation_duration_percentiles_microseconds summary
+# HELP cui_jwt_validation_duration_percentiles_microseconds Percentile distribution of JWT validation pipeline steps: Token format validation
+cui_jwt_validation_duration_percentiles_microseconds{step="token_parsing",quantile="0.5"} 13.375
+cui_jwt_validation_duration_percentiles_microseconds{step="token_parsing",quantile="0.95"} 37.875
+cui_jwt_validation_duration_percentiles_microseconds{step="token_parsing",quantile="0.99"} 37.875
+cui_jwt_validation_duration_percentiles_microseconds_count{step="token_parsing"} 12.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="token_parsing"} 239.58499999999998
+cui_jwt_validation_duration_percentiles_microseconds{step="token_format_check",quantile="0.5"} 0.388671875
+cui_jwt_validation_duration_percentiles_microseconds{step="token_format_check",quantile="0.95"} 0.935546875
+cui_jwt_validation_duration_percentiles_microseconds{step="token_format_check",quantile="0.99"} 0.935546875
+cui_jwt_validation_duration_percentiles_microseconds_count{step="token_format_check"} 12.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="token_format_check"} 4.896
+cui_jwt_validation_duration_percentiles_microseconds{step="cache_lookup",quantile="0.5"} 2.1875
+cui_jwt_validation_duration_percentiles_microseconds{step="cache_lookup",quantile="0.95"} 4.1875
+cui_jwt_validation_duration_percentiles_microseconds{step="cache_lookup",quantile="0.99"} 4.1875
+cui_jwt_validation_duration_percentiles_microseconds_count{step="cache_lookup"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="cache_lookup"} 21.503
+cui_jwt_validation_duration_percentiles_microseconds{step="complete_validation",quantile="0.5"} 47.5
+cui_jwt_validation_duration_percentiles_microseconds{step="complete_validation",quantile="0.95"} 543.5
+cui_jwt_validation_duration_percentiles_microseconds{step="complete_validation",quantile="0.99"} 543.5
+cui_jwt_validation_duration_percentiles_microseconds_count{step="complete_validation"} 12.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="complete_validation"} 1742.228
+cui_jwt_validation_duration_percentiles_microseconds{step="header_validation",quantile="0.5"} 7.125
+cui_jwt_validation_duration_percentiles_microseconds{step="header_validation",quantile="0.95"} 15.375
+cui_jwt_validation_duration_percentiles_microseconds{step="header_validation",quantile="0.99"} 15.375
+cui_jwt_validation_duration_percentiles_microseconds_count{step="header_validation"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="header_validation"} 71.09500000000001
+cui_jwt_validation_duration_percentiles_microseconds{step="issuer_config_resolution",quantile="0.5"} 1.28125
+cui_jwt_validation_duration_percentiles_microseconds{step="issuer_config_resolution",quantile="0.95"} 2.96875
+cui_jwt_validation_duration_percentiles_microseconds{step="issuer_config_resolution",quantile="0.99"} 2.96875
+cui_jwt_validation_duration_percentiles_microseconds_count{step="issuer_config_resolution"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="issuer_config_resolution"} 13.337
+cui_jwt_validation_duration_percentiles_microseconds{step="token_building",quantile="0.5"} 47.0
+cui_jwt_validation_duration_percentiles_microseconds{step="token_building",quantile="0.95"} 247.0
+cui_jwt_validation_duration_percentiles_microseconds{step="token_building",quantile="0.99"} 247.0
+cui_jwt_validation_duration_percentiles_microseconds_count{step="token_building"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="token_building"} 599.0039999999999
+cui_jwt_validation_duration_percentiles_microseconds{step="cache_store",quantile="0.5"} 2.21875
+cui_jwt_validation_duration_percentiles_microseconds{step="cache_store",quantile="0.95"} 4.96875
+cui_jwt_validation_duration_percentiles_microseconds{step="cache_store",quantile="0.99"} 4.96875
+cui_jwt_validation_duration_percentiles_microseconds_count{step="cache_store"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="cache_store"} 21.401
+cui_jwt_validation_duration_percentiles_microseconds{step="claims_validation",quantile="0.5"} 13.75
+cui_jwt_validation_duration_percentiles_microseconds{step="claims_validation",quantile="0.95"} 53.75
+cui_jwt_validation_duration_percentiles_microseconds{step="claims_validation",quantile="0.99"} 53.75
+cui_jwt_validation_duration_percentiles_microseconds_count{step="claims_validation"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="claims_validation"} 177.935
+cui_jwt_validation_duration_percentiles_microseconds{step="issuer_extraction",quantile="0.5"} 1.68359375
+cui_jwt_validation_duration_percentiles_microseconds{step="issuer_extraction",quantile="0.95"} 119.99609375
+cui_jwt_validation_duration_percentiles_microseconds{step="issuer_extraction",quantile="0.99"} 119.99609375
+cui_jwt_validation_duration_percentiles_microseconds_count{step="issuer_extraction"} 12.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="issuer_extraction"} 243.66700000000003
+cui_jwt_validation_duration_percentiles_microseconds{step="jwks_operations",quantile="0.5"} 0.0
+cui_jwt_validation_duration_percentiles_microseconds{step="jwks_operations",quantile="0.95"} 0.0
+cui_jwt_validation_duration_percentiles_microseconds{step="jwks_operations",quantile="0.99"} 0.0
+cui_jwt_validation_duration_percentiles_microseconds_count{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_percentiles_microseconds{step="signature_validation",quantile="0.5"} 184.0
+cui_jwt_validation_duration_percentiles_microseconds{step="signature_validation",quantile="0.95"} 696.0
+cui_jwt_validation_duration_percentiles_microseconds{step="signature_validation",quantile="0.99"} 696.0
+cui_jwt_validation_duration_percentiles_microseconds_count{step="signature_validation"} 9.0
+cui_jwt_validation_duration_percentiles_microseconds_sum{step="signature_validation"} 2485.41
+# TYPE cui_jwt_validation_duration_percentiles_microseconds_max gauge
+# HELP cui_jwt_validation_duration_percentiles_microseconds_max Percentile distribution of JWT validation pipeline steps: Token format validation
+cui_jwt_validation_duration_percentiles_microseconds_max{step="token_parsing"} 38.959
+cui_jwt_validation_duration_percentiles_microseconds_max{step="token_format_check"} 0.917
+cui_jwt_validation_duration_percentiles_microseconds_max{step="cache_lookup"} 4.21
+cui_jwt_validation_duration_percentiles_microseconds_max{step="complete_validation"} 519.805
+cui_jwt_validation_duration_percentiles_microseconds_max{step="header_validation"} 15.087
+cui_jwt_validation_duration_percentiles_microseconds_max{step="issuer_config_resolution"} 2.918
+cui_jwt_validation_duration_percentiles_microseconds_max{step="token_building"} 247.733
+cui_jwt_validation_duration_percentiles_microseconds_max{step="cache_store"} 4.96
+cui_jwt_validation_duration_percentiles_microseconds_max{step="claims_validation"} 53.306
+cui_jwt_validation_duration_percentiles_microseconds_max{step="issuer_extraction"} 116.864
+cui_jwt_validation_duration_percentiles_microseconds_max{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_percentiles_microseconds_max{step="signature_validation"} 674.929
+# TYPE jvm_threads_states_threads gauge
+# HELP jvm_threads_states_threads The current number of threads
+jvm_threads_states_threads{state="runnable"} 0.0
+jvm_threads_states_threads{state="blocked"} 0.0
+jvm_threads_states_threads{state="waiting"} 0.0
+jvm_threads_states_threads{state="timed-waiting"} 0.0
+jvm_threads_states_threads{state="new"} 0.0
+jvm_threads_states_threads{state="terminated"} 0.0
+# TYPE cui_jwt_http_request_duration_percentiles_microseconds_max gauge
+# HELP cui_jwt_http_request_duration_percentiles_microseconds_max Percentile distribution of HTTP-level JWT processing: Total HTTP request processing
+cui_jwt_http_request_duration_percentiles_microseconds_max{type="token_extraction"} 17.466
+cui_jwt_http_request_duration_percentiles_microseconds_max{type="header_extraction"} 17.057
+cui_jwt_http_request_duration_percentiles_microseconds_max{type="authorization_check"} 2.269
+cui_jwt_http_request_duration_percentiles_microseconds_max{type="request_processing"} 53.932
+cui_jwt_http_request_duration_percentiles_microseconds_max{type="response_formatting"} 0.0
+# TYPE cui_jwt_http_request_duration_percentiles_microseconds summary
+# HELP cui_jwt_http_request_duration_percentiles_microseconds Percentile distribution of HTTP-level JWT processing: Total HTTP request processing
+cui_jwt_http_request_duration_percentiles_microseconds{type="token_extraction",quantile="0.5"} 8.25
+cui_jwt_http_request_duration_percentiles_microseconds{type="token_extraction",quantile="0.95"} 12.75
+cui_jwt_http_request_duration_percentiles_microseconds{type="token_extraction",quantile="0.99"} 12.75
+cui_jwt_http_request_duration_percentiles_microseconds_count{type="token_extraction"} 11.0
+cui_jwt_http_request_duration_percentiles_microseconds_sum{type="token_extraction"} 131.93499999999997
+cui_jwt_http_request_duration_percentiles_microseconds{type="header_extraction",quantile="0.5"} 8.25
+cui_jwt_http_request_duration_percentiles_microseconds{type="header_extraction",quantile="0.95"} 11.75
+cui_jwt_http_request_duration_percentiles_microseconds{type="header_extraction",quantile="0.99"} 11.75
+cui_jwt_http_request_duration_percentiles_microseconds_count{type="header_extraction"} 11.0
+cui_jwt_http_request_duration_percentiles_microseconds_sum{type="header_extraction"} 126.739
+cui_jwt_http_request_duration_percentiles_microseconds{type="authorization_check",quantile="0.5"} 2.125
+cui_jwt_http_request_duration_percentiles_microseconds{type="authorization_check",quantile="0.95"} 2.25
+cui_jwt_http_request_duration_percentiles_microseconds{type="authorization_check",quantile="0.99"} 2.25
+cui_jwt_http_request_duration_percentiles_microseconds_count{type="authorization_check"} 2.0
+cui_jwt_http_request_duration_percentiles_microseconds_sum{type="authorization_check"} 4.457000000000001
+cui_jwt_http_request_duration_percentiles_microseconds{type="request_processing",quantile="0.5"} 33.5
+cui_jwt_http_request_duration_percentiles_microseconds{type="request_processing",quantile="0.95"} 53.5
+cui_jwt_http_request_duration_percentiles_microseconds{type="request_processing",quantile="0.99"} 53.5
+cui_jwt_http_request_duration_percentiles_microseconds_count{type="request_processing"} 11.0
+cui_jwt_http_request_duration_percentiles_microseconds_sum{type="request_processing"} 243.156
+cui_jwt_http_request_duration_percentiles_microseconds{type="response_formatting",quantile="0.5"} 0.0
+cui_jwt_http_request_duration_percentiles_microseconds{type="response_formatting",quantile="0.95"} 0.0
+cui_jwt_http_request_duration_percentiles_microseconds{type="response_formatting",quantile="0.99"} 0.0
+cui_jwt_http_request_duration_percentiles_microseconds_count{type="response_formatting"} 0.0
+cui_jwt_http_request_duration_percentiles_microseconds_sum{type="response_formatting"} 0.0
+# TYPE worker_pool_usage_seconds summary
+# HELP worker_pool_usage_seconds Time spent using resources from the pool
+worker_pool_usage_seconds_count{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.0
+worker_pool_usage_seconds_sum{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.120354172
+worker_pool_usage_seconds_count{pool_name="vert.x-worker-thread",pool_type="worker"} 64.0
+worker_pool_usage_seconds_sum{pool_name="vert.x-worker-thread",pool_type="worker"} 0.655063251
+# TYPE worker_pool_usage_seconds_max gauge
+# HELP worker_pool_usage_seconds_max Time spent using resources from the pool
+worker_pool_usage_seconds_max{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.12032075
+worker_pool_usage_seconds_max{pool_name="vert.x-worker-thread",pool_type="worker"} 0.562851296
+# TYPE http_server_active_requests gauge
+# HELP http_server_active_requests  
+http_server_active_requests{server_port="8080",url_scheme="http"} 0.0
+http_server_active_requests{server_port="8443",url_scheme="https"} 1.0
+# TYPE jvm_info counter
+# HELP jvm_info JVM version info
+jvm_info_total{runtime="GraalVM Runtime Environment",vendor="GraalVM Community",version="21.0.8+9-LTS"} 1.0
+# TYPE netty_allocator_pooled_threadlocal_caches gauge
+# HELP netty_allocator_pooled_threadlocal_caches  
+netty_allocator_pooled_threadlocal_caches{allocator_type="PooledByteBufAllocator",name="vertx-pooled"} 2.0
+netty_allocator_pooled_threadlocal_caches{allocator_type="PooledByteBufAllocator",name="pooled"} 1.0
+# TYPE http_server_connections_seconds_max gauge
+# HELP http_server_connections_seconds_max The duration of the connections
+http_server_connections_seconds_max 9.502774825
+# TYPE http_server_connections_seconds summary
+# HELP http_server_connections_seconds The duration of the connections
+http_server_connections_seconds_active_count 64.0
+http_server_connections_seconds_duration_sum 19.39520987
+# TYPE worker_pool_completed counter
+# HELP worker_pool_completed Number of times resources from the pool have been acquired
+worker_pool_completed_total{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.0
+worker_pool_completed_total{pool_name="vert.x-worker-thread",pool_type="worker"} 64.0
+# TYPE jvm_classes_unloaded_classes counter
+# HELP jvm_classes_unloaded_classes The total number of classes unloaded since the Java virtual machine has started execution
+jvm_classes_unloaded_classes_total 0.0
+# TYPE netty_eventexecutor_tasks_pending gauge
+# HELP netty_eventexecutor_tasks_pending  
+netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-1"} 0.0
+netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-0"} 0.0
+netty_eventexecutor_tasks_pending{name="vert.x-acceptor-thread-0"} 0.0
+# TYPE netty_allocator_pooled_cache_size gauge
+# HELP netty_allocator_pooled_cache_size  
+netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_type="small",name="pooled"} 256.0
+netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_type="normal",name="vertx-pooled"} 64.0
+netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_type="normal",name="pooled"} 64.0
+netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_type="small",name="vertx-pooled"} 256.0
+# TYPE jvm_memory_committed_bytes gauge
+# HELP jvm_memory_committed_bytes The amount of memory in bytes that is committed for the Java virtual machine to use
+jvm_memory_committed_bytes{area="heap",id="old generation space"} 8912896.0
+jvm_memory_committed_bytes{area="heap",id="eden space"} 9437184.0
+jvm_memory_committed_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
+jvm_memory_committed_bytes{area="nonheap",id="runtime code cache (native metadata)"} 0.0
+jvm_memory_committed_bytes{area="heap",id="survivor space"} 0.0
+# TYPE worker_pool_queue_delay_seconds_max gauge
+# HELP worker_pool_queue_delay_seconds_max Time spent in the waiting queue before being processed
+worker_pool_queue_delay_seconds_max{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.70667E-4
+worker_pool_queue_delay_seconds_max{pool_name="vert.x-worker-thread",pool_type="worker"} 2.24625E-4
+# TYPE worker_pool_queue_delay_seconds summary
+# HELP worker_pool_queue_delay_seconds Time spent in the waiting queue before being processed
+worker_pool_queue_delay_seconds_count{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.0
+worker_pool_queue_delay_seconds_sum{pool_name="vert.x-internal-blocking",pool_type="worker"} 3.02756E-4
+worker_pool_queue_delay_seconds_count{pool_name="vert.x-worker-thread",pool_type="worker"} 65.0
+worker_pool_queue_delay_seconds_sum{pool_name="vert.x-worker-thread",pool_type="worker"} 0.003544275
+# TYPE jvm_gc_overhead gauge
+# HELP jvm_gc_overhead An approximation of the percent of CPU time used by GC activities over the last lookback period or since monitoring began, whichever is shorter, in the range [0..1]
+jvm_gc_overhead 0.0
+# TYPE jvm_threads_peak_threads gauge
+# HELP jvm_threads_peak_threads The peak live thread count since the Java virtual machine started or peak was reset
+jvm_threads_peak_threads 26.0
+# TYPE netty_allocator_memory_used gauge
+# HELP netty_allocator_memory_used  
+netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="direct",name="vertx-unpooled"} 0.0
+netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="heap",name="pooled"} 0.0
+netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="direct",name="unpooled"} 286.0
+netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="heap",name="vertx-pooled"} 0.0
+netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="direct",name="pooled"} 131072.0
+netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="heap",name="unpooled"} 8192.0
+netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="heap",name="vertx-unpooled"} 663910.0
+netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="direct",name="vertx-pooled"} 917504.0
+# TYPE jvm_threads_started_threads counter
+# HELP jvm_threads_started_threads The total number of application threads started in the JVM
+jvm_threads_started_threads_total 28.0
+# TYPE process_start_time_seconds gauge
+# HELP process_start_time_seconds Start time of the process since unix epoch.
+process_start_time_seconds 1.754036111794E9
+# TYPE http_server_active_connections gauge
+# HELP http_server_active_connections Number of opened connections to the HTTP Server
+http_server_active_connections 0.0
+# TYPE system_cpu_count gauge
+# HELP system_cpu_count The number of processors available to the Java virtual machine
+system_cpu_count 2.0
+# TYPE netty_allocator_pooled_chunk_size gauge
+# HELP netty_allocator_pooled_chunk_size  
+netty_allocator_pooled_chunk_size{allocator_type="PooledByteBufAllocator",name="vertx-pooled"} 65536.0
+netty_allocator_pooled_chunk_size{allocator_type="PooledByteBufAllocator",name="pooled"} 65536.0
+# TYPE worker_pool_queue_size gauge
+# HELP worker_pool_queue_size Number of pending elements in the waiting queue
+worker_pool_queue_size{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
+worker_pool_queue_size{pool_name="vert.x-worker-thread",pool_type="worker"} 0.0
+# TYPE http_server_bytes_written_max gauge
+# HELP http_server_bytes_written_max Number of bytes sent by the server
+http_server_bytes_written_max 32768.0
+# TYPE http_server_bytes_written summary
+# HELP http_server_bytes_written Number of bytes sent by the server
+http_server_bytes_written_count 2662.0
+http_server_bytes_written_sum 856178.0
+# TYPE process_cpu_usage gauge
+# HELP process_cpu_usage The \"recent cpu usage\" for the Java Virtual Machine process
+process_cpu_usage 0.10434782608695652
+# TYPE jvm_classes_loaded_classes gauge
+# HELP jvm_classes_loaded_classes The number of classes that are currently loaded in the Java virtual machine
+jvm_classes_loaded_classes 0.0
+# EOF

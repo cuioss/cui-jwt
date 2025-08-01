@@ -242,11 +242,12 @@
 
     <build>
         <plugins>
-            <!-- Skip unit tests by default -->
+            <!-- Configure surefire for unit tests -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <skipTests>false</skipTests>
+                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                 </configuration>
             </plugin>
 

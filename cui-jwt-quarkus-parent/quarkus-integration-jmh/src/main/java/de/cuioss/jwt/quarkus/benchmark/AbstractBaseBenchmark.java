@@ -16,7 +16,7 @@
 package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.jwt.quarkus.benchmark.metrics.BenchmarkMetrics;
-import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsExporter;
+import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import io.restassured.RestAssured;
 import io.restassured.config.HttpClientConfig;
@@ -50,7 +50,7 @@ public abstract class AbstractBaseBenchmark {
 
     protected String serviceUrl;
     protected String quarkusMetricsUrl;
-    protected MetricsExporter metricsExporter;
+    protected SimpleMetricsExporter metricsExporter;
     protected String benchmarkResultsDir;
 
     /**
@@ -73,7 +73,8 @@ public abstract class AbstractBaseBenchmark {
         configureRestAssured();
 
         // Initialize metrics exporter
-        metricsExporter = new MetricsExporter(quarkusMetricsUrl, benchmarkResultsDir);
+        metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir, 
+                new de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher(quarkusMetricsUrl));
 
         // Clear metrics once before starting the benchmark
         clearMetrics();
@@ -146,9 +147,8 @@ public abstract class AbstractBaseBenchmark {
     protected void exportMetrics() {
         try {
             String benchmarkName = getBenchmarkName();
-            BenchmarkMetrics.BenchmarkMetadata metadata = createBenchmarkMetadata();
             
-            metricsExporter.exportMetrics(benchmarkName, metadata);
+            metricsExporter.exportJwtValidationMetrics(benchmarkName, java.time.Instant.now());
             LOGGER.info("Metrics exported for benchmark: {}", benchmarkName);
         } catch (Exception e) {
             LOGGER.error("Failed to export metrics", e);
