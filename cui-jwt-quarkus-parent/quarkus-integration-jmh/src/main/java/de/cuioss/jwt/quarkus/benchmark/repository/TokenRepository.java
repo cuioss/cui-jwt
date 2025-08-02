@@ -53,7 +53,8 @@ public class TokenRepository {
     private static final int DEFAULT_CONNECTION_TIMEOUT = 200;
     private static final int DEFAULT_MAX_CONNECTIONS = 200;
     private static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 100;
-    private static final int TOKEN_EXPIRY_SECONDS = 3600;
+    private static final int TOKEN_EXPIRY_SECONDS = 900; // 15 minutes - matches Keycloak realm configuration
+    private static final int AGGRESSIVE_REFRESH_THRESHOLD = 300; // Refresh tokens with less than 5 minutes left
     private static final int HTTP_OK = 200;
 
     private final TokenRepositoryConfig config;
@@ -104,9 +105,10 @@ public class TokenRepository {
         int index = tokenIndex.getAndIncrement() % tokenPool.size();
         TokenInfo tokenInfo = tokenPool.get(index);
 
-        // Check if this specific token needs refresh
-        if (tokenInfo.isExpiringSoon(config.getTokenRefreshThresholdSeconds())) {
-            LOGGER.debug("Token at index {} is expiring soon, refreshing", index);
+        // Check if this specific token needs refresh - use more aggressive threshold for safety
+        int refreshThreshold = Math.max(config.getTokenRefreshThresholdSeconds(), AGGRESSIVE_REFRESH_THRESHOLD);
+        if (tokenInfo.isExpiringSoon(refreshThreshold)) {
+            LOGGER.debug("Token at index {} is expiring soon (within {} seconds), refreshing", index, refreshThreshold);
             tokenInfo = refreshToken(tokenInfo);
             tokenPool.set(index, tokenInfo);
         }
@@ -221,8 +223,14 @@ public class TokenRepository {
     }
 
     private TokenInfo refreshToken(TokenInfo oldToken) {
-        String newToken = fetchSingleToken();
-        return new TokenInfo(newToken, Instant.now());
+        try {
+            String newToken = fetchSingleToken();
+            return new TokenInfo(newToken, Instant.now());
+        } catch (Exception e) {
+            LOGGER.warn("Failed to refresh token, keeping old token", e);
+            // Return the old token to avoid breaking the benchmark
+            return oldToken;
+        }
     }
 
     /**
@@ -243,7 +251,8 @@ public class TokenRepository {
 
         public boolean isExpiringSoon(int thresholdSeconds) {
             // Simple heuristic: assume token expires in 1 hour from fetch time
-            return fetchedAt.isBefore(Instant.now().minusSeconds(TOKEN_EXPIRY_SECONDS - thresholdSeconds));
+            // Token needs refresh if: current_time > fetch_time + (expiry_time - threshold)
+            return fetchedAt.plusSeconds(TOKEN_EXPIRY_SECONDS - thresholdSeconds).isBefore(Instant.now());
         }
     }
 

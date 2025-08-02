@@ -104,8 +104,8 @@ public class TokenRepositoryConfig {
     /**
      * Token refresh threshold - tokens will be refreshed when they have less
      * than this many seconds left before expiration.
-     * Default: 300 seconds (5 minutes)
+     * Default: 180 seconds (3 minutes) - safe margin for 15-minute tokens
      */
     @Builder.Default
-    int tokenRefreshThresholdSeconds = 300;
+    int tokenRefreshThresholdSeconds = 180;
 }
