@@ -141,13 +141,8 @@ public class TokenRepository {
         LOGGER.info("Initializing token pool with {} tokens", config.getTokenPoolSize());
 
         for (int i = 0; i < config.getTokenPoolSize(); i++) {
-            try {
-                String token = fetchSingleToken();
-                tokenPool.add(new TokenInfo(token));
-            } catch (Exception e) {
-                LOGGER.error("Failed to fetch token {} of {}", i + 1, config.getTokenPoolSize(), e);
-                // Continue with other tokens
-            }
+            String token = fetchSingleToken();
+            tokenPool.add(new TokenInfo(token));
         }
 
         LOGGER.info("Token pool initialized with {} tokens", tokenPool.size());
@@ -178,14 +173,14 @@ public class TokenRepository {
                 return extractAccessToken(response);
             } else {
                 handleTokenFetchError(response);
+                throw new TokenFetchException("Unexpected error - handleTokenFetchError should have thrown");
             }
-        } catch (RuntimeException e) {
-            throw e; // Re-throw runtime exceptions as-is
-        } catch (IOException | InterruptedException e) {
-            LOGGER.error("Error fetching token from Keycloak", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TokenFetchException("Token fetch was interrupted", e);
+        } catch (IOException e) {
             throw new TokenFetchException("Error fetching token from Keycloak", e);
         }
-        throw new TokenFetchException("Unexpected error fetching token");
     }
 
 
@@ -225,12 +220,7 @@ public class TokenRepository {
     }
 
     private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
-        String errorBody = "<no body>";
-        try {
-            errorBody = response.body();
-        } catch (Exception e) {
-            LOGGER.debug("Failed to extract error body", e);
-        }
+        String errorBody = response.body() != null ? response.body() : "<no body>";
 
         LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
                 response.statusCode(), errorBody);

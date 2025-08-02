@@ -78,7 +78,7 @@ public class HttpClientFactory {
             try {
                 SSLContext sslContext = createTrustAllSSLContext();
                 return createHttpClient(sslContext);
-            } catch (Exception e) {
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
                 throw new RuntimeException("Failed to create insecure HttpClient", e);
             }
         });
@@ -95,7 +95,7 @@ public class HttpClientFactory {
             try {
                 SSLContext sslContext = SSLContext.getDefault();
                 return createHttpClient(sslContext);
-            } catch (Exception e) {
+            } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException("Failed to create secure HttpClient", e);
             }
         });

@@ -75,7 +75,10 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
             } else {
                 LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.statusCode());
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.warn("Metrics query was interrupted", e);
+        } catch (IOException e) {
             LOGGER.warn("Error querying Quarkus metrics", e);
         }
 
