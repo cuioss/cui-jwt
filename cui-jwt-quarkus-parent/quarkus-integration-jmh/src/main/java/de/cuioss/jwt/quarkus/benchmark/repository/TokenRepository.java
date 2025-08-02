@@ -19,12 +19,21 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.tools.logging.CuiLogger;
-import io.restassured.RestAssured;
-import io.restassured.config.HttpClientConfig;
-import io.restassured.config.RestAssuredConfig;
-import io.restassured.config.SSLConfig;
-import io.restassured.response.Response;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +65,7 @@ public class TokenRepository {
     private final List<TokenInfo> tokenPool;
     private final AtomicInteger tokenIndex;
     private volatile Instant lastRefresh;
+    private final HttpClient httpClient;
 
     /**
      * Creates a new TokenRepository with the given configuration.
@@ -68,8 +78,8 @@ public class TokenRepository {
         this.tokenIndex = new AtomicInteger(0);
         this.lastRefresh = Instant.EPOCH;
 
-        // Configure RestAssured for Keycloak connections
-        configureRestAssured();
+        // Configure HttpClient for Keycloak connections
+        this.httpClient = configureHttpClient();
 
         // Initialize token pool
         refreshTokenPool();
@@ -153,19 +163,37 @@ public class TokenRepository {
         return tokenPool.size();
     }
 
-    private void configureRestAssured() {
-        RestAssuredConfig restConfig = RestAssuredConfig.config()
-                .httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.connection.timeout", config.getConnectionTimeoutMs())
-                        .setParam("http.socket.timeout", config.getRequestTimeoutMs())
-                        .setParam("http.connection-manager.max-total", DEFAULT_MAX_CONNECTIONS)
-                        .setParam("http.connection-manager.max-per-route", DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
+    private HttpClient configureHttpClient() {
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(config.getConnectionTimeoutMs()))
+                .version(HttpClient.Version.HTTP_1_1);
 
         if (!config.isVerifySsl()) {
-            restConfig = restConfig.sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation());
+            try {
+                // Create a trust manager that accepts all certificates
+                TrustManager[] trustAllCerts = new TrustManager[] {
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                            // Accept all client certificates
+                        }
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                            // Accept all server certificates
+                        }
+                    }
+                };
+
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+                clientBuilder.sslContext(sslContext);
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                LOGGER.warn("Failed to configure SSL context for relaxed validation", e);
+            }
         }
 
-        RestAssured.config = restConfig;
+        return clientBuilder.build();
     }
 
     private boolean shouldRefreshTokens() {
@@ -196,25 +224,30 @@ public class TokenRepository {
                 config.getKeycloakBaseUrl(), config.getRealm());
 
         try {
-            Response response = RestAssured
-                    .given()
-                    .contentType("application/x-www-form-urlencoded")
-                    .formParam("grant_type", "password")
-                    .formParam("client_id", config.getClientId())
-                    .formParam("client_secret", config.getClientSecret())
-                    .formParam("username", config.getUsername())
-                    .formParam("password", config.getPassword())
-                    .when()
-                    .post(tokenEndpoint);
+            // Build form data as URL encoded string
+            String formData = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
+                    "&client_id=" + URLEncoder.encode(config.getClientId(), StandardCharsets.UTF_8) +
+                    "&client_secret=" + URLEncoder.encode(config.getClientSecret(), StandardCharsets.UTF_8) +
+                    "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
+                    "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
 
-            if (response.getStatusCode() == HTTP_OK) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(tokenEndpoint))
+                    .timeout(Duration.ofMillis(config.getRequestTimeoutMs()))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(formData))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == HTTP_OK) {
                 return extractAccessToken(response);
             } else {
                 handleTokenFetchError(response);
             }
         } catch (RuntimeException e) {
             throw e; // Re-throw runtime exceptions as-is
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.error("Error fetching token from Keycloak", e);
             throw new TokenFetchException("Error fetching token from Keycloak", e);
         }
@@ -249,8 +282,8 @@ public class TokenRepository {
     }
 
     @NonNull
-    private String extractAccessToken(@NonNull Response response) {
-        String responseBody = response.getBody().asString();
+    private String extractAccessToken(@NonNull HttpResponse<String> response) {
+        String responseBody = response.body();
         if (responseBody == null || responseBody.isEmpty()) {
             throw new TokenFetchException("Empty response body from token endpoint");
         }
@@ -268,20 +301,20 @@ public class TokenRepository {
         return token;
     }
 
-    private void handleTokenFetchError(@NonNull Response response) {
+    private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
         String errorBody = "<no body>";
         try {
-            errorBody = response.getBody().asString();
+            errorBody = response.body();
         } catch (Exception e) {
             LOGGER.debug("Failed to extract error body", e);
         }
 
         LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
-                response.getStatusCode(), errorBody);
+                response.statusCode(), errorBody);
 
         throw new TokenFetchException(
                 "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
-                        response.getStatusCode(), errorBody)
+                        response.statusCode(), errorBody)
         );
     }
 

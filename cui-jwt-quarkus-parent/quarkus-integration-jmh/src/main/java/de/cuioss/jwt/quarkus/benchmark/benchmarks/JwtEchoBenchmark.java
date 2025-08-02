@@ -16,10 +16,12 @@
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
 import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
-import io.restassured.response.Response;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
+
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * Benchmark class for echo endpoints to measure network and serialization baseline.
@@ -35,14 +37,14 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void echoGetThroughput() {
+    public void echoGetThroughput() throws Exception {
         String jsonPayload = "{\"data\": {\"message\": \"benchmark-test\"}}";
 
-        Response response = createBaseRequest()
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -52,14 +54,14 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    public void echoGetLatency() {
+    public void echoGetLatency() throws Exception {
         String jsonPayload = "{\"data\": {\"message\": \"benchmark-test\"}}";
 
-        Response response = createBaseRequest()
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -69,7 +71,7 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void echoPostJsonThroughput() {
+    public void echoPostJsonThroughput() throws Exception {
         String jsonPayload = """
                 {
                   "data": {
@@ -82,11 +84,11 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
                 }\
                 """;
 
-        Response response = createBaseRequest()
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -96,7 +98,7 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    public void echoPostJsonLatency() {
+    public void echoPostJsonLatency() throws Exception {
         String jsonPayload = """
                 {
                   "data": {
@@ -106,11 +108,11 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
                 }\
                 """;
 
-        Response response = createBaseRequest()
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -120,14 +122,14 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void echoLargePayloadThroughput() {
+    public void echoLargePayloadThroughput() throws Exception {
         String jsonPayload = "{\"data\": {\"message\": \"hello\"}}";
 
-        Response response = createBaseRequest()
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -137,17 +139,17 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void echoWithHeadersThroughput() {
+    public void echoWithHeadersThroughput() throws Exception {
         String jsonPayload = "{\"data\": {\"message\": \"header-test\"}}";
 
-        Response response = createBaseRequest()
+        HttpRequest request = createBaseRequest("/jwt/echo")
                 .header("X-Benchmark-Test", "true")
                 .header("X-Request-ID", "benchmark-" + System.nanoTime())
                 .header("X-Client-Version", "1.0.0")
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -157,14 +159,14 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.All)
-    public void echoComprehensive() {
+    public void echoComprehensive() throws Exception {
         String jsonPayload = "{\"data\": {\"message\": \"comprehensive-test\"}}";
 
-        Response response = createBaseRequest()
-                .body(jsonPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -174,7 +176,7 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void echoRealisticPayloadThroughput() {
+    public void echoRealisticPayloadThroughput() throws Exception {
         String realisticPayload = """
                 {
                   "user": {
@@ -197,11 +199,11 @@ public class JwtEchoBenchmark extends AbstractBaseBenchmark {
 
         String wrappedPayload = "{\"data\": " + realisticPayload + "}";
 
-        Response response = createBaseRequest()
-                .body(wrappedPayload)
-                .when()
-                .post("/jwt/echo");
+        HttpRequest request = createBaseRequest("/jwt/echo")
+                .POST(HttpRequest.BodyPublishers.ofString(wrappedPayload))
+                .build();
 
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 

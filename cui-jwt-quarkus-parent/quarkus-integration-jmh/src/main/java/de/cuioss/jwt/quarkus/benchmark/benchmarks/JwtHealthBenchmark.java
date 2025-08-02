@@ -16,10 +16,12 @@
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
 import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
-import io.restassured.response.Response;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
+
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * Benchmark class for health endpoints to establish baseline performance.
@@ -35,11 +37,12 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void healthCheckThroughput() {
-        Response response = createBaseRequest()
-                .when()
-                .get("/q/health");
-
+    public void healthCheckThroughput() throws Exception {
+        HttpRequest request = createBaseRequest("/q/health")
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -49,11 +52,12 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    public void healthCheckLatency() {
-        Response response = createBaseRequest()
-                .when()
-                .get("/q/health");
-
+    public void healthCheckLatency() throws Exception {
+        HttpRequest request = createBaseRequest("/q/health")
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -63,11 +67,12 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void livenessCheckThroughput() {
-        Response response = createBaseRequest()
-                .when()
-                .get("/q/health/live");
-
+    public void livenessCheckThroughput() throws Exception {
+        HttpRequest request = createBaseRequest("/q/health/live")
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -77,11 +82,12 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void readinessCheckThroughput() {
-        Response response = createBaseRequest()
-                .when()
-                .get("/q/health/ready");
-
+    public void readinessCheckThroughput() throws Exception {
+        HttpRequest request = createBaseRequest("/q/health/ready")
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -91,11 +97,12 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void startupCheckThroughput() {
-        Response response = createBaseRequest()
-                .when()
-                .get("/q/health/started");
-
+    public void startupCheckThroughput() throws Exception {
+        HttpRequest request = createBaseRequest("/q/health/started")
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -105,11 +112,12 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.All)
-    public void healthCheckAll() {
-        Response response = createBaseRequest()
-                .when()
-                .get("/q/health");
-
+    public void healthCheckAll() throws Exception {
+        HttpRequest request = createBaseRequest("/q/health")
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 

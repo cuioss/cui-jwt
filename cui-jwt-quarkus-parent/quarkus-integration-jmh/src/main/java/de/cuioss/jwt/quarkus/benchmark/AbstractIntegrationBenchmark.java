@@ -18,8 +18,9 @@ package de.cuioss.jwt.quarkus.benchmark;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
 import de.cuioss.tools.logging.CuiLogger;
-import io.restassured.specification.RequestSpecification;
 import org.openjdk.jmh.annotations.*;
+
+import java.net.http.HttpRequest;
 
 /**
  * Abstract base class for Quarkus integration benchmarks that require JWT authentication.
@@ -87,23 +88,25 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
 
 
     /**
-     * Creates an authenticated REST request with a JWT token.
+     * Creates an authenticated HTTP request builder with a JWT token.
      * 
+     * @param path the URI path to send the request to
      * @param token the JWT token to use for authorization
-     * @return configured request specification with Authorization header
+     * @return configured request builder with Authorization header
      */
-    protected RequestSpecification createAuthenticatedRequest(String token) {
-        return createBaseRequest()
+    protected HttpRequest.Builder createAuthenticatedRequest(String path, String token) {
+        return createBaseRequest(path)
                 .header("Authorization", "Bearer " + token);
     }
 
     /**
-     * Creates an authenticated REST request using the next token from the pool.
+     * Creates an authenticated HTTP request builder using the next token from the pool.
      * 
-     * @return configured request specification with Authorization header
+     * @param path the URI path to send the request to
+     * @return configured request builder with Authorization header
      */
-    protected RequestSpecification createAuthenticatedRequest() {
-        return createAuthenticatedRequest(tokenRepository.getNextToken());
+    protected HttpRequest.Builder createAuthenticatedRequest(String path) {
+        return createAuthenticatedRequest(path, tokenRepository.getNextToken());
     }
 
 }

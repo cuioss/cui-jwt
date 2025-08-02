@@ -19,14 +19,18 @@ import de.cuioss.jwt.quarkus.benchmark.metrics.BenchmarkMetrics;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
-import io.restassured.RestAssured;
-import io.restassured.config.HttpClientConfig;
-import io.restassured.config.RestAssuredConfig;
-import io.restassured.config.SSLConfig;
-import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 import org.openjdk.jmh.annotations.*;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
@@ -53,10 +57,11 @@ public abstract class AbstractBaseBenchmark {
     protected String quarkusMetricsUrl;
     protected SimpleMetricsExporter metricsExporter;
     protected String benchmarkResultsDir;
+    protected HttpClient httpClient;
 
     /**
      * Setup method called once before all benchmark iterations.
-     * Initializes RestAssured configuration and metrics exporter.
+     * Initializes HttpClient and metrics exporter.
      */
     @Setup(Level.Trial)
     public void setupBenchmark() {
@@ -70,8 +75,8 @@ public abstract class AbstractBaseBenchmark {
         LOGGER.info("Service URL: {}", serviceUrl);
         LOGGER.info("Quarkus Metrics URL: {}", quarkusMetricsUrl);
 
-        // Configure RestAssured for high-throughput testing
-        configureRestAssured();
+        // Configure HttpClient for high-throughput testing
+        configureHttpClient();
 
         // Initialize metrics exporter
         metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
@@ -102,43 +107,54 @@ public abstract class AbstractBaseBenchmark {
     }
 
     /**
-     * Configures RestAssured with optimized settings for high-throughput testing.
-     * Includes connection pooling and SSL configuration for self-signed certificates.
+     * Configures HttpClient with optimized settings for high-throughput testing.
+     * Includes SSL configuration for self-signed certificates.
      */
-    private void configureRestAssured() {
-        LOGGER.debug("Configuring RestAssured for high-throughput testing");
+    private void configureHttpClient() {
+        LOGGER.debug("Configuring HttpClient for high-throughput testing");
 
-        RestAssuredConfig config = RestAssuredConfig.config()
-                .httpClient(HttpClientConfig.httpClientConfig()
-                        // Connection pool configuration for high-throughput
-                        .setParam("http.connection-manager.max-total", 200)
-                        .setParam("http.connection-manager.max-per-route", 100)
-                        // Connection timeouts
-                        .setParam("http.connection.timeout", 5000)
-                        .setParam("http.socket.timeout", 30000)
-                        // Keep-alive strategy
-                        .setParam("http.connection.stalecheck", true)
-                        .setParam("http.keepalive.timeout", 30000))
-                // SSL configuration for self-signed certificates
-                .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation());
+        try {
+            // Create SSL context that trusts all certificates (for self-signed)
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[]{new TrustAllManager()}, null);
 
-        RestAssured.config = config;
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+            // Build HttpClient with optimized settings
+            httpClient = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .sslContext(sslContext)
+                    .build();
 
-        LOGGER.debug("RestAssured configured successfully");
+            LOGGER.debug("HttpClient configured successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to configure HttpClient", e);
+        }
     }
 
     /**
-     * Creates a basic REST request specification with common headers.
+     * Creates a basic HTTP request builder with common headers.
      * 
-     * @return configured request specification
+     * @param uri the URI to send the request to
+     * @return configured request builder
      */
-    protected RequestSpecification createBaseRequest() {
-        return RestAssured
-                .given()
-                .baseUri(serviceUrl)
-                .contentType("application/json")
-                .accept("application/json");
+    protected HttpRequest.Builder createBaseRequest(String path) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create(serviceUrl + path))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .timeout(Duration.ofSeconds(30));
+    }
+    
+    /**
+     * Sends an HTTP request and returns the response.
+     * 
+     * @param request the request to send
+     * @return the HTTP response
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the operation is interrupted
+     */
+    protected HttpResponse<String> sendRequest(HttpRequest request) throws IOException, InterruptedException {
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     /**
@@ -194,12 +210,15 @@ public abstract class AbstractBaseBenchmark {
      */
     protected void clearMetrics() {
         try {
-            Response response = createBaseRequest()
-                    .post("/jwt/metric_clear");
+            HttpRequest request = createBaseRequest("/jwt/metric_clear")
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+            
+            HttpResponse<String> response = sendRequest(request);
 
-            if (response.getStatusCode() != 200) {
+            if (response.statusCode() != 200) {
                 LOGGER.warn("Failed to clear metrics - Status: {}, Response: {}",
-                        response.getStatusCode(), response.getBody().asString());
+                        response.statusCode(), response.body());
             } else {
                 LOGGER.debug("Metrics cleared successfully");
             }
@@ -216,10 +235,30 @@ public abstract class AbstractBaseBenchmark {
      * @param expectedStatus the expected HTTP status code
      * @throws RuntimeException if the response status doesn't match expected
      */
-    protected void validateResponse(Response response, int expectedStatus) {
-        if (response.getStatusCode() != expectedStatus) {
+    protected void validateResponse(HttpResponse<String> response, int expectedStatus) {
+        if (response.statusCode() != expectedStatus) {
             throw new RuntimeException("Expected status %d but got %d. Response: %s".formatted(
-                    expectedStatus, response.getStatusCode(), response.getBody().asString()));
+                    expectedStatus, response.statusCode(), response.body()));
+        }
+    }
+    
+    /**
+     * Trust manager that accepts all certificates (for testing only).
+     */
+    private static class TrustAllManager implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+            // Accept all
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+            // Accept all
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
         }
     }
 }

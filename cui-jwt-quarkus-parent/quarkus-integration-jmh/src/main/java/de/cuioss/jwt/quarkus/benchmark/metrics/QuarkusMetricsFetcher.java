@@ -16,11 +16,21 @@
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import de.cuioss.tools.logging.CuiLogger;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,11 +42,15 @@ import java.util.Map;
 public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusMetricsFetcher.class);
+    private static final int HTTP_OK = 200;
+    private static final int REQUEST_TIMEOUT_MS = 10000;
 
     private final String quarkusUrl;
+    private final HttpClient httpClient;
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
         this.quarkusUrl = quarkusUrl;
+        this.httpClient = configureHttpClient();
     }
 
     @Override
@@ -45,19 +59,26 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
         try {
             String metricsUrl = quarkusUrl + "/q/metrics";
-            Response response = RestAssured.get(metricsUrl);
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(metricsUrl))
+                    .timeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
+                    .GET()
+                    .build();
 
-            if (response.getStatusCode() == 200) {
-                String responseBody = response.getBody().asString();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == HTTP_OK) {
+                String responseBody = response.body();
 
                 // Save raw metrics for development
                 saveRawMetricsData(responseBody);
 
                 parseQuarkusMetrics(responseBody, results);
             } else {
-                LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.getStatusCode());
+                LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.statusCode());
             }
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.warn("Error querying Quarkus metrics", e);
         }
 
@@ -81,6 +102,37 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         } catch (Exception e) {
             LOGGER.warn("Failed to save raw metrics data", e);
         }
+    }
+
+    private HttpClient configureHttpClient() {
+        HttpClient.Builder clientBuilder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
+                .version(HttpClient.Version.HTTP_1_1);
+
+        try {
+            // Create a trust manager that accepts all certificates for development/testing
+            TrustManager[] trustAllCerts = new TrustManager[] {
+                new X509TrustManager() {
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                    public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        // Accept all client certificates
+                    }
+                    public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        // Accept all server certificates
+                    }
+                }
+            };
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            clientBuilder.sslContext(sslContext);
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            LOGGER.warn("Failed to configure SSL context for relaxed validation", e);
+        }
+
+        return clientBuilder.build();
     }
 
     /**

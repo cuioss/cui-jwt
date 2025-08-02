@@ -16,10 +16,12 @@
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
 import de.cuioss.jwt.quarkus.benchmark.AbstractIntegrationBenchmark;
-import io.restassured.response.Response;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
+
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * Benchmark class for JWT validation endpoints against live Quarkus service.
@@ -35,11 +37,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateJwtThroughput() {
-        Response response = createAuthenticatedRequest()
-                .when()
-                .post("/jwt/validate");
-
+    public void validateJwtThroughput() throws Exception {
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate")
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -49,11 +52,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    public void validateJwtLatency() {
-        Response response = createAuthenticatedRequest()
-                .when()
-                .post("/jwt/validate");
-
+    public void validateJwtLatency() throws Exception {
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate")
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -63,13 +67,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateAccessTokenThroughput() {
+    public void validateAccessTokenThroughput() throws Exception {
         String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        Response response = createBaseRequest()
-                .body(tokenPayload)
-                .when()
-                .post("/jwt/validate-explicit");
-
+        HttpRequest request = createBaseRequest("/jwt/validate-explicit")
+                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -79,13 +83,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateIdTokenThroughput() {
+    public void validateIdTokenThroughput() throws Exception {
         String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        Response response = createBaseRequest()
-                .body(tokenPayload)
-                .when()
-                .post("/jwt/validate/id-token");
-
+        HttpRequest request = createBaseRequest("/jwt/validate/id-token")
+                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -95,13 +99,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateRefreshTokenThroughput() {
+    public void validateRefreshTokenThroughput() throws Exception {
         String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        Response response = createBaseRequest()
-                .body(tokenPayload)
-                .when()
-                .post("/jwt/validate/refresh-token");
-
+        HttpRequest request = createBaseRequest("/jwt/validate/refresh-token")
+                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -111,11 +115,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateMissingAuthHeader() {
-        Response response = createBaseRequest()
-                .when()
-                .post("/jwt/validate");
-
+    public void validateMissingAuthHeader() throws Exception {
+        HttpRequest request = createBaseRequest("/jwt/validate")
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 401);
     }
 
@@ -125,11 +130,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateInvalidToken() {
-        Response response = createAuthenticatedRequest(tokenRepository.getInvalidToken())
-                .when()
-                .post("/jwt/validate");
-
+    public void validateInvalidToken() throws Exception {
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate", tokenRepository.getInvalidToken())
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 401);
     }
 
@@ -139,11 +145,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateExpiredToken() {
-        Response response = createAuthenticatedRequest(tokenRepository.getExpiredToken())
-                .when()
-                .post("/jwt/validate");
-
+    public void validateExpiredToken() throws Exception {
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate", tokenRepository.getExpiredToken())
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 401);
     }
 
@@ -153,14 +160,15 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateWrongSignatureToken() {
+    public void validateWrongSignatureToken() throws Exception {
         // Use an invalid token with wrong signature
         String wrongSignatureToken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrZXkifQ.eyJleHAiOjk5OTk5OTk5OTksImlhdCI6MTY3MDAwMDAwMCwianRpIjoidGVzdC10b2tlbiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvY3Vpand0LXJlYWxtIiwiYXVkIjoiY3Vpand0LWNsaWVudCIsInN1YiI6InRlc3R1c2VyIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiY3Vpand0LWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiJzZXNzaW9uLXN0YXRlIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1c2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoic2Vzc2lvbi1pZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciJ9.wrong_signature_here";
 
-        Response response = createAuthenticatedRequest(wrongSignatureToken)
-                .when()
-                .post("/jwt/validate");
-
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate", wrongSignatureToken)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 401);
     }
 
@@ -170,12 +178,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void validateJwtWithRotation() {
+    public void validateJwtWithRotation() throws Exception {
         String token = tokenRepository.getRandomToken();
-        Response response = createAuthenticatedRequest(token)
-                .when()
-                .post("/jwt/validate");
-
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate", token)
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -185,11 +194,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.SampleTime)
-    public void validateJwtSample() {
-        Response response = createAuthenticatedRequest()
-                .when()
-                .post("/jwt/validate");
-
+    public void validateJwtSample() throws Exception {
+        HttpRequest request = createAuthenticatedRequest("/jwt/validate")
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 
@@ -199,13 +209,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Benchmark
     @BenchmarkMode(Mode.SampleTime)
-    public void validateAccessTokenSample() {
+    public void validateAccessTokenSample() throws Exception {
         String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        Response response = createBaseRequest()
-                .body(tokenPayload)
-                .when()
-                .post("/jwt/validate");
-
+        HttpRequest request = createBaseRequest("/jwt/validate")
+                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
+                .build();
+        
+        HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
 

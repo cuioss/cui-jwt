@@ -69,15 +69,14 @@ Configure target services via system properties:
 -Dprometheus.url=http://localhost:9090              # Prometheus for metrics
 ----
 
-=== Connection Pooling
+=== HTTP Client Configuration
 
-RestAssured is configured for high-throughput testing:
+HttpClient is configured for high-throughput testing:
 
-* *Max Total Connections*: 200
-* *Max Per Route*: 100
+* *HTTP Version*: HTTP/1.1
 * *Connection Timeout*: 5 seconds
-* *Socket Timeout*: 30 seconds
-* *Keep-Alive*: Enabled
+* *Request Timeout*: 30 seconds per request
+* *SSL*: Trust-all for self-signed certificates (test only)
 
 == Running Benchmarks
 
