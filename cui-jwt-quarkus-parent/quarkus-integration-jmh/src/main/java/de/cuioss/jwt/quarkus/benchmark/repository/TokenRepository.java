@@ -29,7 +29,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -49,18 +48,11 @@ public class TokenRepository {
     private static final CuiLogger LOGGER = new CuiLogger(TokenRepository.class);
     private static final Gson GSON = new Gson();
 
-    // Constants for magic numbers
-    private static final int DEFAULT_CONNECTION_TIMEOUT = 200;
-    private static final int DEFAULT_MAX_CONNECTIONS = 200;
-    private static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 100;
-    private static final int TOKEN_EXPIRY_SECONDS = 900; // 15 minutes - matches Keycloak realm configuration
-    private static final int AGGRESSIVE_REFRESH_THRESHOLD = 300; // Refresh tokens with less than 5 minutes left
     private static final int HTTP_OK = 200;
 
     private final TokenRepositoryConfig config;
     private final List<TokenInfo> tokenPool;
     private final AtomicInteger tokenIndex;
-    private volatile Instant lastRefresh;
     private final HttpClient httpClient;
 
     /**
@@ -72,7 +64,6 @@ public class TokenRepository {
         this.config = config;
         this.tokenPool = new ArrayList<>(config.getTokenPoolSize());
         this.tokenIndex = new AtomicInteger(0);
-        this.lastRefresh = Instant.EPOCH;
 
         // Get HttpClient from factory based on SSL verification setting
         this.httpClient = config.isVerifySsl() ? 
@@ -82,7 +73,7 @@ public class TokenRepository {
                 config.isVerifySsl() ? "secure" : "insecure");
 
         // Initialize token pool
-        refreshTokenPool();
+        initializeTokenPool();
     }
 
     /**
@@ -93,27 +84,13 @@ public class TokenRepository {
      */
     @NonNull
     public String getNextToken() {
-        if (shouldRefreshTokens()) {
-            refreshTokenPool();
-        }
-
         if (tokenPool.isEmpty()) {
             LOGGER.warn("Token pool is empty, fetching single token");
             return fetchSingleToken();
         }
 
         int index = tokenIndex.getAndIncrement() % tokenPool.size();
-        TokenInfo tokenInfo = tokenPool.get(index);
-
-        // Check if this specific token needs refresh - use more aggressive threshold for safety
-        int refreshThreshold = Math.max(config.getTokenRefreshThresholdSeconds(), AGGRESSIVE_REFRESH_THRESHOLD);
-        if (tokenInfo.isExpiringSoon(refreshThreshold)) {
-            LOGGER.debug("Token at index {} is expiring soon (within {} seconds), refreshing", index, refreshThreshold);
-            tokenInfo = refreshToken(tokenInfo);
-            tokenPool.set(index, tokenInfo);
-        }
-
-        return tokenInfo.getAccessToken();
+        return tokenPool.get(index).getAccessToken();
     }
 
     /**
@@ -123,10 +100,6 @@ public class TokenRepository {
      */
     @NonNull
     public String getRandomToken() {
-        if (shouldRefreshTokens()) {
-            refreshTokenPool();
-        }
-
         if (tokenPool.isEmpty()) {
             return fetchSingleToken();
         }
@@ -164,27 +137,20 @@ public class TokenRepository {
         return tokenPool.size();
     }
 
-    private boolean shouldRefreshTokens() {
-        return tokenPool.isEmpty() ||
-                lastRefresh.isBefore(Instant.now().minusSeconds(config.getTokenRefreshThresholdSeconds()));
-    }
-
-    private void refreshTokenPool() {
-        LOGGER.info("Refreshing token pool with {} tokens", config.getTokenPoolSize());
-        tokenPool.clear();
+    private void initializeTokenPool() {
+        LOGGER.info("Initializing token pool with {} tokens", config.getTokenPoolSize());
 
         for (int i = 0; i < config.getTokenPoolSize(); i++) {
             try {
                 String token = fetchSingleToken();
-                tokenPool.add(new TokenInfo(token, Instant.now()));
+                tokenPool.add(new TokenInfo(token));
             } catch (Exception e) {
                 LOGGER.error("Failed to fetch token {} of {}", i + 1, config.getTokenPoolSize(), e);
                 // Continue with other tokens
             }
         }
 
-        lastRefresh = Instant.now();
-        LOGGER.info("Token pool refreshed with {} tokens", tokenPool.size());
+        LOGGER.info("Token pool initialized with {} tokens", tokenPool.size());
     }
 
     private String fetchSingleToken() {
@@ -222,37 +188,19 @@ public class TokenRepository {
         throw new TokenFetchException("Unexpected error fetching token");
     }
 
-    private TokenInfo refreshToken(TokenInfo oldToken) {
-        try {
-            String newToken = fetchSingleToken();
-            return new TokenInfo(newToken, Instant.now());
-        } catch (Exception e) {
-            LOGGER.warn("Failed to refresh token, keeping old token", e);
-            // Return the old token to avoid breaking the benchmark
-            return oldToken;
-        }
-    }
 
     /**
-     * Internal class to hold token information including fetch timestamp.
+     * Internal class to hold token information.
      */
     private static class TokenInfo {
         private final String accessToken;
-        private final Instant fetchedAt;
 
-        public TokenInfo(String accessToken, Instant fetchedAt) {
+        public TokenInfo(String accessToken) {
             this.accessToken = accessToken;
-            this.fetchedAt = fetchedAt;
         }
 
         public String getAccessToken() {
             return accessToken;
-        }
-
-        public boolean isExpiringSoon(int thresholdSeconds) {
-            // Simple heuristic: assume token expires in 1 hour from fetch time
-            // Token needs refresh if: current_time > fetch_time + (expiry_time - threshold)
-            return fetchedAt.plusSeconds(TOKEN_EXPIRY_SECONDS - thresholdSeconds).isBefore(Instant.now());
         }
     }
 
