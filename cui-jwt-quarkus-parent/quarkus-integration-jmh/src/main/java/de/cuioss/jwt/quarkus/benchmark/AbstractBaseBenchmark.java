@@ -19,17 +19,14 @@ import de.cuioss.jwt.quarkus.benchmark.metrics.BenchmarkMetrics;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import org.openjdk.jmh.annotations.*;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +54,7 @@ public abstract class AbstractBaseBenchmark {
     protected String quarkusMetricsUrl;
     protected SimpleMetricsExporter metricsExporter;
     protected String benchmarkResultsDir;
-    protected HttpClient httpClient;
+    private HttpClient httpClient;
 
     /**
      * Setup method called once before all benchmark iterations.
@@ -75,8 +72,9 @@ public abstract class AbstractBaseBenchmark {
         LOGGER.info("Service URL: {}", serviceUrl);
         LOGGER.info("Quarkus Metrics URL: {}", quarkusMetricsUrl);
 
-        // Configure HttpClient for high-throughput testing
-        configureHttpClient();
+        // Get cached HttpClient from factory (insecure for self-signed certs)
+        httpClient = HttpClientFactory.getInsecureClient();
+        LOGGER.debug("Using cached HttpClient from factory");
 
         // Initialize metrics exporter
         metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
@@ -106,30 +104,6 @@ public abstract class AbstractBaseBenchmark {
         LOGGER.info("Base benchmark teardown completed");
     }
 
-    /**
-     * Configures HttpClient with optimized settings for high-throughput testing.
-     * Includes SSL configuration for self-signed certificates.
-     */
-    private void configureHttpClient() {
-        LOGGER.debug("Configuring HttpClient for high-throughput testing");
-
-        try {
-            // Create SSL context that trusts all certificates (for self-signed)
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[]{new TrustAllManager()}, null);
-
-            // Build HttpClient with optimized settings
-            httpClient = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .sslContext(sslContext)
-                    .build();
-
-            LOGGER.debug("HttpClient configured successfully");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to configure HttpClient", e);
-        }
-    }
 
     /**
      * Creates a basic HTTP request builder with common headers.
@@ -242,23 +216,4 @@ public abstract class AbstractBaseBenchmark {
         }
     }
     
-    /**
-     * Trust manager that accepts all certificates (for testing only).
-     */
-    private static class TrustAllManager implements X509TrustManager {
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-            // Accept all
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {
-            // Accept all
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    }
 }

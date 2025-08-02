@@ -18,11 +18,9 @@ package de.cuioss.jwt.quarkus.benchmark.repository;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
+import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -30,9 +28,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -78,8 +73,12 @@ public class TokenRepository {
         this.tokenIndex = new AtomicInteger(0);
         this.lastRefresh = Instant.EPOCH;
 
-        // Configure HttpClient for Keycloak connections
-        this.httpClient = configureHttpClient();
+        // Get HttpClient from factory based on SSL verification setting
+        this.httpClient = config.isVerifySsl() ? 
+                HttpClientFactory.getSecureClient() : 
+                HttpClientFactory.getInsecureClient();
+        LOGGER.debug("Using {} HttpClient from factory", 
+                config.isVerifySsl() ? "secure" : "insecure");
 
         // Initialize token pool
         refreshTokenPool();
@@ -161,39 +160,6 @@ public class TokenRepository {
      */
     public int getTokenPoolSize() {
         return tokenPool.size();
-    }
-
-    private HttpClient configureHttpClient() {
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(config.getConnectionTimeoutMs()))
-                .version(HttpClient.Version.HTTP_1_1);
-
-        if (!config.isVerifySsl()) {
-            try {
-                // Create a trust manager that accepts all certificates
-                TrustManager[] trustAllCerts = new TrustManager[] {
-                    new X509TrustManager() {
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return new X509Certificate[0];
-                        }
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                            // Accept all client certificates
-                        }
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                            // Accept all server certificates
-                        }
-                    }
-                };
-
-                SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-                clientBuilder.sslContext(sslContext);
-            } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                LOGGER.warn("Failed to configure SSL context for relaxed validation", e);
-            }
-        }
-
-        return clientBuilder.build();
     }
 
     private boolean shouldRefreshTokens() {

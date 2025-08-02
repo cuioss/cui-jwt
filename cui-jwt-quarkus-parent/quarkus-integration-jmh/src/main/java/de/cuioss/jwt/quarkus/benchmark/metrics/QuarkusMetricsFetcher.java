@@ -15,11 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
+import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,9 +25,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +45,9 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
         this.quarkusUrl = quarkusUrl;
-        this.httpClient = configureHttpClient();
+        // Use insecure client for self-signed certificates in test environment
+        this.httpClient = HttpClientFactory.getInsecureClient();
+        LOGGER.debug("Using insecure HttpClient from factory for metrics fetching");
     }
 
     @Override
@@ -104,36 +101,6 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         }
     }
 
-    private HttpClient configureHttpClient() {
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
-                .version(HttpClient.Version.HTTP_1_1);
-
-        try {
-            // Create a trust manager that accepts all certificates for development/testing
-            TrustManager[] trustAllCerts = new TrustManager[] {
-                new X509TrustManager() {
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                    public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                        // Accept all client certificates
-                    }
-                    public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                        // Accept all server certificates
-                    }
-                }
-            };
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-            clientBuilder.sslContext(sslContext);
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            LOGGER.warn("Failed to configure SSL context for relaxed validation", e);
-        }
-
-        return clientBuilder.build();
-    }
 
     /**
      * Parse Quarkus metrics in Prometheus format
