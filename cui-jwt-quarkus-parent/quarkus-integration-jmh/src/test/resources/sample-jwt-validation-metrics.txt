@@ -259,6 +259,27 @@ cui_jwt_validation_duration_percentiles_microseconds_max{step="claims_validation
 cui_jwt_validation_duration_percentiles_microseconds_max{step="issuer_extraction"} 116.864
 cui_jwt_validation_duration_percentiles_microseconds_max{step="jwks_operations"} 0.0
 cui_jwt_validation_duration_percentiles_microseconds_max{step="signature_validation"} 674.929
+# TYPE cui_jwt_validation_duration_actual_sample_count gauge
+# HELP cui_jwt_validation_duration_actual_sample_count Actual number of samples in ring buffer for Token format validation
+cui_jwt_validation_duration_actual_sample_count{step="token_parsing"} 12.0
+cui_jwt_validation_duration_actual_sample_count{step="token_format_check"} 12.0
+cui_jwt_validation_duration_actual_sample_count{step="cache_lookup"} 9.0
+cui_jwt_validation_duration_actual_sample_count{step="complete_validation"} 12.0
+cui_jwt_validation_duration_actual_sample_count{step="header_validation"} 9.0
+cui_jwt_validation_duration_actual_sample_count{step="issuer_config_resolution"} 9.0
+cui_jwt_validation_duration_actual_sample_count{step="token_building"} 9.0
+cui_jwt_validation_duration_actual_sample_count{step="cache_store"} 9.0
+cui_jwt_validation_duration_actual_sample_count{step="claims_validation"} 9.0
+cui_jwt_validation_duration_actual_sample_count{step="issuer_extraction"} 12.0
+cui_jwt_validation_duration_actual_sample_count{step="jwks_operations"} 0.0
+cui_jwt_validation_duration_actual_sample_count{step="signature_validation"} 9.0
+# TYPE cui_jwt_http_request_duration_actual_sample_count gauge
+# HELP cui_jwt_http_request_duration_actual_sample_count Actual number of samples in ring buffer for HTTP request processing
+cui_jwt_http_request_duration_actual_sample_count{type="token_extraction"} 11.0
+cui_jwt_http_request_duration_actual_sample_count{type="header_extraction"} 11.0
+cui_jwt_http_request_duration_actual_sample_count{type="authorization_check"} 2.0
+cui_jwt_http_request_duration_actual_sample_count{type="request_processing"} 11.0
+cui_jwt_http_request_duration_actual_sample_count{type="response_formatting"} 0.0
 # TYPE jvm_threads_states_threads gauge
 # HELP jvm_threads_states_threads The current number of threads
 jvm_threads_states_threads{state="runnable"} 0.0

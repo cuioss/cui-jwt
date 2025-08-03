@@ -19,11 +19,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -116,7 +118,8 @@ public class SimpleMetricsExporter {
         if (file.exists()) {
             String content = Files.readString(file.toPath());
             if (!content.trim().isEmpty()) {
-                allMetrics = GSON.fromJson(content, Map.class);
+                Type mapType = new TypeToken<Map<String, Object>>(){}.getType();
+                allMetrics = GSON.fromJson(content, mapType);
             }
         }
 
@@ -153,15 +156,22 @@ public class SimpleMetricsExporter {
                 if (stepName != null && !metricName.contains("_max")) {
                     StepPercentileData data = stepData.computeIfAbsent(stepName, k -> new StepPercentileData());
 
-                    if (metricName.contains("_count")) {
-                        data.count = value.longValue();
-                    } else if (metricName.contains("quantile=\"0.5\"")) {
+                    if (metricName.contains("quantile=\"0.5\"")) {
                         data.p50 = value;
                     } else if (metricName.contains("quantile=\"0.95\"")) {
                         data.p95 = value;
                     } else if (metricName.contains("quantile=\"0.99\"")) {
                         data.p99 = value;
                     }
+                }
+            }
+            
+            // Parse actual sample count from the gauge metric
+            if (metricName.startsWith("cui_jwt_validation_duration_actual_sample_count")) {
+                String stepName = extractStepName(metricName);
+                if (stepName != null) {
+                    StepPercentileData data = stepData.computeIfAbsent(stepName, k -> new StepPercentileData());
+                    data.count = value.longValue();
                 }
             }
         }
@@ -217,7 +227,8 @@ public class SimpleMetricsExporter {
                 "JwtValidation".equals(benchmarkMethodName) ||  // getBenchmarkName() returns this
                 benchmarkMethodName.startsWith("validateJwt") ||
                 benchmarkMethodName.contains("validateAccessToken") ||
-                benchmarkMethodName.contains("validateIdToken");
+                benchmarkMethodName.contains("validateIdToken") ||
+                "FinalCumulativeMetrics".equals(benchmarkMethodName);  // For final metrics from BenchmarkRunner
     }
 
     /**
@@ -237,15 +248,22 @@ public class SimpleMetricsExporter {
                 if (measurementType != null && !metricName.contains("_max")) {
                     StepPercentileData data = httpData.computeIfAbsent(measurementType, k -> new StepPercentileData());
 
-                    if (metricName.contains("_count")) {
-                        data.count = value.longValue();
-                    } else if (metricName.contains("quantile=\"0.5\"")) {
+                    if (metricName.contains("quantile=\"0.5\"")) {
                         data.p50 = value;
                     } else if (metricName.contains("quantile=\"0.95\"")) {
                         data.p95 = value;
                     } else if (metricName.contains("quantile=\"0.99\"")) {
                         data.p99 = value;
                     }
+                }
+            }
+            
+            // Parse HTTP actual sample count from the gauge metric
+            if (metricName.startsWith("cui_jwt_http_request_duration_actual_sample_count")) {
+                String measurementType = extractHttpMeasurementType(metricName);
+                if (measurementType != null) {
+                    StepPercentileData data = httpData.computeIfAbsent(measurementType, k -> new StepPercentileData());
+                    data.count = value.longValue();
                 }
             }
         }

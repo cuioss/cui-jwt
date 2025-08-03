@@ -25,10 +25,10 @@ import java.net.http.HttpRequest;
 /**
  * Abstract base class for Quarkus integration benchmarks that require JWT authentication.
  * Extends {@link AbstractBaseBenchmark} and adds token repository support.
- * 
+ *
  * <p>Use this class for benchmarks that need authenticated requests.
  * For benchmarks that don't require authentication, use {@link AbstractBaseBenchmark} directly.</p>
- * 
+ *
  * @since 1.0
  */
 @State(Scope.Benchmark)
@@ -74,11 +74,11 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
                 .clientSecret("benchmark-secret")
                 .username("benchmark-user")
                 .password("benchmark-password")
-                .tokenPoolSize(100)  // Configure for ~10% cache hit ratio
                 .connectionTimeoutMs(5000)
                 .requestTimeoutMs(10000)
                 .verifySsl(false)
                 .tokenRefreshThresholdSeconds(300)
+                .tokenPoolSize(10) // Reduced from 5000 for faster initialization
                 .build();
 
         tokenRepository = new TokenRepository(config);
@@ -89,7 +89,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
 
     /**
      * Creates an authenticated HTTP request builder with a JWT token.
-     * 
+     *
      * @param path the URI path to send the request to
      * @param token the JWT token to use for authorization
      * @return configured request builder with Authorization header
@@ -101,7 +101,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
 
     /**
      * Creates an authenticated HTTP request builder using the next token from the pool.
-     * 
+     *
      * @param path the URI path to send the request to
      * @return configured request builder with Authorization header
      */

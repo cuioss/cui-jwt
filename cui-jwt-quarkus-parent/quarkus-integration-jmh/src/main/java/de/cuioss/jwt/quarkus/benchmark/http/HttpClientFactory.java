@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
 /**
  * Factory class for creating and caching HttpClient instances.
  * Provides centralized configuration for all HTTP clients used in benchmarks.
- * 
+ *
  * <p>Features:
  * <ul>
  * <li>Caching of HttpClient instances to avoid recreating them</li>
@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
  * <li>HTTP/2 as default protocol with fallback to HTTP/1.1</li>
  * <li>Optimized connection settings for benchmark workloads</li>
  * </ul>
- * 
+ *
  * @since 1.0
  */
 @UtilityClass
@@ -69,7 +69,7 @@ public class HttpClientFactory {
     /**
      * Gets or creates a cached HttpClient for insecure connections (trust all certificates).
      * This is typically used for benchmark environments with self-signed certificates.
-     * 
+     *
      * @return HttpClient configured to trust all certificates
      */
     public static HttpClient getInsecureClient() {
@@ -79,14 +79,14 @@ public class HttpClientFactory {
                 SSLContext sslContext = createTrustAllSSLContext();
                 return createHttpClient(sslContext);
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                throw new RuntimeException("Failed to create insecure HttpClient", e);
+                throw new IllegalStateException("Failed to create insecure HttpClient", e);
             }
         });
     }
 
     /**
      * Gets or creates a cached HttpClient for secure connections with standard certificate validation.
-     * 
+     *
      * @return HttpClient with standard SSL configuration
      */
     public static HttpClient getSecureClient() {
@@ -96,14 +96,14 @@ public class HttpClientFactory {
                 SSLContext sslContext = SSLContext.getDefault();
                 return createHttpClient(sslContext);
             } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("Failed to create secure HttpClient", e);
+                throw new IllegalStateException("Failed to create secure HttpClient", e);
             }
         });
     }
 
     /**
      * Creates an HttpClient with the specified SSL context.
-     * 
+     *
      * @param sslContext the SSL context to use
      * @return configured HttpClient
      */
@@ -117,7 +117,7 @@ public class HttpClientFactory {
                 .executor(Executors.newFixedThreadPool(EXECUTOR_THREADS, runnable -> {
                     Thread thread = new Thread(runnable);
                     thread.setDaemon(true);
-                    thread.setName("http-client-" + thread.getId());
+                    thread.setName("http-client-" + thread.threadId());
                     return thread;
                 }))
                 // Follow redirects automatically
@@ -128,7 +128,7 @@ public class HttpClientFactory {
     /**
      * Creates an SSL context that trusts all certificates.
      * WARNING: This should only be used for testing with self-signed certificates.
-     * 
+     *
      * @return SSLContext that trusts all certificates
      * @throws NoSuchAlgorithmException if TLS is not available
      * @throws KeyManagementException if key management fails
@@ -137,23 +137,6 @@ public class HttpClientFactory {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(null, new TrustManager[]{new TrustAllManager()}, new SecureRandom());
         return sslContext;
-    }
-
-    /**
-     * Clears the client cache. Useful for testing or when configuration changes.
-     */
-    public static void clearCache() {
-        LOGGER.info("Clearing HttpClient cache");
-        CLIENT_CACHE.clear();
-    }
-
-    /**
-     * Gets the current size of the client cache.
-     * 
-     * @return number of cached clients
-     */
-    public static int getCacheSize() {
-        return CLIENT_CACHE.size();
     }
 
     /**

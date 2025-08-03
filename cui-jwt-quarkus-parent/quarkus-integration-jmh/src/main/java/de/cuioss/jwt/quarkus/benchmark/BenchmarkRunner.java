@@ -15,19 +15,22 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
+import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.time.Instant;
 import java.util.Collection;
 
 /**
  * Main class for running Quarkus integration benchmarks.
  * <p>
  * This class runs benchmarks against a live Quarkus application to measure
- * real-world performance characteristics including network overhead and 
+ * real-world performance characteristics including network overhead and
  * containerized deployment effects.
  * <p>
  * Benchmark classes:
@@ -48,7 +51,7 @@ public class BenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
-        LOGGER.info("Starting Quarkus JWT integration benchmarks...");
+        LOGGER.info("BenchmarkRunner.main() invoked - starting Quarkus JWT integration benchmarks...");
         LOGGER.info("Service URL: {}", BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:8443"));
         LOGGER.info("Keycloak URL: {}", BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"));
         LOGGER.info("Results file: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"));
@@ -65,7 +68,7 @@ public class BenchmarkRunner {
                 .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(2))
                 // Set measurement time based on profile
                 .measurementTime(BenchmarkOptionsHelper.getMeasurementTime("5s"))
-                // Set warmup time  
+                // Set warmup time
                 .warmupTime(BenchmarkOptionsHelper.getWarmupTime("1s"))
                 // Set number of threads
                 .threads(BenchmarkOptionsHelper.getThreadCount(10))
@@ -109,7 +112,11 @@ public class BenchmarkRunner {
             }
 
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
+
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"));
+            
+            // Process and download final metrics after successful benchmark execution
+            processMetrics();
         } catch (Exception e) {
             LOGGER.error("Benchmark execution failed", e);
             throw e;
@@ -117,8 +124,37 @@ public class BenchmarkRunner {
     }
 
     /**
+     * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
+     * Uses QuarkusMetricsFetcher to download metrics and SimpleMetricsExporter to export them.
+     */
+    private static void processMetrics() {
+        String quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:8443");
+        String outputDirectory = getBenchmarkResultsDir();
+        
+        LOGGER.info("Processing final cumulative metrics from Quarkus...");
+        LOGGER.info("Metrics URL: {}", quarkusMetricsUrl);
+        LOGGER.info("Output directory: {}", outputDirectory);
+        
+        try {
+            // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
+            QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(quarkusMetricsUrl);
+            
+            // Use SimpleMetricsExporter to export JWT validation metrics
+            SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
+            
+            // Export the JWT validation metrics with current timestamp
+            exporter.exportJwtValidationMetrics("FinalCumulativeMetrics", Instant.now());
+            
+            LOGGER.info("Final metrics processing completed successfully");
+        } catch (Exception e) {
+            // Log the error but don't fail the entire benchmark run
+            LOGGER.error("Failed to process final metrics - continuing without metrics", e);
+        }
+    }
+
+    /**
      * Gets the benchmark results directory from system property or defaults to target/benchmark-results.
-     * 
+     *
      * @return the benchmark results directory path
      */
     private static String getBenchmarkResultsDir() {

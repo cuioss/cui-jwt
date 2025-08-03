@@ -20,91 +20,31 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 
+import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 /**
  * Benchmark class for JWT validation endpoints against live Quarkus service.
  * Tests various JWT validation scenarios including success and error cases.
- * 
+ *
  * @since 1.0
  */
 public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
+
+    public static final String PATH = "/jwt/validate";
 
     /**
      * Benchmark for successful JWT validation with valid tokens.
      * Measures throughput and latency of the /jwt/validate endpoint.
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateJwtThroughput() throws Exception {
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate")
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    public void validateJwtThroughput() throws IOException, InterruptedException {
+        HttpRequest request = createAuthenticatedRequest(PATH)
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
 
-    /**
-     * Benchmark for JWT validation latency measurement.
-     * Uses AverageTime mode to focus on latency characteristics.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    public void validateJwtLatency() throws Exception {
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate")
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
-
-    /**
-     * Benchmark for explicit access token validation.
-     * Tests the /jwt/validate-explicit endpoint with access tokens.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateAccessTokenThroughput() throws Exception {
-        String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        HttpRequest request = createBaseRequest("/jwt/validate-explicit")
-                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
-
-    /**
-     * Benchmark for ID token validation.
-     * Tests the /jwt/validate/id-token endpoint.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateIdTokenThroughput() throws Exception {
-        String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        HttpRequest request = createBaseRequest("/jwt/validate/id-token")
-                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
-
-    /**
-     * Benchmark for refresh token validation.
-     * Tests the /jwt/validate/refresh-token endpoint.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateRefreshTokenThroughput() throws Exception {
-        String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        HttpRequest request = createBaseRequest("/jwt/validate/refresh-token")
-                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
-                .build();
-        
         HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
@@ -114,12 +54,12 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      * Tests error handling for requests without authentication.
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateMissingAuthHeader() throws Exception {
-        HttpRequest request = createBaseRequest("/jwt/validate")
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    public void validateMissingAuthHeader() throws IOException, InterruptedException {
+        HttpRequest request = createBaseRequest(PATH)
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
-        
+
         HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 401);
     }
@@ -129,98 +69,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      * Tests error handling for malformed JWT tokens.
      */
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateInvalidToken() throws Exception {
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate", tokenRepository.getInvalidToken())
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    public void validateInvalidToken() throws IOException, InterruptedException {
+        HttpRequest request = createAuthenticatedRequest(PATH, tokenRepository.getInvalidToken())
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
-        
+
         HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 401);
-    }
-
-    /**
-     * Benchmark for validation with expired tokens.
-     * Tests error handling for expired JWT tokens.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateExpiredToken() throws Exception {
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate", tokenRepository.getExpiredToken())
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 401);
-    }
-
-    /**
-     * Benchmark for validation with wrong signature tokens.
-     * Uses an invalid token to test signature verification.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateWrongSignatureToken() throws Exception {
-        // Use an invalid token with wrong signature
-        String wrongSignatureToken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrZXkifQ.eyJleHAiOjk5OTk5OTk5OTksImlhdCI6MTY3MDAwMDAwMCwianRpIjoidGVzdC10b2tlbiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvY3Vpand0LXJlYWxtIiwiYXVkIjoiY3Vpand0LWNsaWVudCIsInN1YiI6InRlc3R1c2VyIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiY3Vpand0LWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiJzZXNzaW9uLXN0YXRlIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1c2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoic2Vzc2lvbi1pZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciJ9.wrong_signature_here";
-
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate", wrongSignatureToken)
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 401);
-    }
-
-    /**
-     * Benchmark with token rotation to test cache behavior.
-     * Uses random tokens to simulate varying cache hit ratios.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void validateJwtWithRotation() throws Exception {
-        String token = tokenRepository.getRandomToken();
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate", token)
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
-
-    /**
-     * Sample mode benchmark for JWT validation to capture HTTP roundtrip percentiles.
-     * This provides external view metrics for HTTP-level performance analysis.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.SampleTime)
-    public void validateJwtSample() throws Exception {
-        HttpRequest request = createAuthenticatedRequest("/jwt/validate")
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
-
-    /**
-     * Sample mode benchmark for access token validation with explicit token payload.
-     * Captures HTTP roundtrip percentiles for access token validation endpoint.
-     */
-    @Benchmark
-    @BenchmarkMode(Mode.SampleTime)
-    public void validateAccessTokenSample() throws Exception {
-        String tokenPayload = "{\"token\": \"" + tokenRepository.getNextToken() + "\"}";
-        HttpRequest request = createBaseRequest("/jwt/validate")
-                .POST(HttpRequest.BodyPublishers.ofString(tokenPayload))
-                .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 200);
-    }
-
-    @Override
-    protected String getBenchmarkName() {
-        return "JwtValidation";
     }
 }

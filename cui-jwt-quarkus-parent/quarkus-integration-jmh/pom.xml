@@ -148,6 +148,7 @@
                                     </environmentVariables>
                                 </configuration>
                             </execution>
+                            <!-- Metrics processing moved to BenchmarkRunner.java directly -->
                             <!-- Generate HTTP metrics from benchmark results -->
                             <execution>
                                 <id>generate-http-metrics</id>

@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.experimental.UtilityClass;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 
 /**
  * Manages benchmark context and metrics directories.
- * 
+ *
  * This class provides intelligent management of metrics storage by:
  * - Detecting the current benchmark context from JVM arguments
  * - Creating context-specific metrics files
@@ -37,6 +38,7 @@ import java.util.regex.Pattern;
  *
  * @since 1.0
  */
+@UtilityClass
 public class BenchmarkContextManager {
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkContextManager.class);
@@ -66,43 +68,13 @@ public class BenchmarkContextManager {
     private static volatile String explicitBenchmarkContext = null;
 
     /**
-     * Gets the current benchmark context directory for metrics storage.
-     * 
-     * The directory format is: target/metrics-download/{number}-{context}/
-     * Where:
-     * - number: Sequential number starting from 1
-     * - context: Derived benchmark context (e.g., "jwt-validation-i2-t10")
-     * 
-     * @return File pointing to the context-specific metrics directory
-     */
-    public static File getBenchmarkMetricsDirectory() {
-        String context = getBenchmarkContext();
-
-        // Use global counter for all benchmarks
-        int directoryNumber = globalDirectoryCounter.incrementAndGet();
-        String dirName = directoryNumber + "-" + context;
-        File metricsDir = new File("target/metrics-download/" + dirName);
-
-        // Create the directory
-        if (!metricsDir.exists() && !metricsDir.mkdirs()) {
-            LOGGER.warn("Failed to create metrics directory: {}, falling back to default", metricsDir.getAbsolutePath());
-            // Fallback to default directory
-            metricsDir = new File("target/metrics-download");
-            metricsDir.mkdirs();
-        }
-
-        LOGGER.info("Using benchmark metrics directory: {}", metricsDir.getAbsolutePath());
-        return metricsDir;
-    }
-
-    /**
      * Derives the benchmark context from the current JVM execution.
-     * 
+     *
      * The context includes:
      * - Benchmark type (extracted from class names or patterns)
      * - JMH configuration (iterations, threads if different from defaults)
      * - Timestamp for uniqueness
-     * 
+     *
      * @return Benchmark context string suitable for directory naming
      */
     public static String getBenchmarkContext() {
@@ -124,7 +96,7 @@ public class BenchmarkContextManager {
     /**
      * Explicitly set the benchmark context. Useful when the benchmark name is known.
      * This will override automatic detection.
-     * 
+     *
      * @param benchmarkName The benchmark name or full class.method name
      */
     public static void setBenchmarkContext(String benchmarkName) {
@@ -361,7 +333,7 @@ public class BenchmarkContextManager {
             }
 
             if (threads != null && !DEFAULT_THREADS.equals(threads)) {
-                if (config.length() > 0) config.append("-");
+                if (!config.isEmpty()) config.append("-");
                 config.append("t").append(threads);
             }
 
@@ -398,7 +370,7 @@ public class BenchmarkContextManager {
 
     /**
      * Gets a simple metrics filename with timestamp for the current context.
-     * 
+     *
      * @return Filename in format: quarkus-metrics-{timestamp}.txt
      */
     public static String getMetricsFilename() {
@@ -410,7 +382,7 @@ public class BenchmarkContextManager {
      * Gets a metrics file in target/metrics-download.
      * Format: {benchmarkType}-metrics.txt
      * Example: jwt-echo-metrics.txt, jwt-health-metrics.txt, jwt-validation-metrics.txt
-     * 
+     *
      * @return File object for the metrics file
      */
     public static File getMetricsFile() {

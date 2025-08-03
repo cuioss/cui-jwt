@@ -149,6 +149,35 @@ class MetricsPostProcessorTest {
     }
 
     @Test
+    @DisplayName("Should correctly sum samples from multiple iterations")
+    void shouldSumSamplesFromMultipleIterations() throws IOException {
+        // Arrange
+        String multiIterationFile = createMultiIterationBenchmarkFile();
+        MetricsPostProcessor parser = new MetricsPostProcessor(multiIterationFile, tempDir.toString());
+
+        // Act
+        parser.parseAndExportHttpMetrics(Instant.now());
+
+        // Assert
+        File outputFile = new File(tempDir.toFile(), "http-metrics.json");
+        try (FileReader reader = new FileReader(outputFile)) {
+            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+
+            Map<String, Object> echoMetrics = (Map<String, Object>) metrics.get("echo");
+            assertNotNull(echoMetrics);
+            
+            // Should sum up: 100 + 200 = 300 samples from two iterations
+            assertEquals(300.0, echoMetrics.get("sample_count"));
+            
+            Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
+            assertNotNull(healthMetrics);
+            
+            // Should sum up: 150 + 250 = 400 samples from two iterations
+            assertEquals(400.0, healthMetrics.get("sample_count"));
+        }
+    }
+
+    @Test
     @DisplayName("Should include timestamp and source information")
     void shouldIncludeTimestampAndSource() throws IOException {
         // Arrange
@@ -366,6 +395,67 @@ class MetricsPostProcessorTest {
                         [
                             [
                                 [8.3, 30]
+                            ]
+                        ]
+                    ]
+                }
+            }
+        ]
+        """;
+
+        try (FileWriter writer = new FileWriter(testFile)) {
+            writer.write(testData);
+        }
+
+        return testFile.getAbsolutePath();
+    }
+
+    private String createMultiIterationBenchmarkFile() throws IOException {
+        File testFile = new File(tempDir.toFile(), "multi-iteration-benchmark-result.json");
+
+        String testData = """
+        [
+            {
+                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtEchoBenchmark.echoComprehensive",
+                "mode": "sample",
+                "primaryMetric": {
+                    "score": 8.5,
+                    "scorePercentiles": {
+                        "50.0": 8.3,
+                        "95.0": 14.7,
+                        "99.0": 26.9
+                    },
+                    "scoreUnit": "ms/op",
+                    "rawDataHistogram": [
+                        [
+                            [
+                                [8.3, 100]
+                            ],
+                            [
+                                [8.5, 200]
+                            ]
+                        ]
+                    ]
+                }
+            },
+            {
+                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
+                "mode": "sample",
+                "primaryMetric": {
+                    "score": 7.5,
+                    "scorePercentiles": {
+                        "50.0": 7.3,
+                        "95.0": 13.7,
+                        "99.0": 25.9
+                    },
+                    "scoreUnit": "ms/op",
+                    "rawDataHistogram": [
+                        [
+                            [
+                                [7.3, 150]
+                            ],
+                            [
+                                [7.5, 250]
                             ]
                         ]
                     ]

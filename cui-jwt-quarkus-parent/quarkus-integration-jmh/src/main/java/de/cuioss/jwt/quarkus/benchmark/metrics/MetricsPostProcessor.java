@@ -203,21 +203,29 @@ public class MetricsPostProcessor {
             return 0;
         }
 
-        JsonArray firstFork = rawDataHistogram.get(0).getAsJsonArray();
-        if (firstFork == null || firstFork.isEmpty()) {
-            return 0;
-        }
-
-        JsonArray measurements = firstFork.get(0).getAsJsonArray();
-        if (measurements == null) {
-            return 0;
-        }
-
         int totalCount = 0;
-        for (JsonElement measurement : measurements) {
-            JsonArray pair = measurement.getAsJsonArray();
-            if (pair.size() >= 2) {
-                totalCount += pair.get(1).getAsInt(); // Second element is the count
+        
+        // Iterate through all forks
+        for (JsonElement forkElement : rawDataHistogram) {
+            JsonArray fork = forkElement.getAsJsonArray();
+            if (fork == null) {
+                continue;
+            }
+            
+            // Iterate through all iterations within each fork
+            for (JsonElement iterationElement : fork) {
+                JsonArray iteration = iterationElement.getAsJsonArray();
+                if (iteration == null) {
+                    continue;
+                }
+                
+                // Count samples in this iteration
+                for (JsonElement measurement : iteration) {
+                    JsonArray pair = measurement.getAsJsonArray();
+                    if (pair != null && pair.size() >= 2) {
+                        totalCount += pair.get(1).getAsInt(); // Second element is the count
+                    }
+                }
             }
         }
 
@@ -378,10 +386,8 @@ public class MetricsPostProcessor {
     }
 
     /**
-     * Legacy method for HTTP-only metrics processing
-     * @deprecated Use parseAndExportAllMetrics() for comprehensive metrics processing
+     * Method for HTTP-only metrics processing
      */
-    @Deprecated
     public static void parseAndExportHttpOnly(String resultsDirectory) throws IOException {
         String benchmarkFile = resultsDirectory + "/integration-benchmark-result.json";
         MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, resultsDirectory);

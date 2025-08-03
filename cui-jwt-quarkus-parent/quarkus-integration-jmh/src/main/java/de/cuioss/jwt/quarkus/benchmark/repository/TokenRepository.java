@@ -20,6 +20,7 @@ import com.google.gson.JsonObject;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.NonNull;
 
 import java.io.IOException;
 import java.net.URI;
@@ -34,13 +35,10 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
-import lombok.NonNull;
-
 /**
  * Repository for fetching and managing JWT tokens from Keycloak for benchmark testing.
  * Implements token caching and rotation to simulate real-world usage patterns.
- * 
+ *
  * @since 1.0
  */
 public class TokenRepository {
@@ -57,7 +55,7 @@ public class TokenRepository {
 
     /**
      * Creates a new TokenRepository with the given configuration.
-     * 
+     *
      * @param config the configuration for connecting to Keycloak
      */
     public TokenRepository(@NonNull TokenRepositoryConfig config) {
@@ -66,11 +64,11 @@ public class TokenRepository {
         this.tokenIndex = new AtomicInteger(0);
 
         // Get HttpClient from factory based on SSL verification setting
-        this.httpClient = config.isVerifySsl() ? 
-                HttpClientFactory.getSecureClient() : 
-                HttpClientFactory.getInsecureClient();
-        LOGGER.debug("Using {} HttpClient from factory", 
-                config.isVerifySsl() ? "secure" : "insecure");
+        this.httpClient = config.isVerifySsl() ?
+            HttpClientFactory.getSecureClient() :
+            HttpClientFactory.getInsecureClient();
+        LOGGER.debug("Using {} HttpClient from factory",
+            config.isVerifySsl() ? "secure" : "insecure");
 
         // Initialize token pool
         initializeTokenPool();
@@ -79,7 +77,7 @@ public class TokenRepository {
     /**
      * Gets the next token from the pool using round-robin rotation.
      * This ensures even distribution and simulates cache miss scenarios.
-     * 
+     *
      * @return a JWT access token
      */
     @NonNull
@@ -90,12 +88,12 @@ public class TokenRepository {
         }
 
         int index = tokenIndex.getAndIncrement() % tokenPool.size();
-        return tokenPool.get(index).getAccessToken();
+        return tokenPool.get(index).accessToken();
     }
 
     /**
      * Gets a random token from the pool for testing different cache scenarios.
-     * 
+     *
      * @return a JWT access token
      */
     @NonNull
@@ -105,12 +103,12 @@ public class TokenRepository {
         }
 
         int randomIndex = ThreadLocalRandom.current().nextInt(tokenPool.size());
-        return tokenPool.get(randomIndex).getAccessToken();
+        return tokenPool.get(randomIndex).accessToken();
     }
 
     /**
      * Gets an invalid token for error testing scenarios.
-     * 
+     *
      * @return an invalid JWT token
      */
     @NonNull
@@ -119,18 +117,8 @@ public class TokenRepository {
     }
 
     /**
-     * Gets an expired token for error testing scenarios.
-     * 
-     * @return an expired JWT token
-     */
-    @NonNull
-    public String getExpiredToken() {
-        return "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrZXkifQ.eyJleHAiOjE1MTYyMzkwMjIsImlhdCI6MTUxNjIzOTAyMiwianRpIjoiZXhwaXJlZC10b2tlbiIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvY3Vpand0LXJlYWxtIiwiYXVkIjoiY3Vpand0LWNsaWVudCIsInN1YiI6InRlc3R1c2VyIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiY3Vpand0LWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiJzZXNzaW9uLXN0YXRlIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1c2VyIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwic2lkIjoic2Vzc2lvbi1pZCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0dXNlciJ9.expired_signature";
-    }
-
-    /**
      * Returns the current size of the token pool.
-     * 
+     *
      * @return the number of tokens in the pool
      */
     public int getTokenPoolSize() {
@@ -150,22 +138,22 @@ public class TokenRepository {
 
     private String fetchSingleToken() {
         String tokenEndpoint = "%s/realms/%s/protocol/openid-connect/token".formatted(
-                config.getKeycloakBaseUrl(), config.getRealm());
+            config.getKeycloakBaseUrl(), config.getRealm());
 
         try {
             // Build form data as URL encoded string
             String formData = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
-                    "&client_id=" + URLEncoder.encode(config.getClientId(), StandardCharsets.UTF_8) +
-                    "&client_secret=" + URLEncoder.encode(config.getClientSecret(), StandardCharsets.UTF_8) +
-                    "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
-                    "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
+                "&client_id=" + URLEncoder.encode(config.getClientId(), StandardCharsets.UTF_8) +
+                "&client_secret=" + URLEncoder.encode(config.getClientSecret(), StandardCharsets.UTF_8) +
+                "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
+                "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(tokenEndpoint))
-                    .timeout(Duration.ofMillis(config.getRequestTimeoutMs()))
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(formData))
-                    .build();
+                .uri(URI.create(tokenEndpoint))
+                .timeout(Duration.ofMillis(config.getRequestTimeoutMs()))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(formData))
+                .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -187,16 +175,8 @@ public class TokenRepository {
     /**
      * Internal class to hold token information.
      */
-    private static class TokenInfo {
-        private final String accessToken;
+    private record TokenInfo(String accessToken) {
 
-        public TokenInfo(String accessToken) {
-            this.accessToken = accessToken;
-        }
-
-        public String getAccessToken() {
-            return accessToken;
-        }
     }
 
     @NonNull
@@ -223,11 +203,11 @@ public class TokenRepository {
         String errorBody = response.body() != null ? response.body() : "<no body>";
 
         LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
-                response.statusCode(), errorBody);
+            response.statusCode(), errorBody);
 
         throw new TokenFetchException(
-                "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
-                        response.statusCode(), errorBody)
+            "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
+                response.statusCode(), errorBody)
         );
     }
 

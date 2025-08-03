@@ -74,10 +74,10 @@ public class TokenRepositoryConfig {
      * Number of tokens to fetch and cache for rotation.
      * This should be configured to achieve approximately 10% cache hit ratio
      * based on the expected number of benchmark requests.
-     * Default: 100
+     * Default: 5000 (10x the default cache size of 500)
      */
     @Builder.Default
-    int tokenPoolSize = 100;
+    int tokenPoolSize = 5000;
 
     /**
      * Connection timeout in milliseconds for Keycloak requests.

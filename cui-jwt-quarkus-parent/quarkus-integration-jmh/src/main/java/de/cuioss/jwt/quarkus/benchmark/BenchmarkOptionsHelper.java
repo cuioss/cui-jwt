@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import lombok.experimental.UtilityClass;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.TimeValue;
 
@@ -23,18 +24,15 @@ import java.io.File;
 /**
  * Shared utility class for building JMH benchmark options for Quarkus integration benchmarks.
  * Consolidates common option parsing logic used by both standard and JFR benchmark runners.
- * 
+ *
  * @since 1.0
  */
+@UtilityClass
 public final class BenchmarkOptionsHelper {
-
-    private BenchmarkOptionsHelper() {
-        // Utility class
-    }
 
     /**
      * Gets the result format from system property or defaults to JSON.
-     * 
+     *
      * @return the result format type
      */
     public static ResultFormatType getResultFormat() {
@@ -49,7 +47,7 @@ public final class BenchmarkOptionsHelper {
     /**
      * Gets the result file path from system property or returns the default.
      * Ensures parent directory exists.
-     * 
+     *
      * @param defaultFileName the default file name to use if property not set
      * @return the result file path
      */
@@ -70,7 +68,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the measurement time from system property or uses the provided default.
-     * 
+     *
      * @param defaultTime the default time value (e.g., "10s", "60s")
      * @return the parsed time value
      */
@@ -81,7 +79,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the warmup time from system property or uses the provided default.
-     * 
+     *
      * @param defaultTime the default time value (e.g., "2s", "5s")
      * @return the parsed time value
      */
@@ -93,7 +91,7 @@ public final class BenchmarkOptionsHelper {
     /**
      * Gets the thread count from system property or uses the provided default.
      * Supports "MAX" to use all available processors.
-     * 
+     *
      * @param defaultCount the default thread count
      * @return the thread count
      */
@@ -111,7 +109,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the number of forks from system property or uses the provided default.
-     * 
+     *
      * @param defaultForks the default number of forks
      * @return the number of forks
      */
@@ -121,7 +119,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the number of warmup iterations from system property or uses the provided default.
-     * 
+     *
      * @param defaultIterations the default number of warmup iterations
      * @return the number of warmup iterations
      */
@@ -131,7 +129,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the number of measurement iterations from system property or uses the provided default.
-     * 
+     *
      * @param defaultIterations the default number of measurement iterations
      * @return the number of measurement iterations
      */
@@ -141,7 +139,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the integration service URL from system property or uses the provided default.
-     * 
+     *
      * @param defaultUrl the default URL
      * @return the service URL
      */
@@ -151,7 +149,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the Keycloak URL from system property or uses the provided default.
-     * 
+     *
      * @param defaultUrl the default URL
      * @return the Keycloak URL
      */
@@ -161,7 +159,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Gets the Quarkus metrics URL from system property or uses the provided default.
-     * 
+     *
      * @param defaultUrl the default URL
      * @return the Quarkus metrics URL
      */
@@ -171,7 +169,7 @@ public final class BenchmarkOptionsHelper {
 
     /**
      * Parses a time value string (e.g., "2s", "1000ms") into a TimeValue object.
-     * 
+     *
      * @param timeStr the time string to parse
      * @return the parsed time value
      */
