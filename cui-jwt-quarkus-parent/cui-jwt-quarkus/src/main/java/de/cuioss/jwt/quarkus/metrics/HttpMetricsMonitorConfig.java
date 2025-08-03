@@ -81,6 +81,15 @@ public class HttpMetricsMonitorConfig {
     private final Set<HttpMeasurementType> measurementTypes;
 
     /**
+     * Window size for the ring buffer (number of samples to retain).
+     * <p>
+     * Defaults to 10000 if not specified.
+     * Higher values provide more accurate percentiles but use more memory.
+     */
+    @Builder.Default
+    private final int windowSize = 10000;
+
+    /**
      * Creates a preconfigured HttpMetricsMonitor based on this configuration.
      * <p>
      * The returned monitor will only record measurements for the configured
@@ -90,7 +99,7 @@ public class HttpMetricsMonitorConfig {
      */
     public HttpMetricsMonitor createMonitor() {
         Set<HttpMeasurementType> types = measurementTypes != null ? measurementTypes : EnumSet.noneOf(HttpMeasurementType.class);
-        return new HttpMetricsMonitor(types);
+        return new HttpMetricsMonitor(types, windowSize);
     }
 
 

@@ -26,6 +26,7 @@ import de.cuioss.tools.logging.CuiLogger;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
@@ -111,6 +112,9 @@ public class JwtMetricsCollector {
     // Caching of distribution summaries for percentiles
     private final Map<String, DistributionSummary> summaries = new ConcurrentHashMap<>();
 
+    // Caching of gauges for sample counts
+    private final Map<String, Gauge> gauges = new ConcurrentHashMap<>();
+
     // Track last known counts to calculate deltas
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
     private final Map<HttpRequestStatus, Long> lastKnownHttpStatusCounts = new ConcurrentHashMap<>();
@@ -147,6 +151,9 @@ public class JwtMetricsCollector {
 
         // Register performance timers for all measurement types
         registerPerformanceTimers();
+
+        // Register sample count gauges
+        registerSampleCountGauges();
 
         // Register HTTP metrics
         registerHttpMetrics();
@@ -197,6 +204,53 @@ public class JwtMetricsCollector {
             counters.put(eventType.name(), counter);
 
             LOGGER.debug("Registered counter for event type %s", eventType.name());
+        }
+    }
+
+    /**
+     * Registers gauges for sample counts that dynamically read from monitors.
+     */
+    private void registerSampleCountGauges() {
+        // Register gauges for JWT validation metrics
+        if (tokenValidatorMonitor != null) {
+            for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
+                Tags tags = Tags.of(Tag.of(TAG_STEP, measurementType.name().toLowerCase()));
+                String gaugeName = VALIDATION_DURATION + ".actual_sample_count." + measurementType.name();
+                
+                Gauge gauge = Gauge.builder(VALIDATION_DURATION + ".actual_sample_count", 
+                        tokenValidatorMonitor, 
+                        monitor -> {
+                            var metricsOpt = monitor.getValidationMetrics(measurementType);
+                            return metricsOpt.map(m -> (double) m.sampleCount()).orElse(0.0);
+                        })
+                        .tags(tags)
+                        .description("Actual number of samples in ring buffer for " + measurementType.getDescription())
+                        .register(registry);
+                
+                gauges.put(gaugeName, gauge);
+                LOGGER.debug("Registered sample count gauge for measurement type %s", measurementType.name());
+            }
+        }
+        
+        // Register gauges for HTTP metrics
+        if (httpMetricsMonitor != null) {
+            for (HttpMeasurementType measurementType : HttpMeasurementType.values()) {
+                Tags tags = Tags.of(Tag.of(TAG_TYPE, measurementType.name().toLowerCase()));
+                String gaugeName = HTTP_REQUEST_DURATION + ".actual_sample_count." + measurementType.name();
+                
+                Gauge gauge = Gauge.builder(HTTP_REQUEST_DURATION + ".actual_sample_count",
+                        httpMetricsMonitor,
+                        monitor -> {
+                            var metricsOpt = monitor.getHttpMetrics(measurementType);
+                            return metricsOpt.map(m -> (double) m.sampleCount()).orElse(0.0);
+                        })
+                        .tags(tags)
+                        .description("Actual number of samples in ring buffer for " + measurementType.getDescription())
+                        .register(registry);
+                
+                gauges.put(gaugeName, gauge);
+                LOGGER.debug("Registered HTTP sample count gauge for measurement type %s", measurementType.name());
+            }
         }
     }
 
@@ -416,6 +470,9 @@ public class JwtMetricsCollector {
                         summary.record(p99.toNanos() / 1000.0); // Convert to microseconds
                     }
 
+                    // The gauge for sample count is already registered, it will automatically
+                    // read the current value from the monitor
+
                     LOGGER.debug("Updated timer and percentiles for measurement type %s with p50=%s, p95=%s, p99=%s",
                             measurementType.name(), p50, p95, p99);
                 }
@@ -437,12 +494,35 @@ public class JwtMetricsCollector {
             DistributionSummary summary = summaries.get(HTTP_PREFIX + measurementType.name());
 
             if (timer != null && summary != null) {
-                var averageDuration = httpMetricsMonitor.getAverageDuration(measurementType);
-                if (!averageDuration.isZero()) {
-                    timer.record(averageDuration);
-                    summary.record(averageDuration.toNanos() / 1000.0); // Convert to microseconds
-                    LOGGER.debug("Updated HTTP timer and distribution summary for measurement type %s with average %s",
-                            measurementType.name(), averageDuration);
+                // Get percentile metrics from ring buffer
+                var metricsOpt = httpMetricsMonitor.getHttpMetrics(measurementType);
+                
+                if (metricsOpt.isPresent()) {
+                    var metrics = metricsOpt.get();
+                    
+                    // Record p50 duration in both timer and summary
+                    var p50 = metrics.p50();
+                    if (!p50.isZero()) {
+                        timer.record(p50);
+                        summary.record(p50.toNanos() / 1000.0); // Convert to microseconds
+                    }
+
+                    // Also record p95 and p99 to get accurate percentile distribution
+                    var p95 = metrics.p95();
+                    if (!p95.isZero()) {
+                        summary.record(p95.toNanos() / 1000.0); // Convert to microseconds
+                    }
+
+                    var p99 = metrics.p99();
+                    if (!p99.isZero()) {
+                        summary.record(p99.toNanos() / 1000.0); // Convert to microseconds
+                    }
+
+                    // The gauge for sample count is already registered, it will automatically
+                    // read the current value from the monitor
+
+                    LOGGER.debug("Updated HTTP timer and percentiles for measurement type %s with p50=%s, p95=%s, p99=%s",
+                            measurementType.name(), p50, p95, p99);
                 }
             }
         }

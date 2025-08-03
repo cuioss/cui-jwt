@@ -15,15 +15,17 @@
  */
 package de.cuioss.jwt.quarkus.metrics;
 
+import de.cuioss.tools.concurrent.StripedRingBuffer;
+import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import lombok.Getter;
 import lombok.NonNull;
 
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Provides thread-safe monitoring of HTTP-level JWT processing metrics.
@@ -71,15 +73,15 @@ import java.util.concurrent.atomic.AtomicReference;
 public class HttpMetricsMonitor {
 
     /**
-     * Tracks running averages for each measurement type.
-     * Uses AtomicReference for thread-safe updates.
+     * Default window size for the ring buffer (number of samples to retain).
      */
-    private final AtomicReference<Duration>[] averageDurations;
+    private static final int DEFAULT_WINDOW_SIZE = 10000;
 
     /**
-     * Tracks sample counts for each measurement type.
+     * Striped ring buffers for each measurement type.
+     * Each buffer stores nanosecond precision measurements.
      */
-    private final AtomicLong[] sampleCounts;
+    private final StripedRingBuffer[] measurementBuffers;
 
     /**
      * Tracks the count of requests by status.
@@ -95,34 +97,47 @@ public class HttpMetricsMonitor {
     private final Set<HttpMeasurementType> enabledTypes;
 
     /**
+     * Window size for the ring buffer.
+     */
+    private final int windowSize;
+
+    /**
      * Creates a new HTTP metrics monitor with all measurement types enabled.
      */
     public HttpMetricsMonitor() {
-        this(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES);
+        this(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES, DEFAULT_WINDOW_SIZE);
     }
 
     /**
-     * Creates a new HTTP metrics monitor with specified enabled measurement types.
+     * Creates a new HTTP metrics monitor with specified enabled measurement types and default window size.
+     *
+     * @param enabledTypes set of measurement types to monitor
+     */
+    public HttpMetricsMonitor(@NonNull Set<HttpMeasurementType> enabledTypes) {
+        this(enabledTypes, DEFAULT_WINDOW_SIZE);
+    }
+
+    /**
+     * Creates a new HTTP metrics monitor with specified enabled measurement types and window size.
      * <p>
      * Package-private constructor to be used from HttpMetricsMonitorConfig.
      *
      * @param enabledTypes set of measurement types to monitor (others will be no-op)
+     * @param windowSize   size of the ring buffer window for each measurement type
      */
     @SuppressWarnings("unchecked")
-    HttpMetricsMonitor(@NonNull Set<HttpMeasurementType> enabledTypes) {
+    HttpMetricsMonitor(@NonNull Set<HttpMeasurementType> enabledTypes, int windowSize) {
         this.enabledTypes = enabledTypes;
-        // Initialize average durations
-        this.averageDurations = new AtomicReference[HttpMeasurementType.values().length];
-        for (int i = 0; i < averageDurations.length; i++) {
-            averageDurations[i] = new AtomicReference<>(Duration.ZERO);
+        this.windowSize = windowSize;
+        
+        // Initialize ring buffers for enabled types
+        this.measurementBuffers = new StripedRingBuffer[HttpMeasurementType.values().length];
+        for (HttpMeasurementType type : HttpMeasurementType.values()) {
+            if (enabledTypes.contains(type)) {
+                measurementBuffers[type.ordinal()] = new StripedRingBuffer(windowSize);
+            }
         }
-
-        // Initialize sample counts
-        this.sampleCounts = new AtomicLong[HttpMeasurementType.values().length];
-        for (int i = 0; i < sampleCounts.length; i++) {
-            sampleCounts[i] = new AtomicLong(0);
-        }
-
+        
         // Initialize request status counters
         this.requestStatusCounts = new AtomicLong[HttpRequestStatus.values().length];
         for (int i = 0; i < requestStatusCounts.length; i++) {
@@ -157,48 +172,16 @@ public class HttpMetricsMonitor {
         }
 
         int index = measurementType.ordinal();
-        Duration newDuration = Duration.ofNanos(Math.max(0, durationNanos));
 
-        // Increment sample count
-        long count = sampleCounts[index].incrementAndGet();
-
-        // Update average using exponential moving average
-        averageDurations[index].updateAndGet(current -> {
-            if (count == 1) {
-                return newDuration;
-            } else {
-                // Use exponential moving average with alpha = 0.1 for responsiveness
-                double alpha = 0.1;
-                long currentNanos = current.toNanos();
-                long newNanos = newDuration.toNanos();
-                long avgNanos = (long) (alpha * newNanos + (1 - alpha) * currentNanos);
-                return Duration.ofNanos(avgNanos);
-            }
-        });
+        // Record in ring buffer - convert nanos to microseconds for storage
+        // StripedRingBuffer expects microseconds and returns Duration based on that
+        StripedRingBuffer buffer = measurementBuffers[index];
+        if (buffer != null) {
+            long durationMicros = durationNanos / 1000;
+            buffer.recordMeasurement(Math.max(0, durationMicros));
+        }
     }
 
-    /**
-     * Gets the average duration for the specified measurement type.
-     * <p>
-     * Returns the current exponential moving average of all measurements.
-     * If no measurements have been recorded, returns Duration.ZERO.
-     *
-     * @param measurementType the type of measurement to analyze
-     * @return the average duration, or Duration.ZERO if no measurements exist
-     */
-    public Duration getAverageDuration(@NonNull HttpMeasurementType measurementType) {
-        return averageDurations[measurementType.ordinal()].get();
-    }
-
-    /**
-     * Gets the current sample count for the specified measurement type.
-     *
-     * @param measurementType the type of measurement to check
-     * @return the number of samples recorded
-     */
-    public long getSampleCount(@NonNull HttpMeasurementType measurementType) {
-        return sampleCounts[measurementType.ordinal()].get();
-    }
 
     /**
      * Records that a request completed with the specified status.
@@ -242,21 +225,54 @@ public class HttpMetricsMonitor {
      */
     public void reset(@NonNull HttpMeasurementType measurementType) {
         int index = measurementType.ordinal();
-        averageDurations[index].set(Duration.ZERO);
-        sampleCounts[index].set(0);
+        
+        // Clear ring buffer
+        if (measurementBuffers[index] != null) {
+            measurementBuffers[index].reset();
+        }
     }
 
     /**
      * Resets all measurements and counters.
      */
     public void resetAll() {
-        for (int i = 0; i < averageDurations.length; i++) {
-            averageDurations[i].set(Duration.ZERO);
-            sampleCounts[i].set(0);
+        // Clear ring buffers
+        for (int i = 0; i < measurementBuffers.length; i++) {
+            if (measurementBuffers[i] != null) {
+                measurementBuffers[i].reset();
+            }
         }
+        
         for (AtomicLong counter : requestStatusCounts) {
             counter.set(0);
         }
+    }
+
+    /**
+     * Gets the percentile statistics for the specified measurement type.
+     * <p>
+     * Returns statistics calculated from the ring buffer if available,
+     * providing accurate percentiles (p50, p95, p99) and sample count.
+     *
+     * @param measurementType the type of measurement to analyze
+     * @return optional containing the statistics, or empty if no measurements exist
+     */
+    public Optional<StripedRingBufferStatistics> getHttpMetrics(@NonNull HttpMeasurementType measurementType) {
+        if (!isEnabled(measurementType)) {
+            return Optional.empty();
+        }
+
+        StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
+        if (buffer == null) {
+            return Optional.empty();
+        }
+
+        StripedRingBufferStatistics stats = buffer.getStatistics();
+        if (stats.sampleCount() == 0) {
+            return Optional.empty();
+        }
+
+        return Optional.of(stats);
     }
 
     /**
@@ -268,5 +284,13 @@ public class HttpMetricsMonitor {
         resetAll();
     }
 
+    /**
+     * Gets the window size for the ring buffers.
+     *
+     * @return the window size
+     */
+    public int getWindowSize() {
+        return windowSize;
+    }
 
 }

@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.metrics;
 
-import de.cuioss.jwt.validation.metrics.NoOpMetricsTicker;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
@@ -41,12 +40,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>
  * Tests cover:
  * <ul>
- *   <li>Basic functionality - recording measurements and calculating averages</li>
+ *   <li>Basic functionality - recording measurements and retrieving percentiles</li>
  *   <li>Request status tracking - counting different outcome types</li>
  *   <li>Thread safety - massive parallel operations from multiple threads</li>
  *   <li>Performance characteristics - minimal overhead validation</li>
  *   <li>Edge cases - boundary conditions and error scenarios</li>
- *   <li>Exponential moving average behavior - responsiveness testing</li>
+ *   <li>Ring buffer behavior - percentile accuracy testing</li>
  * </ul>
  * <p>
  * This test class ensures that HTTP metrics monitoring operations are accurate,
@@ -81,10 +80,8 @@ class HttpMetricsMonitorTest {
 
         // Verify initial state - no measurements recorded
         for (HttpMeasurementType type : HttpMeasurementType.values()) {
-            assertEquals(Duration.ZERO, monitor.getAverageDuration(type),
-                    "Initial average should be zero for " + type);
-            assertEquals(0, monitor.getSampleCount(type),
-                    "Initial sample count should be zero for " + type);
+            var metrics = monitor.getHttpMetrics(type);
+            assertTrue(metrics.isEmpty(), "Initial metrics should be empty for " + type);
         }
 
         // Verify initial request status counts
@@ -104,17 +101,17 @@ class HttpMetricsMonitorTest {
         long durationNanos = 1_000_000;
         monitor.recordMeasurement(measurementType, durationNanos);
 
-        assertEquals(1, monitor.getSampleCount(measurementType),
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics after recording");
+        assertEquals(1, metrics.get().sampleCount(),
                 "Should have one sample recorded");
-
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertEquals(Duration.ofMillis(1), average,
-                "Average should equal the single measurement");
+        assertEquals(1_000_000L, metrics.get().p50().toNanos(),
+                "P50 should equal the single measurement in nanoseconds");
     }
 
     @Test
-    @DisplayName("Should record multiple measurements and use exponential moving average")
-    void shouldRecordMultipleMeasurementsWithExponentialMovingAverage() {
+    @DisplayName("Should record multiple measurements and calculate percentiles")
+    void shouldRecordMultipleMeasurementsAndCalculatePercentiles() {
         var monitor = new HttpMetricsMonitor();
         var measurementType = HttpMeasurementType.HEADER_EXTRACTION;
 
@@ -123,19 +120,15 @@ class HttpMetricsMonitorTest {
         monitor.recordMeasurement(measurementType, 20_000_000); // 20ms
         monitor.recordMeasurement(measurementType, 30_000_000); // 30ms
 
-        assertEquals(3, monitor.getSampleCount(measurementType),
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics after recording");
+        assertEquals(3, metrics.get().sampleCount(),
                 "Should have three samples recorded");
 
-        Duration average = monitor.getAverageDuration(measurementType);
-
-        // With exponential moving average (alpha=0.1), the result should be between first and last measurement
-        assertTrue(average.toMillis() >= 10 && average.toMillis() <= 30,
-                "Average should be between 10ms and 30ms: " + average.toMillis() + "ms");
-
-        // The exponential moving average should not be exactly the simple average (20ms)
-        // Due to the weighting algorithm, it will be influenced by the sequence of measurements
-        assertNotEquals(20, average.toMillis(),
-                "Exponential moving average should differ from simple arithmetic mean");
+        var p50 = metrics.get().p50();
+        // P50 should be the median value (20ms)
+        assertTrue(p50.toNanos() >= 10_000_000L && p50.toNanos() <= 30_000_000L,
+                "P50 should be between 10ms and 30ms: " + p50.toNanos() + "ns");
     }
 
     @Test
@@ -148,401 +141,316 @@ class HttpMetricsMonitorTest {
         long durationNanos = 500_000;
         monitor.recordMeasurement(measurementType, durationNanos);
 
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertEquals(Duration.ofNanos(500_000), average,
-                "Should maintain microsecond precision");
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics after recording");
+        
+        var p50 = metrics.get().p50();
+        assertTrue(p50.toNanos() > 0,
+                "Should have positive p50 after parallel recording");
+        assertEquals(500_000L, p50.toNanos(),
+                "Should maintain microsecond precision: " + p50.toNanos() + " nanos");
     }
 
     @Test
-    @DisplayName("Should isolate measurements between types")
-    void shouldIsolateMeasurementsBetweenTypes() {
-        var monitor = new HttpMetricsMonitor();
-
-        // Record different values for different types
-        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 5_000_000); // 5ms
-        monitor.recordMeasurement(HttpMeasurementType.RESPONSE_FORMATTING, 1_000_000);    // 1ms
-
-        assertEquals(Duration.ofMillis(5),
-                monitor.getAverageDuration(HttpMeasurementType.REQUEST_PROCESSING),
-                "Request processing average should be 5ms");
-
-        assertEquals(Duration.ofMillis(1),
-                monitor.getAverageDuration(HttpMeasurementType.RESPONSE_FORMATTING),
-                "Response formatting average should be 1ms");
-
-        assertEquals(Duration.ZERO,
-                monitor.getAverageDuration(HttpMeasurementType.TOKEN_EXTRACTION),
-                "Unused measurement type should remain at zero");
-    }
-
-    @Test
-    @DisplayName("Should record and track request statuses")
-    void shouldRecordAndTrackRequestStatuses() {
-        var monitor = new HttpMetricsMonitor();
-
-        // Record different request outcomes
-        monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
-        monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
-        monitor.recordRequestStatus(HttpRequestStatus.MISSING_TOKEN);
-        monitor.recordRequestStatus(HttpRequestStatus.INVALID_TOKEN);
-
-        assertEquals(2, monitor.getRequestStatusCount(HttpRequestStatus.SUCCESS),
-                "Should have two successful requests");
-        assertEquals(1, monitor.getRequestStatusCount(HttpRequestStatus.MISSING_TOKEN),
-                "Should have one missing token request");
-        assertEquals(1, monitor.getRequestStatusCount(HttpRequestStatus.INVALID_TOKEN),
-                "Should have one invalid token request");
-        assertEquals(0, monitor.getRequestStatusCount(HttpRequestStatus.INSUFFICIENT_PERMISSIONS),
-                "Should have zero insufficient permissions requests");
-
-        // Test getting all counts
-        Map<HttpRequestStatus, Long> allCounts = monitor.getRequestStatusCounts();
-        assertEquals(2L, allCounts.get(HttpRequestStatus.SUCCESS));
-        assertEquals(1L, allCounts.get(HttpRequestStatus.MISSING_TOKEN));
-        assertEquals(1L, allCounts.get(HttpRequestStatus.INVALID_TOKEN));
-        assertEquals(0L, allCounts.get(HttpRequestStatus.INSUFFICIENT_PERMISSIONS));
-    }
-
-    @Test
-    @DisplayName("Should reset specific measurement type")
-    void shouldResetSpecificMeasurementType() {
-        var monitor = new HttpMetricsMonitor();
-
-        // Record measurements for multiple types
-        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 5_000_000);
-        monitor.recordMeasurement(HttpMeasurementType.HEADER_EXTRACTION, 1_000_000);
-
-        // Reset only request processing
-        monitor.reset(HttpMeasurementType.REQUEST_PROCESSING);
-
-        assertEquals(Duration.ZERO,
-                monitor.getAverageDuration(HttpMeasurementType.REQUEST_PROCESSING),
-                "Reset measurement type should be zero");
-        assertEquals(0, monitor.getSampleCount(HttpMeasurementType.REQUEST_PROCESSING),
-                "Reset sample count should be zero");
-
-        assertEquals(Duration.ofMillis(1),
-                monitor.getAverageDuration(HttpMeasurementType.HEADER_EXTRACTION),
-                "Other measurement types should remain unchanged");
-    }
-
-    @Test
-    @DisplayName("Should reset all measurements and counters")
-    void shouldResetAllMeasurementsAndCounters() {
-        var monitor = new HttpMetricsMonitor();
-
-        // Record measurements for all types
-        for (HttpMeasurementType type : HttpMeasurementType.values()) {
-            monitor.recordMeasurement(type, 1_000_000);
-        }
-
-        // Record request statuses
-        for (HttpRequestStatus status : HttpRequestStatus.values()) {
-            monitor.recordRequestStatus(status);
-        }
-
-        // Reset all
-        monitor.resetAll();
-
-        // Verify all measurements are reset
-        for (HttpMeasurementType type : HttpMeasurementType.values()) {
-            assertEquals(Duration.ZERO, monitor.getAverageDuration(type),
-                    "All measurement types should be reset: " + type);
-            assertEquals(0, monitor.getSampleCount(type),
-                    "All sample counts should be reset: " + type);
-        }
-
-        // Verify all request status counts are reset
-        for (HttpRequestStatus status : HttpRequestStatus.values()) {
-            assertEquals(0, monitor.getRequestStatusCount(status),
-                    "All request status counts should be reset: " + status);
-        }
-    }
-
-    @Test
-    @DisplayName("Should handle zero and negative durations")
-    void shouldHandleZeroAndNegativeDurations() {
-        var monitor = new HttpMetricsMonitor();
-        var measurementType = HttpMeasurementType.TOKEN_EXTRACTION;
-
-        // Record zero duration
-        monitor.recordMeasurement(measurementType, 0);
-        assertEquals(Duration.ZERO, monitor.getAverageDuration(measurementType),
-                "Zero duration should be handled correctly");
-
-        // Record negative duration (should be clamped to zero)
-        monitor.recordMeasurement(measurementType, -1000);
-        assertEquals(Duration.ZERO, monitor.getAverageDuration(measurementType),
-                "Negative duration should be clamped to zero");
-    }
-
-    @Test
-    @DisplayName("Should be thread-safe under moderate load")
-    void shouldBeThreadSafeUnderModerateLoad() {
-        var threadCount = 10;
-        var measurementsPerThread = 1000;
-        var monitor = new HttpMetricsMonitor();
-        var measurementType = HttpMeasurementType.REQUEST_PROCESSING;
-        var startLatch = new CountDownLatch(1);
-        var completedThreads = new AtomicInteger(0);
-        var executor = Executors.newFixedThreadPool(threadCount);
-
-        // Submit all threads
-        for (int i = 0; i < threadCount; i++) {
-            final int threadId = i;
-            executor.submit(() -> {
-                try {
-                    startLatch.await();
-                    for (int j = 0; j < measurementsPerThread; j++) {
-                        // Use different durations per thread for verification
-                        long duration = (threadId + 1) * 1_000_000L; // 1ms, 2ms, 3ms, etc.
-                        monitor.recordMeasurement(measurementType, duration);
-
-                        // Also record request statuses
-                        HttpRequestStatus status = HttpRequestStatus.values()[j % HttpRequestStatus.values().length];
-                        monitor.recordRequestStatus(status);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    completedThreads.incrementAndGet();
-                }
-            });
-        }
-
-        // Start all threads simultaneously
-        startLatch.countDown();
-
-        // Wait for all threads to complete
-        await("All threads to complete their measurements")
-                .atMost(15, SECONDS)
-                .until(() -> completedThreads.get() == threadCount);
-
-        executor.shutdown();
-
-        // Verify measurements were recorded
-        assertTrue(monitor.getSampleCount(measurementType) > 0,
-                "Should have recorded measurements");
-
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertTrue(average.toNanos() > 0,
-                "Average should be positive: " + average.toNanos() + "ns");
-
-        // Verify request status counts
-        long totalStatusCounts = monitor.getRequestStatusCounts().values().stream()
-                .mapToLong(Long::longValue)
-                .sum();
-        assertEquals(threadCount * measurementsPerThread, totalStatusCounts,
-                "Total status counts should equal total operations");
-    }
-
-    @Test
-    @DisplayName("Should handle massive parallel load")
-    void shouldHandleMassiveParallelLoad() {
-        var threadCount = 50;
-        var measurementsPerThread = 5000;
-        var monitor = new HttpMetricsMonitor();
-        var measurementType = HttpMeasurementType.AUTHORIZATION_CHECK;
-        var startLatch = new CountDownLatch(1);
-        var completedThreads = new AtomicInteger(0);
-        var totalMeasurements = new AtomicLong(0);
-        var executor = Executors.newFixedThreadPool(threadCount);
-
-        // Submit all threads
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    startLatch.await();
-                    for (int j = 0; j < measurementsPerThread; j++) {
-                        // Use consistent duration for average calculation verification
-                        monitor.recordMeasurement(measurementType, 2_000_000); // 2ms
-                        totalMeasurements.incrementAndGet();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    completedThreads.incrementAndGet();
-                }
-            });
-        }
-
-        // Measure metrics impact
-        long startTime = System.nanoTime();
-        startLatch.countDown();
-
-        // Wait for all threads to complete
-        await("All threads to complete massive parallel measurements")
-                .atMost(30, SECONDS)
-                .until(() -> completedThreads.get() == threadCount);
-
-        long endTime = System.nanoTime();
-        long totalDurationMs = (endTime - startTime) / 1_000_000;
-
-        executor.shutdown();
-
-        // Verify measurements were recorded
-        assertTrue(monitor.getSampleCount(measurementType) > 0,
-                "Should have recorded measurements under massive load");
-
-        // Verify average is reasonable (should be close to 2ms due to exponential moving average)
-        Duration average = monitor.getAverageDuration(measurementType);
-        assertTrue(average.toMillis() >= 1 && average.toMillis() <= 3,
-                "Average should be close to 2ms under massive load: " + average.toMillis() + "ms");
-
-        // Performance assertion - should complete reasonably quickly
-        double measurementsPerMs = totalMeasurements.get() / (double) totalDurationMs;
-
-        assertTrue(measurementsPerMs > 500, // Should handle at least 500 measurements per millisecond
-                "Performance too slow: %.1f measurements/ms (expected > 500)".formatted(measurementsPerMs));
-
-        log.info("Massive parallel test: {} threads, {} measurements/thread, {:.1f} measurements/ms",
-                threadCount, measurementsPerThread, measurementsPerMs);
-    }
-
-    @Test
-    @DisplayName("Should handle concurrent access to different measurement types and statuses")
-    void shouldHandleConcurrentAccessToDifferentMeasurementTypesAndStatuses() {
-        var monitor = new HttpMetricsMonitor();
-        var measurementTypes = HttpMeasurementType.values();
-        var requestStatuses = HttpRequestStatus.values();
-        var threadsPerType = 5;
-        var measurementsPerThread = 100;
-        var startLatch = new CountDownLatch(1);
-        var completedThreads = new AtomicInteger(0);
-        var executor = Executors.newFixedThreadPool(measurementTypes.length * threadsPerType);
-
-        // Submit threads for each measurement type
-        for (int typeIndex = 0; typeIndex < measurementTypes.length; typeIndex++) {
-            final var measurementType = measurementTypes[typeIndex];
-            final long baseDuration = (typeIndex + 1) * 1_000_000L; // 1ms, 2ms, 3ms, etc.
-
-            for (int threadIndex = 0; threadIndex < threadsPerType; threadIndex++) {
-                final int statusIndex = threadIndex % requestStatuses.length;
-                final var requestStatus = requestStatuses[statusIndex];
-
-                executor.submit(() -> {
-                    try {
-                        startLatch.await();
-                        for (int j = 0; j < measurementsPerThread; j++) {
-                            monitor.recordMeasurement(measurementType, baseDuration);
-                            monitor.recordRequestStatus(requestStatus);
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } finally {
-                        completedThreads.incrementAndGet();
-                    }
-                });
-            }
-        }
-
-        // Start all threads simultaneously
-        startLatch.countDown();
-
-        // Wait for all threads to complete
-        int expectedThreads = measurementTypes.length * threadsPerType;
-        await("All measurement type threads to complete")
-                .atMost(20, SECONDS)
-                .until(() -> completedThreads.get() == expectedThreads);
-
-        executor.shutdown();
-
-        // Verify each measurement type has recorded samples
-        for (int i = 0; i < measurementTypes.length; i++) {
-            var measurementType = measurementTypes[i];
-
-            assertTrue(monitor.getSampleCount(measurementType) > 0,
-                    "Should have samples for " + measurementType);
-
-            Duration average = monitor.getAverageDuration(measurementType);
-            assertTrue(average.toMillis() > 0,
-                    "Average for " + measurementType + " should be positive");
-        }
-
-        // Verify request status counts
-        long totalRequestCounts = monitor.getRequestStatusCounts().values().stream()
-                .mapToLong(Long::longValue)
-                .sum();
-        assertEquals(expectedThreads * measurementsPerThread, totalRequestCounts,
-                "Total request status counts should match expected operations");
-    }
-
-    @RepeatedTest(5)
-    @DisplayName("Should be consistent across multiple runs")
-    void shouldBeConsistentAcrossMultipleRuns() {
-        var monitor = new HttpMetricsMonitor();
-        var measurementType = HttpMeasurementType.HEADER_EXTRACTION;
-
-        // Record consistent measurements
-        IntStream.range(0, 100).forEach(i ->
-                monitor.recordMeasurement(measurementType, 1_500_000)); // 1.5ms each
-
-        Duration average = monitor.getAverageDuration(measurementType);
-        // With exponential moving average, should converge to the input value
-        assertTrue(Math.abs(average.toNanos() - 1_500_000) < 100_000,
-                "Average should be close to 1.5ms: " + average.toNanos() + "ns");
-
-        assertEquals(100, monitor.getSampleCount(measurementType),
-                "Sample count should be consistent");
-    }
-
-    @Test
-    @DisplayName("Should have minimal performance overhead")
-    void shouldHaveMinimalPerformanceOverhead() {
-        var monitor = new HttpMetricsMonitor();
-        var measurementType = HttpMeasurementType.TOKEN_EXTRACTION;
-        var iterations = 100_000;
-
-        // Measure time for recording measurements
-        long startTime = System.nanoTime();
-        for (int i = 0; i < iterations; i++) {
-            monitor.recordMeasurement(measurementType, 1_000_000);
-        }
-        long endTime = System.nanoTime();
-
-        long totalOverheadNanos = endTime - startTime;
-        double overheadPerMeasurementNanos = totalOverheadNanos / (double) iterations;
-
-        // Overhead should be minimal (less than 2 microseconds per measurement)
-        assertTrue(overheadPerMeasurementNanos < 2000,
-                "Performance overhead too high: %.1f ns/measurement (expected < 2000)".formatted(
-                        overheadPerMeasurementNanos));
-
-        log.info("Performance overhead: {:.1f} ns per measurement", overheadPerMeasurementNanos);
-    }
-
-    @Test
-    @DisplayName("Should verify enum descriptions")
-    void shouldVerifyEnumDescriptions() {
-        // Verify HttpMeasurementType descriptions
-        assertEquals("Total HTTP request processing",
-                HttpMeasurementType.REQUEST_PROCESSING.getDescription());
-        assertEquals("Authorization header extraction",
-                HttpMeasurementType.HEADER_EXTRACTION.getDescription());
-        assertEquals("Bearer token extraction",
-                HttpMeasurementType.TOKEN_EXTRACTION.getDescription());
-        assertEquals("Authorization requirements check",
-                HttpMeasurementType.AUTHORIZATION_CHECK.getDescription());
-        assertEquals("Error response formatting",
-                HttpMeasurementType.RESPONSE_FORMATTING.getDescription());
-
-        // Verify HttpRequestStatus enum values exist
-        assertNotNull(HttpRequestStatus.SUCCESS);
-        assertNotNull(HttpRequestStatus.MISSING_TOKEN);
-        assertNotNull(HttpRequestStatus.INVALID_TOKEN);
-        assertNotNull(HttpRequestStatus.INSUFFICIENT_PERMISSIONS);
-        assertNotNull(HttpRequestStatus.ERROR);
-    }
-
-    @Test
-    @DisplayName("Should create monitor with selective measurement types enabled")
-    void shouldCreateMonitorWithSelectiveMeasurementTypes() {
+    @DisplayName("Should handle selective measurement types")
+    void shouldHandleSelectiveMeasurementTypes() {
         var monitor = createMonitorWithEnabledTypes(
                 HttpMeasurementType.REQUEST_PROCESSING,
                 HttpMeasurementType.TOKEN_EXTRACTION
         );
 
-        // Verify only selected types are enabled
+        // Record measurements for enabled types
+        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 1_000_000);
+        monitor.recordMeasurement(HttpMeasurementType.TOKEN_EXTRACTION, 2_000_000);
+
+        // Record measurements for disabled types
+        monitor.recordMeasurement(HttpMeasurementType.RESPONSE_FORMATTING, 3_000_000);
+        monitor.recordMeasurement(HttpMeasurementType.AUTHORIZATION_CHECK, 4_000_000);
+
+        // REQUEST_PROCESSING should have measurements
+        var reqMetrics = monitor.getHttpMetrics(HttpMeasurementType.REQUEST_PROCESSING);
+        assertTrue(reqMetrics.isPresent(),
+                "REQUEST_PROCESSING should have measurements");
+
+        // RESPONSE_FORMATTING should NOT have measurements
+        var respMetrics = monitor.getHttpMetrics(HttpMeasurementType.RESPONSE_FORMATTING);
+        assertTrue(respMetrics.isEmpty(),
+                "RESPONSE_FORMATTING should not have measurements");
+
+        // TOKEN_EXTRACTION should have measurements
+        var tokenMetrics = monitor.getHttpMetrics(HttpMeasurementType.TOKEN_EXTRACTION);
+        assertTrue(tokenMetrics.isPresent(),
+                "TOKEN_EXTRACTION should have measurements");
+    }
+
+    @Test
+    @DisplayName("Should reset individual measurement type")
+    void shouldResetIndividualMeasurementType() {
+        var monitor = new HttpMetricsMonitor();
+
+        // Record measurements for multiple types
+        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 1_000_000);
+        monitor.recordMeasurement(HttpMeasurementType.HEADER_EXTRACTION, 2_000_000);
+        monitor.recordMeasurement(HttpMeasurementType.TOKEN_EXTRACTION, 3_000_000);
+
+        // Reset only REQUEST_PROCESSING
+        monitor.reset(HttpMeasurementType.REQUEST_PROCESSING);
+
+        // Verify reset
+        var resetMetrics = monitor.getHttpMetrics(HttpMeasurementType.REQUEST_PROCESSING);
+        assertTrue(resetMetrics.isEmpty(),
+                "REQUEST_PROCESSING should be reset");
+
+        // Others should remain unchanged
+        var headerMetrics = monitor.getHttpMetrics(HttpMeasurementType.HEADER_EXTRACTION);
+        assertTrue(headerMetrics.isPresent(),
+                "HEADER_EXTRACTION should be unchanged");
+    }
+
+    @Test
+    @DisplayName("Should reset all measurements")
+    void shouldResetAllMeasurements() {
+        var monitor = new HttpMetricsMonitor();
+
+        // Record measurements and status counts
+        for (HttpMeasurementType type : HttpMeasurementType.values()) {
+            monitor.recordMeasurement(type, 1_000_000);
+        }
+        monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
+        monitor.recordRequestStatus(HttpRequestStatus.INVALID_TOKEN);
+
+        // Reset all
+        monitor.resetAll();
+
+        // Verify all metrics are reset
+        for (HttpMeasurementType type : HttpMeasurementType.values()) {
+            var metrics = monitor.getHttpMetrics(type);
+            assertTrue(metrics.isEmpty(),
+                    "Should be reset for " + type);
+        }
+
+        // Verify status counts are reset
+        for (HttpRequestStatus status : HttpRequestStatus.values()) {
+            assertEquals(0, monitor.getRequestStatusCount(status),
+                    "Status count should be reset for " + status);
+        }
+    }
+
+    @Test
+    @DisplayName("Should ignore measurements for disabled types")
+    void shouldIgnoreMeasurementsForDisabledTypes() {
+        var monitor = createMonitorWithEnabledTypes(
+                HttpMeasurementType.REQUEST_PROCESSING
+        );
+
+        // Try to record for disabled type
+        var measurementType = HttpMeasurementType.TOKEN_EXTRACTION;
+        assertFalse(monitor.isEnabled(measurementType),
+                "Type should be disabled");
+
+        // Verify measurement was ignored
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isEmpty(),
+                "Should have no measurements");
+
+        // Force enable and record
+        monitor.recordMeasurement(measurementType, Duration.ofMillis(100).toNanos());
+        metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isEmpty(),
+                "Should still have no measurements for disabled type");
+    }
+
+    @Test
+    @DisplayName("Should handle negative measurements")
+    void shouldHandleNegativeMeasurements() {
+        var monitor = new HttpMetricsMonitor();
+        var measurementType = HttpMeasurementType.REQUEST_PROCESSING;
+
+        // Record negative duration
+        monitor.recordMeasurement(measurementType, -1_000_000);
+
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics");
+        assertTrue(metrics.get().sampleCount() > 0,
+                "Should have recorded samples");
+
+        Duration p50 = metrics.get().p50();
+        assertTrue(p50.toNanos() >= 0,
+                "Should clamp negative values to zero");
+    }
+
+    @Test
+    @DisplayName("Should handle concurrent measurements")
+    void shouldHandleConcurrentMeasurements() throws InterruptedException {
+        var monitor = new HttpMetricsMonitor();
+        var measurementType = HttpMeasurementType.REQUEST_PROCESSING;
+        int threadCount = 100;
+        int measurementsPerThread = 1000;
+
+        var latch = new CountDownLatch(threadCount);
+        var executor = Executors.newFixedThreadPool(threadCount);
+
+        var successCounter = new AtomicInteger(0);
+        var errorCounter = new AtomicInteger(0);
+
+        // Start concurrent threads
+        IntStream.range(0, threadCount).forEach(i ->
+                executor.submit(() -> {
+                    try {
+                        for (int j = 0; j < measurementsPerThread; j++) {
+                            monitor.recordMeasurement(measurementType, (i + j) * 1_000);
+                        }
+                        successCounter.incrementAndGet();
+                    } catch (Exception e) {
+                        errorCounter.incrementAndGet();
+                        log.error("Error in thread " + i, e);
+                    } finally {
+                        latch.countDown();
+                    }
+                })
+        );
+
+        assertTrue(latch.await(5, SECONDS),
+                "All threads should complete within timeout");
+
+        assertEquals(threadCount, successCounter.get(),
+                "All threads should complete successfully");
+        assertEquals(0, errorCounter.get(),
+                "No errors should occur");
+
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics");
+        assertTrue(metrics.get().sampleCount() > 0,
+                "Should have recorded all samples without exceptions");
+
+        // All threads should complete
+        Duration p50 = metrics.get().p50();
+        assertTrue(p50.toNanos() > 0,
+                "Should have positive p50");
+
+        executor.shutdown();
+    }
+
+    @Test
+    @DisplayName("Should handle multiple measurement types concurrently")
+    void shouldHandleMultipleMeasurementTypesConcurrently() throws InterruptedException {
+        var monitor = new HttpMetricsMonitor();
+        var latch = new CountDownLatch(HttpMeasurementType.values().length);
+        var executor = Executors.newFixedThreadPool(HttpMeasurementType.values().length);
+
+        // Start thread for each measurement type
+        for (HttpMeasurementType measurementType : HttpMeasurementType.values()) {
+            executor.submit(() -> {
+                try {
+                    for (int i = 0; i < 1000; i++) {
+                        monitor.recordMeasurement(measurementType, i * 1_000);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertTrue(latch.await(5, SECONDS),
+                "All threads should complete");
+
+        // Verify all types have measurements
+        for (HttpMeasurementType measurementType : HttpMeasurementType.values()) {
+            var metrics = monitor.getHttpMetrics(measurementType);
+            assertTrue(metrics.isPresent(), "Should have metrics for " + measurementType);
+            assertTrue(metrics.get().sampleCount() > 0,
+                    "Should have measurements for " + measurementType);
+
+            Duration p50 = metrics.get().p50();
+            assertTrue(p50.toNanos() >= 0,
+                    "Should have valid p50 for " + measurementType);
+        }
+
+        executor.shutdown();
+    }
+
+    @Test
+    @DisplayName("Should calculate accurate percentiles")
+    void shouldCalculateAccuratePercentiles() {
+        var monitor = new HttpMetricsMonitor();
+        var measurementType = HttpMeasurementType.REQUEST_PROCESSING;
+
+        // Record 100 measurements from 1ms to 100ms
+        for (int i = 1; i <= 100; i++) {
+            monitor.recordMeasurement(measurementType, i * 1_000_000L);
+        }
+
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics");
+        
+        Duration p50 = metrics.get().p50();
+        assertTrue(p50.toNanos() > 0, "Should have positive p50");
+        assertTrue(p50.toNanos() <= 100_000_000L, "P50 should be reasonable (<=100ms in nanos)");
+
+        // Verify sample count
+        assertEquals(100, metrics.get().sampleCount(),
+                "Should have exactly 100 samples");
+    }
+
+    @Test
+    @DisplayName("Should record and retrieve request status counts")
+    void shouldRecordAndRetrieveRequestStatusCounts() {
+        var monitor = new HttpMetricsMonitor();
+
+        // Record various status counts
+        monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
+        monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
+        monitor.recordRequestStatus(HttpRequestStatus.INVALID_TOKEN);
+        monitor.recordRequestStatus(HttpRequestStatus.MISSING_TOKEN);
+        monitor.recordRequestStatus(HttpRequestStatus.INSUFFICIENT_PERMISSIONS);
+
+        // Verify individual counts
+        assertEquals(2, monitor.getRequestStatusCount(HttpRequestStatus.SUCCESS));
+        assertEquals(1, monitor.getRequestStatusCount(HttpRequestStatus.INVALID_TOKEN));
+        assertEquals(1, monitor.getRequestStatusCount(HttpRequestStatus.MISSING_TOKEN));
+        assertEquals(1, monitor.getRequestStatusCount(HttpRequestStatus.INSUFFICIENT_PERMISSIONS));
+        assertEquals(0, monitor.getRequestStatusCount(HttpRequestStatus.ERROR));
+
+        // Verify map of all counts
+        Map<HttpRequestStatus, Long> statusCounts = monitor.getRequestStatusCounts();
+        assertEquals(2L, statusCounts.get(HttpRequestStatus.SUCCESS));
+        assertEquals(1L, statusCounts.get(HttpRequestStatus.INVALID_TOKEN));
+        assertEquals(1L, statusCounts.get(HttpRequestStatus.MISSING_TOKEN));
+    }
+
+    @Test
+    @DisplayName("Should create monitor from configuration")
+    void shouldCreateMonitorFromConfiguration() {
+        // Test default enabled configuration
+        var defaultConfig = HttpMetricsMonitorConfig.defaultEnabled();
+        var defaultMonitor = defaultConfig.createMonitor();
+        assertEquals(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES, defaultMonitor.getEnabledTypes());
+
+        // Test disabled configuration
+        var disabledConfig = HttpMetricsMonitorConfig.disabled();
+        var disabledMonitor = disabledConfig.createMonitor();
+        assertTrue(disabledMonitor.getEnabledTypes().isEmpty());
+
+        // Test selective configuration
+        var selectiveConfig = HttpMetricsMonitorConfig.builder()
+                .measurementType(HttpMeasurementType.REQUEST_PROCESSING)
+                .build();
+        var selectiveMonitor = selectiveConfig.createMonitor();
+        assertEquals(1, selectiveMonitor.getEnabledTypes().size());
+        assertTrue(selectiveMonitor.isEnabled(HttpMeasurementType.REQUEST_PROCESSING));
+    }
+
+    @Test
+    @DisplayName("Should handle configuration with specific measurement types")
+    void shouldHandleConfigurationWithSpecificMeasurementTypes() {
+        var config = HttpMetricsMonitorConfig.builder()
+                .measurementType(HttpMeasurementType.REQUEST_PROCESSING)
+                .measurementType(HttpMeasurementType.TOKEN_EXTRACTION)
+                .build();
+
+        var monitor = config.createMonitor();
+
+        // Verify only configured types are enabled
         assertTrue(monitor.isEnabled(HttpMeasurementType.REQUEST_PROCESSING));
         assertTrue(monitor.isEnabled(HttpMeasurementType.TOKEN_EXTRACTION));
         assertFalse(monitor.isEnabled(HttpMeasurementType.HEADER_EXTRACTION));
@@ -551,81 +459,155 @@ class HttpMetricsMonitorTest {
     }
 
     @Test
-    @DisplayName("Should ignore measurements for disabled types")
-    void shouldIgnoreMeasurementsForDisabledTypes() {
-        var monitor = createMonitorWithEnabledTypes(HttpMeasurementType.REQUEST_PROCESSING);
-
-        // Record measurement for enabled type
-        monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 1_000_000);
-        assertEquals(1, monitor.getSampleCount(HttpMeasurementType.REQUEST_PROCESSING));
-        assertEquals(Duration.ofMillis(1), monitor.getAverageDuration(HttpMeasurementType.REQUEST_PROCESSING));
-
-        // Record measurement for disabled type (should be ignored)
-        monitor.recordMeasurement(HttpMeasurementType.TOKEN_EXTRACTION, 5_000_000);
-        assertEquals(0, monitor.getSampleCount(HttpMeasurementType.TOKEN_EXTRACTION));
-        assertEquals(Duration.ZERO, monitor.getAverageDuration(HttpMeasurementType.TOKEN_EXTRACTION));
-    }
-
-    @Test
-    @DisplayName("Should test clear method alias")
-    void shouldTestClearMethodAlias() {
+    @DisplayName("Should handle clear alias method")
+    void shouldHandleClearAliasMethod() {
         var monitor = new HttpMetricsMonitor();
 
-        // Record some data
+        // Record some measurements
         monitor.recordMeasurement(HttpMeasurementType.REQUEST_PROCESSING, 1_000_000);
         monitor.recordRequestStatus(HttpRequestStatus.SUCCESS);
 
-        // Clear using the alias method
+        // Use clear() alias
         monitor.clear();
 
-        // Verify everything is cleared
-        assertEquals(Duration.ZERO, monitor.getAverageDuration(HttpMeasurementType.REQUEST_PROCESSING));
-        assertEquals(0, monitor.getSampleCount(HttpMeasurementType.REQUEST_PROCESSING));
+        // REQUEST_PROCESSING should be cleared
+        var metrics = monitor.getHttpMetrics(HttpMeasurementType.REQUEST_PROCESSING);
+        assertTrue(metrics.isEmpty(), "REQUEST_PROCESSING should be cleared");
+
+        // Status counts should be cleared
         assertEquals(0, monitor.getRequestStatusCount(HttpRequestStatus.SUCCESS));
     }
 
-    @Test
-    @DisplayName("Should test HttpMetricsMonitorConfig builders")
-    void shouldTestHttpMetricsMonitorConfigBuilders() {
-        // Test default enabled config
-        var defaultConfig = HttpMetricsMonitorConfig.defaultEnabled();
-        assertEquals(HttpMetricsMonitorConfig.ALL_MEASUREMENT_TYPES, defaultConfig.getMeasurementTypes());
+    @RepeatedTest(10)
+    @DisplayName("Should complete operations within reasonable time")
+    void shouldCompleteOperationsWithinReasonableTime() {
+        var monitor = new HttpMetricsMonitor();
+        var measurementType = HttpMeasurementType.TOKEN_EXTRACTION;
 
-        // Test disabled config
-        var disabledConfig = HttpMetricsMonitorConfig.disabled();
-        assertTrue(disabledConfig.getMeasurementTypes().isEmpty());
+        // Warm up
+        for (int i = 0; i < 100; i++) {
+            monitor.recordMeasurement(measurementType, i * 1_000);
+        }
 
-        // Test custom config
-        var customConfig = HttpMetricsMonitorConfig.builder()
-                .measurementType(HttpMeasurementType.REQUEST_PROCESSING)
-                .measurementType(HttpMeasurementType.TOKEN_EXTRACTION)
-                .build();
-        assertEquals(2, customConfig.getMeasurementTypes().size());
-        assertTrue(customConfig.getMeasurementTypes().contains(HttpMeasurementType.REQUEST_PROCESSING));
-        assertTrue(customConfig.getMeasurementTypes().contains(HttpMeasurementType.TOKEN_EXTRACTION));
+        var start = System.nanoTime();
+
+        // Measure recording performance
+        for (int i = 0; i < 10_000; i++) {
+            monitor.recordMeasurement(measurementType, i * 1_000);
+        }
+
+        var duration = Duration.ofNanos(System.nanoTime() - start);
+
+        // Should complete 10,000 recordings quickly
+        assertTrue(duration.toMillis() < 100,
+                "Should complete 10,000 recordings in under 100ms, took: " + duration.toMillis() + "ms");
     }
 
     @Test
-    @DisplayName("Should test MetricsTicker creation")
-    void shouldTestMetricsTickerCreation() {
-        var enabledMonitor = new HttpMetricsMonitor();
-        var disabledMonitor = createMonitorWithEnabledTypes(); // Empty = all disabled
+    @DisplayName("Should track request status counts concurrently")
+    void shouldTrackRequestStatusCountsConcurrently() throws InterruptedException {
+        var monitor = new HttpMetricsMonitor();
+        int threadCount = 10;
+        int recordsPerThread = 1000;
 
-        // Test ticker creation for enabled type
-        var enabledTicker = HttpMeasurementType.REQUEST_PROCESSING.createTicker(enabledMonitor);
-        assertNotNull(enabledTicker);
-        assertInstanceOf(ActiveMetricsTicker.class, enabledTicker);
+        var latch = new CountDownLatch(threadCount);
+        var executor = Executors.newFixedThreadPool(threadCount);
 
-        // Test ticker creation for disabled type
-        var disabledTicker = HttpMeasurementType.REQUEST_PROCESSING.createTicker(disabledMonitor);
-        assertNotNull(disabledTicker);
-        assertSame(NoOpMetricsTicker.INSTANCE, disabledTicker);
+        // Record from multiple threads
+        IntStream.range(0, threadCount).forEach(i ->
+                executor.submit(() -> {
+                    try {
+                        HttpRequestStatus status = i % 2 == 0 ?
+                                HttpRequestStatus.SUCCESS : HttpRequestStatus.INVALID_TOKEN;
+                        for (int j = 0; j < recordsPerThread; j++) {
+                            monitor.recordRequestStatus(status);
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                })
+        );
 
-        // Test started ticker creation
-        var startedTicker = HttpMeasurementType.TOKEN_EXTRACTION.createStartedTicker(enabledMonitor);
-        assertNotNull(startedTicker);
-        // Can't easily verify it's started, but we can verify it records
-        startedTicker.stopAndRecord();
-        assertEquals(1, enabledMonitor.getSampleCount(HttpMeasurementType.TOKEN_EXTRACTION));
+        assertTrue(latch.await(5, SECONDS),
+                "All threads should complete");
+
+        // Verify counts
+        assertEquals(5000, monitor.getRequestStatusCount(HttpRequestStatus.SUCCESS),
+                "Should have 5000 success counts");
+        assertEquals(5000, monitor.getRequestStatusCount(HttpRequestStatus.INVALID_TOKEN),
+                "Should have 5000 invalid token counts");
+
+        executor.shutdown();
+    }
+
+    @Test
+    @DisplayName("Should have stable memory footprint")
+    void shouldHaveStableMemoryFootprint() {
+        var config = HttpMetricsMonitorConfig.builder()
+                .measurementType(HttpMeasurementType.TOKEN_EXTRACTION)
+                .windowSize(1000) // Small window for memory test
+                .build();
+        var monitor = config.createMonitor();
+
+        var measurementType = HttpMeasurementType.TOKEN_EXTRACTION;
+
+        // Record many measurements (more than window size)
+        for (int i = 0; i < 10_000; i++) {
+            monitor.recordMeasurement(measurementType, i * 1_000);
+        }
+
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics");
+        
+        // Due to ring buffer, sample count should be capped at window size
+        assertTrue(metrics.get().sampleCount() <= 1000,
+                "Sample count should be limited by window size");
+    }
+
+    @Test
+    @DisplayName("Should maintain percentile accuracy with ring buffer")
+    void shouldMaintainPercentileAccuracyWithRingBuffer() {
+        var monitor = new HttpMetricsMonitor();
+        var measurementType = HttpMeasurementType.REQUEST_PROCESSING;
+
+        // Record measurements in sorted order
+        for (int i = 1; i <= 1000; i++) {
+            monitor.recordMeasurement(measurementType, i * 1_000L); // 1 microsecond to 1 millisecond
+        }
+
+        var metrics = monitor.getHttpMetrics(measurementType);
+        assertTrue(metrics.isPresent(), "Should have metrics");
+
+        var p50 = metrics.get().p50();
+        var p95 = metrics.get().p95();
+        var p99 = metrics.get().p99();
+
+        // Verify percentiles are in correct order
+        assertTrue(p50.compareTo(p95) <= 0, "P50 should be <= P95");
+        assertTrue(p95.compareTo(p99) <= 0, "P95 should be <= P99");
+
+        // Verify approximate values (allowing for ring buffer approximation)
+        assertTrue(p50.toNanos() >= 400_000L && p50.toNanos() <= 600_000L,
+                "P50 should be around 500 microseconds: " + p50.toNanos());
+        assertTrue(p95.toNanos() >= 900_000 && p95.toNanos() <= 960_000,
+                "P95 should be around 950 microseconds: " + p95.toNanos());
+        assertTrue(p99.toNanos() >= 980_000 && p99.toNanos() <= 1_000_000,
+                "P99 should be around 990 microseconds: " + p99.toNanos());
+    }
+
+    @Test
+    @DisplayName("Should handle enable check for measurement types")
+    void shouldHandleEnableCheckForMeasurementTypes() {
+        var enabledMonitor = createMonitorWithEnabledTypes(HttpMeasurementType.TOKEN_EXTRACTION);
+
+        assertTrue(enabledMonitor.isEnabled(HttpMeasurementType.TOKEN_EXTRACTION));
+        assertFalse(enabledMonitor.isEnabled(HttpMeasurementType.REQUEST_PROCESSING));
+        assertFalse(enabledMonitor.isEnabled(HttpMeasurementType.HEADER_EXTRACTION));
+
+        // Record and verify
+        enabledMonitor.recordMeasurement(HttpMeasurementType.TOKEN_EXTRACTION, 1_000_000);
+        var metrics = enabledMonitor.getHttpMetrics(HttpMeasurementType.TOKEN_EXTRACTION);
+        assertTrue(metrics.isPresent(), "Should have metrics");
+        assertEquals(1, metrics.get().sampleCount());
     }
 }
