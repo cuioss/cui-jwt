@@ -19,7 +19,6 @@
         <module>cui-jwt-quarkus</module>
         <module>cui-jwt-quarkus-deployment</module>
         <module>cui-jwt-quarkus-integration-tests</module>
-        <module>quarkus-integration-benchmark</module>
         <module>quarkus-integration-jmh</module>
     </modules>
 

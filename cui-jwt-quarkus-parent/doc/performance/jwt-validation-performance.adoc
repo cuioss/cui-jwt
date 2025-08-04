@@ -95,12 +95,12 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # Run benchmarks with distroless containers
-cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
-./mvnw clean verify -Pbenchmark-testing
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pintegration-tests
 
 # Run benchmarks with JFR profiling containers
-cd cui-jwt-quarkus-parent/quarkus-integration-benchmark
-./mvnw clean verify -Pbenchmark-jfr
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pjfr
 ----
 
 == Performance Bottleneck Analysis

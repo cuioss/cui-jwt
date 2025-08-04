@@ -374,7 +374,7 @@ Follows link:https://github.com/cuioss/cui-llm-rules/tree/main/standards/cdi-qua
 
 === Integration Benchmarking
 
-The xref:../quarkus-integration-benchmark/README.adoc[JWT Quarkus Integration Benchmarking Module] builds upon this module's containerized infrastructure to provide performance benchmarking capabilities. It reuses:
+The xref:../quarkus-integration-jmh/README.adoc[JWT Quarkus Integration JMH Benchmarking Module] builds upon this module's containerized infrastructure to provide performance benchmarking capabilities. It reuses:
 
 * Container setup and Docker Compose configuration
 * Keycloak integration patterns

@@ -298,7 +298,7 @@ The xref:cui-jwt-benchmarking/README.adoc[JWT Micro-Benchmarking Module] provide
 
 ==== Integration Benchmarks
 
-The xref:cui-jwt-quarkus-parent/quarkus-integration-benchmark/README.adoc[JWT Quarkus Integration Benchmarking Module] provides end-to-end performance testing using containerized environments. It measures:
+The xref:cui-jwt-quarkus-parent/quarkus-integration-jmh/README.adoc[JWT Quarkus Integration JMH Benchmarking Module] provides end-to-end performance testing using containerized environments. It measures:
 
 * HTTP-based JWT validation performance
 * Real Keycloak integration performance

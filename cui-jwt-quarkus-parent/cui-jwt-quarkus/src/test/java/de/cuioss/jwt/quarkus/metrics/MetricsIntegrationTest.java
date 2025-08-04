@@ -88,8 +88,8 @@ class MetricsIntegrationTest {
 
         // Verify that metrics are registered for all event types
         for (SecurityEventCounter.EventType eventType : SecurityEventCounter.EventType.values()) {
-            // Skip success events as they're handled differently
-            if (eventType.name().contains("_CREATED")) {
+            // Skip success events as they're handled differently (registered under success metrics)
+            if (eventType.getCategory() == null) {
                 continue;
             }
 

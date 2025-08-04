@@ -6,7 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-RESULTS_DIR="$PROJECT_ROOT/cui-jwt-quarkus-parent/quarkus-integration-benchmark/target/monitoring-results"
+RESULTS_DIR="$PROJECT_ROOT/cui-jwt-quarkus-parent/quarkus-integration-jmh/target/monitoring-results"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 echo "🔍 JWT Validation Benchmark with Comprehensive Monitoring"
@@ -375,7 +375,7 @@ echo ""
 
 # Start benchmark with JFR recording
 START_TIME=$(date +%s)
-$MAVEN_CMD verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Pintegration-benchmarks > "$BENCHMARK_LOG" 2>&1 &
+$MAVEN_CMD verify -pl cui-jwt-quarkus-parent/quarkus-integration-jmh -Pbenchmark > "$BENCHMARK_LOG" 2>&1 &
 BENCHMARK_PID=$!
 
 # Wait for containers to start

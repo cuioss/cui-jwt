@@ -237,4 +237,4 @@ The project consists of the following modules:
 * xref:cui-jwt-quarkus/README.adoc[cui-jwt-quarkus] - Contains the runtime code for the extension
 * xref:cui-jwt-quarkus-integration-tests/README.adoc[cui-jwt-quarkus-integration-tests] - Provides integration tests
 * xref:doc/README.adoc[doc] - Contains additional documentation
-* xref:quarkus-integration-benchmark/README.adoc[quarkus-integration-benchmark] - Performance benchmarking for the extension
+* xref:quarkus-integration-jmh/README.adoc[quarkus-integration-jmh] - Performance benchmarking for the extension
