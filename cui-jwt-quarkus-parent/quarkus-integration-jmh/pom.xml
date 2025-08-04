@@ -19,13 +19,13 @@
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
         <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
-        
+
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.BenchmarkRunner</benchmark.runner>
-        
+
         <!-- Default benchmark results directory -->
         <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
-        
+
         <!-- JMH Configuration Properties - Optimized for integration testing -->
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>${benchmark.results.dir}/integration-benchmark-result</jmh.result.filePrefix>
@@ -35,7 +35,7 @@
         <jmh.threads>10</jmh.threads>
         <jmh.time>5s</jmh.time>
         <jmh.warmupTime>1s</jmh.warmupTime>
-        
+
         <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
@@ -56,14 +56,14 @@
             <version>${version.jmh}</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- CUI utilities -->
         <dependency>
             <groupId>de.cuioss</groupId>
             <artifactId>cui-java-tools</artifactId>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- JSON processing -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -71,7 +71,7 @@
             <version>2.10.1</version>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- HdrHistogram for accurate latency recording -->
         <dependency>
             <groupId>org.hdrhistogram</groupId>
@@ -79,14 +79,14 @@
             <version>2.1.12</version>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- CUI JWT Quarkus for MetricIdentifier -->
         <dependency>
             <groupId>de.cuioss.jwt</groupId>
@@ -94,7 +94,7 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- JUnit for basic testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -186,7 +186,7 @@
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>rebuild-container</id>
             <build>
@@ -215,7 +215,7 @@
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>benchmark-jfr</id>
             <properties>

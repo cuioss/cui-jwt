@@ -138,43 +138,60 @@ public class MetricsPostProcessor {
     private void processBenchmark(JsonObject benchmark, Map<String, HttpEndpointMetrics> endpointMetrics) {
         String benchmarkName = benchmark.get("benchmark").getAsString();
         String mode = benchmark.get("mode").getAsString();
-
-        // Only process sample mode benchmarks for percentile data
-        if (!"sample".equals(mode)) {
-            return;
-        }
-
+        
         String endpointType = determineEndpointType(benchmarkName);
         if (endpointType == null) {
             return;
         }
 
-        // Extract percentiles from primaryMetric scorePercentiles
-        JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
-        if (primaryMetric == null) {
-            return;
-        }
-
-        JsonObject scorePercentiles = primaryMetric.getAsJsonObject("scorePercentiles");
-        if (scorePercentiles == null) {
-            return;
-        }
-
-        // Extract sample count from raw data histogram
-        int sampleCount = extractSampleCount(primaryMetric);
-
         HttpEndpointMetrics metrics = endpointMetrics.computeIfAbsent(endpointType,
                 k -> new HttpEndpointMetrics(getEndpointDisplayName(k), benchmarkName));
 
-        // Update metrics with percentile data (convert from ms to ms, keep as ms)
-        double p50 = scorePercentiles.get("50.0").getAsDouble();
-        double p95 = scorePercentiles.get("95.0").getAsDouble();
-        double p99 = scorePercentiles.get("99.0").getAsDouble();
+        // Process throughput mode benchmarks
+        if ("thrpt".equals(mode)) {
+            JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
+            if (primaryMetric != null) {
+                double score = primaryMetric.get("score").getAsDouble();
+                String scoreUnit = primaryMetric.get("scoreUnit").getAsString();
+                
+                // Convert to ops/s if necessary
+                double throughputOpsPerSec = score;
+                if ("ops/ms".equals(scoreUnit)) {
+                    throughputOpsPerSec = score * 1000; // Convert ops/ms to ops/s
+                } else if ("ops/us".equals(scoreUnit)) {
+                    throughputOpsPerSec = score * 1000000; // Convert ops/us to ops/s
+                }
+                
+                metrics.updateThroughput(throughputOpsPerSec);
+                LOGGER.debug("Processed {} throughput: {} ops/s", endpointType, throughputOpsPerSec);
+            }
+        }
+        // Process sample mode benchmarks for percentile data
+        else if ("sample".equals(mode)) {
+            // Extract percentiles from primaryMetric scorePercentiles
+            JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
+            if (primaryMetric == null) {
+                return;
+            }
 
-        metrics.updateMetrics(sampleCount, p50, p95, p99);
+            JsonObject scorePercentiles = primaryMetric.getAsJsonObject("scorePercentiles");
+            if (scorePercentiles == null) {
+                return;
+            }
 
-        LOGGER.debug("Processed {} - samples: {}, p50: {}ms, p95: {}ms, p99: {}ms",
-                endpointType, sampleCount, p50, p95, p99);
+            // Extract sample count from raw data histogram
+            int sampleCount = extractSampleCount(primaryMetric);
+
+            // Update metrics with percentile data (convert from ms to ms, keep as ms)
+            double p50 = scorePercentiles.get("50.0").getAsDouble();
+            double p95 = scorePercentiles.get("95.0").getAsDouble();
+            double p99 = scorePercentiles.get("99.0").getAsDouble();
+
+            metrics.updateMetrics(sampleCount, p50, p95, p99);
+
+            LOGGER.debug("Processed {} - samples: {}, p50: {}ms, p95: {}ms, p99: {}ms",
+                    endpointType, sampleCount, p50, p95, p99);
+        }
     }
 
     private String determineEndpointType(String benchmarkName) {
@@ -243,6 +260,11 @@ public class MetricsPostProcessor {
             endpointData.put("name", metrics.displayName);
             endpointData.put("timestamp", timestamp.toString());
             endpointData.put("sample_count", metrics.sampleCount);
+            
+            // Add throughput if available
+            if (metrics.throughput > 0) {
+                endpointData.put("throughput_ops_per_sec", formatNumber(metrics.throughput));
+            }
 
             Map<String, Object> percentiles = new LinkedHashMap<>();
             percentiles.put("p50_us", formatNumber(metrics.p50 * MICROSECONDS_PER_MILLISECOND));
@@ -288,6 +310,7 @@ public class MetricsPostProcessor {
         double p50;
         double p95;
         double p99;
+        double throughput; // ops/s
 
         HttpEndpointMetrics(String displayName, String sourceBenchmark) {
             this.displayName = displayName;
@@ -302,6 +325,10 @@ public class MetricsPostProcessor {
             this.p95 = p95;
             this.p99 = p99;
         }
+        
+        void updateThroughput(double throughput) {
+            this.throughput = throughput;
+        }
 
         // Getter methods for testing
         public String getDisplayName() {
@@ -310,6 +337,10 @@ public class MetricsPostProcessor {
 
         public String getSourceBenchmark() {
             return sourceBenchmark;
+        }
+        
+        public double getThroughput() {
+            return throughput;
         }
 
         public int getSampleCount() {
