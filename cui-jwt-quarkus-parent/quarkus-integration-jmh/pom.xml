@@ -220,7 +220,8 @@
             <id>benchmark-jfr</id>
             <properties>
                 <skip.benchmark>false</skip.benchmark>
-                <benchmark.results.dir>target/benchmark-jfr-results</benchmark.results.dir>
+                <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
+                <jfr.enabled>true</jfr.enabled>
             </properties>
             <build>
                 <plugins>
@@ -228,8 +229,88 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
+                            <!-- Create benchmark and JFR results directories -->
                             <execution>
-                                <id>collect-jfr-files</id>
+                                <id>create-jfr-dirs</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>mkdir -p ${benchmark.results.dir}/jfr-recordings ${benchmark.results.dir}/jfr-reports</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Build JFR integration tests (without running containers) -->
+                            <execution>
+                                <id>maven-build-jfr-tests</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>cd ../cui-jwt-quarkus-integration-tests &amp;&amp; ../../mvnw clean compile quarkus:build -Pintegration-tests -DskipTests &amp;&amp; DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr DOCKER_BUILDKIT=1 docker compose build cui-jwt-integration-tests</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Start JFR integration test containers -->
+                            <execution>
+                                <id>start-jfr-containers</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Run benchmarks with JFR profiling enabled -->
+                            <execution>
+                                <id>run-benchmarks-jfr</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>java</executable>
+                                    <arguments>
+                                        <argument>-classpath</argument>
+                                        <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
+                                        <argument>-Djmh.result.format=${jmh.result.format}</argument>
+                                        <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
+                                        <argument>-Djmh.iterations=${jmh.iterations}</argument>
+                                        <argument>-Djmh.warmupIterations=${jmh.warmupIterations}</argument>
+                                        <argument>-Djmh.forks=${jmh.forks}</argument>
+                                        <argument>-Djmh.threads=${jmh.threads}</argument>
+                                        <argument>-Djmh.time=${jmh.time}</argument>
+                                        <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
+                                        <argument>-Dbenchmark.results.dir=${benchmark.results.dir}</argument>
+                                        <argument>-Dintegration.service.url=${integration.service.url}</argument>
+                                        <argument>-Dkeycloak.url=${keycloak.url}</argument>
+                                        <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
+                                        <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
+                                        <argument>-XX:+UnlockDiagnosticVMOptions</argument>
+                                        <argument>-XX:+DebugNonSafepoints</argument>
+                                        <argument>-XX:StartFlightRecording=settings=profile,filename=${benchmark.results.dir}/jfr-recordings/benchmark.jfr,dumponexit=true</argument>
+                                        <argument>${benchmark.runner}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Verify JFR files from container volume mount -->
+                            <execution>
+                                <id>verify-jfr-files</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
@@ -238,7 +319,22 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>docker cp cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1:/tmp/jfr-output ${benchmark.results.dir}/jfr-recordings || true</argument>
+                                        <argument>echo "JFR files in ${benchmark.results.dir}/jfr-recordings:" &amp;&amp; ls -la ${benchmark.results.dir}/jfr-recordings/ || echo "No JFR directory found"</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Generate JFR reports -->
+                            <execution>
+                                <id>generate-jfr-reports</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>for jfr in ${benchmark.results.dir}/jfr-recordings/*.jfr; do if [ -f "$jfr" ] &amp;&amp; [ -s "$jfr" ]; then echo "Generating summary for $(basename "$jfr")"; jfr summary "$jfr" > "${benchmark.results.dir}/jfr-reports/$(basename "$jfr" .jfr)-summary.txt" || echo "Failed to generate summary for $(basename "$jfr")"; else echo "Skipping empty or non-existent file: $(basename "$jfr")"; fi; done</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -256,6 +352,23 @@
                                         <argument>cd target &amp;&amp; java -cp "classes:dependency/*" de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor benchmark-results || echo "Comprehensive metrics generation failed - continuing"</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Stop integration test containers -->
+                            <execution>
+                                <id>stop-jfr-containers</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <!-- Don't fail build if cleanup fails -->
+                                    <successCodes>
+                                        <successCode>0</successCode>
+                                        <successCode>1</successCode>
+                                    </successCodes>
                                 </configuration>
                             </execution>
                         </executions>
