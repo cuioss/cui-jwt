@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleMetricsExporterTest {
+
+    private static final CuiLogger LOGGER = new CuiLogger(SimpleMetricsExporterTest.class);
 
     @TempDir
     Path tempDir;
@@ -273,7 +276,7 @@ class SimpleMetricsExporterTest {
                 return metrics;
 
             } catch (Exception e) {
-                System.err.println("Failed to load test metrics: " + e.getMessage());
+                LOGGER.error("Failed to load test metrics: %s", e.getMessage());
                 return new HashMap<>();
             }
         }

@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.File;
 import java.io.FileReader;
@@ -33,12 +34,13 @@ import java.util.Map;
  */
 public class TestMetricsExportIntegration {
 
+    private static final CuiLogger LOGGER = new CuiLogger(TestMetricsExportIntegration.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static void main(String[] args) throws Exception {
         // Create temporary directory for output
         Path tempDir = Files.createTempDirectory("metrics-test");
-        System.out.println("Using temp directory: " + tempDir);
+        LOGGER.info("Using temp directory: %s", tempDir);
 
         // Create test metrics fetcher with sample data
         MetricsFetcher testFetcher = new TestMetricsFetcher();
@@ -64,38 +66,38 @@ public class TestMetricsExportIntegration {
         // Read and display the result
         File resultFile = new File(tempDir.toFile(), "integration-metrics.json");
         if (resultFile.exists()) {
-            System.out.println("\nGenerated integration-metrics.json:");
-            System.out.println("=====================================");
+            LOGGER.info("\nGenerated integration-metrics.json:");
+            LOGGER.info("=====================================");
             String content = Files.readString(resultFile.toPath());
-            System.out.println(content);
+            LOGGER.info(content);
 
             // Verify structure
             JsonObject json = GSON.fromJson(new FileReader(resultFile), JsonObject.class);
-            System.out.println("\nVerification:");
-            System.out.println("- Number of benchmarks: " + json.size());
-            System.out.println("- Contains JwtEchoBenchmark: " + json.has("echoGetThroughput"));
-            System.out.println("- Contains JwtHealthBenchmark: " + json.has("healthCheckLatency"));
+            LOGGER.info("\nVerification:");
+            LOGGER.info("- Number of benchmarks: %s", json.size());
+            LOGGER.info("- Contains JwtEchoBenchmark: %s", json.has("echoGetThroughput"));
+            LOGGER.info("- Contains JwtHealthBenchmark: %s", json.has("healthCheckLatency"));
 
             // Check one benchmark in detail
             if (json.has("validateJwtThroughput")) {
                 JsonObject benchmark = json.getAsJsonObject("validateJwtThroughput");
-                System.out.println("\nvalidateJwtThroughput structure:");
-                System.out.println("- Has timestamp: " + benchmark.has("timestamp"));
-                System.out.println("- Has steps: " + benchmark.has("steps"));
-                System.out.println("- Has bearer_token_producer_metrics: " + benchmark.has("bearer_token_producer_metrics"));
+                LOGGER.info("\nvalidateJwtThroughput structure:");
+                LOGGER.info("- Has timestamp: %s", benchmark.has("timestamp"));
+                LOGGER.info("- Has steps: %s", benchmark.has("steps"));
+                LOGGER.info("- Has bearer_token_producer_metrics: %s", benchmark.has("bearer_token_producer_metrics"));
 
                 if (benchmark.has("steps")) {
                     JsonObject steps = benchmark.getAsJsonObject("steps");
-                    System.out.println("- Number of steps: " + steps.size());
+                    LOGGER.info("- Number of steps: %s", steps.size());
                 }
 
                 if (benchmark.has("bearer_token_producer_metrics")) {
                     JsonObject httpMetrics = benchmark.getAsJsonObject("bearer_token_producer_metrics");
-                    System.out.println("- Number of bearer token producer metrics: " + httpMetrics.size());
+                    LOGGER.info("- Number of bearer token producer metrics: %s", httpMetrics.size());
                 }
             }
         } else {
-            System.err.println("ERROR: integration-metrics.json was not created!");
+            LOGGER.error("ERROR: integration-metrics.json was not created!");
         }
 
         // Clean up
@@ -119,7 +121,7 @@ public class TestMetricsExportIntegration {
                 return metrics;
 
             } catch (Exception e) {
-                System.err.println("Failed to load test metrics: " + e.getMessage());
+                LOGGER.error("Failed to load test metrics: %s", e.getMessage());
                 return new HashMap<>();
             }
         }

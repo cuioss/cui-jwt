@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.benchmark;
 
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler.IssuerKeyMaterial;
+import de.cuioss.tools.logging.CuiLogger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class BenchmarkKeyCache {
 
+    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkKeyCache.class);
+
     /**
      * Cache of pre-generated issuer key materials by count
      */
@@ -46,14 +49,14 @@ public final class BenchmarkKeyCache {
     static {
         // Pre-generate key materials for common issuer counts
         long startTime = System.currentTimeMillis();
-        System.out.println("BenchmarkKeyCache: Starting RSA key pre-generation...");
+        LOGGER.info("BenchmarkKeyCache: Starting RSA key pre-generation...");
 
         for (int count = 1; count <= MAX_CACHED_ISSUERS; count++) {
             ISSUER_CACHE.put(count, InMemoryKeyMaterialHandler.createMultipleIssuers(count));
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        System.out.printf("BenchmarkKeyCache: Pre-generated keys for %d issuer configurations in %d ms%n",
+        LOGGER.info("BenchmarkKeyCache: Pre-generated keys for %s issuer configurations in %s ms",
                 MAX_CACHED_ISSUERS, duration);
     }
 
@@ -83,7 +86,7 @@ public final class BenchmarkKeyCache {
         }
 
         // Generate on demand if not cached (this should be rare in benchmarks)
-        System.err.printf("WARNING: BenchmarkKeyCache miss for count=%d. Generating keys during benchmark!%n", count);
+        LOGGER.warn("BenchmarkKeyCache miss for count=%s. Generating keys during benchmark!", count);
         IssuerKeyMaterial[] generated = InMemoryKeyMaterialHandler.createMultipleIssuers(count);
         ISSUER_CACHE.put(count, generated);
         return generated;
@@ -115,6 +118,6 @@ public final class BenchmarkKeyCache {
      */
     public static void initialize() {
         // The static initializer will run when this method is called
-        System.out.println("BenchmarkKeyCache: Initialized with " + ISSUER_CACHE.size() + " configurations");
+        LOGGER.info("BenchmarkKeyCache: Initialized with %s configurations", ISSUER_CACHE.size());
     }
 }

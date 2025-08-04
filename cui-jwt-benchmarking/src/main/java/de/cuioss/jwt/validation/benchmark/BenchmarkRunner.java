@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -34,6 +35,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
  */
 public class BenchmarkRunner {
 
+    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
+
     /**
      * Main method to run all benchmarks.
      *
@@ -43,9 +46,9 @@ public class BenchmarkRunner {
     public static void main(String[] args) throws Exception {
 
         // Initialize key cache before benchmarks start
-        System.out.println("Initializing benchmark key cache...");
+        LOGGER.info("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
-        System.out.println("Key cache initialized. Starting benchmarks...\n");
+        LOGGER.info("Key cache initialized. Starting benchmarks...");
 
         // Configure JMH options
         Options options = new OptionsBuilder()

@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.*;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for MetricsPostProcessor with JWT validation sample mode benchmarks
  */
 class MetricsPostProcessorJwtValidationTest {
+
+    private static final CuiLogger LOGGER = new CuiLogger(MetricsPostProcessorJwtValidationTest.class);
 
     @TempDir
     Path tempDir;
@@ -72,8 +75,8 @@ class MetricsPostProcessorJwtValidationTest {
         assertTrue(jwtMetrics.getP99() > 0, "JWT validation p99 should be > 0");
         assertTrue(jwtMetrics.getSourceBenchmark().contains("JwtValidationBenchmark"));
 
-        System.out.println("JWT Validation metrics - samples: " + jwtMetrics.getSampleCount() +
-                ", p50: " + jwtMetrics.getP50() + "ms, p95: " + jwtMetrics.getP95() + "ms, p99: " + jwtMetrics.getP99() + "ms");
+        LOGGER.debug("JWT Validation metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
+                jwtMetrics.getSampleCount(), jwtMetrics.getP50(), jwtMetrics.getP95(), jwtMetrics.getP99());
     }
 
     @Test
@@ -147,8 +150,8 @@ class MetricsPostProcessorJwtValidationTest {
             assertTrue(jwtPercentiles.containsKey("p95_ms"));
             assertTrue(jwtPercentiles.containsKey("p99_ms"));
 
-            System.out.println("Complete HTTP metrics generated with JWT validation data:");
-            System.out.println(Files.readString(outputFile.toPath()));
+            LOGGER.debug("Complete HTTP metrics generated with JWT validation data:");
+            LOGGER.debug(Files.readString(outputFile.toPath()));
         }
     }
 

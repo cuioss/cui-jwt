@@ -428,7 +428,7 @@ public class MetricsPostProcessor {
      */
     public static void main(String[] args) {
         if (args.length != 1) {
-            System.err.println("Usage: MetricsPostProcessor <results-directory>");
+            LOGGER.error("Usage: MetricsPostProcessor <results-directory>");
             System.exit(1);
         }
 

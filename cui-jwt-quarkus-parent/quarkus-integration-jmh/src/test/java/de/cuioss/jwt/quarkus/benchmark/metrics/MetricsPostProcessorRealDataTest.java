@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for MetricsPostProcessor using real benchmark data from integration-benchmark-result.json
  */
 class MetricsPostProcessorRealDataTest {
+
+    private static final CuiLogger LOGGER = new CuiLogger(MetricsPostProcessorRealDataTest.class);
 
     @TempDir
     Path tempDir;
@@ -95,12 +98,12 @@ class MetricsPostProcessorRealDataTest {
         assertTrue(jwtMetrics.getP99() > 0, "JWT validation p99 should be > 0");
         assertTrue(jwtMetrics.getSourceBenchmark().contains("JwtValidationBenchmark"));
 
-        System.out.println("Echo metrics - samples: " + echoMetrics.getSampleCount() +
-                ", p50: " + echoMetrics.getP50() + "ms, p95: " + echoMetrics.getP95() + "ms, p99: " + echoMetrics.getP99() + "ms");
-        System.out.println("Health metrics - samples: " + healthMetrics.getSampleCount() +
-                ", p50: " + healthMetrics.getP50() + "ms, p95: " + healthMetrics.getP95() + "ms, p99: " + healthMetrics.getP99() + "ms");
-        System.out.println("JWT Validation metrics - samples: " + jwtMetrics.getSampleCount() +
-                ", p50: " + jwtMetrics.getP50() + "ms, p95: " + jwtMetrics.getP95() + "ms, p99: " + jwtMetrics.getP99() + "ms");
+        LOGGER.debug("Echo metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
+                echoMetrics.getSampleCount(), echoMetrics.getP50(), echoMetrics.getP95(), echoMetrics.getP99());
+        LOGGER.debug("Health metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
+                healthMetrics.getSampleCount(), healthMetrics.getP50(), healthMetrics.getP95(), healthMetrics.getP99());
+        LOGGER.debug("JWT Validation metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
+                jwtMetrics.getSampleCount(), jwtMetrics.getP50(), jwtMetrics.getP95(), jwtMetrics.getP99());
     }
 
     @Test
@@ -159,7 +162,7 @@ class MetricsPostProcessorRealDataTest {
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         String jsonContent = Files.readString(outputFile.toPath());
 
-        System.out.println("Real data JSON content:\n" + jsonContent);
+        LOGGER.debug("Real data JSON content:\n%s", jsonContent);
 
         // Parse to verify structure
         Map<String, Object> metrics = gson.fromJson(jsonContent, Map.class);
@@ -258,9 +261,8 @@ class MetricsPostProcessorRealDataTest {
             String endpointType = entry.getKey();
             MetricsPostProcessor.HttpEndpointMetrics metrics = entry.getValue();
 
-            System.out.println("Endpoint: " + endpointType +
-                    ", Sample Count: " + metrics.getSampleCount() +
-                    ", Source: " + metrics.getSourceBenchmark());
+            LOGGER.debug("Endpoint: %s, Sample Count: %s, Source: %s",
+                    endpointType, metrics.getSampleCount(), metrics.getSourceBenchmark());
 
             // Sample counts should be realistic for JMH benchmarks
             assertTrue(metrics.getSampleCount() >= 10,
