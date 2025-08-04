@@ -115,7 +115,7 @@ public class TokenValidatorMonitorConfig {
 
 
     /**
-     * Creates a configuration with default settings that monitors all measurement types.
+     * Creates a configuration with default settings that monitors no measurement types.
      *
      * @return configuration with all measurement types enabled and default window size
      */

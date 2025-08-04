@@ -9,24 +9,29 @@ This guide provides information for developers extending or integrating with the
 
 The library includes a lightweight, thread-safe performance monitoring system in the `de.cuioss.jwt.validation.metrics` package for analyzing JWT validation performance.
 
-=== TokenValidatorMonitor
+=== TokenValidatorMonitor and MetricsTicker
 
-`TokenValidatorMonitor` measures execution times for different JWT validation pipeline stages with microsecond precision:
+`TokenValidatorMonitor` measures execution times for different JWT validation pipeline stages with microsecond precision using the `MetricsTicker` abstraction:
 
 [source,java]
 ----
 // Create monitor with default window size (100 samples)
 TokenValidatorMonitor monitor = new TokenValidatorMonitor();
 
-// Record a measurement
-long startNanos = System.nanoTime();
+// Create a ticker for a specific measurement type
+MetricsTicker ticker = MeasurementType.SIGNATURE_VALIDATION.createTicker(monitor);
+
+// Start recording
+ticker.startRecording();
 // ... perform signature validation ...
-long durationNanos = System.nanoTime() - startNanos;
-monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, durationNanos);
+// Stop and record the measurement
+ticker.stopAndRecord();
 
 // Get average for analysis
 Duration avgSignatureTime = monitor.getAverageDuration(MeasurementType.SIGNATURE_VALIDATION);
 ----
+
+The `MetricsTicker` interface provides a clean abstraction that supports both active monitoring and no-op implementations to minimize overhead when metrics are disabled.
 
 === MeasurementType
 

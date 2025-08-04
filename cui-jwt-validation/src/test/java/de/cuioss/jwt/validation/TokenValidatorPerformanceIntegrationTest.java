@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
@@ -52,7 +53,7 @@ class TokenValidatorPerformanceIntegrationTest {
         // Create a TokenValidator (will initialize with default performance monitor)
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         var issuerConfig = tokenHolder.getIssuerConfig();
-        var tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+        var tokenValidator = TokenValidator.builder().monitorConfig(TokenValidatorMonitorConfig.defaultEnabled()).issuerConfig(issuerConfig).build();
 
         // Get the performance monitor
         TokenValidatorMonitor performanceMonitor = tokenValidator.getPerformanceMonitor();

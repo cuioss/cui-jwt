@@ -99,7 +99,7 @@ import java.util.Optional;
  * TokenValidator tokenValidator = TokenValidator.builder()
  *     .parserConfig(ParserConfig.builder().build())
  *     .issuerConfig(issuerConfig)
- *     .monitorConfig(metricsConfig)  // Optional: null means all types monitored
+ *     .monitorConfig(metricsConfig)  // Optional: null means no types monitored
  *     .cacheConfig(cacheConfig)      // Optional: null means default caching enabled
  *     .build();
  *
@@ -224,8 +224,8 @@ public class TokenValidator {
         if (monitorConfig != null) {
             this.performanceMonitor = monitorConfig.createMonitor();
         } else {
-            // Default: monitor all types with default window size
-            this.performanceMonitor = TokenValidatorMonitorConfig.defaultEnabled().createMonitor();
+            // Default: disabled monitoring
+            this.performanceMonitor = TokenValidatorMonitorConfig.disabled().createMonitor();
         }
 
         this.jwtParser = NonValidatingJwtParser.builder()
