@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.metrics;
 
 import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
-import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -79,28 +78,20 @@ public class JwtMetricsCollector {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwtMetricsCollector.class);
 
-    private static final String VALIDATION_ERRORS = JwtPropertyKeys.METRICS.VALIDATION_ERRORS;
-    private static final String VALIDATION_DURATION = JwtPropertyKeys.METRICS.VALIDATION_DURATION;
-    private static final String HTTP_REQUEST_DURATION = "cui.jwt.http.request.duration";
-    private static final String HTTP_REQUEST_COUNT = "cui.jwt.http.request.count";
-    private static final String HTTP_PREFIX = "HTTP_";
-
+    private static final String VALIDATION_ERRORS = MetricIdentifier.VALIDATION.ERRORS;
+    private static final String VALIDATION_DURATION = MetricIdentifier.VALIDATION.DURATION;
     private static final String TAG_EVENT_TYPE = "event_type";
     private static final String TAG_RESULT = "result";
     private static final String TAG_CATEGORY = "category";
     private static final String TAG_STEP = "step";
-    private static final String TAG_STATUS = "status";
-    private static final String TAG_TYPE = "type";
 
     private static final String RESULT_FAILURE = "failure";
 
     private final MeterRegistry registry;
     private final TokenValidator tokenValidator;
-    private final BearerTokenProducer bearerTokenProducer;
 
     private SecurityEventCounter securityEventCounter;
     private TokenValidatorMonitor tokenValidatorMonitor;
-    private HttpMetricsMonitor httpMetricsMonitor;
 
 
     // Caching of counters to avoid lookups
@@ -117,22 +108,18 @@ public class JwtMetricsCollector {
 
     // Track last known counts to calculate deltas
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
-    private final Map<HttpRequestStatus, Long> lastKnownHttpStatusCounts = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new JwtMetricsCollector with the given MeterRegistry, TokenValidator, and BearerTokenProducer.
+     * Creates a new JwtMetricsCollector with the given MeterRegistry and TokenValidator.
      *
      * @param registry the Micrometer registry
      * @param tokenValidator the token validator containing monitoring components
-     * @param bearerTokenProducer the bearer token producer containing HTTP monitoring components
      */
     @Inject
     public JwtMetricsCollector(@NonNull MeterRegistry registry,
-            @NonNull TokenValidator tokenValidator,
-            @NonNull BearerTokenProducer bearerTokenProducer) {
+            @NonNull TokenValidator tokenValidator) {
         this.registry = registry;
         this.tokenValidator = tokenValidator;
-        this.bearerTokenProducer = bearerTokenProducer;
     }
 
     /**
@@ -144,7 +131,6 @@ public class JwtMetricsCollector {
         LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
         securityEventCounter = tokenValidator.getSecurityEventCounter();
         tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
-        httpMetricsMonitor = bearerTokenProducer.getHttpMetricsMonitor();
 
         // Register counters for all event types
         registerEventCounters();
@@ -155,18 +141,9 @@ public class JwtMetricsCollector {
         // Register sample count gauges
         registerSampleCountGauges();
 
-        // Register HTTP metrics
-        registerHttpMetrics();
-
         // Initialize the last known counts
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
         lastKnownCounts.putAll(currentCounts);
-
-        // Initialize HTTP status counts
-        if (httpMetricsMonitor != null) {
-            Map<HttpRequestStatus, Long> currentHttpStatusCounts = httpMetricsMonitor.getRequestStatusCounts();
-            lastKnownHttpStatusCounts.putAll(currentHttpStatusCounts);
-        }
 
         LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size() + summaries.size()));
 
@@ -231,27 +208,6 @@ public class JwtMetricsCollector {
                 LOGGER.debug("Registered sample count gauge for measurement type %s", measurementType.name());
             }
         }
-        
-        // Register gauges for HTTP metrics
-        if (httpMetricsMonitor != null) {
-            for (HttpMeasurementType measurementType : HttpMeasurementType.values()) {
-                Tags tags = Tags.of(Tag.of(TAG_TYPE, measurementType.name().toLowerCase()));
-                String gaugeName = HTTP_REQUEST_DURATION + ".actual_sample_count." + measurementType.name();
-                
-                Gauge gauge = Gauge.builder(HTTP_REQUEST_DURATION + ".actual_sample_count",
-                        httpMetricsMonitor,
-                        monitor -> {
-                            var metricsOpt = monitor.getHttpMetrics(measurementType);
-                            return metricsOpt.map(m -> (double) m.sampleCount()).orElse(0.0);
-                        })
-                        .tags(tags)
-                        .description("Actual number of samples in ring buffer for " + measurementType.getDescription())
-                        .register(registry);
-                
-                gauges.put(gaugeName, gauge);
-                LOGGER.debug("Registered HTTP sample count gauge for measurement type %s", measurementType.name());
-            }
-        }
     }
 
     /**
@@ -296,53 +252,6 @@ public class JwtMetricsCollector {
         LOGGER.debug("Registered %s performance timers and distribution summaries for enabled measurement types", timers.size());
     }
 
-    /**
-     * Registers HTTP-level metrics for request processing.
-     */
-    private void registerHttpMetrics() {
-        if (httpMetricsMonitor == null) {
-            LOGGER.warn(WARN.HTTP_METRICS_MONITOR_NOT_AVAILABLE::format);
-            return;
-        }
-
-        // Register timers and distribution summaries for HTTP measurement types
-        for (HttpMeasurementType measurementType : HttpMeasurementType.values()) {
-            Tags tags = Tags.of(Tag.of(TAG_TYPE, measurementType.name().toLowerCase()));
-
-            Timer timer = Timer.builder(HTTP_REQUEST_DURATION)
-                    .tags(tags)
-                    .description("Duration of HTTP-level JWT processing: " + measurementType.getDescription())
-                    .register(registry);
-
-            timers.put(HTTP_PREFIX + measurementType.name(), timer);
-
-            // Register distribution summary for percentile metrics
-            DistributionSummary summary = DistributionSummary.builder(HTTP_REQUEST_DURATION + ".percentiles")
-                    .tags(tags)
-                    .description("Percentile distribution of HTTP-level JWT processing: " + measurementType.getDescription())
-                    .baseUnit("microseconds")
-                    .publishPercentiles(0.5, 0.95, 0.99) // p50, p95, p99
-                    .register(registry);
-
-            summaries.put(HTTP_PREFIX + measurementType.name(), summary);
-
-            LOGGER.debug("Registered HTTP timer and distribution summary for measurement type %s", measurementType.name());
-        }
-
-        // Register counters for HTTP request statuses
-        for (HttpRequestStatus status : HttpRequestStatus.values()) {
-            Tags tags = Tags.of(Tag.of(TAG_STATUS, status.name().toLowerCase()));
-
-            Counter counter = Counter.builder(HTTP_REQUEST_COUNT)
-                    .tags(tags)
-                    .description("Count of HTTP requests by status")
-                    .baseUnit("requests")
-                    .register(registry);
-
-            counters.put(HTTP_PREFIX + "STATUS_" + status.name(), counter);
-            LOGGER.debug("Registered HTTP counter for status %s", status.name());
-        }
-    }
 
     /**
      * Updates all counters and performance metrics from the current state.
@@ -355,7 +264,6 @@ public class JwtMetricsCollector {
     public void updateCounters() {
         updateSecurityEventCounters();
         updatePerformanceMetrics();
-        updateHttpMetrics();
     }
 
     /**
@@ -385,14 +293,8 @@ public class JwtMetricsCollector {
             tokenValidatorMonitor.resetAll();
         }
 
-        // Clear HTTP metrics monitor
-        if (httpMetricsMonitor != null) {
-            httpMetricsMonitor.clear();
-        }
-
         // Clear tracking maps to reset delta calculations
         lastKnownCounts.clear();
-        lastKnownHttpStatusCounts.clear();
 
         LOGGER.info(INFO.JWT_METRICS_CLEARED::format);
     }
@@ -480,76 +382,4 @@ public class JwtMetricsCollector {
         }
     }
 
-    /**
-     * Updates HTTP-level metrics from the HttpMetricsMonitor state.
-     */
-    private void updateHttpMetrics() {
-        if (httpMetricsMonitor == null) {
-            return;
-        }
-
-        // Update HTTP performance timers and distribution summaries
-        for (HttpMeasurementType measurementType : HttpMeasurementType.values()) {
-            Timer timer = timers.get(HTTP_PREFIX + measurementType.name());
-            DistributionSummary summary = summaries.get(HTTP_PREFIX + measurementType.name());
-
-            if (timer != null && summary != null) {
-                // Get percentile metrics from ring buffer
-                var metricsOpt = httpMetricsMonitor.getHttpMetrics(measurementType);
-                
-                if (metricsOpt.isPresent()) {
-                    var metrics = metricsOpt.get();
-                    
-                    // Record p50 duration in both timer and summary
-                    var p50 = metrics.p50();
-                    if (!p50.isZero()) {
-                        timer.record(p50);
-                        summary.record(p50.toNanos() / 1000.0); // Convert to microseconds
-                    }
-
-                    // Also record p95 and p99 to get accurate percentile distribution
-                    var p95 = metrics.p95();
-                    if (!p95.isZero()) {
-                        summary.record(p95.toNanos() / 1000.0); // Convert to microseconds
-                    }
-
-                    var p99 = metrics.p99();
-                    if (!p99.isZero()) {
-                        summary.record(p99.toNanos() / 1000.0); // Convert to microseconds
-                    }
-
-                    // The gauge for sample count is already registered, it will automatically
-                    // read the current value from the monitor
-
-                    LOGGER.debug("Updated HTTP timer and percentiles for measurement type %s with p50=%s, p95=%s, p99=%s",
-                            measurementType.name(), p50, p95, p99);
-                }
-            }
-        }
-
-        // Update HTTP request status counters
-        Map<HttpRequestStatus, Long> statusCounts = httpMetricsMonitor.getRequestStatusCounts();
-        for (Map.Entry<HttpRequestStatus, Long> entry : statusCounts.entrySet()) {
-            HttpRequestStatus status = entry.getKey();
-            Long currentCount = entry.getValue();
-
-            // Get the last known count for this status
-            Long lastCount = lastKnownHttpStatusCounts.getOrDefault(status, 0L);
-
-            // Calculate the delta
-            long delta = currentCount - lastCount;
-
-            // Only update if there's a change
-            if (delta > 0) {
-                Counter counter = counters.get(HTTP_PREFIX + "STATUS_" + status.name());
-                if (counter != null) {
-                    counter.increment(delta);
-                    LOGGER.debug("Updated HTTP status counter for %s by %d", status.name(), delta);
-                }
-
-                // Update the last known count
-                lastKnownHttpStatusCounts.put(status, currentCount);
-            }
-        }
-    }
 }

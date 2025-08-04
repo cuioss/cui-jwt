@@ -155,7 +155,6 @@ This ensures reliable cleanup of native executables and build artifacts without 
 == Test Categories
 
 * **HealthCheckIntegrationIT**: Health endpoint validation
-* **MetricsIntegrationIT**: Prometheus metrics verification
 * **HttpsJwtValidationIT**: HTTPS JWT validation testing
 * **JwtValidationKeycloakIT**: Benchmark realm validation (well-known discovery)
 * **JwtValidationIntegrationIT**: Integration realm validation (direct JWKS URL)

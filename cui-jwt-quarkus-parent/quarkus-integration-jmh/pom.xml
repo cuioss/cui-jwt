@@ -87,6 +87,14 @@
             <scope>provided</scope>
         </dependency>
         
+        <!-- CUI JWT Quarkus for MetricIdentifier -->
+        <dependency>
+            <groupId>de.cuioss.jwt</groupId>
+            <artifactId>cui-jwt-quarkus</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        
         <!-- JUnit for basic testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

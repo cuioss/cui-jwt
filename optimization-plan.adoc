@@ -9,22 +9,35 @@
 
 **Focus**: Integration test performance optimization for Quarkus JWT validation endpoint
 
-**Target**: Reduce P95 latency from 186.6ms to <20ms through infrastructure and framework optimization
+**Target**: Achieve <5ms P95 latency for most request categories (echo, health) and <10ms for JWT validation
 
-**Key Finding**: 97% of request latency comes from framework/infrastructure overhead, not JWT library
+**Critical Finding (August 1, 2025)**: RestAssured benchmark driver is introducing 20-50x overhead, masking true application performance. Actual JWT validation takes 40μs-1.4ms internally, but RestAssured measures 22-65ms.
 
-== Current Performance Baseline (July 26, 2025)
+== Current Performance Baseline (August 1, 2025)
 
 === Integration Test Results
 
 **Infrastructure**: Apple M4, OrbStack containerization, Quarkus native runtime
 
 |===
-| Endpoint Type | Throughput | P95 Latency | Description | Overhead Analysis
-| **Health Check** | 32,392 req/sec | 4.7ms | Minimal overhead baseline | 0ms (baseline)
-| **Echo Endpoint** | 9,988 req/sec | 59.0ms | CDI + virtual threads | +54.3ms framework
-| **JWT Validation** | 1,314 req/sec | 186.6ms | Full JWT processing | +127.6ms JWT pipeline
+| Endpoint Type | Throughput | P50 Latency | P95 Latency | P99 Latency | Description
+| **Health Check** | ~41 req/sec | 24.3ms | 50.4ms | 61.9ms | Simple health endpoint
+| **Echo Endpoint** | ~38 req/sec | 25.9ms | 54.3ms | 65.6ms | Basic echo service
+| **JWT Validation** | ~45 req/sec | 22.3ms | 47.3ms | 56.4ms | Full JWT processing
 |===
+
+=== 🚨 CRITICAL FINDING: RestAssured Overhead Issue
+
+**Major Discovery**: The benchmark driver (RestAssured) is introducing massive overhead:
+- **Internal JWT validation**: 40μs-1.4ms (from integration-jwt-validation-metrics.json)
+- **HTTP endpoint response**: 22-65ms (from http-metrics.json)
+- **Overhead ratio**: 20-50x slower through RestAssured!
+
+**Key Evidence**:
+1. All endpoints (health, echo, JWT) show nearly identical latencies (22-26ms P50)
+2. JWT validation internal metrics show sub-millisecond performance
+3. Previous baseline showed health check at 4.7ms P95 - current goal is <5ms
+4. The uniformity of results across all endpoints strongly indicates a benchmark infrastructure issue
 
 === Performance Gap Analysis
 
@@ -35,22 +48,39 @@
 - **Gap**: 2,222-3,589x difference (P50) indicates infrastructure dominates performance
 - **Note**: Current microbenchmark baseline: 100,672 ops/s standard throughput
 
-=== Latency Breakdown (186.6ms P95 Total)
+=== Latency Breakdown (Current Results - August 1, 2025)
 
 ```
-Total P95 Latency:           186.6ms (100%)
-├─ Infrastructure (Echo):     59.0ms (32%) - CDI + Virtual Threads
-├─ JWT Library:               31.7ms (17%) - Core validation logic (P99 from microbenchmarks)
-├─ Issuer Resolution:         21.5ms (12%) - Config lookup/caching
-├─ HTTP Processing:           26.7ms (14%) - Request/response handling
-└─ Untracked Overhead:       ~47.7ms (26%) - Thread pools, GC, contention
+Total P95 Latency:              54.3ms (Echo), 50.4ms (Health), 47.3ms (JWT)
+├─ RestAssured Overhead:        ~45-50ms (90%+) - HTTP client framework overhead
+├─ Actual JWT Validation:       1.4ms (3%) - Complete JWT processing (P95)
+├─ Token Parsing:               128μs - JWT parsing
+├─ Signature Validation:        632μs - Cryptographic validation  
+├─ Bearer Token Processing:     29μs - Request handling
+└─ Other JWT Operations:        <500μs - Caching, claims validation
 ```
+
+**Critical Insight**: The benchmark infrastructure (RestAssured) is consuming 90%+ of measured latency, making it impossible to accurately measure actual application performance.
 
 == Critical Integration Test Bottlenecks
 
-=== 1. Virtual Thread + CDI Overhead 🔴 **MAJOR BOTTLENECK**
+=== 1. RestAssured HTTP Client Overhead 🔴 **PRIMARY BOTTLENECK**
 
-**Problem**: 54.3ms latency increase from virtual thread scheduling and CDI RequestScoped instantiation
+**Problem**: RestAssured is adding 45-50ms overhead to every request, making performance measurement impossible
+
+**Impact**:
+- 90%+ of measured latency is from the benchmark tool itself
+- Masks actual application performance characteristics  
+- Makes all endpoints appear equally slow (~22-26ms P50)
+
+**Root Causes**:
+- Heavy framework with extensive validation and serialization
+- Not designed for high-performance benchmarking
+- Adds layers of abstraction over underlying HTTP client
+
+=== 2. Virtual Thread + CDI Overhead ⚠️ **SECONDARY - REQUIRES REMEASUREMENT**
+
+**Problem**: Previously measured 54.3ms latency may have been RestAssured overhead
 
 **Impact**:
 
@@ -86,6 +116,95 @@ Total P95 Latency:           186.6ms (100%)
 - Memory allocation pressure
 
 == Priority Action Plan
+
+=== 🔴 URGENT Priority 0: RestAssured Benchmark Driver Overhead
+
+**Goal**: Replace or optimize RestAssured to achieve <5ms benchmark measurements
+
+**Problem**: RestAssured is adding 20-50x overhead to all HTTP requests
+- Actual JWT validation: 40μs-1.4ms
+- RestAssured measurement: 22-65ms
+- This masks all real performance characteristics
+
+**Immediate Actions**:
+
+==== Option 1: Replace RestAssured with Lower-Overhead HTTP Client
+
+**Alternatives to Evaluate**:
+1. **Java 11+ HttpClient**: Native, minimal overhead
+   ```java
+   HttpClient client = HttpClient.newBuilder()
+       .version(HttpClient.Version.HTTP_1_1)
+       .connectTimeout(Duration.ofSeconds(5))
+       .build();
+   ```
+
+2. **Apache HttpClient 5**: High-performance, mature
+   ```java
+   CloseableHttpClient httpClient = HttpClients.custom()
+       .setDefaultRequestConfig(RequestConfig.custom()
+           .setConnectTimeout(5, TimeUnit.SECONDS)
+           .build())
+       .build();
+   ```
+
+3. **OkHttp**: Efficient, designed for high-throughput
+   ```java
+   OkHttpClient client = new OkHttpClient.Builder()
+       .connectTimeout(5, TimeUnit.SECONDS)
+       .connectionPool(new ConnectionPool(100, 5, TimeUnit.MINUTES))
+       .build();
+   ```
+
+==== Option 2: Optimize RestAssured Configuration
+
+**Current Issues**:
+- Connection pool may be too small (max-per-route=100)
+- Possible serialization/deserialization overhead
+- Validation framework overhead
+
+**Optimization Attempts**:
+```java
+// Disable response validation
+RestAssured.config = RestAssuredConfig.config()
+    .httpClient(HttpClientConfig.httpClientConfig()
+        .setParam("http.connection-manager.max-total", 500)
+        .setParam("http.connection-manager.max-per-route", 200)
+        .reuseHttpClientInstance()) // Reuse client instance
+    .decoderConfig(DecoderConfig.decoderConfig()
+        .noContentDecoders()) // Skip content decoding
+    .encoderConfig(EncoderConfig.encoderConfig()
+        .appendDefaultContentCharsetToContentTypeIfUndefined(false));
+```
+
+==== Option 3: Direct Netty/Vert.x Client
+
+**For Quarkus Native Alignment**:
+```java
+// Use Quarkus's underlying Vert.x client directly
+WebClient client = WebClient.create(vertx, new WebClientOptions()
+    .setMaxPoolSize(200)
+    .setHttp2MaxPoolSize(200)
+    .setIdleTimeout(30)
+    .setConnectTimeout(5000));
+```
+
+==== Validation Approach
+
+1. **Create Benchmark Comparison**:
+   - Run same endpoints with different HTTP clients
+   - Measure overhead of each client
+   - Compare with curl/wrk baseline
+
+2. **Target Metrics**:
+   - Echo endpoint: <5ms P95 (matching previous baseline)
+   - Health endpoint: <5ms P95
+   - JWT validation: <10ms P95 (accounting for actual JWT processing)
+
+3. **Implementation Priority**:
+   - Start with Java HttpClient (simplest, no dependencies)
+   - If insufficient, try OkHttp or direct Vert.x
+   - Only optimize RestAssured if replacement isn't feasible
 
 === Priority 1: CDI and Virtual Thread Optimization 🚀
 
@@ -248,11 +367,12 @@ jdk.virtualThreadScheduler.maxPoolSize=<experiment>
 === Target Performance Goals
 
 |===
-| Metric | Current | Target | Improvement
-| **P95 Latency** | 186.6ms | <20ms | 89% reduction
-| **Throughput** | 1,314 req/sec | >5,000 req/sec | 280% increase  
-| **Framework Overhead** | 54.3ms | <10ms | 82% reduction
-| **Issuer Resolution** | 21.5ms | <2ms | 91% reduction
+| Metric | Current (RestAssured) | Internal Actual | Target (New Client) | Notes
+| **Echo P95 Latency** | 54.3ms | Unknown | <5ms | Baseline network latency
+| **Health P95 Latency** | 50.4ms | Unknown | <5ms | Minimal processing
+| **JWT P95 Latency** | 47.3ms | 1.4ms | <10ms | Includes HTTP overhead
+| **Throughput** | ~40 req/sec | N/A | >5,000 req/sec | After removing RestAssured
+| **RestAssured Overhead** | 45-50ms | N/A | <1ms | Switch to lightweight client
 |===
 
 
@@ -272,6 +392,11 @@ jdk.virtualThreadScheduler.maxPoolSize=<experiment>
 - Consistent results across multiple runs
 
 == Dismissed Integration Test Optimization Approaches
+
+=== Further RestAssured Optimization
+**Status:** ❌ DISMISSED - Fundamental architectural mismatch for performance benchmarking
+
+**Reason:** RestAssured is designed for functional testing with rich DSL and validation capabilities, not performance benchmarking. Its architecture includes multiple layers (Groovy DSL, response validation, content parsing) that add unavoidable overhead. Even with aggressive optimization, the framework's design makes sub-5ms latencies unachievable. Replacement with a lightweight HTTP client is the only viable path.
 
 === BouncyCastle JCA Provider for Integration Tests
 **Status:** ❌ DISMISSED - Adds complexity without addressing framework overhead
@@ -332,3 +457,25 @@ jdk.virtualThreadScheduler.maxPoolSize=<experiment>
 **Library optimization** (17% of latency) is addressed separately in the microbenchmark optimization plan.
 
 **Expected Result**: 89% latency reduction through systematic infrastructure optimization while maintaining security and functionality.
+
+== Immediate Next Steps (August 1, 2025)
+
+1. **Create RestAssured Alternative Benchmark**:
+   - Implement parallel benchmark using Java 11 HttpClient
+   - Run side-by-side comparison with current RestAssured implementation
+   - Validate that sub-5ms latencies are achievable
+
+2. **Establish True Performance Baseline**:
+   - Use curl or wrk to measure raw endpoint performance
+   - Compare with internal JWT validation metrics (40μs-1.4ms)
+   - Document actual application performance without client overhead
+
+3. **Refactor Benchmark Infrastructure**:
+   - Create abstraction layer for HTTP client selection
+   - Allow switching between RestAssured (functional tests) and lightweight client (performance tests)
+   - Maintain backward compatibility for existing test suites
+
+4. **Re-evaluate All Previous Findings**:
+   - Once RestAssured overhead is removed, re-measure all endpoints
+   - Update optimization priorities based on true performance characteristics
+   - Focus on actual bottlenecks, not measurement artifacts
