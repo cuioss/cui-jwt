@@ -163,7 +163,7 @@ A master `performance-tracking.json` file maintains the last 10 benchmark runs f
 
 === Performance Trends Visualization
 
-Access comprehensive performance trends at: https://cuioss.github.io/cui-jwt/benchmarks/trends.html
+Access comprehensive performance trends at: https://cuioss.github.io/cui-jwt/benchmarks/performance-trends.html
 
 **Features:**
 * Interactive charts for all key metrics
@@ -227,19 +227,26 @@ For detailed information about the benchmarking system:
 
 === Templates and Scripts
 
-The `doc/templates/` directory contains:
+The `doc/templates/` directory contains HTML templates for visualization:
 
 **HTML Templates:**
 * `index-visualizer.html` - JMH Visualizer integration template
+* `integration-index.html` - Integration benchmark visualization
+* `step-metrics-visualizer.html` - Step-by-step metrics visualization
 * `performance-trends.html` - Interactive performance trends visualization
 
-**Data Templates:**
-* `performance-run.json` - Individual benchmark run data template (uses `envsubst` variables)
+The `scripts/` directory contains processing and utility scripts:
 
 **Processing Scripts:**
-* `scripts/create-performance-badge.sh` - Generates comprehensive performance badge from JMH results
-* `scripts/create-performance-tracking.sh` - Creates timestamped performance tracking files 
-* `scripts/update-performance-trends.sh` - Updates consolidated tracking and manages trend analysis
-* `scripts/calculate-trend-badge.sh` - Calculates trend metrics and generates trend badge
+* `create-performance-badge.sh` - Generates comprehensive performance badge from JMH results
+* `create-performance-tracking.sh` - Creates timestamped performance tracking files 
+* `update-performance-trends.sh` - Updates consolidated tracking and manages trend analysis
+* `calculate-trend-badge.sh` - Calculates trend metrics and generates trend badge
+* `prepare-github-pages.sh` - Prepares GitHub Pages deployment structure
+
+**Local Testing Scripts:**
+* `serve-local.sh` - Starts HTTP server for local template testing (Python-based)
+* `serve-local.js` - Node.js alternative for local HTTP server
+* `LOCAL_TESTING.md` - Documentation for local testing setup
 
 The scripts architecture separates complex badge and tracking logic from the GitHub workflow, making the system more maintainable and testable.

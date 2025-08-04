@@ -88,5 +88,5 @@ Example workflow usage:
     find benchmark-results -name "jmh-result*.json" -type f -exec cp {} gh-pages/jmh-result.json \;
 
     # Use the JMH Visualizer template for visualization
-    cp cui-jwt-benchmarking/doc/index-visualizer.html gh-pages/index.html
+    cp cui-jwt-benchmarking/doc/templates/index-visualizer.html gh-pages/index-visualizer.html
 ----

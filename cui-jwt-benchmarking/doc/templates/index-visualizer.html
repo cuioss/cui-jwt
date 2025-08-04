@@ -75,8 +75,8 @@
           iframe.style.display = 'block';
           errorMessage.style.display = 'none';
         } else {
-          // Try with a hardcoded approach
-          iframe.src = 'https://jmh.morethan.io/?source=https://cuioss.github.io/cui-jwt/benchmarks/data/jmh-result.json';
+          // Try with a constructed URL approach
+          iframe.src = 'https://jmh.morethan.io/?source=' + encodeURIComponent(jsonUrl);
 
           // Add robust error handling for iframe loading
           let iframeLoaded = false;

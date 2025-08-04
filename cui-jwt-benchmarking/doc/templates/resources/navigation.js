@@ -4,10 +4,10 @@ class BenchmarkNavigation {
   constructor(currentPage = '') {
     this.currentPage = currentPage;
     this.pages = [
-      { id: 'micro', title: 'Micro Benchmarks', file: 'index.html', description: 'JMH unit-level performance testing' },
-      { id: 'integration', title: 'Integration Tests', file: 'integration.html', description: 'End-to-end containerized testing' },
-      { id: 'step-metrics', title: 'Step Metrics', file: 'step-metrics.html', description: 'Detailed step-by-step analysis' },
-      { id: 'trends', title: 'Performance Trends', file: 'trends.html', description: 'Historical performance tracking' }
+      { id: 'micro', title: 'Micro Benchmarks', file: 'index-visualizer.html', description: 'JMH unit-level performance testing' },
+      { id: 'integration', title: 'Integration Tests', file: 'integration-index.html', description: 'End-to-end containerized testing' },
+      { id: 'step-metrics', title: 'Step Metrics', file: 'step-metrics-visualizer.html', description: 'Detailed step-by-step analysis' },
+      { id: 'trends', title: 'Performance Trends', file: 'performance-trends.html', description: 'Historical performance tracking' }
     ];
   }
 
@@ -53,12 +53,12 @@ class BenchmarkNavigation {
 // Utility function to get current page type from filename or path
 function getCurrentPageType() {
   const path = window.location.pathname;
-  const filename = path.split('/').pop() || 'index.html';
+  const filename = path.split('/').pop() || 'index-visualizer.html';
   
   if (filename.includes('integration')) return 'integration';
   if (filename.includes('step-metrics')) return 'step-metrics';  
-  if (filename.includes('trends')) return 'trends';
-  if (filename === 'index.html' || filename === '') return 'micro';
+  if (filename.includes('performance-trends')) return 'trends';
+  if (filename.includes('index-visualizer')) return 'micro';
   return 'micro'; // default
 }
 
