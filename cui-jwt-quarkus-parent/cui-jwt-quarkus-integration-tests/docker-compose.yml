@@ -62,7 +62,7 @@ services:
       # Read-only certificate mount (production pattern)
       - ./src/main/docker/certificates:/app/certificates:ro
       # JFR output volume - mount directly to benchmark target directory
-      - ../quarkus-integration-benchmark/target/jfr-reports:/tmp/jfr-output:rw
+      - ../quarkus-integration-jmh/target/benchmark-results/jfr-recordings:/tmp/jfr-output:rw
 
     # OWASP Security hardening (production-grade)
     security_opt:

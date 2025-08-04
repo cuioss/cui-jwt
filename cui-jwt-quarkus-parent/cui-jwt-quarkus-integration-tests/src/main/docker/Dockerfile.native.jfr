@@ -20,12 +20,12 @@ COPY --chmod=0644 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/m
 COPY --chmod=0600 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.key /app/certificates/localhost.key
 COPY --chmod=0644 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost-truststore.p12 /app/certificates/localhost-truststore.p12
 
+# Create JFR output directory with proper permissions
+RUN mkdir -p /tmp/jfr-output && chmod 777 /tmp/jfr-output
+
 EXPOSE 8443
 HEALTHCHECK --interval=15s --timeout=8s --retries=3 --start-period=15s CMD ["/app/health-check.sh"]
 USER 1001
-
-# Create JFR output directory
-RUN mkdir -p /tmp/jfr-output && chmod 777 /tmp/jfr-output
 
 # JFR-enabled entrypoint with profiling optimized for benchmarking
 ENTRYPOINT ["/app/application", \
