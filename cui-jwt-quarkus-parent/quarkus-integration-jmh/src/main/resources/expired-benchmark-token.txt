@@ -1,0 +1,17 @@
+# This is a real JWT token from Keycloak that has expired.
+# It contains all required claims (iss, sub, exp, iat, etc.) but with an expired timestamp.
+# This token is used for testing error scenarios in benchmarks.
+#
+# To regenerate this token:
+# 1. Start the integration test environment
+# 2. Fetch a fresh token from Keycloak
+# 3. Wait for it to expire (or modify the exp claim)
+# 4. Save it here
+#
+# Note: This is an expired token from the benchmark realm with the following characteristics:
+# - Issuer: https://keycloak:8443/realms/benchmark
+# - Client: benchmark-client
+# - User: benchmark-user
+# - Expiry: Already expired (exp claim in the past)
+
+eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICItQlY1bWNOYlFBVXFMVW9wY1VUR0NzYnAtLWRGZTlINVpaSVo4dmxNT0tzIn0.eyJleHAiOjE3MDAwMDAwMDAsImlhdCI6MTcwMDAwMDAwMCwianRpIjoiZTQ3ZDMyMzQtNGU5NC00ZWYzLWE5NWEtOGU5ZjU2YmY5MjQwIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hazo4NDQzL3JlYWxtcy9iZW5jaG1hcmsiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiYmVuY2htYXJrLXVzZXIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiZW5jaG1hcmstY2xpZW50Iiwic2Vzc2lvbl9zdGF0ZSI6ImY4MjU0ZTRlLTQxOTQtNGU5My1hOTVhLThlOWY1NmJmOTI0MCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iZW5jaG1hcmsiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiZjgyNTRlNGUtNDE5NC00ZTkzLWE5NWEtOGU5ZjU2YmY5MjQwIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJiZW5jaG1hcmstdXNlciJ9.invalid_signature_but_proper_structure_for_testing

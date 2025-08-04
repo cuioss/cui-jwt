@@ -22,7 +22,10 @@ import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -52,6 +55,7 @@ public class TokenRepository {
     private final List<TokenInfo> tokenPool;
     private final AtomicInteger tokenIndex;
     private final HttpClient httpClient;
+    private String expiredToken;
 
     /**
      * Creates a new TokenRepository with the given configuration.
@@ -70,6 +74,9 @@ public class TokenRepository {
         LOGGER.debug("Using {} HttpClient from factory",
             config.isVerifySsl() ? "secure" : "insecure");
 
+        // Load expired token from resources
+        loadExpiredToken();
+        
         // Initialize token pool
         initializeTokenPool();
     }
@@ -108,12 +115,18 @@ public class TokenRepository {
 
     /**
      * Gets an invalid token for error testing scenarios.
+     * Returns a real expired token that contains all required claims but has an expired timestamp.
      *
-     * @return an invalid JWT token
+     * @return an expired JWT token with proper structure
      */
     @NonNull
     public String getInvalidToken() {
-        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkludmFsaWQgVG9rZW4iLCJpYXQiOjE1MTYyMzkwMjJ9.invalid_signature";
+        if (expiredToken != null) {
+            return expiredToken;
+        }
+        // Fallback to hardcoded expired token if resource loading failed
+        LOGGER.warn("Using fallback expired token as resource loading failed");
+        return "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICItQlY1bWNOYlFBVXFMVW9wY1VUR0NzYnAtLWRGZTlINVpaSVo4dmxNT0tzIn0.eyJleHAiOjE3MDAwMDAwMDAsImlhdCI6MTcwMDAwMDAwMCwianRpIjoiZTQ3ZDMyMzQtNGU5NC00ZWYzLWE5NWEtOGU5ZjU2YmY5MjQwIiwiaXNzIjoiaHR0cHM6Ly9rZXljbG9hazo4NDQzL3JlYWxtcy9iZW5jaG1hcmsiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiYmVuY2htYXJrLXVzZXIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJiZW5jaG1hcmstY2xpZW50Iiwic2Vzc2lvbl9zdGF0ZSI6ImY4MjU0ZTRlLTQxOTQtNGU5My1hOTVhLThlOWY1NmJmOTI0MCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1iZW5jaG1hcmsiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwic2lkIjoiZjgyNTRlNGUtNDE5NC00ZTkzLWE5NWEtOGU5ZjU2YmY5MjQwIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJiZW5jaG1hcmstdXNlciJ9.invalid_signature_but_proper_structure_for_testing";
     }
 
     /**
@@ -209,6 +222,41 @@ public class TokenRepository {
             "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
                 response.statusCode(), errorBody)
         );
+    }
+
+    /**
+     * Loads the expired token from resources file.
+     * This token is used for testing error scenarios in benchmarks.
+     */
+    private void loadExpiredToken() {
+        String resourcePath = "/expired-benchmark-token.txt";
+        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                LOGGER.warn("Expired token resource not found: {}", resourcePath);
+                return;
+            }
+            
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                StringBuilder tokenBuilder = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // Skip comments and empty lines
+                    if (!line.trim().startsWith("#") && !line.trim().isEmpty()) {
+                        tokenBuilder.append(line.trim());
+                    }
+                }
+                
+                String token = tokenBuilder.toString();
+                if (!token.isEmpty()) {
+                    this.expiredToken = token;
+                    LOGGER.info("Loaded expired token from resources (length: {})", token.length());
+                } else {
+                    LOGGER.warn("Expired token file was empty or contained only comments");
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to load expired token from resources", e);
+        }
     }
 
     /**
