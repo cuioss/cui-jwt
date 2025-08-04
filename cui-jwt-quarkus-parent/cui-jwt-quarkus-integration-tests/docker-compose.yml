@@ -54,8 +54,6 @@ services:
       # JFR configuration handled by image variant (distroless vs JFR-enabled)
       - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true -Djdk.tls.maxHandshakeMessageSize=65536 -Djdk.tls.maxCertificateChainLength=10 -Djdk.tls.useExtendedMasterSecret=true
       - QUARKUS_LOG_LEVEL=INFO
-      # Enable benchmark profile when ENABLE_BENCHMARK_PROFILE is set
-      - QUARKUS_PROFILE=${QUARKUS_PROFILE:-prod}
 
     depends_on:
       - keycloak

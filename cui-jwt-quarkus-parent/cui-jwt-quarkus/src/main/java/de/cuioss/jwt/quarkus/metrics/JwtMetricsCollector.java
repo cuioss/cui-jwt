@@ -209,6 +209,16 @@ public class JwtMetricsCollector {
         // Get current counts for all event types
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
 
+        // Debug: Log current state for success events
+        for (SecurityEventCounter.EventType eventType : SecurityEventCounter.EventType.values()) {
+            if (eventType.getCategory() == null) {
+                long count = securityEventCounter.getCount(eventType);
+                if (count > 0) {
+                    LOGGER.debug("Success event %s has count %d", eventType.name(), count);
+                }
+            }
+        }
+
         // Update counters based on current counts
         for (Map.Entry<SecurityEventCounter.EventType, Long> entry : currentCounts.entrySet()) {
             SecurityEventCounter.EventType eventType = entry.getKey();
@@ -227,7 +237,9 @@ public class JwtMetricsCollector {
                 if (counter != null) {
                     // Increment the counter by the delta
                     counter.increment(delta);
-                    LOGGER.debug("Updated counter for event type %s by %d", eventType.name(), delta);
+                    LOGGER.debug("Updated counter for event type %s by %d (total: %f)", eventType.name(), delta, counter.count());
+                } else {
+                    LOGGER.warn("No Micrometer counter found for event type %s, delta %d lost", eventType.name(), delta);
                 }
 
                 // Update the last known count

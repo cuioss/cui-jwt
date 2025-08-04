@@ -172,12 +172,18 @@ public class SimpleMetricsExporter {
         long totalErrors = 0;
         long totalSuccess = 0;
         
+        // Debug: Count metrics by type
+        int errorMetricsFound = 0;
+        int successMetricsFound = 0;
+        int successOperationsMetricsFound = 0;
+        
         // Extract both error and success metrics
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
             
             if (metricName.startsWith("cui_jwt_validation_errors_total")) {
+                errorMetricsFound++;
                 // Parse error metrics tags: category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"
                 String category = extractTag(metricName, "category");
                 String eventType = extractTag(metricName, "event_type");
@@ -188,10 +194,28 @@ public class SimpleMetricsExporter {
                     categoryData.put(eventType, formatNumber(value.longValue()));
                     totalErrors += value.longValue();
                 }
-            } else if (metricName.startsWith("cui_jwt_validation_success_total")) {
+            } else if (metricName.startsWith("cui_jwt_validation_success_operations_total")) {
+                successOperationsMetricsFound++;
                 // Parse success metrics tags: event_type="ACCESS_TOKEN_CREATED",result="success"
                 String eventType = extractTag(metricName, "event_type");
                 String result = extractTag(metricName, "result");
+                
+                LOGGER.debug("Found success_operations metric: {} with eventType={}, result={}, value={}", 
+                             metricName, eventType, result, value);
+                
+                if (eventType != null && "success".equals(result) && value != null && value > 0) {
+                    successByType.put(eventType, formatNumber(value.longValue()));
+                    totalSuccess += value.longValue();
+                    LOGGER.debug("Added success event: {} = {}", eventType, value.longValue());
+                }
+            } else if (metricName.startsWith("cui_jwt_validation_success_total")) {
+                successMetricsFound++;
+                // Parse success metrics tags: event_type="ACCESS_TOKEN_CREATED",result="success"
+                String eventType = extractTag(metricName, "event_type");
+                String result = extractTag(metricName, "result");
+                
+                LOGGER.debug("Found success_total metric: {} with eventType={}, result={}, value={}", 
+                             metricName, eventType, result, value);
                 
                 if (eventType != null && "success".equals(result) && value != null && value > 0) {
                     successByType.put(eventType, formatNumber(value.longValue()));
@@ -199,6 +223,9 @@ public class SimpleMetricsExporter {
                 }
             }
         }
+        
+        LOGGER.info("Metrics scan summary: {} error metrics, {} success_total metrics, {} success_operations metrics", 
+                    errorMetricsFound, successMetricsFound, successOperationsMetricsFound);
         
         securityMetrics.put("total_errors", formatNumber(totalErrors));
         securityMetrics.put("total_success", formatNumber(totalSuccess));

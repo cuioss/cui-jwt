@@ -138,15 +138,6 @@
                                 <configuration>
                                     <executable>../cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
-                                    <environmentVariables>
-                                        <!-- Enable benchmark-specific Quarkus profile that disables JWT caching
-                                             This ensures every request goes through full validation pipeline for accurate metrics.
-                                             The benchmark profile is defined in application-benchmark.properties which sets:
-                                             - cui.jwt.cache.access-token.enabled=false
-                                             This attempts to increase sample counts for better statistical analysis,
-                                             though actual sample counts are still limited by the monitor's window size. -->
-                                        <ENABLE_BENCHMARK_PROFILE>true</ENABLE_BENCHMARK_PROFILE>
-                                    </environmentVariables>
                                 </configuration>
                             </execution>
                             <!-- Fetch real JWT tokens from Keycloak -->
