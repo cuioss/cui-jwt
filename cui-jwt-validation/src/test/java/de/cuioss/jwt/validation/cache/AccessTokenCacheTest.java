@@ -30,6 +30,7 @@ import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger
 class AccessTokenCacheTest {
+
+    private static final CuiLogger LOGGER = new CuiLogger(AccessTokenCacheTest.class);
 
     private AccessTokenCache cache;
     private SecurityEventCounter securityEventCounter;
@@ -351,7 +354,7 @@ class AccessTokenCacheTest {
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             errorCount.incrementAndGet();
-                            e.printStackTrace();
+                            LOGGER.error("Error during concurrent cache eviction test", e);
                         }
                     }
                 } catch (InterruptedException e) {

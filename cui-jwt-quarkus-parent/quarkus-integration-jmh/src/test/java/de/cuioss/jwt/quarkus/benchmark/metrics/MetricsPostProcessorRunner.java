@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -24,16 +25,17 @@ import java.io.IOException;
  */
 class MetricsPostProcessorRunner {
 
+    private static final CuiLogger LOGGER = new CuiLogger(MetricsPostProcessorRunner.class);
+
     @Test
     void runParserOnActualResults() throws IOException {
         String resultsDirectory = "target/benchmark-results";
 
         try {
             MetricsPostProcessor.parseAndExport(resultsDirectory);
-            System.out.println("Successfully parsed and exported HTTP metrics from actual benchmark results");
+            LOGGER.info("Successfully parsed and exported HTTP metrics from actual benchmark results");
         } catch (Exception e) {
-            System.err.println("Failed to parse benchmark results: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.error("Failed to parse benchmark results: " + e.getMessage(), e);
         }
     }
 }

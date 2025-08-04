@@ -72,7 +72,7 @@ public class JfrEventTest {
                             Thread.sleep(ThreadLocalRandom.current().nextInt(1, 10));
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.error("Error during JFR event test operation", e);
                     } finally {
                         latch.countDown();
                     }
