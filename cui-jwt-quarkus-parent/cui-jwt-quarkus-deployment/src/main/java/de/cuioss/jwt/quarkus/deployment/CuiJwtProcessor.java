@@ -49,9 +49,6 @@ import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.jwks.parser.JwksParser;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
-// Metrics and monitoring classes
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 // JWT validation pipeline classes
 import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
@@ -129,7 +126,6 @@ public class CuiJwtProcessor {
                 TokenValidator.class,        // Public constructors, API methods
                 IssuerConfigResolver.class,  // Package constructor, internal methods
                 SecurityEventCounter.class,  // Default constructor, counter methods
-                TokenValidatorMonitor.class, // Constructor + methods for metrics collection
                 MeterRegistry.class)         // Micrometer registry for metrics
                 .methods(true)    // Methods needed for API calls and getters
                 .fields(false)    // No direct field access needed
@@ -208,9 +204,7 @@ public class CuiJwtProcessor {
                 // Claim handling classes - need full reflection for enum handling
                 ClaimValue.class,
                 ClaimName.class,
-                ClaimValueType.class,
-                // Metrics enum - need full reflection for enum handling
-                MeasurementType.class)
+                ClaimValueType.class)
                 .methods(true)  // Methods needed for getters/setters on token content
                 .fields(true)   // Fields needed for direct field access in token content
                 .constructors(true) // Constructors needed for instantiation

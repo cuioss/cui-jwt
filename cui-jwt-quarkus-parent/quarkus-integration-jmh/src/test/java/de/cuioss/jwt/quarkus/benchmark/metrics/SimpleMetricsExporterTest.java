@@ -48,7 +48,7 @@ class SimpleMetricsExporterTest {
     }
 
     @Test
-    @DisplayName("Should export real JWT validation metrics")
+    @DisplayName("Should export JWT bearer token validation metrics")
     void shouldExportRealJwtValidationMetrics() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
@@ -63,24 +63,22 @@ class SimpleMetricsExporterTest {
 
             Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
             assertNotNull(benchmarkData);
-            assertTrue(benchmarkData.containsKey("steps"));
+            assertTrue(benchmarkData.containsKey("bearer_token_producer_metrics"));
+            assertTrue(benchmarkData.containsKey("security_event_counter_metrics"));
 
-            Map<String, Object> steps = (Map<String, Object>) benchmarkData.get("steps");
+            Map<String, Object> bearerMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
+            assertTrue(bearerMetrics.containsKey("validation"));
 
-            assertTrue(steps.containsKey("token_parsing"));
-            assertTrue(steps.containsKey("signature_validation"));
-            assertTrue(steps.containsKey("complete_validation"));
-
-            if (steps.containsKey("token_parsing")) {
-                Map<String, Object> tokenParsing = (Map<String, Object>) steps.get("token_parsing");
-                assertTrue(tokenParsing.containsKey("sample_count"));
-                assertTrue(tokenParsing.containsKey("p50_us"));
-                assertTrue(tokenParsing.containsKey("p95_us"));
-                assertTrue(tokenParsing.containsKey("p99_us"));
-
-                Double sampleCount = (Double) tokenParsing.get("sample_count");
-                assertTrue(sampleCount > 0, "Sample count should be greater than 0");
-            }
+            Map<String, Object> validation = (Map<String, Object>) bearerMetrics.get("validation");
+            assertTrue(validation.containsKey("sample_count"));
+            assertTrue(validation.containsKey("p50_us"));
+            assertTrue(validation.containsKey("p95_us"));
+            assertTrue(validation.containsKey("p99_us"));
+            
+            // Check security event metrics
+            Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
+            assertTrue(securityMetrics.containsKey("total_errors"));
+            assertTrue(securityMetrics.containsKey("errors_by_category"));
         }
     }
 
@@ -105,7 +103,8 @@ class SimpleMetricsExporterTest {
             for (String benchmarkKey : aggregatedData.keySet()) {
                 Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get(benchmarkKey);
                 assertTrue(benchmarkData.containsKey("timestamp"));
-                assertTrue(benchmarkData.containsKey("steps"));
+                assertTrue(benchmarkData.containsKey("bearer_token_producer_metrics"));
+                assertTrue(benchmarkData.containsKey("security_event_counter_metrics"));
             }
         }
     }
@@ -122,13 +121,10 @@ class SimpleMetricsExporterTest {
 
         String jsonContent = Files.readString(aggregatedFile.toPath());
 
-        // Check for sample counts from real data (now much larger values)
+        // Check for sample count in bearer token validation metrics
         assertTrue(jsonContent.contains("\"sample_count\": "), "Should contain sample_count field");
-        // The actual values in our test data are 114, 132, 384, etc.
-        assertTrue(jsonContent.contains("\"sample_count\": 114") || 
-                   jsonContent.contains("\"sample_count\": 132") || 
-                   jsonContent.contains("\"sample_count\": 384"), 
-                   "Should contain actual sample counts from test data");
+        // Check for bearer token validation metrics
+        assertTrue(jsonContent.contains("\"validation\""), "Should contain bearer token validation metrics");
     }
 
     @Test
@@ -141,21 +137,16 @@ class SimpleMetricsExporterTest {
         File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
 
-        // Check for formatted microsecond values from real data
-        // Values should be properly formatted (no excessive decimal places)
+        // Check for formatted microsecond values in bearer token metrics
         assertTrue(jsonContent.contains("\"p50_us\":"), "Should contain p50_us fields");
         assertTrue(jsonContent.contains("\"p95_us\":"), "Should contain p95_us fields");
         assertTrue(jsonContent.contains("\"p99_us\":"), "Should contain p99_us fields");
         
-        // Check that we have proper formatting (looking for some actual values)
-        // From the test data: token_parsing p50=18.875, p95=127.875, etc.
-        assertTrue(jsonContent.contains("\"p50_us\": 19") || // token_parsing p50
-                   jsonContent.contains("\"p50_us\": 32") || // complete_validation p50  
-                   jsonContent.contains("\"p50_us\": 0.1"),  // token_format_check p50
-                   "Should contain properly formatted p50 values");
-        
-        // Bearer token validation metrics should also be present
+        // Bearer token validation metrics should be present
         assertTrue(jsonContent.contains("\"validation\""), "Should contain bearer token validation metrics");
+        assertTrue(jsonContent.contains("\"bearer_token_producer_metrics\""), "Should contain bearer token producer metrics");
+        // Security event metrics should be present
+        assertTrue(jsonContent.contains("\"security_event_counter_metrics\""), "Should contain security event counter metrics");
     }
 
     @Test
@@ -219,6 +210,18 @@ class SimpleMetricsExporterTest {
         // Verify that we have actual data (from the new test file with real metrics)
         Double sampleCount = (Double) validation.get("sample_count");
         assertTrue(sampleCount > 0, "Bearer token validation should have sample count > 0");
+        
+        // Check security event metrics
+        Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
+        assertNotNull(securityMetrics, "Should have security event counter metrics");
+        assertTrue(securityMetrics.containsKey("total_errors"));
+        assertTrue(securityMetrics.containsKey("errors_by_category"));
+        
+        // Verify we have the MISSING_CLAIM error from the test data (169356.0)
+        Object totalErrorsObj = securityMetrics.get("total_errors");
+        assertTrue(totalErrorsObj instanceof Number, "total_errors should be a number");
+        Number totalErrors = (Number) totalErrorsObj;
+        assertTrue(totalErrors.longValue() > 0, "Should have some security events recorded");
     }
 
     @Test
@@ -240,9 +243,13 @@ class SimpleMetricsExporterTest {
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
 
             Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
-            Map<String, Object> steps = (Map<String, Object>) benchmarkData.get("steps");
+            Map<String, Object> bearerMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
+            Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
 
-            assertTrue(steps.isEmpty());
+            assertNotNull(bearerMetrics, "Should have bearer token producer metrics even with empty data");
+            assertTrue(bearerMetrics.containsKey("validation"));
+            assertNotNull(securityMetrics, "Should have security event counter metrics even with empty data");
+            assertTrue(securityMetrics.containsKey("total_errors"));
         }
     }
 

@@ -18,13 +18,10 @@ package de.cuioss.jwt.quarkus.producer;
 import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
-import de.cuioss.jwt.quarkus.config.TokenValidatorMonitorConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -54,7 +51,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * <p>
  * Produced components:
  * <ul>
- *   <li>{@link TokenValidator} - Main JWT validation component (includes SecurityEventCounter and TokenValidatorMonitor)</li>
+ *   <li>{@link TokenValidator} - Main JWT validation component (includes SecurityEventCounter)</li>
  *   <li>{@link List}&lt;{@link IssuerConfig}&gt; - Resolved issuer configurations</li>
  * </ul>
  *
@@ -83,11 +80,6 @@ public class TokenValidatorProducer {
     @NonNull
     SecurityEventCounter securityEventCounter;
 
-    @Produces
-    @ApplicationScoped
-    @NonNull
-    TokenValidatorMonitor tokenValidatorMonitor;
-
     @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
         this.config = config;
@@ -113,9 +105,6 @@ public class TokenValidatorProducer {
         ParserConfigResolver parserConfigResolver = new ParserConfigResolver(config);
         ParserConfig parserConfig = parserConfigResolver.resolveParserConfig();
 
-        // Resolve monitor config using the dedicated resolver
-        TokenValidatorMonitorConfigResolver monitorConfigResolver = new TokenValidatorMonitorConfigResolver(config);
-        TokenValidatorMonitorConfig monitorConfig = monitorConfigResolver.resolveMonitorConfig();
 
         // Resolve cache config using the dedicated resolver
         AccessTokenCacheConfigResolver cacheConfigResolver = new AccessTokenCacheConfigResolver(config);
@@ -124,7 +113,6 @@ public class TokenValidatorProducer {
         // Create TokenValidator using builder pattern - it handles internal initialization
         TokenValidator.TokenValidatorBuilder builder = TokenValidator.builder()
                 .parserConfig(parserConfig)
-                .monitorConfig(monitorConfig)
                 .cacheConfig(cacheConfig);
 
         // Add each issuer config to the builder
@@ -136,9 +124,6 @@ public class TokenValidatorProducer {
 
         // Extract SecurityEventCounter from the TokenValidator
         securityEventCounter = tokenValidator.getSecurityEventCounter();
-
-        // Extract TokenValidatorMonitor from the TokenValidator
-        tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
 
         LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
     }

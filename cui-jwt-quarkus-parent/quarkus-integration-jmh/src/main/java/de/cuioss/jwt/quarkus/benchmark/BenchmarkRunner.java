@@ -143,7 +143,7 @@ public class BenchmarkRunner {
             SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
             
             // Export the JWT validation metrics with current timestamp
-            exporter.exportJwtValidationMetrics("JWTValidation", Instant.now());
+            exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
             
             LOGGER.info("Final metrics processing completed successfully");
         } catch (Exception e) {

@@ -17,19 +17,14 @@ package de.cuioss.jwt.quarkus.metrics;
 
 import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.EventCategory;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.PostConstruct;
@@ -44,20 +39,17 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
 
 /**
- * Collects JWT validation metrics from both {@link SecurityEventCounter} and
- * {@link TokenValidatorMonitor} and exposes them as Micrometer metrics.
+ * Collects JWT validation metrics from {@link SecurityEventCounter} and exposes them as Micrometer metrics.
  * <p>
- * This collector registers metrics for security events and performance measurements:
+ * This collector registers metrics for security events:
  * <ul>
  *   <li>Security Event Counters - from {@link SecurityEventCounter}</li>
- *   <li>Performance Timers - from {@link TokenValidatorMonitor}</li>
  * </ul>
  * <p>
  * All metrics follow Micrometer naming conventions and include appropriate tags
  * for filtering:
  * <ul>
  *   <li>cui.jwt.validation.errors - Counter for validation errors by type</li>
- *   <li>cui.jwt.validation.duration - Timer for validation pipeline steps</li>
  * </ul>
  * <p>
  * Security event metrics include tags:
@@ -65,11 +57,6 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
  *   <li>event_type - The type of security event</li>
  *   <li>result - The validation result (failure)</li>
  *   <li>category - The category of event (structure, signature, semantic)</li>
- * </ul>
- * <p>
- * Performance metrics include tags:
- * <ul>
- *   <li>step - The validation pipeline step (parsing, header, signature, claims, jwks, complete)</li>
  * </ul>
  */
 @ApplicationScoped
@@ -79,11 +66,9 @@ public class JwtMetricsCollector {
     private static final CuiLogger LOGGER = new CuiLogger(JwtMetricsCollector.class);
 
     private static final String VALIDATION_ERRORS = MetricIdentifier.VALIDATION.ERRORS;
-    private static final String VALIDATION_DURATION = MetricIdentifier.VALIDATION.DURATION;
     private static final String TAG_EVENT_TYPE = "event_type";
     private static final String TAG_RESULT = "result";
     private static final String TAG_CATEGORY = "category";
-    private static final String TAG_STEP = "step";
 
     private static final String RESULT_FAILURE = "failure";
 
@@ -91,20 +76,9 @@ public class JwtMetricsCollector {
     private final TokenValidator tokenValidator;
 
     private SecurityEventCounter securityEventCounter;
-    private TokenValidatorMonitor tokenValidatorMonitor;
-
 
     // Caching of counters to avoid lookups
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
-
-    // Caching of timers to avoid lookups
-    private final Map<String, Timer> timers = new ConcurrentHashMap<>();
-
-    // Caching of distribution summaries for percentiles
-    private final Map<String, DistributionSummary> summaries = new ConcurrentHashMap<>();
-
-    // Caching of gauges for sample counts
-    private final Map<String, Gauge> gauges = new ConcurrentHashMap<>();
 
     // Track last known counts to calculate deltas
     private final Map<SecurityEventCounter.EventType, Long> lastKnownCounts = new ConcurrentHashMap<>();
@@ -113,7 +87,7 @@ public class JwtMetricsCollector {
      * Creates a new JwtMetricsCollector with the given MeterRegistry and TokenValidator.
      *
      * @param registry the Micrometer registry
-     * @param tokenValidator the token validator containing monitoring components
+     * @param tokenValidator the token validator containing the security event counter
      */
     @Inject
     public JwtMetricsCollector(@NonNull MeterRegistry registry,
@@ -130,22 +104,15 @@ public class JwtMetricsCollector {
     void initialize() {
         LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
         securityEventCounter = tokenValidator.getSecurityEventCounter();
-        tokenValidatorMonitor = tokenValidator.getPerformanceMonitor();
 
         // Register counters for all event types
         registerEventCounters();
-
-        // Register performance timers for all measurement types
-        registerPerformanceTimers();
-
-        // Register sample count gauges
-        registerSampleCountGauges();
 
         // Initialize the last known counts
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
         lastKnownCounts.putAll(currentCounts);
 
-        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size() + timers.size() + summaries.size()));
+        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size()));
 
         // Force initial update to ensure metrics are visible immediately
         updateCounters();
@@ -184,77 +151,9 @@ public class JwtMetricsCollector {
         }
     }
 
-    /**
-     * Registers gauges for sample counts that dynamically read from monitors.
-     */
-    private void registerSampleCountGauges() {
-        // Register gauges for JWT validation metrics
-        if (tokenValidatorMonitor != null) {
-            for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
-                Tags tags = Tags.of(Tag.of(TAG_STEP, measurementType.name().toLowerCase()));
-                String gaugeName = VALIDATION_DURATION + ".actual_sample_count." + measurementType.name();
-                
-                Gauge gauge = Gauge.builder(VALIDATION_DURATION + ".actual_sample_count", 
-                        tokenValidatorMonitor, 
-                        monitor -> {
-                            var metricsOpt = monitor.getValidationMetrics(measurementType);
-                            return metricsOpt.map(m -> (double) m.sampleCount()).orElse(0.0);
-                        })
-                        .tags(tags)
-                        .description("Actual number of samples in ring buffer for " + measurementType.getDescription())
-                        .register(registry);
-                
-                gauges.put(gaugeName, gauge);
-                LOGGER.debug("Registered sample count gauge for measurement type %s", measurementType.name());
-            }
-        }
-    }
 
     /**
-     * Registers timers for enabled performance measurement types only.
-     */
-    private void registerPerformanceTimers() {
-        if (tokenValidatorMonitor == null) {
-            LOGGER.warn(WARN.TOKEN_VALIDATOR_MONITOR_NOT_AVAILABLE::format);
-            return;
-        }
-
-        // Only register timers for measurement types that are enabled in the monitor
-        for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
-            // Create tags for this measurement type
-            Tags tags = Tags.of(
-                    Tag.of(TAG_STEP, measurementType.name().toLowerCase())
-            );
-
-            // Register the timer for basic timing metrics
-            Timer timer = Timer.builder(VALIDATION_DURATION)
-                    .tags(tags)
-                    .description("Duration of JWT validation pipeline steps: " + measurementType.getDescription())
-                    .register(registry);
-
-            // Store the timer for later updates
-            timers.put(measurementType.name(), timer);
-
-            // Register distribution summary for percentile metrics
-            DistributionSummary summary = DistributionSummary.builder(VALIDATION_DURATION + ".percentiles")
-                    .tags(tags)
-                    .description("Percentile distribution of JWT validation pipeline steps: " + measurementType.getDescription())
-                    .baseUnit("microseconds")
-                    .publishPercentiles(0.5, 0.95, 0.99) // p50, p95, p99
-                    .register(registry);
-
-            // Store the summary for later updates
-            summaries.put(measurementType.name(), summary);
-
-            LOGGER.debug("Registered timer and distribution summary for enabled measurement type %s", measurementType.name());
-        }
-
-        LOGGER.debug("Registered %s performance timers and distribution summaries for enabled measurement types", timers.size());
-    }
-
-
-    /**
-     * Updates all counters and performance metrics from the current state.
+     * Updates all counters from the current state.
      * This method is called periodically to ensure metrics are up to date.
      * <p>
      * The interval can be configured via the property: cui.jwt.metrics.collection.interval
@@ -263,7 +162,6 @@ public class JwtMetricsCollector {
     @Scheduled(every = "${" + JwtPropertyKeys.METRICS.COLLECTION_INTERVAL + ":10s}")
     public void updateCounters() {
         updateSecurityEventCounters();
-        updatePerformanceMetrics();
     }
 
     /**
@@ -272,8 +170,6 @@ public class JwtMetricsCollector {
      * This method performs the following operations:
      * <ul>
      *   <li>Clears the SecurityEventCounter to reset all security event counts</li>
-     *   <li>Resets the TokenValidatorMonitor to clear all validation performance metrics</li>
-     *   <li>Clears the HttpMetricsMonitor to reset all HTTP-level metrics</li>
      *   <li>Resets internal tracking maps to ensure proper delta calculations after clearing</li>
      * </ul>
      * <p>
@@ -286,11 +182,6 @@ public class JwtMetricsCollector {
         // Clear security event counter
         if (securityEventCounter != null) {
             securityEventCounter.reset();
-        }
-
-        // Reset token validator monitor
-        if (tokenValidatorMonitor != null) {
-            tokenValidatorMonitor.resetAll();
         }
 
         // Clear tracking maps to reset delta calculations
@@ -329,55 +220,6 @@ public class JwtMetricsCollector {
 
                 // Update the last known count
                 lastKnownCounts.put(eventType, currentCount);
-            }
-        }
-    }
-
-    /**
-     * Updates performance metrics from the TokenValidatorMonitor state.
-     * Only processes measurement types that are enabled in the monitor configuration.
-     */
-    private void updatePerformanceMetrics() {
-        if (tokenValidatorMonitor == null) {
-            return;
-        }
-
-        // Only process measurement types that are enabled and have registered timers
-        for (MeasurementType measurementType : tokenValidatorMonitor.getEnabledTypes()) {
-            Timer timer = timers.get(measurementType.name());
-            DistributionSummary summary = summaries.get(measurementType.name());
-
-            if (timer != null && summary != null) {
-                // Get the current metrics from the monitor
-                var metricsOpt = tokenValidatorMonitor.getValidationMetrics(measurementType);
-
-                if (metricsOpt.isPresent()) {
-                    var metrics = metricsOpt.get();
-
-                    // Record p50 duration in both timer and summary
-                    var p50 = metrics.p50();
-                    if (!p50.isZero()) {
-                        timer.record(p50);
-                        summary.record(p50.toNanos() / 1000.0); // Convert to microseconds
-                    }
-
-                    // Also record p95 and p99 to get accurate percentile distribution
-                    var p95 = metrics.p95();
-                    if (!p95.isZero()) {
-                        summary.record(p95.toNanos() / 1000.0); // Convert to microseconds
-                    }
-
-                    var p99 = metrics.p99();
-                    if (!p99.isZero()) {
-                        summary.record(p99.toNanos() / 1000.0); // Convert to microseconds
-                    }
-
-                    // The gauge for sample count is already registered, it will automatically
-                    // read the current value from the monitor
-
-                    LOGGER.debug("Updated timer and percentiles for measurement type %s with p50=%s, p95=%s, p99=%s",
-                            measurementType.name(), p50, p95, p99);
-                }
             }
         }
     }

@@ -39,8 +39,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Simplified metrics exporter that processes JWT validation metrics.
- * Only creates integration-jwt-validation-metrics.json with all JWT validation benchmark results.
+ * Simplified metrics exporter that processes JWT bearer token validation metrics.
+ * Creates integration-jwt-validation-metrics.json with bearer token validation results.
  * Uses dependency injection pattern for metrics fetching to improve testability.
  *
  * @since 1.0
@@ -68,11 +68,11 @@ public class SimpleMetricsExporter {
     }
 
     /**
-     * Export JWT validation metrics for a specific benchmark method.
+     * Export JWT bearer token validation metrics for a specific benchmark method.
      * Updates the aggregated integration-jwt-validation-metrics.json file.
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
-        LOGGER.info("Exporting JWT validation metrics for: {}", benchmarkMethodName);
+        LOGGER.info("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
 
         // Set the benchmark context for proper directory naming
         BenchmarkContextManager.setBenchmarkContext(benchmarkMethodName);
@@ -84,14 +84,14 @@ public class SimpleMetricsExporter {
 
             // Process JWT validation specific metrics if applicable
             if (isJwtValidationBenchmark(benchmarkMethodName)) {
-                Map<String, Object> stepMetrics = extractStepMetrics(allMetrics);
                 Map<String, Object> timedMetrics = extractTimedMetrics(allMetrics);
+                Map<String, Object> securityEventMetrics = extractSecurityEventMetrics(allMetrics);
 
-                // Create benchmark data
+                // Create benchmark data with bearer token and security event metrics
                 Map<String, Object> benchmarkData = new LinkedHashMap<>();
                 benchmarkData.put("timestamp", timestamp.toString());
-                benchmarkData.put("steps", stepMetrics);
                 benchmarkData.put("bearer_token_producer_metrics", timedMetrics);
+                benchmarkData.put("security_event_counter_metrics", securityEventMetrics);
 
                 // Extract just the method name (remove class prefix)
                 String simpleBenchmarkName = benchmarkMethodName;
@@ -140,85 +140,6 @@ public class SimpleMetricsExporter {
         }
     }
 
-    /**
-     * Extract JWT validation step metrics from fetched metrics data
-     */
-    private Map<String, Object> extractStepMetrics(Map<String, Double> allMetrics) {
-        Map<String, Object> stepMetrics = new LinkedHashMap<>();
-        Map<String, StepPercentileData> stepData = new HashMap<>();
-
-        for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
-            String metricName = entry.getKey();
-            Double value = entry.getValue();
-
-            // Parse cui_jwt_validation_duration_percentiles_microseconds metrics
-            if (metricName.startsWith("cui_jwt_validation_duration_percentiles_microseconds")) {
-                String stepName = extractStepName(metricName);
-                if (stepName != null && !metricName.contains("_max")) {
-                    StepPercentileData data = stepData.computeIfAbsent(stepName, k -> new StepPercentileData());
-
-                    if (metricName.contains("quantile=\"0.5\"")) {
-                        data.p50 = value;
-                    } else if (metricName.contains("quantile=\"0.95\"")) {
-                        data.p95 = value;
-                    } else if (metricName.contains("quantile=\"0.99\"")) {
-                        data.p99 = value;
-                    }
-                }
-            }
-            
-            // Parse actual sample count from the gauge metric
-            if (metricName.startsWith("cui_jwt_validation_duration_actual_sample_count")) {
-                String stepName = extractStepName(metricName);
-                if (stepName != null) {
-                    StepPercentileData data = stepData.computeIfAbsent(stepName, k -> new StepPercentileData());
-                    data.count = value.longValue();
-                }
-            }
-        }
-
-        // Convert collected data to expected format
-        for (Map.Entry<String, StepPercentileData> entry : stepData.entrySet()) {
-            String stepName = entry.getKey();
-            StepPercentileData data = entry.getValue();
-
-            if (data.count > 0) {
-                Map<String, Object> metric = new LinkedHashMap<>();
-                metric.put("sample_count", formatNumber(data.count));
-                metric.put("p50_us", formatNumber(data.p50));
-                metric.put("p95_us", formatNumber(data.p95));
-                metric.put("p99_us", formatNumber(data.p99));
-                stepMetrics.put(stepName, metric);
-            }
-        }
-
-        LOGGER.info("Extracted {} step metrics", stepMetrics.size());
-        return stepMetrics;
-    }
-
-
-    /**
-     * Extract step name from metric name like "cui_jwt_validation_duration_seconds_count{step="token_parsing"}"
-     */
-    private String extractStepName(String metricName) {
-        Pattern pattern = Pattern.compile("step=\"([^\"]+)\"");
-        Matcher matcher = pattern.matcher(metricName);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return null;
-    }
-
-
-    /**
-     * Helper class to collect step percentile data
-     */
-    private static class StepPercentileData {
-        long count = 0;
-        double p50 = 0.0;
-        double p95 = 0.0;
-        double p99 = 0.0;
-    }
 
     /**
      * Check if a benchmark name represents a JWT validation benchmark
@@ -228,8 +149,63 @@ public class SimpleMetricsExporter {
                 "JwtValidation".equals(benchmarkMethodName) ||  // getBenchmarkName() returns this
                 benchmarkMethodName.startsWith("validateJwt") ||
                 benchmarkMethodName.contains("validateAccessToken") ||
-                benchmarkMethodName.contains("validateIdToken") ||
-                "JWTValidation".equals(benchmarkMethodName);  // For final metrics from BenchmarkRunner
+                benchmarkMethodName.contains("validateIdToken");
+    }
+
+    /**
+     * Helper class to collect percentile data
+     */
+    private static class StepPercentileData {
+        long count = 0;
+        double p50 = 0.0;
+        double p95 = 0.0;
+        double p99 = 0.0;
+    }
+
+    /**
+     * Extract SecurityEventCounter metrics from fetched metrics data
+     */
+    private Map<String, Object> extractSecurityEventMetrics(Map<String, Double> allMetrics) {
+        Map<String, Object> securityMetrics = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> eventsByCategory = new LinkedHashMap<>();
+        long totalErrors = 0;
+        
+        // Extract cui_jwt_validation_errors_total metrics
+        for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
+            String metricName = entry.getKey();
+            Double value = entry.getValue();
+            
+            if (metricName.startsWith("cui_jwt_validation_errors_total")) {
+                // Parse tags: category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"
+                String category = extractTag(metricName, "category");
+                String eventType = extractTag(metricName, "event_type");
+                String result = extractTag(metricName, "result");
+                
+                if (category != null && eventType != null && value != null && value > 0) {
+                    Map<String, Object> categoryData = eventsByCategory.computeIfAbsent(category, k -> new LinkedHashMap<>());
+                    categoryData.put(eventType, formatNumber(value.longValue()));
+                    totalErrors += value.longValue();
+                }
+            }
+        }
+        
+        securityMetrics.put("total_errors", formatNumber(totalErrors));
+        securityMetrics.put("errors_by_category", eventsByCategory);
+        
+        LOGGER.info("Extracted security event metrics: {} total errors across {} categories", 
+                totalErrors, eventsByCategory.size());
+        
+        return securityMetrics;
+    }
+
+    /**
+     * Extract tag value from Prometheus metric name
+     */
+    private String extractTag(String metricName, String tagName) {
+        String pattern = tagName + "=\"([^\"]+)\"";
+        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher matcher = regex.matcher(metricName);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     /**
