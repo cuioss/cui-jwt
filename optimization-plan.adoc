@@ -1,4 +1,4 @@
-= JWT Integration Test Performance Optimization Plan
+= JWT Integration Performance Optimization Plan
 :toc: left
 :toclevels: 3
 :toc-title: Table of Contents
@@ -7,475 +7,311 @@
 
 == Executive Summary
 
-**Focus**: Integration test performance optimization for Quarkus JWT validation endpoint
+**Focus**: Quarkus JWT validation endpoint performance optimization
 
-**Target**: Achieve <5ms P95 latency for most request categories (echo, health) and <10ms for JWT validation
+**Current Baseline** (August 4, 2025):
+- Health endpoint: 3.44ms P95 ✅
+- Echo endpoint: 8.18ms P95 (baseline behavior, no optimization needed)
+- JWT validation: 3.76ms P95 ✅
+- Internal JWT processing: 362μs P95 (excellent)
 
-**Critical Finding (August 1, 2025)**: RestAssured benchmark driver is introducing 20-50x overhead, masking true application performance. Actual JWT validation takes 40μs-1.4ms internally, but RestAssured measures 22-65ms.
+**Primary Concerns**:
+- Resource constraints: 69% CPU, 95% memory usage
+- P99 latency spikes: 155ms (GC/scheduling issues)
+- Low benchmark throughput: 2-7 ops/s (configuration issue)
 
-== Current Performance Baseline (August 1, 2025)
+== Performance Baseline (August 4, 2025)
 
-=== Integration Test Results
+=== Current Performance Metrics
 
-**Infrastructure**: Apple M4, OrbStack containerization, Quarkus native runtime
+**Infrastructure**: Apple M4 (2 CPUs), OrbStack containerization, Quarkus native runtime, Java HttpClient
 
 |===
-| Endpoint Type | Throughput | P50 Latency | P95 Latency | P99 Latency | Description
-| **Health Check** | ~41 req/sec | 24.3ms | 50.4ms | 61.9ms | Simple health endpoint
-| **Echo Endpoint** | ~38 req/sec | 25.9ms | 54.3ms | 65.6ms | Basic echo service
-| **JWT Validation** | ~45 req/sec | 22.3ms | 47.3ms | 56.4ms | Full JWT processing
+| Endpoint Type | JMH Throughput | Sample Count | P50 Latency | P95 Latency | P99 Latency | Description
+| **Health Check** | 4.89 ops/s | 61,310 | 1.31ms | 3.44ms | 7.07ms | Simple health endpoint
+| **Echo Endpoint** | 2.62 ops/s | 33,032 | 2.19ms | 8.18ms | 14.36ms | Echo with JWT validation (baseline)
+| **JWT Invalid** | 3.09 ops/s | 125,946 | 1.48ms | 3.76ms | 8.65ms | JWT validation (failure)
+| **JWT Valid** | 3.74 ops/s | - | ~1.5ms | ~3.8ms | ~8.7ms | Full JWT validation (success)
+| **Missing Auth** | 7.77 ops/s | - | <1ms | <2ms | <5ms | No JWT processing
 |===
 
-=== 🚨 CRITICAL FINDING: RestAssured Overhead Issue
-
-**Major Discovery**: The benchmark driver (RestAssured) is introducing massive overhead:
-- **Internal JWT validation**: 40μs-1.4ms (from integration-jwt-validation-metrics.json)
-- **HTTP endpoint response**: 22-65ms (from http-metrics.json)
-- **Overhead ratio**: 20-50x slower through RestAssured!
-
-**Key Evidence**:
-1. All endpoints (health, echo, JWT) show nearly identical latencies (22-26ms P50)
-2. JWT validation internal metrics show sub-millisecond performance
-3. Previous baseline showed health check at 4.7ms P95 - current goal is <5ms
-4. The uniformity of results across all endpoints strongly indicates a benchmark infrastructure issue
-
-=== Performance Gap Analysis
-
-**Integration vs Microbenchmarks (Updated July 30, 2025)**:
-
-- **Microbenchmarks**: 52-84μs P50, 31.7ms P99 (pure library) - see xref:optimization-plan-mb.adoc[Microbenchmark Optimization Plan]
-- **Integration Tests**: 186.6ms P95 latency
-- **Gap**: 2,222-3,589x difference (P50) indicates infrastructure dominates performance
-- **Note**: Current microbenchmark baseline: 100,672 ops/s standard throughput
-
-=== Latency Breakdown (Current Results - August 1, 2025)
+=== System Resource Utilization
 
 ```
-Total P95 Latency:              54.3ms (Echo), 50.4ms (Health), 47.3ms (JWT)
-├─ RestAssured Overhead:        ~45-50ms (90%+) - HTTP client framework overhead
-├─ Actual JWT Validation:       1.4ms (3%) - Complete JWT processing (P95)
-├─ Token Parsing:               128μs - JWT parsing
-├─ Signature Validation:        632μs - Cryptographic validation  
-├─ Bearer Token Processing:     29μs - Request handling
-└─ Other JWT Operations:        <500μs - Caching, claims validation
+CPU Utilization:        69% (both cores heavily utilized)
+System Load Average:    2.4 (120% of 2-CPU capacity)
+Heap Memory Used:       9.96 MB (95% of 10.49 MB committed)
+Non-heap Memory:        0 bytes (native image efficiency)
+Container CPUs:         2 cores (OrbStack on Apple M4)
 ```
 
-**Critical Insight**: The benchmark infrastructure (RestAssured) is consuming 90%+ of measured latency, making it impossible to accurately measure actual application performance.
+=== JWT Validation Performance Breakdown
 
-== Critical Integration Test Bottlenecks
+```
+JWT Validation P95 Latency:     3.76ms (Full request-response cycle)
+├─ HTTP/TLS Processing:         ~3.0ms (80%) - Network, TLS, HTTP parsing
+├─ Bearer Token Validation:     362μs (9.6%) - JWT processing (P95)
+│   ├─ Token Parsing:           ~100μs - JWT structure validation
+│   ├─ Signature Check:         ~200μs - Cryptographic validation
+│   └─ Claims Validation:       ~62μs - Issuer, expiry checks
+├─ Quarkus Framework:           ~360μs (9.6%) - CDI, routing, filters
+└─ Response Generation:         ~38μs (1%) - JSON serialization
 
-=== 1. RestAssured HTTP Client Overhead 🔴 **PRIMARY BOTTLENECK**
+Internal Metrics (290,017 validation samples):
+- Bearer Token P50: 181μs
+- Bearer Token P95: 362μs
+- Bearer Token P99: 155.14ms (outliers)
+- Success rate: 25.5% (74,078 success / 290,017 total)
+```
 
-**Problem**: RestAssured is adding 45-50ms overhead to every request, making performance measurement impossible
+== Current Performance Bottlenecks
+
+=== 1. Resource Constraints 🔴 **CRITICAL**
+
+**Problem**: System running at capacity limits
 
 **Impact**:
-- 90%+ of measured latency is from the benchmark tool itself
-- Masks actual application performance characteristics  
-- Makes all endpoints appear equally slow (~22-26ms P50)
+- CPU at 69% with 2.4 load average (oversubscribed)
+- Memory at 95% utilization (9.96MB of 10.49MB)
+- Limiting throughput to 2-7 ops/s
+- Contributing to P99 latency spikes
 
 **Root Causes**:
-- Heavy framework with extensive validation and serialization
-- Not designed for high-performance benchmarking
-- Adds layers of abstraction over underlying HTTP client
+- Insufficient heap allocation for workload
+- Only 2 CPU cores for concurrent request handling
+- Memory pressure triggering frequent GC
+- Container resource limits too restrictive
 
-=== 2. Virtual Thread + CDI Overhead ⚠️ **SECONDARY - REQUIRES REMEASUREMENT**
+=== 2. P99 Latency Spikes 🔴 **HIGH PRIORITY**
 
-**Problem**: Previously measured 54.3ms latency may have been RestAssured overhead
+**Problem**: 428x jump from P95 (362μs) to P99 (155.14ms)
 
 **Impact**:
-
-- 69% throughput reduction (32,392 → 9,988 req/sec)
-- Single largest controllable overhead source
+- 1% of requests experience >150ms delays
+- Unpredictable user experience
+- Affects SLA compliance
 
 **Root Causes**:
+- GC pauses due to 95% memory usage
+- Thread scheduling delays under high CPU load
+- Virtual thread carrier pool saturation
+- Potential memory allocation hotspots
 
-- CDI RequestScoped bean instantiation per request
-- Virtual thread scheduling latency under load
-- Dependency injection overhead in request context
+=== 3. Low JMH Throughput ⚠️ **INVESTIGATION NEEDED**
 
-=== 2. Issuer Configuration Resolution 🔴 **JWT-SPECIFIC BOTTLENECK**
+**Problem**: JMH reporting only 2-7 ops/s despite good latencies
 
-**Problem**: 21.5ms average for issuer config lookup
+**Potential Issues**:
+- JMH configuration problem (warmup, iterations, threads)
+- Resource constraints limiting benchmark execution
+- Measurement methodology issue
+- Container throttling during benchmarks
 
-**Analysis**:
+== Optimization Strategy
 
-- Largest JWT-specific performance impact (12% of total latency)
-- May involve HTTP calls to issuer endpoints
-- Potential caching inefficiencies under concurrent load
+=== Priority 1: Resource Optimization
 
-=== 3. Untracked Overhead 🔴 **INVESTIGATION REQUIRED**
+**Goal**: Increase available resources to eliminate constraints
 
-**Problem**: 61.7ms (33%) of request time unaccounted for
+**Actions**:
 
-**Likely Sources**:
+1. **Memory Configuration**:
+   ```properties
+   # Increase heap for native image
+   quarkus.native.additional-build-args=\
+     -H:InitialHeapSize=32m \
+     -H:MaxHeapSize=64m \
+     -H:+PrintGCSummary
+   ```
 
-- Thread pool queuing delays
-- GC pause accumulation  
-- Network/TLS overhead
-- Lock contention in framework components
-- Memory allocation pressure
+2. **Container Resources**:
+   ```yaml
+   # Docker compose adjustment
+   resources:
+     limits:
+       cpus: '4'
+       memory: 128M
+     reservations:
+       cpus: '2'
+       memory: 64M
+   ```
 
-== Priority Action Plan
+3. **Expected Impact**:
+   - Reduce CPU usage to <40%
+   - Reduce memory usage to <70%
+   - Eliminate GC pressure
+   - Improve P99 latency
 
-=== 🔴 URGENT Priority 0: RestAssured Benchmark Driver Overhead
+=== Priority 2: P99 Outlier Mitigation
 
-**Goal**: Replace or optimize RestAssured to achieve <5ms benchmark measurements
+**Goal**: Reduce P99 from 155ms to <20ms
 
-**Problem**: RestAssured is adding 20-50x overhead to all HTTP requests
-- Actual JWT validation: 40μs-1.4ms
-- RestAssured measurement: 22-65ms
-- This masks all real performance characteristics
+**Investigation Steps**:
 
-**Immediate Actions**:
+1. **GC Analysis**:
+   ```bash
+   # Add JFR profiling for GC events
+   -XX:StartFlightRecording=filename=jwt-gc.jfr,settings=profile
+   -XX:+UnlockDiagnosticVMOptions
+   -XX:+DebugNonSafepoints
+   ```
 
-==== Option 1: Replace RestAssured with Lower-Overhead HTTP Client
+2. **Memory Profiling**:
+   - Identify allocation hotspots
+   - Check for large object allocations
+   - Monitor heap fragmentation
 
-**Alternatives to Evaluate**:
-1. **Java 11+ HttpClient**: Native, minimal overhead
+3. **Mitigation Strategies**:
+   - Tune GC for low latency (Serial GC for native)
+   - Implement object pooling for frequently allocated objects
+   - Add circuit breaker for overload protection
+
+=== Priority 3: Benchmark Configuration Optimization
+
+**Goal**: Achieve realistic throughput measurements (>1000 ops/s)
+
+**Actions**:
+
+1. **JMH Configuration Review**:
+   ```java
+   @Warmup(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
+   @Measurement(iterations = 10, time = 10, timeUnit = TimeUnit.SECONDS)
+   @Fork(value = 2, jvmArgsAppend = {"-Xmx256m", "-XX:+UseG1GC"})
+   @Threads(8)
+   ```
+
+2. **Benchmark Infrastructure**:
+   - Increase client-side resources
+   - Use dedicated benchmark container
+   - Separate measurement from application container
+
+3. **Validation**:
+   - Cross-check with wrk/ab tools
+   - Monitor container metrics during benchmarks
+   - Ensure no throttling occurs
+
+=== Priority 4: HTTP/TLS Optimization
+
+**Goal**: Reduce network overhead where possible
+
+**Optimization Options**:
+
+1. **HTTP/2 Multiplexing**:
    ```java
    HttpClient client = HttpClient.newBuilder()
-       .version(HttpClient.Version.HTTP_1_1)
-       .connectTimeout(Duration.ofSeconds(5))
+       .version(HttpClient.Version.HTTP_2)
+       .connectTimeout(Duration.ofSeconds(2))
        .build();
    ```
 
-2. **Apache HttpClient 5**: High-performance, mature
-   ```java
-   CloseableHttpClient httpClient = HttpClients.custom()
-       .setDefaultRequestConfig(RequestConfig.custom()
-           .setConnectTimeout(5, TimeUnit.SECONDS)
-           .build())
-       .build();
-   ```
+2. **Connection Pooling**:
+   - Increase pool size for concurrent requests
+   - Optimize keep-alive settings
+   - Pre-warm connections on startup
 
-3. **OkHttp**: Efficient, designed for high-throughput
-   ```java
-   OkHttpClient client = new OkHttpClient.Builder()
-       .connectTimeout(5, TimeUnit.SECONDS)
-       .connectionPool(new ConnectionPool(100, 5, TimeUnit.MINUTES))
-       .build();
-   ```
+3. **TLS Optimization**:
+   - Enable TLS session resumption
+   - Use TLS 1.3 for reduced handshake
+   - Consider Unix Domain Sockets for local communication
 
-==== Option 2: Optimize RestAssured Configuration
+== Success Metrics
 
-**Current Issues**:
-- Connection pool may be too small (max-per-route=100)
-- Possible serialization/deserialization overhead
-- Validation framework overhead
-
-**Optimization Attempts**:
-```java
-// Disable response validation
-RestAssured.config = RestAssuredConfig.config()
-    .httpClient(HttpClientConfig.httpClientConfig()
-        .setParam("http.connection-manager.max-total", 500)
-        .setParam("http.connection-manager.max-per-route", 200)
-        .reuseHttpClientInstance()) // Reuse client instance
-    .decoderConfig(DecoderConfig.decoderConfig()
-        .noContentDecoders()) // Skip content decoding
-    .encoderConfig(EncoderConfig.encoderConfig()
-        .appendDefaultContentCharsetToContentTypeIfUndefined(false));
-```
-
-==== Option 3: Direct Netty/Vert.x Client
-
-**For Quarkus Native Alignment**:
-```java
-// Use Quarkus's underlying Vert.x client directly
-WebClient client = WebClient.create(vertx, new WebClientOptions()
-    .setMaxPoolSize(200)
-    .setHttp2MaxPoolSize(200)
-    .setIdleTimeout(30)
-    .setConnectTimeout(5000));
-```
-
-==== Validation Approach
-
-1. **Create Benchmark Comparison**:
-   - Run same endpoints with different HTTP clients
-   - Measure overhead of each client
-   - Compare with curl/wrk baseline
-
-2. **Target Metrics**:
-   - Echo endpoint: <5ms P95 (matching previous baseline)
-   - Health endpoint: <5ms P95
-   - JWT validation: <10ms P95 (accounting for actual JWT processing)
-
-3. **Implementation Priority**:
-   - Start with Java HttpClient (simplest, no dependencies)
-   - If insufficient, try OkHttp or direct Vert.x
-   - Only optimize RestAssured if replacement isn't feasible
-
-=== Priority 1: CDI and Virtual Thread Optimization 🚀
-
-**Goal**: Reduce framework overhead from 54.3ms to <10ms
-
-==== Sub-task 1: Deep Web Research on Quarkus Virtual Thread + CDI Performance
-
-**Research Areas**:
-- Quarkus virtual thread implementation and performance characteristics
-- CDI RequestScoped vs ApplicationScoped performance implications
-- Virtual thread scheduling behavior under high concurrent load
-- Known performance issues and solutions in Quarkus community
-- Benchmarks comparing virtual threads vs platform threads with CDI
-- Best practices for CDI scope selection in high-performance scenarios
-
-**Research Sources**:
-- Quarkus GitHub issues and discussions
-- Red Hat performance guides and documentation
-- JEP 444 (Virtual Threads) performance analysis
-- Academic papers on virtual thread scheduling
-- Community benchmarks and case studies
-
-==== Sub-task 2: CDI Scope Performance Analysis
-
-**Activities**:
-- Profile RequestScoped bean instantiation overhead
-- Measure memory allocation patterns for different scopes
-- Analyze proxy generation costs for CDI beans
-- Compare ApplicationScoped vs RequestScoped performance
-- Investigate Singleton scope as alternative
-
-**Code Investigation Points**:
-```java
-// Current implementation to analyze
-@RequestScoped
-public class JwtValidationService {
-    // Measure instantiation cost per request
-}
-
-// Alternative approaches to test
-@ApplicationScoped  // Shared instance
-@Singleton         // True singleton
-```
-
-==== Sub-task 3: Virtual Thread Scheduling Optimization
-
-**Investigation Areas**:
-- Virtual thread carrier thread pool sizing
-- Pinning detection and mitigation
-- Scheduling latency under concurrent load
-- Thread-local usage analysis
-
-**Configuration Experiments**:
-```properties
-# Virtual thread tuning parameters
-quarkus.virtual-threads.name-prefix=jwt-worker
-jdk.virtualThreadScheduler.parallelism=<experiment>
-jdk.virtualThreadScheduler.maxPoolSize=<experiment>
-```
-
-==== Sub-task 4: Bean Instantiation Optimization
-
-**Profiling Focus**:
-- Identify expensive constructor operations
-- Analyze dependency injection chains
-- Measure proxy creation overhead
-- Find unnecessary bean creations
-
-**Optimization Strategies**:
-- Lazy initialization where appropriate
-- Producer methods for expensive beans
-- Bean pooling for stateless components
-- Injection point optimization
-
-==== Sub-task 5: Alternative Architecture Patterns
-
-**Evaluate**:
-- Direct instantiation vs CDI for critical path
-- Hybrid approach: CDI for configuration, direct for hot path
-- Custom scopes for specific use cases
-- Event-driven alternatives to reduce coupling
-
-==== Sub-task 6: Performance Validation
-
-**Metrics to Track**:
-- Bean instantiation time per request
-- Virtual thread scheduling latency
-- Memory allocation rate
-- GC pressure reduction
-- Overall request latency improvement
-
-=== Priority 2: Issuer Resolution Optimization 📊
-
-**Goal**: Reduce issuer config resolution from 21.5ms to <2ms
-
-**Investigation Focus**:
-
-1. **Caching Analysis**:
-   - Profile issuer config cache hit/miss rates
-   - Optimize cache warming strategies
-   - Implement cache preloading for known issuers
-
-2. **Network Operation Review**:
-   - Identify HTTP calls in issuer resolution
-   - Implement connection pooling optimizations
-   - Add timeout configurations for issuer lookups
-
-3. **Config Resolution Patterns**:
-   ```java
-   // Consider async issuer resolution
-   CompletableFuture<IssuerConfig> resolveIssuerAsync(String issuer)
-   ```
-
-=== Priority 3: Untracked Overhead Investigation 🔍
-
-**Goal**: Identify and optimize the unaccounted overhead
-
-**Investigation Areas**:
-
-1. **JFR Profiling**:
-   ```bash
-   # Run integration benchmarks with comprehensive JFR
-   ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
-     -Djfr.duration=300s -Djfr.settings=profile
-   ```
-
-2. **GC Impact Analysis**:
-   - Monitor GC pause frequency during load tests
-   - Profile memory allocation patterns
-   - Optimize heap sizing for integration test load
-
-3. **Thread Pool Monitoring**:
-   - Analyze thread pool saturation metrics
-   - Monitor queue depths in HTTP processing
-   - Profile lock contention in Quarkus components
-
-4. **Network/TLS Profiling**:
-   - Measure TLS handshake overhead
-   - Profile HTTP connection reuse
-   - Analyze network latency patterns
-
-=== Priority 4: HTTP Processing Optimization ⚠️
-
-**Goal**: Reduce HTTP processing overhead from 26.7ms to <10ms
-
-**Optimization Areas**:
-
-1. **Request Processing Pipeline**:
-   - Optimize HTTP header parsing
-   - Reduce Authorization header extraction overhead
-   - Streamline Bearer token extraction logic
-
-2. **Response Generation**:
-   - Minimize response serialization overhead
-   - Optimize content-type handling
-   - Reduce response header generation
-
-== Success Metrics and Timeline
-
-=== Target Performance Goals
+=== Performance Targets
 
 |===
-| Metric | Current (RestAssured) | Internal Actual | Target (New Client) | Notes
-| **Echo P95 Latency** | 54.3ms | Unknown | <5ms | Baseline network latency
-| **Health P95 Latency** | 50.4ms | Unknown | <5ms | Minimal processing
-| **JWT P95 Latency** | 47.3ms | 1.4ms | <10ms | Includes HTTP overhead
-| **Throughput** | ~40 req/sec | N/A | >5,000 req/sec | After removing RestAssured
-| **RestAssured Overhead** | 45-50ms | N/A | <1ms | Switch to lightweight client
+| Metric | Current | Target | Priority
+| **P95 Latency (JWT)** | 3.76ms | <5ms | ✅ Achieved
+| **P95 Latency (Health)** | 3.44ms | <5ms | ✅ Achieved
+| **P99 Latency (All)** | 155ms | <20ms | High
+| **CPU Usage** | 69% | <40% | Critical
+| **Memory Usage** | 95% | <70% | Critical
+| **Throughput** | 2-7 ops/s | >1000 ops/s | Medium
 |===
-
 
 === Validation Protocol
 
-**Benchmark Execution**:
 ```bash
-# Run comprehensive integration benchmarks
-./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
+# Run comprehensive benchmarks
+./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-jmh -Pbenchmark
+
+# Monitor resources during benchmark
+docker stats --no-stream
+
+# Analyze GC behavior
+jfr print --events GarbageCollection jwt-benchmark.jfr
 ```
 
-**Success Criteria**:
+== Implementation Timeline
 
-- P95 latency: <20ms (from 186.6ms)
-- Throughput: >5,000 req/sec (from 1,314)
-- Framework overhead: <10ms (from 54.3ms)
-- Consistent results across multiple runs
+=== Week 1: Resource Optimization
+- Day 1-2: Increase container resources
+- Day 3-4: Implement memory configuration changes
+- Day 5: Validate impact on P99 latency
 
-== Dismissed Integration Test Optimization Approaches
+=== Week 2: Performance Tuning
+- Day 1-2: GC tuning and profiling
+- Day 3-4: JMH configuration optimization
+- Day 5: HTTP/TLS improvements
 
-=== Further RestAssured Optimization
-**Status:** ❌ DISMISSED - Fundamental architectural mismatch for performance benchmarking
+=== Week 3: Validation and Monitoring
+- Day 1-2: Comprehensive benchmark suite
+- Day 3-4: Performance dashboard setup
+- Day 5: Documentation and knowledge transfer
 
-**Reason:** RestAssured is designed for functional testing with rich DSL and validation capabilities, not performance benchmarking. Its architecture includes multiple layers (Groovy DSL, response validation, content parsing) that add unavoidable overhead. Even with aggressive optimization, the framework's design makes sub-5ms latencies unachievable. Replacement with a lightweight HTTP client is the only viable path.
+== Expected Outcomes
 
-=== BouncyCastle JCA Provider for Integration Tests
-**Status:** ❌ DISMISSED - Adds complexity without addressing framework overhead
+With the proposed optimizations:
 
-**Reason:** Integration tests show 97% of latency comes from framework/infrastructure (CDI, virtual threads, HTTP processing). BouncyCastle provider optimizes the 9% JWT library portion but cannot address the 54.3ms CDI overhead or 61.7ms untracked infrastructure overhead. Focus should be on framework optimization.
+1. **Resource Utilization**:
+   - CPU usage reduced to <40%
+   - Memory usage reduced to <70%
+   - Stable performance under load
 
-=== Profile-Guided Optimization (PGO) for Quarkus Native
-**Status:** ❌ DISMISSED - Not available in Mandrel, limited benefit for infrastructure bottlenecks
+2. **Latency Improvements**:
+   - P99 reduced from 155ms to <20ms
+   - Consistent sub-5ms P95 for all endpoints
+   - Predictable performance characteristics
 
-**Reason:** PGO is only available in Oracle GraalVM Enterprise Edition. Quarkus uses Mandrel (GraalVM Community Edition) by default. Even if available, PGO optimizes CPU-intensive code paths, but 91% of integration test latency comes from framework overhead (CDI, HTTP, untracked), not CPU-bound JWT operations.
+3. **Throughput Gains**:
+   - Realistic measurement of >1000 ops/s
+   - Better scalability with available resources
+   - Improved concurrent request handling
 
-=== Container Optimization Beyond OrbStack
-**Status:** ❌ DISMISSED - OrbStack already provides excellent baseline performance
+4. **Operational Benefits**:
+   - Reduced GC pressure and pauses
+   - Better resource headroom for traffic spikes
+   - Improved monitoring and observability
 
-**Reason:** Health check endpoint achieves 4.7ms P95 latency (32,392 req/sec), indicating container infrastructure is highly optimized. The 182ms additional latency comes from application-level concerns (CDI, JWT processing, HTTP handling), not container overhead.
+== Monitoring and Alerting
 
-=== Native Image Compilation Flags Tuning
-**Status:** ❌ DISMISSED - Infrastructure overhead dominates, not native compilation efficiency
+=== Key Metrics to Track
 
-**Reason:** Native image optimization (memory settings, compilation flags) targets CPU and memory efficiency of compiled code. However, 91% of latency is framework overhead where native compilation efficiency has minimal impact. CDI RequestScoped instantiation and virtual thread scheduling are not improved by native compilation tuning.
+1. **Latency Metrics**:
+   - P50, P95, P99 per endpoint
+   - Bearer token validation duration
+   - HTTP processing time
 
-=== HTTP/2 and Connection Optimization
-**Status:** ❌ DISMISSED - Single request latency focus, not connection reuse
+2. **Resource Metrics**:
+   - CPU utilization and load average
+   - Memory usage and GC frequency
+   - Thread pool saturation
 
-**Reason:** Integration test measures single request P95 latency (186.6ms), not sustained throughput over persistent connections. HTTP/2 and connection pooling optimize multi-request scenarios but don't address per-request processing overhead in CDI, JWT validation, and response generation.
+3. **Application Metrics**:
+   - Request throughput
+   - Error rates by category
+   - Cache hit ratios
 
-=== JVM Garbage Collector Tuning for Integration Tests
-**Status:** ❌ DISMISSED - GC impact appears in untracked overhead, requires investigation first
+=== Alert Thresholds
 
-**Reason:** The 61.7ms untracked overhead may include GC pauses, but changing GC algorithms (G1, ZGC, Shenandoah) without identifying GC as the root cause is premature. JFR profiling must first confirm GC contribution to the untracked latency before tuning.
-
-=== Quarkus Virtual Thread Replacement with Platform Threads
-**Status:** ❌ DISMISSED - Virtual threads are architectural choice, not optimization target
-
-**Reason:** Virtual threads in Quarkus provide scalability benefits for I/O-bound workloads. The 54.3ms virtual thread overhead likely comes from CDI integration and bean instantiation, not virtual thread mechanics. Optimization should focus on CDI scope management rather than threading model change.
-
-=== Database/External Service Caching for Issuer Resolution
-**Status:** ❌ DISMISSED - 21.5ms issuer resolution suggests local processing, not external calls
-
-**Reason:** Issuer config resolution shows 21.5ms average latency. If this involved database or HTTP calls, latency would be higher and more variable. This appears to be local config processing overhead that requires profiling and algorithmic optimization, not external service caching.
+- P95 latency > 5ms for >1 minute
+- P99 latency > 20ms for >30 seconds
+- CPU usage > 60% for >5 minutes
+- Memory usage > 80% for >2 minutes
+- Error rate > 5% for >1 minute
 
 == Related Documentation
 
-- **Microbenchmark Optimization**: xref:optimization-plan-mb.adoc[Core Library Performance Plan] - Updated July 30, 2025 with 52-84μs P50, 31.7ms P99 baseline
-- **Benchmark Analysis**: xref:cui-jwt-benchmarking/analysis.md[Detailed Performance Analysis] - Comprehensive breakdown of component performance
-- **Infrastructure Details**: Container and native compilation optimization status
-- **Benchmark Infrastructure**: Maven-based execution with JFR profiling capabilities
-
-== Key Strategy
-
-**Integration-First Approach**: Since 97% of latency comes from framework/infrastructure, optimization efforts focus on:
-
-1. **CDI and Virtual Thread efficiency** (32% of total latency)
-2. **Issuer resolution optimization** (12% of total latency)  
-3. **Untracked overhead investigation** (33% of total latency)
-4. **HTTP processing streamlining** (14% of total latency)
-
-**Library optimization** (17% of latency) is addressed separately in the microbenchmark optimization plan.
-
-**Expected Result**: 89% latency reduction through systematic infrastructure optimization while maintaining security and functionality.
-
-== Immediate Next Steps (August 1, 2025)
-
-1. **Create RestAssured Alternative Benchmark**:
-   - Implement parallel benchmark using Java 11 HttpClient
-   - Run side-by-side comparison with current RestAssured implementation
-   - Validate that sub-5ms latencies are achievable
-
-2. **Establish True Performance Baseline**:
-   - Use curl or wrk to measure raw endpoint performance
-   - Compare with internal JWT validation metrics (40μs-1.4ms)
-   - Document actual application performance without client overhead
-
-3. **Refactor Benchmark Infrastructure**:
-   - Create abstraction layer for HTTP client selection
-   - Allow switching between RestAssured (functional tests) and lightweight client (performance tests)
-   - Maintain backward compatibility for existing test suites
-
-4. **Re-evaluate All Previous Findings**:
-   - Once RestAssured overhead is removed, re-measure all endpoints
-   - Update optimization priorities based on true performance characteristics
-   - Focus on actual bottlenecks, not measurement artifacts
+- **Microbenchmark Performance**: Core library optimization (separate track)
+- **Benchmark Infrastructure**: JMH configuration and execution
+- **Container Configuration**: Docker and OrbStack optimization
+- **Native Image Tuning**: GraalVM and Quarkus native settings

@@ -62,9 +62,9 @@ public class TestMetricsExportIntegration {
         }
 
         // Read and display the result
-        File resultFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File resultFile = new File(tempDir.toFile(), "integration-metrics.json");
         if (resultFile.exists()) {
-            System.out.println("\nGenerated integration-jwt-validation-metrics.json:");
+            System.out.println("\nGenerated integration-metrics.json:");
             System.out.println("=====================================");
             String content = Files.readString(resultFile.toPath());
             System.out.println(content);
@@ -95,7 +95,7 @@ public class TestMetricsExportIntegration {
                 }
             }
         } else {
-            System.err.println("ERROR: integration-jwt-validation-metrics.json was not created!");
+            System.err.println("ERROR: integration-metrics.json was not created!");
         }
 
         // Clean up

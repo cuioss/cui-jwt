@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 
 /**
  * Simplified metrics exporter that processes JWT bearer token validation metrics.
- * Creates integration-jwt-validation-metrics.json with bearer token validation results.
+ * Creates integration-metrics.json with bearer token validation results.
  * Uses dependency injection pattern for metrics fetching to improve testability.
  *
  * @since 1.0
@@ -69,7 +69,7 @@ public class SimpleMetricsExporter {
 
     /**
      * Export JWT bearer token validation metrics for a specific benchmark method.
-     * Updates the aggregated integration-jwt-validation-metrics.json file.
+     * Updates the aggregated integration-metrics.json file.
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
         LOGGER.info("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
@@ -111,7 +111,7 @@ public class SimpleMetricsExporter {
     }
 
     private void updateAggregatedMetrics(String benchmarkMethodName, Map<String, Object> benchmarkData) throws IOException {
-        String filename = outputDirectory + "/integration-jwt-validation-metrics.json";
+        String filename = outputDirectory + "/integration-metrics.json";
 
         // Read existing data
         Map<String, Object> allMetrics = new LinkedHashMap<>();
@@ -135,7 +135,7 @@ public class SimpleMetricsExporter {
         try (FileWriter writer = new FileWriter(outputFile)) {
             GSON.toJson(allMetrics, writer);
             writer.flush();
-            LOGGER.info("Updated integration-jwt-validation-metrics.json with {} benchmarks at: {}",
+            LOGGER.info("Updated integration-metrics.json with {} benchmarks at: {}",
                     allMetrics.size(), outputFile.getAbsolutePath());
         }
     }

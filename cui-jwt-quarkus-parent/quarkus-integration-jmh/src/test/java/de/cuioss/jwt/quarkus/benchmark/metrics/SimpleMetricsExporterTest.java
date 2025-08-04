@@ -54,7 +54,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
@@ -93,7 +93,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtLatency", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
@@ -118,7 +118,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         String jsonContent = Files.readString(aggregatedFile.toPath());
@@ -136,7 +136,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
 
         // Check for formatted microsecond values in bearer token metrics
@@ -168,7 +168,7 @@ class SimpleMetricsExporterTest {
         filteringExporter.exportJwtValidationMetrics("JwtHealth", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         String jsonContent = Files.readString(aggregatedFile.toPath());
 
         assertTrue(jsonContent.contains("\"validateJwtThroughput\""));
@@ -190,7 +190,7 @@ class SimpleMetricsExporterTest {
         exporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateJwtThroughput", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
 
         Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
@@ -239,7 +239,7 @@ class SimpleMetricsExporterTest {
         emptyExporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
         // Assert
-        File aggregatedFile = new File(tempDir.toFile(), "integration-jwt-validation-metrics.json");
+        File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
