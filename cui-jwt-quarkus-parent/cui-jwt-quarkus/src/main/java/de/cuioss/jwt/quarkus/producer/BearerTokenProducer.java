@@ -24,12 +24,12 @@ import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
 
+import io.micrometer.core.annotation.Timed;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
-import io.micrometer.core.annotation.Timed;
 import lombok.NonNull;
 
 import java.util.*;

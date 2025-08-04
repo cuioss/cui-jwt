@@ -138,7 +138,7 @@ public class MetricsPostProcessor {
     private void processBenchmark(JsonObject benchmark, Map<String, HttpEndpointMetrics> endpointMetrics) {
         String benchmarkName = benchmark.get("benchmark").getAsString();
         String mode = benchmark.get("mode").getAsString();
-        
+
         String endpointType = determineEndpointType(benchmarkName);
         if (endpointType == null) {
             return;
@@ -153,7 +153,7 @@ public class MetricsPostProcessor {
             if (primaryMetric != null) {
                 double score = primaryMetric.get("score").getAsDouble();
                 String scoreUnit = primaryMetric.get("scoreUnit").getAsString();
-                
+
                 // Convert to ops/s if necessary
                 double throughputOpsPerSec = score;
                 if ("ops/ms".equals(scoreUnit)) {
@@ -161,13 +161,11 @@ public class MetricsPostProcessor {
                 } else if ("ops/us".equals(scoreUnit)) {
                     throughputOpsPerSec = score * 1000000; // Convert ops/us to ops/s
                 }
-                
+
                 metrics.updateThroughput(throughputOpsPerSec);
                 LOGGER.debug("Processed {} throughput: {} ops/s", endpointType, throughputOpsPerSec);
             }
-        }
-        // Process sample mode benchmarks for percentile data
-        else if ("sample".equals(mode)) {
+        } else if ("sample".equals(mode)) {
             // Extract percentiles from primaryMetric scorePercentiles
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
             if (primaryMetric == null) {
@@ -221,21 +219,21 @@ public class MetricsPostProcessor {
         }
 
         int totalCount = 0;
-        
+
         // Iterate through all forks
         for (JsonElement forkElement : rawDataHistogram) {
             JsonArray fork = forkElement.getAsJsonArray();
             if (fork == null) {
                 continue;
             }
-            
+
             // Iterate through all iterations within each fork
             for (JsonElement iterationElement : fork) {
                 JsonArray iteration = iterationElement.getAsJsonArray();
                 if (iteration == null) {
                     continue;
                 }
-                
+
                 // Count samples in this iteration
                 for (JsonElement measurement : iteration) {
                     JsonArray pair = measurement.getAsJsonArray();
@@ -260,7 +258,7 @@ public class MetricsPostProcessor {
             endpointData.put("name", metrics.displayName);
             endpointData.put("timestamp", timestamp.toString());
             endpointData.put("sample_count", metrics.sampleCount);
-            
+
             // Add throughput if available
             if (metrics.throughput > 0) {
                 endpointData.put("throughput_ops_per_sec", formatNumber(metrics.throughput));
@@ -325,7 +323,7 @@ public class MetricsPostProcessor {
             this.p95 = p95;
             this.p99 = p99;
         }
-        
+
         void updateThroughput(double throughput) {
             this.throughput = throughput;
         }
@@ -338,7 +336,7 @@ public class MetricsPostProcessor {
         public String getSourceBenchmark() {
             return sourceBenchmark;
         }
-        
+
         public double getThroughput() {
             return throughput;
         }

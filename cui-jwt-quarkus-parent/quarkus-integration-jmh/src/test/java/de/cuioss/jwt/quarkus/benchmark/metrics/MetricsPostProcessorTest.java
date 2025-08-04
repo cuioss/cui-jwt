@@ -165,13 +165,13 @@ class MetricsPostProcessorTest {
 
             Map<String, Object> echoMetrics = (Map<String, Object>) metrics.get("echo");
             assertNotNull(echoMetrics);
-            
+
             // Should sum up: 100 + 200 = 300 samples from two iterations
             assertEquals(300.0, echoMetrics.get("sample_count"));
-            
+
             Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
             assertNotNull(healthMetrics);
-            
+
             // Should sum up: 150 + 250 = 400 samples from two iterations
             assertEquals(400.0, healthMetrics.get("sample_count"));
         }

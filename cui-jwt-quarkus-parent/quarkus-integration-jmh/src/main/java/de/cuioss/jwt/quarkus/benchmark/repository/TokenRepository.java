@@ -69,14 +69,14 @@ public class TokenRepository {
 
         // Get HttpClient from factory based on SSL verification setting
         this.httpClient = config.isVerifySsl() ?
-            HttpClientFactory.getSecureClient() :
-            HttpClientFactory.getInsecureClient();
+                HttpClientFactory.getSecureClient() :
+                HttpClientFactory.getInsecureClient();
         LOGGER.debug("Using {} HttpClient from factory",
-            config.isVerifySsl() ? "secure" : "insecure");
+                config.isVerifySsl() ? "secure" : "insecure");
 
         // Load expired token from resources
         loadExpiredToken();
-        
+
         // Initialize token pool
         initializeTokenPool();
     }
@@ -151,22 +151,22 @@ public class TokenRepository {
 
     private String fetchSingleToken() {
         String tokenEndpoint = "%s/realms/%s/protocol/openid-connect/token".formatted(
-            config.getKeycloakBaseUrl(), config.getRealm());
+                config.getKeycloakBaseUrl(), config.getRealm());
 
         try {
             // Build form data as URL encoded string
             String formData = "grant_type=" + URLEncoder.encode("password", StandardCharsets.UTF_8) +
-                "&client_id=" + URLEncoder.encode(config.getClientId(), StandardCharsets.UTF_8) +
-                "&client_secret=" + URLEncoder.encode(config.getClientSecret(), StandardCharsets.UTF_8) +
-                "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
-                "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
+                    "&client_id=" + URLEncoder.encode(config.getClientId(), StandardCharsets.UTF_8) +
+                    "&client_secret=" + URLEncoder.encode(config.getClientSecret(), StandardCharsets.UTF_8) +
+                    "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
+                    "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
 
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(tokenEndpoint))
-                .timeout(Duration.ofMillis(config.getRequestTimeoutMs()))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(formData))
-                .build();
+                    .uri(URI.create(tokenEndpoint))
+                    .timeout(Duration.ofMillis(config.getRequestTimeoutMs()))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(formData))
+                    .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -216,11 +216,11 @@ public class TokenRepository {
         String errorBody = response.body() != null ? response.body() : "<no body>";
 
         LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
-            response.statusCode(), errorBody);
+                response.statusCode(), errorBody);
 
         throw new TokenFetchException(
-            "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
-                response.statusCode(), errorBody)
+                "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
+                        response.statusCode(), errorBody)
         );
     }
 
@@ -235,7 +235,7 @@ public class TokenRepository {
                 LOGGER.warn("Expired token resource not found: {}", resourcePath);
                 return;
             }
-            
+
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 StringBuilder tokenBuilder = new StringBuilder();
                 String line;
@@ -245,7 +245,7 @@ public class TokenRepository {
                         tokenBuilder.append(line.trim());
                     }
                 }
-                
+
                 String token = tokenBuilder.toString();
                 if (!token.isEmpty()) {
                     this.expiredToken = token;

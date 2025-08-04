@@ -114,7 +114,7 @@ public class BenchmarkRunner {
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
 
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"));
-            
+
             // Process and download final metrics after successful benchmark execution
             processMetrics();
         } catch (Exception e) {
@@ -130,21 +130,21 @@ public class BenchmarkRunner {
     private static void processMetrics() {
         String quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:8443");
         String outputDirectory = getBenchmarkResultsDir();
-        
+
         LOGGER.info("Processing final cumulative metrics from Quarkus...");
         LOGGER.info("Metrics URL: {}", quarkusMetricsUrl);
         LOGGER.info("Output directory: {}", outputDirectory);
-        
+
         try {
             // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
             QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(quarkusMetricsUrl);
-            
+
             // Use SimpleMetricsExporter to export JWT validation metrics
             SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
-            
+
             // Export the JWT validation metrics with current timestamp
             exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
-            
+
             LOGGER.info("Final metrics processing completed successfully");
         } catch (Exception e) {
             // Log the error but don't fail the entire benchmark run

@@ -15,12 +15,12 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.URI;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,10 +29,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * Simple test to verify that the HttpClient migration was successful.
  * This test verifies that the basic HttpClient setup works correctly.
  */
-public class HttpClientMigrationTest {
+class HttpClientMigrationTest {
 
     @Test
-    public void testHttpClientSetup() throws Exception {
+    void httpClientSetup() throws Exception {
         // Create a simple HttpClient
         HttpClient client = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
@@ -44,7 +44,7 @@ public class HttpClientMigrationTest {
     }
 
     @Test
-    public void testHttpRequestBuilder() {
+    void httpRequestBuilder() {
         // Test that we can build HTTP requests properly
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://localhost:10443/jwt/echo"))
@@ -61,9 +61,9 @@ public class HttpClientMigrationTest {
     }
 
     @Test
-    public void testCompilationSuccessful() {
+    void compilationSuccessful() {
         // This test verifies that all benchmark classes compile with HttpClient
-        try {
+        Assertions.assertDoesNotThrow(() -> {
             // Verify that key benchmark classes can be loaded
             Class.forName("de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark");
             Class.forName("de.cuioss.jwt.quarkus.benchmark.AbstractIntegrationBenchmark");
@@ -72,8 +72,6 @@ public class HttpClientMigrationTest {
             Class.forName("de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtValidationBenchmark");
             Class.forName("de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository");
             Class.forName("de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher");
-        } catch (ClassNotFoundException e) {
-            fail("Failed to load benchmark class: " + e.getMessage());
-        }
+        }, "Failed to load benchmark class: ");
     }
 }

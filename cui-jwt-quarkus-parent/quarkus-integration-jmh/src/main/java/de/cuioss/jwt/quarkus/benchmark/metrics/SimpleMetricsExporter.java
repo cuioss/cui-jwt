@@ -119,7 +119,8 @@ public class SimpleMetricsExporter {
         if (file.exists()) {
             String content = Files.readString(file.toPath());
             if (!content.trim().isEmpty()) {
-                Type mapType = new TypeToken<Map<String, Object>>(){}.getType();
+                Type mapType = new TypeToken<Map<String, Object>>(){
+                }.getType();
                 allMetrics = GSON.fromJson(content, mapType);
             }
         }
@@ -171,24 +172,24 @@ public class SimpleMetricsExporter {
         Map<String, Object> successByType = new LinkedHashMap<>();
         long totalErrors = 0;
         long totalSuccess = 0;
-        
+
         // Debug: Count metrics by type
         int errorMetricsFound = 0;
         int successMetricsFound = 0;
         int successOperationsMetricsFound = 0;
-        
+
         // Extract both error and success metrics
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
-            
+
             if (metricName.startsWith("cui_jwt_validation_errors_total")) {
                 errorMetricsFound++;
                 // Parse error metrics tags: category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"
                 String category = extractTag(metricName, "category");
                 String eventType = extractTag(metricName, "event_type");
                 String result = extractTag(metricName, "result");
-                
+
                 if (category != null && eventType != null && value != null && value > 0) {
                     Map<String, Object> categoryData = errorsByCategory.computeIfAbsent(category, k -> new LinkedHashMap<>());
                     categoryData.put(eventType, formatNumber(value.longValue()));
@@ -199,10 +200,10 @@ public class SimpleMetricsExporter {
                 // Parse success metrics tags: event_type="ACCESS_TOKEN_CREATED",result="success"
                 String eventType = extractTag(metricName, "event_type");
                 String result = extractTag(metricName, "result");
-                
-                LOGGER.debug("Found success_operations metric: {} with eventType={}, result={}, value={}", 
-                             metricName, eventType, result, value);
-                
+
+                LOGGER.debug("Found success_operations metric: {} with eventType={}, result={}, value={}",
+                        metricName, eventType, result, value);
+
                 if (eventType != null && "success".equals(result) && value != null && value > 0) {
                     successByType.put(eventType, formatNumber(value.longValue()));
                     totalSuccess += value.longValue();
@@ -213,28 +214,28 @@ public class SimpleMetricsExporter {
                 // Parse success metrics tags: event_type="ACCESS_TOKEN_CREATED",result="success"
                 String eventType = extractTag(metricName, "event_type");
                 String result = extractTag(metricName, "result");
-                
-                LOGGER.debug("Found success_total metric: {} with eventType={}, result={}, value={}", 
-                             metricName, eventType, result, value);
-                
+
+                LOGGER.debug("Found success_total metric: {} with eventType={}, result={}, value={}",
+                        metricName, eventType, result, value);
+
                 if (eventType != null && "success".equals(result) && value != null && value > 0) {
                     successByType.put(eventType, formatNumber(value.longValue()));
                     totalSuccess += value.longValue();
                 }
             }
         }
-        
-        LOGGER.info("Metrics scan summary: {} error metrics, {} success_total metrics, {} success_operations metrics", 
-                    errorMetricsFound, successMetricsFound, successOperationsMetricsFound);
-        
+
+        LOGGER.info("Metrics scan summary: {} error metrics, {} success_total metrics, {} success_operations metrics",
+                errorMetricsFound, successMetricsFound, successOperationsMetricsFound);
+
         securityMetrics.put("total_errors", formatNumber(totalErrors));
         securityMetrics.put("total_success", formatNumber(totalSuccess));
         securityMetrics.put("errors_by_category", errorsByCategory);
         securityMetrics.put("success_by_type", successByType);
-        
-        LOGGER.info("Extracted security event metrics: {} total errors across {} categories, {} total successes across {} types", 
+
+        LOGGER.info("Extracted security event metrics: {} total errors across {} categories, {} total successes across {} types",
                 totalErrors, errorsByCategory.size(), totalSuccess, successByType.size());
-        
+
         return securityMetrics;
     }
 
@@ -243,8 +244,8 @@ public class SimpleMetricsExporter {
      */
     private String extractTag(String metricName, String tagName) {
         String pattern = tagName + "=\"([^\"]+)\"";
-        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
-        java.util.regex.Matcher matcher = regex.matcher(metricName);
+        Pattern regex = Pattern.compile(pattern);
+        Matcher matcher = regex.matcher(metricName);
         return matcher.find() ? matcher.group(1) : null;
     }
 
@@ -262,16 +263,16 @@ public class SimpleMetricsExporter {
         // We need to estimate percentiles from these values
         
         String validationMetricPrefix = MetricIdentifier.BEARER_TOKEN.VALIDATION.replace(".", "_") + "_seconds";
-        
+
         // Collect the available metrics
         Double count = null;
         Double sum = null;
         Double max = null;
-        
+
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
-            
+
             if (metricName.startsWith(validationMetricPrefix)) {
                 if (metricName.contains("_count") && metricName.contains("getBearerTokenResult")) {
                     count = value;
@@ -282,15 +283,15 @@ public class SimpleMetricsExporter {
                 }
             }
         }
-        
+
         // Create validation metrics if we have data
         if (count != null && sum != null && max != null && count > 0) {
             StepPercentileData data = new StepPercentileData();
             data.count = count.longValue();
-            
+
             // Calculate average in microseconds
             double avgMicros = (sum / count) * 1_000_000;
-            
+
             // Estimate percentiles based on available data
             // For a simple estimation:
             // - p50 ≈ average (reasonable for symmetric distributions)
@@ -324,10 +325,10 @@ public class SimpleMetricsExporter {
             timedMetrics.put(measurementType.toLowerCase(), metric);
         }
 
-        LOGGER.info("Extracted {} timed metrics with count={}, avg={}μs", 
-                    timedMetrics.size(), 
-                    count != null ? count.longValue() : 0,
-                    count != null && count > 0 ? String.format("%.2f", (sum / count) * 1_000_000) : "N/A");
+        LOGGER.info("Extracted {} timed metrics with count={}, avg={}μs",
+                timedMetrics.size(),
+                count != null ? count.longValue() : 0,
+                count != null && count > 0 ? "%.2f".formatted((sum / count) * 1_000_000) : "N/A");
         return timedMetrics;
     }
 

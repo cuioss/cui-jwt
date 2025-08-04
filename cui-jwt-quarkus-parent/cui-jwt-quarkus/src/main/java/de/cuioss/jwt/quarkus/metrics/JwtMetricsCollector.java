@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
 
 /**
  * Collects JWT validation metrics from {@link SecurityEventCounter} and exposes them as Micrometer metrics.
@@ -127,7 +126,7 @@ public class JwtMetricsCollector {
         // For each event type, create appropriate counters
         for (SecurityEventCounter.EventType eventType : SecurityEventCounter.EventType.values()) {
             EventCategory category = eventType.getCategory();
-            
+
             if (category == null) {
                 // Success events (no category) - register as success metrics
                 Tags tags = Tags.of(

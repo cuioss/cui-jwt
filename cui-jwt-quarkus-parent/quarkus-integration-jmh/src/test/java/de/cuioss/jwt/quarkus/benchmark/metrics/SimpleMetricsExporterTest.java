@@ -74,7 +74,7 @@ class SimpleMetricsExporterTest {
             assertTrue(validation.containsKey("p50_us"));
             assertTrue(validation.containsKey("p95_us"));
             assertTrue(validation.containsKey("p99_us"));
-            
+
             // Check security event metrics
             Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
             assertTrue(securityMetrics.containsKey("total_errors"));
@@ -143,7 +143,7 @@ class SimpleMetricsExporterTest {
         assertTrue(jsonContent.contains("\"p50_us\":"), "Should contain p50_us fields");
         assertTrue(jsonContent.contains("\"p95_us\":"), "Should contain p95_us fields");
         assertTrue(jsonContent.contains("\"p99_us\":"), "Should contain p99_us fields");
-        
+
         // Bearer token validation metrics should be present
         assertTrue(jsonContent.contains("\"validation\""), "Should contain bearer token validation metrics");
         assertTrue(jsonContent.contains("\"bearer_token_producer_metrics\""), "Should contain bearer token producer metrics");
@@ -199,8 +199,8 @@ class SimpleMetricsExporterTest {
         Map<String, Object> httpMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
 
         // Check for new @Timed metrics structure - validation only (extraction removed)
-        assertTrue(httpMetrics.containsKey("validation"), 
-                   "Should contain validation metric");
+        assertTrue(httpMetrics.containsKey("validation"),
+                "Should contain validation metric");
 
         // Check validation metric structure
         Map<String, Object> validation = (Map<String, Object>) httpMetrics.get("validation");
@@ -208,11 +208,11 @@ class SimpleMetricsExporterTest {
         assertTrue(validation.containsKey("p50_us"));
         assertTrue(validation.containsKey("p95_us"));
         assertTrue(validation.containsKey("p99_us"));
-        
+
         // Verify that we have actual data (from the new test file with real metrics)
         Double sampleCount = (Double) validation.get("sample_count");
         assertTrue(sampleCount > 0, "Bearer token validation should have sample count > 0");
-        
+
         // Check security event metrics
         Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
         assertNotNull(securityMetrics, "Should have security event counter metrics");
@@ -220,7 +220,7 @@ class SimpleMetricsExporterTest {
         assertTrue(securityMetrics.containsKey("total_success"));
         assertTrue(securityMetrics.containsKey("errors_by_category"));
         assertTrue(securityMetrics.containsKey("success_by_type"));
-        
+
         // Verify we have the MISSING_CLAIM error from the test data (169356.0)
         Object totalErrorsObj = securityMetrics.get("total_errors");
         assertTrue(totalErrorsObj instanceof Number, "total_errors should be a number");

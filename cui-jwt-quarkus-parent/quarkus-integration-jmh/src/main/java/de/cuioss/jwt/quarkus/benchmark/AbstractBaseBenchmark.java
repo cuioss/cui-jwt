@@ -15,10 +15,10 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import org.openjdk.jmh.annotations.*;
 
 import java.io.IOException;
@@ -85,7 +85,7 @@ public abstract class AbstractBaseBenchmark {
     /**
      * Creates a basic HTTP request builder with common headers.
      *
-     * @param uri the URI to send the request to
+     * @param path the URI to send the request to
      * @return configured request builder
      */
     protected HttpRequest.Builder createBaseRequest(String path) {
@@ -107,7 +107,6 @@ public abstract class AbstractBaseBenchmark {
     protected HttpResponse<String> sendRequest(HttpRequest request) throws IOException, InterruptedException {
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
-
 
 
     /**

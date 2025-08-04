@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.metrics;
 
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;

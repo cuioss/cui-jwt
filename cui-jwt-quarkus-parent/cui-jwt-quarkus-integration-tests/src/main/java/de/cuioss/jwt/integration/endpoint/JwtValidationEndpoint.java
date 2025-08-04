@@ -21,9 +21,10 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -31,9 +32,6 @@ import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 
 /**
  * REST endpoint for JWT validation operations.

@@ -56,7 +56,7 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
         try {
             String metricsUrl = quarkusUrl + "/q/metrics";
-            
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(metricsUrl))
                     .timeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
