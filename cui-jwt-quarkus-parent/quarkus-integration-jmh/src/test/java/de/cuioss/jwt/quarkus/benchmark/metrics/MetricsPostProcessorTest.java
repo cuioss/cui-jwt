@@ -48,8 +48,8 @@ class MetricsPostProcessorTest {
     }
 
     @Test
-    @DisplayName("Should parse all three endpoint types")
-    void shouldParseAllThreeEndpointTypes() throws IOException {
+    @DisplayName("Should parse all endpoint types")
+    void shouldParseAllEndpointTypes() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
@@ -62,12 +62,12 @@ class MetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertTrue(metrics.containsKey("jwt_validation"));
-            assertTrue(metrics.containsKey("echo"));
             assertTrue(metrics.containsKey("health"));
-            assertEquals(3, metrics.size());
+            assertEquals(2, metrics.size());
         }
     }
 
@@ -83,13 +83,16 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
-            Map<String, Object> echoMetrics = (Map<String, Object>) metrics.get("echo");
-            assertNotNull(echoMetrics);
-            assertEquals("Echo", echoMetrics.get("name"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
+            assertNotNull(healthMetrics);
+            assertEquals("Health Check", healthMetrics.get("name"));
 
-            Map<String, Object> percentiles = (Map<String, Object>) echoMetrics.get("percentiles");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> percentiles = (Map<String, Object>) healthMetrics.get("percentiles");
             assertNotNull(percentiles);
 
             assertTrue(percentiles.containsKey("p50_us"));
@@ -117,7 +120,8 @@ class MetricsPostProcessorTest {
 
         assertFalse(jsonContent.contains(".0\""));
 
-        Map<String, Object> parsed = gson.fromJson(jsonContent, Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> parsed = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
         assertTrue(parsed.size() >= 1);
     }
@@ -134,9 +138,11 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             for (String endpointType : metrics.keySet()) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
 
                 assertTrue(endpointData.containsKey("sample_count"));
@@ -161,14 +167,10 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
-            Map<String, Object> echoMetrics = (Map<String, Object>) metrics.get("echo");
-            assertNotNull(echoMetrics);
-
-            // Should sum up: 100 + 200 = 300 samples from two iterations
-            assertEquals(300.0, echoMetrics.get("sample_count"));
-
+            @SuppressWarnings("unchecked")
             Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
             assertNotNull(healthMetrics);
 
@@ -190,9 +192,11 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             for (String endpointType : metrics.keySet()) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
 
                 assertEquals(testTimestamp.toString(), endpointData.get("timestamp"));
@@ -220,11 +224,13 @@ class MetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertFalse(metrics.isEmpty());
 
             for (String endpointType : metrics.keySet()) {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
                 String source = (String) endpointData.get("source");
                 assertTrue(source.contains("sample mode"));
@@ -260,7 +266,8 @@ class MetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
             assertFalse(metrics.isEmpty());
         }
     }
@@ -270,35 +277,6 @@ class MetricsPostProcessorTest {
 
         String testData = """
         [
-            {
-                "jmhVersion": "1.37",
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtEchoBenchmark.echoComprehensive",
-                "mode": "sample",
-                "threads": 1,
-                "forks": 1,
-                "primaryMetric": {
-                    "score": 9.150612945454549,
-                    "scorePercentiles": {
-                        "0.0": 5.226496,
-                        "50.0": 8.318976,
-                        "90.0": 13.198950400000001,
-                        "95.0": 14.766079999999999,
-                        "99.0": 26.88860160000001,
-                        "99.9": 28.213248,
-                        "100.0": 28.213248
-                    },
-                    "scoreUnit": "ms/op",
-                    "rawDataHistogram": [
-                        [
-                            [
-                                [5.226496, 1],
-                                [8.318976, 50],
-                                [28.213248, 1]
-                            ]
-                        ]
-                    ]
-                }
-            },
             {
                 "jmhVersion": "1.37",
                 "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
@@ -373,7 +351,7 @@ class MetricsPostProcessorTest {
         String testData = """
         [
             {
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtEchoBenchmark.echoComprehensive",
+                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
                 "mode": "thrpt",
                 "primaryMetric": {
                     "score": 1000.0,
@@ -381,7 +359,7 @@ class MetricsPostProcessorTest {
                 }
             },
             {
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtEchoBenchmark.echoComprehensive",
+                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
                 "mode": "sample",
                 "primaryMetric": {
                     "score": 8.5,
@@ -415,29 +393,6 @@ class MetricsPostProcessorTest {
 
         String testData = """
         [
-            {
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtEchoBenchmark.echoComprehensive",
-                "mode": "sample",
-                "primaryMetric": {
-                    "score": 8.5,
-                    "scorePercentiles": {
-                        "50.0": 8.3,
-                        "95.0": 14.7,
-                        "99.0": 26.9
-                    },
-                    "scoreUnit": "ms/op",
-                    "rawDataHistogram": [
-                        [
-                            [
-                                [8.3, 100]
-                            ],
-                            [
-                                [8.5, 200]
-                            ]
-                        ]
-                    ]
-                }
-            },
             {
                 "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
                 "mode": "sample",

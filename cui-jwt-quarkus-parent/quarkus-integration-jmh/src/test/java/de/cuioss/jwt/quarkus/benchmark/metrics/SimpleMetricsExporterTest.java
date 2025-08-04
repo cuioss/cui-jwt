@@ -162,12 +162,10 @@ class SimpleMetricsExporterTest {
         SimpleMetricsExporter filteringExporter = new SimpleMetricsExporter(tempDir.toString(), multiTypeFetcher);
 
         // Act
-        filteringExporter.exportJwtValidationMetrics("JwtEchoBenchmark.echoGetThroughput", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtHealthBenchmark.healthCheckLatency", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateJwtThroughput", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateAccessTokenLatency", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
-        filteringExporter.exportJwtValidationMetrics("JwtEcho", Instant.now());
         filteringExporter.exportJwtValidationMetrics("JwtHealth", Instant.now());
 
         // Assert
@@ -177,12 +175,11 @@ class SimpleMetricsExporterTest {
         assertTrue(jsonContent.contains("\"validateJwtThroughput\""));
         assertTrue(jsonContent.contains("\"validateAccessTokenLatency\""));
 
-        assertFalse(jsonContent.contains("\"JwtEcho\""));
         assertFalse(jsonContent.contains("\"JwtHealth\""));
-        assertFalse(jsonContent.contains("\"echoGetThroughput\""));
         assertFalse(jsonContent.contains("\"healthCheckLatency\""));
 
-        Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> aggregatedData = (Map<String, Object>) gson.fromJson(new FileReader(aggregatedFile), Map.class);
         assertEquals(3, aggregatedData.size());
     }
 

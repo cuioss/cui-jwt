@@ -35,15 +35,14 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>For benchmarks that require JWT authentication, use {@link AbstractIntegrationBenchmark} instead.</p>
  *
+ * <p>Benchmark execution parameters (iterations, threads, warmup, etc.) are configured dynamically
+ * via {@link BenchmarkRunner} and {@link BenchmarkOptionsHelper} using system properties.</p>
+ *
  * @since 1.0
  */
 @BenchmarkMode(Mode.All)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-@Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 2, time = 5, timeUnit = TimeUnit.SECONDS)
-@Fork(1)
-@Threads(10)
 public abstract class AbstractBaseBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractBaseBenchmark.class);

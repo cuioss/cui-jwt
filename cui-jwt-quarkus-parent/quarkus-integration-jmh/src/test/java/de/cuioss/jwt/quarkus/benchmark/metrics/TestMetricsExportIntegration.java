@@ -54,7 +54,6 @@ public class TestMetricsExportIntegration {
                 "JwtValidationBenchmark.validateAccessTokenThroughput",
                 "JwtValidationBenchmark.validateIdTokenThroughput",
                 "JwtValidationBenchmark.validateJwtLatency",
-                "JwtEchoBenchmark.echoGetThroughput",  // Should be filtered out
                 "JwtHealthBenchmark.healthCheckLatency" // Should be filtered out
         };
 
@@ -75,7 +74,6 @@ public class TestMetricsExportIntegration {
             JsonObject json = GSON.fromJson(new FileReader(resultFile), JsonObject.class);
             LOGGER.info("\nVerification:");
             LOGGER.info("- Number of benchmarks: %s", json.size());
-            LOGGER.info("- Contains JwtEchoBenchmark: %s", json.has("echoGetThroughput"));
             LOGGER.info("- Contains JwtHealthBenchmark: %s", json.has("healthCheckLatency"));
 
             // Check one benchmark in detail

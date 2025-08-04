@@ -87,9 +87,9 @@ public class QuarkusMetricsPostProcessor {
             throw new IOException("Metrics download directory not found: " + metricsDownloadDirectory);
         }
 
-        // Find all metrics files (jwt-echo-metrics.txt, jwt-health-metrics.txt, jwt-validation-metrics.txt, finalcumulativemetrics-*.txt)
+        // Find all metrics files (jwt-health-metrics.txt, jwt-validation-metrics.txt, finalcumulativemetrics-*.txt)
         File[] metricsFiles = metricsDir.listFiles((dir, name) ->
-                name.endsWith("-metrics.txt") && (name.contains("jwt-echo") || name.contains("jwt-health") ||
+                name.endsWith("-metrics.txt") && (name.contains("jwt-health") ||
                         name.contains("jwt-validation") || name.contains("finalcumulativemetrics")));
 
         if (metricsFiles == null || metricsFiles.length == 0) {

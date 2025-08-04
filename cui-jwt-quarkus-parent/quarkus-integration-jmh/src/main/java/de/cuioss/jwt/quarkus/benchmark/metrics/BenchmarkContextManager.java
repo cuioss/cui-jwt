@@ -190,8 +190,6 @@ public class BenchmarkContextManager {
 
         if (isValidationBenchmark(lowerName)) {
             return "jwt-validation";
-        } else if (isEchoBenchmark(lowerName)) {
-            return "jwt-echo";
         } else if (isHealthBenchmark(lowerName)) {
             return "jwt-health";
         } else if (lowerName.contains("jwt")) {
@@ -207,10 +205,6 @@ public class BenchmarkContextManager {
                 lowerName.contains("validateaccess") || lowerName.contains("validateid");
     }
 
-    private static boolean isEchoBenchmark(String lowerName) {
-        return "jwtecho".equals(lowerName) || lowerName.contains("jwtecho") ||
-                (lowerName.contains("echo") && lowerName.contains("jwt"));
-    }
 
     private static boolean isHealthBenchmark(String lowerName) {
         return "jwthealth".equals(lowerName) || lowerName.contains("jwthealth") ||
@@ -266,8 +260,6 @@ public class BenchmarkContextManager {
         String classPath = System.getProperty("java.class.path", "");
         if (classPath.contains("JwtValidation")) {
             return "jwt-validation";
-        } else if (classPath.contains("JwtEcho")) {
-            return "echo";
         } else if (classPath.contains("JwtHealth")) {
             return "health";
         }
@@ -291,8 +283,6 @@ public class BenchmarkContextManager {
     private static String extractTypeFromBenchmarkClass(String className) {
         if (className.contains("JwtValidation")) {
             return "jwt-validation";
-        } else if (className.contains("JwtEcho")) {
-            return "echo";
         } else if (className.contains("JwtHealth")) {
             return "health";
         } else if (className.contains("Benchmark")) {
@@ -381,7 +371,7 @@ public class BenchmarkContextManager {
     /**
      * Gets a metrics file in target/metrics-download.
      * Format: {benchmarkType}-metrics.txt
-     * Example: jwt-echo-metrics.txt, jwt-health-metrics.txt, jwt-validation-metrics.txt
+     * Example: jwt-health-metrics.txt, jwt-validation-metrics.txt
      *
      * @return File object for the metrics file
      */

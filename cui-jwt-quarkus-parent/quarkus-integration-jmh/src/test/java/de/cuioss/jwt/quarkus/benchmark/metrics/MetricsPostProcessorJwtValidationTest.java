@@ -88,10 +88,9 @@ class MetricsPostProcessorJwtValidationTest {
         // When - parse combined benchmark results
         Map<String, MetricsPostProcessor.HttpEndpointMetrics> endpointMetrics = parser.parseBenchmarkResults(combinedBenchmarkData);
 
-        // Then - should contain all three endpoint types
-        assertEquals(3, endpointMetrics.size(), "Should contain all three endpoint types");
+        // Then - should contain all endpoint types
+        assertEquals(2, endpointMetrics.size(), "Should contain all endpoint types");
         assertTrue(endpointMetrics.containsKey("jwt_validation"), "Should contain JWT validation");
-        assertTrue(endpointMetrics.containsKey("echo"), "Should contain echo");
         assertTrue(endpointMetrics.containsKey("health"), "Should contain health");
 
         // Generate output file
@@ -133,18 +132,20 @@ class MetricsPostProcessorJwtValidationTest {
 
         // Verify complete output
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> completeMetrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> completeMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
-            // Should have all three endpoint types
+            // Should have all endpoint types
             assertTrue(completeMetrics.containsKey("jwt_validation"));
-            assertTrue(completeMetrics.containsKey("echo"));
             assertTrue(completeMetrics.containsKey("health"));
 
             // Verify JWT validation data
+            @SuppressWarnings("unchecked")
             Map<String, Object> jwtData = (Map<String, Object>) completeMetrics.get("jwt_validation");
             assertEquals("JWT Validation", jwtData.get("name"));
             assertTrue(jwtData.containsKey("percentiles"));
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> jwtPercentiles = (Map<String, Object>) jwtData.get("percentiles");
             assertTrue(jwtPercentiles.containsKey("p50_ms"));
             assertTrue(jwtPercentiles.containsKey("p95_ms"));
@@ -190,7 +191,7 @@ class MetricsPostProcessorJwtValidationTest {
     }
 
     private String createCombinedBenchmarkData() throws IOException {
-        // Combine JWT validation, echo, and health sample mode data
+        // Combine JWT validation and health sample mode data
         String jwtData = Files.readString(Path.of(jwtValidationBenchmarkFile));
         String realData = Files.readString(Path.of("src/test/resources/integration-benchmark-result.json"));
 
@@ -205,10 +206,11 @@ class MetricsPostProcessorJwtValidationTest {
             combined.add(element);
         }
 
-        // Add sample mode benchmarks from real data (echo and health)
+        // Add sample mode benchmarks from real data (health only)
         for (JsonElement element : realBenchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            if ("sample".equals(benchmark.get("mode").getAsString())) {
+            if ("sample".equals(benchmark.get("mode").getAsString()) && 
+                !benchmark.get("benchmark").getAsString().contains("JwtEchoBenchmark")) {
                 combined.add(element);
             }
         }

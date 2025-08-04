@@ -26,7 +26,7 @@ import java.net.http.HttpResponse;
 
 /**
  * Benchmark class for JWT validation endpoints against live Quarkus service.
- * Tests various JWT validation scenarios including success and error cases.
+ * Tests successful JWT validation scenario.
  *
  * @since 1.0
  */
@@ -47,35 +47,5 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
 
         HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
-    }
-
-    /**
-     * Benchmark for validation with missing Authorization header.
-     * Tests error handling for requests without authentication.
-     */
-    @Benchmark
-    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
-    public void validateMissingAuthHeader() throws IOException, InterruptedException {
-        HttpRequest request = createBaseRequest(PATH)
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 401);
-    }
-
-    /**
-     * Benchmark for validation with invalid/malformed tokens.
-     * Tests error handling for malformed JWT tokens.
-     */
-    @Benchmark
-    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
-    public void validateInvalidToken() throws IOException, InterruptedException {
-        HttpRequest request = createAuthenticatedRequest(PATH, tokenRepository.getInvalidToken())
-                .POST(HttpRequest.BodyPublishers.noBody())
-                .build();
-
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 401);
     }
 }

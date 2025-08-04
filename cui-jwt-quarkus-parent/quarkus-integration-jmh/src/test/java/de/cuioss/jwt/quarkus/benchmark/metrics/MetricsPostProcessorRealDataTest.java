@@ -63,20 +63,9 @@ class MetricsPostProcessorRealDataTest {
         // Then - should parse expected endpoint types from real data
         assertFalse(endpointMetrics.isEmpty(), "Should parse metrics from real benchmark data");
 
-        // Based on the real data, we expect Echo, Health, and JWT Validation endpoints
-        assertTrue(endpointMetrics.containsKey("echo"), "Should contain echo metrics from real data");
+        // Based on the real data, we expect Health and JWT Validation endpoints
         assertTrue(endpointMetrics.containsKey("health"), "Should contain health metrics from real data");
         assertTrue(endpointMetrics.containsKey("jwt_validation"), "Should contain JWT validation metrics from real data");
-
-        // Verify echo endpoint metrics
-        MetricsPostProcessor.HttpEndpointMetrics echoMetrics = endpointMetrics.get("echo");
-        assertNotNull(echoMetrics);
-        assertEquals("Echo", echoMetrics.getDisplayName());
-        assertTrue(echoMetrics.getSampleCount() > 0, "Echo should have sample count > 0");
-        assertTrue(echoMetrics.getP50() > 0, "Echo p50 should be > 0");
-        assertTrue(echoMetrics.getP95() > 0, "Echo p95 should be > 0");
-        assertTrue(echoMetrics.getP99() > 0, "Echo p99 should be > 0");
-        assertTrue(echoMetrics.getSourceBenchmark().contains("JwtEchoBenchmark"));
 
         // Verify health endpoint metrics
         MetricsPostProcessor.HttpEndpointMetrics healthMetrics = endpointMetrics.get("health");
@@ -98,8 +87,6 @@ class MetricsPostProcessorRealDataTest {
         assertTrue(jwtMetrics.getP99() > 0, "JWT validation p99 should be > 0");
         assertTrue(jwtMetrics.getSourceBenchmark().contains("JwtValidationBenchmark"));
 
-        LOGGER.debug("Echo metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
-                echoMetrics.getSampleCount(), echoMetrics.getP50(), echoMetrics.getP95(), echoMetrics.getP99());
         LOGGER.debug("Health metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
                 healthMetrics.getSampleCount(), healthMetrics.getP50(), healthMetrics.getP95(), healthMetrics.getP99());
         LOGGER.debug("JWT Validation metrics - samples: %s, p50: %sms, p95: %sms, p99: %sms",
@@ -120,27 +107,15 @@ class MetricsPostProcessorRealDataTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             // Should contain endpoints from real data
-            assertTrue(metrics.containsKey("echo"), "Should contain echo from real data");
             assertTrue(metrics.containsKey("health"), "Should contain health from real data");
             assertTrue(metrics.containsKey("jwt_validation"), "Should contain JWT validation from real data");
 
-            // Verify echo data structure
-            Map<String, Object> echoData = (Map<String, Object>) metrics.get("echo");
-            assertEquals("Echo", echoData.get("name"));
-            assertEquals(testTimestamp.toString(), echoData.get("timestamp"));
-            assertTrue(echoData.containsKey("sample_count"));
-            assertTrue(echoData.containsKey("percentiles"));
-            assertTrue(((String) echoData.get("source")).contains("JMH benchmark"));
-
-            Map<String, Object> echoPercentiles = (Map<String, Object>) echoData.get("percentiles");
-            assertTrue(echoPercentiles.containsKey("p50_us"));
-            assertTrue(echoPercentiles.containsKey("p95_us"));
-            assertTrue(echoPercentiles.containsKey("p99_us"));
-
             // Verify health data structure
+            @SuppressWarnings("unchecked")
             Map<String, Object> healthData = (Map<String, Object>) metrics.get("health");
             assertEquals("Health Check", healthData.get("name"));
             assertEquals(testTimestamp.toString(), healthData.get("timestamp"));
@@ -165,7 +140,8 @@ class MetricsPostProcessorRealDataTest {
         LOGGER.debug("Real data JSON content:\n%s", jsonContent);
 
         // Parse to verify structure
-        Map<String, Object> metrics = gson.fromJson(jsonContent, Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
         assertFalse(metrics.isEmpty(), "Should have parsed real data");
 
         // Verify number formatting in JSON content
@@ -174,7 +150,9 @@ class MetricsPostProcessorRealDataTest {
 
         // Verify that all percentiles are properly formatted numbers
         for (String endpointType : metrics.keySet()) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
+            @SuppressWarnings("unchecked")
             Map<String, Object> percentiles = (Map<String, Object>) endpointData.get("percentiles");
 
             for (String percentile : percentiles.keySet()) {
@@ -198,18 +176,6 @@ class MetricsPostProcessorRealDataTest {
         Map<String, MetricsPostProcessor.HttpEndpointMetrics> endpointMetrics = parser.parseBenchmarkResults(jsonContent);
 
         // Then - verify specific values are reasonable for HTTP roundtrip times
-        if (endpointMetrics.containsKey("echo")) {
-            MetricsPostProcessor.HttpEndpointMetrics echoMetrics = endpointMetrics.get("echo");
-
-            // HTTP roundtrip times should be in reasonable millisecond ranges
-            assertTrue(echoMetrics.getP50() > 1.0 && echoMetrics.getP50() < 100.0,
-                    "Echo p50 should be reasonable HTTP roundtrip time (1-100ms): " + echoMetrics.getP50());
-            assertTrue(echoMetrics.getP95() > echoMetrics.getP50(),
-                    "Echo p95 should be > p50: p95=" + echoMetrics.getP95() + ", p50=" + echoMetrics.getP50());
-            assertTrue(echoMetrics.getP99() > echoMetrics.getP95(),
-                    "Echo p99 should be > p95: p99=" + echoMetrics.getP99() + ", p95=" + echoMetrics.getP95());
-        }
-
         if (endpointMetrics.containsKey("health")) {
             MetricsPostProcessor.HttpEndpointMetrics healthMetrics = endpointMetrics.get("health");
 
@@ -282,9 +248,6 @@ class MetricsPostProcessorRealDataTest {
         Map<String, MetricsPostProcessor.HttpEndpointMetrics> endpointMetrics = parser.parseBenchmarkResults(jsonContent);
 
         // Then - verify display names are user-friendly
-        if (endpointMetrics.containsKey("echo")) {
-            assertEquals("Echo", endpointMetrics.get("echo").getDisplayName());
-        }
         if (endpointMetrics.containsKey("health")) {
             assertEquals("Health Check", endpointMetrics.get("health").getDisplayName());
         }

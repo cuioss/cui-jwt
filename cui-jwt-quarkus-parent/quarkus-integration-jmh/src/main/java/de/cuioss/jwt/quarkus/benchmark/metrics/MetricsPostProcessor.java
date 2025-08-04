@@ -73,7 +73,7 @@ public class MetricsPostProcessor {
 
     /**
      * Parse JMH benchmark results and generate http-metrics.json with roundtrip times
-     * for JWT validation, echo, and health endpoints.
+     * for JWT validation and health endpoints.
      *
      * @param timestamp Timestamp for the metrics output
      * @throws IOException if file operations fail
@@ -195,8 +195,6 @@ public class MetricsPostProcessor {
     private String determineEndpointType(String benchmarkName) {
         if (benchmarkName.contains("JwtValidationBenchmark")) {
             return "jwt_validation";
-        } else if (benchmarkName.contains("JwtEchoBenchmark")) {
-            return "echo";
         } else if (benchmarkName.contains("JwtHealthBenchmark")) {
             return "health";
         }
@@ -206,7 +204,6 @@ public class MetricsPostProcessor {
     private String getEndpointDisplayName(String endpointType) {
         return switch (endpointType) {
             case "jwt_validation" -> "JWT Validation";
-            case "echo" -> "Echo";
             case "health" -> "Health Check";
             default -> endpointType;
         };

@@ -64,28 +64,32 @@ class ComprehensiveMetricsPostProcessorTest {
         assertTrue(quarkusMetricsFile.exists(), "Should create quarkus-metrics.json");
 
         try (FileReader reader = new FileReader(httpMetricsFile)) {
-            Map<String, Object> httpMetrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
-            assertTrue(httpMetrics.containsKey("echo"));
             assertTrue(httpMetrics.containsKey("health"));
             assertTrue(httpMetrics.containsKey("jwt_validation"));
 
-            Map<String, Object> echoData = (Map<String, Object>) httpMetrics.get("echo");
-            assertEquals(testTimestamp.toString(), echoData.get("timestamp"));
-            assertTrue(echoData.containsKey("percentiles"));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> healthData = (Map<String, Object>) httpMetrics.get("health");
+            assertEquals(testTimestamp.toString(), healthData.get("timestamp"));
+            assertTrue(healthData.containsKey("percentiles"));
         }
 
         try (FileReader reader = new FileReader(quarkusMetricsFile)) {
-            Map<String, Object> quarkusMetrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> quarkusMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertTrue(quarkusMetrics.containsKey("cpu"));
             assertTrue(quarkusMetrics.containsKey("memory"));
             assertTrue(quarkusMetrics.containsKey("metadata"));
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> cpuData = (Map<String, Object>) quarkusMetrics.get("cpu");
             assertTrue(cpuData.containsKey("system_cpu_usage_avg"));
             assertTrue(cpuData.containsKey("cpu_count"));
 
+            @SuppressWarnings("unchecked")
             Map<String, Object> memoryData = (Map<String, Object>) quarkusMetrics.get("memory");
             assertTrue(memoryData.containsKey("heap"));
             assertTrue(memoryData.containsKey("nonheap"));
@@ -111,7 +115,8 @@ class ComprehensiveMetricsPostProcessorTest {
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json if metrics-download missing");
 
         try (FileReader reader = new FileReader(httpMetricsFile)) {
-            Map<String, Object> httpMetrics = gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
             assertFalse(httpMetrics.isEmpty());
         }
     }
@@ -135,14 +140,20 @@ class ComprehensiveMetricsPostProcessorTest {
         try (FileReader httpReader = new FileReader(httpMetricsFile);
              FileReader quarkusReader = new FileReader(quarkusMetricsFile)) {
 
-            Map<String, Object> httpMetrics = gson.fromJson(httpReader, Map.class);
-            Map<String, Object> quarkusMetrics = gson.fromJson(quarkusReader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(httpReader, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> quarkusMetrics = (Map<String, Object>) gson.fromJson(quarkusReader, Map.class);
 
             assertFalse(httpMetrics.isEmpty());
             assertFalse(quarkusMetrics.isEmpty());
 
-            String httpTimestamp = (String) ((Map<String, Object>) httpMetrics.get("echo")).get("timestamp");
-            String quarkusTimestamp = (String) ((Map<String, Object>) quarkusMetrics.get("metadata")).get("timestamp");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> healthMap = (Map<String, Object>) httpMetrics.get("health");
+            String httpTimestamp = (String) healthMap.get("timestamp");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metadataMap = (Map<String, Object>) quarkusMetrics.get("metadata");
+            String quarkusTimestamp = (String) metadataMap.get("timestamp");
 
             assertNotNull(httpTimestamp);
             assertNotNull(quarkusTimestamp);
@@ -203,24 +214,6 @@ class ComprehensiveMetricsPostProcessorTest {
 
         String benchmarkData = """
             [
-                {
-                    "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtEchoBenchmark.echoComprehensive",
-                    "mode": "sample",
-                    "primaryMetric": {
-                        "scorePercentiles": {
-                            "50.0": 8.5,
-                            "95.0": 15.2,
-                            "99.0": 28.1
-                        },
-                        "rawDataHistogram": [
-                            [
-                                [
-                                    [8.5, 50]
-                                ]
-                            ]
-                        ]
-                    }
-                },
                 {
                     "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
                     "mode": "sample",

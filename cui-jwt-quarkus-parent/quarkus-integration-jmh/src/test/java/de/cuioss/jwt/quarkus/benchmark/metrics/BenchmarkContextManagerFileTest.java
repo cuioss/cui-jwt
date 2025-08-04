@@ -47,35 +47,28 @@ class BenchmarkContextManagerFileTest {
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
         File file1 = BenchmarkContextManager.getMetricsFile();
 
-        BenchmarkContextManager.setBenchmarkContext("jwt-echo");
-        File file2 = BenchmarkContextManager.getMetricsFile();
-
         BenchmarkContextManager.setBenchmarkContext("jwt-health");
-        File file3 = BenchmarkContextManager.getMetricsFile();
+        File file2 = BenchmarkContextManager.getMetricsFile();
 
         // Assert
         String file1Name = file1.getName();
         String file2Name = file2.getName();
-        String file3Name = file3.getName();
 
         assertEquals("jwt-validation-metrics.txt", file1Name,
                 "Validation should be jwt-validation-metrics.txt");
-        assertEquals("jwt-echo-metrics.txt", file2Name,
-                "Echo should be jwt-echo-metrics.txt");
-        assertEquals("jwt-health-metrics.txt", file3Name,
+        assertEquals("jwt-health-metrics.txt", file2Name,
                 "Health should be jwt-health-metrics.txt");
 
         BenchmarkContextManager.setBenchmarkContext("jwt-validation");
-        File file4 = BenchmarkContextManager.getMetricsFile();
-        String file4Name = file4.getName();
+        File file3 = BenchmarkContextManager.getMetricsFile();
+        String file3Name = file3.getName();
 
-        assertEquals("jwt-validation-metrics.txt", file4Name,
+        assertEquals("jwt-validation-metrics.txt", file3Name,
                 "Same type should always get the same file name");
 
         assertTrue(file1.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
         assertTrue(file2.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
         assertTrue(file3.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
-        assertTrue(file4.getAbsolutePath().contains("target" + File.separator + "metrics-download"));
     }
 
     @Test
@@ -84,13 +77,11 @@ class BenchmarkContextManagerFileTest {
         // Arrange
         String[] benchmarkNames = {
                 "JwtValidation",
-                "JwtEcho",
                 "JwtHealth"
         };
 
         String[] expectedFileNames = {
                 "jwt-validation-metrics.txt",
-                "jwt-echo-metrics.txt",
                 "jwt-health-metrics.txt"
         };
 
@@ -130,9 +121,9 @@ class BenchmarkContextManagerFileTest {
         File file1 = BenchmarkContextManager.getMetricsFile();
         assertEquals("jwt-validation-metrics.txt", file1.getName());
 
-        BenchmarkContextManager.setBenchmarkContext("jwt-echo");
+        BenchmarkContextManager.setBenchmarkContext("jwt-health");
         File file2 = BenchmarkContextManager.getMetricsFile();
-        assertEquals("jwt-echo-metrics.txt", file2.getName());
+        assertEquals("jwt-health-metrics.txt", file2.getName());
 
         // Act
         BenchmarkContextManager.resetForTesting();
