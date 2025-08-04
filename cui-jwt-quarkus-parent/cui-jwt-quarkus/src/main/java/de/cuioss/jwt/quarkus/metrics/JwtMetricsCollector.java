@@ -50,13 +50,14 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
  * for filtering:
  * <ul>
  *   <li>cui.jwt.validation.errors - Counter for validation errors by type</li>
+ *   <li>cui.jwt.validation.success - Counter for successful operations by type</li>
  * </ul>
  * <p>
  * Security event metrics include tags:
  * <ul>
  *   <li>event_type - The type of security event</li>
- *   <li>result - The validation result (failure)</li>
- *   <li>category - The category of event (structure, signature, semantic)</li>
+ *   <li>result - The validation result (success or failure)</li>
+ *   <li>category - The category of event (structure, signature, semantic) - only for failures</li>
  * </ul>
  */
 @ApplicationScoped
@@ -65,12 +66,12 @@ public class JwtMetricsCollector {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwtMetricsCollector.class);
 
-    private static final String VALIDATION_ERRORS = MetricIdentifier.VALIDATION.ERRORS;
     private static final String TAG_EVENT_TYPE = "event_type";
     private static final String TAG_RESULT = "result";
     private static final String TAG_CATEGORY = "category";
 
     private static final String RESULT_FAILURE = "failure";
+    private static final String RESULT_SUCCESS = "success";
 
     private final MeterRegistry registry;
     private final TokenValidator tokenValidator;
@@ -120,34 +121,45 @@ public class JwtMetricsCollector {
 
     /**
      * Registers counters for all security event types.
-     *
+     * Creates both success and failure counters as appropriate.
      */
     private void registerEventCounters() {
-        // For each event type, create a counter with appropriate tags
+        // For each event type, create appropriate counters
         for (SecurityEventCounter.EventType eventType : SecurityEventCounter.EventType.values()) {
-            // Create tags for this event type
-            Tags tags = Tags.of(
-                    Tag.of(TAG_EVENT_TYPE, eventType.name()),
-                    Tag.of(TAG_RESULT, RESULT_FAILURE)
-            );
-
-            // Add category tag if available
             EventCategory category = eventType.getCategory();
-            if (category != null) {
-                tags = tags.and(Tag.of(TAG_CATEGORY, category.name()));
+            
+            if (category == null) {
+                // Success events (no category) - register as success metrics
+                Tags tags = Tags.of(
+                        Tag.of(TAG_EVENT_TYPE, eventType.name()),
+                        Tag.of(TAG_RESULT, RESULT_SUCCESS)
+                );
+
+                Counter counter = Counter.builder(MetricIdentifier.VALIDATION.SUCCESS)
+                        .tags(tags)
+                        .description("Number of successful JWT operations by type")
+                        .baseUnit("operations")
+                        .register(registry);
+
+                counters.put(eventType.name(), counter);
+                LOGGER.debug("Registered success counter for event type %s", eventType.name());
+            } else {
+                // Failure events (with category) - register as error metrics
+                Tags tags = Tags.of(
+                        Tag.of(TAG_EVENT_TYPE, eventType.name()),
+                        Tag.of(TAG_RESULT, RESULT_FAILURE),
+                        Tag.of(TAG_CATEGORY, category.name())
+                );
+
+                Counter counter = Counter.builder(MetricIdentifier.VALIDATION.ERRORS)
+                        .tags(tags)
+                        .description("Number of JWT validation errors by type")
+                        .baseUnit("errors")
+                        .register(registry);
+
+                counters.put(eventType.name(), counter);
+                LOGGER.debug("Registered error counter for event type %s", eventType.name());
             }
-
-            // Register the counter
-            Counter counter = Counter.builder(VALIDATION_ERRORS)
-                    .tags(tags)
-                    .description("Number of JWT validation errors by type")
-                    .baseUnit("errors")
-                    .register(registry);
-
-            // Store the counter for later updates
-            counters.put(eventType.name(), counter);
-
-            LOGGER.debug("Registered counter for event type %s", eventType.name());
         }
     }
 

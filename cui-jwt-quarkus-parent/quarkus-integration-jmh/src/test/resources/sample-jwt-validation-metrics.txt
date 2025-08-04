@@ -219,6 +219,12 @@ cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_
 cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_ROTATION_DETECTED",result="failure"} 0.0
 cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="DECODED_PART_SIZE_EXCEEDED",result="failure"} 0.0
 cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_NBF_FUTURE",result="failure"} 0.0
+# TYPE cui_jwt_validation_success counter
+# HELP cui_jwt_validation_success Number of successful JWT operations by type
+cui_jwt_validation_success_total{event_type="ACCESS_TOKEN_CREATED",result="success"} 45230.0
+cui_jwt_validation_success_total{event_type="ID_TOKEN_CREATED",result="success"} 12500.0
+cui_jwt_validation_success_total{event_type="REFRESH_TOKEN_CREATED",result="success"} 3400.0
+cui_jwt_validation_success_total{event_type="ACCESS_TOKEN_CACHE_HIT",result="success"} 18750.0
 # TYPE http_server_connections_seconds_max gauge
 # HELP http_server_connections_seconds_max The duration of the connections
 http_server_connections_seconds_max 0.039171247

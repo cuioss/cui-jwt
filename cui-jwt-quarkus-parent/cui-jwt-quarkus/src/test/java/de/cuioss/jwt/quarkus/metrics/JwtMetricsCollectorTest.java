@@ -66,17 +66,27 @@ class JwtMetricsCollectorTest {
         // Ensure collector is properly initialized
         assertNotNull(metricsCollector);
 
-        // Get counters from registry
-        Collection<Counter> counters = registry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS).counters();
+        // Get counters from registry - both error and success counters
+        Collection<Counter> errorCounters = registry.find(MetricIdentifier.VALIDATION.ERRORS).counters();
+        Collection<Counter> successCounters = registry.find(MetricIdentifier.VALIDATION.SUCCESS).counters();
 
         // Verify counters exist for all event types
-        assertFalse(counters.isEmpty(), "Should have registered counters");
+        assertFalse(errorCounters.isEmpty(), "Should have registered error counters");
+        assertFalse(successCounters.isEmpty(), "Should have registered success counters");
 
         // Verify all event types have corresponding counters
         for (EventType eventType : SecurityEventCounter.EventType.values()) {
-            boolean hasCounter = counters.stream()
-                    .anyMatch(counter -> Objects.equals(counter.getId().getTag("event_type"), eventType.name()));
-            assertTrue(hasCounter, "Should have counter for event type: " + eventType.name());
+            if (eventType.getCategory() == null) {
+                // Success events should be in success counters
+                boolean hasCounter = successCounters.stream()
+                        .anyMatch(counter -> Objects.equals(counter.getId().getTag("event_type"), eventType.name()));
+                assertTrue(hasCounter, "Should have success counter for event type: " + eventType.name());
+            } else {
+                // Error events should be in error counters
+                boolean hasCounter = errorCounters.stream()
+                        .anyMatch(counter -> Objects.equals(counter.getId().getTag("event_type"), eventType.name()));
+                assertTrue(hasCounter, "Should have error counter for event type: " + eventType.name());
+            }
         }
     }
 
@@ -96,7 +106,7 @@ class JwtMetricsCollectorTest {
         metricsCollector.updateCounters();
 
         // Verify the metric exists with the correct tags
-        boolean hasMetric = !registry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS)
+        boolean hasMetric = !registry.find(MetricIdentifier.VALIDATION.ERRORS)
                 .tag("event_type", testEventType.name())
                 .tag("result", "failure")
                 .tag("category", "INVALID_SIGNATURE")
@@ -132,7 +142,7 @@ class JwtMetricsCollectorTest {
         metricsCollector.updateCounters();
 
         // The counter should only reflect the new increment, not the old ones
-        Counter metricCounter = registry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS)
+        Counter metricCounter = registry.find(MetricIdentifier.VALIDATION.ERRORS)
                 .tag("event_type", testEventType.name())
                 .counter();
         assertNotNull(metricCounter, "Counter should exist");

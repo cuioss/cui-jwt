@@ -78,7 +78,9 @@ class SimpleMetricsExporterTest {
             // Check security event metrics
             Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
             assertTrue(securityMetrics.containsKey("total_errors"));
+            assertTrue(securityMetrics.containsKey("total_success"));
             assertTrue(securityMetrics.containsKey("errors_by_category"));
+            assertTrue(securityMetrics.containsKey("success_by_type"));
         }
     }
 
@@ -215,7 +217,9 @@ class SimpleMetricsExporterTest {
         Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
         assertNotNull(securityMetrics, "Should have security event counter metrics");
         assertTrue(securityMetrics.containsKey("total_errors"));
+        assertTrue(securityMetrics.containsKey("total_success"));
         assertTrue(securityMetrics.containsKey("errors_by_category"));
+        assertTrue(securityMetrics.containsKey("success_by_type"));
         
         // Verify we have the MISSING_CLAIM error from the test data (169356.0)
         Object totalErrorsObj = securityMetrics.get("total_errors");
@@ -250,6 +254,9 @@ class SimpleMetricsExporterTest {
             assertTrue(bearerMetrics.containsKey("validation"));
             assertNotNull(securityMetrics, "Should have security event counter metrics even with empty data");
             assertTrue(securityMetrics.containsKey("total_errors"));
+            assertTrue(securityMetrics.containsKey("total_success"));
+            assertTrue(securityMetrics.containsKey("errors_by_category"));
+            assertTrue(securityMetrics.containsKey("success_by_type"));
         }
     }
 

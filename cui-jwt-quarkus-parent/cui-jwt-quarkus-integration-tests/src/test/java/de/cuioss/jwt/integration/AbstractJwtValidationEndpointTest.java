@@ -189,4 +189,106 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             // Just verify the endpoint responds - content validation depends on actual token
         }
     }
+
+    @Test
+    @Order(99)
+    @DisplayName("Verify SecurityEventCounter metrics have sensible bounds after all tests")
+    void verifySecurityEventCounterMetrics() {
+        LOGGER.info("Verifying SecurityEventCounter metrics bounds after all integration tests");
+        
+        // Fetch metrics from the /q/metrics endpoint
+        String metricsResponse = given()
+            .when()
+            .get("/q/metrics")
+            .then()
+            .statusCode(200)
+            .extract()
+            .body()
+            .asString();
+        
+        LOGGER.debug("Raw metrics response length: {}", metricsResponse.length());
+        
+        // Debug: Print relevant metrics lines
+        String[] lines = metricsResponse.split("\n");
+        for (String line : lines) {
+            if (line.contains("cui_jwt_validation")) {
+                LOGGER.info("Found JWT validation metric: {}", line);
+            }
+        }
+        
+        // Verify we have both success and error metrics
+        assertTrue(metricsResponse.contains("cui_jwt_validation_success_total"), 
+                   "Should contain success metrics");
+        assertTrue(metricsResponse.contains("cui_jwt_validation_errors_total"), 
+                   "Should contain error metrics");
+        
+        // Parse metrics to check bounds
+        Map<String, Double> parsedMetrics = parseMetricsResponse(metricsResponse);
+        
+        // Verify success metrics have reasonable bounds
+        // We expect ACCESS_TOKEN_CREATED to be the highest since all tests use access tokens
+        double accessTokensCreated = getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ACCESS_TOKEN_CREATED");
+        assertTrue(accessTokensCreated >= 10, 
+                   "Should have created at least 10 access tokens during integration tests, got: " + accessTokensCreated);
+        assertTrue(accessTokensCreated <= 10000, 
+                   "Access token creation count seems unreasonably high: " + accessTokensCreated);
+        
+        // Verify cache hits if caching is enabled
+        double accessTokenCacheHits = getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ACCESS_TOKEN_CACHE_HIT");
+        // Cache hits should be >= 0 (could be 0 if cache is disabled)
+        assertTrue(accessTokenCacheHits >= 0, 
+                   "Cache hits should be non-negative: " + accessTokenCacheHits);
+        
+        // Verify total success count is reasonable
+        double totalSuccess = accessTokensCreated + accessTokenCacheHits 
+                + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ID_TOKEN_CREATED")
+                + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "REFRESH_TOKEN_CREATED");
+        assertTrue(totalSuccess >= 10, 
+                   "Total successful operations should be at least 10: " + totalSuccess);
+        
+        LOGGER.info("SecurityEventCounter metrics validation passed - ACCESS_TOKEN_CREATED: {}, " +
+                   "ACCESS_TOKEN_CACHE_HIT: {}, Total Success: {}", 
+                   accessTokensCreated, accessTokenCacheHits, totalSuccess);
+    }
+    
+    private Map<String, Double> parseMetricsResponse(String metricsResponse) {
+        Map<String, Double> metrics = new java.util.HashMap<>();
+        String[] lines = metricsResponse.split("\n");
+        
+        for (String line : lines) {
+            line = line.trim();
+            // Skip comments and empty lines
+            if (line.startsWith("#") || line.isEmpty()) {
+                continue;
+            }
+            
+            // Parse metric lines: metric_name{tags} value
+            int spaceIndex = line.lastIndexOf(' ');
+            if (spaceIndex > 0) {
+                String metricPart = line.substring(0, spaceIndex);
+                String valuePart = line.substring(spaceIndex + 1);
+                
+                try {
+                    double value = Double.parseDouble(valuePart);
+                    metrics.put(metricPart, value);
+                } catch (NumberFormatException e) {
+                    // Ignore invalid metrics
+                }
+            }
+        }
+        
+        return metrics;
+    }
+    
+    private double getMetricValue(Map<String, Double> metrics, String metricPrefix, String eventType) {
+        // Look for metrics like: cui_jwt_validation_success_total{event_type="ACCESS_TOKEN_CREATED",result="success"}
+        for (Map.Entry<String, Double> entry : metrics.entrySet()) {
+            String metricName = entry.getKey();
+            if (metricName.startsWith(metricPrefix) && 
+                metricName.contains("event_type=\"" + eventType + "\"")) {
+                return entry.getValue();
+            }
+        }
+        return 0.0; // Return 0 if metric not found
+    }
 }

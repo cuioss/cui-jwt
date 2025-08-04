@@ -167,33 +167,46 @@ public class SimpleMetricsExporter {
      */
     private Map<String, Object> extractSecurityEventMetrics(Map<String, Double> allMetrics) {
         Map<String, Object> securityMetrics = new LinkedHashMap<>();
-        Map<String, Map<String, Object>> eventsByCategory = new LinkedHashMap<>();
+        Map<String, Map<String, Object>> errorsByCategory = new LinkedHashMap<>();
+        Map<String, Object> successByType = new LinkedHashMap<>();
         long totalErrors = 0;
+        long totalSuccess = 0;
         
-        // Extract cui_jwt_validation_errors_total metrics
+        // Extract both error and success metrics
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
             
             if (metricName.startsWith("cui_jwt_validation_errors_total")) {
-                // Parse tags: category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"
+                // Parse error metrics tags: category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"
                 String category = extractTag(metricName, "category");
                 String eventType = extractTag(metricName, "event_type");
                 String result = extractTag(metricName, "result");
                 
                 if (category != null && eventType != null && value != null && value > 0) {
-                    Map<String, Object> categoryData = eventsByCategory.computeIfAbsent(category, k -> new LinkedHashMap<>());
+                    Map<String, Object> categoryData = errorsByCategory.computeIfAbsent(category, k -> new LinkedHashMap<>());
                     categoryData.put(eventType, formatNumber(value.longValue()));
                     totalErrors += value.longValue();
+                }
+            } else if (metricName.startsWith("cui_jwt_validation_success_total")) {
+                // Parse success metrics tags: event_type="ACCESS_TOKEN_CREATED",result="success"
+                String eventType = extractTag(metricName, "event_type");
+                String result = extractTag(metricName, "result");
+                
+                if (eventType != null && "success".equals(result) && value != null && value > 0) {
+                    successByType.put(eventType, formatNumber(value.longValue()));
+                    totalSuccess += value.longValue();
                 }
             }
         }
         
         securityMetrics.put("total_errors", formatNumber(totalErrors));
-        securityMetrics.put("errors_by_category", eventsByCategory);
+        securityMetrics.put("total_success", formatNumber(totalSuccess));
+        securityMetrics.put("errors_by_category", errorsByCategory);
+        securityMetrics.put("success_by_type", successByType);
         
-        LOGGER.info("Extracted security event metrics: {} total errors across {} categories", 
-                totalErrors, eventsByCategory.size());
+        LOGGER.info("Extracted security event metrics: {} total errors across {} categories, {} total successes across {} types", 
+                totalErrors, errorsByCategory.size(), totalSuccess, successByType.size());
         
         return securityMetrics;
     }

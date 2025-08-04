@@ -74,6 +74,11 @@ public final class MetricIdentifier {
         public static final String ERRORS = BASE + ".errors";
 
         /**
+         * Counter for successful validation operations by type.
+         */
+        public static final String SUCCESS = BASE + ".success";
+
+        /**
          * Timer for JWT validation pipeline steps.
          */
         public static final String DURATION = BASE + ".duration";
