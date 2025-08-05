@@ -57,12 +57,12 @@ jobs:
           mkdir -p benchmark-results
 
           # Run micro benchmarks using configuration from pom.xml
-          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-library -Pbenchmark
 
           # Move micro benchmark results to expected location for upload
-          if [ -d "cui-jwt-benchmarking/target/benchmark-results" ]; then
+          if [ -d "benchmarking/benchmark-library/target/benchmark-results" ]; then
             echo "Moving micro benchmark results to upload location..."
-            mv cui-jwt-benchmarking/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
+            mv benchmarking/benchmark-library/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
           fi
 
       - name: Set up Docker Buildx
@@ -72,14 +72,14 @@ jobs:
         run: |
           # Run integration benchmarks with native image using profile
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl quarkus-integration-jmh -Pbenchmark -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark -DskipTests
 
           # Move integration benchmark results to expected location for upload
-          if [ -d "quarkus-integration-jmh/target/benchmark-results" ]; then
+          if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results" ]; then
             echo "Moving integration benchmark results to upload location..."
             # Copy health check and JWT validation results
-            cp quarkus-integration-jmh/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
-            cp quarkus-integration-jmh/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
           fi
 
           # Add timestamp to results
@@ -107,9 +107,9 @@ jobs:
           mkdir -p gh-pages
 
           # Process all benchmarks using orchestration script
-          bash cui-jwt-benchmarking/scripts/process-all-benchmarks.sh \
+          bash benchmarking/benchmark-library/scripts/process-all-benchmarks.sh \
             benchmark-results \
-            cui-jwt-benchmarking/doc/templates \
+            benchmarking/benchmark-library/doc/templates \
             gh-pages \
             "${{ github.sha }}" \
             "$TIMESTAMP" \

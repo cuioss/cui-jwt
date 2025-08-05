@@ -189,7 +189,7 @@ For comprehensive performance metrics methodology, scoring calculations, and int
 
 === Integration Benchmarking
 
-The xref:../quarkus-integration-jmh/README.adoc[JWT Quarkus Integration JMH Benchmarking Module] provides end-to-end performance testing using the **identical scoring formula** as this micro-benchmark module:
+The xref:../benchmark-integration-quarkus/README.adoc[JWT Quarkus Integration Benchmarks] provides end-to-end performance testing using the **identical scoring formula** as this micro-benchmark module:
 
 [cols="1,1,1", options="header"]
 |===

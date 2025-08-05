@@ -34,7 +34,7 @@ image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/bench
 image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/integration/badges/performance-badge.json[Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/integration/]
 image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/integration/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/integration/trends.html]
 
-xref:cui-jwt-benchmarking/doc/performance-scoring.adoc[Understand Performance Metrics]
+xref:benchmarking/benchmark-library/doc/performance-scoring.adoc[Understand Performance Metrics]
 
 https://cuioss.github.io/cui-jwt/about.html[Generated Documentation on github-pages]
 
@@ -288,7 +288,7 @@ The project includes two complementary benchmarking modules that use identical p
 
 ==== Micro-Benchmarks
 
-The xref:cui-jwt-benchmarking/README.adoc[JWT Micro-Benchmarking Module] provides in-memory performance measurements using JMH (Java Microbenchmark Harness). It measures:
+The xref:benchmarking/benchmark-library/README.adoc[JWT Benchmark Library] provides in-memory performance measurements using JMH (Java Microbenchmark Harness). It measures:
 
 * Token validation performance across different scenarios
 * JWKS key retrieval and caching performance  
@@ -298,7 +298,7 @@ The xref:cui-jwt-benchmarking/README.adoc[JWT Micro-Benchmarking Module] provide
 
 ==== Integration Benchmarks
 
-The xref:quarkus-integration-jmh/README.adoc[JWT Quarkus Integration JMH Benchmarking Module] provides end-to-end performance testing using containerized environments. It measures:
+The xref:benchmarking/benchmark-integration-quarkus/README.adoc[JWT Quarkus Integration Benchmarks] provides end-to-end performance testing using containerized environments. It measures:
 
 * HTTP-based JWT validation performance
 * Real Keycloak integration performance
@@ -310,7 +310,7 @@ Both modules use the **identical weighted scoring formula**: `Performance Score 
 
 Benchmark results are automatically published to GitHub Pages and can be used to track performance regressions over time.
 
-xref:cui-jwt-benchmarking/doc/performance-scoring.adoc[Understand Performance Metrics]
+xref:benchmarking/benchmark-library/doc/performance-scoring.adoc[Understand Performance Metrics]
 
 == External Resources
 

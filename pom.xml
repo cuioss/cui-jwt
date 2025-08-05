@@ -65,8 +65,7 @@
     <modules>
         <module>bom</module>
         <module>cui-jwt-validation</module>
-        <module>cui-jwt-benchmarking</module>
         <module>cui-jwt-quarkus-parent</module>
-        <module>quarkus-integration-jmh</module>
+        <module>benchmarking</module>
     </modules>
 </project>

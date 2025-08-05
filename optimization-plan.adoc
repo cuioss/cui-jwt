@@ -148,7 +148,7 @@ Internal Metrics (520,808 validation samples):
 2. **Profile JWT Validation Hot Paths**:
    ```bash
    # Run JFR profiling to identify CPU bottlenecks
-   mvn clean verify -Pbenchmark-jfr -pl quarkus-integration-jmh
+   mvn clean verify -Pbenchmark-jfr -pl benchmarking/benchmark-integration-quarkus
    jfr print --events CPULoad,ExecutionSample --stack-depth 20 target/benchmark-jfr-results/jfr-recordings/*.jfr
    ```
 
@@ -272,7 +272,7 @@ Internal Metrics (520,808 validation samples):
 [source,bash]
 ----
 # Run comprehensive benchmarks
-./mvnw clean verify -pl quarkus-integration-jmh -Pbenchmark
+./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
 
 # Monitor resources during benchmark
 docker stats --no-stream
@@ -357,7 +357,7 @@ Given the excellent baseline performance, tighter thresholds are appropriate:
 git log --since="2025-08-04" --until="2025-08-05" --oneline -- cui-jwt-quarkus-parent/
 
 # Step 2: Run JFR profiling
-mvn clean verify -Pbenchmark-jfr -pl quarkus-integration-jmh
+mvn clean verify -Pbenchmark-jfr -pl benchmarking/benchmark-integration-quarkus
 
 # Step 3: Compare CPU profiles
 jfr print --events ExecutionSample --stack-depth 50 target/benchmark-jfr-results/jfr-recordings/*.jfr | head -200
@@ -386,7 +386,7 @@ jfr print --events JavaMonitorWait,JavaMonitorEnter target/benchmark-jfr-results
 3. **Check Thread Pool Configuration**:
    ```bash
    # Verify HTTP client thread pool settings
-   grep -r "executor\|thread\|pool" quarkus-integration-jmh/src/
+   grep -r "executor\|thread\|pool" benchmarking/benchmark-integration-quarkus/src/
    ```
 
 === 3. Benchmark Comparison Script 🟢

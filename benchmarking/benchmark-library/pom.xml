@@ -5,27 +5,23 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-parent</artifactId>
+        <artifactId>benchmarking</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cui-jwt-benchmarking</artifactId>
+    <artifactId>benchmark-library</artifactId>
     <packaging>jar</packaging>
-    <name>JWT Token Validation Benchmarking</name>
+    <name>JWT Token Validation Benchmark Library</name>
     <description>Benchmarking module for JWT token validation</description>
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.validation.benchmark</maven.jar.plugin.automatic.module.name>
-        <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
         <version.mockwebserver3>5.0.0-alpha.12</version.mockwebserver3>
 
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.validation.benchmark.BenchmarkRunner</benchmark.runner>
-
-        <!-- Default benchmark results directory -->
-        <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
         
         <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.result.format>JSON</jmh.result.format>
@@ -47,17 +43,6 @@
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-core</artifactId>
-                <version>${version.jmh}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.openjdk.jmh</groupId>
-                <artifactId>jmh-generator-annprocess</artifactId>
-                <scope>provided</scope>
-                <version>${version.jmh}</version>
             </dependency>
             <dependency>
                 <groupId>de.cuioss.jwt</groupId>

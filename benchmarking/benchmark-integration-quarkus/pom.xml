@@ -5,26 +5,22 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-parent</artifactId>
+        <artifactId>benchmarking</artifactId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>quarkus-integration-jmh</artifactId>
+    <artifactId>benchmark-integration-quarkus</artifactId>
     <packaging>jar</packaging>
-    <name>JWT Token Validation Quarkus Integration JMH Benchmarks</name>
+    <name>JWT Token Validation Quarkus Integration Benchmarks</name>
     <description>JMH benchmarks for Quarkus integration testing against live services</description>
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
-        <skip.benchmark>true</skip.benchmark>
         <sonar.skip>true</sonar.skip>
 
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.BenchmarkRunner</benchmark.runner>
-
-        <!-- Default benchmark results directory -->
-        <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
 
         <!-- JMH Configuration Properties - Optimized for integration testing -->
         <jmh.result.format>JSON</jmh.result.format>
@@ -47,14 +43,10 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
-            <version>${version.jmh}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-generator-annprocess</artifactId>
-            <version>${version.jmh}</version>
-            <scope>provided</scope>
         </dependency>
 
         <!-- CUI utilities -->
@@ -68,16 +60,12 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.10.1</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- HdrHistogram for accurate latency recording -->
         <dependency>
             <groupId>org.hdrhistogram</groupId>
             <artifactId>HdrHistogram</artifactId>
-            <version>2.1.12</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- Lombok -->
@@ -117,7 +105,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../mvnw</executable>
+                                    <executable>../../mvnw</executable>
                                     <arguments>
                                         <argument>compile</argument>
                                         <argument>exec:exec@build-native-if-needed</argument>
@@ -125,7 +113,7 @@
                                         <argument>-Pintegration-tests</argument>
                                         <argument>-DskipTests</argument>
                                     </arguments>
-                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <workingDirectory>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
                                 </configuration>
                             </execution>
                             <!-- Start integration test containers (keep running for benchmarks) -->
@@ -136,7 +124,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
@@ -165,7 +153,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>
@@ -196,11 +184,11 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../mvnw</executable>
+                                    <executable>../../mvnw</executable>
                                     <arguments>
                                         <argument>clean</argument>
                                     </arguments>
-                                    <workingDirectory>${project.basedir}/../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <workingDirectory>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
                                 </configuration>
                             </execution>
                         </executions>
@@ -248,7 +236,7 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>cd ../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests &amp;&amp; ../../mvnw clean compile quarkus:build -Pintegration-tests -DskipTests &amp;&amp; DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr DOCKER_BUILDKIT=1 docker compose build cui-jwt-integration-tests</argument>
+                                        <argument>cd ../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests &amp;&amp; ../../mvnw clean compile quarkus:build -Pintegration-tests -DskipTests &amp;&amp; DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr DOCKER_BUILDKIT=1 docker compose build cui-jwt-integration-tests</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
@@ -264,7 +252,7 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</argument>
+                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
@@ -357,7 +345,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>
