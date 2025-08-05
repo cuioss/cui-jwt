@@ -1,217 +1,92 @@
-= JFR Instrumentation for JWT Benchmark Variance Analysis
-
-== Overview
-
-This module includes Java Flight Recorder (JFR) instrumentation to measure operation time variance under concurrent load during JWT validation benchmarks. JFR provides production-ready, low-overhead profiling that captures detailed timing information for analyzing performance variance.
+= JFR Instrumentation for Variance Analysis
 
 == Quick Start
 
-=== Running Standard Benchmarks
-
 [source,bash]
 ----
-# Run standard benchmarks (without JFR instrumentation)
-mvn verify -Pbenchmark
-----
-
-=== Running JFR-Instrumented Benchmarks
-
-[source,bash]
-----
-# Run JFR-instrumented benchmarks with variance analysis
+# Run JFR-instrumented benchmarks
 mvn verify -Pbenchmark-jfr
 
-# JFR recording will be saved to:
-# target/benchmark-results/jfr-benchmark.jfr
-----
-
-=== Analyzing Results
-
-[source,bash]
-----
-# View variance analysis summary
-java -cp target/classes:target/dependency/* \
+# Analyze variance
+java -cp "target/classes:target/dependency/*" \
   de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
   target/benchmark-results/jfr-benchmark.jfr
 ----
 
-== What Gets Measured
+== What's Measured
 
-=== Individual Operations
+=== Operation Events
 
-* *Duration*: Precise timing of each JWT validation operation
-* *Metadata*: Token size, issuer, thread information
-* *Concurrency*: Number of concurrent operations at execution time
-* *Success/Failure*: Operation outcome with error details
+* Duration of each JWT validation
+* Token metadata (size, issuer)
+* Concurrent operations count
+* Success/failure status
 
-=== Periodic Statistics (1-second intervals)
+=== Statistics (1-second intervals)
 
-* *Latency Percentiles*: P50, P95, P99
-* *Variance Metrics*: Standard deviation, coefficient of variation
-* *Throughput*: Operations per second
-* *Concurrency*: Active thread count
+* Latency percentiles (P50, P95, P99)
+* Variance metrics (standard deviation, CV)
+* Throughput and concurrency
 
-== Understanding Variance
+== Variance Interpretation
 
-The *Coefficient of Variation (CV)* is the key metric for understanding performance consistency:
+Coefficient of Variation (CV) indicates performance consistency:
 
+[cols="1,2,2", options="header"]
 |===
-|CV Range |Interpretation |Typical Cause 
+|CV Range |Interpretation |Typical Cause
 
-|&lt; 25% |Low variance, consistent performance |Well-optimized code path 
-|25-50% |Moderate variance, acceptable |Normal concurrent contention 
-|&gt; 50% |High variance, investigate |Lock contention, GC pauses 
+|< 25%
+|Low variance
+|Well-optimized path
+
+|25-50%
+|Moderate variance
+|Normal contention
+
+|> 50%
+|High variance
+|Lock contention, GC
 |===
 
-== JFR Events Reference
+== JFR Events
 
 === de.cuioss.jwt.Operation
 
-Records each individual JWT operation with timing and metadata.
+Individual operation timing:
 
-*Fields:*
-- `operationType`: Type of operation (validation, parsing, etc.)
-- `benchmarkName`: Name of the benchmark
-- `duration`: Operation duration (auto-captured)
-- `tokenSize`: Size of JWT token in bytes
-- `issuer`: Token issuer identifier
-- `success`: Operation success status
-- `concurrentOperations`: Number of concurrent ops
+* `operationType` - Operation type
+* `duration` - Auto-captured timing
+* `tokenSize` - JWT size in bytes
+* `success` - Operation result
 
 === de.cuioss.jwt.OperationStatistics
 
-Periodic statistics snapshot (emitted every second).
+Periodic performance snapshot:
 
-*Fields:*
-- `sampleCount`: Operations in this period
-- `p50Latency`, `p95Latency`, `p99Latency`: Latency percentiles
-- `variance`: Statistical variance
-- `coefficientOfVariation`: CV percentage
-- `concurrentThreads`: Active thread count
+* `p50Latency`, `p95Latency`, `p99Latency` - Percentiles
+* `coefficientOfVariation` - CV percentage
+* `concurrentThreads` - Active threads
 
-== Advanced Analysis
-
-=== Using JDK Tools
+== Analysis Tools
 
 [source,bash]
 ----
-# Print all JWT operation events
+# View JWT events
 jfr print --events de.cuioss.jwt.Operation benchmark.jfr
 
-# Export to JSON for custom analysis
-jfr print --json --events de.cuioss.jwt.* benchmark.jfr > jwt-events.json
+# Export to JSON
+jfr print --json --events de.cuioss.jwt.* benchmark.jfr > events.json
 
-# View event summary
-jfr summary benchmark.jfr
+# JDK Mission Control
+# 1. Open JMC
+# 2. File > Open > benchmark.jfr
+# 3. Filter events: de.cuioss.jwt.*
 ----
-
-=== Custom Analysis
-
-[source,java]
-----
-// Programmatic analysis example
-Path jfrFile = Path.of("benchmark.jfr");
-JfrVarianceAnalyzer analyzer = new JfrVarianceAnalyzer();
-VarianceReport report = analyzer.analyze(jfrFile);
-
-// Access detailed metrics
-Map<String, Object> metrics = report.toJson();
-----
-
-=== Visualizing with JDK Mission Control
-
-. Download https://www.oracle.com/java/technologies/jdk-mission-control.html[JDK Mission Control]
-. Open the JFR file: `File > Open File > benchmark.jfr`
-. Navigate to "Event Browser" tab
-. Filter for `de.cuioss.jwt.*` events
-. Use the "Latency" view to visualize operation timing
-
-== Benchmark Profiles
-
-=== Standard Profile (`benchmark`)
-
-* Runs all performance benchmarks (PerformanceIndicatorBenchmark, ErrorLoadBenchmark)
-* Optimized for fast execution (&lt;10 minutes)
-* Standard JMH metrics without JFR overhead
-* Use when: You need quick performance metrics
-
-=== JFR Profile (`benchmark-jfr`)
-
-* Runs only JFR-instrumented benchmarks
-* Uses the same JMH settings as the standard profile
-* Captures detailed timing and variance metrics
-* Automatic JFR recording generation
-* Use when: You need to analyze performance variance or debug inconsistent performance
-
-== Implementation Details
-
-=== Low Overhead Design
-
-* Event allocation minimized through object pooling
-* Conditional commit based on duration thresholds
-* Efficient percentile tracking with HdrHistogram
-* Periodic aggregation reduces event volume
-
-=== Integration Points
-
-* Separate benchmark runner for JFR mode
-* Compatible with existing metrics collection
-* No impact on standard benchmarks
-* Profile-based activation
-
-== Troubleshooting
-
-=== No JFR File Generated
-
-* Ensure Java 11+ is used (JFR is built-in)
-* Check Maven output for JFR-related errors
-* Verify `-XX:StartFlightRecording` in process arguments
-
-=== High Overhead Observed
-
-* Reduce event frequency with custom JFC configuration
-* Increase statistics period (default: 1 second)
-* Disable stack traces if not needed
-
-=== Analysis Errors
-
-* Ensure JFR file is not corrupted
-* Check Java version compatibility
-* Verify all dependencies are on classpath
 
 == Configuration
 
-=== Custom JFR Settings
-
-Create a custom JFC file to control event collection:
-
-[source,xml]
-----
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration version="2.0">
-  <event name="de.cuioss.jwt.Operation">
-    <setting name="enabled">true</setting>
-    <setting name="threshold">0 ms</setting>
-  </event>
-  <event name="de.cuioss.jwt.OperationStatistics">
-    <setting name="enabled">true</setting>
-    <setting name="period">1 s</setting>
-  </event>
-</configuration>
-----
-
-=== Maven Configuration
-
-The JFR recording is configured in the JfrBenchmarkRunner class:
-
-[source,java]
-----
-.jvmArgs("-XX:+UnlockDiagnosticVMOptions", 
-        "-XX:+DebugNonSafepoints",
-        "-XX:StartFlightRecording=filename=target/benchmark-results/jfr-benchmark.jfr,settings=profile");
-----
-
-To run with custom settings:
+Custom JMH parameters:
 
 [source,bash]
 ----
@@ -221,10 +96,15 @@ mvn verify -Pbenchmark-jfr \
   -Djmh.time=10s
 ----
 
+== Troubleshooting
+
+* **No JFR file**: Check Java 11+, verify `-XX:StartFlightRecording` in output
+* **High overhead**: Increase statistics period, reduce event frequency
+* **Analysis errors**: Verify file integrity, check classpath
+
 == Best Practices
 
-. *Baseline First*: Run benchmarks without JFR to establish baseline
-. *Multiple Runs*: Collect multiple recordings for statistical validity
-. *Analyze Trends*: Look for variance patterns over time
-. *Correlate Events*: Cross-reference with GC and system events
-. *Production Ready*: Same instrumentation can be used in production with minimal overhead
+1. Establish baseline without JFR first
+2. Run multiple recordings for validity
+3. Analyze variance patterns over time
+4. Correlate with GC and system events
