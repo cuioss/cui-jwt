@@ -16,34 +16,32 @@ fi
 
 echo "Creating performance tracking data..."
 
-# Get environment info
-JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2)
-OS_NAME="$(uname -s)"
+# Load utility libraries
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/metrics-utils.sh"
 
-# Capture actual JVM arguments if available from environment or use default
-if [ -n "$MAVEN_OPTS" ]; then
-  JVM_ARGS_VALUE="$MAVEN_OPTS"
-elif [ -n "$JAVA_OPTS" ]; then
-  JVM_ARGS_VALUE="$JAVA_OPTS"  
-else
-  JVM_ARGS_VALUE="default"
-fi
+# Get environment info
+eval $(get_environment_info)
 
 # Create performance tracking directory
 mkdir -p "$OUTPUT_DIR/data/tracking"
 mkdir -p "$OUTPUT_DIR/badges"
 
-# Run the performance badge script to get metrics and capture in a metrics file
+# Run the unified performance badge script to get metrics and capture in a metrics file
 METRICS_FILE="$OUTPUT_DIR/data/tracking/metrics-temp.sh"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-bash "$SCRIPT_DIR/create-performance-badge.sh" "$JMH_RESULT_FILE" "$OUTPUT_DIR/badges" > "$METRICS_FILE.log" 2>&1
+
+# Detect benchmark type
+BENCHMARK_TYPE=$(detect_benchmark_type "$JMH_RESULT_FILE")
+
+bash "$SCRIPT_DIR/create-unified-performance-badge.sh" "$BENCHMARK_TYPE" "$JMH_RESULT_FILE" "$OUTPUT_DIR/badges" > "$METRICS_FILE.log" 2>&1
 
 # Read the badge output immediately after script execution
 BADGE_OUTPUT_CONTENT=$(cat "$METRICS_FILE.log")
 
 # Extract metrics from badge script output and create a sourceable metrics file
 {
-  echo "# Performance metrics extracted from create-performance-badge.sh"
+  echo "# Performance metrics extracted from create-unified-performance-badge.sh"
   echo "$BADGE_OUTPUT_CONTENT" | grep "PERFORMANCE_SCORE=" | head -1 || echo "PERFORMANCE_SCORE=0"
   echo "$BADGE_OUTPUT_CONTENT" | grep "THROUGHPUT_OPS_PER_SEC=" | head -1 || echo "THROUGHPUT_OPS_PER_SEC=0" 
   echo "$BADGE_OUTPUT_CONTENT" | grep "AVERAGE_TIME_SEC=" | head -1 || echo "AVERAGE_TIME_SEC=0"
@@ -54,7 +52,7 @@ BADGE_OUTPUT_CONTENT=$(cat "$METRICS_FILE.log")
 
 # Source the metrics file for more robust parsing
 source "$METRICS_FILE" || {
-  echo "Error: Failed to source metrics from create-performance-badge.sh"
+  echo "Error: Failed to source metrics from create-unified-performance-badge.sh"
   exit 1
 }
 

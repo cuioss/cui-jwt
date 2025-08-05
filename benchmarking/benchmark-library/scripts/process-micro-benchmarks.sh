@@ -27,31 +27,24 @@ mkdir -p "$OUTPUT_DIR/badges"
 # Copy JMH result to output directory for visualization
 cp "$JMH_RESULT_FILE" "$OUTPUT_DIR/data/jmh-result.json"
 
-# Detect benchmark type based on content
+# Load utility libraries and detect benchmark type
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/metrics-utils.sh"
+
 echo "🔍 Detecting benchmark type..."
-BENCHMARK_TYPE="micro"
-if grep -q "JwtHealthBenchmark\|JwtValidationBenchmark\|JwtEchoBenchmark" "$JMH_RESULT_FILE"; then
-    BENCHMARK_TYPE="integration"
+BENCHMARK_TYPE=$(detect_benchmark_type "$JMH_RESULT_FILE")
+
+if [ "$BENCHMARK_TYPE" = "integration" ]; then
     echo "  ✓ Detected integration benchmarks"
-elif grep -q "SimpleCoreValidationBenchmark\|SimpleErrorLoadBenchmark" "$JMH_RESULT_FILE"; then
-    BENCHMARK_TYPE="micro"
-    echo "  ✓ Detected micro benchmarks"
 else
-    echo "  ⚠️  Unknown benchmark type, defaulting to integration"
-    BENCHMARK_TYPE="integration"
+    echo "  ✓ Detected micro benchmarks"
 fi
 
-# Create performance badge using unified script
+# Create performance badge using unified script (includes simple badges)
 echo "🏆 Creating performance badge for $BENCHMARK_TYPE benchmarks..."
-if ! bash "$SCRIPT_DIR/create-unified-performance-badge.sh" "$BENCHMARK_TYPE" "$OUTPUT_DIR/data/jmh-result.json" "$OUTPUT_DIR/badges"; then
+if ! bash "$SCRIPT_DIR/create-unified-performance-badge.sh" "$BENCHMARK_TYPE" "$OUTPUT_DIR/data/jmh-result.json" "$OUTPUT_DIR/badges" "$COMMIT_HASH" "$TIMESTAMP" "$TIMESTAMP_WITH_TIME"; then
     echo "⚠️  Failed to create performance badge, creating fallback..."
     echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"Processing Error\",\"color\":\"red\"}" > "$OUTPUT_DIR/badges/performance-badge.json"
-fi
-
-# Create simple badges
-echo "📊 Creating simple badges..."
-if ! bash "$SCRIPT_DIR/create-simple-badge.sh" "$OUTPUT_DIR/data/jmh-result.json" "$OUTPUT_DIR/badges" "$TIMESTAMP" "$TIMESTAMP_WITH_TIME"; then
-    echo "⚠️  Failed to create simple badges"
 fi
 
 # Performance Tracking System

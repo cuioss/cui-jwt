@@ -34,11 +34,9 @@ The benchmark processing workflow has been modularized into focused scripts that
 
 ### Supporting Scripts
 
-- **create-unified-performance-badge.sh** - Creates performance score badges
-- **create-simple-badge.sh** - Creates individual metric badges
+- **create-unified-performance-badge.sh** - Creates all performance and informational badges (handles both micro and integration)
 - **create-performance-tracking.sh** - Manages historical performance data
 - **update-performance-trends.sh** - Updates trend analysis
-- **calculate-trend-badge.sh** - Creates trend indicator badges
 - **create-unified-trend-badge.sh** - Creates consolidated trend badges
 
 ### Utility Scripts
@@ -46,7 +44,11 @@ The benchmark processing workflow has been modularized into focused scripts that
 - **serve-local.sh** - Local HTTP server for testing (Python-based)
 - **serve-local.js** - Local HTTP server for testing (Node.js-based)
 - **prepare-step-metrics.sh** - Prepares step-by-step metrics data
-- **process-integration-results.sh** - Legacy integration processing (kept for compatibility)
+
+### Utility Libraries
+
+- **lib/badge-utils.sh** - Common badge creation functions and color calculations
+- **lib/metrics-utils.sh** - Common metric calculation and conversion utilities
 
 ## Usage
 
@@ -113,8 +115,29 @@ gh-pages/
 
 This script structure was migrated from inline GitHub Actions workflow logic to improve:
 - Maintainability
-- Testability
+- Testability  
 - Reusability
 - Local development experience
 
 The migration preserved all functionality while making the process more transparent and easier to debug.
+
+## Architecture Improvements
+
+The scripts have been consolidated and reorganized for better maintainability:
+
+- **Reduced from 16 to 11 scripts** by removing redundant functionality
+- **Eliminated circular dependencies** by consolidating badge creation
+- **Extracted common utilities** to `lib/` directory for better code reuse
+- **Improved separation of concerns** with focused, single-purpose scripts
+
+### Script Reduction Summary
+
+**Removed Scripts:**
+- `process-integration-results.sh` - Legacy script with no references
+- `calculate-trend-badge.sh` - Functionality absorbed by unified trend script
+- `create-performance-badge.sh` - Merged into unified performance badge script
+- `create-simple-badge.sh` - Integrated into unified performance badge script
+
+**Added Libraries:**
+- `lib/badge-utils.sh` - Common badge functions
+- `lib/metrics-utils.sh` - Common metric calculations

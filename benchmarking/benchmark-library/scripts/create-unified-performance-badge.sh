@@ -1,14 +1,21 @@
 #!/bin/bash
 # Unified Performance Badge Creation Script
 # Handles both micro-benchmarks and integration benchmarks
-# Usage: create-unified-performance-badge.sh <benchmark-type> <result-file> <output-directory> [commit-hash]
+# Usage: create-unified-performance-badge.sh <benchmark-type> <result-file> <output-directory> [commit-hash] [timestamp] [timestamp-with-time]
 
 set -e
+
+# Load utility libraries
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/lib/badge-utils.sh"
+source "$SCRIPT_DIR/lib/metrics-utils.sh"
 
 BENCHMARK_TYPE="$1"  # "micro" or "integration"
 RESULT_FILE="$2"
 OUTPUT_DIR="$3"
 COMMIT_HASH="${4:-unknown}"
+TIMESTAMP="${5:-$(date +"%Y-%m-%d")}"
+TIMESTAMP_WITH_TIME="${6:-$(date +"%Y-%m-%d %H:%M %Z")}"
 
 if [ ! -f "$RESULT_FILE" ]; then
   echo "Error: Result file not found: $RESULT_FILE"
@@ -20,95 +27,6 @@ mkdir -p "$OUTPUT_DIR"
 
 echo "Creating unified performance badge for $BENCHMARK_TYPE benchmarks..."
 
-# Common badge creation function
-create_badge() {
-    local label="$1"
-    local message="$2"
-    local color="$3"
-    local filename="$4"
-    
-    echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"$message\",\"color\":\"$color\"}" > "$OUTPUT_DIR/$filename"
-}
-
-# Common unit conversion functions
-convert_to_ops_per_sec() {
-    local value="$1"
-    local unit="$2"
-    
-    if [[ "$unit" == "ops/s" ]]; then
-        echo "$value"
-    elif [[ "$unit" == "s/op" ]]; then
-        if [ "$(echo "$value == 0" | bc -l)" -eq 1 ]; then
-            echo "0"
-        else
-            echo "scale=2; 1 / $value" | bc -l
-        fi
-    elif [[ "$unit" == "ms/op" ]]; then
-        if [ "$(echo "$value == 0" | bc -l)" -eq 1 ]; then
-            echo "0"
-        else
-            echo "scale=2; 1000 / $value" | bc -l
-        fi
-    elif [[ "$unit" == "us/op" ]]; then
-        if [ "$(echo "$value == 0" | bc -l)" -eq 1 ]; then
-            echo "0"
-        else
-            echo "scale=2; 1000000 / $value" | bc -l
-        fi
-    else
-        echo "0"
-    fi
-}
-
-convert_to_milliseconds() {
-    local value="$1"
-    local unit="$2"
-    
-    if [[ "$unit" == "ms/op" ]]; then
-        echo "$value"
-    elif [[ "$unit" == "us/op" ]]; then
-        echo "scale=3; $value / 1000" | bc -l
-    elif [[ "$unit" == "s/op" ]]; then
-        echo "scale=3; $value * 1000" | bc -l
-    else
-        echo "0"
-    fi
-}
-
-format_throughput_display() {
-    local throughput="$1"
-    
-    if [ $(echo "$throughput >= 1000" | bc -l) -eq 1 ]; then
-        throughput_k=$(echo "scale=1; $throughput / 1000" | bc -l)
-        echo "${throughput_k}k"
-    else
-        printf "%.0f" "$throughput"
-    fi
-}
-
-# Calculate weighted performance score
-calculate_performance_score() {
-    local throughput="$1"
-    local latency_ms="$2"
-    local error_resilience="$3"
-    
-    # Convert latency to operations per second equivalent
-    local latency_ops_per_sec
-    if [ "$(echo "$latency_ms == 0" | bc -l)" -eq 1 ]; then
-        latency_ops_per_sec="0"
-    else
-        latency_ops_per_sec=$(echo "scale=2; 1000 / $latency_ms" | bc -l)
-    fi
-    
-    # Calculate weighted score
-    if [ "$error_resilience" != "0" ]; then
-        # Enhanced formula: (throughput * 0.57) + (latency * 0.40) + (error_resilience * 0.03)
-        echo "scale=2; ($throughput * 0.57) + ($latency_ops_per_sec * 0.40) + ($error_resilience * 0.03)" | bc -l
-    else
-        # Fallback to original formula: (throughput * 0.6) + (latency * 0.4)
-        echo "scale=2; ($throughput * 0.6) + ($latency_ops_per_sec * 0.4)" | bc -l
-    fi
-}
 
 # Process micro benchmarks
 process_micro_benchmarks() {
@@ -189,36 +107,14 @@ process_integration_benchmarks() {
     local formatted_latency_ms=$(printf "%.0f" "$avg_latency_ms")
     
     # Determine badge color
-    local badge_color="red"
-    if (( $(echo "$integration_score >= 50" | bc -l) )); then
-        badge_color="green"
-    elif (( $(echo "$integration_score >= 25" | bc -l) )); then
-        badge_color="yellow"
-    elif (( $(echo "$integration_score >= 10" | bc -l) )); then
-        badge_color="orange"
-    fi
+    local badge_color=$(get_performance_badge_color "$integration_score")
     
     # Create performance badge
     create_badge "Performance Score" "${formatted_score} (${throughput_display} ops/s, ${formatted_latency_ms}ms)" "$badge_color" "performance-badge.json"
     
     # Create additional integration-specific badges
-    local throughput_color="red"
-    if (( $(echo "$avg_throughput >= 100" | bc -l) )); then
-        throughput_color="green"
-    elif (( $(echo "$avg_throughput >= 50" | bc -l) )); then
-        throughput_color="yellow"
-    elif (( $(echo "$avg_throughput >= 25" | bc -l) )); then
-        throughput_color="orange"
-    fi
-    
-    local latency_color="red"
-    if (( $(echo "$avg_latency_ms <= 10" | bc -l) )); then
-        latency_color="green"
-    elif (( $(echo "$avg_latency_ms <= 25" | bc -l) )); then
-        latency_color="yellow"
-    elif (( $(echo "$avg_latency_ms <= 50" | bc -l) )); then
-        latency_color="orange"
-    fi
+    local throughput_color=$(get_throughput_badge_color "$avg_throughput")
+    local latency_color=$(get_latency_badge_color "$avg_latency_ms")
     
     create_badge "Throughput" "${throughput_display} ops/s" "$throughput_color" "throughput-badge.json"
     create_badge "Latency" "${formatted_latency_ms}ms" "$latency_color" "latency-badge.json"
@@ -234,16 +130,30 @@ process_integration_benchmarks() {
     echo "AVG_TIME_MICROS=$(echo "scale=0; $avg_latency_ms * 1000" | bc -l)"
 }
 
+# Create simple badges for both types
+create_simple_badges() {
+    echo "Creating simple informational badges..."
+    
+    # Create combined badge for all benchmarks
+    create_badge "JWT Benchmarks" "Updated $TIMESTAMP" "brightgreen" "all-benchmarks.json"
+    
+    # Create last benchmark run badge with time
+    create_badge "Last Benchmark Run" "$TIMESTAMP_WITH_TIME" "blue" "last-run-badge.json"
+    
+    echo "Simple badges created successfully"
+}
+
 # Main processing logic
 if [ "$BENCHMARK_TYPE" = "micro" ]; then
     process_micro_benchmarks
-    # For micro benchmarks, also output the expected variables
-    # These should be set by process_micro_benchmarks function
 elif [ "$BENCHMARK_TYPE" = "integration" ]; then
     process_integration_benchmarks
 else
     echo "Error: Invalid benchmark type. Use 'micro' or 'integration'"
     exit 1
 fi
+
+# Always create simple badges
+create_simple_badges
 
 echo "Badge creation completed successfully"
