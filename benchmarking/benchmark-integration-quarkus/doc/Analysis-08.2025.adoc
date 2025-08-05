@@ -48,7 +48,7 @@ Performance analysis and optimization tracking for JWT validation in Quarkus nat
 
 |**Optimization Targets**
 |Algorithm efficiency, JCA performance
-|Connection pooling, native image tuning
+|Baseline performance measurement
 |===
 
 == Performance Baseline History
@@ -101,11 +101,11 @@ The integration benchmarks have shown various performance patterns:
 * Thread pool saturation metrics
 * Container resource allocation
 
-**Error Rate Analysis**:
+**Test Characteristics**:
 
-* Success/failure ratios for JWT validation
-* KEY_NOT_FOUND vs validation errors
-* Impact of error handling on performance
+* Only positive test cases (valid tokens)
+* No error rate tracking (not testing invalid tokens)
+* Focus on successful validation performance
 
 === Measurement Methodology
 
@@ -119,7 +119,7 @@ The integration benchmarks have shown various performance patterns:
 **Load Generation**:
 
 * Configurable thread pools (typically 10-30 threads)
-* Mixed valid/invalid token testing
+* Valid token testing only
 * Sustained load duration for reliable measurements
 * JFR profiling integration for deep analysis
 
@@ -132,62 +132,24 @@ The integration benchmarks have shown various performance patterns:
 
 == Optimization Strategies
 
-=== Container and Native Image Optimization
+=== Current Configuration
 
-**Native Compilation Tuning**:
+**Test Setup**:
 
-[source,xml]
-----
-<quarkus.native.additional-build-args>
-  -O2,
-  --enable-all-security-services,
-  --initialize-at-build-time=sun.security.provider.SecureRandom
-</quarkus.native.additional-build-args>
-----
+* Native Quarkus compilation with standard flags
+* Container resource allocation based on available system resources
+* Default HTTP client configuration (no custom connection pooling)
+* Cache deliberately disabled for consistent benchmark results
 
-**Benefits Achieved**:
 
-* Memory footprint: ~6MB (vs 100MB+ JVM)
-* Startup time: <100ms (vs several seconds JVM)
-* Predictable performance (no JIT warmup)
+=== JWT Validation Characteristics
 
-**Container Resource Tuning**:
+**Current Implementation**:
 
-* CPU allocation: 2-4 cores optimal for M4
-* Memory limits: 128MB sufficient 
-* Network optimization: connection pooling essential
-
-=== HTTP and Networking Optimization
-
-**Connection Pool Configuration**:
-
-[source,java]
-----
-HttpClient.newBuilder()
-    .executor(Executors.newFixedThreadPool(50))
-    .connectTimeout(Duration.ofSeconds(10))
-    .build();
-----
-
-**Impact**:
-
-* Reduced connection establishment overhead
-* Better thread utilization under load
-* Lower P99 latencies for HTTP processing
-
-=== JWT-Specific Optimizations
-
-**Caching Strategy**:
-
-* Access token caching with configurable eviction
-* JWKS key caching to avoid repeated fetches
-* Balanced cache size vs memory usage
-
-**Validation Pipeline**:
-
-* Parallel validation of token components where possible
-* Early validation failures to avoid expensive operations
-* Efficient error handling paths
+* Cache disabled for benchmark consistency
+* Sequential validation pipeline
+* Standard Quarkus JWT validation
+* No custom optimizations applied
 
 == Current Performance Characteristics
 
@@ -244,9 +206,7 @@ Total Request Time: 2,000μs (P95)
 
 . **Throughput Trends**: ops/s over time for both endpoints
 . **Latency Percentiles**: P50/P95/P99 tracking with alerting
-. **Error Rates**: Success/failure ratios and error categorization  
 . **Resource Utilization**: CPU, memory, thread pool usage
-. **Cache Effectiveness**: Hit ratios and eviction patterns
 
 **Alert Thresholds** (based on M4 baseline):
 
@@ -254,7 +214,6 @@ Total Request Time: 2,000μs (P95)
 * P95 latency > 4ms (sustained)
 * P99 latency > 8ms (sustained)
 * CPU utilization > 85% (sustained)
-* Error rate deviation > 15% from baseline
 
 === Profiling and Deep Analysis
 
@@ -286,61 +245,33 @@ mvn clean package -DskipTests
 # Run current benchmarks and compare
 ----
 
-== Optimization Roadmap
+== Performance Focus Areas
 
-=== Immediate Optimizations (High Impact)
+=== Current Benchmark Focus
 
-**Connection Pool Tuning**:
+**What We Measure**:
 
-* Profile optimal thread pool sizes for target load
-* Implement connection reuse across benchmark iterations
-* Monitor connection establishment overhead
+* Raw throughput under sustained load
+* Latency distribution (P50, P95, P99)
+* Resource utilization patterns
+* Comparison between health and JWT endpoints
 
-**Native Image Optimization**:
+**Deliberately Excluded**:
 
-* Experiment with -O3 optimization level
-* Profile build-time vs runtime initialization trade-offs
-* Optimize security provider initialization
+* Cache optimization (cache disabled)
+* Connection pooling optimizations
+* Native compilation tuning beyond defaults
+* Error handling paths (only positive cases)
+* Alternative architectures or frameworks
 
-**Load Testing Refinement**:
+=== Performance Baseline Purpose
 
-* Develop realistic token workloads
-* Implement graduated load patterns
-* Create comparative benchmark suites
+The integration benchmarks establish a baseline for:
 
-=== Advanced Optimizations (Medium Impact)
-
-**Cryptographic Performance**:
-
-* Profile different signature algorithms (RS256 vs ES256)
-* Evaluate hardware crypto acceleration options
-* Optimize key loading and caching strategies
-
-**Framework Optimization**:
-
-* Profile Quarkus filter chain overhead
-* Evaluate CDI vs manual dependency injection
-* Optimize error handling paths
-
-**Container Environment**:
-
-* Test different container runtimes (Docker vs Podman)
-* Optimize container resource limits
-* Evaluate multi-stage build optimizations
-
-=== Research Areas (Longer Term)
-
-**Alternative Architectures**:
-
-* Evaluate reactive/async request processing
-* Compare virtual threads vs platform threads
-* Test GraalVM enterprise optimizations
-
-**Scaling Patterns**:
-
-* Load balancer configuration optimization
-* Database connection pooling (if added)
-* Distributed caching strategies (if needed)
+* Understanding end-to-end performance characteristics
+* Comparing HTTP overhead vs JWT processing time
+* Validating that micro benchmark improvements translate to real-world gains
+* Detecting performance regressions in the integration layer
 
 == Integration with Micro Benchmarks
 
@@ -351,7 +282,6 @@ mvn clean package -DskipTests
 * JWT validation component costs (50-200μs baseline)
 * Algorithm performance comparisons
 * Memory allocation patterns
-* Cache behavior under different loads
 
 **Integration Insights for Micro Benchmarks**:
 
@@ -382,9 +312,8 @@ Integration performance benchmarking provides essential insights into real-world
 
 **Optimization Focus**:
 
-* Container and network optimization has highest impact
-* Native image tuning provides consistent improvements
-* JWT algorithm choice has moderate performance impact
+* Container and network optimization has highest impact for integration benchmarks
+* Baseline measurements enable regression detection
 * Monitoring and observability enable continuous optimization
 
 **Future Directions**:
