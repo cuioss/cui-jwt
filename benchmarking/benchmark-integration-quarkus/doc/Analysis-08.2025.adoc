@@ -58,18 +58,21 @@ Performance analysis and optimization tracking for JWT validation in Quarkus nat
 The integration benchmarks have shown various performance patterns:
 
 **Health Endpoint Performance**:
+
 * Consistently achieves 11,000-12,000+ ops/s
 * Provides baseline for HTTP/container overhead
 * P95 latencies typically 1.5-2.0ms
 * Memory usage remains very low (~6MB)
 
 **JWT Validation Performance**:
+
 * Target range: 8,000-11,000 ops/s  
 * More variable due to cryptographic complexity
 * P95 latencies typically 2-4ms
 * Includes full JWT validation overhead
 
 **Resource Utilization Patterns**:
+
 * CPU usage varies from 50-75% under load
 * Memory remains consistently low due to native image
 * Container CPU allocation impacts throughput significantly
@@ -80,22 +83,26 @@ The integration benchmarks have shown various performance patterns:
 === Key Metrics Tracked
 
 **Throughput Metrics**:
+
 * Health endpoint: ops/s (baseline system capacity)
 * JWT validation endpoint: ops/s (with crypto overhead)
 * Throughput gap analysis (efficiency measure)
 
 **Latency Distribution**:
+
 * P50, P95, P99 percentiles for both endpoints
 * JWT validation component breakdown
 * HTTP processing vs JWT validation time
 
 **Resource Efficiency**:
+
 * CPU utilization and load patterns
 * Memory usage (heap + non-heap)
 * Thread pool saturation metrics
 * Container resource allocation
 
 **Error Rate Analysis**:
+
 * Success/failure ratios for JWT validation
 * KEY_NOT_FOUND vs validation errors
 * Impact of error handling on performance
@@ -103,18 +110,21 @@ The integration benchmarks have shown various performance patterns:
 === Measurement Methodology
 
 **Test Environment Standardization**:
+
 * Apple M4 processor (4 CPU cores)
 * OrbStack containerization platform
 * Quarkus native runtime compilation
 * Java HttpClient for load generation
 
 **Load Generation**:
+
 * Configurable thread pools (typically 10-30 threads)
 * Mixed valid/invalid token testing
 * Sustained load duration for reliable measurements
 * JFR profiling integration for deep analysis
 
 **Data Collection**:
+
 * JMH integration for statistical accuracy
 * Prometheus metrics extraction during runs
 * JFR recordings for CPU/memory profiling
@@ -125,20 +135,24 @@ The integration benchmarks have shown various performance patterns:
 === Container and Native Image Optimization
 
 **Native Compilation Tuning**:
-```xml
+
+[source,xml]
+----
 <quarkus.native.additional-build-args>
   -O2,
   --enable-all-security-services,
   --initialize-at-build-time=sun.security.provider.SecureRandom
 </quarkus.native.additional-build-args>
-```
+----
 
 **Benefits Achieved**:
+
 * Memory footprint: ~6MB (vs 100MB+ JVM)
 * Startup time: <100ms (vs several seconds JVM)
 * Predictable performance (no JIT warmup)
 
 **Container Resource Tuning**:
+
 * CPU allocation: 2-4 cores optimal for M4
 * Memory limits: 128MB sufficient 
 * Network optimization: connection pooling essential
@@ -146,14 +160,17 @@ The integration benchmarks have shown various performance patterns:
 === HTTP and Networking Optimization
 
 **Connection Pool Configuration**:
-```java
+
+[source,java]
+----
 HttpClient.newBuilder()
     .executor(Executors.newFixedThreadPool(50))
     .connectTimeout(Duration.ofSeconds(10))
     .build();
-```
+----
 
 **Impact**:
+
 * Reduced connection establishment overhead
 * Better thread utilization under load
 * Lower P99 latencies for HTTP processing
@@ -161,11 +178,13 @@ HttpClient.newBuilder()
 === JWT-Specific Optimizations
 
 **Caching Strategy**:
+
 * Access token caching with configurable eviction
 * JWKS key caching to avoid repeated fetches
 * Balanced cache size vs memory usage
 
 **Validation Pipeline**:
+
 * Parallel validation of token components where possible
 * Early validation failures to avoid expensive operations
 * Efficient error handling paths
@@ -175,18 +194,21 @@ HttpClient.newBuilder()
 === Typical Performance Ranges
 
 **Good Performance Conditions** (M4, 4 CPU, optimal config):
+
 * Health endpoint: 11,000-12,500 ops/s
 * JWT validation: 9,000-11,000 ops/s  
 * P95 latencies: 1.5-2.5ms
 * CPU usage: 60-75%
 
 **Resource-Constrained Conditions** (lower CPU/memory):
+
 * Health endpoint: 8,000-10,000 ops/s
 * JWT validation: 6,000-8,000 ops/s
 * P95 latencies: 3-5ms
 * CPU usage: 80-95%
 
 **Performance Variance Factors**:
+
 * Container CPU allocation (major impact)
 * Thread pool configuration (moderate impact)
 * System background load (moderate impact)
@@ -195,7 +217,9 @@ HttpClient.newBuilder()
 === Latency Breakdown Analysis
 
 **Typical 2ms JWT Request Breakdown**:
-```
+
+[source,text]
+----
 Total Request Time: 2,000μs (P95)
 ├─ HTTP/TLS Processing: ~1,600μs (80%)
 │   ├─ Network latency: ~400μs
@@ -210,20 +234,22 @@ Total Request Time: 2,000μs (P95)
     ├─ CDI injection: ~30μs
     ├─ Security filters: ~40μs
     └─ Routing/dispatch: ~30μs
-```
+----
 
 == Monitoring and Observability
 
 === Key Performance Indicators
 
 **Continuous Monitoring Metrics**:
-1. **Throughput Trends**: ops/s over time for both endpoints
-2. **Latency Percentiles**: P50/P95/P99 tracking with alerting
-3. **Error Rates**: Success/failure ratios and error categorization  
-4. **Resource Utilization**: CPU, memory, thread pool usage
-5. **Cache Effectiveness**: Hit ratios and eviction patterns
+
+. **Throughput Trends**: ops/s over time for both endpoints
+. **Latency Percentiles**: P50/P95/P99 tracking with alerting
+. **Error Rates**: Success/failure ratios and error categorization  
+. **Resource Utilization**: CPU, memory, thread pool usage
+. **Cache Effectiveness**: Hit ratios and eviction patterns
 
 **Alert Thresholds** (based on M4 baseline):
+
 * JWT throughput < 8,000 ops/s (sustained)
 * P95 latency > 4ms (sustained)
 * P99 latency > 8ms (sustained)
@@ -233,7 +259,9 @@ Total Request Time: 2,000μs (P95)
 === Profiling and Deep Analysis
 
 **JFR Integration**:
-```bash
+
+[source,bash]
+----
 # Run with JFR profiling enabled
 mvn clean verify -Pbenchmark-jfr -pl benchmarking/benchmark-integration-quarkus
 
@@ -242,10 +270,12 @@ jfr print --events ExecutionSample --stack-depth 20 target/benchmark-results/*.j
 
 # Check GC impact
 jfr print --events GarbageCollection target/benchmark-results/*.jfr
-```
+----
 
 **Performance Regression Detection**:
-```bash
+
+[source,bash]
+----
 # Compare performance between builds
 git checkout <baseline-commit>
 mvn clean package -DskipTests
@@ -254,23 +284,26 @@ mvn clean package -DskipTests
 git checkout <current-commit>  
 mvn clean package -DskipTests
 # Run current benchmarks and compare
-```
+----
 
 == Optimization Roadmap
 
 === Immediate Optimizations (High Impact)
 
 **Connection Pool Tuning**:
+
 * Profile optimal thread pool sizes for target load
 * Implement connection reuse across benchmark iterations
 * Monitor connection establishment overhead
 
 **Native Image Optimization**:
+
 * Experiment with -O3 optimization level
 * Profile build-time vs runtime initialization trade-offs
 * Optimize security provider initialization
 
 **Load Testing Refinement**:
+
 * Develop realistic token workloads
 * Implement graduated load patterns
 * Create comparative benchmark suites
@@ -278,16 +311,19 @@ mvn clean package -DskipTests
 === Advanced Optimizations (Medium Impact)
 
 **Cryptographic Performance**:
+
 * Profile different signature algorithms (RS256 vs ES256)
 * Evaluate hardware crypto acceleration options
 * Optimize key loading and caching strategies
 
 **Framework Optimization**:
+
 * Profile Quarkus filter chain overhead
 * Evaluate CDI vs manual dependency injection
 * Optimize error handling paths
 
 **Container Environment**:
+
 * Test different container runtimes (Docker vs Podman)
 * Optimize container resource limits
 * Evaluate multi-stage build optimizations
@@ -295,11 +331,13 @@ mvn clean package -DskipTests
 === Research Areas (Longer Term)
 
 **Alternative Architectures**:
+
 * Evaluate reactive/async request processing
 * Compare virtual threads vs platform threads
 * Test GraalVM enterprise optimizations
 
 **Scaling Patterns**:
+
 * Load balancer configuration optimization
 * Database connection pooling (if added)
 * Distributed caching strategies (if needed)
@@ -309,12 +347,14 @@ mvn clean package -DskipTests
 === Complementary Analysis
 
 **Micro Benchmark Insights for Integration**:
+
 * JWT validation component costs (50-200μs baseline)
 * Algorithm performance comparisons
 * Memory allocation patterns
 * Cache behavior under different loads
 
 **Integration Insights for Micro Benchmarks**:
+
 * Real-world latency budgets for validation
 * Network vs compute optimization priorities  
 * Error handling performance requirements
@@ -323,28 +363,32 @@ mvn clean package -DskipTests
 === Validation Pipeline
 
 **Performance Regression Prevention**:
-1. **Micro benchmarks**: Detect core algorithm regressions
-2. **Integration benchmarks**: Detect system-level regressions
-3. **Load testing**: Validate under realistic conditions
-4. **Production monitoring**: Continuous validation
+
+. **Micro benchmarks**: Detect core algorithm regressions
+. **Integration benchmarks**: Detect system-level regressions
+. **Load testing**: Validate under realistic conditions
+. **Production monitoring**: Continuous validation
 
 == Conclusion
 
 Integration performance benchmarking provides essential insights into real-world JWT validation performance. The key findings show that:
 
 **System Performance**:
+
 * Native Quarkus achieves excellent throughput (8K-12K ops/s)
 * Memory efficiency is outstanding (~6MB total usage)
 * HTTP processing dominates total request time (80%)
 * JWT validation overhead is reasonable (~15% of request time)
 
 **Optimization Focus**:
+
 * Container and network optimization has highest impact
 * Native image tuning provides consistent improvements
 * JWT algorithm choice has moderate performance impact
 * Monitoring and observability enable continuous optimization
 
 **Future Directions**:
+
 * Enhanced profiling integration with JFR
 * Automated performance regression detection
 * Production workload simulation improvements
