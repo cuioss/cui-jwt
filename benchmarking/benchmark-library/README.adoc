@@ -2,18 +2,25 @@
 
 Performance benchmarking for JWT token validation core library using JMH.
 
-== Quick Start
+== Building and Running
+
+=== Prerequisites
+
+* JDK 21 or later
+* Maven 3.8+
+
+=== Quick Start
 
 [source,bash]
 ----
 # Run all benchmarks
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
 
-# Quick validation run
+# Quick validation run (faster)
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
   -Djmh.iterations=1 -Djmh.warmupIterations=1
 
-# With JFR profiling
+# With JFR profiling for detailed analysis
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
 ----
 
@@ -131,8 +138,19 @@ For custom benchmarking:
 </dependency>
 ----
 
-== Related Documentation
+== Documentation
 
-* link:doc/performance-scoring.adoc[Performance Scoring Methodology]
+For comprehensive documentation on benchmarking, analysis, and visualization:
+
+📚 **link:doc/README.adoc[Complete Documentation]**
+
+=== Quick Links
+
+* link:doc/workflow.adoc[Benchmark Workflow] - Complete workflow guide
+* link:doc/Analysis-08.2025.adoc[Performance Analysis] - Latest benchmark insights
+* link:doc/performance-scoring.adoc[Performance Scoring] - Methodology details
+* link:doc/local-testing.adoc[Local Testing] - Development setup
+
+=== Related
+
 * link:../benchmark-integration-quarkus/README.adoc[Integration Benchmarks]
-* link:JFR-INSTRUMENTATION.md[JFR Variance Analysis]

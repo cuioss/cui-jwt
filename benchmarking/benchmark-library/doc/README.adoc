@@ -1,33 +1,20 @@
 = JWT Library Benchmarks Documentation
 :source-highlighter: highlight.js
 
-Performance benchmarking documentation for the JWT token validation library using JMH.
+Documentation for the JWT validation library performance benchmarking capabilities.
 
 == Overview
 
-This module provides comprehensive performance benchmarking capabilities for the JWT validation library, including:
+This documentation covers:
 
-* **Micro Benchmarks** - Core JWT validation performance using JMH
-* **Integration Benchmarks** - End-to-end performance testing with Quarkus
+* **Benchmark Analysis** - Performance metrics and optimization insights
+* **Documentation Structure** - Organized guides for different use cases
 * **Visualization Tools** - Interactive HTML templates for result analysis
-* **Automated Processing** - CI/CD pipeline scripts for result processing
+* **Processing Pipeline** - CI/CD scripts for automated benchmark processing
 
-== Quick Start
+For building and running benchmarks, see the link:../README.adoc[main README].
 
-=== Running Benchmarks
-
-[source,bash]
-----
-# Run all benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
-
-# Quick validation run
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
-  -Djmh.iterations=1 -Djmh.warmupIterations=1
-
-# With JFR profiling
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
-----
+== Quick Access
 
 === Local Testing
 
@@ -51,6 +38,10 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 * link:local-testing.adoc[Local Testing Guide] - How to test visualizations locally
 * link:performance-scoring.adoc[Performance Scoring] - Weighted metrics methodology
 * link:JFR-Instrumentation.adoc[JFR Instrumentation] - Variance analysis guide
+
+=== Performance Analysis
+
+* link:Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Latest performance metrics and optimization insights
 
 === Benchmarks
 
@@ -94,32 +85,6 @@ The benchmark processing workflow is handled by modular scripts:
 
 See link:scripts-architecture.adoc[Scripts Architecture] for complete workflow documentation.
 
-== Configuration
-
-=== JMH Parameters
-
-[source,bash]
-----
--Djmh.iterations=5           # Measurement iterations (default: 5)
--Djmh.warmupIterations=3     # Warmup iterations (default: 3)  
--Djmh.forks=2               # JVM forks (default: 2)
--Djmh.threads=4             # Concurrent threads (default: 4)
--Djmh.time=10s              # Time per iteration
--Djmh.includes=*Benchmark   # Benchmark pattern filter
-----
-
-=== Running Specific Benchmarks
-
-[source,bash]
-----
-# Single benchmark
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
-  -Djmh.includes=TokenValidatorBenchmark
-
-# Multiple benchmarks  
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
-  -Djmh.includes="TokenValidator|JwksClient"
-----
 
 == Results and Visualization
 
