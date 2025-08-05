@@ -1,252 +1,138 @@
-= JWT Token Validation Benchmarking Module
-:toc: macro
-:toclevels: 3
-:sectnumlevels: 1
+= JWT Library Benchmarks
 
-This module contains benchmarking code for the JWT token validation library. It uses JMH (Java Microbenchmark Harness) to measure performance of various components.
+Performance benchmarking for JWT token validation core library using JMH.
 
-toc::[]
+== Quick Start
 
-== Maven Coordinates
+[source,bash]
+----
+# Run all benchmarks
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+
+# Quick validation run
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.iterations=1 -Djmh.warmupIterations=1
+
+# With JFR profiling
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+----
+
+== Configuration
+
+=== JMH Parameters
+
+[source,bash]
+----
+-Djmh.iterations=5           # Measurement iterations (default: 5)
+-Djmh.warmupIterations=3     # Warmup iterations (default: 3)
+-Djmh.forks=2               # JVM forks (default: 2)
+-Djmh.threads=4             # Concurrent threads (default: 4)
+-Djmh.time=10s              # Time per iteration
+-Djmh.includes=*Benchmark   # Benchmark pattern filter
+----
+
+=== Running Specific Benchmarks
+
+[source,bash]
+----
+# Single benchmark
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.includes=TokenValidatorBenchmark
+
+# Multiple benchmarks
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.includes="TokenValidator|JwksClient"
+----
+
+== Benchmarks
+
+* `TokenValidatorBenchmark` - Core JWT validation performance
+* `JwksClientBenchmark` - JWKS key retrieval performance
+* `MultiIssuerValidatorBenchmark` - Multi-issuer validation
+* `ErrorLoadBenchmark` - Error handling impact
+* `ConcurrentTokenValidationBenchmark` - Concurrent validation
+* `JfrInstrumentedBenchmark` - Detailed variance analysis (JFR profile only)
+
+== Output
+
+Results in `target/`:
+
+* `benchmark-results/jmh-result.json` - Raw JMH results
+* `benchmark-results/performance-<timestamp>.json` - Performance tracking data
+* `benchmark-results/jfr-benchmark.jfr` - JFR recording (with -Pbenchmark-jfr)
+
+== Performance Score
+
+Composite metric combining:
+
+* **Throughput (57%)** - Operations per second
+* **Latency (40%)** - Response time (inverted)
+* **Error Resilience (3%)** - Error handling efficiency
+
+Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience × 0.03)
+
+== Analysis
+
+=== View Results
+
+[source,bash]
+----
+# Throughput summary
+jq '.[] | {benchmark: .benchmark, score: .primaryMetric.score, unit: .primaryMetric.scoreUnit}' \
+  target/benchmark-results/jmh-result.json
+
+# Performance score
+jq '.performanceScore' target/benchmark-results/performance-*.json
+----
+
+=== JFR Analysis
+
+[source,bash]
+----
+# Analyze variance
+java -cp "target/classes:target/dependency/*" \
+  de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
+  target/benchmark-results/jfr-benchmark.jfr
+
+# View hot methods
+jfr print --events jdk.ExecutionSample \
+  target/benchmark-results/jfr-benchmark.jfr
+----
+
+== Performance Tracking
+
+=== Automatic Tracking
+
+Each run generates:
+
+* `performance-YYYYMMDD-HHMMSS.json` - Timestamped metrics
+* Updates to `performance-tracking.json` - Last 10 runs
+
+=== GitHub Pages
+
+View trends at: https://cuioss.github.io/cui-jwt/benchmarks/performance-trends.html
+
+Features:
+
+* Interactive performance charts
+* Trend indicators with percentage changes
+* Performance badges (↗ improving, → stable, ↘ declining)
+
+== Maven Dependency
+
+For custom benchmarking:
 
 [source,xml]
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-benchmarking</artifactId>
+    <artifactId>benchmark-library</artifactId>
     <scope>test</scope>
 </dependency>
 ----
 
-== Core Concepts
-
-The benchmarking module provides performance measurements for key components of the JWT validation library:
-
-* Token validation performance (average time and throughput)
-* JWKS key retrieval performance  
-* Multi-issuer validation performance
-* Error handling performance
-* Concurrent validation performance
-* **Performance Score**: A weighted metric combining throughput and latency
-
-== Usage Examples
-
-=== Running Benchmarks Manually
-
-Benchmarks are configured to be skipped by default to prevent them from slowing down regular builds. To run the benchmarks manually, you need to explicitly enable them.
-
-==== Using Maven Command Line
-
-To run benchmarks from the command line:
-
-[source,bash]
-----
-# From the project root directory
-./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
-
-# With custom JMH parameters
-./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
-  -Djmh.iterations=5 \
-  -Djmh.warmupIterations=3 \
-  -Djmh.forks=2 \
-  -Djmh.threads=4
-----
-
-==== JMH Parameters
-
-You can customize the benchmark execution with the following JMH parameters:
-
-* `jmh.iterations` - Number of measurement iterations (default: 5)
-* `jmh.warmupIterations` - Number of warmup iterations (default: 3)
-* `jmh.forks` - Number of JVM forks (default: 2)
-* `jmh.threads` - Number of threads (default: 4)
-* `jmh.result.format` - Result format (default: JSON)
-* `jmh.result.filePrefix` - Result file prefix
-
-==== Running Specific Benchmarks
-
-To run specific benchmarks, you can use the `jmh.includes` parameter:
-
-[source,bash]
-----
-./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark \
-  -Djmh.includes=TokenValidatorBenchmark
-----
-
-=== Running JFR-Instrumented Benchmarks
-
-For detailed variance analysis and performance profiling, use the JFR-instrumented benchmark profile:
-
-[source,bash]
-----
-# Run benchmarks with JFR instrumentation
-./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark-jfr
-
-# Custom parameters for extended analysis
-./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark-jfr \
-  -Djmh.iterations=10 \
-  -Djmh.threads=16 \
-  -Djmh.time=10s
-----
-
-The JFR profile:
-
-* Runs only JFR-instrumented benchmarks (`JfrInstrumentedBenchmark`)
-* Captures detailed timing and variance metrics
-* Generates JFR recording at `target/benchmark-results/jfr-benchmark.jfr`
-* Uses the same JMH settings as the standard benchmark profile
-
-To analyze the JFR data:
-
-[source,bash]
-----
-java -cp "target/classes:target/dependency/*" \
-  de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
-  target/benchmark-results/jfr-benchmark.jfr
-----
-
-See link:JFR-INSTRUMENTATION.md[JFR Instrumentation Guide] for detailed information about variance analysis.
-
-== Benchmark Results
-
-After running the benchmarks, results will be available in the `target` directory. If you've configured JSON output, you can visualize the results using the HTML visualizer template included in this module.
-
-== Benchmark Classes
-
-=== TokenValidatorBenchmark
-
-Measures the performance of token validation operations.
-
-=== JwksClientBenchmark
-
-Measures the performance of JWKS key retrieval operations.
-
-=== MultiIssuerValidatorBenchmark
-
-Measures the performance of multi-issuer token validation.
-
-=== ErrorLoadBenchmark
-
-Measures the performance impact of error handling.
-
-=== ConcurrentTokenValidationBenchmark
-
-Measures the performance of concurrent token validation.
-
-== GitHub Actions Integration
-
-This module is configured to run benchmarks automatically via GitHub Actions:
-
-* On merges to the main branch
-* On version tag pushes
-* Manually via workflow dispatch
-
-Results are published to GitHub Pages for visualization and comparison over time.
-
-== Performance Tracking System
-
-The benchmarking module includes an advanced performance tracking system that monitors trends over time:
-
-=== Individual Run Tracking
-
-Each benchmark run creates a timestamped JSON file containing:
-
-* Performance metrics (score, throughput, latency, error resilience)
-* Environment information (Java version, OS, commit hash)
-* Raw JMH measurement data
-
-Files are stored as `performance-YYYYMMDD-HHMMSS.json` in the tracking directory.
-
-=== Consolidated Tracking
-
-A master `performance-tracking.json` file maintains the last 10 benchmark runs for trend analysis.
-
-=== Performance Trends Visualization
-
-Access comprehensive performance trends at: https://cuioss.github.io/cui-jwt/benchmarks/performance-trends.html
-
-**Features:**
-* Interactive charts for all key metrics
-* Trend indicators with percentage changes
-* Percentage change calculation between first and last of last 10 runs
-* Technical variation filtering for accurate trend detection
-
-=== Performance Trend Badge
-
-The **Performance Trend** badge shows:
-
-* **↗ X.X% (improving)** - Green badge for performance gains > 2%
-* **↘ X.X% (declining)** - Orange badge for performance drops > 2%  
-* **→ X.X% (stable)** - Grey badge for changes ≤ 2%
-
-Clicking the badge opens the detailed trends visualization.
-
-== Understand Performance Metrics
-
-For comprehensive performance metrics methodology, scoring calculations, and interpretation guidelines, see xref:doc/performance-scoring.adoc[Performance Scoring System Documentation].
-
-== Related Modules
-
-=== Integration Benchmarking
-
-The xref:../benchmark-integration-quarkus/README.adoc[JWT Quarkus Integration Benchmarks] provides end-to-end performance testing using the **identical scoring formula** as this micro-benchmark module:
-
-[cols="1,1,1", options="header"]
-|===
-|Aspect |Micro-Benchmarks (this module) |Integration Benchmarks
-
-|**Measurement Scope**
-|In-memory library calls
-|End-to-end HTTP validation
-
-|**Time Scale** 
-|Microseconds (pure library)
-|Milliseconds (HTTP overhead)
-
-|**Infrastructure**
-|Direct JVM execution
-|Docker containers + Keycloak
-
-|**Scoring Formula**
-|**Performance Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience × 0.03)**
-|**Identical** (same weights and formula)
-
-|**Use Case**
-|Library optimization & regression detection
-|System-level performance validation
-|===
-
-Both modules produce comparable performance scores for tracking performance trends across different testing approaches.
-
-== Documentation
-
-For detailed information about the benchmarking system:
-
-* xref:doc/performance-scoring.adoc[Performance Scoring System] - Complete methodology and calculation details
-* xref:doc/README.adoc[Benchmark Documentation] - Visualization templates and additional documentation
-
-=== Templates and Scripts
-
-The `doc/templates/` directory contains HTML templates for visualization:
-
-**HTML Templates:**
-* `index-visualizer.html` - JMH Visualizer integration template
-* `integration-index.html` - Integration benchmark visualization
-* `step-metrics-visualizer.html` - Step-by-step metrics visualization
-* `performance-trends.html` - Interactive performance trends visualization
-
-The `scripts/` directory contains processing and utility scripts:
-
-**Processing Scripts:**
-* `create-performance-badge.sh` - Generates comprehensive performance badge from JMH results
-* `create-performance-tracking.sh` - Creates timestamped performance tracking files 
-* `update-performance-trends.sh` - Updates consolidated tracking and manages trend analysis
-* `calculate-trend-badge.sh` - Calculates trend metrics and generates trend badge
-* `prepare-github-pages.sh` - Prepares GitHub Pages deployment structure
-
-**Local Testing Scripts:**
-* `serve-local.sh` - Starts HTTP server for local template testing (Python-based)
-* `serve-local.js` - Node.js alternative for local HTTP server
-* `LOCAL_TESTING.md` - Documentation for local testing setup
-
-The scripts architecture separates complex badge and tracking logic from the GitHub workflow, making the system more maintainable and testable.
+== Related Documentation
+
+* link:doc/performance-scoring.adoc[Performance Scoring Methodology]
+* link:../benchmark-integration-quarkus/README.adoc[Integration Benchmarks]
+* link:JFR-INSTRUMENTATION.md[JFR Variance Analysis]
