@@ -60,7 +60,7 @@ The benchmark processing is automatically triggered in GitHub Actions:
 
 [source,bash]
 ----
-cd benchmarking/benchmark-library/scripts
+cd benchmarking/scripts
 ./serve-local.sh
 # Open http://localhost:8080
 ----
@@ -71,12 +71,12 @@ You can run the processing scripts manually on existing results:
 
 [source,bash]
 ----
-cd benchmarking/benchmark-library/scripts
+cd benchmarking/scripts
 
 # Process all results
 ./process-all-benchmarks.sh \
   path/to/benchmark-results \
-  ../doc/templates \
+  doc/templates \
   output-directory \
   commit-hash \
   "2024-01-15" \

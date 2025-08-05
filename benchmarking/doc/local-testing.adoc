@@ -9,7 +9,7 @@ To test the benchmark visualization templates locally, use one of the provided H
 
 [source,bash]
 ----
-cd benchmarking/benchmark-library/scripts
+cd benchmarking/scripts
 ./serve-local.sh
 # Or specify a port:
 ./serve-local.sh 3000
@@ -19,7 +19,7 @@ cd benchmarking/benchmark-library/scripts
 
 [source,bash]
 ----
-cd benchmarking/benchmark-library/scripts
+cd benchmarking/scripts
 node serve-local.js
 # Or specify a port:
 node serve-local.js 3000
@@ -31,7 +31,7 @@ From the `doc/templates` directory:
 
 [source,bash]
 ----
-cd benchmarking/benchmark-library/doc/templates
+cd benchmarking/doc/templates
 
 # Python 3
 python3 -m http.server 8080

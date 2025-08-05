@@ -12,7 +12,7 @@ This documentation covers:
 * **Visualization Tools** - Interactive HTML templates for result analysis
 * **Processing Pipeline** - CI/CD scripts for automated benchmark processing
 
-For building and running benchmarks, see the link:../README.adoc[main README].
+For building and running benchmarks, see the link:benchmark-library/README.adoc[benchmark library README].
 
 == Quick Access
 
@@ -22,7 +22,7 @@ For local development and testing of visualization templates:
 
 [source,bash]
 ----
-cd benchmarking/benchmark-library/scripts
+cd benchmarking/scripts
 ./serve-local.sh
 # Open http://localhost:8080 in your browser
 ----

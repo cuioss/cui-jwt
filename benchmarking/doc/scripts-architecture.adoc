@@ -60,9 +60,9 @@ The main entry point is called from `.github/workflows/benchmark.yml`:
 
 [source,bash]
 ----
-bash benchmarking/benchmark-library/scripts/process-all-benchmarks.sh \
+bash benchmarking/scripts/process-all-benchmarks.sh \
   benchmark-results \
-  benchmarking/benchmark-library/doc/templates \
+  benchmarking/doc/templates \
   gh-pages \
   "${{ github.sha }}" \
   "$TIMESTAMP" \
