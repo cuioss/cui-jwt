@@ -56,69 +56,53 @@ class KeycloakDefaultGroupsMapperTest {
         assertNotNull(result.getOriginalString());
     }
 
-    @Test
-    @DisplayName("Handle missing groups claim")
-    void shouldHandleMissingGroups() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .add("iss", "https://keycloak.example.com")
-                .build();
-
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("edgeCaseGroupsProvider")
+    @DisplayName("Handle edge cases for groups claim")
+    void shouldHandleGroupsEdgeCases(String testCase, JsonObject jsonObject, boolean shouldBePresent, String expectedOriginalString) {
         ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertFalse(result.isPresent());
+        assertEquals(shouldBePresent, result.isPresent());
         assertTrue(result.getAsList().isEmpty());
+        
+        if (expectedOriginalString != null) {
+            assertEquals(expectedOriginalString, result.getOriginalString());
+        }
     }
 
-    @Test
-    @DisplayName("Handle empty groups array")
-    void shouldHandleEmptyGroupsArray() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .add("groups", Json.createArrayBuilder().build())
-                .build();
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertTrue(result.isPresent());
-        assertTrue(result.getAsList().isEmpty());
-        assertEquals("[]", result.getOriginalString());
-    }
-
-    @Test
-    @DisplayName("Handle non-array groups value")
-    void shouldHandleNonArrayGroups() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .add("groups", "test-group")
-                .build();
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertFalse(result.isPresent());
-        assertTrue(result.getAsList().isEmpty());
-    }
-
-    @Test
-    @DisplayName("Handle null groups")
-    void shouldHandleNullGroups() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .addNull("groups")
-                .build();
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertFalse(result.isPresent());
-        assertTrue(result.getAsList().isEmpty());
+    private static Stream<Arguments> edgeCaseGroupsProvider() {
+        return Stream.of(
+                Arguments.of("missing groups claim",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .add("iss", "https://keycloak.example.com")
+                                .build(),
+                        false,
+                        null),
+                Arguments.of("empty groups array",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .add("groups", Json.createArrayBuilder().build())
+                                .build(),
+                        true,
+                        "[]"),
+                Arguments.of("non-array groups value",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .add("groups", "test-group")
+                                .build(),
+                        false,
+                        null),
+                Arguments.of("null groups",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .addNull("groups")
+                                .build(),
+                        false,
+                        null)
+        );
     }
 
     @Test

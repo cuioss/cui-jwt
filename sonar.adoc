@@ -55,14 +55,14 @@ Each task follows the standard format as defined in the refactoring process docu
 === Testing Improvements
 
 ==== T1. Parameterize KeycloakDefaultGroupsMapperTest Tests
-[ ] *Priority:* Medium
+[x] *Priority:* Medium
 
 *Description:* Replace 4 similar tests in `KeycloakDefaultGroupsMapperTest.java:138` with a single parameterized test.
 
 *Rationale:* Parameterized tests reduce code duplication, improve maintainability, and make it easier to add new test cases.
 
 ==== T2. Remove Duplicate Test Implementation in MandatoryClaimsValidatorTest
-[ ] *Priority:* Medium
+[x] *Priority:* Medium
 
 *Description:* Update the test method at line 249 so that its implementation is not identical to `shouldFailValidationWhenSubjectClaimIsMissing` on line 88.
 
@@ -77,9 +77,9 @@ Progress is tracked using checkboxes in the task list:
 
 === Current Progress
 
-* Code Structure and Design: 3/4 completed
-* Testing Improvements: 0/2 completed
-* Overall: 3/6 completed
+* Code Structure and Design: 3/3 completed (C4 removed as per user request)
+* Testing Improvements: 2/2 completed
+* Overall: 5/5 completed (100%)
 
 == Task Completion Process
 
