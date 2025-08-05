@@ -63,7 +63,7 @@ public class SimpleMetricsExporter {
         this.metricsFetcher = metricsFetcher;
         File dir = new File(outputDirectory);
         dir.mkdirs();
-        LOGGER.info("SimpleMetricsExporter initialized with output directory: {} (exists: {})",
+        LOGGER.debug("SimpleMetricsExporter initialized with output directory: {} (exists: {})",
                 dir.getAbsolutePath(), dir.exists());
     }
 
@@ -261,7 +261,7 @@ public class SimpleMetricsExporter {
         // - _sum: total time in seconds
         // - _max: maximum observed value in seconds
         // We need to estimate percentiles from these values
-        
+
         String validationMetricPrefix = MetricConstants.BEARER_TOKEN.VALIDATION.replace(".", "_") + "_seconds";
 
         // Collect the available metrics
@@ -300,7 +300,7 @@ public class SimpleMetricsExporter {
             data.p50 = avgMicros;
             data.p95 = Math.min(avgMicros * 2, max * 1_000_000 * 0.8); // 80% of max as upper bound
             data.p99 = max * 1_000_000 * 0.9; // 90% of max as p99 estimate
-            
+
             timedData.put("validation", data);
         } else {
             // No data available, create empty metrics

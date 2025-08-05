@@ -77,7 +77,7 @@ public class TokenRepositoryConfig {
      * Default: 5000 (10x the default cache size of 500)
      */
     @Builder.Default
-    int tokenPoolSize = 500;
+    int tokenPoolSize = 100;
 
     /**
      * Connection timeout in milliseconds for Keycloak requests.

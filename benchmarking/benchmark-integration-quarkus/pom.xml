@@ -74,6 +74,13 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        
+        <!-- Apache Commons IO for TeeOutputStream -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.15.1</version>
+        </dependency>
 
 
         <!-- JUnit for basic testing -->

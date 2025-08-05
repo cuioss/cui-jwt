@@ -15,7 +15,11 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.logging;
 
+import org.apache.commons.io.output.TeeOutputStream;
+
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,8 +35,13 @@ public class BenchmarkLoggingSetup {
     
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     
+    // Keep references to original streams
+    private static final PrintStream ORIGINAL_OUT = System.out;
+    private static final PrintStream ORIGINAL_ERR = System.err;
+    
     /**
      * Configures logging to write to both console and a timestamped file in benchmark-results.
+     * Also redirects System.out and System.err to capture all console output.
      * 
      * @param benchmarkResultsDir the directory where benchmark results are stored
      */
@@ -47,46 +56,63 @@ public class BenchmarkLoggingSetup {
             String logFileName = String.format("benchmark-run_%s.log", timestamp);
             Path logFile = resultsPath.resolve(logFileName);
             
-            // Get root logger
-            Logger rootLogger = Logger.getLogger("");
+            // Create output file stream
+            FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true);
             
-            // Remove existing handlers
-            Handler[] handlers = rootLogger.getHandlers();
-            for (Handler handler : handlers) {
-                rootLogger.removeHandler(handler);
-            }
+            // Create TeeOutputStream for System.out (writes to both console and file)
+            TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
+            PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
             
-            // Create console handler
-            ConsoleHandler consoleHandler = new ConsoleHandler();
-            consoleHandler.setLevel(Level.INFO);
-            consoleHandler.setFormatter(new SimpleFormatter());
-            rootLogger.addHandler(consoleHandler);
+            // Create TeeOutputStream for System.err (writes to both console and file)
+            TeeOutputStream teeErr = new TeeOutputStream(ORIGINAL_ERR, fileOut);
+            PrintStream newErr = new PrintStream(teeErr, true); // auto-flush enabled
             
-            // Create file handler
-            FileHandler fileHandler = new FileHandler(logFile.toString(), false);
-            fileHandler.setLevel(Level.ALL);
-            fileHandler.setFormatter(new SimpleFormatter());
-            rootLogger.addHandler(fileHandler);
+            // Redirect System.out and System.err
+            System.setOut(newOut);
+            System.setErr(newErr);
             
-            // Set root logger level
-            rootLogger.setLevel(Level.INFO);
-            
-            // Configure de.cuioss packages
-            Logger.getLogger("de").setLevel(Level.INFO);
-            Logger.getLogger("de.cuioss").setLevel(Level.INFO);
-            Logger.getLogger("de.cuioss.jwt").setLevel(Level.INFO);
-            Logger.getLogger("de.cuioss.jwt.quarkus").setLevel(Level.INFO);
-            Logger.getLogger("de.cuioss.jwt.quarkus.benchmark").setLevel(Level.INFO);
-            
-            // Disable JMH internal logging
-            Logger.getLogger("org.openjdk.jmh").setLevel(Level.OFF);
+            // Configure java.util.logging as before
+            configureJavaUtilLogging(logFile);
             
             // Log configuration success
-            rootLogger.info("Benchmark logging configured - writing to: " + logFile);
+            System.out.println("Benchmark logging configured - writing to: " + logFile);
+            System.out.println("All console output (System.out/err and JMH) will be captured to both console and file");
             
         } catch (IOException e) {
             System.err.println("Failed to configure file logging: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    private static void configureJavaUtilLogging(Path logFile) throws IOException {
+        // Get root logger
+        Logger rootLogger = Logger.getLogger("");
+        
+        // Remove existing handlers
+        Handler[] handlers = rootLogger.getHandlers();
+        for (Handler handler : handlers) {
+            rootLogger.removeHandler(handler);
+        }
+        
+        // Only add console handler - file logging is handled by TeeOutputStream
+        ConsoleHandler consoleHandler = new ConsoleHandler();
+        consoleHandler.setLevel(Level.INFO);
+        consoleHandler.setFormatter(new SimpleFormatter());
+        rootLogger.addHandler(consoleHandler);
+        
+        // No FileHandler needed - TeeOutputStream captures everything to file
+        
+        // Set root logger level
+        rootLogger.setLevel(Level.INFO);
+        
+        // Configure de.cuioss packages
+        Logger.getLogger("de").setLevel(Level.INFO);
+        Logger.getLogger("de.cuioss").setLevel(Level.INFO);
+        Logger.getLogger("de.cuioss.jwt").setLevel(Level.INFO);
+        Logger.getLogger("de.cuioss.jwt.quarkus").setLevel(Level.INFO);
+        Logger.getLogger("de.cuioss.jwt.quarkus.benchmark").setLevel(Level.INFO);
+        
+        // Disable JMH internal logging
+        Logger.getLogger("org.openjdk.jmh").setLevel(Level.OFF);
     }
 }

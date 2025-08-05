@@ -17,3 +17,6 @@
 
 # Exclude test data files from benchmarking templates
 /cui-jwt-benchmarking/doc/templates/data/
+
+# Claude Code configuration
+.claude/

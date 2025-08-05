@@ -41,7 +41,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
 
     /**
      * Setup method called once before all benchmark iterations.
-     * Extends parent setup and adds token repository initialization.
+     * Extends parent setup and initializes or reuses the shared token repository.
      */
     @Override
     @Setup(Level.Trial)
@@ -53,34 +53,40 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
 
         // Get Keycloak configuration
         keycloakUrl = BenchmarkOptionsHelper.getKeycloakUrl("https://localhost:1443");
-        LOGGER.info("Keycloak URL: {}", keycloakUrl);
 
-        // Initialize token repository
+        // Initialize token repository using shared instance if available
         initializeTokenRepository();
 
         LOGGER.info("Integration benchmark setup completed");
     }
 
     /**
-     * Initializes the token repository with configuration for testing scenarios.
+     * Initializes the token repository, using the shared instance if available
+     * or creating a new one if needed (for forked JVM processes).
      */
     private void initializeTokenRepository() {
-        LOGGER.debug("Initializing token repository");
+        if (TokenRepository.isSharedInstanceInitialized()) {
+            LOGGER.debug("Using existing shared TokenRepository instance");
+            tokenRepository = TokenRepository.getSharedInstance();
+        } else {
+            LOGGER.debug("Initializing new TokenRepository for forked benchmark process");
 
-        TokenRepositoryConfig config = TokenRepositoryConfig.builder()
-                .keycloakBaseUrl(keycloakUrl)
-                .realm("benchmark")
-                .clientId("benchmark-client")
-                .clientSecret("benchmark-secret")
-                .username("benchmark-user")
-                .password("benchmark-password")
-                .connectionTimeoutMs(5000)
-                .requestTimeoutMs(10000)
-                .verifySsl(false)
-                .tokenRefreshThresholdSeconds(300)
-                .build();
+            TokenRepositoryConfig config = TokenRepositoryConfig.builder()
+                    .keycloakBaseUrl(keycloakUrl)
+                    .realm("benchmark")
+                    .clientId("benchmark-client")
+                    .clientSecret("benchmark-secret")
+                    .username("benchmark-user")
+                    .password("benchmark-password")
+                    .connectionTimeoutMs(5000)
+                    .requestTimeoutMs(10000)
+                    .verifySsl(false)
+                    .tokenRefreshThresholdSeconds(300)
+                    .build();
 
-        tokenRepository = new TokenRepository(config);
+            TokenRepository.initializeSharedInstance(config);
+            tokenRepository = TokenRepository.getSharedInstance();
+        }
 
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
     }
