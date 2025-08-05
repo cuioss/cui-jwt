@@ -44,6 +44,11 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 public abstract class AbstractBaseBenchmark {
+    
+    static {
+        // Set the logging manager to prevent JBoss LogManager errors in forked JVMs
+        System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
+    }
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractBaseBenchmark.class);
 

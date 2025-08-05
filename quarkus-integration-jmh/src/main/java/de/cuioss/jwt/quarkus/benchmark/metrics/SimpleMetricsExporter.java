@@ -20,7 +20,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
-import de.cuioss.jwt.quarkus.metrics.MetricIdentifier;
+import de.cuioss.jwt.quarkus.benchmark.constants.MetricConstants;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.File;
@@ -262,7 +262,7 @@ public class SimpleMetricsExporter {
         // - _max: maximum observed value in seconds
         // We need to estimate percentiles from these values
         
-        String validationMetricPrefix = MetricIdentifier.BEARER_TOKEN.VALIDATION.replace(".", "_") + "_seconds";
+        String validationMetricPrefix = MetricConstants.BEARER_TOKEN.VALIDATION.replace(".", "_") + "_seconds";
 
         // Collect the available metrics
         Double count = null;

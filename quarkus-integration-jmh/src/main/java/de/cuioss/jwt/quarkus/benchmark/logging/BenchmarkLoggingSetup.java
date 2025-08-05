@@ -1,0 +1,92 @@
+/*
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.jwt.quarkus.benchmark.logging;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.logging.*;
+
+/**
+ * Sets up logging for JMH benchmarks to write to both console and a file in benchmark-results.
+ * This is called programmatically to ensure the log file is written to the correct directory.
+ */
+public class BenchmarkLoggingSetup {
+    
+    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+    
+    /**
+     * Configures logging to write to both console and a timestamped file in benchmark-results.
+     * 
+     * @param benchmarkResultsDir the directory where benchmark results are stored
+     */
+    public static void configureLogging(String benchmarkResultsDir) {
+        try {
+            // Ensure directory exists
+            Path resultsPath = Paths.get(benchmarkResultsDir);
+            Files.createDirectories(resultsPath);
+            
+            // Create log file with timestamp
+            String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
+            String logFileName = String.format("benchmark-run_%s.log", timestamp);
+            Path logFile = resultsPath.resolve(logFileName);
+            
+            // Get root logger
+            Logger rootLogger = Logger.getLogger("");
+            
+            // Remove existing handlers
+            Handler[] handlers = rootLogger.getHandlers();
+            for (Handler handler : handlers) {
+                rootLogger.removeHandler(handler);
+            }
+            
+            // Create console handler
+            ConsoleHandler consoleHandler = new ConsoleHandler();
+            consoleHandler.setLevel(Level.INFO);
+            consoleHandler.setFormatter(new SimpleFormatter());
+            rootLogger.addHandler(consoleHandler);
+            
+            // Create file handler
+            FileHandler fileHandler = new FileHandler(logFile.toString(), false);
+            fileHandler.setLevel(Level.ALL);
+            fileHandler.setFormatter(new SimpleFormatter());
+            rootLogger.addHandler(fileHandler);
+            
+            // Set root logger level
+            rootLogger.setLevel(Level.INFO);
+            
+            // Configure de.cuioss packages
+            Logger.getLogger("de").setLevel(Level.INFO);
+            Logger.getLogger("de.cuioss").setLevel(Level.INFO);
+            Logger.getLogger("de.cuioss.jwt").setLevel(Level.INFO);
+            Logger.getLogger("de.cuioss.jwt.quarkus").setLevel(Level.INFO);
+            Logger.getLogger("de.cuioss.jwt.quarkus.benchmark").setLevel(Level.INFO);
+            
+            // Disable JMH internal logging
+            Logger.getLogger("org.openjdk.jmh").setLevel(Level.OFF);
+            
+            // Log configuration success
+            rootLogger.info("Benchmark logging configured - writing to: " + logFile);
+            
+        } catch (IOException e) {
+            System.err.println("Failed to configure file logging: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}

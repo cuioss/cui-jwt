@@ -9,27 +9,39 @@
 
 **Focus**: Quarkus JWT validation endpoint performance optimization
 
-**Current Baseline** (August 4, 2025 - Actual Measurements):
+**Current Baseline** (August 5, 2025 - Performance Regression Detected):
 
-- Health endpoint: 1.54ms P95, 2.02ms P99 ✅ **EXCELLENT**
-- JWT validation: 1.58ms P95, 2.15ms P99 ✅ **EXCELLENT**
-- Internal JWT processing: 203μs P95 (outstanding), 95ms P99 (spike issue)
+- Health endpoint: 12,439 ops/s (improved from 11,311) ✅ 
+- JWT validation: 8,770 ops/s (down from 10,943) 🔴 **20% REGRESSION**
+- CPU usage: 50% (down from 73%) - indicating underutilization
 
-**Key Achievements**:
+**Key Findings**:
 
-- Throughput: 8,400-11,300 ops/s (exceeded 10K target!)
-- Latency: All endpoints <2ms P95 (well below 5ms target)
-- CPU usage: 73% (manageable but could be optimized)
+- Health checks prove system can handle 12,439 ops/s
+- JWT validation only achieving 8,770 ops/s (30% lower than health)
+- CPU at 50% suggests computational bottleneck, not I/O
+- JMH optimization: 24 threads optimal (was 30)
 
-**Remaining Concern**:
+**Critical Issue**:
 
-- Bearer token P99 spike: 95ms (versus 203μs P95) - 468x jump indicates periodic issue
+- JWT validation throughput regressed 20% since August 4
+- Health endpoint improved, ruling out infrastructure issues
+- Indicates JWT-specific performance degradation
 
-== Performance Baseline (August 4, 2025)
+== Performance Baseline Comparison
 
-=== Current Performance Metrics
+=== Performance Metrics - August 4 vs August 5
 
-**Infrastructure**: Apple M4 (2 CPUs), OrbStack containerization, Quarkus native runtime, Java HttpClient
+**Infrastructure**: Apple M4 (4 CPUs), OrbStack containerization, Quarkus native runtime, Java HttpClient
+
+|===
+| Endpoint Type | Aug 4 Throughput | Aug 5 Throughput | Change | Aug 5 P50 | Aug 5 P95 | Aug 5 P99 
+| **Health Check** | 11,311 ops/s | 12,439 ops/s | +10% ✅ | 1,739μs | 2,896μs | 5,652μs
+| **JWT Validation** | 10,943 ops/s | 8,770 ops/s | -20% 🔴 | 2,540μs | 4,506μs | 7,586μs
+| **Throughput Gap** | 3.2% | 41.8% | - | - | - | -
+|===
+
+=== August 4 Baseline (Previous High Performance)
 
 |===
 | Endpoint Type | Throughput | Sample Count | P50 Latency | P95 Latency | P99 Latency | Description
@@ -120,38 +132,90 @@ Internal Metrics (520,808 validation samples):
 
 == Optimization Strategy
 
-=== Priority 1: Investigate P99 Bearer Token Spike
+=== 🔴 Priority 1: Fix JWT Validation Performance Regression (20% throughput loss)
 
-**Goal**: Understand and mitigate the 95ms P99 spike in bearer token processing
+**Goal**: Restore JWT validation throughput from 8,770 ops/s back to 10,943+ ops/s
 
-**Investigation Steps**:
+**Root Cause Analysis Tasks**:
 
-1. **Add Detailed Monitoring**:
+1. **Compare Code Changes**:
+   ```bash
+   # Check what changed between August 4 and August 5
+   git log --since="2025-08-04" --until="2025-08-05" --oneline -- cui-jwt-quarkus-parent/
+   git diff db66e8b..HEAD -- cui-jwt-quarkus-parent/cui-jwt-quarkus/src/main/java/de/cuioss/jwt/
+   ```
 
-   [source,java]
-   ----
-   // Add percentile tracking for bearer token operations
-   @Timed(percentiles = {0.5, 0.95, 0.99, 0.999})
-   public AccessTokenContent validateBearerToken(String token) {
-       // Track cache hits vs misses
-       // Monitor key rotation events
+2. **Profile JWT Validation Hot Paths**:
+   ```bash
+   # Run JFR profiling to identify CPU bottlenecks
+   mvn clean verify -Pbenchmark-jfr -pl quarkus-integration-jmh
+   jfr print --events CPULoad,ExecutionSample --stack-depth 20 target/benchmark-jfr-results/jfr-recordings/*.jfr
+   ```
+
+3. **Analyze Cryptographic Operations**:
+   - Check if signature verification algorithm changed
+   - Verify JWKS key loading performance
+   - Profile RSA/ECDSA operations
+   - Check for synchronization bottlenecks
+
+4. **Thread Utilization Analysis**:
+   ```java
+   // Add thread-level metrics to understand CPU underutilization
+   @Counted(name = "jwt_validation_thread_active")
+   @Timed(name = "jwt_validation_thread_time")
+   public void validateToken() {
+       // Track per-thread utilization
    }
-   ----
+   ```
 
-2. **JFR Profiling** ✅ **ALREADY IMPLEMENTED**:
+5. **Comparative Benchmark**:
+   ```bash
+   # Run side-by-side comparison with August 4 build
+   git checkout db66e8b  # Last known good commit
+   mvn clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+   # Save the native binary
+   
+   git checkout feature/integration-perfomance-optimization
+   # Run benchmarks against both binaries
+   ```
 
-   [source,bash]
-   ----
-   # Use existing benchmark-jfr profile
-   mvn clean verify -Pbenchmark-jfr
-   # JFR files automatically collected to target/benchmark-jfr-results/jfr-recordings/
-   ----
+=== 🟡 Priority 2: Optimize JWT Processing for Raw Performance
 
-3. **Potential Mitigations**:
-   - Pre-warm caches on startup
-   - Implement cache preloading for known keys
-   - Add circuit breaker for outlier detection
-   - Consider timeout-based fallback
+**Goal**: Close the 41.8% throughput gap between health checks and JWT validation
+
+**Actionable Tasks**:
+
+1. **Parallel Token Validation**:
+   ```java
+   // Investigate if token parts can be validated in parallel
+   CompletableFuture<Boolean> signatureCheck = CompletableFuture.supplyAsync(() -> verifySignature());
+   CompletableFuture<Boolean> claimsCheck = CompletableFuture.supplyAsync(() -> validateClaims());
+   CompletableFuture<Boolean> expiryCheck = CompletableFuture.supplyAsync(() -> checkExpiry());
+   ```
+
+2. **Optimize Cryptographic Libraries**:
+   - Benchmark BouncyCastle vs native Java crypto
+   - Consider hardware acceleration (AES-NI, SHA extensions)
+   - Profile key loading and caching
+
+3. **Remove Synchronization Bottlenecks**:
+   ```bash
+   # Find synchronized blocks and locks
+   grep -r "synchronized\|Lock\|Semaphore" cui-jwt-quarkus-parent/cui-jwt-quarkus/src/
+   ```
+
+4. **Native Image Optimizations**:
+   ```xml
+   <!-- Try aggressive native optimizations -->
+   <quarkus.native.additional-build-args>
+     -O3,
+     -march=native,
+     --enable-all-security-services,
+     --initialize-at-build-time
+   </quarkus.native.additional-build-args>
+   ```
+
+=== 🟢 Priority 3: Investigate P99 Bearer Token Spike
 
 === Priority 2: CPU Optimization ✅ **MOSTLY IMPLEMENTED**
 
@@ -208,7 +272,7 @@ Internal Metrics (520,808 validation samples):
 [source,bash]
 ----
 # Run comprehensive benchmarks
-./mvnw clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-jmh -Pbenchmark
+./mvnw clean verify -pl quarkus-integration-jmh -Pbenchmark
 
 # Monitor resources during benchmark
 docker stats --no-stream
@@ -284,34 +348,101 @@ Given the excellent baseline performance, tighter thresholds are appropriate:
 - Memory usage > 20MB for >2 minutes (currently 5.77MB)
 - Error rate deviation > 10% from baseline
 
+== Immediate Action Items (August 5, 2025)
+
+=== 1. Investigate Performance Regression 🔴 **URGENT**
+
+```bash
+# Step 1: Check recent code changes
+git log --since="2025-08-04" --until="2025-08-05" --oneline -- cui-jwt-quarkus-parent/
+
+# Step 2: Run JFR profiling
+mvn clean verify -Pbenchmark-jfr -pl quarkus-integration-jmh
+
+# Step 3: Compare CPU profiles
+jfr print --events ExecutionSample --stack-depth 50 target/benchmark-jfr-results/jfr-recordings/*.jfr | head -200
+
+# Step 4: Check for lock contention
+jfr print --events JavaMonitorWait,JavaMonitorEnter target/benchmark-jfr-results/jfr-recordings/*.jfr
+```
+
+=== 2. Quick Performance Wins 🟡
+
+1. **Verify Native Compilation Flags**:
+   ```bash
+   # Check current optimization level
+   grep "native.additional-build-args" cui-jwt-quarkus-parent/pom.xml
+   ```
+
+2. **Profile Token Validation**:
+   ```java
+   // Add timing to each validation step
+   long start = System.nanoTime();
+   // ... validation step ...
+   long duration = System.nanoTime() - start;
+   metrics.record("jwt.validation.step.X", duration);
+   ```
+
+3. **Check Thread Pool Configuration**:
+   ```bash
+   # Verify HTTP client thread pool settings
+   grep -r "executor\|thread\|pool" quarkus-integration-jmh/src/
+   ```
+
+=== 3. Benchmark Comparison Script 🟢
+
+Create a script to compare performance between commits:
+
+```bash
+#!/bin/bash
+# compare-performance.sh
+
+# Checkout and build August 4 version
+git checkout db66e8b
+mvn clean package -DskipTests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cp target/*-runner /tmp/jwt-aug4-runner
+
+# Checkout and build current version  
+git checkout feature/integration-perfomance-optimization
+mvn clean package -DskipTests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cp target/*-runner /tmp/jwt-current-runner
+
+# Run benchmarks on both
+echo "Testing August 4 build..."
+# ... benchmark commands ...
+
+echo "Testing current build..."
+# ... benchmark commands ...
+```
+
 == Conclusion
 
-The JWT validation endpoint has **exceeded all original performance targets**:
+The JWT validation endpoint showed **performance regression on August 5, 2025**:
 
-**Major Achievements**:
+**Current Status**:
 
-- ✅ P95 latency: 1.5-1.6ms (target was <5ms) - **3x better**
-- ✅ P99 latency: 2.0-2.2ms (target was <20ms) - **9-10x better**
-- ✅ Throughput: 10,900-11,300 ops/s (target was >10,000) - **achieved**
-- ✅ Memory usage: 5.77MB - **extremely efficient**
+- 🔴 JWT Throughput: 8,770 ops/s (down from 10,943) - **20% regression**
+- ✅ Health Throughput: 12,439 ops/s (up from 11,311) - **10% improvement**
+- 🔴 Performance Gap: 41.8% between health and JWT (was 3.2%)
+- 🟡 CPU Usage: 50% (down from 73%) - **underutilization**
+- ✅ JMH Optimization: 24 threads optimal (was 30)
 
-**Implementation Status**:
+**Key Findings**:
 
-- ✅ HTTP/2 and connection pooling fully implemented
-- ✅ Cache system with configurable size and eviction
-- ✅ JFR profiling integrated via benchmark-jfr profile
-- ✅ Metrics collection with P50/P95/P99 percentiles
-- ✅ Native image optimization with -O2 flag
+1. **Infrastructure is NOT the bottleneck** - health checks improved
+2. **JWT-specific performance issue** - 30% slower than health endpoint
+3. **CPU underutilization** - only 50% usage indicates compute bottleneck
+4. **Raw cryptographic performance** needs optimization
 
-**Remaining Tasks**:
+**Critical Actions**:
 
-- 🔴 Investigate P99 bearer token spike (95ms) - critical issue
-- 🟡 Fine-tune CPU usage from 73% to ~60%
-- 🟡 Add P99.9/P99.99 percentiles
-- 🟡 Implement cache hit/miss ratio tracking
-- 🟡 Set up real-time monitoring dashboard
+- 🔴 **URGENT**: Investigate code changes between Aug 4-5
+- 🔴 **URGENT**: Profile JWT validation hot paths with JFR
+- 🟡 **HIGH**: Optimize cryptographic operations
+- 🟡 **HIGH**: Remove synchronization bottlenecks
+- 🟢 **MEDIUM**: Explore parallel validation strategies
 
-The current implementation demonstrates that Quarkus with native compilation can deliver **enterprise-grade JWT validation performance** with minimal resource usage.
+The system has the capacity for 12,439+ ops/s (proven by health checks) but JWT validation is currently limiting throughput to 8,770 ops/s. Focus must be on optimizing the JWT validation computation path.
 
 == Related Documentation
 

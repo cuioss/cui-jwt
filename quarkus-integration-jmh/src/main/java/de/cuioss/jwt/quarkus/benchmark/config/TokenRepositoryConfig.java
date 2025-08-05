@@ -21,7 +21,7 @@ import lombok.Value;
 /**
  * Configuration for TokenRepository to connect to Keycloak and fetch tokens
  * for benchmark testing.
- * 
+ *
  * @since 1.0
  */
 @Value
@@ -77,7 +77,7 @@ public class TokenRepositoryConfig {
      * Default: 5000 (10x the default cache size of 500)
      */
     @Builder.Default
-    int tokenPoolSize = 5000;
+    int tokenPoolSize = 500;
 
     /**
      * Connection timeout in milliseconds for Keycloak requests.

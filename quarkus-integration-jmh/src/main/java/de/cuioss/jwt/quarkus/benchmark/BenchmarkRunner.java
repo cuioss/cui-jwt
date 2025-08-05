@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
@@ -41,6 +42,11 @@ import java.util.Collection;
  * </ul>
  */
 public class BenchmarkRunner {
+    
+    static {
+        // Set the logging manager as early as possible to prevent JBoss LogManager errors
+        System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
+    }
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
 
@@ -51,10 +57,17 @@ public class BenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
+        // Set the logging manager explicitly before anything else to prevent the error
+        System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
+        
+        // Configure logging to write to benchmark-results directory
+        String benchmarkResultsDir = getBenchmarkResultsDir();
+        BenchmarkLoggingSetup.configureLogging(benchmarkResultsDir);
+        
         LOGGER.info("BenchmarkRunner.main() invoked - starting Quarkus JWT integration benchmarks...");
         LOGGER.info("Service URL: {}", BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:8443"));
         LOGGER.info("Keycloak URL: {}", BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"));
-        LOGGER.info("Results file: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"));
+        LOGGER.info("Results file: {}", BenchmarkOptionsHelper.getResultFile(benchmarkResultsDir + "/integration-benchmark-result.json"));
 
         // Configure JMH options using system properties passed from Maven
         Options options = new OptionsBuilder()
@@ -76,7 +89,8 @@ public class BenchmarkRunner {
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
                 .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"))
                 // Add JVM arguments
-                .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
+                .jvmArgs("-Djava.util.logging.manager=java.util.logging.LogManager",
+                        "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
                         "-Dbenchmark.results.dir=" + getBenchmarkResultsDir(),
                         "-Dintegration.service.url=" + BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:8443"),
                         "-Dkeycloak.url=" + BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"),

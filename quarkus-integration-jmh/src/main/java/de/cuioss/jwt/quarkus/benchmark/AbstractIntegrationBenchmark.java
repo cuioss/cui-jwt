@@ -78,7 +78,6 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
                 .requestTimeoutMs(10000)
                 .verifySsl(false)
                 .tokenRefreshThresholdSeconds(300)
-                .tokenPoolSize(10) // Reduced from 5000 for faster initialization
                 .build();
 
         tokenRepository = new TokenRepository(config);

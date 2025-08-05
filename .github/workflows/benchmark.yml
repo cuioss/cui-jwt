@@ -72,14 +72,14 @@ jobs:
         run: |
           # Run integration benchmarks with native image using profile
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-jmh -Pbenchmark -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl quarkus-integration-jmh -Pbenchmark -DskipTests
 
           # Move integration benchmark results to expected location for upload
-          if [ -d "cui-jwt-quarkus-parent/quarkus-integration-jmh/target/benchmark-results" ]; then
+          if [ -d "quarkus-integration-jmh/target/benchmark-results" ]; then
             echo "Moving integration benchmark results to upload location..."
             # Copy health check and JWT validation results
-            cp cui-jwt-quarkus-parent/quarkus-integration-jmh/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
-            cp cui-jwt-quarkus-parent/quarkus-integration-jmh/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
+            cp quarkus-integration-jmh/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
+            cp quarkus-integration-jmh/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
           fi
 
           # Add timestamp to results
