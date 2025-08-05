@@ -6,7 +6,7 @@ To test the benchmark visualization templates locally, use one of the provided H
 
 ### Option 1: Bash Script (Python-based)
 ```bash
-cd cui-jwt-benchmarking/scripts
+cd benchmarking/benchmark-library/scripts
 ./serve-local.sh
 # Or specify a port:
 ./serve-local.sh 3000
@@ -14,7 +14,7 @@ cd cui-jwt-benchmarking/scripts
 
 ### Option 2: Node.js Script
 ```bash
-cd cui-jwt-benchmarking/scripts
+cd benchmarking/benchmark-library/scripts
 node serve-local.js
 # Or specify a port:
 node serve-local.js 3000
@@ -23,7 +23,7 @@ node serve-local.js 3000
 ### Option 3: Manual Commands
 From the `doc/templates` directory:
 ```bash
-cd cui-jwt-benchmarking/doc/templates
+cd benchmarking/benchmark-library/doc/templates
 
 # Python 3
 python3 -m http.server 8080
