@@ -46,18 +46,11 @@ Each task follows the standard format as defined in the refactoring process docu
 *Rationale:* Methods with high cognitive complexity are prone to bugs and difficult to maintain. Reducing complexity improves code quality and testability.
 
 ==== C3. Break Cyclic Dependency in Producer Package
-[ ] *Priority:* High
+[x] *Priority:* High
 
 *Description:* Resolve the cyclic dependency between 2 classes within the `de.cuioss.jwt.quarkus.producer` package, specifically involving `BearerTokenResult.java:74`.
 
 *Rationale:* Cyclic dependencies violate clean architecture principles, make the code harder to understand, and can lead to initialization issues.
-
-==== C4. Refactor IssuerConfig Constructor
-[ ] *Priority:* Medium
-
-*Description:* Refactor the constructor in `IssuerConfig.java:791` that has 8 parameters to have 7 or fewer parameters.
-
-*Rationale:* Too many constructor parameters indicate poor design, make the code harder to use correctly, and increase the risk of parameter confusion.
 
 === Testing Improvements
 
@@ -84,9 +77,9 @@ Progress is tracked using checkboxes in the task list:
 
 === Current Progress
 
-* Code Structure and Design: 0/4 completed
+* Code Structure and Design: 1/4 completed
 * Testing Improvements: 0/2 completed
-* Overall: 0/6 completed
+* Overall: 1/6 completed
 
 == Task Completion Process
 
@@ -95,9 +88,8 @@ After implementing any refactoring task, follow the standardized process defined
 1. Implement the fix following SonarCloud recommendations
 2. Run quality verification: `./mvnw -Ppre-commit clean verify -pl [module]`
 3. Run full build: `./mvnw clean install -pl [module]`
-4. Create pull request with task ID in title
-5. Wait for SonarCloud analysis in CI/CD
-6. Mark task as complete `[x]` once merged
+4. Wait for SonarCloud analysis in CI/CD
+5. Mark task as complete `[x]` once merged
 
 When committing refactoring changes, use the task identifier and title as the commit subject (e.g., "refactor: C1. Refactor VertxHttpServletRequestAdapter Method").
 

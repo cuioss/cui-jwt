@@ -268,7 +268,7 @@ public class BearerTokenResult implements Serializable {
     /**
      * Creates an appropriate HTTP error response based on the bearer token validation status.
      * <p>
-     * This method delegates to the status-specific strategy implementation following
+     * This method delegates to the {@link BearerTokenResponseFactory} which follows
      * OAuth 2.0 Bearer Token specification (RFC 6750) and OAuth Step-Up Authentication
      * Challenge (draft-ietf-oauth-step-up-authn-challenge-17) best practices.
      * <p>
@@ -288,7 +288,7 @@ public class BearerTokenResult implements Serializable {
      * @return Response object with appropriate HTTP status code, headers, and body
      */
     public Response errorResponse() {
-        return status.createResponse(this);
+        return BearerTokenResponseFactory.createResponse(this);
     }
 
 
