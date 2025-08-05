@@ -27,9 +27,23 @@ mkdir -p "$OUTPUT_DIR/badges"
 # Copy JMH result to output directory for visualization
 cp "$JMH_RESULT_FILE" "$OUTPUT_DIR/data/jmh-result.json"
 
+# Detect benchmark type based on content
+echo "🔍 Detecting benchmark type..."
+BENCHMARK_TYPE="micro"
+if grep -q "JwtHealthBenchmark\|JwtValidationBenchmark\|JwtEchoBenchmark" "$JMH_RESULT_FILE"; then
+    BENCHMARK_TYPE="integration"
+    echo "  ✓ Detected integration benchmarks"
+elif grep -q "SimpleCoreValidationBenchmark\|SimpleErrorLoadBenchmark" "$JMH_RESULT_FILE"; then
+    BENCHMARK_TYPE="micro"
+    echo "  ✓ Detected micro benchmarks"
+else
+    echo "  ⚠️  Unknown benchmark type, defaulting to integration"
+    BENCHMARK_TYPE="integration"
+fi
+
 # Create performance badge using unified script
-echo "🏆 Creating performance badge..."
-if ! bash "$SCRIPT_DIR/create-unified-performance-badge.sh" micro "$OUTPUT_DIR/data/jmh-result.json" "$OUTPUT_DIR/badges"; then
+echo "🏆 Creating performance badge for $BENCHMARK_TYPE benchmarks..."
+if ! bash "$SCRIPT_DIR/create-unified-performance-badge.sh" "$BENCHMARK_TYPE" "$OUTPUT_DIR/data/jmh-result.json" "$OUTPUT_DIR/badges"; then
     echo "⚠️  Failed to create performance badge, creating fallback..."
     echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"Processing Error\",\"color\":\"red\"}" > "$OUTPUT_DIR/badges/performance-badge.json"
 fi

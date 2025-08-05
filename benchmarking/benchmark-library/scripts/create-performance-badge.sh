@@ -14,6 +14,19 @@ fi
 
 echo "Creating performance indicator badge..."
 
+# Check benchmark type first
+BENCHMARK_TYPE="micro"
+if grep -q "JwtHealthBenchmark\|JwtValidationBenchmark\|JwtEchoBenchmark" "$JMH_RESULT_FILE"; then
+    BENCHMARK_TYPE="integration"
+fi
+
+if [ "$BENCHMARK_TYPE" == "integration" ]; then
+    # For integration benchmarks, delegate to unified script
+    echo "Detected integration benchmarks, using unified badge creation..."
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    exec bash "$SCRIPT_DIR/create-unified-performance-badge.sh" integration "$JMH_RESULT_FILE" "$OUTPUT_DIR"
+fi
+
 # Extract throughput data from SimpleCoreValidationBenchmark.measureThroughput
 throughput_entry=$(jq -r '.[] | select(.benchmark == "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureThroughput")' "$JMH_RESULT_FILE" 2>/dev/null)
 throughput_score=$(echo "$throughput_entry" | jq -r '.primaryMetric.score' 2>/dev/null || echo "0")

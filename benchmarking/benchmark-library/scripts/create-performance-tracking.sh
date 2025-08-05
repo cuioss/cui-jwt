@@ -35,7 +35,8 @@ mkdir -p "$OUTPUT_DIR/badges"
 
 # Run the performance badge script to get metrics and capture in a metrics file
 METRICS_FILE="$OUTPUT_DIR/data/tracking/metrics-temp.sh"
-bash "$TEMPLATES_DIR/scripts/create-performance-badge.sh" "$JMH_RESULT_FILE" "$OUTPUT_DIR/badges" > "$METRICS_FILE.log" 2>&1
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$SCRIPT_DIR/create-performance-badge.sh" "$JMH_RESULT_FILE" "$OUTPUT_DIR/badges" > "$METRICS_FILE.log" 2>&1
 
 # Read the badge output immediately after script execution
 BADGE_OUTPUT_CONTENT=$(cat "$METRICS_FILE.log")

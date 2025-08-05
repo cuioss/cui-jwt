@@ -146,6 +146,14 @@ process_micro_benchmarks() {
     create_badge "Performance Score" "${formatted_score} (${throughput_display} ops/s, ${formatted_avg_time_ms}ms)" "brightgreen" "performance-badge.json"
     
     echo "Created micro-benchmark performance badge: Score=$formatted_score (Throughput=${throughput_display} ops/s, AvgTime=${formatted_avg_time_ms}ms)"
+    
+    # Export metrics for performance tracking
+    echo "PERFORMANCE_SCORE=$formatted_score"
+    echo "THROUGHPUT_OPS_PER_SEC=$throughput_ops_per_sec"
+    echo "AVERAGE_TIME_SEC=$(echo "scale=6; $avg_time_ms / 1000" | bc -l)"
+    echo "THROUGHPUT_DISPLAY=$throughput_display"
+    echo "ERROR_RESILIENCE_OPS_PER_SEC=$error_resilience_ops_per_sec"
+    echo "AVG_TIME_MICROS=$(echo "scale=0; $avg_time_ms * 1000" | bc -l)"
 }
 
 # Process integration benchmarks
@@ -216,11 +224,21 @@ process_integration_benchmarks() {
     create_badge "Latency" "${formatted_latency_ms}ms" "$latency_color" "latency-badge.json"
     
     echo "Created integration benchmark badges: Score=$formatted_score (Throughput=${throughput_display} ops/s, Latency=${formatted_latency_ms}ms)"
+    
+    # Export metrics for performance tracking
+    echo "PERFORMANCE_SCORE=$formatted_score"
+    echo "THROUGHPUT_OPS_PER_SEC=$avg_throughput"
+    echo "AVERAGE_TIME_SEC=$(echo "scale=6; $avg_latency_ms / 1000" | bc -l)"
+    echo "THROUGHPUT_DISPLAY=$throughput_display"
+    echo "ERROR_RESILIENCE_OPS_PER_SEC=0"
+    echo "AVG_TIME_MICROS=$(echo "scale=0; $avg_latency_ms * 1000" | bc -l)"
 }
 
 # Main processing logic
 if [ "$BENCHMARK_TYPE" = "micro" ]; then
     process_micro_benchmarks
+    # For micro benchmarks, also output the expected variables
+    # These should be set by process_micro_benchmarks function
 elif [ "$BENCHMARK_TYPE" = "integration" ]; then
     process_integration_benchmarks
 else
