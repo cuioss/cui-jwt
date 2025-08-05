@@ -41,7 +41,7 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 === Performance Analysis
 
-* link:Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Latest performance metrics and optimization insights
+* link:../benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Latest performance metrics and optimization insights
 
 === Benchmarks
 
