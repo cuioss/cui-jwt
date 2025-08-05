@@ -1,30 +1,133 @@
-= Benchmark Documentation
+= JWT Library Benchmarks Documentation
+:source-highlighter: highlight.js
 
-== Files
+Performance benchmarking documentation for the JWT token validation library using JMH.
 
+== Overview
+
+This module provides comprehensive performance benchmarking capabilities for the JWT validation library, including:
+
+* **Micro Benchmarks** - Core JWT validation performance using JMH
+* **Integration Benchmarks** - End-to-end performance testing with Quarkus
+* **Visualization Tools** - Interactive HTML templates for result analysis
+* **Automated Processing** - CI/CD pipeline scripts for result processing
+
+== Quick Start
+
+=== Running Benchmarks
+
+[source,bash]
+----
+# Run all benchmarks
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+
+# Quick validation run
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.iterations=1 -Djmh.warmupIterations=1
+
+# With JFR profiling
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+----
+
+=== Local Testing
+
+For local development and testing of visualization templates:
+
+[source,bash]
+----
+cd benchmarking/benchmark-library/scripts
+./serve-local.sh
+# Open http://localhost:8080 in your browser
+----
+
+See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
+
+== Documentation Structure
+
+=== Core Documentation
+
+* link:workflow.adoc[Benchmark Workflow] - Complete workflow guide for running and processing benchmarks
+* link:scripts-architecture.adoc[Scripts Architecture] - Detailed script documentation and architecture
+* link:local-testing.adoc[Local Testing Guide] - How to test visualizations locally
 * link:performance-scoring.adoc[Performance Scoring] - Weighted metrics methodology
 * link:JFR-Instrumentation.adoc[JFR Instrumentation] - Variance analysis guide
 
-== Visualization Templates
+=== Benchmarks
 
-HTML templates for benchmark result visualization:
+The library includes two types of benchmarks:
 
-* `templates/index-visualizer.html` - JMH Visualizer integration
+==== Micro Benchmarks
+- `TokenValidatorBenchmark` - Core JWT validation performance  
+- `JwksClientBenchmark` - JWKS key retrieval performance
+- Performance scoring based on throughput, latency, and error resilience
+
+==== Integration Benchmarks  
+- End-to-end JWT validation with Quarkus native image
+- Health check performance baselines
+- JWT validation overhead calculations
+
+=== Visualization Tools
+
+==== HTML Templates
+
+* `templates/index-visualizer.html` - Interactive JMH result visualization
 * `templates/performance-trends.html` - Historical performance tracking
-* `templates/integration-index.html` - Integration benchmark viewer
+* `templates/integration-index.html` - Integration benchmark results
+* `templates/step-metrics-visualizer.html` - Step-by-step metrics analysis
 
-== Template Usage
+==== Badge Generation
 
-Templates work with standard JMH JSON output (`jmh-result.json`):
+Automated badge generation for:
+- Performance scores and trends
+- Throughput and latency metrics
+- Integration test results
+- Last benchmark run timestamps
 
-[source,yaml]
+=== Processing Pipeline
+
+The benchmark processing workflow is handled by modular scripts:
+
+* **Orchestration** - Main processing pipeline coordination
+* **Badge Creation** - Performance and informational badges
+* **Trend Analysis** - Historical performance tracking
+* **GitHub Pages** - Automated result publication
+
+See link:scripts-architecture.adoc[Scripts Architecture] for complete workflow documentation.
+
+== Configuration
+
+=== JMH Parameters
+
+[source,bash]
 ----
-# GitHub workflow example
-- name: Generate visualization
-  run: |
-    mkdir -p gh-pages
-    cp benchmark-results/jmh-result*.json gh-pages/jmh-result.json
-    cp benchmarking/benchmark-library/doc/templates/index-visualizer.html gh-pages/
+-Djmh.iterations=5           # Measurement iterations (default: 5)
+-Djmh.warmupIterations=3     # Warmup iterations (default: 3)  
+-Djmh.forks=2               # JVM forks (default: 2)
+-Djmh.threads=4             # Concurrent threads (default: 4)
+-Djmh.time=10s              # Time per iteration
+-Djmh.includes=*Benchmark   # Benchmark pattern filter
 ----
 
-The visualizer automatically loads results from the same directory.
+=== Running Specific Benchmarks
+
+[source,bash]
+----
+# Single benchmark
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.includes=TokenValidatorBenchmark
+
+# Multiple benchmarks  
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.includes="TokenValidator|JwksClient"
+----
+
+== Results and Visualization
+
+Benchmark results are automatically processed and published to GitHub Pages with:
+
+* Interactive performance visualizations
+* Historical trend analysis
+* Performance scoring and badges
+* Detailed metrics breakdown
+
+The visualization templates work with standard JMH JSON output and provide rich, interactive analysis capabilities for performance data.
