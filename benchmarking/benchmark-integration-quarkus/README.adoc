@@ -1,335 +1,102 @@
 = Quarkus Integration JMH Benchmarks
 
-This module provides comprehensive JMH benchmarks for testing JWT validation performance against a live Quarkus application. Unlike the `benchmark-library` module which tests core validation logic in isolation, this module measures real-world performance including network overhead, containerization effects, and end-to-end integration scenarios.
+Real-world JWT validation performance testing against live Quarkus applications in containers.
 
-== Overview
+== Quick Start
 
-The benchmarks in this module test:
+[source,bash]
+----
+# Run benchmarks with automatic container management
+mvn clean verify -Pbenchmark-testing
 
-* *JWT Validation Performance*: Throughput and latency of JWT validation endpoints
-* *Health Check Performance*: Kubernetes health, liveness, readiness, and startup probes
-* *Network Baseline*: Simple health endpoint for minimal overhead comparison
-* *Cache Behavior*: Token rotation to test cache hit/miss ratios
-* *Real-world Integration*: Full HTTP request/response cycles against containerized services
+# Quick validation run  
+mvn clean verify -Pbenchmark-testing -Djmh.iterations=1 -Djmh.threads=1
+
+# With JFR profiling
+mvn clean verify -Pbenchmark-jfr
+
+# Force rebuild of Quarkus native container
+mvn clean verify -Prebuild-container,benchmark-testing
+----
 
 == Architecture
 
-=== Token Repository
+=== Benchmarks
 
-The `TokenRepository` provides optimized token management:
+* `JwtValidationBenchmark` - JWT validation endpoint performance
+* `JwtHealthBenchmark` - Health check baseline measurements
 
-* *Shared Static Instance*: Pre-initialized to avoid multiple Keycloak connections
-* *Token Pool*: Maintains 100 tokens for realistic cache testing (~10% hit ratio)
-* *Fork Compatibility*: Handles both pre-initialized and JMH forked process scenarios
-* *Efficient Fetching*: Reduced from 500 to 100 tokens per benchmark run
+=== Token Management
 
-=== Logging System
+Pre-initialized `TokenRepository` with 100-token pool for realistic cache testing (~10% hit ratio).
 
-Comprehensive logging using Apache Commons IO:
+=== Service URLs
 
-* *TeeOutputStream*: Captures all console output (System.out/err and JMH progress)
-* *Dual Output*: Writes simultaneously to console and timestamped log file
-* *No Duplicates*: Single logging pipeline prevents duplicate entries
-* *Complete Coverage*: Includes JMH progress, forked process output, and metrics
-
-== Benchmark Classes
-
-=== JwtValidationBenchmark
-
-Tests JWT validation endpoint performance:
-
-* `validateJwtThroughput` - Primary validation endpoint (throughput mode)
-* `validateJwtSample` - Primary validation endpoint (sampling mode for latency percentiles)
-
-=== JwtHealthBenchmark  
-
-Provides baseline performance measurements:
-
-* `healthCheckThroughput` - Simple health endpoint (throughput mode)
-* `healthCheckAll` - Comprehensive health check (sampling mode)
-
-== Running Benchmarks
-
-=== Prerequisites
-
-The benchmarks require the integration test containers to be running:
-
-[source,bash]
-----
-# The benchmark-testing profile handles container startup automatically
-# No manual container management needed
-----
-
-Default service URLs (configured in pom.xml):
-
-* Quarkus JWT service: https://localhost:10443
-* Keycloak: https://localhost:1443  
-* Metrics endpoint: https://localhost:10443/q/metrics
-
-=== Standard Benchmarks
-
-Run benchmarks with automatic container management:
-
-[source,bash]
-----
-# Full benchmark run with default settings
-mvn clean verify -Pbenchmark-testing
-
-# Quick validation run (minimal iterations)
-mvn clean verify -Pbenchmark-testing \
-  -Djmh.iterations=1 \
-  -Djmh.warmupIterations=1 \
-  -Djmh.threads=1 \
-  -Djmh.time=1s
-----
-
-=== JFR-Enabled Benchmarks
-
-Run with Java Flight Recorder for detailed profiling:
-
-[source,bash]
-----
-# Run benchmarks with JFR profiling
-mvn clean verify -Pbenchmark-jfr
-
-# JFR files are saved to:
-# - target/benchmark-results/jfr-recordings/ (from JMH runner)
-# - Container JFR files are also collected if enabled
-----
-
-=== Custom Configuration
-
-Override default JMH settings via system properties:
-
-[source,bash]
-----
-mvn clean verify -Pbenchmark-testing \
-  -Djmh.threads=50 \
-  -Djmh.time=30s \
-  -Djmh.iterations=10 \
-  -Djmh.warmupIterations=2 \
-  -Djmh.forks=2
-----
+* Quarkus: https://localhost:10443
+* Keycloak: https://localhost:1443
 
 == Configuration
 
-=== JMH Default Settings
-
-Optimized for integration testing:
-
-* *Warmup*: 1 iteration × 1 second (services already warm)
-* *Measurement*: 5 iterations × 10 seconds  
-* *Threads*: 24 concurrent threads
-* *Forks*: 2 JVM instances
-* *Timeout*: 10 minutes per iteration
-
-=== System Properties
-
-Configure via `-D` flags:
-
-* `jmh.iterations` - Number of measurement iterations (default: 5)
-* `jmh.warmupIterations` - Number of warmup iterations (default: 1)
-* `jmh.threads` - Number of concurrent threads (default: 24)
-* `jmh.time` - Measurement time per iteration (default: 10s)
-* `jmh.warmupTime` - Warmup time per iteration (default: 1s)
-* `jmh.forks` - Number of JVM forks (default: 2)
-* `integration.service.url` - Target Quarkus service URL
-* `keycloak.url` - Keycloak server URL
-* `benchmark.results.dir` - Output directory (default: target/benchmark-results)
-
-== Results and Metrics
-
-=== Output Files
-
-All results are saved to `target/benchmark-results/`:
-
-* `integration-benchmark-result.json` - JMH benchmark results
-* `http-metrics.json` - HTTP endpoint performance metrics
-* `integration-metrics.json` - Detailed integration metrics with security events
-* `benchmark-run_<timestamp>.log` - Complete console output and JMH progress
-* `jwt-validation-*-metrics.txt` - Raw Prometheus metrics snapshots
-
-=== Metrics Collection
-
-The benchmark runner automatically:
-
-1. Executes JMH benchmarks with configured parameters
-2. Downloads Prometheus metrics from Quarkus application
-3. Processes JMH results to generate `http-metrics.json`
-4. Exports detailed metrics to `integration-metrics.json`
-5. Captures all output to timestamped log files
-
-=== Performance Metrics
-
-Key metrics collected:
-
-* *Throughput*: Operations per second/millisecond
-* *Latency Percentiles*: p50, p90, p95, p99, p99.9, p99.99
-* *Sample Count*: Number of measurements
-* *HTTP Timings*: Average response time from Quarkus metrics
-* *Security Events*: Success/error counts for JWT validation
-* *JVM Metrics*: If exposed by the application
-
-== Token Management
-
-=== Shared TokenRepository
-
-Optimized initialization strategy:
-
-[source,java]
-----
-// Pre-initialized in BenchmarkRunner.main()
-TokenRepository.initializeSharedInstance(config);
-
-// Used by benchmarks (handles fork scenarios)
-if (TokenRepository.isSharedInstanceInitialized()) {
-    tokenRepository = TokenRepository.getSharedInstance();
-} else {
-    // Fork scenario - create new instance
-    tokenRepository = new TokenRepository(config);
-}
-----
-
-=== Token Configuration
-
-Default settings in `TokenRepositoryConfig`:
-
-* Realm: `benchmark`
-* Client ID: `benchmark-client`
-* Username: `benchmark-user`
-* Token pool size: 100 tokens
-* Connection timeout: 5 seconds
-* Request timeout: 10 seconds
-* SSL verification: Disabled (test only)
-
-== Troubleshooting
-
-=== Connection Issues
-
-If benchmarks fail to connect:
-
-1. Check container status: `docker ps`
-2. Verify service health: `curl -k https://localhost:10443/q/health`
-3. Check Keycloak: `curl -k https://localhost:1443/realms/benchmark`
-4. Review logs in `target/benchmark-results/benchmark-run_*.log`
-
-=== Missing Metrics
-
-If `http-metrics.json` is incomplete:
-
-1. Verify `MetricsPostProcessor` is called in `BenchmarkRunner`
-2. Check JMH results file exists and contains data
-3. Review benchmark names match expected patterns
-4. Check log files for processing errors
-
-=== Duplicate Log Entries
-
-This has been fixed by removing the FileHandler. If you see duplicates:
-
-1. Ensure you're using the latest `BenchmarkLoggingSetup`
-2. Check that only TeeOutputStream is handling file output
-3. Verify no custom logging configurations override the setup
-
-=== Token Initialization Errors
-
-If TokenRepository initialization fails:
-
-1. Check Keycloak is accessible at configured URL
-2. Verify realm/client/user credentials
-3. Review network connectivity and SSL settings
-4. Check logs for specific error messages
-
-== Performance Analysis
-
-=== Expected Results
-
-Typical performance on modern hardware:
-
-* *Health Check*: 10,000-15,000 ops/sec, <1ms median latency
-* *JWT Validation*: 5,000-10,000 ops/sec, 1-3ms median latency
-* *Network Overhead*: ~0.5-1ms additional latency vs in-process
-* *Container Overhead*: ~10-20% throughput reduction vs bare metal
-
-=== Analyzing Results
-
-Use the generated files for analysis:
+=== JMH Settings
 
 [source,bash]
 ----
-# View throughput results
+-Djmh.iterations=5         # Measurement iterations (default: 5)
+-Djmh.warmupIterations=1   # Warmup iterations (default: 1)  
+-Djmh.threads=24          # Concurrent threads (default: 24)
+-Djmh.time=10s            # Time per iteration (default: 10s)
+-Djmh.forks=2             # JVM forks (default: 2)
+----
+
+== Output
+
+Results in `target/benchmark-results/`:
+
+* `integration-benchmark-result.json` - JMH results
+* `http-metrics.json` - HTTP performance metrics
+* `integration-metrics.json` - Detailed metrics with security events
+* `benchmark-run_*.log` - Complete console output
+
+== Analysis
+
+[source,bash]
+----
+# View throughput
 jq '.[] | select(.mode == "thrpt") | {benchmark: .benchmark, score: .primaryMetric.score}' \
   target/benchmark-results/integration-benchmark-result.json
 
-# View latency percentiles  
-jq '.[] | select(.mode == "sample") | {benchmark: .benchmark, percentiles: .primaryMetric.scorePercentiles}' \
+# View latency percentiles
+jq '.[] | select(.mode == "sample") | .primaryMetric.scorePercentiles' \
   target/benchmark-results/integration-benchmark-result.json
 
-# Compare HTTP metrics
-jq '.' target/benchmark-results/http-metrics.json
+# JFR analysis
+jfr summary target/benchmark-results/jfr-recordings/benchmark.jfr
 ----
 
-=== JFR Analysis
+== Expected Performance
 
-For detailed profiling with JFR files:
-
-[source,bash]
-----
-# View hot methods
-jfr print --events jdk.ExecutionSample target/benchmark-results/jfr-recordings/benchmark.jfr
-
-# Analyze allocations
-jfr print --events jdk.ObjectAllocationInNewTLAB target/benchmark-results/jfr-recordings/benchmark.jfr
-
-# Review GC events
-jfr print --events jdk.GarbageCollection target/benchmark-results/jfr-recordings/benchmark.jfr
-----
+* Health Check: 10,000-15,000 ops/sec, <1ms median
+* JWT Validation: 5,000-10,000 ops/sec, 1-3ms median
 
 == Development
 
-=== Adding New Benchmarks
+=== Adding Benchmarks
 
-1. Create class in `de.cuioss.jwt.quarkus.benchmark.benchmarks`
-2. Extend `AbstractIntegrationBenchmark` or `AbstractBaseBenchmark`
-3. Use `@Benchmark` annotation on test methods
-4. Choose appropriate `@BenchmarkMode`:
-   - `Mode.Throughput` for ops/time measurements
-   - `Mode.SampleTime` for latency percentiles
-   - `Mode.All` for both
-5. Override `getBenchmarkName()` for metrics identification
+1. Extend `AbstractIntegrationBenchmark`
+2. Use `@Benchmark` with appropriate `@BenchmarkMode`
+3. Override `getBenchmarkName()` for metrics
 
-=== Modifying Configuration
-
-* `BenchmarkOptionsHelper` - Add new system properties
-* `TokenRepositoryConfig` - Update Keycloak settings
-* `pom.xml` - Modify profiles and dependencies
-* `BenchmarkRunner` - Change initialization logic
-* `MetricsPostProcessor` - Add new metrics mappings
-
-=== Best Practices
-
-1. Always run with containers to ensure realistic conditions
-2. Use sampling mode for latency-sensitive measurements
-3. Ensure sufficient warmup for JIT compilation
-4. Monitor container resources during benchmark runs
-5. Compare results across multiple runs for consistency
-6. Review logs for any warnings or errors
-7. Keep token pool size appropriate for cache testing
-
-== Container Management
-
-The `benchmark-testing` profile handles:
-
-1. Building native Quarkus application
-2. Creating optimized container image
-3. Starting Keycloak and Quarkus containers
-4. Running benchmarks
-5. Collecting metrics
-6. Stopping containers (with graceful error handling)
-
-To force container rebuild:
+=== Troubleshooting
 
 [source,bash]
 ----
-# Clean everything including containers
-mvn clean verify -Prebuild-container,benchmark-testing
+# Check containers
+docker ps
+
+# Verify services
+curl -k https://localhost:10443/q/health
+curl -k https://localhost:1443/realms/benchmark
+
+# Review logs
+tail -f target/benchmark-results/benchmark-run_*.log
 ----
