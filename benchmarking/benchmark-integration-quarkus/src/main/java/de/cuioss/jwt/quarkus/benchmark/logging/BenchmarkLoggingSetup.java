@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.*;
@@ -32,13 +31,13 @@ import java.util.logging.*;
  * This is called programmatically to ensure the log file is written to the correct directory.
  */
 public class BenchmarkLoggingSetup {
-    
+
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
-    
+
     // Keep references to original streams
     private static final PrintStream ORIGINAL_OUT = System.out;
     private static final PrintStream ORIGINAL_ERR = System.err;
-    
+
     /**
      * Configures logging to write to both console and a timestamped file in benchmark-results.
      * Also redirects System.out and System.err to capture all console output.
@@ -48,17 +47,17 @@ public class BenchmarkLoggingSetup {
     public static void configureLogging(String benchmarkResultsDir) {
         try {
             // Ensure directory exists
-            Path resultsPath = Paths.get(benchmarkResultsDir);
+            Path resultsPath = Path.of(benchmarkResultsDir);
             Files.createDirectories(resultsPath);
-            
+
             // Create log file with timestamp
             String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-            String logFileName = String.format("benchmark-run_%s.log", timestamp);
+            String logFileName = "benchmark-run_%s.log".formatted(timestamp);
             Path logFile = resultsPath.resolve(logFileName);
-            
+
             // Create output file stream
             FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true);
-            
+
             // Create TeeOutputStream for System.out (writes to both console and file)
             TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
             PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
@@ -70,48 +69,48 @@ public class BenchmarkLoggingSetup {
             // Redirect System.out and System.err
             System.setOut(newOut);
             System.setErr(newErr);
-            
+
             // Configure java.util.logging as before
             configureJavaUtilLogging(logFile);
-            
+
             // Log configuration success
             System.out.println("Benchmark logging configured - writing to: " + logFile);
             System.out.println("All console output (System.out/err and JMH) will be captured to both console and file");
-            
+
         } catch (IOException e) {
             System.err.println("Failed to configure file logging: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     private static void configureJavaUtilLogging(Path logFile) throws IOException {
         // Get root logger
         Logger rootLogger = Logger.getLogger("");
-        
+
         // Remove existing handlers
         Handler[] handlers = rootLogger.getHandlers();
         for (Handler handler : handlers) {
             rootLogger.removeHandler(handler);
         }
-        
+
         // Only add console handler - file logging is handled by TeeOutputStream
         ConsoleHandler consoleHandler = new ConsoleHandler();
         consoleHandler.setLevel(Level.INFO);
         consoleHandler.setFormatter(new SimpleFormatter());
         rootLogger.addHandler(consoleHandler);
-        
+
         // No FileHandler needed - TeeOutputStream captures everything to file
         
         // Set root logger level
         rootLogger.setLevel(Level.INFO);
-        
+
         // Configure de.cuioss packages
         Logger.getLogger("de").setLevel(Level.INFO);
         Logger.getLogger("de.cuioss").setLevel(Level.INFO);
         Logger.getLogger("de.cuioss.jwt").setLevel(Level.INFO);
         Logger.getLogger("de.cuioss.jwt.quarkus").setLevel(Level.INFO);
         Logger.getLogger("de.cuioss.jwt.quarkus.benchmark").setLevel(Level.INFO);
-        
+
         // Disable JMH internal logging
         Logger.getLogger("org.openjdk.jmh").setLevel(Level.OFF);
     }

@@ -132,21 +132,18 @@ class MetricsPostProcessorJwtValidationTest {
 
         // Verify complete output
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> completeMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> completeMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             // Should have all endpoint types
             assertTrue(completeMetrics.containsKey("jwt_validation"));
             assertTrue(completeMetrics.containsKey("health"));
 
             // Verify JWT validation data
-            @SuppressWarnings("unchecked")
-            Map<String, Object> jwtData = (Map<String, Object>) completeMetrics.get("jwt_validation");
+            @SuppressWarnings("unchecked") Map<String, Object> jwtData = (Map<String, Object>) completeMetrics.get("jwt_validation");
             assertEquals("JWT Validation", jwtData.get("name"));
             assertTrue(jwtData.containsKey("percentiles"));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> jwtPercentiles = (Map<String, Object>) jwtData.get("percentiles");
+            @SuppressWarnings("unchecked") Map<String, Object> jwtPercentiles = (Map<String, Object>) jwtData.get("percentiles");
             assertTrue(jwtPercentiles.containsKey("p50_ms"));
             assertTrue(jwtPercentiles.containsKey("p95_ms"));
             assertTrue(jwtPercentiles.containsKey("p99_ms"));
@@ -209,8 +206,8 @@ class MetricsPostProcessorJwtValidationTest {
         // Add sample mode benchmarks from real data (health only)
         for (JsonElement element : realBenchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            if ("sample".equals(benchmark.get("mode").getAsString()) && 
-                !benchmark.get("benchmark").getAsString().contains("JwtEchoBenchmark")) {
+            if ("sample".equals(benchmark.get("mode").getAsString()) &&
+                    !benchmark.get("benchmark").getAsString().contains("JwtEchoBenchmark")) {
                 combined.add(element);
             }
         }

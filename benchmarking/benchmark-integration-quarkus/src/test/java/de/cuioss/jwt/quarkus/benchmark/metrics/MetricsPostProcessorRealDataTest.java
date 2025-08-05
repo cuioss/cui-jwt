@@ -107,16 +107,14 @@ class MetricsPostProcessorRealDataTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             // Should contain endpoints from real data
             assertTrue(metrics.containsKey("health"), "Should contain health from real data");
             assertTrue(metrics.containsKey("jwt_validation"), "Should contain JWT validation from real data");
 
             // Verify health data structure
-            @SuppressWarnings("unchecked")
-            Map<String, Object> healthData = (Map<String, Object>) metrics.get("health");
+            @SuppressWarnings("unchecked") Map<String, Object> healthData = (Map<String, Object>) metrics.get("health");
             assertEquals("Health Check", healthData.get("name"));
             assertEquals(testTimestamp.toString(), healthData.get("timestamp"));
             assertTrue(healthData.containsKey("sample_count"));
@@ -140,8 +138,7 @@ class MetricsPostProcessorRealDataTest {
         LOGGER.debug("Real data JSON content:\n%s", jsonContent);
 
         // Parse to verify structure
-        @SuppressWarnings("unchecked")
-        Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
+        @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
         assertFalse(metrics.isEmpty(), "Should have parsed real data");
 
         // Verify number formatting in JSON content
@@ -150,10 +147,8 @@ class MetricsPostProcessorRealDataTest {
 
         // Verify that all percentiles are properly formatted numbers
         for (String endpointType : metrics.keySet()) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> percentiles = (Map<String, Object>) endpointData.get("percentiles");
+            @SuppressWarnings("unchecked") Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
+            @SuppressWarnings("unchecked") Map<String, Object> percentiles = (Map<String, Object>) endpointData.get("percentiles");
 
             for (String percentile : percentiles.keySet()) {
                 Object value = percentiles.get(percentile);

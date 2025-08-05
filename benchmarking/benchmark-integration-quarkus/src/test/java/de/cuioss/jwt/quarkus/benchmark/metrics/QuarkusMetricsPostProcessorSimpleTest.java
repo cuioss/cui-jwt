@@ -74,8 +74,7 @@ class QuarkusMetricsPostProcessorSimpleTest {
 
         // Basic validation that file contains expected structure
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             // Should have main sections
             assertTrue(metrics.containsKey("cpu"), "Should contain CPU metrics");
@@ -103,8 +102,7 @@ class QuarkusMetricsPostProcessorSimpleTest {
 
         // Verify basic structure
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
             assertFalse(metrics.isEmpty(), "Should have parsed metrics");
         }
     }

@@ -64,33 +64,28 @@ class ComprehensiveMetricsPostProcessorTest {
         assertTrue(quarkusMetricsFile.exists(), "Should create quarkus-metrics.json");
 
         try (FileReader reader = new FileReader(httpMetricsFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertTrue(httpMetrics.containsKey("health"));
             assertTrue(httpMetrics.containsKey("jwt_validation"));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> healthData = (Map<String, Object>) httpMetrics.get("health");
+            @SuppressWarnings("unchecked") Map<String, Object> healthData = (Map<String, Object>) httpMetrics.get("health");
             assertEquals(testTimestamp.toString(), healthData.get("timestamp"));
             assertTrue(healthData.containsKey("percentiles"));
         }
 
         try (FileReader reader = new FileReader(quarkusMetricsFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> quarkusMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> quarkusMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertTrue(quarkusMetrics.containsKey("cpu"));
             assertTrue(quarkusMetrics.containsKey("memory"));
             assertTrue(quarkusMetrics.containsKey("metadata"));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> cpuData = (Map<String, Object>) quarkusMetrics.get("cpu");
+            @SuppressWarnings("unchecked") Map<String, Object> cpuData = (Map<String, Object>) quarkusMetrics.get("cpu");
             assertTrue(cpuData.containsKey("system_cpu_usage_avg"));
             assertTrue(cpuData.containsKey("cpu_count"));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> memoryData = (Map<String, Object>) quarkusMetrics.get("memory");
+            @SuppressWarnings("unchecked") Map<String, Object> memoryData = (Map<String, Object>) quarkusMetrics.get("memory");
             assertTrue(memoryData.containsKey("heap"));
             assertTrue(memoryData.containsKey("nonheap"));
         }
@@ -115,8 +110,7 @@ class ComprehensiveMetricsPostProcessorTest {
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json if metrics-download missing");
 
         try (FileReader reader = new FileReader(httpMetricsFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
             assertFalse(httpMetrics.isEmpty());
         }
     }
@@ -140,19 +134,15 @@ class ComprehensiveMetricsPostProcessorTest {
         try (FileReader httpReader = new FileReader(httpMetricsFile);
              FileReader quarkusReader = new FileReader(quarkusMetricsFile)) {
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(httpReader, Map.class);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> quarkusMetrics = (Map<String, Object>) gson.fromJson(quarkusReader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> httpMetrics = (Map<String, Object>) gson.fromJson(httpReader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> quarkusMetrics = (Map<String, Object>) gson.fromJson(quarkusReader, Map.class);
 
             assertFalse(httpMetrics.isEmpty());
             assertFalse(quarkusMetrics.isEmpty());
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> healthMap = (Map<String, Object>) httpMetrics.get("health");
+            @SuppressWarnings("unchecked") Map<String, Object> healthMap = (Map<String, Object>) httpMetrics.get("health");
             String httpTimestamp = (String) healthMap.get("timestamp");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metadataMap = (Map<String, Object>) quarkusMetrics.get("metadata");
+            @SuppressWarnings("unchecked") Map<String, Object> metadataMap = (Map<String, Object>) quarkusMetrics.get("metadata");
             String quarkusTimestamp = (String) metadataMap.get("timestamp");
 
             assertNotNull(httpTimestamp);

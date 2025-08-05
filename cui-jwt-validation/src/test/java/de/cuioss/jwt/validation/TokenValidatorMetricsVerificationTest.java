@@ -43,7 +43,7 @@ class TokenValidatorMetricsVerificationTest {
         tokenValidator = TokenValidator.builder()
                 .issuerConfig(testTokenHolder.getIssuerConfig())
                 .cacheConfig(AccessTokenCacheConfig.disabled())
-            .monitorConfig(TokenValidatorMonitorConfig.defaultEnabled())
+                .monitorConfig(TokenValidatorMonitorConfig.defaultEnabled())
                 .build();
     }
 

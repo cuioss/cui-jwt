@@ -178,8 +178,7 @@ class SimpleMetricsExporterTest {
         assertFalse(jsonContent.contains("\"JwtHealth\""));
         assertFalse(jsonContent.contains("\"healthCheckLatency\""));
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> aggregatedData = (Map<String, Object>) gson.fromJson(new FileReader(aggregatedFile), Map.class);
+        @SuppressWarnings("unchecked") Map<String, Object> aggregatedData = (Map<String, Object>) gson.fromJson(new FileReader(aggregatedFile), Map.class);
         assertEquals(3, aggregatedData.size());
     }
 

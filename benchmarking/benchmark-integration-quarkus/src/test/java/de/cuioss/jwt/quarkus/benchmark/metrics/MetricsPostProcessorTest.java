@@ -62,8 +62,7 @@ class MetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertTrue(metrics.containsKey("jwt_validation"));
             assertTrue(metrics.containsKey("health"));
@@ -83,16 +82,13 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
+            @SuppressWarnings("unchecked") Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
             assertNotNull(healthMetrics);
             assertEquals("Health Check", healthMetrics.get("name"));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> percentiles = (Map<String, Object>) healthMetrics.get("percentiles");
+            @SuppressWarnings("unchecked") Map<String, Object> percentiles = (Map<String, Object>) healthMetrics.get("percentiles");
             assertNotNull(percentiles);
 
             assertTrue(percentiles.containsKey("p50_us"));
@@ -120,8 +116,7 @@ class MetricsPostProcessorTest {
 
         assertFalse(jsonContent.contains(".0\""));
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> parsed = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
+        @SuppressWarnings("unchecked") Map<String, Object> parsed = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
         assertTrue(parsed.size() >= 1);
     }
@@ -138,12 +133,10 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             for (String endpointType : metrics.keySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
+                @SuppressWarnings("unchecked") Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
 
                 assertTrue(endpointData.containsKey("sample_count"));
 
@@ -167,11 +160,9 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
+            @SuppressWarnings("unchecked") Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
             assertNotNull(healthMetrics);
 
             // Should sum up: 150 + 250 = 400 samples from two iterations
@@ -192,12 +183,10 @@ class MetricsPostProcessorTest {
         // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             for (String endpointType : metrics.keySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
+                @SuppressWarnings("unchecked") Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
 
                 assertEquals(testTimestamp.toString(), endpointData.get("timestamp"));
                 assertTrue(endpointData.containsKey("source"));
@@ -224,14 +213,12 @@ class MetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
 
             assertFalse(metrics.isEmpty());
 
             for (String endpointType : metrics.keySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
+                @SuppressWarnings("unchecked") Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
                 String source = (String) endpointData.get("source");
                 assertTrue(source.contains("sample mode"));
             }
@@ -266,8 +253,7 @@ class MetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
             assertFalse(metrics.isEmpty());
         }
     }
