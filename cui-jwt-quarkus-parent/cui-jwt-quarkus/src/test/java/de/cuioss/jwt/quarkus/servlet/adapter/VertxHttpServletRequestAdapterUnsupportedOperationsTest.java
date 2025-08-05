@@ -15,13 +15,19 @@
  */
 package de.cuioss.jwt.quarkus.servlet.adapter;
 
-import de.cuioss.jwt.quarkus.servlet.TestHttpServerRequest;
 import de.cuioss.jwt.quarkus.servlet.VertxHttpServletRequestAdapter;
 
+import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
+import org.easymock.EasyMock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,10 +57,23 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
     @DisplayName("Should throw UnsupportedOperationException for unsupported methods")
     @SuppressWarnings("java:S5961")
     void shouldThrowUnsupportedOperationExceptionForUnsupportedMethods(String methodName) {
-        // Create a test adapter with an anonymous implementation of TestHttpServerRequest
-        // that implements the abstract peerCertificateChain method
-        TestHttpServerRequest testRequest = new TestHttpServerRequest();
-        VertxHttpServletRequestAdapter adapter = new VertxHttpServletRequestAdapter(testRequest);
+        // Create a mock HttpServerRequest
+        HttpServerRequest mockRequest = EasyMock.createMock(HttpServerRequest.class);
+        
+        // Set up default expectations for methods that are called in the constructor
+        EasyMock.expect(mockRequest.version()).andReturn(HttpVersion.HTTP_1_1).anyTimes();
+        EasyMock.expect(mockRequest.method()).andReturn(HttpMethod.GET).anyTimes();
+        EasyMock.expect(mockRequest.scheme()).andReturn("http").anyTimes();
+        EasyMock.expect(mockRequest.uri()).andReturn("/test").anyTimes();
+        EasyMock.expect(mockRequest.path()).andReturn("/test").anyTimes();
+        EasyMock.expect(mockRequest.query()).andReturn(null).anyTimes();
+        EasyMock.expect(mockRequest.absoluteURI()).andReturn("http://localhost/test").anyTimes();
+        EasyMock.expect(mockRequest.headers()).andReturn(MultiMap.caseInsensitiveMultiMap()).anyTimes();
+        EasyMock.expect(mockRequest.params()).andReturn(MultiMap.caseInsensitiveMultiMap()).anyTimes();
+        EasyMock.expect(mockRequest.cookies()).andReturn(Collections.emptySet()).anyTimes();
+        
+        EasyMock.replay(mockRequest);
+        VertxHttpServletRequestAdapter adapter = new VertxHttpServletRequestAdapter(mockRequest);
 
         UnsupportedOperationException exception = null;
 
@@ -155,11 +174,28 @@ class VertxHttpServletRequestAdapterUnsupportedOperationsTest {
     @Test
     @DisplayName("getContextPath should return empty string")
     void getContextPathShouldReturnEmptyString() {
-        TestHttpServerRequest testRequest = new TestHttpServerRequest();
-        VertxHttpServletRequestAdapter adapter = new VertxHttpServletRequestAdapter(testRequest);
+        // Create a mock HttpServerRequest
+        HttpServerRequest mockRequest = EasyMock.createMock(HttpServerRequest.class);
+        
+        // Set up default expectations for methods that are called in the constructor
+        EasyMock.expect(mockRequest.version()).andReturn(HttpVersion.HTTP_1_1).anyTimes();
+        EasyMock.expect(mockRequest.method()).andReturn(HttpMethod.GET).anyTimes();
+        EasyMock.expect(mockRequest.scheme()).andReturn("http").anyTimes();
+        EasyMock.expect(mockRequest.uri()).andReturn("/test").anyTimes();
+        EasyMock.expect(mockRequest.path()).andReturn("/test").anyTimes();
+        EasyMock.expect(mockRequest.query()).andReturn(null).anyTimes();
+        EasyMock.expect(mockRequest.absoluteURI()).andReturn("http://localhost/test").anyTimes();
+        EasyMock.expect(mockRequest.headers()).andReturn(MultiMap.caseInsensitiveMultiMap()).anyTimes();
+        EasyMock.expect(mockRequest.params()).andReturn(MultiMap.caseInsensitiveMultiMap()).anyTimes();
+        EasyMock.expect(mockRequest.cookies()).andReturn(Collections.emptySet()).anyTimes();
+        
+        EasyMock.replay(mockRequest);
+        VertxHttpServletRequestAdapter adapter = new VertxHttpServletRequestAdapter(mockRequest);
 
         String contextPath = adapter.getContextPath();
 
         assertEquals("", contextPath, "Context path should be an empty string");
+        
+        EasyMock.verify(mockRequest);
     }
 }
