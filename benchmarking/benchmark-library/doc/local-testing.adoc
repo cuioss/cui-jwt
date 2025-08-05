@@ -1,4 +1,5 @@
 = Local Testing Guide
+:source-highlighter: highlight.js
 
 == Quick Start
 

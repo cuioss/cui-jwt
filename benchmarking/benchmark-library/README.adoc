@@ -1,13 +1,9 @@
 = JWT Library Benchmarks
+:source-highlighter: highlight.js
 
 Performance benchmarking for JWT token validation core library using JMH.
 
 == Building and Running
-
-=== Prerequisites
-
-* JDK 21 or later
-* Maven 3.8+
 
 === Quick Start
 

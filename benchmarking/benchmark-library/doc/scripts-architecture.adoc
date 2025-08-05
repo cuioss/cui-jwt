@@ -10,21 +10,25 @@ The benchmark processing workflow has been modularized into focused scripts that
 === Core Scripts
 
 . *process-all-benchmarks.sh* - Master orchestration script
++
 * Coordinates all benchmark processing
 * Handles both micro and integration benchmarks
 * Creates processing status reports
 * Entry point from GitHub Actions
 . *process-micro-benchmarks.sh* - JMH micro benchmark processing
++
 * Processes JMH benchmark results
 * Creates performance badges
 * Updates performance tracking
 * Generates trend badges
 . *process-integration-benchmarks.sh* - Integration benchmark processing
++
 * Processes health check and JWT validation results
 * Creates integration-specific badges
 * Calculates JWT overhead metrics
 * Prepares data for visualization
 . *prepare-github-pages.sh* - GitHub Pages structure preparation
++
 * Sets up unified directory structure
 * Copies templates and resources
 * Prepares data directory

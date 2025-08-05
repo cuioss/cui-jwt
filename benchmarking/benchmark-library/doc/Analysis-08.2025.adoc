@@ -1,4 +1,5 @@
 = JWT Benchmark Analysis - Baseline Performance (July 30, 2025)
+:source-highlighter: highlight.js
 
 == Executive Summary
 
@@ -59,18 +60,25 @@ The benchmark results show varying P99 latencies across different workloads:
 == Key Performance Characteristics
 
 . *Throughput Baseline*:
++
 * Standard: 100,673 ops/s
 * Error 0%: 113,581 ops/s
 * Error 50%: 178,652 ops/s (best performance)
+
 . *Latency Profile*:
++
 * Average: 860.66μs
 * Concurrent: 883.40μs
 * P50 range: 52-84μs (good median performance)
+
 . *P99 Variance*:
++
 * Complete validation P99: 112μs to 31.7ms (152μs in average-time mode)
 * Signature validation P99: 124μs to 10.2ms (stable 124μs in average-time mode)
 * High P99/P50 ratios in throughput mode vs stable average-time mode (both with 100 threads)
+
 . *Component Performance*:
++
 * Signature validation: Dominant component (45-62μs P50)
 * Token parsing: Consistent performance (3.7-6.1μs P50)
 * Cache operations: Minimal overhead (0.0-0.4μs P50)
@@ -194,26 +202,30 @@ mvn verify -Pbenchmark -Djmh.threads=1,50,100,150,200
 The JWT validation library baseline performance (July 30, 2025) shows:
 
 *Current Strengths*:
-1. *Good median latency*: 52-84μs P50 for complete validation
-2. *Error handling efficiency*: 178,652 ops/s with 50% error rate
-3. *Stable average-time mode performance*: P99 of 152μs in average-time mode vs 31.7ms in throughput mode
-4. *Consistent core components*: Token parsing and claims validation show low variance
+
+. *Good median latency*: 52-84μs P50 for complete validation
+. *Error handling efficiency*: 178,652 ops/s with 50% error rate
+. *Stable average-time mode performance*: P99 of 152μs in average-time mode vs 31.7ms in throughput mode
+. *Consistent core components*: Token parsing and claims validation show low variance
 
 *Key Insights*:
-1. *Mode-dependent variance*: Throughput mode shows extreme P99 spikes while average-time mode remains stable (both with 100 threads)
-2. *Signature validation bottleneck*: 10.2ms P99 spikes in mixed scenarios vs 124μs in average-time mode
-3. *Thread efficiency opportunity*: 1,007 ops/s/thread baseline performance
+
+. *Mode-dependent variance*: Throughput mode shows extreme P99 spikes while average-time mode remains stable (both with 100 threads)
+. *Signature validation bottleneck*: 10.2ms P99 spikes in mixed scenarios vs 124μs in average-time mode
+. *Thread efficiency opportunity*: 1,007 ops/s/thread baseline performance
 
 *Optimization Priorities*:
-1. *P99 latency reduction*: From 31.7ms to &lt;5ms in throughput scenarios (High Priority)
-2. *Throughput enhancement*: From 100,673 to 200k ops/s (Medium Priority)
-3. *Thread efficiency*: From 1,007 to 2,000+ ops/s/thread (Medium Priority)
-4. *P99/P50 ratio*: From 377x to &lt;50x for predictability (High Priority)
+
+. *P99 latency reduction*: From 31.7ms to <5ms in throughput scenarios (High Priority)
+. *Throughput enhancement*: From 100,673 to 200k ops/s (Medium Priority)
+. *Thread efficiency*: From 1,007 to 2,000+ ops/s/thread (Medium Priority)
+. *P99/P50 ratio*: From 377x to <50x for predictability (High Priority)
 
 *Next Steps*:
-1. Investigate why average-time mode shows stable P99 while throughput mode spikes (both with 100 threads)
-2. Profile signature validation hotspots causing 10ms+ spikes
-3. Consider async architecture for 2x throughput gain
+
+. Investigate why average-time mode shows stable P99 while throughput mode spikes (both with 100 threads)
+. Profile signature validation hotspots causing 10ms+ spikes
+. Consider async architecture for 2x throughput gain
 
 *Production Readiness*: The library shows good performance characteristics in average-time mode. The extreme P99 spikes appear specific to throughput mode optimization and may not impact typical production scenarios.
 
@@ -330,26 +342,34 @@ The system already caches validated tokens effectively:
 === The JCA Bottleneck on Cache Misses
 
 When a token is not in cache (new token, cache eviction, or rotation):
-1. Full validation pipeline executes, including signature verification
-2. JCA's `Signature.verify()` performs expensive RSA operations
-3. With 100 concurrent threads hitting cache misses, CPU saturates
-4. P99 latency spikes to 67ms due to thread scheduling delays
+
+. Full validation pipeline executes, including signature verification
+. JCA's `Signature.verify()` performs expensive RSA operations
+. With 100 concurrent threads hitting cache misses, CPU saturates
+. P99 latency spikes to 67ms due to thread scheduling delays
 
 === Recommendations
 
 . *Accept Current Performance* (Primary)
++
 * 99% of operations complete in ≤71μs (excellent)
 * 1% tail latency may be acceptable for the workload
 * Measure actual production impact vs synthetic benchmarks
+
 . *Virtual Thread Tuning* (If needed)
++
 * Monitor carrier thread behavior under load
 * Tune Virtual Thread carrier pool size
 * Consider platform thread comparison for CPU-intensive work
+
 . *Entropy Optimization* (For startup)
++
 * JVM mode: Add `-Djava.security.egd=file:/dev/./urandom`
 * Native mode: Configure `--initialize-at-run-time` for SecureRandom
 * Prevents blocking on entropy gathering in Docker
+
 . *Algorithm Analysis Complete*
++
 * ES256 tested and found to be slower than RS256
 * Current RSA implementation is optimal for this workload
 * No viable algorithm alternatives available
@@ -359,11 +379,14 @@ When a token is not in cache (new token, cache eviction, or rotation):
 === The Real Problem: JCA Thread Safety with Virtual Threads
 
 . *Signature Instances are NOT Thread-Safe*
++
 * JCA `Signature.getInstance()` maintains internal state
 * Cannot be shared between threads
 * ThreadLocal is *not an option* with Virtual Threads
 * Must create new instance for each operation
+
 . *Performance Impact with 100 Threads*
++
 * Each thread creates new Signature instance
 * RSA operations are CPU-intensive
 * 100 concurrent RSA validations saturate CPU
@@ -372,13 +395,17 @@ When a token is not in cache (new token, cache eviction, or rotation):
 === Secondary Issue: Entropy Blocking in Docker
 
 . *Docker Container Entropy Starvation*
++
 * Default `/dev/random` can block for 21+ seconds
 * Waiting for entropy in containerized environments
 * Affects SecureRandom initialization
+
 . *Solution for JVM Mode Only*
- `
-   -Djava.security.egd=file:/dev/./urandom
-`
++
+----
+-Djava.security.egd=file:/dev/./urandom
+----
++
 * Non-blocking entropy source
 * The `./` syntax is required (Java quirk)
 * *Note*: May not work in Quarkus native mode
@@ -393,16 +420,22 @@ When a token is not in cache (new token, cache eviction, or rotation):
 === Viable Solutions
 
 . *Reduce Concurrent Load*
++
 * Limit concurrent signature validations with semaphore
 * Queue requests to prevent CPU saturation
 * Match concurrency to available CPU cores
+
 . *For Quarkus Native Mode*
- `
-   quarkus.native.additional-build-args=--initialize-at-run-time=sun.security.provider.SecureRandom
-`
++
+----
+quarkus.native.additional-build-args=--initialize-at-run-time=sun.security.provider.SecureRandom
+----
++
 * Prevents build-time initialization of SecureRandom
 * Required for proper entropy handling
+
 . *Architectural Review*
++
 * ES256 tested and found slower than current RSA implementation
 * Token cache size already optimized (good hit rates)
 * Monitor actual cache miss patterns vs production load
@@ -417,17 +450,19 @@ When a token is not in cache (new token, cache eviction, or rotation):
 *This is NOT CPU saturation* - it's *thread scheduling unfairness*.
 
 *Why Semaphores Are Wrong:*
-1. *Same total work*: 100 RSA operations still need 100 operations worth of CPU
-2. *Added overhead*: Semaphore synchronization reduces performance +
-3. *Doesn't fix root cause*: OS scheduler fairness issues remain
-4. *Modern CPUs*: Designed to handle thread oversubscription efficiently
+
+. *Same total work*: 100 RSA operations still need 100 operations worth of CPU
+. *Added overhead*: Semaphore synchronization reduces performance
+. *Doesn't fix root cause*: OS scheduler fairness issues remain
+. *Modern CPUs*: Designed to handle thread oversubscription efficiently
 
 === Revised Analysis
 
 The P99 spikes are caused by:
-1. *OS scheduler starvation* - Some threads get delayed while others run
-2. *Thread safety requirement* - New Signature instances per operation
-3. *Virtual Threads coordination* - Platform thread carrier scheduling
-4. *Entropy blocking* in Docker (secondary, affects startup)
+
+. *OS scheduler starvation* - Some threads get delayed while others run
+. *Thread safety requirement* - New Signature instances per operation
+. *Virtual Threads coordination* - Platform thread carrier scheduling
+. *Entropy blocking* in Docker (secondary, affects startup)
 
 *The issue is scheduler fairness, not CPU capacity.*

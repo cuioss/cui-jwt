@@ -1,4 +1,5 @@
 = JFR Instrumentation for Variance Analysis
+:source-highlighter: highlight.js
 
 == Quick Start
 
