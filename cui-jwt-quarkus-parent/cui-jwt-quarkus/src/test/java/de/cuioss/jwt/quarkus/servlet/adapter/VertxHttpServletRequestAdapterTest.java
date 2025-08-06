@@ -71,7 +71,7 @@ class VertxHttpServletRequestAdapterTest {
         EasyMock.expect(mockRequest.headers()).andReturn(MultiMap.caseInsensitiveMultiMap()).anyTimes();
         EasyMock.expect(mockRequest.params()).andReturn(MultiMap.caseInsensitiveMultiMap()).anyTimes();
         EasyMock.expect(mockRequest.cookies()).andReturn(Collections.emptySet()).anyTimes();
-        
+
         EasyMock.replay(mockRequest);
         adapter = new VertxHttpServletRequestAdapter(mockRequest);
         EasyMock.reset(mockRequest);
@@ -112,7 +112,7 @@ class VertxHttpServletRequestAdapterTest {
             MultiMap headers = MultiMap.caseInsensitiveMultiMap();
             headers.add("Content-Type", "application/json");
             headers.add("Authorization", "Bearer token123");
-            
+
             EasyMock.expect(mockRequest.headers()).andReturn(headers).anyTimes();
             EasyMock.expect(mockRequest.getHeader("Content-Type")).andReturn("application/json").anyTimes();
             EasyMock.expect(mockRequest.getHeader("Authorization")).andReturn("Bearer token123").anyTimes();
@@ -123,7 +123,7 @@ class VertxHttpServletRequestAdapterTest {
             assertEquals("application/json", adapter.getHeader("Content-Type"));
             assertEquals("Bearer token123", adapter.getHeader("Authorization"));
             assertNull(adapter.getHeader("NonExistentHeader"));
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -134,7 +134,7 @@ class VertxHttpServletRequestAdapterTest {
             MultiMap headers = MultiMap.caseInsensitiveMultiMap();
             headers.add("Accept", "application/json");
             headers.add("Accept", "text/plain");
-            
+
             EasyMock.expect(mockRequest.headers()).andReturn(headers).anyTimes();
             EasyMock.replay(mockRequest);
 
@@ -152,7 +152,7 @@ class VertxHttpServletRequestAdapterTest {
             // Test non-existent header
             Enumeration<String> nonExistentHeaders = adapter.getHeaders("NonExistentHeader");
             assertFalse(nonExistentHeaders.hasMoreElements());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -164,7 +164,7 @@ class VertxHttpServletRequestAdapterTest {
             headers.add("Content-Type", "application/json");
             headers.add("Authorization", "Bearer token123");
             headers.add("Accept", "application/json");
-            
+
             EasyMock.expect(mockRequest.headers()).andReturn(headers).anyTimes();
             EasyMock.replay(mockRequest);
 
@@ -179,7 +179,7 @@ class VertxHttpServletRequestAdapterTest {
             assertTrue(names.contains("Authorization"));
             assertTrue(names.contains("Accept"));
             assertEquals(3, names.size());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -190,7 +190,7 @@ class VertxHttpServletRequestAdapterTest {
             MultiMap headers = MultiMap.caseInsensitiveMultiMap();
             headers.add("Content-Length", "1024");
             headers.add("Invalid-Int", "not-an-int");
-            
+
             EasyMock.expect(mockRequest.headers()).andReturn(headers).anyTimes();
             EasyMock.replay(mockRequest);
 
@@ -200,7 +200,7 @@ class VertxHttpServletRequestAdapterTest {
 
             // Test invalid integer format
             assertEquals(-1, adapter.getIntHeader("Invalid-Int"));
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -211,7 +211,7 @@ class VertxHttpServletRequestAdapterTest {
             MultiMap headers = MultiMap.caseInsensitiveMultiMap();
             headers.add("If-Modified-Since", "1609459200000");
             headers.add("Invalid-Date", "not-a-date");
-            
+
             EasyMock.expect(mockRequest.headers()).andReturn(headers).anyTimes();
             EasyMock.replay(mockRequest);
 
@@ -221,7 +221,7 @@ class VertxHttpServletRequestAdapterTest {
 
             // Test invalid date format
             assertEquals(-1, adapter.getDateHeader("Invalid-Date"));
-            
+
             EasyMock.verify(mockRequest);
         }
     }
@@ -260,7 +260,7 @@ class VertxHttpServletRequestAdapterTest {
             Set<Cookie> cookies = new HashSet<>();
             cookies.add(sessionCookie);
             cookies.add(preferenceCookie);
-            
+
             EasyMock.expect(mockRequest.cookies()).andReturn(cookies).anyTimes();
             EasyMock.replay(mockRequest);
 
@@ -292,7 +292,7 @@ class VertxHttpServletRequestAdapterTest {
             // Verify preference cookie
             assertNotNull(preferenceServletCookie);
             assertEquals("dark-mode", preferenceServletCookie.getValue());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -302,12 +302,12 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             EasyMock.expect(mockRequest.cookies()).andReturn(Collections.emptySet()).anyTimes();
             EasyMock.replay(mockRequest);
-            
+
             // Test with default empty cookie set
             jakarta.servlet.http.Cookie[] cookies = adapter.getCookies();
             assertNotNull(cookies);
             assertEquals(0, cookies.length);
-            
+
             EasyMock.verify(mockRequest);
         }
     }
@@ -323,10 +323,10 @@ class VertxHttpServletRequestAdapterTest {
             EasyMock.expect(mockRequest.method()).andReturn(HttpMethod.GET).times(1);
             EasyMock.expect(mockRequest.method()).andReturn(HttpMethod.POST).times(1);
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("GET", adapter.getMethod());
             assertEquals("POST", adapter.getMethod());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -336,9 +336,9 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             EasyMock.expect(mockRequest.query()).andReturn("param1=value1&param2=value2").anyTimes();
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("param1=value1&param2=value2", adapter.getQueryString());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -348,9 +348,9 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             EasyMock.expect(mockRequest.uri()).andReturn("/api/users/123").anyTimes();
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("/api/users/123", adapter.getRequestURI());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -360,9 +360,9 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             EasyMock.expect(mockRequest.absoluteURI()).andReturn("https://example.com/api/users/123").anyTimes();
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("https://example.com/api/users/123", adapter.getRequestURL().toString());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -372,9 +372,9 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             EasyMock.expect(mockRequest.path()).andReturn("/api/users/123").anyTimes();
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("/api/users/123", adapter.getServletPath());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -385,10 +385,10 @@ class VertxHttpServletRequestAdapterTest {
             EasyMock.expect(mockRequest.version()).andReturn(HttpVersion.HTTP_1_1).times(1);
             EasyMock.expect(mockRequest.version()).andReturn(HttpVersion.HTTP_2).times(1);
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("HTTP/1.1", adapter.getProtocol());
             assertEquals("HTTP/2", adapter.getProtocol());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -398,9 +398,9 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             EasyMock.expect(mockRequest.scheme()).andReturn("https").anyTimes();
             EasyMock.replay(mockRequest);
-            
+
             assertEquals("https", adapter.getScheme());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -411,10 +411,10 @@ class VertxHttpServletRequestAdapterTest {
             EasyMock.expect(mockRequest.scheme()).andReturn("https").times(1);
             EasyMock.expect(mockRequest.scheme()).andReturn("http").times(1);
             EasyMock.replay(mockRequest);
-            
+
             assertTrue(adapter.isSecure());
             assertFalse(adapter.isSecure());
-            
+
             EasyMock.verify(mockRequest);
         }
     }
@@ -473,23 +473,23 @@ class VertxHttpServletRequestAdapterTest {
             // Setup - Test 1: charset=UTF-8
             MultiMap headers1 = MultiMap.caseInsensitiveMultiMap();
             headers1.add("Content-Type", "application/json; charset=UTF-8");
-            
+
             // Test 2: charset=ISO-8859-1
             MultiMap headers2 = MultiMap.caseInsensitiveMultiMap();
             headers2.add("Content-Type", "text/html; charset=ISO-8859-1");
-            
+
             // Test 3: no charset
             MultiMap headers3 = MultiMap.caseInsensitiveMultiMap();
             headers3.add("Content-Type", "application/json");
-            
+
             // Test 4: no Content-Type header
             MultiMap headers4 = MultiMap.caseInsensitiveMultiMap();
-            
+
             EasyMock.expect(mockRequest.headers())
-                .andReturn(headers1).times(1)
-                .andReturn(headers2).times(1)
-                .andReturn(headers3).times(1)
-                .andReturn(headers4).times(1);
+                    .andReturn(headers1).times(1)
+                    .andReturn(headers2).times(1)
+                    .andReturn(headers3).times(1)
+                    .andReturn(headers4).times(1);
             EasyMock.replay(mockRequest);
 
             // Test
@@ -527,16 +527,16 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             MultiMap headers1 = MultiMap.caseInsensitiveMultiMap();
             headers1.add("Content-Length", "1024");
-            
+
             MultiMap headers2 = MultiMap.caseInsensitiveMultiMap();
             headers2.add("Content-Length", "not-a-number");
-            
+
             MultiMap headers3 = MultiMap.caseInsensitiveMultiMap();
-            
+
             EasyMock.expect(mockRequest.headers())
-                .andReturn(headers1).times(1)
-                .andReturn(headers2).times(1)
-                .andReturn(headers3).times(1);
+                    .andReturn(headers1).times(1)
+                    .andReturn(headers2).times(1)
+                    .andReturn(headers3).times(1);
             EasyMock.replay(mockRequest);
 
             // Test
@@ -547,7 +547,7 @@ class VertxHttpServletRequestAdapterTest {
 
             // Test with no Content-Length header
             assertEquals(-1, adapter.getContentLength());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -557,12 +557,12 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             MultiMap headers1 = MultiMap.caseInsensitiveMultiMap();
             headers1.add("Content-Type", "application/json; charset=UTF-8");
-            
+
             MultiMap headers2 = MultiMap.caseInsensitiveMultiMap();
-            
+
             EasyMock.expect(mockRequest.headers())
-                .andReturn(headers1).times(1)
-                .andReturn(headers2).times(1);
+                    .andReturn(headers1).times(1)
+                    .andReturn(headers2).times(1);
             EasyMock.replay(mockRequest);
 
             // Test
@@ -570,7 +570,7 @@ class VertxHttpServletRequestAdapterTest {
 
             // Test with no Content-Type header
             assertNull(adapter.getContentType());
-            
+
             EasyMock.verify(mockRequest);
         }
     }
@@ -592,7 +592,7 @@ class VertxHttpServletRequestAdapterTest {
             assertEquals("value2", adapter.getParameter("param2"));
             assertEquals("value 3", adapter.getParameter("param3"));
             assertNull(adapter.getParameter("nonExistentParam"));
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -614,7 +614,7 @@ class VertxHttpServletRequestAdapterTest {
             assertTrue(names.contains("param1"));
             assertTrue(names.contains("param2"));
             assertEquals(2, names.size());
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -640,7 +640,7 @@ class VertxHttpServletRequestAdapterTest {
 
             // Test non-existent parameter
             assertNull(adapter.getParameterValues("nonExistentParam"));
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -671,7 +671,7 @@ class VertxHttpServletRequestAdapterTest {
             assertTrue(paramMap.containsKey("param3"));
             assertEquals(1, paramMap.get("param3").length);
             assertEquals("", paramMap.get("param3")[0]);
-            
+
             EasyMock.verify(mockRequest);
         }
     }
@@ -730,17 +730,17 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             MultiMap headers1 = MultiMap.caseInsensitiveMultiMap();
             headers1.add("Accept-Language", "en-US,en;q=0.9,fr;q=0.8");
-            
+
             MultiMap headers2 = MultiMap.caseInsensitiveMultiMap();
             headers2.add("Accept-Language", "fr-FR;q=0.9,en-US;q=0.8");
-            
+
             MultiMap headers3 = MultiMap.caseInsensitiveMultiMap();
-            
+
             // getLocale calls getLocales which uses headers().get("Accept-Language")
             EasyMock.expect(mockRequest.headers())
-                .andReturn(headers1).times(1)
-                .andReturn(headers2).times(1)
-                .andReturn(headers3).times(1);
+                    .andReturn(headers1).times(1)
+                    .andReturn(headers2).times(1)
+                    .andReturn(headers3).times(1);
             EasyMock.replay(mockRequest);
 
             // Test
@@ -754,7 +754,7 @@ class VertxHttpServletRequestAdapterTest {
             // Test with no Accept-Language header
             locale = adapter.getLocale();
             assertEquals(Locale.getDefault(), locale);
-            
+
             EasyMock.verify(mockRequest);
         }
 
@@ -764,12 +764,12 @@ class VertxHttpServletRequestAdapterTest {
             // Setup
             MultiMap headers1 = MultiMap.caseInsensitiveMultiMap();
             headers1.add("Accept-Language", "en-US,en;q=0.9,fr;q=0.8,de;q=0.7");
-            
+
             MultiMap headers2 = MultiMap.caseInsensitiveMultiMap();
-            
+
             EasyMock.expect(mockRequest.headers())
-                .andReturn(headers1).times(1)
-                .andReturn(headers2).times(1);
+                    .andReturn(headers1).times(1)
+                    .andReturn(headers2).times(1);
             EasyMock.replay(mockRequest);
 
             // Test
@@ -788,7 +788,7 @@ class VertxHttpServletRequestAdapterTest {
 
             assertEquals(1, localeList.size());
             assertEquals(Locale.getDefault(), localeList.getFirst());
-            
+
             EasyMock.verify(mockRequest);
         }
     }

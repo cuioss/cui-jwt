@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 public class BearerTokenResponseFactory {
 
     public static final String TOKEN_NOT_PRESENT = "Bearer token validation failed or token not present";
-    
+
     // HTTP Header Constants
     private static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
     private static final String HEADER_CACHE_CONTROL = "Cache-Control";

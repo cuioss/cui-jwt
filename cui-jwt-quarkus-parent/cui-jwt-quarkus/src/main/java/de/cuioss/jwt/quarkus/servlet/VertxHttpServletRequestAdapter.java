@@ -477,17 +477,17 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public Map<String, String[]> getParameterMap() {
         Map<String, List<String>> paramMap = new HashMap<>();
-        
+
         // Extract parameters from query string
         extractQueryParameters(paramMap);
-        
+
         // Add parameters from Vertx's built-in parameter handling
         addVertxParameters(paramMap);
-        
+
         // Convert to String[] values
         return convertToStringArrayMap(paramMap);
     }
-    
+
     /**
      * Extracts parameters from the query string and adds them to the parameter map.
      */
@@ -496,13 +496,13 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         if (query == null || query.isEmpty()) {
             return;
         }
-        
+
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             processQueryPair(pair, paramMap);
         }
     }
-    
+
     /**
      * Processes a single key-value pair from the query string.
      */
@@ -511,13 +511,13 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         if (keyValue.length == 0) {
             return;
         }
-        
+
         String key = keyValue[0];
         String value = keyValue.length == 2 ? keyValue[1] : "";
         String decodedValue = URLDecoder.decode(value, StandardCharsets.UTF_8);
         paramMap.computeIfAbsent(key, k -> new ArrayList<>()).add(decodedValue);
     }
-    
+
     /**
      * Adds parameters from Vertx's built-in parameter handling for keys not found in query string.
      */
@@ -525,19 +525,19 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         if (vertxRequest.params() == null || vertxRequest.params().isEmpty()) {
             return;
         }
-        
+
         for (String name : vertxRequest.params().names()) {
             if (paramMap.containsKey(name)) {
                 continue;
             }
-            
+
             List<String> values = vertxRequest.params().getAll(name);
             if (values != null && !values.isEmpty()) {
                 paramMap.put(name, new ArrayList<>(values));
             }
         }
     }
-    
+
     /**
      * Converts a map with List values to a map with String[] values.
      */
@@ -648,26 +648,26 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
     @Override
     public Enumeration<Locale> getLocales() {
         List<Locale> locales = parseAcceptLanguageHeader();
-        
+
         // Add default locale if no valid locales were found
         if (locales.isEmpty()) {
             locales.add(Locale.getDefault());
         }
-        
+
         return Collections.enumeration(locales);
     }
-    
+
     /**
      * Parses the Accept-Language header and returns a list of locales.
      */
     private List<Locale> parseAcceptLanguageHeader() {
         List<Locale> locales = new ArrayList<>();
         String acceptLanguage = vertxRequest.headers().get("Accept-Language");
-        
+
         if (acceptLanguage == null || acceptLanguage.isEmpty()) {
             return locales;
         }
-        
+
         // Parse Accept-Language header according to RFC 7231
         // Format: language-tag[;q=weight], language-tag[;q=weight], ...
         String[] languages = acceptLanguage.split(",");
@@ -677,26 +677,26 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
                 locales.add(locale);
             }
         }
-        
+
         return locales;
     }
-    
+
     /**
      * Parses a single language tag from the Accept-Language header.
      */
     private Locale parseLanguageTag(String lang) {
         String trimmedLang = lang.trim();
-        
+
         // Extract language tag without quality value
         trimmedLang = extractLanguageWithoutQuality(trimmedLang);
-        
+
         if (trimmedLang.isEmpty()) {
             return null;
         }
-        
+
         return createLocaleFromTag(trimmedLang);
     }
-    
+
     /**
      * Extracts the language tag portion, removing any quality value.
      */
@@ -707,7 +707,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         }
         return lang;
     }
-    
+
     /**
      * Creates a Locale from a language tag, returning null if invalid.
      */
