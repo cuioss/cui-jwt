@@ -72,6 +72,7 @@ public class HttpClientFactory {
      * Created lazily and reused to avoid resource leaks.
      * Double-checked locking pattern with volatile ensures thread-safe initialization.
      */
+    @SuppressWarnings("java:S3077") // Volatile is sufficient here - ExecutorService is immutable once assigned and internally thread-safe
     private static volatile ExecutorService sharedExecutor = null;
     private static final Object executorLock = new Object();
 
