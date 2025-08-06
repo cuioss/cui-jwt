@@ -15,11 +15,9 @@
  */
 package de.cuioss.jwt.validation.cache;
 
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -49,7 +47,7 @@ import java.util.concurrent.ScheduledExecutorService;
  *     .build();
  *
  * // Create cache instance
- * AccessTokenCache cache = config.createCache(securityEventCounter);
+ * AccessTokenCache cache = new AccessTokenCache(config, securityEventCounter);
  * </pre>
  *
  * @author Oliver Wolff
@@ -111,18 +109,6 @@ public class AccessTokenCacheConfig {
                 .build();
     }
 
-    /**
-     * Creates an AccessTokenCache instance based on this configuration.
-     * <p>
-     * Always returns a cache instance. When maxSize is 0, the cache will
-     * immediately return null from computeIfAbsent without any caching behavior.
-     *
-     * @param securityEventCounter the security event counter for tracking cache hits
-     * @return the configured AccessTokenCache (never null)
-     */
-    public AccessTokenCache createCache(@NonNull SecurityEventCounter securityEventCounter) {
-        return new AccessTokenCache(this, securityEventCounter);
-    }
 
     /**
      * Checks if caching is enabled based on the configuration.

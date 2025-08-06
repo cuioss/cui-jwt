@@ -282,7 +282,7 @@ public class TokenValidator {
             cacheConfig = AccessTokenCacheConfig.defaultConfig();
         }
 
-        this.accessTokenCache = cacheConfig.createCache(this.securityEventCounter);
+        this.accessTokenCache = new AccessTokenCache(cacheConfig, this.securityEventCounter);
         LOGGER.debug("AccessTokenCache initialized with maxSize=%s, evictionInterval=%ss",
                 cacheConfig.getMaxSize(), cacheConfig.getEvictionIntervalSeconds());
 
