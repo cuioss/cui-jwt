@@ -6,7 +6,7 @@
 [source,bash]
 ----
 # Run JFR-instrumented benchmarks
-mvn verify -Pbenchmark-jfr
+./mvnw verify -Pbenchmark-jfr
 
 # Analyze variance
 java -cp "target/classes:target/dependency/*" \
@@ -91,7 +91,7 @@ Custom JMH parameters:
 
 [source,bash]
 ----
-mvn verify -Pbenchmark-jfr \
+./mvnw verify -Pbenchmark-jfr \
   -Djmh.iterations=10 \
   -Djmh.threads=16 \
   -Djmh.time=10s

@@ -67,7 +67,7 @@ Access DevUI components during development:
 
 [source, bash]
 ----
-mvn quarkus:dev
+./mvnw quarkus:dev
 # Navigate to http://localhost:8080/q/dev/
 # Find "CUI JWT" section for JWT validation tools
 ----

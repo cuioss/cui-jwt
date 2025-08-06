@@ -139,7 +139,7 @@ The module integrates Docker cleanup with Maven's clean phase to prevent file lo
 [source,bash]
 ----
 # Standard clean command now stops Docker containers first
-mvn clean
+./mvnw clean
 
 # What happens:
 # 1. Executes stop-integration-container.sh --clean (pre-clean phase)
@@ -305,10 +305,10 @@ The module supports dual-image builds via Maven profiles:
 [source,bash]
 ----
 # Production build (104MB distroless image)
-mvn clean package -Pdocker-distroless
+./mvnw clean package -Pdocker-distroless
 
 # JFR profiling build (187MB UBI-based image)
-mvn clean package -Pdocker-jfr
+./mvnw clean package -Pdocker-jfr
 
 # Run with Docker Compose (uses built image)
 docker compose up

@@ -188,13 +188,13 @@ The benchmark results show varying P99 latencies across different workloads:
 [source,bash]
 ----
 # Standard benchmarks
-mvn verify -Pbenchmark
+./mvnw verify -Pbenchmark
 
 # Component-level analysis
-mvn verify -Pbenchmark-jfr
+./mvnw verify -Pbenchmark-jfr
 
 # Thread scaling analysis
-mvn verify -Pbenchmark -Djmh.threads=1,50,100,150,200
+./mvnw verify -Pbenchmark -Djmh.threads=1,50,100,150,200
 ----
 
 == Conclusion

@@ -157,27 +157,74 @@ public class SimplifiedMetricsExporter {
     }
 
     /**
-     * Get current benchmark name from thread or stack trace
+     * Get current benchmark name using system property first, then fallback to runtime detection.
+     * This approach is more robust and maintainable than parsing thread names and stack traces.
      */
     private static String getCurrentBenchmarkName() {
-        String threadName = Thread.currentThread().getName();
-        // JMH typically includes benchmark method name in thread name
-        if (threadName.contains("measureThroughput")) return "measureThroughput";
-        if (threadName.contains("measureAverageTime")) return "measureAverageTime";
-        if (threadName.contains("measureConcurrentValidation")) return "measureConcurrentValidation";
-        if (threadName.contains("validateMixedTokens0")) return "validateMixedTokens0";
-        if (threadName.contains("validateMixedTokens50")) return "validateMixedTokens50";
+        // First check for explicit system property override
+        String explicitName = System.getProperty("benchmark.context");
+        if (explicitName != null && !explicitName.trim().isEmpty()) {
+            return explicitName.trim();
+        }
 
-        // Fallback: check stack trace
+        // Fallback 1: Try to find benchmark class name from stack trace
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         for (StackTraceElement element : stackTrace) {
+            String className = element.getClassName();
             String methodName = element.getMethodName();
-            if (methodName.startsWith("measure") || methodName.startsWith("validate")) {
+
+            // Look for benchmark class names (more reliable than method names)
+            if (className.contains("Benchmark") && !className.equals(SimplifiedMetricsExporter.class.getName())) {
+                String simpleName = className.substring(className.lastIndexOf('.') + 1);
+                // Remove "Benchmark" suffix if present for cleaner names
+                if (simpleName.endsWith("Benchmark")) {
+                    return simpleName.substring(0, simpleName.length() - 9).toLowerCase();
+                }
+                return simpleName.toLowerCase();
+            }
+
+            // Look for benchmark method patterns
+            if (methodName.startsWith("measure") || methodName.startsWith("validate") || methodName.startsWith("benchmark")) {
                 return methodName;
             }
         }
 
+        // Fallback 2: Parse thread name with more generic patterns
+        String threadName = Thread.currentThread().getName();
+        // JMH typically includes benchmark information in thread name
+        if (threadName.contains("measure")) {
+            return extractBenchmarkFromThread(threadName, "measure");
+        }
+        if (threadName.contains("validate")) {
+            return extractBenchmarkFromThread(threadName, "validate");
+        }
+        if (threadName.contains("benchmark")) {
+            return extractBenchmarkFromThread(threadName, "benchmark");
+        }
+
         return null;
+    }
+
+    /**
+     * Extract benchmark name from thread name using pattern matching
+     */
+    private static String extractBenchmarkFromThread(String threadName, String pattern) {
+        int index = threadName.indexOf(pattern);
+        if (index >= 0) {
+            // Extract the method name part
+            String remaining = threadName.substring(index);
+            // Find word boundary or common separators
+            int endIndex = remaining.length();
+            for (int i = pattern.length(); i < remaining.length(); i++) {
+                char c = remaining.charAt(i);
+                if (!Character.isLetterOrDigit(c) && c != '_') {
+                    endIndex = i;
+                    break;
+                }
+            }
+            return remaining.substring(0, endIndex);
+        }
+        return pattern;
     }
 
     /**

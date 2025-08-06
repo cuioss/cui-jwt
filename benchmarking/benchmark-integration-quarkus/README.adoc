@@ -7,16 +7,16 @@ Real-world JWT validation performance testing against live Quarkus applications 
 [source,bash]
 ----
 # Run benchmarks with automatic container management
-mvn clean verify -Pbenchmark-testing
+./mvnw clean verify -Pbenchmark-testing
 
 # Quick validation run  
-mvn clean verify -Pbenchmark-testing -Djmh.iterations=1 -Djmh.threads=1
+./mvnw clean verify -Pbenchmark-testing -Djmh.iterations=1 -Djmh.threads=1
 
 # With JFR profiling
-mvn clean verify -Pbenchmark-jfr
+./mvnw clean verify -Pbenchmark-jfr
 
 # Force rebuild of Quarkus native container
-mvn clean verify -Prebuild-container,benchmark-testing
+./mvnw clean verify -Prebuild-container,benchmark-testing
 ----
 
 == Architecture

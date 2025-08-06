@@ -215,10 +215,10 @@ Build commands:
 [source,bash]
 ----
 # Production build (distroless native image)
-mvn clean verify -Pintegration-tests
+./mvnw clean verify -Pintegration-tests
 
 # JFR profiling build (UBI-based native image)
-mvn clean verify -Pjfr
+./mvnw clean verify -Pjfr
 ----
 
 More information: xref:doc/configuration/native-image-configuration.adoc[Native Image Support]

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -152,5 +153,106 @@ class SimplifiedMetricsExporterTest {
         // Verify that values >= 10 are integers without decimal point
         assertTrue(jsonContent.contains("\"p50_us\": 13"), "Values >= 10 should be integers without decimal");
         assertFalse(jsonContent.contains("13.0"), "Values >= 10 should not have .0 suffix");
+    }
+
+    @Test
+    void shouldUseSystemPropertyForBenchmarkContext() throws Exception {
+        // Given - set system property
+        String originalProperty = System.getProperty("benchmark.context");
+        System.setProperty("benchmark.context", "custom-benchmark-test");
+
+        try {
+            // When - call the private method via reflection
+            Method method = SimplifiedMetricsExporter.class.getDeclaredMethod("getCurrentBenchmarkName");
+            method.setAccessible(true);
+            String result = (String) method.invoke(null);
+
+            // Then
+            assertEquals("custom-benchmark-test", result);
+        } finally {
+            // Cleanup
+            if (originalProperty != null) {
+                System.setProperty("benchmark.context", originalProperty);
+            } else {
+                System.clearProperty("benchmark.context");
+            }
+        }
+    }
+
+    @Test
+    void shouldFallbackToBenchmarkClassDetection() throws Exception {
+        // Given - clear system property and create stack with benchmark class
+        String originalProperty = System.getProperty("benchmark.context");
+        System.clearProperty("benchmark.context");
+
+        try {
+            // Create a mock benchmark class scenario by calling from a class with "Benchmark" in name
+            String result = new MockJwtValidationBenchmark().getBenchmarkNameFromExporter();
+
+            // Then - should extract class name without "Benchmark" suffix
+            assertEquals("simplifiedmetricsexportertest$mockjwtvalidation", result);
+        } finally {
+            // Cleanup
+            if (originalProperty != null) {
+                System.setProperty("benchmark.context", originalProperty);
+            }
+        }
+    }
+
+    @Test
+    void shouldReturnNullWhenNoBenchmarkContextFound() throws Exception {
+        // Given - clear system property
+        String originalProperty = System.getProperty("benchmark.context");
+        System.clearProperty("benchmark.context");
+
+        try {
+            // When - call from test context (no benchmark patterns)
+            Method method = SimplifiedMetricsExporter.class.getDeclaredMethod("getCurrentBenchmarkName");
+            method.setAccessible(true);
+            String result = (String) method.invoke(null);
+
+            // Then - should return null when no patterns match
+            assertNull(result);
+        } finally {
+            // Cleanup
+            if (originalProperty != null) {
+                System.setProperty("benchmark.context", originalProperty);
+            }
+        }
+    }
+
+    @Test
+    void shouldHandleEmptySystemProperty() throws Exception {
+        // Given - set empty system property
+        String originalProperty = System.getProperty("benchmark.context");
+        System.setProperty("benchmark.context", "  ");
+
+        try {
+            // When
+            Method method = SimplifiedMetricsExporter.class.getDeclaredMethod("getCurrentBenchmarkName");
+            method.setAccessible(true);
+            String result = (String) method.invoke(null);
+
+            // Then - should fallback to other detection methods when property is empty/whitespace
+            assertNull(result); // In test context, should return null
+        } finally {
+            // Cleanup
+            if (originalProperty != null) {
+                System.setProperty("benchmark.context", originalProperty);
+            } else {
+                System.clearProperty("benchmark.context");
+            }
+        }
+    }
+
+    /**
+     * Mock benchmark class to test class name detection
+     */
+    private static class MockJwtValidationBenchmark {
+        String getBenchmarkNameFromExporter() throws Exception {
+            Method method = SimplifiedMetricsExporter.class.getDeclaredMethod("getCurrentBenchmarkName");
+            method.setAccessible(true);
+            return (String) method.invoke(null);
+        }
     }
 }

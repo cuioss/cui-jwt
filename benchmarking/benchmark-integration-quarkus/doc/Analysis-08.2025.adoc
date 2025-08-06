@@ -222,7 +222,7 @@ Total Request Time: 2,000μs (P95)
 [source,bash]
 ----
 # Run with JFR profiling enabled
-mvn clean verify -Pbenchmark-jfr -pl benchmarking/benchmark-integration-quarkus
+./mvnw clean verify -Pbenchmark-jfr -pl benchmarking/benchmark-integration-quarkus
 
 # Analyze CPU hotspots
 jfr print --events ExecutionSample --stack-depth 20 target/benchmark-results/*.jfr
@@ -237,11 +237,11 @@ jfr print --events GarbageCollection target/benchmark-results/*.jfr
 ----
 # Compare performance between builds
 git checkout <baseline-commit>
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
 # Run baseline benchmarks and save results
 
 git checkout <current-commit>  
-mvn clean package -DskipTests
+./mvnw clean package -DskipTests
 # Run current benchmarks and compare
 ----
 
