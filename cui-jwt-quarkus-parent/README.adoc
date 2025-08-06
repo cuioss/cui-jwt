@@ -7,6 +7,22 @@ A Quarkus extension for the CUI JWT validation library.
 
 toc::[]
 
+== Building and Running
+
+=== Quick Start
+
+[source,bash]
+----
+# Production build (distroless native image) - from project root
+./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+
+# JFR profiling build (UBI-based native image) - from project root
+./mvnw clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+
+# Run unit tests only
+./mvnw test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus
+----
+
 == Maven Coordinates
 
 [source,xml]
@@ -210,16 +226,6 @@ The extension supports GraalVM Native Image compilation with dual-image builds f
 
 * **Production**: Distroless images (104MB) with minimal attack surface
 * **Profiling**: UBI-based images (187MB) with full JFR support
-
-Build commands:
-[source,bash]
-----
-# Production build (distroless native image)
-./mvnw clean verify -Pintegration-tests
-
-# JFR profiling build (UBI-based native image)
-./mvnw clean verify -Pjfr
-----
 
 More information: xref:doc/configuration/native-image-configuration.adoc[Native Image Support]
 
