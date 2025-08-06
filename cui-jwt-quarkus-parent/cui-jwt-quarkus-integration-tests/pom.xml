@@ -309,8 +309,16 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>true</skipTests>
-                            <!-- Fix argLine placeholder issue inherited from parent -->
+                            <!-- Override parent argLine to avoid @{argLine} placeholder issue -->
                             <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                            <!-- Clear parent's system properties that contain @{argLine} -->
+                            <systemPropertyVariables>
+                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                                <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                                <maven.home>${maven.home}</maven.home>
+                                <!-- Explicitly set without @{argLine} placeholder -->
+                                <quarkus.test.arg-line>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</quarkus.test.arg-line>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
 
