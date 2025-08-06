@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimplifiedMetricsExporterTest {
@@ -47,14 +49,26 @@ class SimplifiedMetricsExporterTest {
                 .build()
                 .createMonitor();
 
-        // Simulate some measurements
+        // Simulate some measurements with actual time delay
         long parseStart = System.nanoTime();
-        Thread.sleep(10);
+        
+        // Wait a bit to simulate parsing time
+        await()
+                .atMost(50, TimeUnit.MILLISECONDS)
+                .pollDelay(10, TimeUnit.MILLISECONDS)
+                .until(() -> true);
+        
         long parseDuration = System.nanoTime() - parseStart;
         monitor.recordMeasurement(MeasurementType.TOKEN_PARSING, parseDuration);
 
         long headerStart = System.nanoTime();
-        Thread.sleep(5);
+        
+        // Wait a bit to simulate header validation time
+        await()
+                .atMost(20, TimeUnit.MILLISECONDS)
+                .pollDelay(5, TimeUnit.MILLISECONDS)
+                .until(() -> true);
+        
         long headerDuration = System.nanoTime() - headerStart;
         monitor.recordMeasurement(MeasurementType.HEADER_VALIDATION, headerDuration);
 

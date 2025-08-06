@@ -30,7 +30,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleMetricsExporterTest {
@@ -92,7 +94,13 @@ class SimpleMetricsExporterTest {
     void shouldHandleMultipleBenchmarks() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
-        Thread.sleep(10);
+        
+        // Wait a bit to ensure different timestamps
+        await()
+                .atMost(100, TimeUnit.MILLISECONDS)
+                .pollDelay(10, TimeUnit.MILLISECONDS)
+                .until(() -> true);
+        
         exporter.exportJwtValidationMetrics("validateJwtLatency", Instant.now());
 
         // Assert

@@ -20,6 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.TimeUnit;
+
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkContextManagerTest {
@@ -74,13 +77,18 @@ class BenchmarkContextManagerTest {
 
     @Test
     @DisplayName("Should reset context properly and generate new context")
-    void shouldResetContextProperly() throws InterruptedException {
+    void shouldResetContextProperly() {
         // Arrange
         String originalContext = BenchmarkContextManager.getBenchmarkContext();
 
-        // Act
-        Thread.sleep(1100);
-        BenchmarkContextManager.resetContext();
+        // Act - Wait a bit to ensure timestamp difference
+        await()
+                .atMost(2, TimeUnit.SECONDS)
+                .pollDelay(1100, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    BenchmarkContextManager.resetContext();
+                    return true;
+                });
         String newContext = BenchmarkContextManager.getBenchmarkContext();
 
         // Assert
