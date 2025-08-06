@@ -37,9 +37,9 @@ import java.io.File;
  * <p>
  * JFR data is automatically saved to: {@code target/benchmark-results/}
  *
- * @see CoreJfrBenchmark
- * @see ErrorJfrBenchmark
- * @see MixedJfrBenchmark
+ * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.CoreJfrBenchmark
+ * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.ErrorJfrBenchmark
+ * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.MixedJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer
  */
 public class JfrBenchmarkRunner {
