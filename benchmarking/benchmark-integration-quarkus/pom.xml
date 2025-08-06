@@ -79,7 +79,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.15.1</version>
+            <version>${version.commons-io}</version>
         </dependency>
 
 
@@ -94,10 +94,121 @@
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>4.3.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Configure surefire for unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>false</skipTests>
+                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                </configuration>
+            </plugin>
+
+            <!-- Enable annotation processing for JMH -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.openjdk.jmh</groupId>
+                            <artifactId>jmh-generator-annprocess</artifactId>
+                            <version>${version.jmh}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${version.lombok}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+
+            <!-- Execute benchmark tests when skip.benchmark is false -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-benchmark-dir</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>mkdir</executable>
+                            <arguments>
+                                <argument>-p</argument>
+                                <argument>${benchmark.results.dir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-benchmarks</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
+                                <argument>-classpath</argument>
+                                <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
+                                <argument>-Djmh.result.format=${jmh.result.format}</argument>
+                                <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
+                                <argument>-Djmh.iterations=${jmh.iterations}</argument>
+                                <argument>-Djmh.warmupIterations=${jmh.warmupIterations}</argument>
+                                <argument>-Djmh.forks=${jmh.forks}</argument>
+                                <argument>-Djmh.threads=${jmh.threads}</argument>
+                                <argument>-Djmh.time=${jmh.time}</argument>
+                                <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
+                                <argument>-Dbenchmark.results.dir=${benchmark.results.dir}</argument>
+                                <argument>-Dintegration.service.url=${integration.service.url}</argument>
+                                <argument>-Dkeycloak.url=${keycloak.url}</argument>
+                                <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
+                                <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
+                                <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
+                                <argument>-XX:+UnlockDiagnosticVMOptions</argument>
+                                <argument>-XX:+DebugNonSafepoints</argument>
+                                <argument>${benchmark.runner}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Build classpath for benchmark execution -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>
@@ -375,114 +486,4 @@
             </build>
         </profile>
     </profiles>
-
-    <build>
-        <plugins>
-            <!-- Configure surefire for unit tests -->
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skipTests>false</skipTests>
-                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
-                </configuration>
-            </plugin>
-
-            <!-- Enable annotation processing for JMH -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.openjdk.jmh</groupId>
-                            <artifactId>jmh-generator-annprocess</artifactId>
-                            <version>${version.jmh}</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${version.lombok}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                    <release>21</release>
-                </configuration>
-            </plugin>
-
-            <!-- Execute benchmark tests when skip.benchmark is false -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>create-benchmark-dir</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>mkdir</executable>
-                            <arguments>
-                                <argument>-p</argument>
-                                <argument>${benchmark.results.dir}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>run-benchmarks</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>java</executable>
-                            <arguments>
-                                <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
-                                <argument>-classpath</argument>
-                                <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
-                                <argument>-Djmh.result.format=${jmh.result.format}</argument>
-                                <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
-                                <argument>-Djmh.iterations=${jmh.iterations}</argument>
-                                <argument>-Djmh.warmupIterations=${jmh.warmupIterations}</argument>
-                                <argument>-Djmh.forks=${jmh.forks}</argument>
-                                <argument>-Djmh.threads=${jmh.threads}</argument>
-                                <argument>-Djmh.time=${jmh.time}</argument>
-                                <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
-                                <argument>-Dbenchmark.results.dir=${benchmark.results.dir}</argument>
-                                <argument>-Dintegration.service.url=${integration.service.url}</argument>
-                                <argument>-Dkeycloak.url=${keycloak.url}</argument>
-                                <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
-                                <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
-                                <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
-                                <argument>-XX:+UnlockDiagnosticVMOptions</argument>
-                                <argument>-XX:+DebugNonSafepoints</argument>
-                                <argument>${benchmark.runner}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Build classpath for benchmark execution -->
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

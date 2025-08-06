@@ -104,7 +104,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>${version.exec-maven-plugin}</version>
                 <executions>
                     <execution>
                         <id>stop-docker-containers</id>
@@ -160,6 +159,7 @@
                     
                     <!-- Skip Unit Tests (Surefire) -->
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>true</skipTests>
@@ -170,6 +170,7 @@
 
                     <!-- Integration Test Configuration -->
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <executions>
                             <execution>
@@ -198,7 +199,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>${version.exec-maven-plugin}</version>
                         <executions>
                             <!-- Build native executable if needed -->
                             <execution>
@@ -295,6 +295,7 @@
                     
                     <!-- Skip Unit Tests (Surefire) -->
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>true</skipTests>
@@ -305,6 +306,7 @@
 
                     <!-- Integration Test Configuration for JFR -->
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <executions>
                             <execution>
@@ -333,7 +335,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>${version.exec-maven-plugin}</version>
                         <executions>
                             <!-- Build native executable if needed -->
                             <execution>

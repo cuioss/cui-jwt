@@ -31,6 +31,7 @@
         -->
         <junit-platform.version>1.13.1</junit-platform.version>
         <version.weld-junit5>5.0.1.Final</version.weld-junit5>
+        <version.easymock>5.2.0</version.easymock>
     </properties>
 
     <dependencyManagement>
@@ -38,7 +39,7 @@
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-bom</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${version.quarkus}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -79,7 +80,7 @@
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-extension-processor</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${version.quarkus}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -134,7 +135,7 @@
                 <plugin>
                     <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-maven-plugin</artifactId>
-                    <version>${quarkus.version}</version>
+                    <version>${version.quarkus}</version>
                     <extensions>true</extensions>
                     <executions>
                         <execution>
@@ -147,6 +148,7 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
                         <!-- Use release instead of source/target to properly handle modules -->
@@ -154,6 +156,7 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <systemPropertyVariables>
@@ -177,6 +180,7 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <configuration>
                         <systemPropertyVariables>
