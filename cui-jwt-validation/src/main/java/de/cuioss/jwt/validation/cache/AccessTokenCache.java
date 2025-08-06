@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.MetricsTicker;
+import de.cuioss.jwt.validation.metrics.MetricsTickerFactory;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
@@ -182,7 +183,7 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache lookup
-        MetricsTicker lookupTicker = MeasurementType.CACHE_LOOKUP.createStartedTicker(performanceMonitor);
+        MetricsTicker lookupTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.CACHE_LOOKUP, performanceMonitor);
 
         // Generate cache key from token string
         int cacheKey = tokenString.hashCode();
@@ -218,7 +219,7 @@ public class AccessTokenCache {
         }
 
         // Create metrics ticker for cache store
-        MetricsTicker storeTicker = MeasurementType.CACHE_STORE.createTicker(performanceMonitor);
+        MetricsTicker storeTicker = MetricsTickerFactory.createTicker(MeasurementType.CACHE_STORE, performanceMonitor);
 
         // Cache miss - use computeIfAbsent to ensure only one thread validates
         CachedToken newCached = cache.computeIfAbsent(cacheKey, key -> {

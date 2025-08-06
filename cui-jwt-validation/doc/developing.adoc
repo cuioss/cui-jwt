@@ -19,7 +19,7 @@ The library includes a lightweight, thread-safe performance monitoring system in
 TokenValidatorMonitor monitor = new TokenValidatorMonitor();
 
 // Create a ticker for a specific measurement type
-MetricsTicker ticker = MeasurementType.SIGNATURE_VALIDATION.createTicker(monitor);
+MetricsTicker ticker = MetricsTickerFactory.createTicker(MeasurementType.SIGNATURE_VALIDATION, monitor);
 
 // Start recording
 ticker.startRecording();

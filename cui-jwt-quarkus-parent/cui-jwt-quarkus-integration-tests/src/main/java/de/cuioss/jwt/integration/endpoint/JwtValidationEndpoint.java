@@ -16,6 +16,7 @@
 package de.cuioss.jwt.integration.endpoint;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import de.cuioss.jwt.quarkus.producer.BearerTokenResponseFactory;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -267,8 +268,8 @@ public class JwtValidationEndpoint {
         } else {
             LOGGER.debug("Bearer token authorization failed for: %s", description);
         }
-        // Use the improved BearerTokenStatus.createResponse() method
-        return tokenResult.errorResponse();
+        // Use the BearerTokenResponseFactory to create the response
+        return BearerTokenResponseFactory.createResponse(tokenResult);
     }
 
     /**

@@ -117,7 +117,7 @@ public class InstanceEndpoint {
             }
         }
         // Token missing, invalid, or lacks required scope
-        return tokenResult.errorResponse();
+        return BearerTokenResponseFactory.createResponse(tokenResult);
     }
 }
 

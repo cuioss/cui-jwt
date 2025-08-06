@@ -64,7 +64,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *             return Response.ok(token.getSubject().orElse("unknown")).build();
  *         } else {
  *             // Return appropriate error response
- *             return tokenResult.errorResponse();
+ *             return BearerTokenResponseFactory.createResponse(tokenResult);
  *         }
  *     }
  * }
@@ -97,7 +97,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *         // Use validated token
  *     } else {
  *         // Handle validation failure with detailed status information
- *         return tokenResult.errorResponse();
+ *         return BearerTokenResponseFactory.createResponse(tokenResult);
  *     }
  * }
  * }</pre>

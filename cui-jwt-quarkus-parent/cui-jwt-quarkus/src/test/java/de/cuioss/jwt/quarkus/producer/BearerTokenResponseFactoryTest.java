@@ -34,20 +34,21 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link BearerTokenResult#errorResponse()} method OAuth compliance.
+ * Tests for {@link BearerTokenResponseFactory} OAuth compliance.
  * <p>
  * Validates OAuth 2.0 Bearer Token specification (RFC 6750) and OAuth Step-Up
- * Authentication Challenge compliance of error response generation.
+ * Authentication Challenge compliance of error response generation from
+ * {@link BearerTokenResult} objects.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-@DisplayName("BearerTokenResult Error Response")
-class BearerTokenResultErrorResponseTest {
+@DisplayName("BearerTokenResponseFactory Tests")
+class BearerTokenResponseFactoryTest {
 
     @Nested
-    @DisplayName("FULLY_VERIFIED Response")
-    class FullyVerifiedResponse {
+    @DisplayName("createResponse() with FULLY_VERIFIED status")
+    class CreateResponseWithFullyVerifiedStatus {
 
         @Test
         @DisplayName("should return 200 OK with security headers")
@@ -56,7 +57,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.success(tokenContent,
                     Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(200, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
@@ -66,8 +67,8 @@ class BearerTokenResultErrorResponseTest {
     }
 
     @Nested
-    @DisplayName("COULD_NOT_ACCESS_REQUEST Response")
-    class CouldNotAccessRequestResponse {
+    @DisplayName("createResponse() with COULD_NOT_ACCESS_REQUEST status")
+    class CreateResponseWithCouldNotAccessRequestStatus {
 
         @Test
         @DisplayName("should return 500 Internal Server Error with error message")
@@ -75,7 +76,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.couldNotAccessRequest(
                     Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(500, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
@@ -86,8 +87,8 @@ class BearerTokenResultErrorResponseTest {
     }
 
     @Nested
-    @DisplayName("NO_TOKEN_GIVEN Response")
-    class NoTokenGivenResponse {
+    @DisplayName("createResponse() with NO_TOKEN_GIVEN status")
+    class CreateResponseWithNoTokenGivenStatus {
 
         @Test
         @DisplayName("should return 401 Unauthorized with basic WWW-Authenticate header")
@@ -95,7 +96,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.noTokenGiven(
                     Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(401, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
@@ -105,8 +106,8 @@ class BearerTokenResultErrorResponseTest {
     }
 
     @Nested
-    @DisplayName("PARSING_ERROR Response")
-    class ParsingErrorResponse {
+    @DisplayName("createResponse() with PARSING_ERROR status")
+    class CreateResponseWithParsingErrorStatus {
 
         @Test
         @DisplayName("should return 401 Unauthorized with invalid_token error")
@@ -116,7 +117,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.parsingError(exception,
                     Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(401, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
@@ -137,7 +138,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.parsingError(exception,
                     Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(401, response.getStatus());
             String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
@@ -146,8 +147,8 @@ class BearerTokenResultErrorResponseTest {
     }
 
     @Nested
-    @DisplayName("CONSTRAINT_VIOLATION Response")
-    class ConstraintViolationResponse {
+    @DisplayName("createResponse() with CONSTRAINT_VIOLATION status")
+    class CreateResponseWithConstraintViolationStatus {
 
         @Test
         @DisplayName("should return 401 Unauthorized for scope violation with insufficient_scope error")
@@ -156,7 +157,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     missingScopes, Collections.emptySet(), Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(401, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
@@ -180,7 +181,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     Collections.emptySet(), missingRoles, Collections.emptySet());
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(403, response.getStatus());
             assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"));
@@ -204,7 +205,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     Collections.emptySet(), Collections.emptySet(), missingGroups);
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(403, response.getStatus());
 
@@ -226,7 +227,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     Collections.emptySet(), missingRoles, missingGroups);
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             assertEquals(403, response.getStatus());
 
@@ -245,7 +246,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     missingScopes, missingRoles, missingGroups);
 
-            Response response = result.errorResponse();
+            Response response = BearerTokenResponseFactory.createResponse(result);
 
             // Should return 401 for scope violation, not 403 for role/group
             assertEquals(401, response.getStatus());
@@ -267,7 +268,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     missingScopes, Collections.emptySet(), Collections.emptySet());
 
-            String wwwAuthenticate = result.errorResponse().getHeaderString("WWW-Authenticate");
+            String wwwAuthenticate = BearerTokenResponseFactory.createResponse(result).getHeaderString("WWW-Authenticate");
 
             // Check both possible orders since Set doesn't guarantee ordering
             boolean hasCorrectScope = wwwAuthenticate.contains("scope=\"read:\\\"special\\\" write\"") ||
@@ -282,7 +283,7 @@ class BearerTokenResultErrorResponseTest {
             var result = BearerTokenResult.constraintViolation(
                     Collections.emptySet(), missingRoles, Collections.emptySet());
 
-            String wwwAuthenticate = result.errorResponse().getHeaderString("WWW-Authenticate");
+            String wwwAuthenticate = BearerTokenResponseFactory.createResponse(result).getHeaderString("WWW-Authenticate");
             assertTrue(wwwAuthenticate.contains("required_roles=\"admin:\\\"special\\\"\""));
         }
     }
@@ -303,7 +304,7 @@ class BearerTokenResultErrorResponseTest {
             );
 
             testCases.forEach((name, result) -> {
-                var response = result.errorResponse();
+                var response = BearerTokenResponseFactory.createResponse(result);
                 assertEquals("no-store, no-cache, must-revalidate", response.getHeaderString("Cache-Control"),
                         name + " should have Cache-Control header");
                 assertEquals("no-cache", response.getHeaderString("Pragma"),

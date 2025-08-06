@@ -26,6 +26,7 @@ import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.MetricsTicker;
+import de.cuioss.jwt.validation.metrics.MetricsTickerFactory;
 import de.cuioss.jwt.validation.metrics.NoOpMetricsTicker;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
@@ -301,7 +302,7 @@ public class TokenValidator {
         LOGGER.debug("Creating access token");
 
         // Record complete validation time
-        MetricsTicker completeTicker = MeasurementType.COMPLETE_VALIDATION.createStartedTicker(performanceMonitor);
+        MetricsTicker completeTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.COMPLETE_VALIDATION, performanceMonitor);
         try {
             // Use cache-aware processing for access tokens
             AccessTokenContent result = processAccessTokenWithCache(tokenString);
@@ -392,9 +393,9 @@ public class TokenValidator {
      */
     private AccessTokenContent processAccessTokenWithCache(@NonNull String tokenString) {
         // Perform minimal validation to get issuer for cache key
-        validateTokenFormat(tokenString, MeasurementType.TOKEN_FORMAT_CHECK.createTicker(performanceMonitor));
-        DecodedJwt decodedJwt = decodeToken(tokenString, MeasurementType.TOKEN_PARSING.createTicker(performanceMonitor));
-        String issuer = validateAndExtractIssuer(decodedJwt, MeasurementType.ISSUER_EXTRACTION.createTicker(performanceMonitor));
+        validateTokenFormat(tokenString, MetricsTickerFactory.createTicker(MeasurementType.TOKEN_FORMAT_CHECK, performanceMonitor));
+        DecodedJwt decodedJwt = decodeToken(tokenString, MetricsTickerFactory.createTicker(MeasurementType.TOKEN_PARSING, performanceMonitor));
+        String issuer = validateAndExtractIssuer(decodedJwt, MetricsTickerFactory.createTicker(MeasurementType.ISSUER_EXTRACTION, performanceMonitor));
 
         // Use transparent cache - handles enabled/disabled states internally
         return accessTokenCache.computeIfAbsent(
@@ -402,16 +403,16 @@ public class TokenValidator {
                 token -> {
                     // Continue with expensive validation steps
                     // We already have the decodedJwt and issuer, so continue from issuer config resolution
-                    IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MeasurementType.ISSUER_CONFIG_RESOLUTION.createTicker(performanceMonitor));
-                    validateTokenHeader(decodedJwt, issuerConfig, MeasurementType.HEADER_VALIDATION.createTicker(performanceMonitor));
-                    validateTokenSignature(decodedJwt, issuerConfig, MeasurementType.SIGNATURE_VALIDATION.createTicker(performanceMonitor));
+                    IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MetricsTickerFactory.createTicker(MeasurementType.ISSUER_CONFIG_RESOLUTION, performanceMonitor));
+                    validateTokenHeader(decodedJwt, issuerConfig, MetricsTickerFactory.createTicker(MeasurementType.HEADER_VALIDATION, performanceMonitor));
+                    validateTokenSignature(decodedJwt, issuerConfig, MetricsTickerFactory.createTicker(MeasurementType.SIGNATURE_VALIDATION, performanceMonitor));
 
                     TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
                     AccessTokenContent accessToken = buildAccessToken(decodedJwt, cachedBuilder,
-                            MeasurementType.TOKEN_BUILDING.createTicker(performanceMonitor));
+                            MetricsTickerFactory.createTicker(MeasurementType.TOKEN_BUILDING, performanceMonitor));
 
                     AccessTokenContent validatedToken = validateTokenClaims(accessToken, issuerConfig,
-                            MeasurementType.CLAIMS_VALIDATION.createTicker(performanceMonitor));
+                            MetricsTickerFactory.createTicker(MeasurementType.CLAIMS_VALIDATION, performanceMonitor));
 
                     LOGGER.debug("Token successfully validated");
                     return validatedToken;
