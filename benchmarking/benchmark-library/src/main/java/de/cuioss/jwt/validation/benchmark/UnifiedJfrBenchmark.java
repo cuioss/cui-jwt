@@ -89,7 +89,7 @@ public class UnifiedJfrBenchmark {
     @TearDown(Level.Trial)
     public void tearDown() {
         // Export metrics
-        if (tokenValidator != null && tokenValidator.getPerformanceMonitor() != null) {
+        if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
@@ -102,42 +102,6 @@ public class UnifiedJfrBenchmark {
             jfrInstrumentation.shutdown();
         }
     }
-
-    /**
-     * Determines the current benchmark name from the thread name or stack trace
-     */
-    private String getCurrentBenchmarkName() {
-        // JMH typically includes the benchmark method name in the thread name
-        String threadName = Thread.currentThread().getName();
-
-        // Check all registered benchmark names
-        String[] benchmarkNames = {
-                "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr",
-                "validateValidTokenWithJfr", "validateExpiredTokenWithJfr", "validateInvalidSignatureTokenWithJfr",
-                "validateMalformedTokenWithJfr", "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
-        };
-
-        for (String name : benchmarkNames) {
-            if (threadName.contains(name)) {
-                return name;
-            }
-        }
-
-        // Fallback: check stack trace
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        for (StackTraceElement element : stackTrace) {
-            String methodName = element.getMethodName();
-            for (String name : benchmarkNames) {
-                if (name.equals(methodName)) {
-                    return methodName;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    // ========== Core Validation Benchmarks ==========
 
     /**
      * Measures average validation time for single-threaded token validation with JFR instrumentation using full token spectrum.

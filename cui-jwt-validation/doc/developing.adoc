@@ -126,6 +126,16 @@ The library provides comprehensive test utilities via the `generators` artifact.
 * Configure appropriate JWKS refresh intervals (300-3600 seconds)
 * Consider using the built-in access token cache (see README for configuration)
 
+=== Metrics Precision Notes
+
+Some validation operations execute in sub-microsecond time and may appear as zero when exported:
+
+* `TOKEN_FORMAT_CHECK` - Simple `String.isBlank()` check, typically < 1000ns
+* `ISSUER_EXTRACTION` - `Optional.get()` from decoded JWT, typically < 1000ns
+* `JWKS_OPERATIONS` - May show as 0 if keys are cached; actual JWKS fetches occur within signature validation
+
+When these nanosecond measurements are converted to milliseconds for JSON export, they round to 0. This is expected behavior for extremely fast operations and does not indicate missing measurements.
+
 == Memory Management
 
 Configure limits in `ParserConfig` to prevent attacks:

@@ -41,7 +41,7 @@ class SimplifiedMetricsExporterTest {
     private final Gson gson = new GsonBuilder().create();
 
     @Test
-    void shouldExportMetricsToJsonFile() throws IOException, InterruptedException {
+    void shouldExportMetricsToJsonFile() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
                 .measurementType(MeasurementType.TOKEN_PARSING)
