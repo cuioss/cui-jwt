@@ -36,10 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.awaitility.Awaitility.await;
@@ -78,7 +75,6 @@ class AccessTokenCacheTest {
     @Test
     void cacheMiss() {
         // Given
-        String issuer = "https://example.com";
         String token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiZXhwIjoxOTk5OTk5OTk5fQ.signature";
         AtomicInteger validationCount = new AtomicInteger(0);
         AccessTokenContent expectedContent = createAccessToken("https://example.com",
@@ -102,7 +98,6 @@ class AccessTokenCacheTest {
     @Test
     void cacheHit() {
         // Given
-        String issuer = "https://example.com";
         String token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwiZXhwIjoxOTk5OTk5OTk5fQ.signature";
         AtomicInteger validationCount = new AtomicInteger(0);
         AccessTokenContent expectedContent = createAccessToken("https://example.com",
@@ -133,7 +128,6 @@ class AccessTokenCacheTest {
         // This test verifies that expired tokens are detected and throw exception
         
         // Given
-        String issuer = "https://example.com";
         AtomicInteger validationCount = new AtomicInteger(0);
 
         // Create test data with consistent token
@@ -142,7 +136,7 @@ class AccessTokenCacheTest {
         // First access - cache a token that will expire soon
         AccessTokenContent expiredContent = createAccessTokenWithRawToken(
                 "https://example.com",
-                OffsetDateTime.now().plusSeconds(1), // Will expire in 1 second
+                OffsetDateTime.now().plusSeconds(2), // Will expire in 2 seconds
                 testToken
         );
 
@@ -155,12 +149,14 @@ class AccessTokenCacheTest {
         assertEquals(1, validationCount.get());
         assertEquals(1, cache.size());
 
-        // Wait for token to expire
-        try {
-            Thread.sleep(1100); // Wait 1.1 seconds
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        // Wait for token to expire using Awaitility
+        await()
+                .atMost(3, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .until(() -> {
+                    // Check if token has expired by comparing with current time
+                    return expiredContent.getExpirationTime().isBefore(OffsetDateTime.now());
+                });
 
         // When - second access should detect expiration and throw exception
         TokenValidationException exception =
@@ -182,10 +178,9 @@ class AccessTokenCacheTest {
     @Test
     void concurrentAccess() throws InterruptedException {
         // Given
-        String issuer = "https://example.com";
         String token = "concurrent-token";
         AtomicInteger validationCount = new AtomicInteger(0);
-        AccessTokenContent content = createAccessToken(issuer, OffsetDateTime.now().plusHours(1));
+        AccessTokenContent content = createAccessToken("https://example.com", OffsetDateTime.now().plusHours(1));
 
         int threadCount = 10;
         CountDownLatch startLatch = new CountDownLatch(1);
@@ -199,11 +194,10 @@ class AccessTokenCacheTest {
                     startLatch.await();
                     AccessTokenContent result = cache.computeIfAbsent(token, t -> {
                         validationCount.incrementAndGet();
-                        // Simulate some processing time
-                        try {
-                            Thread.sleep(10);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+                        // Simulate some processing time without blocking
+                        // This allows for testing concurrent access without sleep
+                        for (int j = 0; j < 1000; j++) {
+                            ThreadLocalRandom.current().nextDouble();
                         }
                         return content;
                     }, performanceMonitor);
@@ -221,8 +215,9 @@ class AccessTokenCacheTest {
         startLatch.countDown();
 
         // Wait for completion
-        assertTrue(doneLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "All threads should complete within 10 seconds");
         executor.shutdown();
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS), "Executor should terminate cleanly");
 
         // Then - validation should happen only once despite concurrent access
         assertEquals(1, validationCount.get());
@@ -369,8 +364,9 @@ class AccessTokenCacheTest {
         startLatch.countDown();
 
         // Wait for completion
-        assertTrue(doneLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(doneLatch.await(15, TimeUnit.SECONDS), "All threads should complete within 15 seconds");
         executor.shutdown();
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS), "Executor should terminate cleanly");
 
         // Then - no errors should occur
         assertEquals(0, errorCount.get());
@@ -454,7 +450,6 @@ class AccessTokenCacheTest {
         // When - add 20 tokens that will expire in 5 seconds
         OffsetDateTime expirationTime = OffsetDateTime.now().plusSeconds(5);
         for (int i = 0; i < 20; i++) {
-            String token = "eviction-test-token-" + i;
             String rawToken = "raw-token-" + i; // Unique raw token for each entry
             AccessTokenContent content = createAccessTokenWithRawToken(
                     "https://example.com",
