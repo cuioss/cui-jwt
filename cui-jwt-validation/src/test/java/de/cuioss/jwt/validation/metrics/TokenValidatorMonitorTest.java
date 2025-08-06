@@ -92,20 +92,20 @@ class TokenValidatorMonitorTest {
     @DisplayName("Should reject invalid window sizes")
     void shouldRejectInvalidWindowSizes() {
         assertThrows(IllegalArgumentException.class,
-                () -> TokenValidatorMonitorConfig.builder()
-                        .windowSize(0)
-                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
-                        .build()
-                        .createMonitor(),
+                () -> createMonitorWithWindowSize(0),
                 "Should reject zero window size");
 
         assertThrows(IllegalArgumentException.class,
-                () -> TokenValidatorMonitorConfig.builder()
-                        .windowSize(-1)
-                        .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
-                        .build()
-                        .createMonitor(),
+                () -> createMonitorWithWindowSize(-1),
                 "Should reject negative window size");
+    }
+
+    private TokenValidatorMonitor createMonitorWithWindowSize(int windowSize) {
+        return TokenValidatorMonitorConfig.builder()
+                .windowSize(windowSize)
+                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                .build()
+                .createMonitor();
     }
 
     @Test
