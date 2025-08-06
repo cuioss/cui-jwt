@@ -194,7 +194,7 @@ public class BearerTokenResponseFactory {
      */
     private static String buildInsufficientScopeHeader(Collection<String> missingScopes) {
         StringBuilder sb = buildBaseAuthenticateHeader(ERROR_INSUFFICIENT_SCOPE);
-        
+
         if (!missingScopes.isEmpty()) {
             String scopeValue = joinAndEscape(missingScopes);
             sb.append(", ").append(PARAM_SCOPE).append("=\"").append(scopeValue).append("\"");
