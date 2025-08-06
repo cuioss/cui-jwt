@@ -51,54 +51,55 @@ public class JfrEventTest {
 
             // Create instrumentation
             JfrInstrumentation instrumentation = new JfrInstrumentation();
-
-            // Record phase event
-            instrumentation.recordPhase("TestBenchmark", "warmup", 1, 3, 1, 4);
-
-            // Simulate some operations
-            ExecutorService executor = Executors.newFixedThreadPool(4);
             try {
+                // Record phase event
+                instrumentation.recordPhase("TestBenchmark", "warmup", 1, 3, 1, 4);
+
+                // Simulate some operations
                 CountDownLatch latch = new CountDownLatch(100);
+                @SuppressWarnings("java:S2095") // ExecutorService is properly closed in finally block
+                ExecutorService executor = Executors.newFixedThreadPool(4);
+                try {
+                    for (int i = 0; i < 100; i++) {
+                        final int index = i;
+                        executor.submit(() -> {
+                            try {
+                                // Simulate JWT validation with varying latency
+                                try (JfrInstrumentation.OperationRecorder recorder =
+                                        instrumentation.recordOperation("TestBenchmark", "validation")) {
+                                    // ThreadLocalRandom is safe for benchmark/test simulation
+                                    recorder.withTokenSize(ThreadLocalRandom.current().nextInt(100, 500))
+                                            .withIssuer("issuer-" + (index % 3))
+                                            .withSuccess(index % 10 != 0); // 90% success rate
 
-                for (int i = 0; i < 100; i++) {
-                    final int index = i;
-                    executor.submit(() -> {
-                        try {
-                            // Simulate JWT validation with varying latency
-                            try (JfrInstrumentation.OperationRecorder recorder =
-                                    instrumentation.recordOperation("TestBenchmark", "validation")) {
-                                // ThreadLocalRandom is safe for benchmark/test simulation
-                                recorder.withTokenSize(ThreadLocalRandom.current().nextInt(100, 500))
-                                        .withIssuer("issuer-" + (index % 3))
-                                        .withSuccess(index % 10 != 0); // 90% success rate
-
-                                // Simulate processing time - ThreadLocalRandom is appropriate for test scenarios
-                                Thread.sleep(ThreadLocalRandom.current().nextInt(1, 10));
+                                    // Simulate processing time - ThreadLocalRandom is appropriate for test scenarios
+                                    Thread.sleep(ThreadLocalRandom.current().nextInt(1, 10));
+                                }
+                            } catch (InterruptedException e) {
+                                // Restore interrupt status and exit
+                                Thread.currentThread().interrupt();
+                                LOGGER.error("Test operation interrupted", e);
+                            } catch (RuntimeException e) {
+                                LOGGER.error("Error during JFR event test operation", e);
+                            } finally {
+                                latch.countDown();
                             }
-                        } catch (InterruptedException e) {
-                            // Restore interrupt status and exit
-                            Thread.currentThread().interrupt();
-                            LOGGER.error("Test operation interrupted", e);
-                        } catch (RuntimeException e) {
-                            LOGGER.error("Error during JFR event test operation", e);
-                        } finally {
-                            latch.countDown();
-                        }
-                    });
-                }
+                        });
+                    }
 
-                // Wait for operations to complete
-                latch.await();
-                Thread.sleep(2000); // Wait for periodic statistics
-            } finally {
-                // Shutdown - ensures executor is always closed
-                executor.shutdown();
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
+                    // Wait for operations to complete
+                    latch.await();
+                    Thread.sleep(2000); // Wait for periodic statistics
+                } finally {
+                    // Shutdown - ensures executor is always closed
+                    executor.shutdown();
+                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        executor.shutdownNow();
+                    }
                 }
+            } finally {
+                instrumentation.shutdown();
             }
-            
-            instrumentation.shutdown();
 
             recording.stop();
             LOGGER.info("JFR Recording stopped.");
