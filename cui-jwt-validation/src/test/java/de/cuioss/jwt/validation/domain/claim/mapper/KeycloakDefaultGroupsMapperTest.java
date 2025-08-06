@@ -66,7 +66,7 @@ class KeycloakDefaultGroupsMapperTest {
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
         assertEquals(shouldBePresent, result.isPresent());
         assertTrue(result.getAsList().isEmpty());
-        
+
         if (expectedOriginalString != null) {
             assertEquals(expectedOriginalString, result.getOriginalString());
         }
