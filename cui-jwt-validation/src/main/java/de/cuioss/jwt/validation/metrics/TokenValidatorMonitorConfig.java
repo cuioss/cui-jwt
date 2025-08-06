@@ -69,7 +69,7 @@ public class TokenValidatorMonitorConfig {
      * Use this constant when you want to monitor all pipeline steps.
      */
     public static final Set<MeasurementType> ALL_MEASUREMENT_TYPES =
-            EnumSet.allOf(MeasurementType.class);
+            Set.copyOf(EnumSet.allOf(MeasurementType.class));
 
     /**
      * Default window size for the rolling measurement buffer.
