@@ -23,6 +23,8 @@
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus</maven.jar.plugin.automatic.module.name>
+        <!-- Default argLine property (empty when JaCoCo not active) -->
+        <argLine></argLine>
         <!--
         Logging configuration:
         - Use JBoss LogManager for tests (java.servlet.logging.manager=org.jboss.logmanager.LogManager)
@@ -163,14 +165,14 @@
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                             <maven.home>${maven.home}</maven.home>
-                            <quarkus.test.arg-line>@{argLine}</quarkus.test.arg-line>
+                            <quarkus.test.arg-line>${argLine}</quarkus.test.arg-line>
                         </systemPropertyVariables>
                         <useModulePath>false</useModulePath>
                         <useFile>false</useFile>
                         <trimStackTrace>false</trimStackTrace>
                         <enableAssertions>true</enableAssertions>
                         <!-- JaCoCo-compatible argLine (will be empty if JaCoCo not active) -->
-                        <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                        <argLine>${argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         <!-- Stability configurations -->
                         <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         <forkedProcessExitTimeoutInSeconds>60</forkedProcessExitTimeoutInSeconds>
@@ -187,13 +189,13 @@
                             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                             <maven.home>${maven.home}</maven.home>
-                            <quarkus.test.arg-line>@{argLine}</quarkus.test.arg-line>
+                            <quarkus.test.arg-line>${argLine}</quarkus.test.arg-line>
                         </systemPropertyVariables>
                         <useModulePath>false</useModulePath>
                         <useFile>false</useFile>
                         <trimStackTrace>false</trimStackTrace>
                         <enableAssertions>true</enableAssertions>
-                        <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                        <argLine>${argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         <!-- Fix for class loading issues -->
                         <useSystemClassLoader>false</useSystemClassLoader>
                         <reuseForks>false</reuseForks>
