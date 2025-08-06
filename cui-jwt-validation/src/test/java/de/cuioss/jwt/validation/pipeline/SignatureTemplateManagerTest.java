@@ -71,6 +71,7 @@ class SignatureTemplateManagerTest {
     }
 
     @Test
+    @SuppressWarnings("java:S1612") // Cannot use method reference due to ambiguous get() methods
     void concurrentAccess() {
         int numberOfThreads = 10;
         int operationsPerThread = 20;
