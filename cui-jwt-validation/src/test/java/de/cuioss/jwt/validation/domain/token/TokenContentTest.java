@@ -18,7 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.pipeline.ValidationContext;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;

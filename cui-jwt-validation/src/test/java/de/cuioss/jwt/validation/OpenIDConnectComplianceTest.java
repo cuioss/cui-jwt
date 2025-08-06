@@ -17,8 +17,8 @@ package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
-import de.cuioss.jwt.validation.pipeline.ValidationContext;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.TestTokenHolder;

@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;

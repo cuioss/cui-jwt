@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksType;

@@ -18,7 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.pipeline.ValidationContext;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import lombok.NonNull;
 
 import java.time.OffsetDateTime;
