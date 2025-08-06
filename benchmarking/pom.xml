@@ -60,6 +60,11 @@
                 <artifactId>HdrHistogram</artifactId>
                 <version>${version.hdrhistogram}</version>
             </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.commons-io}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
