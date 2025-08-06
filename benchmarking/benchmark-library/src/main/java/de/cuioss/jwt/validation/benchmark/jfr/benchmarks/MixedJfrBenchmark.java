@@ -38,6 +38,8 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
     private static final String[] BENCHMARK_NAMES = {
             "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
     };
+    
+    private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
 
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
@@ -75,7 +77,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
         String errorType = errorLoadDelegate0.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", "mixed-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", MIXED_VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
 
@@ -100,7 +102,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
         String errorType = errorLoadDelegate50.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", "mixed-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", MIXED_VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
 

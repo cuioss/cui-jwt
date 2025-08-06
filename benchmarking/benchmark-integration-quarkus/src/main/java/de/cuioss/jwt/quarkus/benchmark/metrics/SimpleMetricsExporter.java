@@ -74,9 +74,6 @@ public class SimpleMetricsExporter {
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
         LOGGER.info("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
 
-        // Set the benchmark context for proper directory naming
-        BenchmarkContextManager.setBenchmarkContext(benchmarkMethodName);
-
         // Always save raw metrics for ALL benchmarks
         try {
             Map<String, Double> allMetrics = metricsFetcher.fetchMetrics();

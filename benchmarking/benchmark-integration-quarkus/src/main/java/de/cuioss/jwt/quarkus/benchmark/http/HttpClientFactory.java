@@ -28,6 +28,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -65,6 +66,13 @@ public class HttpClientFactory {
      * Set to match typical benchmark thread count.
      */
     private static final int EXECUTOR_THREADS = 50;
+    
+    /**
+     * Shared executor service for all HTTP clients.
+     * Created lazily and reused to avoid resource leaks.
+     */
+    private static volatile ExecutorService sharedExecutor = null;
+    private static final Object executorLock = new Object();
 
     /**
      * Gets or creates a cached HttpClient for insecure connections (trust all certificates).
@@ -102,6 +110,25 @@ public class HttpClientFactory {
     }
 
     /**
+     * Gets or creates the shared executor service for HTTP clients.
+     */
+    private static ExecutorService getSharedExecutor() {
+        if (sharedExecutor == null) {
+            synchronized (executorLock) {
+                if (sharedExecutor == null) {
+                    sharedExecutor = Executors.newFixedThreadPool(EXECUTOR_THREADS, runnable -> {
+                        Thread thread = new Thread(runnable);
+                        thread.setDaemon(true);
+                        thread.setName("http-client-" + thread.threadId());
+                        return thread;
+                    });
+                }
+            }
+        }
+        return sharedExecutor;
+    }
+
+    /**
      * Creates an HttpClient with the specified SSL context.
      *
      * @param sslContext the SSL context to use
@@ -113,13 +140,8 @@ public class HttpClientFactory {
                 .version(HttpClient.Version.HTTP_2)
                 .sslContext(sslContext)
                 .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
-                // Use a dedicated thread pool for better performance in benchmarks
-                .executor(Executors.newFixedThreadPool(EXECUTOR_THREADS, runnable -> {
-                    Thread thread = new Thread(runnable);
-                    thread.setDaemon(true);
-                    thread.setName("http-client-" + thread.threadId());
-                    return thread;
-                }))
+                // Use shared executor to avoid resource leaks
+                .executor(getSharedExecutor())
                 // Follow redirects automatically
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();

@@ -39,6 +39,9 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class UnifiedJfrBenchmark {
 
+    private static final String ERROR_VALIDATION_OPERATION = "error-validation";
+    private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
+    
     private TokenRepository tokenRepository;
     private TokenValidator tokenValidator;
     private CoreValidationDelegate coreValidationDelegate;
@@ -219,7 +222,7 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateExpiredTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", "error-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(200) // Approximate size
                     .withIssuer("benchmark-issuer")
                     .withError("expired");
@@ -237,7 +240,7 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateMalformedTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", "error-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(25) // Length of malformed token
                     .withIssuer("unknown")
                     .withError("malformed");
@@ -255,7 +258,7 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateInvalidSignatureTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", "error-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(200) // Approximate size
                     .withIssuer("benchmark-issuer")
                     .withError("invalid_signature");
@@ -277,7 +280,7 @@ public class UnifiedJfrBenchmark {
         String errorType = errorLoadDelegate0.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", "mixed-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", MIXED_VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
 
@@ -302,7 +305,7 @@ public class UnifiedJfrBenchmark {
         String errorType = errorLoadDelegate50.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", "mixed-validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", MIXED_VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
 

@@ -26,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,8 +91,11 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
      */
     private void saveRawMetricsData(String rawMetrics) {
         try {
-            // Use BenchmarkContextManager for file naming
-            File outputFile = BenchmarkContextManager.getMetricsFile();
+            // Create simple timestamp-based filename
+            String timestamp = Instant.now().toString().replace(":", "-").replace(".", "-");
+            File metricsDir = new File("target/metrics-download");
+            metricsDir.mkdirs();
+            File outputFile = new File(metricsDir, "quarkus-metrics-" + timestamp + ".txt");
 
             try (FileWriter writer = new FileWriter(outputFile)) {
                 writer.write(rawMetrics);
