@@ -39,7 +39,7 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
             "validateValidTokenWithJfr", "validateExpiredTokenWithJfr",
             "validateInvalidSignatureTokenWithJfr", "validateMalformedTokenWithJfr"
     };
-    
+
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
 
     private ErrorLoadDelegate errorLoadDelegate;

@@ -39,6 +39,8 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
             "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr"
     };
 
+    private static final String OPERATION_TYPE_VALIDATION = "validation";
+
     private CoreValidationDelegate coreValidationDelegate;
 
     @Override
@@ -64,16 +66,8 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTimeWithJfr() {
-        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
-
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", "validation")) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(tokenRepository.getTokenIssuer(token));
-
-            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
-            recorder.withSuccess(true);
-            return result;
-        }
+        return performValidationWithJfr("measureAverageTimeWithJfr", "full_spectrum",
+                () -> coreValidationDelegate.validateWithFullSpectrum());
     }
 
     /**
@@ -83,16 +77,8 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughputWithJfr() {
-        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
-
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", "validation")) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(tokenRepository.getTokenIssuer(token));
-
-            AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
-            recorder.withSuccess(true);
-            return result;
-        }
+        return performValidationWithJfr("measureThroughputWithJfr", "full_spectrum",
+                () -> coreValidationDelegate.validateWithFullSpectrum());
     }
 
     /**
@@ -102,15 +88,37 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureConcurrentValidationWithJfr() {
-        String token = coreValidationDelegate.getCurrentToken("rotation");
+        return performValidationWithJfr("measureConcurrentValidationWithJfr", "rotation",
+                () -> coreValidationDelegate.validateWithRotation());
+    }
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureConcurrentValidationWithJfr", "validation")) {
+    /**
+     * Common method to perform validation with JFR instrumentation.
+     * 
+     * @param operationName the name of the operation for JFR recording
+     * @param tokenType the type of token to retrieve
+     * @param validationSupplier the validation operation to perform
+     * @return the validation result
+     */
+    private AccessTokenContent performValidationWithJfr(String operationName, String tokenType,
+            ValidationSupplier validationSupplier) {
+        String token = coreValidationDelegate.getCurrentToken(tokenType);
+
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation(operationName, OPERATION_TYPE_VALIDATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
-            AccessTokenContent result = coreValidationDelegate.validateWithRotation();
+            AccessTokenContent result = validationSupplier.validate();
             recorder.withSuccess(true);
             return result;
         }
+    }
+
+    /**
+     * Functional interface for validation operations.
+     */
+    @FunctionalInterface
+    private interface ValidationSupplier {
+        AccessTokenContent validate();
     }
 }

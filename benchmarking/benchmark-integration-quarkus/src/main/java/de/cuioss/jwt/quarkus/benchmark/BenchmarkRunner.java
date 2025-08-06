@@ -53,6 +53,9 @@ public class BenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
 
+    private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
+    private static final String BENCHMARK_RESULT_FILENAME = "/integration-benchmark-result.json";
+
     /**
      * Main method to run all integration benchmarks.
      *
@@ -69,9 +72,9 @@ public class BenchmarkRunner {
         BenchmarkLoggingSetup.configureLogging(benchmarkResultsDir);
 
         LOGGER.info("BenchmarkRunner.main() invoked - starting Quarkus JWT integration benchmarks...");
-        LOGGER.info("Service URL: {}", BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:8443"));
+        LOGGER.info("Service URL: {}", BenchmarkOptionsHelper.getIntegrationServiceUrl(DEFAULT_SERVICE_URL));
         LOGGER.info("Keycloak URL: {}", BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"));
-        LOGGER.info("Results file: {}", BenchmarkOptionsHelper.getResultFile(benchmarkResultsDir + "/integration-benchmark-result.json"));
+        LOGGER.info("Results file: {}", BenchmarkOptionsHelper.getResultFile(benchmarkResultsDir + BENCHMARK_RESULT_FILENAME));
 
         // Pre-initialize the shared TokenRepository instance
         initializeSharedTokenRepository();
@@ -94,14 +97,14 @@ public class BenchmarkRunner {
                 .threads(BenchmarkOptionsHelper.getThreadCount(10))
                 // Configure result output
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"))
+                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME))
                 // Add JVM arguments
                 .jvmArgs("-Djava.util.logging.manager=java.util.logging.LogManager",
                         "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
                         "-Dbenchmark.results.dir=" + getBenchmarkResultsDir(),
-                        "-Dintegration.service.url=" + BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:8443"),
+                        "-Dintegration.service.url=" + BenchmarkOptionsHelper.getIntegrationServiceUrl(DEFAULT_SERVICE_URL),
                         "-Dkeycloak.url=" + BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"),
-                        "-Dquarkus.metrics.url=" + BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:8443"))
+                        "-Dquarkus.metrics.url=" + BenchmarkOptionsHelper.getQuarkusMetricsUrl(DEFAULT_SERVICE_URL))
                 .build();
 
         try {
@@ -114,7 +117,7 @@ public class BenchmarkRunner {
             // Check if any benchmarks actually ran
             if (results.isEmpty()) {
                 LOGGER.error("No benchmark results were produced - all benchmarks failed");
-                throw new RuntimeException("Benchmark execution failed: No results produced");
+                throw new IllegalStateException("Benchmark execution failed: No results produced");
             }
 
             LOGGER.debug("Found {} benchmark results", results.size());
@@ -129,12 +132,12 @@ public class BenchmarkRunner {
             if (benchmarksWithoutResults > 0) {
                 LOGGER.error("Benchmark execution failed: {} out of {} benchmarks produced no valid results",
                         benchmarksWithoutResults, results.size());
-                throw new RuntimeException("Benchmark execution failed: " + benchmarksWithoutResults + " benchmarks produced no valid results");
+                throw new IllegalStateException("Benchmark execution failed: " + benchmarksWithoutResults + " benchmarks produced no valid results");
             }
 
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
 
-            LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/integration-benchmark-result.json"));
+            LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
 
             // Process and download final metrics after successful benchmark execution
             processMetrics();
@@ -150,7 +153,7 @@ public class BenchmarkRunner {
      * Also processes JMH benchmark results to create http-metrics.json.
      */
     private static void processMetrics() {
-        String quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:8443");
+        String quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl(DEFAULT_SERVICE_URL);
         String outputDirectory = getBenchmarkResultsDir();
 
         LOGGER.info("Processing final cumulative metrics from Quarkus...");
@@ -168,7 +171,7 @@ public class BenchmarkRunner {
             exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
 
             // Process JMH benchmark results to create http-metrics.json
-            String benchmarkResultsFile = BenchmarkOptionsHelper.getResultFile(outputDirectory + "/integration-benchmark-result.json");
+            String benchmarkResultsFile = BenchmarkOptionsHelper.getResultFile(outputDirectory + BENCHMARK_RESULT_FILENAME);
             LOGGER.info("Processing JMH benchmark results from: {}", benchmarkResultsFile);
 
             MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);

@@ -23,6 +23,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.Getter;
 
 import java.io.File;
 import java.io.FileReader;
@@ -66,7 +67,9 @@ public class MetricsPostProcessor {
         this.benchmarkResultsFile = benchmarkResultsFile;
         this.outputDirectory = outputDirectory;
         File dir = new File(outputDirectory);
-        dir.mkdirs();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("Failed to create output directory: " + dir.getAbsolutePath());
+        }
         LOGGER.info("MetricsPostProcessor initialized with benchmark file: {} and output directory: {}",
                 benchmarkResultsFile, dir.getAbsolutePath());
     }
@@ -104,16 +107,7 @@ public class MetricsPostProcessor {
      * @return Map of endpoint metrics
      */
     public Map<String, HttpEndpointMetrics> parseBenchmarkResults(FileReader reader) {
-        Map<String, HttpEndpointMetrics> endpointMetrics = new LinkedHashMap<>();
-
-        JsonArray benchmarks = GSON.fromJson(reader, JsonArray.class);
-
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            processBenchmark(benchmark, endpointMetrics);
-        }
-
-        return endpointMetrics;
+        return parseBenchmarkResultsInternal(GSON.fromJson(reader, JsonArray.class));
     }
 
     /**
@@ -123,9 +117,11 @@ public class MetricsPostProcessor {
      * @return Map of endpoint metrics
      */
     public Map<String, HttpEndpointMetrics> parseBenchmarkResults(String jsonContent) {
-        Map<String, HttpEndpointMetrics> endpointMetrics = new LinkedHashMap<>();
+        return parseBenchmarkResultsInternal(GSON.fromJson(jsonContent, JsonArray.class));
+    }
 
-        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
+    private Map<String, HttpEndpointMetrics> parseBenchmarkResultsInternal(JsonArray benchmarks) {
+        Map<String, HttpEndpointMetrics> endpointMetrics = new LinkedHashMap<>();
 
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
@@ -216,32 +212,39 @@ public class MetricsPostProcessor {
         }
 
         int totalCount = 0;
-
-        // Iterate through all forks
         for (JsonElement forkElement : rawDataHistogram) {
-            JsonArray fork = forkElement.getAsJsonArray();
-            if (fork == null) {
-                continue;
-            }
+            totalCount += processFork(forkElement);
+        }
+        return totalCount;
+    }
 
-            // Iterate through all iterations within each fork
-            for (JsonElement iterationElement : fork) {
-                JsonArray iteration = iterationElement.getAsJsonArray();
-                if (iteration == null) {
-                    continue;
-                }
-
-                // Count samples in this iteration
-                for (JsonElement measurement : iteration) {
-                    JsonArray pair = measurement.getAsJsonArray();
-                    if (pair != null && pair.size() >= 2) {
-                        totalCount += pair.get(1).getAsInt(); // Second element is the count
-                    }
-                }
-            }
+    private int processFork(JsonElement forkElement) {
+        JsonArray fork = forkElement.getAsJsonArray();
+        if (fork == null) {
+            return 0;
         }
 
-        return totalCount;
+        int forkCount = 0;
+        for (JsonElement iterationElement : fork) {
+            forkCount += processIteration(iterationElement);
+        }
+        return forkCount;
+    }
+
+    private int processIteration(JsonElement iterationElement) {
+        JsonArray iteration = iterationElement.getAsJsonArray();
+        if (iteration == null) {
+            return 0;
+        }
+
+        int iterationCount = 0;
+        for (JsonElement measurement : iteration) {
+            JsonArray pair = measurement.getAsJsonArray();
+            if (pair != null && pair.size() >= 2) {
+                iterationCount += pair.get(1).getAsInt();
+            }
+        }
+        return iterationCount;
     }
 
     private void generateHttpMetricsFile(Map<String, HttpEndpointMetrics> endpointMetrics, Instant timestamp) throws IOException {
@@ -291,13 +294,14 @@ public class MetricsPostProcessor {
             return Math.round(value * DECIMAL_PRECISION) / DECIMAL_PRECISION;
         } else {
             // Return as integer for values >= 10
-            return (long) Math.round(value);
+            return Math.round(value);
         }
     }
 
     /**
      * Class to track metrics for an HTTP endpoint - made public for testing
      */
+    @Getter
     public static class HttpEndpointMetrics {
         final String displayName;
         final String sourceBenchmark;
@@ -325,34 +329,6 @@ public class MetricsPostProcessor {
             this.throughput = throughput;
         }
 
-        // Getter methods for testing
-        public String getDisplayName() {
-            return displayName;
-        }
-
-        public String getSourceBenchmark() {
-            return sourceBenchmark;
-        }
-
-        public double getThroughput() {
-            return throughput;
-        }
-
-        public int getSampleCount() {
-            return sampleCount;
-        }
-
-        public double getP50() {
-            return p50;
-        }
-
-        public double getP95() {
-            return p95;
-        }
-
-        public double getP99() {
-            return p99;
-        }
     }
 
     /**

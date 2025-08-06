@@ -94,13 +94,13 @@ class SimpleMetricsExporterTest {
     void shouldHandleMultipleBenchmarks() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
-        
+
         // Wait a bit to ensure different timestamps
         await()
                 .atMost(100, TimeUnit.MILLISECONDS)
                 .pollDelay(10, TimeUnit.MILLISECONDS)
                 .until(() -> true);
-        
+
         exporter.exportJwtValidationMetrics("validateJwtLatency", Instant.now());
 
         // Assert

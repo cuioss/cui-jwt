@@ -310,7 +310,6 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
     }
 
     private double getMetricValue(Map<String, Double> metrics, String metricPrefix, String eventType) {
-        // Look for metrics like: cui_jwt_validation_success_total{event_type="ACCESS_TOKEN_CREATED",result="success"}
         for (Map.Entry<String, Double> entry : metrics.entrySet()) {
             String metricName = entry.getKey();
             if (metricName.startsWith(metricPrefix) &&

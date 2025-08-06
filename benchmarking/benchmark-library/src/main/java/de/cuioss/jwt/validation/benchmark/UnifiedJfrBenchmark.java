@@ -41,7 +41,7 @@ public class UnifiedJfrBenchmark {
 
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
     private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
-    
+
     private TokenRepository tokenRepository;
     private TokenValidator tokenValidator;
     private CoreValidationDelegate coreValidationDelegate;

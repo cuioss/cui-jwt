@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.benchmark.TokenRepository;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.TearDown;
 
 /**
@@ -41,7 +40,7 @@ public abstract class AbstractBenchmark {
     /**
      * Get the array of benchmark method names for this benchmark class.
      * Subclasses must implement this to provide their benchmark method names.
-     * 
+     *
      * @return Array of benchmark method names
      */
     protected abstract String[] getBenchmarkMethodNames();
@@ -49,7 +48,7 @@ public abstract class AbstractBenchmark {
     /**
      * Setup method for benchmark initialization.
      * Subclasses should call this from their @Setup method.
-     * 
+     *
      * @param benchmarkNames Names to register (kept for compatibility)
      */
     protected void setupBase(String... benchmarkNames) {
@@ -74,7 +73,7 @@ public abstract class AbstractBenchmark {
      */
     @TearDown(Level.Trial)
     public void exportBenchmarkMetrics() {
-        if (tokenValidator != null && tokenValidator.getPerformanceMonitor() != null) {
+        if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (Exception e) {

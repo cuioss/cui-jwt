@@ -66,7 +66,7 @@ public class HttpClientFactory {
      * Set to match typical benchmark thread count.
      */
     private static final int EXECUTOR_THREADS = 50;
-    
+
     /**
      * Shared executor service for all HTTP clients.
      * Created lazily and reused to avoid resource leaks.

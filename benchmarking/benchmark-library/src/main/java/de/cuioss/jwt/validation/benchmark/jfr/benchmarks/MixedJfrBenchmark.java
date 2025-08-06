@@ -38,7 +38,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
     private static final String[] BENCHMARK_NAMES = {
             "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
     };
-    
+
     private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
 
     private ErrorLoadDelegate errorLoadDelegate0;

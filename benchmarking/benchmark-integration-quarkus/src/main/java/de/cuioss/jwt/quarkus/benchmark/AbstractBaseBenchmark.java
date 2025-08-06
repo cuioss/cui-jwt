@@ -118,11 +118,11 @@ public abstract class AbstractBaseBenchmark {
      *
      * @param response the response to check
      * @param expectedStatus the expected HTTP status code
-     * @throws RuntimeException if the response status doesn't match expected
+     * @throws IllegalStateException if the response status doesn't match expected
      */
     protected void validateResponse(HttpResponse<String> response, int expectedStatus) {
         if (response.statusCode() != expectedStatus) {
-            throw new RuntimeException("Expected status %d but got %d. Response: %s".formatted(
+            throw new IllegalStateException("Expected status %d but got %d. Response: %s".formatted(
                     expectedStatus, response.statusCode(), response.body()));
         }
     }

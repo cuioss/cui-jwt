@@ -23,8 +23,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.time.OffsetDateTime;
-
 /**
  * Validator for JWT expiration and time-based claims.
  * <p>

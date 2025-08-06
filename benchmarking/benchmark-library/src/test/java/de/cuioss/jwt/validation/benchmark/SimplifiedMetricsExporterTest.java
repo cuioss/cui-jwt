@@ -51,24 +51,24 @@ class SimplifiedMetricsExporterTest {
 
         // Simulate some measurements with actual time delay
         long parseStart = System.nanoTime();
-        
+
         // Wait a bit to simulate parsing time
         await()
                 .atMost(50, TimeUnit.MILLISECONDS)
                 .pollDelay(10, TimeUnit.MILLISECONDS)
                 .until(() -> true);
-        
+
         long parseDuration = System.nanoTime() - parseStart;
         monitor.recordMeasurement(MeasurementType.TOKEN_PARSING, parseDuration);
 
         long headerStart = System.nanoTime();
-        
+
         // Wait a bit to simulate header validation time
         await()
                 .atMost(20, TimeUnit.MILLISECONDS)
                 .pollDelay(5, TimeUnit.MILLISECONDS)
                 .until(() -> true);
-        
+
         long headerDuration = System.nanoTime() - headerStart;
         monitor.recordMeasurement(MeasurementType.HEADER_VALIDATION, headerDuration);
 

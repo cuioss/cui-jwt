@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.logging;
 
+import lombok.experimental.UtilityClass;
 import org.apache.commons.io.output.TeeOutputStream;
 
 import java.io.FileOutputStream;
@@ -30,6 +31,8 @@ import java.util.logging.*;
  * Sets up logging for JMH benchmarks to write to both console and a file in benchmark-results.
  * This is called programmatically to ensure the log file is written to the correct directory.
  */
+@UtilityClass
+@SuppressWarnings("java:S106") // System.out and System.err usage is intentional for logging setup
 public class BenchmarkLoggingSetup {
 
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -41,7 +44,7 @@ public class BenchmarkLoggingSetup {
     /**
      * Configures logging to write to both console and a timestamped file in benchmark-results.
      * Also redirects System.out and System.err to capture all console output.
-     * 
+     *
      * @param benchmarkResultsDir the directory where benchmark results are stored
      */
     public static void configureLogging(String benchmarkResultsDir) {
@@ -55,35 +58,37 @@ public class BenchmarkLoggingSetup {
             String logFileName = "benchmark-run_%s.log".formatted(timestamp);
             Path logFile = resultsPath.resolve(logFileName);
 
-            // Create output file stream
-            FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true);
+            // Create output file stream with try-with-resources
+            try (FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true)) {
+                // Create TeeOutputStream for System.out (writes to both console and file)
+                TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
+                PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
 
-            // Create TeeOutputStream for System.out (writes to both console and file)
-            TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
-            PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
-            
-            // Create TeeOutputStream for System.err (writes to both console and file)
-            TeeOutputStream teeErr = new TeeOutputStream(ORIGINAL_ERR, fileOut);
-            PrintStream newErr = new PrintStream(teeErr, true); // auto-flush enabled
-            
-            // Redirect System.out and System.err
-            System.setOut(newOut);
-            System.setErr(newErr);
+                // Create TeeOutputStream for System.err (writes to both console and file)
+                TeeOutputStream teeErr = new TeeOutputStream(ORIGINAL_ERR, fileOut);
+                PrintStream newErr = new PrintStream(teeErr, true); // auto-flush enabled
 
-            // Configure java.util.logging as before
-            configureJavaUtilLogging(logFile);
+                // Redirect System.out and System.err
+                System.setOut(newOut);
+                System.setErr(newErr);
 
-            // Log configuration success
-            System.out.println("Benchmark logging configured - writing to: " + logFile);
-            System.out.println("All console output (System.out/err and JMH) will be captured to both console and file");
+                // Configure java.util.logging as before
+                configureJavaUtilLogging();
+
+                // Log configuration success - System.out is appropriate here as we're setting up logging
+                System.out.println("Benchmark logging configured - writing to: " + logFile);
+                System.out.println("All console output (System.out/err and JMH) will be captured to both console and file");
+            }
 
         } catch (IOException e) {
+            // System.err is appropriate here as logging infrastructure may not be set up yet
             System.err.println("Failed to configure file logging: " + e.getMessage());
-            e.printStackTrace();
+            // Keep minimal error output during logging setup
+            System.err.println("Continuing with console-only logging");
         }
     }
 
-    private static void configureJavaUtilLogging(Path logFile) throws IOException {
+    private static void configureJavaUtilLogging() {
         // Get root logger
         Logger rootLogger = Logger.getLogger("");
 
@@ -100,7 +105,7 @@ public class BenchmarkLoggingSetup {
         rootLogger.addHandler(consoleHandler);
 
         // No FileHandler needed - TeeOutputStream captures everything to file
-        
+
         // Set root logger level
         rootLogger.setLevel(Level.INFO);
 
