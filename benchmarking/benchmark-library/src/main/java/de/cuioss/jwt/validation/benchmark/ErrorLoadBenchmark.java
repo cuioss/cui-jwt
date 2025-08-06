@@ -60,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class ErrorLoadBenchmark {
 
+    private static final String TEST_SUBJECT_PREFIX = "test-subject-";
+
     private TokenValidator tokenValidator;
     private String validAccessToken;
     private String expiredToken;
@@ -111,7 +113,7 @@ public class ErrorLoadBenchmark {
         // Generate valid tokens
         for (int i = 0; i < TOKEN_COUNT; i++) {
             TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-            tokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+            tokenHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT_PREFIX + i));
             validTokens.add(tokenHolder.getRawToken());
         }
 
@@ -126,14 +128,14 @@ public class ErrorLoadBenchmark {
                             .expiredToken(true)
                             .build();
                     TestTokenHolder expiredHolder = new TestTokenHolder(baseTokenHolder.getTokenType(), expiredParams);
-                    expiredHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                    expiredHolder.withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT_PREFIX + i));
                     invalidToken = expiredHolder.getRawToken();
                     break;
 
                 case 1: // Invalid signature
                     TestTokenHolder invalidSigHolder = baseTokenHolder.regenerateClaims()
                             .withKeyId("invalid-key-id-" + i)
-                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString("test-subject-" + i));
+                            .withClaim(ClaimName.SUBJECT.getName(), ClaimValue.forPlainString(TEST_SUBJECT_PREFIX + i));
                     invalidToken = invalidSigHolder.getRawToken();
                     break;
 
@@ -155,7 +157,7 @@ public class ErrorLoadBenchmark {
         try {
             return tokenValidator.createAccessToken(validAccessToken);
         } catch (TokenValidationException e) {
-            throw new RuntimeException("Unexpected validation failure for valid token", e);
+            throw new IllegalStateException("Unexpected validation failure for valid token", e);
         }
     }
 

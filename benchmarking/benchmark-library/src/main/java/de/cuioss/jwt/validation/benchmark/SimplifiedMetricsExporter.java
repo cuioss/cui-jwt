@@ -21,6 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -102,7 +103,7 @@ public class SimplifiedMetricsExporter {
                         allMetrics = parsedMetrics;
                     }
                 }
-            } catch (Exception e) {
+            } catch (IOException | JsonSyntaxException e) {
                 log.warn("Failed to read existing metrics file, starting fresh: {}", e.getMessage());
                 // Delete corrupted file to start fresh
                 try {

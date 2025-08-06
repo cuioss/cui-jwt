@@ -344,7 +344,7 @@ public class MetricsPostProcessor {
         try {
             parseAndExportHttpMetrics(timestamp);
             LOGGER.info("Successfully processed HTTP roundtrip metrics");
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOGGER.warn("Failed to process HTTP metrics: {}", e.getMessage());
         }
 
@@ -357,7 +357,7 @@ public class MetricsPostProcessor {
             QuarkusMetricsPostProcessor quarkusProcessor = new QuarkusMetricsPostProcessor(metricsDownloadDir, outputDirectory);
             quarkusProcessor.parseAndExportQuarkusMetrics(timestamp);
             LOGGER.info("Successfully processed Quarkus resource usage metrics");
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOGGER.warn("Failed to process Quarkus metrics: {}", e.getMessage());
         }
 
@@ -411,7 +411,7 @@ public class MetricsPostProcessor {
         try {
             parseAndExport(resultsDirectory);
             LOGGER.info("Comprehensive metrics generation completed successfully");
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOGGER.error("Failed to generate comprehensive metrics", e);
             System.exit(1);
         }

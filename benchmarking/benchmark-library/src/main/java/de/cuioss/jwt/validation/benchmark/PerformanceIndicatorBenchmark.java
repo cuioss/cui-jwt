@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import org.openjdk.jmh.annotations.*;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -79,42 +80,13 @@ public class PerformanceIndicatorBenchmark {
     @TearDown(Level.Trial)
     public void exportMetrics() {
         // Export metrics using SimplifiedMetricsExporter
-        if (tokenValidator != null && tokenValidator.getPerformanceMonitor() != null) {
+        if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
-            } catch (Exception e) {
-                // Ignore errors during metrics export
+            } catch (IOException e) {
+                // Ignore errors during metrics export - likely file I/O issues
             }
         }
-    }
-
-    /**
-     * Determines the current benchmark name from the thread name or stack trace
-     */
-    private String getCurrentBenchmarkName() {
-        // JMH typically includes the benchmark method name in the thread name
-        String threadName = Thread.currentThread().getName();
-
-        if (threadName.contains("measureAverageTime")) {
-            return "measureAverageTime";
-        } else if (threadName.contains("measureThroughput")) {
-            return "measureThroughput";
-        } else if (threadName.contains("measureConcurrentValidation")) {
-            return "measureConcurrentValidation";
-        }
-
-        // Fallback: check stack trace
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        for (StackTraceElement element : stackTrace) {
-            String methodName = element.getMethodName();
-            if ("measureAverageTime".equals(methodName) ||
-                    "measureThroughput".equals(methodName) ||
-                    "measureConcurrentValidation".equals(methodName)) {
-                return methodName;
-            }
-        }
-
-        return null;
     }
 
 

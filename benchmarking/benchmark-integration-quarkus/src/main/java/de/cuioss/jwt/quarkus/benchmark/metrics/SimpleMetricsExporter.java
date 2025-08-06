@@ -102,7 +102,7 @@ public class SimpleMetricsExporter {
                 LOGGER.info("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOGGER.error("Failed to export metrics for {}", benchmarkMethodName, e);
         }
     }
@@ -259,7 +259,7 @@ public class SimpleMetricsExporter {
         // - _max: maximum observed value in seconds
         // We need to estimate percentiles from these values
 
-        String validationMetricPrefix = MetricConstants.BEARER_TOKEN.VALIDATION.replace(".", "_") + "_seconds";
+        String validationMetricPrefix = MetricConstants.BEARERTOKEN.VALIDATION.replace(".", "_") + "_seconds";
 
         // Collect the available metrics
         Double count = null;

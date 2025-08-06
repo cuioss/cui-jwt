@@ -63,7 +63,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             String token = tokenRepository.getToken(tokenIndex.getAndIncrement());
             return validateToken(token);
         } catch (TokenValidationException e) {
-            throw new RuntimeException("Unexpected validation failure for valid token", e);
+            throw new IllegalStateException("Unexpected validation failure for valid token", e);
         }
     }
 
@@ -88,8 +88,8 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
     public Object validateMalformed() {
         try {
             return validateToken(malformedToken);
-        } catch (Exception e) {
-            return e; // Expected - could be various exceptions
+        } catch (TokenValidationException | IllegalArgumentException e) {
+            return e; // Expected - malformed tokens can throw various validation exceptions
         }
     }
 
@@ -120,7 +120,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
                 blackhole.consume(result);
             }
             return result;
-        } catch (Exception e) {
+        } catch (TokenValidationException e) {
             if (blackhole != null) {
                 blackhole.consume(e);
             }
@@ -134,10 +134,12 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
      * @return the selected token
      */
     public String selectToken() {
+        // ThreadLocalRandom is safe for benchmarking - it provides thread-safe pseudorandom numbers
         int random = ThreadLocalRandom.current().nextInt(100);
 
         if (random < errorPercentage) {
             // Select an error token based on distribution
+            // ThreadLocalRandom is appropriate here for distributing error types in benchmarks
             int errorType = ThreadLocalRandom.current().nextInt(3);
             switch (errorType) {
                 case 0:
@@ -145,6 +147,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
                 case 1:
                     return malformedToken;
                 case 2:
+                default:
                     return invalidSignatureToken;
             }
         }

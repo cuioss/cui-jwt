@@ -22,6 +22,7 @@ import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -118,7 +119,7 @@ public class TestMetricsExportIntegration {
                 parseQuarkusMetrics(content, metrics);
                 return metrics;
 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 LOGGER.error("Failed to load test metrics: %s", e.getMessage());
                 return new HashMap<>();
             }

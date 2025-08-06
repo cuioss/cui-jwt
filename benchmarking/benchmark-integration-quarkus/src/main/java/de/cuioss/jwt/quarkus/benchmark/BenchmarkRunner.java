@@ -27,6 +27,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -141,7 +142,7 @@ public class BenchmarkRunner {
 
             // Process and download final metrics after successful benchmark execution
             processMetrics();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.error("Benchmark execution failed", e);
             throw e;
         }
@@ -178,9 +179,9 @@ public class BenchmarkRunner {
             metricsPostProcessor.parseAndExportHttpMetrics(Instant.now());
 
             LOGGER.info("Final metrics processing completed successfully");
-        } catch (Exception e) {
+        } catch (IOException e) {
             // Log the error but don't fail the entire benchmark run
-            LOGGER.error("Failed to process final metrics - continuing without metrics", e);
+            LOGGER.error("Failed to process final metrics due to I/O error - continuing without metrics", e);
         }
     }
 

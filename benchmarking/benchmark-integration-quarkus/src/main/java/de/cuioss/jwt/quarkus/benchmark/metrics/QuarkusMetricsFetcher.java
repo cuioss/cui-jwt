@@ -103,7 +103,7 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
             LOGGER.info("✅ Saved raw Quarkus metrics to: {}", outputFile.getAbsolutePath());
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOGGER.warn("Failed to save raw metrics data", e);
         }
     }

@@ -70,6 +70,7 @@ public class HttpClientFactory {
     /**
      * Shared executor service for all HTTP clients.
      * Created lazily and reused to avoid resource leaks.
+     * Double-checked locking pattern with volatile ensures thread-safe initialization.
      */
     private static volatile ExecutorService sharedExecutor = null;
     private static final Object executorLock = new Object();
@@ -165,15 +166,18 @@ public class HttpClientFactory {
      * Trust manager that accepts all certificates.
      * WARNING: Only for testing environments with self-signed certificates.
      */
+    @SuppressWarnings("java:S4830") // Server certificate validation is intentionally disabled for benchmark testing
     private static class TrustAllManager implements X509TrustManager {
         @Override
+        @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks
         public void checkClientTrusted(X509Certificate[] chain, String authType) {
-            // Accept all - only for testing
+            // Accept all - only for testing with self-signed certificates in benchmark environments
         }
 
         @Override
+        @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks  
         public void checkServerTrusted(X509Certificate[] chain, String authType) {
-            // Accept all - only for testing
+            // Accept all - only for testing with self-signed certificates in benchmark environments
         }
 
         @Override

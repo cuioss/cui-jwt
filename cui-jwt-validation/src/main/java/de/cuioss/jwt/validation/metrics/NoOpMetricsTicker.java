@@ -24,6 +24,7 @@ package de.cuioss.jwt.validation.metrics;
  * @author Oliver Wolff
  * @since 1.0
  */
+@SuppressWarnings("java:S6548") // owolff: fits for its purpose as a no-op implementation
 public final class NoOpMetricsTicker implements MetricsTicker {
 
     /**

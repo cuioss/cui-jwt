@@ -34,7 +34,7 @@ public final class MetricConstants {
      * Metrics related to bearer token operations.
      */
     @UtilityClass
-    public static final class BEARER_TOKEN {
+    public static final class BEARERTOKEN {
         /**
          * Base path for bearer token metrics.
          */

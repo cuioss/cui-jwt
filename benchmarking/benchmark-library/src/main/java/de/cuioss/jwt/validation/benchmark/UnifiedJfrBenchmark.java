@@ -25,6 +25,7 @@ import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -91,8 +92,8 @@ public class UnifiedJfrBenchmark {
         if (tokenValidator != null && tokenValidator.getPerformanceMonitor() != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
-            } catch (Exception e) {
-                // Ignore errors during metrics export
+            } catch (IOException e) {
+                // Ignore errors during metrics export - likely file I/O issues
             }
         }
 

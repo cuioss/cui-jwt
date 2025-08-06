@@ -23,6 +23,8 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.TearDown;
 
+import java.io.IOException;
+
 /**
  * Abstract base class for all JWT benchmarks.
  * Provides common functionality to reduce code duplication.
@@ -76,7 +78,7 @@ public abstract class AbstractBenchmark {
         if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
-            } catch (Exception e) {
+            } catch (IOException e) {
                 log.error("Failed to export benchmark metrics", e);
             }
         }

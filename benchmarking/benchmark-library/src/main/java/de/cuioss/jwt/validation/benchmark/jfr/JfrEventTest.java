@@ -30,9 +30,10 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Simple test to verify JFR events are working properly.
  */
+@SuppressWarnings("java:S2245") // ThreadLocalRandom is appropriate for test scenarios
 public class JfrEventTest {
 
-    private static final CuiLogger log = new CuiLogger(JfrEventTest.class);
+    private static final CuiLogger LOGGER = new CuiLogger(JfrEventTest.class);
 
     public static void main(String[] args) throws Exception {
         Path outputPath = Path.of("target/benchmark-results/test-jfr.jfr");
@@ -45,7 +46,7 @@ public class JfrEventTest {
             recording.setDestination(outputPath);
             recording.start();
 
-            log.info("JFR Recording started...");
+            LOGGER.info("JFR Recording started...");
 
             // Create instrumentation
             JfrInstrumentation instrumentation = new JfrInstrumentation();
@@ -64,15 +65,20 @@ public class JfrEventTest {
                         // Simulate JWT validation with varying latency
                         try (JfrInstrumentation.OperationRecorder recorder =
                                 instrumentation.recordOperation("TestBenchmark", "validation")) {
+                            // ThreadLocalRandom is safe for benchmark/test simulation
                             recorder.withTokenSize(ThreadLocalRandom.current().nextInt(100, 500))
                                     .withIssuer("issuer-" + (index % 3))
                                     .withSuccess(index % 10 != 0); // 90% success rate
-                            
-                            // Simulate processing time
+
+                            // Simulate processing time - ThreadLocalRandom is appropriate for test scenarios
                             Thread.sleep(ThreadLocalRandom.current().nextInt(1, 10));
                         }
-                    } catch (Exception e) {
-                        log.error("Error during JFR event test operation", e);
+                    } catch (InterruptedException e) {
+                        // Restore interrupt status and exit
+                        Thread.currentThread().interrupt();
+                        LOGGER.error("Test operation interrupted", e);
+                    } catch (RuntimeException e) {
+                        LOGGER.error("Error during JFR event test operation", e);
                     } finally {
                         latch.countDown();
                     }
@@ -82,17 +88,17 @@ public class JfrEventTest {
             // Wait for operations to complete
             latch.await();
             Thread.sleep(2000); // Wait for periodic statistics
-            
+
             // Shutdown
             executor.shutdown();
             instrumentation.shutdown();
 
             recording.stop();
-            log.info("JFR Recording stopped.");
+            LOGGER.info("JFR Recording stopped.");
         }
 
         // Verify the recording
-        log.info("\nAnalyzing JFR recording...");
+        LOGGER.info("\nAnalyzing JFR recording...");
         analyzeRecording(outputPath);
     }
 
@@ -110,39 +116,42 @@ public class JfrEventTest {
                     case "de.cuioss.jwt.Operation":
                         operationCount++;
                         if (operationCount == 1) {
-                            log.info("\nFirst Operation Event:");
-                            log.info("  Operation Type: %s", event.getString("operationType"));
-                            log.info("  Benchmark: %s", event.getString("benchmarkName"));
-                            log.info("  Duration: %s ms", event.getDuration().toMillis());
-                            log.info("  Success: %s", event.getBoolean("success"));
+                            LOGGER.info("\nFirst Operation Event:");
+                            LOGGER.info("  Operation Type: %s", event.getString("operationType"));
+                            LOGGER.info("  Benchmark: %s", event.getString("benchmarkName"));
+                            LOGGER.info("  Duration: %s ms", event.getDuration().toMillis());
+                            LOGGER.info("  Success: %s", event.getBoolean("success"));
                         }
                         break;
                     case "de.cuioss.jwt.OperationStatistics":
                         statisticsCount++;
                         if (statisticsCount == 1) {
-                            log.info("\nFirst Statistics Event:");
-                            log.info("  Sample Count: %s", event.getLong("sampleCount"));
-                            log.info("  P50 Latency: %s ms", event.getDuration("p50Latency").toMillis());
-                            log.info("  CV: %s%%", event.getDouble("coefficientOfVariation"));
+                            LOGGER.info("\nFirst Statistics Event:");
+                            LOGGER.info("  Sample Count: %s", event.getLong("sampleCount"));
+                            LOGGER.info("  P50 Latency: %s ms", event.getDuration("p50Latency").toMillis());
+                            LOGGER.info("  CV: %s%%", event.getDouble("coefficientOfVariation"));
                         }
                         break;
                     case "de.cuioss.jwt.BenchmarkPhase":
                         phaseCount++;
-                        log.info("\nPhase Event:");
-                        log.info("  Phase: %s", event.getString("phase"));
-                        log.info("  Benchmark: %s", event.getString("benchmarkName"));
+                        LOGGER.info("\nPhase Event:");
+                        LOGGER.info("  Phase: %s", event.getString("phase"));
+                        LOGGER.info("  Benchmark: %s", event.getString("benchmarkName"));
+                        break;
+                    default:
+                        // Ignore other event types
                         break;
                 }
             }
         }
 
-        log.info("\nSummary:");
-        log.info("  Operation Events: %s", operationCount);
-        log.info("  Statistics Events: %s", statisticsCount);
-        log.info("  Phase Events: %s", phaseCount);
+        LOGGER.info("\nSummary:");
+        LOGGER.info("  Operation Events: %s", operationCount);
+        LOGGER.info("  Statistics Events: %s", statisticsCount);
+        LOGGER.info("  Phase Events: %s", phaseCount);
 
         if (operationCount == 0 && statisticsCount == 0) {
-            log.error("\nWARNING: No JWT events found in recording!");
+            LOGGER.error("\nWARNING: No JWT events found in recording!");
         }
     }
 }

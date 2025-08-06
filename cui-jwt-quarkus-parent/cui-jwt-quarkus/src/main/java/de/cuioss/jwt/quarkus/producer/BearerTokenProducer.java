@@ -141,7 +141,7 @@ public class BearerTokenProducer {
      * @return BearerTokenResult containing detailed validation information
      */
     @NonNull
-    @Timed(value = MetricIdentifier.BEARER_TOKEN.VALIDATION, description = "Bearer token validation duration")
+    @Timed(value = MetricIdentifier.BEARERTOKEN.VALIDATION, description = "Bearer token validation duration")
     BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
