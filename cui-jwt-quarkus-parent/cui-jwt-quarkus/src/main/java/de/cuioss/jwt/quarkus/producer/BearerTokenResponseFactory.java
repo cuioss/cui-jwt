@@ -193,15 +193,10 @@ public class BearerTokenResponseFactory {
      * @return Formatted WWW-Authenticate header value for insufficient scope
      */
     private static String buildInsufficientScopeHeader(Collection<String> missingScopes) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
-        sb.append(", ").append(PARAM_ERROR).append("=\"").append(ERROR_INSUFFICIENT_SCOPE).append("\"");
-        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(ERROR_MSG_HIGHER_PRIVILEGES).append("\"");
-
+        StringBuilder sb = buildBaseAuthenticateHeader(ERROR_INSUFFICIENT_SCOPE);
+        
         if (!missingScopes.isEmpty()) {
-            String scopeValue = missingScopes.stream()
-                    .map(BearerTokenResponseFactory::escapeQuotes)
-                    .collect(Collectors.joining(" "));
+            String scopeValue = joinAndEscape(missingScopes);
             sb.append(", ").append(PARAM_SCOPE).append("=\"").append(scopeValue).append("\"");
         }
 
@@ -217,27 +212,46 @@ public class BearerTokenResponseFactory {
      * @return Formatted WWW-Authenticate header value for insufficient privileges
      */
     private static String buildInsufficientPrivilegesHeader(Collection<String> missingRoles, Collection<String> missingGroups) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
-        sb.append(", ").append(PARAM_ERROR).append("=\"").append(ERROR_INSUFFICIENT_PRIVILEGES).append("\"");
-        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(ERROR_MSG_HIGHER_PRIVILEGES).append("\"");
+        StringBuilder sb = buildBaseAuthenticateHeader(ERROR_INSUFFICIENT_PRIVILEGES);
 
         // Add missing roles and groups as custom parameters
         if (!missingRoles.isEmpty()) {
-            String rolesValue = missingRoles.stream()
-                    .map(BearerTokenResponseFactory::escapeQuotes)
-                    .collect(Collectors.joining(" "));
+            String rolesValue = joinAndEscape(missingRoles);
             sb.append(", ").append(PARAM_REQUIRED_ROLES).append("=\"").append(rolesValue).append("\"");
         }
 
         if (!missingGroups.isEmpty()) {
-            String groupsValue = missingGroups.stream()
-                    .map(BearerTokenResponseFactory::escapeQuotes)
-                    .collect(Collectors.joining(" "));
+            String groupsValue = joinAndEscape(missingGroups);
             sb.append(", ").append(PARAM_REQUIRED_GROUPS).append("=\"").append(groupsValue).append("\"");
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Builds the base WWW-Authenticate header structure with bearer scheme, realm, and error.
+     *
+     * @param errorCode The OAuth error code
+     * @return StringBuilder with base header structure
+     */
+    private static StringBuilder buildBaseAuthenticateHeader(String errorCode) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(BEARER_SCHEME).append(" ").append(REALM_PARAMETER);
+        sb.append(", ").append(PARAM_ERROR).append("=\"").append(errorCode).append("\"");
+        sb.append(", ").append(PARAM_ERROR_DESCRIPTION).append("=\"").append(ERROR_MSG_HIGHER_PRIVILEGES).append("\"");
+        return sb;
+    }
+
+    /**
+     * Joins a collection of strings with spaces after escaping quotes.
+     *
+     * @param values The collection of strings to join
+     * @return Space-separated string with escaped quotes
+     */
+    private static String joinAndEscape(Collection<String> values) {
+        return values.stream()
+                .map(BearerTokenResponseFactory::escapeQuotes)
+                .collect(Collectors.joining(" "));
     }
 
     /**
