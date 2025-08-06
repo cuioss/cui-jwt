@@ -83,7 +83,7 @@ public class TokenHeaderValidator {
      * @throws TokenValidationException if the token header is invalid
      */
     public void validate(@NonNull DecodedJwt decodedJwt) {
-        LOGGER.trace("Validating validation header");
+        LOGGER.trace("Validating token header");
 
         validateAlgorithm(decodedJwt);
         validateKeyId(decodedJwt);
@@ -154,9 +154,12 @@ public class TokenHeaderValidator {
         if (kid.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
+            var headerInfo = decodedJwt.getHeader()
+                    .map(header -> "Available header claims: " + header.keySet())
+                    .orElse("Available header claims: none");
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required key ID (kid) claim in token header. Available header claims: " + (decodedJwt.getHeader().isPresent() ? decodedJwt.getHeader().get().keySet() : "none")
+                    "Missing required key ID (kid) claim in token header. " + headerInfo
             );
         }
         LOGGER.debug("Key ID is valid: %s", kid.get());
