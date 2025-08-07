@@ -55,13 +55,13 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should return 400 for missing request body")
         void validateExplicitTokenMissingBody() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty access token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty access token in request body"));
         }
 
         @Test
@@ -69,13 +69,13 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateIdToken should return 400 for missing request body")
         void validateIdTokenMissingBody() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
         }
 
         @Test
@@ -83,13 +83,13 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateRefreshToken should return 400 for missing request body")
         void validateRefreshTokenMissingBody() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .when()
-                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .when()
+                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
         }
     }
 
@@ -103,14 +103,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should return 400 for empty token")
         void validateExplicitTokenEmptyToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, ""))
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty access token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, ""))
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty access token in request body"));
         }
 
         @Test
@@ -118,14 +118,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateIdToken should return 400 for empty token")
         void validateIdTokenEmptyToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, ""))
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, ""))
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
         }
 
         @Test
@@ -133,14 +133,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateRefreshToken should return 400 for empty token")
         void validateRefreshTokenEmptyToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, ""))
-                .when()
-                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, ""))
+                    .when()
+                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
         }
     }
 
@@ -154,14 +154,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should return 400 for whitespace-only token")
         void validateExplicitTokenWhitespaceToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "   "))
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty access token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "   "))
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty access token in request body"));
         }
 
         @Test
@@ -169,14 +169,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateIdToken should return 400 for whitespace-only token")
         void validateIdTokenWhitespaceToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "   "))
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "   "))
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
         }
 
         @Test
@@ -184,14 +184,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateRefreshToken should return 400 for whitespace-only token")
         void validateRefreshTokenWhitespaceToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "   "))
-                .when()
-                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "   "))
+                    .when()
+                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
         }
 
         @Test
@@ -199,14 +199,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should return 400 for tab and newline whitespace")
         void validateExplicitTokenTabNewlineWhitespace() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "\t\n  "))
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty access token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "\t\n  "))
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty access token in request body"));
         }
     }
 
@@ -220,14 +220,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should handle null token field gracefully")
         void validateExplicitTokenNullToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body("{\"token\": null}")
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty access token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body("{\"token\": null}")
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty access token in request body"));
         }
 
         @Test
@@ -235,14 +235,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateIdToken should handle null token field gracefully")
         void validateIdTokenNullToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body("{\"token\": null}")
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body("{\"token\": null}")
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
         }
 
         @Test
@@ -250,14 +250,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateRefreshToken should handle null token field gracefully")
         void validateRefreshTokenNullToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body("{\"token\": null}")
-                .when()
-                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body("{\"token\": null}")
+                    .when()
+                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty refresh token in request body"));
         }
     }
 
@@ -271,14 +271,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should handle malformed JSON gracefully")
         void validateExplicitTokenMalformedJson() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body("{\"invalid\":\"json\"}")
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty access token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body("{\"invalid\":\"json\"}")
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty access token in request body"));
         }
 
         @Test
@@ -286,14 +286,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateIdToken should handle missing token field gracefully")
         void validateIdTokenMissingTokenField() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body("{\"notToken\": \"someValue\"}")
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body("{\"notToken\": \"someValue\"}")
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Missing or empty ID token in request body"));
         }
     }
 
@@ -307,14 +307,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateExplicitToken should return 401 for invalid token format")
         void validateExplicitTokenInvalidFormat() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
-                .when()
-                .post(JWT_VALIDATE_EXPLICIT_PATH)
-                .then()
-                .statusCode(401)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, containsString("Token validation failed"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
+                    .when()
+                    .post(JWT_VALIDATE_EXPLICIT_PATH)
+                    .then()
+                    .statusCode(401)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, containsString("Token validation failed"));
         }
 
         @Test
@@ -322,14 +322,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateIdToken should return 401 for invalid token format")
         void validateIdTokenInvalidFormat() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(401)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, containsString("ID token validation failed"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(401)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, containsString("ID token validation failed"));
         }
 
         @Test
@@ -338,14 +338,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         void validateRefreshTokenOpaqueValidation() {
             // Note: Refresh tokens are validated opaquely and return 200 for any string
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
-                .when()
-                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                .then()
-                .statusCode(200)
-                .body(VALID, equalTo(true))
-                .body(MESSAGE, containsString("Refresh token is valid"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "invalid.token.here"))
+                    .when()
+                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, containsString("Refresh token is valid"));
         }
     }
 
@@ -359,13 +359,13 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateToken should return 401 for missing Authorization header")
         void validateTokenMissingAuthorizationHeader() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .when()
-                .post(JWT_VALIDATE_PATH)
-                .then()
-                .statusCode(401)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .when()
+                    .post(JWT_VALIDATE_PATH)
+                    .then()
+                    .statusCode(401)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
         }
 
         @Test
@@ -373,14 +373,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateToken should return 401 for invalid Authorization header format")
         void validateTokenInvalidAuthorizationHeader() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .header(AUTHORIZATION, "InvalidFormat token")
-                .when()
-                .post(JWT_VALIDATE_PATH)
-                .then()
-                .statusCode(401)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .header(AUTHORIZATION, "InvalidFormat token")
+                    .when()
+                    .post(JWT_VALIDATE_PATH)
+                    .then()
+                    .statusCode(401)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
         }
 
         @Test
@@ -388,14 +388,14 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
         @DisplayName("validateToken should return 401 for invalid token in Authorization header")
         void validateTokenInvalidAuthorizationToken() {
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .header(AUTHORIZATION, BEARER_PREFIX + "invalid.token.here")
-                .when()
-                .post(JWT_VALIDATE_PATH)
-                .then()
-                .statusCode(401)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .header(AUTHORIZATION, BEARER_PREFIX + "invalid.token.here")
+                    .when()
+                    .post(JWT_VALIDATE_PATH)
+                    .then()
+                    .statusCode(401)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo("Bearer token validation failed or token not present"));
         }
     }
 
@@ -405,15 +405,15 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
     void tokenRequestIsEmptyConsistency() {
         // Test that all endpoints consistently use TokenRequest.isEmpty() logic
         String[] endpoints = {
-            JWT_VALIDATE_EXPLICIT_PATH,
-            JWT_VALIDATE_ID_TOKEN_PATH,
-            JWT_VALIDATE_REFRESH_TOKEN_PATH
+                JWT_VALIDATE_EXPLICIT_PATH,
+                JWT_VALIDATE_ID_TOKEN_PATH,
+                JWT_VALIDATE_REFRESH_TOKEN_PATH
         };
 
         String[] expectedMessages = {
-            "Missing or empty access token in request body",
-            "Missing or empty ID token in request body",
-            "Missing or empty refresh token in request body"
+                "Missing or empty access token in request body",
+                "Missing or empty ID token in request body",
+                "Missing or empty refresh token in request body"
         };
 
         for (int i = 0; i < endpoints.length; i++) {
@@ -422,25 +422,25 @@ class JwtValidationEndpointApiValidationIT extends BaseIntegrationTest {
 
             // Test with empty string
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, ""))
-                .when()
-                .post(endpoint)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo(expectedMessage));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, ""))
+                    .when()
+                    .post(endpoint)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo(expectedMessage));
 
             // Test with whitespace
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, "  \t  "))
-                .when()
-                .post(endpoint)
-                .then()
-                .statusCode(400)
-                .body(VALID, equalTo(false))
-                .body(MESSAGE, equalTo(expectedMessage));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, "  \t  "))
+                    .when()
+                    .post(endpoint)
+                    .then()
+                    .statusCode(400)
+                    .body(VALID, equalTo(false))
+                    .body(MESSAGE, equalTo(expectedMessage));
         }
     }
 }

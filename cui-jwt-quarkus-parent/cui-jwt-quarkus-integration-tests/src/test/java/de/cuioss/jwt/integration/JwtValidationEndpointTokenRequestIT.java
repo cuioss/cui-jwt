@@ -43,14 +43,14 @@ class JwtValidationEndpointTokenRequestIT extends BaseIntegrationTest {
     void tokenRequestDeserialization() {
         // Test that TokenRequest record works correctly with JSON deserialization
         given()
-            .contentType(CONTENT_TYPE_JSON)
-            .body(Map.of(TOKEN_FIELD_NAME, "test.token.value"))
-            .when()
-            .post("/jwt/validate-explicit")
-            .then()
-            .statusCode(401) // Should get 401 for invalid token, not 400 for missing token
-            .body(VALID, equalTo(false))
-            .body(MESSAGE, containsString("Token validation failed"));
+                .contentType(CONTENT_TYPE_JSON)
+                .body(Map.of(TOKEN_FIELD_NAME, "test.token.value"))
+                .when()
+                .post("/jwt/validate-explicit")
+                .then()
+                .statusCode(401) // Should get 401 for invalid token, not 400 for missing token
+                .body(VALID, equalTo(false))
+                .body(MESSAGE, containsString("Token validation failed"));
     }
 
     @Test
@@ -59,13 +59,13 @@ class JwtValidationEndpointTokenRequestIT extends BaseIntegrationTest {
     void tokenRequestIsEmptyWithTokenTrimming() {
         // Test that tokens with surrounding whitespace are handled correctly
         given()
-            .contentType(CONTENT_TYPE_JSON)
-            .body(Map.of(TOKEN_FIELD_NAME, "  valid.token.value  "))
-            .when()
-            .post("/jwt/validate-explicit")
-            .then()
-            .statusCode(401) // Should get 401 for invalid token, not 400 for empty token
-            .body(VALID, equalTo(false))
-            .body(MESSAGE, containsString("Token validation failed"));
+                .contentType(CONTENT_TYPE_JSON)
+                .body(Map.of(TOKEN_FIELD_NAME, "  valid.token.value  "))
+                .when()
+                .post("/jwt/validate-explicit")
+                .then()
+                .statusCode(401) // Should get 401 for invalid token, not 400 for empty token
+                .body(VALID, equalTo(false))
+                .body(MESSAGE, containsString("Token validation failed"));
     }
 }

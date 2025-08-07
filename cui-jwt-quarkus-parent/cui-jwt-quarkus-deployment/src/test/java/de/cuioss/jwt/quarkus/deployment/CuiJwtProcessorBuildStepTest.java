@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;

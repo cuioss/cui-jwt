@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -87,7 +88,7 @@ public class JwtValidationEndpoint {
             if (tokenOpt.isPresent()) {
                 AccessTokenContent token = tokenOpt.get();
                 LOGGER.debug("Access token validated successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
-                    token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
+                        token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
                 return Response.ok(createTokenResponse(token, "Access token is valid")).build();
             } else {
                 LOGGER.debug("BasicToken authorized but no AccessTokenContent present");
@@ -97,8 +98,8 @@ public class JwtValidationEndpoint {
         }
         // Return consistent JSON format for authorization header tests
         return Response.status(Response.Status.UNAUTHORIZED)
-            .entity(new ValidationResponse(false, "Bearer token validation failed or token not present"))
-            .build();
+                .entity(new ValidationResponse(false, "Bearer token validation failed or token not present"))
+                .build();
     }
 
     /**
@@ -113,20 +114,20 @@ public class JwtValidationEndpoint {
     public Response validateExplicitToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ValidationResponse(false, "Missing or empty access token in request body"))
-                .build();
+                    .entity(new ValidationResponse(false, "Missing or empty access token in request body"))
+                    .build();
         }
 
         try {
             AccessTokenContent token = tokenValidator.createAccessToken(tokenRequest.token().trim());
             LOGGER.debug("Explicit token validated successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
-                token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
+                    token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
             return Response.ok(createTokenResponse(token, "Access token is valid")).build();
         } catch (TokenValidationException e) {
             LOGGER.warn("Explicit token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                .entity(new ValidationResponse(false, "Token validation failed: " + e.getMessage()))
-                .build();
+                    .entity(new ValidationResponse(false, "Token validation failed: " + e.getMessage()))
+                    .build();
         }
     }
 
@@ -138,8 +139,8 @@ public class JwtValidationEndpoint {
     public Response validateIdToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ValidationResponse(false, "Missing or empty ID token in request body"))
-                .build();
+                    .entity(new ValidationResponse(false, "Missing or empty ID token in request body"))
+                    .build();
         }
 
         try {
@@ -148,8 +149,8 @@ public class JwtValidationEndpoint {
         } catch (TokenValidationException e) {
             LOGGER.warn("ID token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                .entity(new ValidationResponse(false, "ID token validation failed: " + e.getMessage()))
-                .build();
+                    .entity(new ValidationResponse(false, "ID token validation failed: " + e.getMessage()))
+                    .build();
         }
     }
 
@@ -161,8 +162,8 @@ public class JwtValidationEndpoint {
     public Response validateRefreshToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new ValidationResponse(false, "Missing or empty refresh token in request body"))
-                .build();
+                    .entity(new ValidationResponse(false, "Missing or empty refresh token in request body"))
+                    .build();
         }
 
         try {
@@ -171,8 +172,8 @@ public class JwtValidationEndpoint {
         } catch (TokenValidationException e) {
             LOGGER.warn("Refresh token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
-                .entity(new ValidationResponse(false, "Refresh token validation failed: " + e.getMessage()))
-                .build();
+                    .entity(new ValidationResponse(false, "Refresh token validation failed: " + e.getMessage()))
+                    .build();
         }
     }
 
@@ -235,8 +236,8 @@ public class JwtValidationEndpoint {
         // Touch the TokenValidator to simulate dependency usage
         var securityEventCounter = tokenValidator.getSecurityEventCounter();
         long totalEvents = securityEventCounter.getCounters().values().stream()
-            .mapToLong(Long::longValue)
-            .sum();
+                .mapToLong(Long::longValue)
+                .sum();
         LOGGER.debug("Echo endpoint called - total security events: %d", totalEvents);
 
         // Return the exact same data that was sent
@@ -260,7 +261,7 @@ public class JwtValidationEndpoint {
             if (tokenOpt.isPresent()) {
                 AccessTokenContent token = tokenOpt.get();
                 LOGGER.debug("Bearer token authorized successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
-                    token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
+                        token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
                 return Response.ok(createTokenResponse(token, description + " is valid")).build();
             } else {
                 LOGGER.debug("Bearer token authorized but no AccessTokenContent present for: %s", description);

@@ -90,14 +90,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
             // Test positive case: valid access token via Authorization header
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
-                .when()
-                .post(JWT_VALIDATE_PATH)
-                .then()
-                .statusCode(200)
-                .body(VALID, equalTo(true))
-                .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
+                    .when()
+                    .post(JWT_VALIDATE_PATH)
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
         }
 
         @Test
@@ -110,14 +110,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
             // Test positive case: valid ID token via request body
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, validIdToken))
-                .when()
-                .post(JWT_VALIDATE_ID_TOKEN_PATH)
-                .then()
-                .statusCode(200)
-                .body(VALID, equalTo(true))
-                .body(MESSAGE, equalTo("ID token is valid"));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, validIdToken))
+                    .when()
+                    .post(JWT_VALIDATE_ID_TOKEN_PATH)
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("ID token is valid"));
         }
 
         @Test
@@ -130,14 +130,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
             // Test positive case: valid refresh token via request body
             given()
-                .contentType(CONTENT_TYPE_JSON)
-                .body(Map.of(TOKEN_FIELD_NAME, validRefreshToken))
-                .when()
-                .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
-                .then()
-                .statusCode(200)
-                .body(VALID, equalTo(true))
-                .body(MESSAGE, equalTo(REFRESH_TOKEN_IS_VALID));
+                    .contentType(CONTENT_TYPE_JSON)
+                    .body(Map.of(TOKEN_FIELD_NAME, validRefreshToken))
+                    .when()
+                    .post(JWT_VALIDATE_REFRESH_TOKEN_PATH)
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo(REFRESH_TOKEN_IS_VALID));
         }
 
         @Test
@@ -151,14 +151,14 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             // Test multiple consecutive requests
             for (int i = 0; i < 3; i++) {
                 given()
-                    .contentType(CONTENT_TYPE_JSON)
-                    .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
-                    .when()
-                    .post(JWT_VALIDATE_PATH)
-                    .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true))
-                    .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
+                        .contentType(CONTENT_TYPE_JSON)
+                        .header(AUTHORIZATION, BEARER_PREFIX + validAccessToken)
+                        .when()
+                        .post(JWT_VALIDATE_PATH)
+                        .then()
+                        .statusCode(200)
+                        .body(VALID, equalTo(true))
+                        .body(MESSAGE, equalTo(ACCESS_TOKEN_VALID_MESSAGE));
             }
         }
     }
@@ -170,10 +170,10 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
         @ParameterizedTest
         @ValueSource(strings = {
-            "/jwt/bearer-token/with-scopes",
-            "/jwt/bearer-token/with-roles",
-            "/jwt/bearer-token/with-groups",
-            "/jwt/bearer-token/with-all"
+                "/jwt/bearer-token/with-scopes",
+                "/jwt/bearer-token/with-roles",
+                "/jwt/bearer-token/with-groups",
+                "/jwt/bearer-token/with-all"
         })
         @DisplayName("Bearer token endpoint validation with different requirement types")
         void bearerTokenEndpointValidation(String endpoint) {
@@ -184,11 +184,11 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             }
 
             given()
-                .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
-                .when()
-                .get(endpoint)
-                .then()
-                .statusCode(200);
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get(endpoint)
+                    .then()
+                    .statusCode(200);
             // Just verify the endpoint responds - content validation depends on actual token
         }
     }
@@ -202,30 +202,30 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         // Wait for metrics to be collected (collection interval is 2s)
         // Just wait a bit to ensure metrics collection has run at least once
         await()
-            .atMost(Duration.ofSeconds(5))
-            .pollInterval(Duration.ofSeconds(1))
-            .until(() -> {
-                String response = given()
-                    .when()
-                    .get("/q/metrics")
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .body()
-                    .asString();
-                // Just wait for any JWT validation metrics to appear
-                return response.contains("cui_jwt_validation");
-            });
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofSeconds(1))
+                .until(() -> {
+                    String response = given()
+                            .when()
+                            .get("/q/metrics")
+                            .then()
+                            .statusCode(200)
+                            .extract()
+                            .body()
+                            .asString();
+                    // Just wait for any JWT validation metrics to appear
+                    return response.contains("cui_jwt_validation");
+                });
 
         // Fetch metrics from the /q/metrics endpoint
         String metricsResponse = given()
-            .when()
-            .get("/q/metrics")
-            .then()
-            .statusCode(200)
-            .extract()
-            .body()
-            .asString();
+                .when()
+                .get("/q/metrics")
+                .then()
+                .statusCode(200)
+                .extract()
+                .body()
+                .asString();
 
         LOGGER.debug("Raw metrics response length: {}", metricsResponse.length());
 
@@ -239,7 +239,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
         // Verify we have error metrics (always present)
         assertTrue(metricsResponse.contains("cui_jwt_validation_errors_total"),
-            "Should contain error metrics");
+                "Should contain error metrics");
 
         // Check if success metrics are present (may not be if no success events occurred)
         boolean hasSuccessMetrics = metricsResponse.contains("cui_jwt_validation_success_total");
@@ -253,26 +253,26 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             // We expect ACCESS_TOKEN_CREATED to be the highest since all tests use access tokens
             double accessTokensCreated = getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ACCESS_TOKEN_CREATED");
             assertTrue(accessTokensCreated >= 10,
-                "Should have created at least 10 access tokens during integration tests, got: " + accessTokensCreated);
+                    "Should have created at least 10 access tokens during integration tests, got: " + accessTokensCreated);
             assertTrue(accessTokensCreated <= 10000,
-                "Access token creation count seems unreasonably high: " + accessTokensCreated);
+                    "Access token creation count seems unreasonably high: " + accessTokensCreated);
 
             // Verify cache hits if caching is enabled
             double accessTokenCacheHits = getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ACCESS_TOKEN_CACHE_HIT");
             // Cache hits should be >= 0 (could be 0 if cache is disabled)
             assertTrue(accessTokenCacheHits >= 0,
-                "Cache hits should be non-negative: " + accessTokenCacheHits);
+                    "Cache hits should be non-negative: " + accessTokenCacheHits);
 
             // Verify total success count is reasonable
             double totalSuccess = accessTokensCreated + accessTokenCacheHits
-                + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ID_TOKEN_CREATED")
-                + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "REFRESH_TOKEN_CREATED");
+                    + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ID_TOKEN_CREATED")
+                    + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "REFRESH_TOKEN_CREATED");
             assertTrue(totalSuccess >= 10,
-                "Total successful operations should be at least 10: " + totalSuccess);
+                    "Total successful operations should be at least 10: " + totalSuccess);
 
             LOGGER.info("SecurityEventCounter metrics validation passed - ACCESS_TOKEN_CREATED: {}, " +
-                "ACCESS_TOKEN_CACHE_HIT: {}, Total Success: {}",
-                accessTokensCreated, accessTokenCacheHits, totalSuccess);
+                    "ACCESS_TOKEN_CACHE_HIT: {}, Total Success: {}",
+                    accessTokensCreated, accessTokenCacheHits, totalSuccess);
         } else {
             LOGGER.warn("Success metrics not found - this indicates SecurityEventCounter success events are not being published");
             // For now, just verify that we at least have the error metrics structure
@@ -313,7 +313,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         for (Map.Entry<String, Double> entry : metrics.entrySet()) {
             String metricName = entry.getKey();
             if (metricName.startsWith(metricPrefix) &&
-                metricName.contains("event_type=\"" + eventType + "\"")) {
+                    metricName.contains("event_type=\"" + eventType + "\"")) {
                 return entry.getValue();
             }
         }

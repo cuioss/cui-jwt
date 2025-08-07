@@ -79,11 +79,11 @@ public class TestRealm {
      */
     public static TestRealm createIntegrationRealm() {
         return new TestRealm(
-            INTEGRATION_REALM_ID,
-            INTEGRATION_CLIENT_ID,
-            INTEGRATION_CLIENT_SECRET,
-            INTEGRATION_USERNAME,
-            INTEGRATION_PASSWORD
+                INTEGRATION_REALM_ID,
+                INTEGRATION_CLIENT_ID,
+                INTEGRATION_CLIENT_SECRET,
+                INTEGRATION_USERNAME,
+                INTEGRATION_PASSWORD
         );
     }
 
@@ -94,11 +94,11 @@ public class TestRealm {
      */
     public static TestRealm createBenchmarkRealm() {
         return new TestRealm(
-            BENCHMARK_REALM_ID,
-            BENCHMARK_CLIENT_ID,
-            BENCHMARK_CLIENT_SECRET,
-            BENCHMARK_USERNAME,
-            BENCHMARK_PASSWORD
+                BENCHMARK_REALM_ID,
+                BENCHMARK_CLIENT_ID,
+                BENCHMARK_CLIENT_SECRET,
+                BENCHMARK_USERNAME,
+                BENCHMARK_PASSWORD
         );
     }
 
@@ -121,19 +121,19 @@ public class TestRealm {
      */
     public TokenResponse obtainValidTokenWithScopes(String scopes) {
         Response tokenResponse = given()
-            .baseUri(KEYCLOAK_BASE_URL)
-            .contentType("application/x-www-form-urlencoded")
-            .formParam("client_id", clientId)
-            .formParam("client_secret", clientSecret)
-            .formParam("username", username)
-            .formParam("password", password)
-            .formParam("grant_type", "password")
-            .formParam("scope", scopes)
-            .when()
-            .post(TOKEN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+                .baseUri(KEYCLOAK_BASE_URL)
+                .contentType("application/x-www-form-urlencoded")
+                .formParam("client_id", clientId)
+                .formParam("client_secret", clientSecret)
+                .formParam("username", username)
+                .formParam("password", password)
+                .formParam("grant_type", "password")
+                .formParam("scope", scopes)
+                .when()
+                .post(TOKEN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
         assertEquals(200, tokenResponse.statusCode(),
-            "Should be able to obtain tokens from " + realmIdentifier + " realm with scopes: " + scopes + ". Response: " + tokenResponse.body().asString());
+                "Should be able to obtain tokens from " + realmIdentifier + " realm with scopes: " + scopes + ". Response: " + tokenResponse.body().asString());
 
         Map<String, Object> tokenData = tokenResponse.jsonPath().getMap("");
 
@@ -167,13 +167,13 @@ public class TestRealm {
     public boolean isWellKnownEndpointHealthy() {
         try {
             Response response = given()
-                .baseUri(KEYCLOAK_BASE_URL)
-                .when()
-                .get(WELL_KNOWN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+                    .baseUri(KEYCLOAK_BASE_URL)
+                    .when()
+                    .get(WELL_KNOWN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
             return response.statusCode() == 200 &&
-                response.body().asString().contains("\"issuer\"") &&
-                response.body().asString().contains("\"jwks_uri\"");
+                    response.body().asString().contains("\"issuer\"") &&
+                    response.body().asString().contains("\"jwks_uri\"");
         } catch (Exception e) {
             return false;
         }
@@ -187,9 +187,9 @@ public class TestRealm {
     public boolean isJwksEndpointHealthy() {
         try {
             Response response = given()
-                .baseUri(KEYCLOAK_BASE_URL)
-                .when()
-                .get(CERTS_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+                    .baseUri(KEYCLOAK_BASE_URL)
+                    .when()
+                    .get(CERTS_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
             return response.statusCode() == 200 && response.body().asString().contains("\"keys\"");
         } catch (Exception e) {
@@ -205,9 +205,9 @@ public class TestRealm {
     public boolean isKeycloakHealthy() {
         try {
             Response response = given()
-                .baseUri(KEYCLOAK_MANAGEMENT_URL)
-                .when()
-                .get("/health/ready");
+                    .baseUri(KEYCLOAK_MANAGEMENT_URL)
+                    .when()
+                    .get("/health/ready");
 
             return response.statusCode() == 200;
         } catch (Exception e) {

@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.*;
-import java.util.Locale;
 
 /**
  * Mock implementation of {@link HttpServletRequest} for testing purposes.

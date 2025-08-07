@@ -29,38 +29,22 @@ import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 // Claim mappers
-import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.StringSplitterMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.*;
 // Domain token classes
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.domain.token.BaseTokenContent;
-import de.cuioss.jwt.validation.domain.token.IdTokenContent;
-import de.cuioss.jwt.validation.domain.token.MinimalTokenContent;
-import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
-import de.cuioss.jwt.validation.domain.token.TokenContent;
+import de.cuioss.jwt.validation.domain.token.*;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 // JWKS classes
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.jwks.parser.JwksParser;
-import de.cuioss.jwt.validation.pipeline.DecodedJwt;
-// JWT validation pipeline classes
-import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
-import de.cuioss.jwt.validation.pipeline.TokenBuilder;
-import de.cuioss.jwt.validation.pipeline.TokenClaimValidator;
-import de.cuioss.jwt.validation.pipeline.TokenHeaderValidator;
-import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
+import de.cuioss.jwt.validation.pipeline.*;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 // Security and algorithm classes
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
