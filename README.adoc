@@ -26,13 +26,14 @@ image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/bench
 
 *Micro Benchmarks*
 
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/performance-badge.json[JWT Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/]
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/trends.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/performance-badge.json[JWT Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/index-visualizer.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/performance-trends.html]
 
 *Integration Benchmarks*
 
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/integration/badges/performance-badge.json[Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/integration/]
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/integration/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/integration/trends.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-summary-badge.json[Integration Tests Status,link=https://cuioss.github.io/cui-jwt/benchmarks/integration-benchmark-visualizer.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-health-badge.json[Health Check Performance,link=https://cuioss.github.io/cui-jwt/benchmarks/integration-benchmark-visualizer.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-jwt-badge.json[JWT Validation Performance,link=https://cuioss.github.io/cui-jwt/benchmarks/integration-benchmark-visualizer.html]
 
 xref:benchmarking/doc/performance-scoring.adoc[Understand Performance Metrics]
 
