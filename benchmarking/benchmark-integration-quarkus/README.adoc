@@ -12,7 +12,7 @@ Real-world JWT validation performance testing against live Quarkus applications 
 # Quick validation run  
 ./mvnw clean verify -Pbenchmark-testing -Djmh.iterations=1 -Djmh.threads=1 -pl benchmarking/benchmark-integration-quarkus
 
-# With JFR profiling
+# With JFR profiling (local development only - not available in CI)
 ./mvnw clean verify -Pbenchmark-jfr -pl benchmarking/benchmark-integration-quarkus
 
 # Force rebuild of Quarkus native container

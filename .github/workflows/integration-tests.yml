@@ -32,5 +32,7 @@ jobs:
       - name: Run Integration Tests Distroless
         run: ./mvnw --no-transfer-progress clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
-      - name: Run Integration Tests ubi9-quarkus-micro-image / jfr
-        run: ./mvnw --no-transfer-progress clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+      # JFR profile disabled in CI - only available for local development
+      # The JFR native container has startup issues in GitHub Actions environment
+      # - name: Run Integration Tests ubi9-quarkus-micro-image / jfr
+      #   run: ./mvnw --no-transfer-progress clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests

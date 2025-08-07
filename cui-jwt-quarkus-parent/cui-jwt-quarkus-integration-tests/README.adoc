@@ -65,13 +65,14 @@ DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compo
 ./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 ----
 
-=== JFR-Enabled (Profiling)
+=== JFR-Enabled (Profiling) - Local Development Only
 
 * **Dockerfile**: `Dockerfile.native.jfr`
 * **Base Image**: UBI 9 Micro with debugging tools
 * **Size**: 96MB
-* **Use Case**: Performance analysis, profiling, debugging
+* **Use Case**: Performance analysis, profiling, debugging (local development only)
 * **Features**: Full JFR profiling, debugging tools, monitoring capabilities
+* **Note**: JFR profile is disabled in CI/CD due to container startup issues in GitHub Actions
 
 [source,bash]
 ----
@@ -96,7 +97,8 @@ ls -la -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/jfr-r
 |Startup Time |~0.2s |~0.2s
 |JFR Profiling |❌ |✅
 |Debugging Tools |❌ |✅
-|Production Ready |✅ |⚠️ (Development/Profiling)
+|Production Ready |✅ |⚠️ (Local Development Only)
+|CI/CD Support |✅ |❌ (Disabled in GitHub Actions)
 |===
 
 == Module Structure
