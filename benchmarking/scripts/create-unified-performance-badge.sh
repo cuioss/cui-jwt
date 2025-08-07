@@ -115,8 +115,8 @@ process_integration_benchmarks() {
     # Determine badge color
     local badge_color=$(get_performance_badge_color "$integration_score")
     
-    # Create performance badge
-    create_badge "Performance Score" "${formatted_score} (${throughput_display} ops/s, ${formatted_latency_ms}ms)" "$badge_color" "performance-badge.json"
+    # Create integration performance badge (different name from micro benchmarks)
+    create_badge "Integration Performance" "${formatted_score} (${throughput_display} ops/s, ${formatted_latency_ms}ms)" "$badge_color" "integration-performance-badge.json"
     
     # Create additional integration-specific badges
     local throughput_color=$(get_throughput_badge_color "$avg_throughput")
