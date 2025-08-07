@@ -366,6 +366,9 @@
                                 <configuration>
                                     <executable>./scripts/build-native-if-needed.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
+                                    <environmentVariables>
+                                        <MAVEN_PROFILE>-Pjfr</MAVEN_PROFILE>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
                             <!-- Build Docker image with JFR support (native executable must already exist) -->
