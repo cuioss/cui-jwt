@@ -54,47 +54,83 @@ else
 EOF
 fi
 
-# Extract key metrics from JMH results for badges
-echo "🎯 Extracting integration metrics for badges..."
+# Create performance tracking data for integration benchmarks
+echo "📊 Creating integration performance tracking..."
+TRACKING_OUTPUT=$(bash "$SCRIPT_DIR/create-performance-tracking.sh" "$OUTPUT_DIR/data/integration-benchmark-result.json" "$TEMPLATES_DIR" "$OUTPUT_DIR" "$COMMIT_HASH" 2>&1)
+echo "$TRACKING_OUTPUT"
 
-# Extract health check and JWT validation throughput
-HEALTH_THROUGHPUT=$(jq -r '[.[] | select(.benchmark | contains("healthCheck")) | .primaryMetric.score] | if length > 0 then (add / length) else 0 end' "$INTEGRATION_JMH_RESULTS" 2>/dev/null || echo "0")
-JWT_THROUGHPUT=$(jq -r '[.[] | select(.benchmark | contains("jwt") or contains("Jwt") or contains("validation")) | .primaryMetric.score] | if length > 0 then (add / length) else 0 end' "$INTEGRATION_JMH_RESULTS" 2>/dev/null || echo "0")
+# Extract metrics from tracking script output
+PERF_SCORE=$(echo "$TRACKING_OUTPUT" | grep "PERF_SCORE=" | cut -d'=' -f2 || echo "0")
+PERF_THROUGHPUT=$(echo "$TRACKING_OUTPUT" | grep "PERF_THROUGHPUT=" | cut -d'=' -f2 || echo "0")
+PERF_LATENCY=$(echo "$TRACKING_OUTPUT" | grep "PERF_LATENCY=" | cut -d'=' -f2 || echo "0")
+PERF_RESILIENCE=$(echo "$TRACKING_OUTPUT" | grep "PERF_RESILIENCE=" | cut -d'=' -f2 || echo "0")
 
-# Format throughput values
-if [ "$HEALTH_THROUGHPUT" != "0" ]; then
-    HEALTH_BADGE_VALUE=$(printf "%.1f ops/s" "$HEALTH_THROUGHPUT")
-    HEALTH_COLOR="green"
+echo "🎯 Extracted Integration Performance Metrics:"
+echo "  Score: $PERF_SCORE"
+echo "  Throughput: $PERF_THROUGHPUT"
+echo "  Latency: $PERF_LATENCY"
+echo "  Resilience: $PERF_RESILIENCE"
+
+# Create integration performance badge with actual score
+if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ] && [ "$PERF_SCORE" != "" ]; then
+    # Determine color based on score
+    SCORE_VALUE=$(echo "$PERF_SCORE" | sed 's/[^0-9.]//g')
+    if (( $(echo "$SCORE_VALUE >= 80" | bc -l) )); then
+        BADGE_COLOR="green"
+    elif (( $(echo "$SCORE_VALUE >= 60" | bc -l) )); then
+        BADGE_COLOR="yellow"
+    else
+        BADGE_COLOR="orange"
+    fi
+    echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"$PERF_SCORE\",\"color\":\"$BADGE_COLOR\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
 else
-    HEALTH_BADGE_VALUE="No Data"
-    HEALTH_COLOR="red"
+    echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"No Data\",\"color\":\"red\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
 fi
 
-if [ "$JWT_THROUGHPUT" != "0" ]; then
-    JWT_BADGE_VALUE=$(printf "%.1f ops/s" "$JWT_THROUGHPUT")
-    JWT_COLOR="green"
+# Update integration trends and create trend badge
+if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ] && [ "$PERF_SCORE" != "" ]; then
+    echo "📈 Updating integration performance trends..."
+    # Create a separate trends file for integration benchmarks
+    TRENDS_FILE="$OUTPUT_DIR/data/integration-trends.json"
+    if [ -f "$TRENDS_FILE" ]; then
+        # Read existing trends
+        PREV_SCORE=$(jq -r '.latest_score // "0"' "$TRENDS_FILE" 2>/dev/null || echo "0")
+        PREV_SCORE_VALUE=$(echo "$PREV_SCORE" | sed 's/[^0-9.]//g')
+        SCORE_VALUE=$(echo "$PERF_SCORE" | sed 's/[^0-9.]//g')
+        
+        # Calculate trend
+        if (( $(echo "$SCORE_VALUE > $PREV_SCORE_VALUE + 1" | bc -l) )); then
+            TREND_SYMBOL="↗"
+            TREND_COLOR="green"
+        elif (( $(echo "$SCORE_VALUE < $PREV_SCORE_VALUE - 1" | bc -l) )); then
+            TREND_SYMBOL="↘"
+            TREND_COLOR="orange"
+        else
+            TREND_SYMBOL="→"
+            TREND_COLOR="blue"
+        fi
+    else
+        TREND_SYMBOL="→"
+        TREND_COLOR="blue"
+    fi
+    
+    # Update trends file
+    cat > "$TRENDS_FILE" << EOF
+{
+  "latest_score": "$PERF_SCORE",
+  "latest_throughput": "$PERF_THROUGHPUT",
+  "latest_latency": "$PERF_LATENCY",
+  "latest_resilience": "$PERF_RESILIENCE",
+  "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+    
+    # Create trend badge
+    TREND_MESSAGE="${TREND_SYMBOL} ${SCORE_VALUE}%"
+    echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"$TREND_MESSAGE\",\"color\":\"$TREND_COLOR\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
 else
-    JWT_BADGE_VALUE="No Data"
-    JWT_COLOR="red"
+    echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
 fi
-
-# Create integration performance badges (using standard names that match fallback badges)
-echo "{\"schemaVersion\":1,\"label\":\"Health Check\",\"message\":\"$HEALTH_BADGE_VALUE\",\"color\":\"$HEALTH_COLOR\"}" > "$OUTPUT_DIR/badges/integration-health-badge.json"
-echo "{\"schemaVersion\":1,\"label\":\"JWT Validation\",\"message\":\"$JWT_BADGE_VALUE\",\"color\":\"$JWT_COLOR\"}" > "$OUTPUT_DIR/badges/integration-jwt-badge.json"
-
-# Create main integration performance badge (replaces fallback)
-if [ "$HEALTH_THROUGHPUT" != "0" ] && [ "$JWT_THROUGHPUT" != "0" ]; then
-    SUMMARY_VALUE="✓ Running"
-    SUMMARY_COLOR="green"
-else
-    SUMMARY_VALUE="⚠ Partial"
-    SUMMARY_COLOR="yellow"
-fi
-echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"$SUMMARY_VALUE\",\"color\":\"$SUMMARY_COLOR\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
-
-# Create integration trend badge (replaces fallback)
-TREND_VALUE="↗ Active"
-echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"$TREND_VALUE\",\"color\":\"green\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
 
 # Create metadata file
 cat > "$OUTPUT_DIR/data/integration-metadata.json" << EOF
@@ -103,12 +139,15 @@ cat > "$OUTPUT_DIR/data/integration-metadata.json" << EOF
   "commit": "$COMMIT_HASH",
   "generated_at": "$TIMESTAMP",
   "metrics": {
-    "health_check_throughput": $HEALTH_THROUGHPUT,
-    "jwt_validation_throughput": $JWT_THROUGHPUT
+    "performance_score": "$PERF_SCORE",
+    "throughput": "$PERF_THROUGHPUT",
+    "latency": "$PERF_LATENCY",
+    "resilience": "$PERF_RESILIENCE"
   }
 }
 EOF
 
 echo "✅ Integration JMH benchmarks processed successfully"
-echo "   - Health Check: $HEALTH_BADGE_VALUE"
-echo "   - JWT Validation: $JWT_BADGE_VALUE"
+echo "   - Performance Score: $PERF_SCORE"
+echo "   - Throughput: $PERF_THROUGHPUT"
+echo "   - Latency: $PERF_LATENCY"
