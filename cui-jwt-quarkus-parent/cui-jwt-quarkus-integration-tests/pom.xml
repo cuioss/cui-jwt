@@ -269,15 +269,16 @@
                 
                 <!-- JFR profile runs in JVM mode for profiling, not native -->
                 <quarkus.native.enabled>false</quarkus.native.enabled>
-                <!-- JVM-specific JFR options -->
-                <quarkus.package.type>jar</quarkus.package.type>
+                <!-- JVM-specific packaging - use fast-jar for optimal startup -->
+                <quarkus.package.jar.enabled>true</quarkus.package.jar.enabled>
+                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
                 <!-- Enable JFR monitoring in JVM mode -->
                 <quarkus.jfr.enabled>true</quarkus.jfr.enabled>
             </properties>
             <build>
                 <plugins>
                     
-                    <!-- Quarkus plugin with JFR support (build only on-demand via script) -->
+                    <!-- Quarkus plugin with JFR support (JVM build) -->
                     <plugin>
                         <groupId>io.quarkus</groupId>
                         <artifactId>quarkus-maven-plugin</artifactId>
@@ -286,6 +287,14 @@
                             <execution>
                                 <id>default</id>
                                 <phase>none</phase>
+                            </execution>
+                            <!-- Add explicit JVM build execution -->
+                            <execution>
+                                <id>build-jvm</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>
