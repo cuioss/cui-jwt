@@ -267,36 +267,20 @@
                 <!-- Enable integration tests -->
                 <skipITs>false</skipITs>
                 
-                <!-- JFR profile runs in JVM mode for profiling, not native -->
-                <quarkus.native.enabled>false</quarkus.native.enabled>
-                <!-- JVM-specific packaging - use fast-jar for optimal startup -->
-                <quarkus.package.jar.enabled>true</quarkus.package.jar.enabled>
-                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
-                <!-- Enable JFR monitoring in JVM mode -->
+                <!-- JFR profile builds native executable with JFR support -->
+                <quarkus.native.enabled>true</quarkus.native.enabled>
+                <!-- Native build with JFR monitoring enabled -->
+                <quarkus.native.monitoring>jfr</quarkus.native.monitoring>
                 <quarkus.jfr.enabled>true</quarkus.jfr.enabled>
             </properties>
             <build>
                 <plugins>
                     
-                    <!-- Quarkus plugin with JFR support (JVM build) -->
+                    <!-- Quarkus plugin with JFR support (native build) -->
                     <plugin>
                         <groupId>io.quarkus</groupId>
                         <artifactId>quarkus-maven-plugin</artifactId>
-                        <executions>
-                            <!-- Override parent's default execution to prevent automatic native build -->
-                            <execution>
-                                <id>default</id>
-                                <phase>none</phase>
-                            </execution>
-                            <!-- Add explicit JVM build execution -->
-                            <execution>
-                                <id>build-jvm</id>
-                                <goals>
-                                    <goal>build</goal>
-                                </goals>
-                                <phase>package</phase>
-                            </execution>
-                        </executions>
+                        <!-- Use parent configuration for native build -->
                     </plugin>
                     
                     <!-- Skip Unit Tests (Surefire) -->
@@ -338,10 +322,9 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <!-- Skip native build for JFR profile (runs in JVM mode) -->
-                            <!-- Build Docker image with JFR support for JVM mode -->
+                            <!-- Build Docker image with native JFR support -->
                             <execution>
-                                <id>docker-build-jfr-jvm</id>
+                                <id>docker-build-jfr</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
@@ -355,8 +338,8 @@
                                         <argument>cui-jwt-integration-tests</argument>
                                     </arguments>
                                     <environmentVariables>
-                                        <DOCKERFILE>Dockerfile.jvm</DOCKERFILE>
-                                        <DOCKER_IMAGE_TAG>jfr-jvm</DOCKER_IMAGE_TAG>
+                                        <DOCKERFILE>Dockerfile.native.jfr</DOCKERFILE>
+                                        <DOCKER_IMAGE_TAG>jfr</DOCKER_IMAGE_TAG>
                                         <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
                                     </environmentVariables>
                                 </configuration>

@@ -110,7 +110,6 @@ cui-jwt-quarkus-integration-tests/
 │   │   └── endpoint/JwtValidationEndpoint.java
 │   ├── resources/application.properties
 │   └── docker/
-│       ├── Dockerfile.jvm
 │       ├── Dockerfile.native.distroless
 │       ├── Dockerfile.native.jfr
 │       ├── certificates/
@@ -309,16 +308,12 @@ DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compo
 
 # JFR profiling build (UBI 9 micro image, 96MB)
 DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
-
-# JVM development build
-docker compose build --build-arg DOCKERFILE=Dockerfile.jvm
 ----
 
 **Image Characteristics**:
 
-* **Distroless**: Minimal production image with fast startup (~0.2s)
-* **JFR-enabled**: Full profiling support with debugging tools (~0.2s startup)
-* **JVM**: Development image with full JVM capabilities
+* **Distroless**: Minimal production native image with ultra-fast startup (~0.2s)
+* **JFR-enabled**: Native image with JFR profiling support and debugging tools (~0.2s startup)
 
 == Troubleshooting
 
