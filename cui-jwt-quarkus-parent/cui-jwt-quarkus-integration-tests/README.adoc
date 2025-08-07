@@ -14,16 +14,6 @@ Integration tests for the CUI JWT Quarkus extension with native container testin
 * **External Test**: `10443` (Docker mapped port)
 * **Configuration**: Maven property `test.https.port`
 
-=== Test Base Class
-
-[source,java]
-----
-@QuarkusIntegrationTest
-class MyIntegrationTest extends BaseIntegrationTest {
-    // Automatically configured for external port
-}
-----
-
 == Features
 
 * Native container testing with production-like behavior
@@ -43,13 +33,13 @@ class MyIntegrationTest extends BaseIntegrationTest {
 [source,bash]
 ----
 # Native tests (5-10 minutes) -am=also make -> build all modules that are required
-../../mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
+./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
 
 # JVM tests only
-../../mvnw clean test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 # Manual testing
-./scripts/start-integration-container.sh
+cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh
 curl -k https://localhost:10443/q/health
 ./scripts/stop-integration-container.sh
 ----
@@ -72,7 +62,7 @@ The integration tests support two optimized container variants for different use
 DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build cui-jwt-integration-tests
 
 # Run integration tests with distroless
-../../mvnw clean verify -Pintegration-tests
+./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 ----
 
 === JFR-Enabled (Profiling)
@@ -89,10 +79,10 @@ DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compo
 DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build cui-jwt-integration-tests
 
 # Run JFR profiling tests
-../../mvnw clean verify -Pjfr
+./mvnw clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 # Extract JFR recordings (automatic via Maven)
-ls -la target/jfr-results/
+ls -la -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/jfr-results/
 ----
 
 === Image Comparison
@@ -139,7 +129,7 @@ The module integrates Docker cleanup with Maven's clean phase to prevent file lo
 [source,bash]
 ----
 # Standard clean command now stops Docker containers first
-./mvnw clean
+./mvnw clean -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 # What happens:
 # 1. Executes stop-integration-container.sh --clean (pre-clean phase)
@@ -149,8 +139,6 @@ The module integrates Docker cleanup with Maven's clean phase to prevent file lo
 ----
 
 This ensures reliable cleanup of native executables and build artifacts without "file in use" errors.
-
-== Test Structure
 
 == Test Categories
 
