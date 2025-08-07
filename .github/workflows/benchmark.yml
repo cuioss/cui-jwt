@@ -72,24 +72,39 @@ jobs:
         run: |
           # Run integration benchmarks with native image using profile that includes container startup
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing -DskipTests
+          
+          # Check what was actually created
+          echo "📁 Checking benchmark-integration-quarkus/target directory structure:"
+          ls -la benchmarking/benchmark-integration-quarkus/target/ || echo "Target directory not found"
+          
+          echo "📁 Checking benchmark-integration-quarkus/target/benchmark-results directory:"
+          ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/ || echo "Benchmark results directory not found"
+          
+          echo "🔍 Finding all JSON files in benchmark-integration-quarkus:"
+          find benchmarking/benchmark-integration-quarkus -name "*.json" -type f | head -20
 
           # Move integration benchmark results to expected location for upload
           if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results" ]; then
             echo "Moving integration benchmark results to upload location..."
-            # Copy the main integration benchmark result file
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/integration-benchmark-result.json benchmark-results/ 2>/dev/null || echo "No integration benchmark results"
-            # Also copy any additional result files (health check, JWT validation, etc.)
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
+            # Copy ALL json files from benchmark-results directory
+            for file in benchmarking/benchmark-integration-quarkus/target/benchmark-results/*.json; do
+              if [ -f "$file" ]; then
+                echo "Copying: $(basename "$file")"
+                cp "$file" benchmark-results/
+              fi
+            done
+          else
+            echo "❌ Directory benchmarking/benchmark-integration-quarkus/target/benchmark-results does not exist!"
           fi
 
           # Add timestamp to results
           echo "{ \"timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"commit\": \"${{ github.sha }}\" }" > benchmark-results/metadata.json
 
           # Verify that benchmark results were generated
-          echo "Checking for benchmark results..."
+          echo "📊 Final contents of benchmark-results directory:"
           ls -la benchmark-results/
+          echo "🔍 Searching for any benchmark-result files in entire workspace:"
           find . -name "*benchmark-result*.json" -type f || echo "No benchmark result files found anywhere"
 
       - name: Upload benchmark results
