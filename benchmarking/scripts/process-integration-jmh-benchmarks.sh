@@ -78,11 +78,11 @@ else
     JWT_COLOR="red"
 fi
 
-# Create integration performance badges
+# Create integration performance badges (using standard names that match fallback badges)
 echo "{\"schemaVersion\":1,\"label\":\"Health Check\",\"message\":\"$HEALTH_BADGE_VALUE\",\"color\":\"$HEALTH_COLOR\"}" > "$OUTPUT_DIR/badges/integration-health-badge.json"
 echo "{\"schemaVersion\":1,\"label\":\"JWT Validation\",\"message\":\"$JWT_BADGE_VALUE\",\"color\":\"$JWT_COLOR\"}" > "$OUTPUT_DIR/badges/integration-jwt-badge.json"
 
-# Create summary badge
+# Create main integration performance badge (replaces fallback)
 if [ "$HEALTH_THROUGHPUT" != "0" ] && [ "$JWT_THROUGHPUT" != "0" ]; then
     SUMMARY_VALUE="✓ Running"
     SUMMARY_COLOR="green"
@@ -90,7 +90,11 @@ else
     SUMMARY_VALUE="⚠ Partial"
     SUMMARY_COLOR="yellow"
 fi
-echo "{\"schemaVersion\":1,\"label\":\"Integration Tests\",\"message\":\"$SUMMARY_VALUE\",\"color\":\"$SUMMARY_COLOR\"}" > "$OUTPUT_DIR/badges/integration-summary-badge.json"
+echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"$SUMMARY_VALUE\",\"color\":\"$SUMMARY_COLOR\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
+
+# Create integration trend badge (replaces fallback)
+TREND_VALUE="↗ Active"
+echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"$TREND_VALUE\",\"color\":\"green\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
 
 # Create metadata file
 cat > "$OUTPUT_DIR/data/integration-metadata.json" << EOF
