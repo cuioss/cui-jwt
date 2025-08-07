@@ -32,6 +32,8 @@
         <junit-platform.version>1.13.1</junit-platform.version>
         <version.weld-junit5>5.0.1.Final</version.weld-junit5>
         <version.easymock>5.2.0</version.easymock>
+        <!-- Default empty argLine for JaCoCo compatibility - JaCoCo will override this when active -->
+        <argLine></argLine>
     </properties>
 
     <dependencyManagement>
@@ -193,7 +195,7 @@
                         <useFile>false</useFile>
                         <trimStackTrace>false</trimStackTrace>
                         <enableAssertions>true</enableAssertions>
-                        <argLine>${argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                        <argLine>@{argLine} -XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
                         <!-- Fix for class loading issues -->
                         <useSystemClassLoader>false</useSystemClassLoader>
                         <reuseForks>false</reuseForks>
