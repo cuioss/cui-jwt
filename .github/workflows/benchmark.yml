@@ -77,7 +77,9 @@ jobs:
           # Move integration benchmark results to expected location for upload
           if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results" ]; then
             echo "Moving integration benchmark results to upload location..."
-            # Copy health check and JWT validation results
+            # Copy the main integration benchmark result file
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/integration-benchmark-result.json benchmark-results/ 2>/dev/null || echo "No integration benchmark results"
+            # Also copy any additional result files (health check, JWT validation, etc.)
             cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
             cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
           fi
