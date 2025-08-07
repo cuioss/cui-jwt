@@ -78,11 +78,17 @@ process_micro_benchmarks() {
 process_integration_benchmarks() {
     echo "Processing integration benchmark results..."
     
-    # Calculate average integration throughput
+    # Calculate average integration throughput (handle both ops/s and ops/ms)
     local avg_throughput=$(jq -r '
-      [.[] | select(.benchmark and (.mode == "thrpt" or .primaryMetric.scoreUnit == "ops/s"))] |
+      [.[] | select(.benchmark and .mode == "thrpt")] |
       if length > 0 then
-        (map(.primaryMetric.score) | add / length | . * 100 | round / 100)
+        map(
+          if .primaryMetric.scoreUnit == "ops/ms" then
+            .primaryMetric.score * 1000  # Convert ops/ms to ops/s
+          else
+            .primaryMetric.score
+          end
+        ) | add / length | . * 100 | round / 100
       else
         0
       end

@@ -71,18 +71,26 @@ echo "  Throughput: $PERF_THROUGHPUT"
 echo "  Latency: $PERF_LATENCY"
 echo "  Resilience: $PERF_RESILIENCE"
 
-# Create integration performance badge with actual score
+# Create integration performance badge with actual score and details
 if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ] && [ "$PERF_SCORE" != "" ]; then
+    # Format latency for display (convert to ms if needed)
+    LATENCY_MS=$(echo "$PERF_LATENCY * 1000" | bc -l | xargs printf "%.0f")
+    
+    # Format the badge message with score, throughput, and latency (like micro benchmarks)
+    BADGE_MESSAGE="${PERF_SCORE} (${PERF_THROUGHPUT} ops/s, ${LATENCY_MS}ms)"
+    
     # Determine color based on score
     SCORE_VALUE=$(echo "$PERF_SCORE" | sed 's/[^0-9.]//g')
-    if (( $(echo "$SCORE_VALUE >= 80" | bc -l) )); then
+    if (( $(echo "$SCORE_VALUE >= 5000" | bc -l) )); then
+        BADGE_COLOR="brightgreen"
+    elif (( $(echo "$SCORE_VALUE >= 1000" | bc -l) )); then
         BADGE_COLOR="green"
-    elif (( $(echo "$SCORE_VALUE >= 60" | bc -l) )); then
+    elif (( $(echo "$SCORE_VALUE >= 500" | bc -l) )); then
         BADGE_COLOR="yellow"
     else
         BADGE_COLOR="orange"
     fi
-    echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"$PERF_SCORE\",\"color\":\"$BADGE_COLOR\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
+    echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"$BADGE_MESSAGE\",\"color\":\"$BADGE_COLOR\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
 else
     echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"No Data\",\"color\":\"red\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
 fi

@@ -9,6 +9,9 @@ convert_to_ops_per_sec() {
     
     if [[ "$unit" == "ops/s" ]]; then
         echo "$value"
+    elif [[ "$unit" == "ops/ms" ]]; then
+        # Convert ops/ms to ops/s by multiplying by 1000
+        echo "scale=2; $value * 1000" | bc -l
     elif [[ "$unit" == "s/op" ]]; then
         if [ "$(echo "$value == 0" | bc -l)" -eq 1 ]; then
             echo "0"
