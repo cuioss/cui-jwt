@@ -3,13 +3,38 @@
   "enabled": true,
   "displayName": "JWT Benchmark Realm",
   "displayNameHtml": "<strong>JWT Benchmark</strong>",
-  "accessTokenLifespan": 300,
+  "accessTokenLifespan": 900,
   "accessTokenLifespanForImplicitFlow": 900,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
   "offlineSessionIdleTimeout": 2592000,
   "attributes": {
     "frontendUrl": "https://keycloak:8443"
+  },
+  "defaultSignatureAlgorithm": "RS256",
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "rsa-generated",
+        "providerId": "rsa-generated",
+        "config": {
+          "priority": ["100"],
+          "enabled": ["true"],
+          "active": ["true"],
+          "keySize": ["2048"]
+        }
+      },
+      {
+        "name": "ecdsa-generated",
+        "providerId": "ecdsa-generated",
+        "config": {
+          "priority": ["50"],
+          "enabled": ["true"],
+          "active": ["true"],
+          "ecdsaEllipticCurveKey": ["P-256"]
+        }
+      }
+    ]
   },
   "clients": [
     {

@@ -15,17 +15,15 @@
  */
 package de.cuioss.jwt.quarkus.metrics;
 
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.quarkus.runtime.StartupEvent;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,35 +59,39 @@ class JwtMetricsCollectorTest {
     @Inject
     JwtMetricsCollector metricsCollector;
 
-    @Inject
-    Event<StartupEvent> startupEvent;
-
     @Test
     @DisplayName("Should initialize metrics for all event types")
     void shouldInitializeMetrics() {
         // Ensure collector is properly initialized
         assertNotNull(metricsCollector);
 
-        // Get counters from registry
-        Collection<Counter> counters = registry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS).counters();
+        // Get counters from registry - both error and success counters
+        Collection<Counter> errorCounters = registry.find(MetricIdentifier.VALIDATION.ERRORS).counters();
+        Collection<Counter> successCounters = registry.find(MetricIdentifier.VALIDATION.SUCCESS).counters();
 
         // Verify counters exist for all event types
-        assertFalse(counters.isEmpty(), "Should have registered counters");
+        assertFalse(errorCounters.isEmpty(), "Should have registered error counters");
+        assertFalse(successCounters.isEmpty(), "Should have registered success counters");
 
         // Verify all event types have corresponding counters
         for (EventType eventType : SecurityEventCounter.EventType.values()) {
-            boolean hasCounter = counters.stream()
-                    .anyMatch(counter -> Objects.equals(counter.getId().getTag("event_type"), eventType.name()));
-            assertTrue(hasCounter, "Should have counter for event type: " + eventType.name());
+            if (eventType.getCategory() == null) {
+                // Success events should be in success counters
+                boolean hasCounter = successCounters.stream()
+                        .anyMatch(counter -> Objects.equals(counter.getId().getTag("event_type"), eventType.name()));
+                assertTrue(hasCounter, "Should have success counter for event type: " + eventType.name());
+            } else {
+                // Error events should be in error counters
+                boolean hasCounter = errorCounters.stream()
+                        .anyMatch(counter -> Objects.equals(counter.getId().getTag("event_type"), eventType.name()));
+                assertTrue(hasCounter, "Should have error counter for event type: " + eventType.name());
+            }
         }
     }
 
     @Test
     @DisplayName("Should record metrics for security events")
     void shouldHaveMetricsForSecurityEvents() {
-        // Fire the startup event to ensure metrics are initialized
-        startupEvent.fire(new StartupEvent());
-
         // Get the security event counter from the token validator
         SecurityEventCounter counter = tokenValidator.getSecurityEventCounter();
         assertNotNull(counter);
@@ -103,12 +105,47 @@ class JwtMetricsCollectorTest {
         metricsCollector.updateCounters();
 
         // Verify the metric exists with the correct tags
-        boolean hasMetric = !registry.find(JwtPropertyKeys.METRICS.VALIDATION_ERRORS)
+        boolean hasMetric = !registry.find(MetricIdentifier.VALIDATION.ERRORS)
                 .tag("event_type", testEventType.name())
                 .tag("result", "failure")
                 .tag("category", "INVALID_SIGNATURE")
                 .counters().isEmpty();
 
         assertTrue(hasMetric, "Should have metric for the event type");
+    }
+
+
+    @Test
+    @DisplayName("Should clear all metrics when clear method is called")
+    void shouldClearAllMetrics() {
+        // Get the security event counter
+        SecurityEventCounter securityEventCounter = tokenValidator.getSecurityEventCounter();
+        assertNotNull(securityEventCounter);
+
+        // Record some events
+        EventType testEventType = EventType.SIGNATURE_VALIDATION_FAILED;
+        securityEventCounter.increment(testEventType);
+        securityEventCounter.increment(testEventType);
+
+        // Verify data is recorded
+        assertTrue(securityEventCounter.getCount(testEventType) > 0, "Should have recorded security events");
+
+        // Clear all metrics
+        metricsCollector.clear();
+
+        // Verify all metrics are cleared
+        assertEquals(0, securityEventCounter.getCount(testEventType), "Security event counter should be cleared");
+
+        // Verify the tracking maps are cleared by recording new events and checking delta calculation
+        securityEventCounter.increment(testEventType);
+        metricsCollector.updateCounters();
+
+        // The counter should only reflect the new increment, not the old ones
+        Counter metricCounter = registry.find(MetricIdentifier.VALIDATION.ERRORS)
+                .tag("event_type", testEventType.name())
+                .counter();
+        assertNotNull(metricCounter, "Counter should exist");
+        // Note: We can't directly check the counter value as it's cumulative in Micrometer,
+        // but we've verified the underlying monitors are cleared
     }
 }

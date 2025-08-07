@@ -1,4 +1,4 @@
-name: JMH Benchmark
+name: Performance Benchmark
 
 on:
   pull_request:
@@ -57,12 +57,12 @@ jobs:
           mkdir -p benchmark-results
 
           # Run micro benchmarks using configuration from pom.xml
-          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Dskip.benchmark=false -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-library -Pbenchmark
 
           # Move micro benchmark results to expected location for upload
-          if [ -d "cui-jwt-benchmarking/target/benchmark-results" ]; then
+          if [ -d "benchmarking/benchmark-library/target/benchmark-results" ]; then
             echo "Moving micro benchmark results to upload location..."
-            mv cui-jwt-benchmarking/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
+            mv benchmarking/benchmark-library/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
           fi
 
       - name: Set up Docker Buildx
@@ -70,18 +70,16 @@ jobs:
 
       - name: Run Integration Benchmarks
         run: |
-          # Build native image first for integration tests
-          echo "🔨 Building native image for integration tests..."
-          ./mvnw --no-transfer-progress clean package -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -DskipTests
-
-          # Run integration benchmarks with native image using configuration from pom.xml
+          # Run integration benchmarks with native image using profile
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl cui-jwt-quarkus-parent/quarkus-integration-benchmark -Dskip.benchmark=false -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark -DskipTests
 
           # Move integration benchmark results to expected location for upload
-          if [ -d "cui-jwt-quarkus-parent/quarkus-integration-benchmark/target/benchmark-results" ]; then
+          if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results" ]; then
             echo "Moving integration benchmark results to upload location..."
-            mv cui-jwt-quarkus-parent/quarkus-integration-benchmark/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
+            # Copy health check and JWT validation results
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/health-check-results.json benchmark-results/ 2>/dev/null || echo "No health check results"
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/jwt-validation-results.json benchmark-results/ 2>/dev/null || echo "No JWT validation results"
           fi
 
           # Add timestamp to results
@@ -99,7 +97,7 @@ jobs:
           path: benchmark-results/
           retention-days: 90  # Keep results for 90 days
 
-      - name: Prepare GitHub Pages visualization
+      - name: Process All Benchmarks
         run: |
           # Get current date for badge timestamp in Berlin time
           TIMESTAMP=$(TZ='Europe/Berlin' date +"%Y-%m-%d")
@@ -108,122 +106,25 @@ jobs:
           # Create gh-pages directory
           mkdir -p gh-pages
 
-          # Create header for badge markdown
-          echo "## Benchmark Results ($TIMESTAMP)" > gh-pages/badge-markdown.txt
+          # Process all benchmarks using orchestration script
+          bash benchmarking/scripts/process-all-benchmarks.sh \
+            benchmark-results \
+            benchmarking/doc/templates \
+            gh-pages \
+            "${{ github.sha }}" \
+            "$TIMESTAMP" \
+            "$TIMESTAMP_WITH_TIME"
 
-          # Process micro benchmarks (legacy jmh-result.json for compatibility)
-          if [ -f "benchmark-results/micro-benchmark-result.json" ]; then
-            echo "Processing micro benchmark results..."
-            # Copy for legacy compatibility
-            cp benchmark-results/micro-benchmark-result.json benchmark-results/jmh-result.json
-
-            # Prepare GitHub Pages structure using script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/prepare-github-pages.sh benchmark-results cui-jwt-benchmarking/doc/templates gh-pages
-
-            # Create performance badge using unified script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-performance-badge.sh micro gh-pages/jmh-result.json gh-pages/badges
-
-            # Create simple badges using script for micro benchmarks
-            bash cui-jwt-benchmarking/doc/templates/scripts/create-simple-badge.sh gh-pages/jmh-result.json gh-pages/badges "$TIMESTAMP" "$TIMESTAMP_WITH_TIME"
-
-            # Performance Tracking System for micro benchmarks
-            echo "Setting up micro benchmark performance tracking..."
-            COMMIT_HASH="${{ github.sha }}"
-
-            # Create performance tracking data using script
-            TRACKING_OUTPUT=$(bash cui-jwt-benchmarking/doc/templates/scripts/create-performance-tracking.sh gh-pages/jmh-result.json cui-jwt-benchmarking/doc/templates gh-pages "$COMMIT_HASH" 2>&1)
-            echo "$TRACKING_OUTPUT"
-
-            # Extract metrics from tracking script output
-            PERF_SCORE=$(echo "$TRACKING_OUTPUT" | grep "PERF_SCORE=" | cut -d'=' -f2)
-            PERF_THROUGHPUT=$(echo "$TRACKING_OUTPUT" | grep "PERF_THROUGHPUT=" | cut -d'=' -f2)
-            PERF_LATENCY=$(echo "$TRACKING_OUTPUT" | grep "PERF_LATENCY=" | cut -d'=' -f2)
-            PERF_RESILIENCE=$(echo "$TRACKING_OUTPUT" | grep "PERF_RESILIENCE=" | cut -d'=' -f2)
-
-            if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ]; then
-              # Update consolidated tracking and create trend badge using script
-              bash cui-jwt-benchmarking/doc/templates/scripts/update-performance-trends.sh cui-jwt-benchmarking/doc/templates gh-pages "$COMMIT_HASH" "$PERF_SCORE" "$PERF_THROUGHPUT" "$PERF_LATENCY" "$PERF_RESILIENCE"
-            else
-              echo "Warning: Could not extract valid performance metrics for trend tracking"
-              echo "{\"schemaVersion\":1,\"label\":\"Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/badges/trend-badge.json"
-            fi
-          else
-            echo "Warning: micro-benchmark-result.json not found"
-            echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"No Data\",\"color\":\"red\"}" > "gh-pages/badges/performance-badge.json"
-            echo "{\"schemaVersion\":1,\"label\":\"Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/badges/trend-badge.json"
-          fi
-
-          # Process integration benchmarks
-          if [ -f "benchmark-results/integration-benchmark-result.json" ]; then
-            echo "Processing integration benchmark results..."
-            mkdir -p gh-pages/integration/badges
-
-            # Copy integration results to dedicated location
-            cp benchmark-results/integration-benchmark-result.json gh-pages/integration/jmh-result.json
-
-            # Copy integration template
-            cp cui-jwt-benchmarking/doc/templates/integration-index.html gh-pages/integration/index.html
-
-            # Create integration performance badge using unified script
-            bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-performance-badge.sh integration benchmark-results/integration-benchmark-result.json gh-pages/integration/badges "$COMMIT_HASH"
-            
-            # Process integration results using dedicated script for additional metrics
-            INTEGRATION_OUTPUT=$(bash cui-jwt-benchmarking/doc/templates/scripts/process-integration-results.sh benchmark-results/integration-benchmark-result.json gh-pages "$COMMIT_HASH" 2>&1)
-            echo "$INTEGRATION_OUTPUT"
-
-            # Extract integration metrics from script output
-            INTEGRATION_SCORE=$(echo "$INTEGRATION_OUTPUT" | grep "INTEGRATION_SCORE=" | cut -d'=' -f2)
-            INTEGRATION_THROUGHPUT=$(echo "$INTEGRATION_OUTPUT" | grep "INTEGRATION_THROUGHPUT=" | cut -d'=' -f2)
-            INTEGRATION_LATENCY=$(echo "$INTEGRATION_OUTPUT" | grep "INTEGRATION_LATENCY=" | cut -d'=' -f2)
-
-            echo "Integration Performance Metrics:"
-            echo "  Score: $INTEGRATION_SCORE"
-            echo "  Throughput: $INTEGRATION_THROUGHPUT ops/s"
-            echo "  Latency: $INTEGRATION_LATENCY s"
-
-            # Create integration trend tracking (similar to micro benchmarks)
-            if [ -n "$INTEGRATION_SCORE" ] && [ "$INTEGRATION_SCORE" != "0" ]; then
-              echo "Setting up integration benchmark performance tracking..."
-
-              # Create integration-specific tracking file
-              INTEGRATION_TRACKING_FILE="gh-pages/integration/performance-tracking.json"
-              curl -f -s "https://cuioss.github.io/cui-jwt/benchmarks/integration/performance-tracking.json" -o "$INTEGRATION_TRACKING_FILE" 2>/dev/null || echo '{"runs":[]}' > "$INTEGRATION_TRACKING_FILE"
-
-              # Add current integration run to tracking
-              INTEGRATION_RUN=$(cat <<EOF
-          {
-            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-            "commit": "$COMMIT_HASH",
-            "performance": {
-              "score": $INTEGRATION_SCORE,
-              "throughput": {"value": $INTEGRATION_THROUGHPUT, "unit": "ops/s"},
-              "averageTime": {"value": $INTEGRATION_LATENCY, "unit": "s"},
-              "errorResilience": {"value": 100, "unit": "ops/s"}
-            }
-          }
-          EOF
-              )
-
-              # Update integration tracking file
-              jq --argjson newrun "$INTEGRATION_RUN" '.runs += [$newrun] | .runs = (.runs | sort_by(.timestamp) | .[-10:])' "$INTEGRATION_TRACKING_FILE" > "$INTEGRATION_TRACKING_FILE.tmp" && mv "$INTEGRATION_TRACKING_FILE.tmp" "$INTEGRATION_TRACKING_FILE"
-
-              # Create integration trend badge using unified script
-              bash cui-jwt-benchmarking/doc/templates/scripts/create-unified-trend-badge.sh integration "$INTEGRATION_TRACKING_FILE" "gh-pages/integration/badges"
-
-              # Copy performance trends template for integration
-              cp cui-jwt-benchmarking/doc/templates/performance-trends.html gh-pages/integration/trends.html
-            else
-              echo "Warning: Could not extract valid integration performance metrics for trend tracking"
-              echo "{\"schemaVersion\":1,\"label\":\"Integration Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/integration/badges/trend-badge.json"
-            fi
-
-            # Add integration benchmark link to main page
-            echo "- [Integration Benchmark Results](integration/index.html)" >> gh-pages/badge-markdown.txt
-          else
-            echo "Warning: integration-benchmark-result.json not found"
-            mkdir -p gh-pages/integration/badges
-            echo "{\"schemaVersion\":1,\"label\":\"Performance Score\",\"message\":\"No Data\",\"color\":\"red\"}" > "gh-pages/integration/badges/performance-badge.json"
-            echo "{\"schemaVersion\":1,\"label\":\"Performance Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "gh-pages/integration/badges/trend-badge.json"
+          echo "📊 Benchmark processing completed"
+          
+          # Display processing results for debugging
+          if [ -f "gh-pages/processing-results.json" ]; then
+            echo "📋 Processing Summary:"
+            jq -r '
+              "🔬 Micro Benchmarks: " + .processing.micro.status + " - " + .processing.micro.message,
+              "🔗 Integration Benchmarks: " + .processing.integration.status + " - " + .processing.integration.message,
+              "❌ Errors: " + (.errors | length | tostring)
+            ' gh-pages/processing-results.json
           fi
 
       - name: Deploy to cuioss.github.io

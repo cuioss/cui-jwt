@@ -348,6 +348,53 @@ The following tests verify the implementation:
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/security/SecurityEventCounterTest.java[SecurityEventCounterTest]
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest]
 
+=== TokenValidatorMonitor
+_See Requirement xref:../Requirements.adoc#CUI-JWT-7.4[CUI-JWT-7.4: Performance Monitoring]_
+
+==== Status: IMPLEMENTED
+
+This specification has been implemented in the following classes:
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitor.java[TokenValidatorMonitor] (class)
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/metrics/MeasurementType.java[MeasurementType] (enum)
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (integration)
+
+The `TokenValidatorMonitor` provides high-performance, thread-safe monitoring of JWT validation pipeline metrics. It measures execution times for different stages of JWT validation with microsecond precision and maintains a configurable rolling window of recent measurements.
+
+==== Key Features
+
+* **Thread-Safe**: All operations are lock-free using atomic operations
+* **Zero Runtime Impact**: Optimized for minimal overhead during measurement
+* **Microsecond Precision**: All measurements recorded in microseconds
+* **Rolling Window**: Maintains configurable number of recent samples (default: 100)
+* **Pipeline Aware**: Measures each validation step separately
+
+==== Measurement Types
+
+The monitor tracks the following pipeline steps:
+
+* `COMPLETE_VALIDATION` - Complete token validation from start to finish
+* `TOKEN_PARSING` - JWT token parsing and structure validation
+* `HEADER_VALIDATION` - JWT header validation
+* `SIGNATURE_VALIDATION` - JWT signature verification (typically most expensive)
+* `CLAIMS_VALIDATION` - JWT claims validation
+* `JWKS_OPERATIONS` - JWKS key retrieval and processing operations
+
+==== Integration with Micrometer
+
+In Quarkus environments, the performance metrics are automatically exposed as Micrometer timers through the `JwtMetricsCollector`:
+
+* **Metric Name**: `cui.jwt.validation.duration`
+* **Tags**: `step` (measurement type in lowercase)
+* **Description**: Duration of JWT validation pipeline steps
+
+For implementation details, see the JavaDoc of the xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitor.java[TokenValidatorMonitor] class.
+
+The following tests verify the implementation:
+
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitorTest.java[TokenValidatorMonitorTest]
+* xref:../../cui-jwt-quarkus-parent/cui-jwt-quarkus/src/test/java/de/cuioss/jwt/quarkus/metrics/JwtMetricsCollectorTest.java[JwtMetricsCollectorTest] (Quarkus integration)
+
 === Token Architecture and Types
 _See Requirement xref:../Requirements.adoc#CUI-JWT-1.2[CUI-JWT-1.2: Token Types]_
 

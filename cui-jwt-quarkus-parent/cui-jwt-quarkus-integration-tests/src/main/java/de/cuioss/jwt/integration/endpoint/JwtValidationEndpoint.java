@@ -16,14 +16,16 @@
 package de.cuioss.jwt.integration.endpoint;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import de.cuioss.jwt.quarkus.producer.BearerTokenResponseFactory;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -32,9 +34,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
-import jakarta.enterprise.context.RequestScoped;
-
 /**
  * REST endpoint for JWT validation operations.
  * Focused on core JWT validation use cases for integration testing.
@@ -42,7 +41,7 @@ import jakarta.enterprise.context.RequestScoped;
 @Path("/jwt")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RequestScoped
+@ApplicationScoped
 @RegisterForReflection
 @RunOnVirtualThread
 public class JwtValidationEndpoint {
@@ -50,26 +49,26 @@ public class JwtValidationEndpoint {
     private static final CuiLogger LOGGER = new CuiLogger(JwtValidationEndpoint.class);
 
     private final TokenValidator tokenValidator;
-    private final BearerTokenResult basicToken;
-    private final BearerTokenResult tokenWithScopes;
-    private final BearerTokenResult tokenWithRoles;
-    private final BearerTokenResult tokenWithGroups;
-    private final BearerTokenResult tokenWithAll;
+    private final Instance<BearerTokenResult> basicToken;
+    private final Instance<BearerTokenResult> tokenWithScopes;
+    private final Instance<BearerTokenResult> tokenWithRoles;
+    private final Instance<BearerTokenResult> tokenWithGroups;
+    private final Instance<BearerTokenResult> tokenWithAll;
 
     public JwtValidationEndpoint(
             TokenValidator tokenValidator,
-            @BearerToken BearerTokenResult basicToken,
-            @BearerToken(requiredScopes = {"read"}) BearerTokenResult tokenWithScopes,
-            @BearerToken(requiredRoles = {"user"}) BearerTokenResult tokenWithRoles,
-            @BearerToken(requiredGroups = {"test-group"}) BearerTokenResult tokenWithGroups,
-            @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"}) BearerTokenResult tokenWithAll) {
+            @BearerToken Instance<BearerTokenResult> basicToken,
+            @BearerToken(requiredScopes = {"read"}) Instance<BearerTokenResult> tokenWithScopes,
+            @BearerToken(requiredRoles = {"user"}) Instance<BearerTokenResult> tokenWithRoles,
+            @BearerToken(requiredGroups = {"test-group"}) Instance<BearerTokenResult> tokenWithGroups,
+            @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"}) Instance<BearerTokenResult> tokenWithAll) {
         this.tokenValidator = tokenValidator;
         this.basicToken = basicToken;
         this.tokenWithScopes = tokenWithScopes;
         this.tokenWithRoles = tokenWithRoles;
         this.tokenWithGroups = tokenWithGroups;
         this.tokenWithAll = tokenWithAll;
-        LOGGER.info("JwtValidationEndpoint initialized with TokenValidator and BearerTokenResult instances");
+        LOGGER.info("JwtValidationEndpoint initialized with TokenValidator and lazy BearerTokenResult instances");
     }
 
     /**
@@ -82,8 +81,9 @@ public class JwtValidationEndpoint {
     @Path("/validate")
     public Response validateToken() {
         LOGGER.debug("validateToken called - checking basicToken authorization");
-        if (basicToken.isSuccessfullyAuthorized()) {
-            var tokenOpt = basicToken.getAccessTokenContent();
+        BearerTokenResult tokenResult = basicToken.get();
+        if (tokenResult.isSuccessfullyAuthorized()) {
+            var tokenOpt = tokenResult.getAccessTokenContent();
             if (tokenOpt.isPresent()) {
                 AccessTokenContent token = tokenOpt.get();
                 LOGGER.debug("Access token validated successfully - Subject: %s, Roles: %s, Groups: %s, Scopes: %s",
@@ -182,7 +182,7 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-scopes")
     public Response testTokenWithScopes() {
-        return processBearerTokenResult(tokenWithScopes, "Token with scopes");
+        return processBearerTokenResult(tokenWithScopes.get(), "Token with scopes");
     }
 
     /**
@@ -191,7 +191,7 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-roles")
     public Response testTokenWithRoles() {
-        return processBearerTokenResult(tokenWithRoles, "Token with roles");
+        return processBearerTokenResult(tokenWithRoles.get(), "Token with roles");
     }
 
     /**
@@ -200,7 +200,7 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-groups")
     public Response testTokenWithGroups() {
-        return processBearerTokenResult(tokenWithGroups, "Token with groups");
+        return processBearerTokenResult(tokenWithGroups.get(), "Token with groups");
     }
 
     /**
@@ -209,7 +209,7 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-all")
     public Response testTokenWithAll() {
-        return processBearerTokenResult(tokenWithAll, "Token with all requirements");
+        return processBearerTokenResult(tokenWithAll.get(), "Token with all requirements");
     }
 
     /**
@@ -218,7 +218,33 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/basic")
     public Response testBasicToken() {
-        return processBearerTokenResult(basicToken, "Basic token");
+        return processBearerTokenResult(basicToken.get(), "Basic token");
+    }
+
+    /**
+     * Echo endpoint for performance analysis.
+     * Touches the TokenValidator (via getSecurityEventCounter) to maintain similar dependency injection
+     * overhead but skips actual JWT validation work.
+     *
+     * @param echoRequest Request containing data to echo back
+     * @return Echo response with the same data
+     */
+    @POST
+    @Path("/echo")
+    public Response echo(EchoRequest echoRequest) {
+        // Touch the TokenValidator to simulate dependency usage
+        var securityEventCounter = tokenValidator.getSecurityEventCounter();
+        long totalEvents = securityEventCounter.getCounters().values().stream()
+            .mapToLong(Long::longValue)
+            .sum();
+        LOGGER.debug("Echo endpoint called - total security events: %d", totalEvents);
+
+        // Return the exact same data that was sent
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("echo", echoRequest != null ? echoRequest.data() : null);
+        responseData.put("eventCounter", totalEvents);
+
+        return Response.ok(new ValidationResponse(true, "Echo successful", responseData)).build();
     }
 
 
@@ -242,8 +268,8 @@ public class JwtValidationEndpoint {
         } else {
             LOGGER.debug("Bearer token authorization failed for: %s", description);
         }
-        // Use the improved BearerTokenStatus.createResponse() method
-        return tokenResult.errorResponse();
+        // Use the BearerTokenResponseFactory to create the response
+        return BearerTokenResponseFactory.createResponse(tokenResult);
     }
 
     /**
@@ -273,6 +299,9 @@ public class JwtValidationEndpoint {
         public boolean isEmpty() {
             return token == null || token.trim().isEmpty();
         }
+    }
+
+    public record EchoRequest(Map<String, Object> data) {
     }
 
     public record ValidationResponse(boolean valid, String message, Map<String, Object> data) {

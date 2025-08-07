@@ -1,0 +1,98 @@
+= JWT Library Benchmarks Documentation
+:source-highlighter: highlight.js
+
+Documentation for the JWT validation library performance benchmarking capabilities.
+
+== Overview
+
+This documentation covers:
+
+* **Benchmark Analysis** - Performance metrics and optimization insights
+* **Documentation Structure** - Organized guides for different use cases
+* **Visualization Tools** - Interactive HTML templates for result analysis
+* **Processing Pipeline** - CI/CD scripts for automated benchmark processing
+
+For building and running benchmarks, see the link:benchmark-library/README.adoc[benchmark library README].
+
+== Quick Access
+
+=== Local Testing
+
+For local development and testing of visualization templates:
+
+[source,bash]
+----
+cd benchmarking/scripts
+./serve-local.sh
+# Open http://localhost:8080 in your browser
+----
+
+See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
+
+== Documentation Structure
+
+=== Core Documentation
+
+* link:workflow.adoc[Benchmark Workflow] - Complete workflow guide for running and processing benchmarks
+* link:scripts-architecture.adoc[Scripts Architecture] - Detailed script documentation and architecture
+* link:local-testing.adoc[Local Testing Guide] - How to test visualizations locally
+* link:performance-scoring.adoc[Performance Scoring] - Weighted metrics methodology
+* link:JFR-Instrumentation.adoc[JFR Instrumentation] - Variance analysis guide
+
+=== Performance Analysis
+
+* link:../benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Latest performance metrics and optimization insights
+
+=== Benchmarks
+
+The library includes two types of benchmarks:
+
+==== Micro Benchmarks
+- `TokenValidatorBenchmark` - Core JWT validation performance  
+- `JwksClientBenchmark` - JWKS key retrieval performance
+- Performance scoring based on throughput, latency, and error resilience
+
+==== Integration Benchmarks  
+- End-to-end JWT validation with Quarkus native image
+- Health check performance baselines
+- JWT validation overhead calculations
+
+=== Visualization Tools
+
+==== HTML Templates
+
+* `templates/index-visualizer.html` - Interactive JMH result visualization
+* `templates/performance-trends.html` - Historical performance tracking
+* `templates/integration-index.html` - Integration benchmark results
+* `templates/step-metrics-visualizer.html` - Step-by-step metrics analysis
+
+==== Badge Generation
+
+Automated badge generation for:
+- Performance scores and trends
+- Throughput and latency metrics
+- Integration test results
+- Last benchmark run timestamps
+
+=== Processing Pipeline
+
+The benchmark processing workflow is handled by modular scripts:
+
+* **Orchestration** - Main processing pipeline coordination
+* **Badge Creation** - Performance and informational badges
+* **Trend Analysis** - Historical performance tracking
+* **GitHub Pages** - Automated result publication
+
+See link:scripts-architecture.adoc[Scripts Architecture] for complete workflow documentation.
+
+
+== Results and Visualization
+
+Benchmark results are automatically processed and published to GitHub Pages with:
+
+* Interactive performance visualizations
+* Historical trend analysis
+* Performance scoring and badges
+* Detailed metrics breakdown
+
+The visualization templates work with standard JMH JSON output and provide rich, interactive analysis capabilities for performance data.

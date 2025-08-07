@@ -184,7 +184,7 @@ public class TestTokenHolder implements TokenContent {
             cachedRawToken = builder.compact();
             return cachedRawToken;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate JWT token", e);
+            throw new IllegalStateException("Failed to generate JWT token", e);
         }
     }
 
@@ -212,6 +212,45 @@ public class TestTokenHolder implements TokenContent {
         // Invalidate cached token since header has changed
         cachedRawToken = null;
         return this;
+    }
+
+    /**
+     * Sets the signing algorithm to ES256 for testing ECDSA signature format issues.
+     * 
+     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
+     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
+     * This causes signature validation failures until format conversion is implemented.</p>
+     * 
+     * @return this instance for method chaining
+     */
+    public TestTokenHolder withES256IeeeP1363Format() {
+        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES256);
+    }
+
+    /**
+     * Sets the signing algorithm to ES384 for testing ECDSA signature format issues.
+     * 
+     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
+     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
+     * This causes signature validation failures until format conversion is implemented.</p>
+     * 
+     * @return this instance for method chaining
+     */
+    public TestTokenHolder withES384IeeeP1363Format() {
+        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES384);
+    }
+
+    /**
+     * Sets the signing algorithm to ES512 for testing ECDSA signature format issues.
+     * 
+     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
+     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
+     * This causes signature validation failures until format conversion is implemented.</p>
+     * 
+     * @return this instance for method chaining
+     */
+    public TestTokenHolder withES512IeeeP1363Format() {
+        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES512);
     }
 
     /**
@@ -394,7 +433,7 @@ public class TestTokenHolder implements TokenContent {
      * the header, body, and signature.
      *
      * @return a DecodedJwt instance representing this token
-     * @throws RuntimeException if the conversion fails
+     * @throws IllegalStateException if the conversion fails
      */
     public DecodedJwt asDecodedJwt() {
         try {
@@ -422,7 +461,7 @@ public class TestTokenHolder implements TokenContent {
             // Create and return the DecodedJwt
             return new DecodedJwt(header, body, signature, parts, signedJwt);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to convert TestTokenHolder to DecodedJwt", e);
+            throw new IllegalStateException("Failed to convert TestTokenHolder to DecodedJwt", e);
         }
     }
 

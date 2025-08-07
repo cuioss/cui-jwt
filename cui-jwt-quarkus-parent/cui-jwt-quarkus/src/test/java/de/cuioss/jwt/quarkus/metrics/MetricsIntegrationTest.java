@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -51,9 +52,15 @@ class MetricsIntegrationTest {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    JwtMetricsCollector metricsCollector;
+
     @Test
     @DisplayName("Should record metrics for token validation")
     void shouldRecordMetricsForTokenValidation() {
+        // Force initialization of metrics collector
+        metricsCollector.updateCounters();
+
         String invalidToken = "invalid.jwt.token";
 
         assertThrows(TokenValidationException.class, () -> tokenValidator.createAccessToken(invalidToken),
@@ -76,10 +83,13 @@ class MetricsIntegrationTest {
     @Test
     @DisplayName("Should register metrics for all security event types")
     void shouldRegisterMetricsForAllSecurityEventTypes() {
+        // Force initialization of metrics collector
+        metricsCollector.updateCounters();
+
         // Verify that metrics are registered for all event types
         for (SecurityEventCounter.EventType eventType : SecurityEventCounter.EventType.values()) {
-            // Skip success events as they're handled differently
-            if (eventType.name().contains("_CREATED")) {
+            // Skip success events as they're handled differently (registered under success metrics)
+            if (eventType.getCategory() == null) {
                 continue;
             }
 
@@ -123,6 +133,9 @@ class MetricsIntegrationTest {
     @MethodSource("invalidTokenScenarios")
     @DisplayName("Should record metrics for different invalid token scenarios")
     void shouldRecordMetricsForDifferentInvalidTokens(String description, String invalidToken, Class<? extends Exception> expectedException) {
+        // Force initialization of metrics collector
+        metricsCollector.updateCounters();
+
         Exception thrownException = assertThrows(expectedException, () -> tokenValidator.createAccessToken(invalidToken), "Should throw an exception for invalid token: " + description);
 
         assertTrue(expectedException.isAssignableFrom(thrownException.getClass()),

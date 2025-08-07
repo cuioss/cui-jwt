@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -60,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TokenClaimValidatorTest {
 
     private static final SecurityEventCounter SECURITY_EVENT_COUNTER = new SecurityEventCounter();
+    private static final ValidationContext VALIDATION_CONTEXT = new ValidationContext(60);
 
     private TokenClaimValidator createValidator(IssuerConfig issuerConfig) {
         return new TokenClaimValidator(issuerConfig, SECURITY_EVENT_COUNTER);
@@ -156,7 +158,7 @@ class TokenClaimValidatorTest {
         void shouldValidateTokenWithAllMandatoryClaims(TestTokenHolder tokenHolder) {
             var validator = createValidator(tokenHolder.getIssuerConfig());
 
-            TokenContent result = assertDoesNotThrow(() -> validator.validate(tokenHolder));
+            TokenContent result = assertDoesNotThrow(() -> validator.validate(tokenHolder, VALIDATION_CONTEXT));
 
             assertNotNull(result, "Token content should not be null");
         }
@@ -171,7 +173,7 @@ class TokenClaimValidatorTest {
             TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
             tokenHolder.withClaim(ClaimName.AUTHORIZED_PARTY.getName(), ClaimValue.forPlainString(TestTokenHolder.TEST_CLIENT_ID));
 
-            TokenContent result = assertDoesNotThrow(() -> validator.validate(tokenHolder));
+            TokenContent result = assertDoesNotThrow(() -> validator.validate(tokenHolder, VALIDATION_CONTEXT));
 
             assertNotNull(result, "Token content should not be null");
             assertEquals(TokenType.ACCESS_TOKEN, result.getTokenType(), "Token type should be ACCESS_TOKEN");
@@ -183,7 +185,7 @@ class TokenClaimValidatorTest {
             var validator = createValidator(createDefaultIssuerConfig());
             TestTokenHolder tokenHolder = TestTokenGenerators.idTokens().next();
 
-            TokenContent result = assertDoesNotThrow(() -> validator.validate(tokenHolder));
+            TokenContent result = assertDoesNotThrow(() -> validator.validate(tokenHolder, VALIDATION_CONTEXT));
 
             assertNotNull(result, "Token content should not be null");
             assertEquals(TokenType.ID_TOKEN, result.getTokenType(), "Token type should be ID_TOKEN");

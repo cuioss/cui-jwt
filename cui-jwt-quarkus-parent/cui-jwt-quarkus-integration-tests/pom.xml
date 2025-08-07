@@ -63,6 +63,7 @@
             <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
         </dependency>
 
+
         <!-- JWT Validation Test Utilities for key material -->
         <dependency>
             <groupId>de.cuioss.jwt</groupId>
@@ -82,6 +83,11 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Dev UI Testing Dependencies -->
         <dependency>
@@ -98,7 +104,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>${version.exec-maven-plugin}</version>
                 <executions>
                     <execution>
                         <id>stop-docker-containers</id>
@@ -125,44 +130,36 @@
     </build>
 
     <profiles>
-        <!-- Profile for running integration tests with Maven-built native image -->
+        <!-- Profile for running integration tests with distroless native image (no JFR) -->
         <profile>
             <id>integration-tests</id>
             <properties>
                 <!-- Enable integration tests -->
                 <skipITs>false</skipITs>
-
-                <!-- Enable native image building in Maven -->
+                
+                <!-- Container-based native build with optimized rebuild detection -->
                 <quarkus.native.container-build>true</quarkus.native.container-build>
                 <quarkus.native.enabled>true</quarkus.native.enabled>
-                <quarkus.package.jar.type>fast-jar</quarkus.package.jar.type>
             </properties>
             <build>
                 <plugins>
-                    <!-- Quarkus Maven Plugin for code generation and build -->
+                    
+                    <!-- Quarkus plugin (build only on-demand via script) -->
                     <plugin>
                         <groupId>io.quarkus</groupId>
                         <artifactId>quarkus-maven-plugin</artifactId>
                         <executions>
-                            <!-- Single execution for all goals to prevent duplicates -->
+                            <!-- Override parent's default execution to prevent automatic native build -->
                             <execution>
-                                <goals>
-                                    <goal>generate-code</goal>
-                                    <goal>generate-code-tests</goal>
-                                    <goal>build</goal>
-                                </goals>
+                                <id>default</id>
+                                <phase>none</phase>
                             </execution>
                         </executions>
-                        <configuration>
-                            <properties>
-                                <quarkus.native.enabled>true</quarkus.native.enabled>
-                                <quarkus.package.jar.enabled>false</quarkus.package.jar.enabled>
-                            </properties>
-                        </configuration>
                     </plugin>
-
+                    
                     <!-- Skip Unit Tests (Surefire) -->
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>true</skipTests>
@@ -171,8 +168,8 @@
 
                     <!-- Integration Test Configuration -->
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <!-- Inherits base configuration from parent, adds module-specific overrides -->
                         <executions>
                             <execution>
                                 <goals>
@@ -180,28 +177,59 @@
                                     <goal>verify</goal>
                                 </goals>
                                 <configuration>
-                                    <!-- Include all tests in integration package -->
                                     <includes>
                                         <include>**/integration/**/*IT.java</include>
                                     </includes>
                                     <systemPropertyVariables>
                                         <test.https.port>${test.https.port}</test.https.port>
                                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                                        <quarkus.native.enabled>${quarkus.native.enabled}</quarkus.native.enabled>
+                                        <quarkus.native.enabled>false</quarkus.native.enabled>
                                     </systemPropertyVariables>
-                                    <!-- Use the skipITs property -->
                                     <skipITs>${skipITs}</skipITs>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
 
-                    <!-- Start/Stop application using scripts -->
+                    <!-- Docker build and application lifecycle -->
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>${version.exec-maven-plugin}</version>
                         <executions>
+                            <!-- Build native executable if needed -->
+                            <execution>
+                                <id>build-native-if-needed</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/build-native-if-needed.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Build Docker image (native executable must already exist) -->
+                            <execution>
+                                <id>docker-build-distroless</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>compose</argument>
+                                        <argument>build</argument>
+                                        <argument>cui-jwt-integration-tests</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <DOCKERFILE>Dockerfile.native.distroless</DOCKERFILE>
+                                        <DOCKER_IMAGE_TAG>distroless</DOCKER_IMAGE_TAG>
+                                        <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
                             <!-- Start application before integration tests -->
                             <execution>
                                 <id>start-integration-app</id>
@@ -231,28 +259,119 @@
                 </plugins>
             </build>
         </profile>
-        <!-- Profile for PGO instrumentation (step 1) -->
-        <profile>
-            <id>pgo-instrument</id>
-            <properties>
-                <quarkus.native.enabled>true</quarkus.native.enabled>
-                <quarkus.native.container-build>true</quarkus.native.container-build>
-                <quarkus.native.builder-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.native.builder-image>
-                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
-                <quarkus.native.additional-build-args>--pgo-instrument</quarkus.native.additional-build-args>
-            </properties>
-        </profile>
         
-        <!-- Profile for PGO optimized build (step 3) -->
+        <!-- Profile for JFR profiling with UBI-based images -->
         <profile>
-            <id>pgo-optimize</id>
+            <id>jfr</id>
             <properties>
+                <!-- Enable integration tests -->
+                <skipITs>false</skipITs>
+                
+                <!-- JFR profile builds native executable with JFR support -->
                 <quarkus.native.enabled>true</quarkus.native.enabled>
-                <quarkus.native.container-build>true</quarkus.native.container-build>
-                <quarkus.native.builder-image>quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21</quarkus.native.builder-image>
-                <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
-                <quarkus.native.additional-build-args>--pgo=${project.basedir}/default.iprof</quarkus.native.additional-build-args>
+                <!-- Native build with JFR monitoring enabled -->
+                <quarkus.native.monitoring>jfr</quarkus.native.monitoring>
+                <quarkus.jfr.enabled>true</quarkus.jfr.enabled>
             </properties>
+            <build>
+                <plugins>
+                    
+                    <!-- Quarkus plugin with JFR support (native build) -->
+                    <plugin>
+                        <groupId>io.quarkus</groupId>
+                        <artifactId>quarkus-maven-plugin</artifactId>
+                        <!-- Use parent configuration for native build -->
+                    </plugin>
+                    
+                    <!-- Skip Unit Tests (Surefire) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Integration Test Configuration for JFR -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/integration/**/*IT.java</include>
+                                    </includes>
+                                    <systemPropertyVariables>
+                                        <test.https.port>${test.https.port}</test.https.port>
+                                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                                        <quarkus.native.enabled>false</quarkus.native.enabled>
+                                    </systemPropertyVariables>
+                                    <skipITs>${skipITs}</skipITs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Docker build and application lifecycle -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Build Docker image with native JFR support -->
+                            <execution>
+                                <id>docker-build-jfr</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>compose</argument>
+                                        <argument>build</argument>
+                                        <argument>cui-jwt-integration-tests</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <DOCKERFILE>Dockerfile.native.jfr</DOCKERFILE>
+                                        <DOCKER_IMAGE_TAG>jfr</DOCKER_IMAGE_TAG>
+                                        <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                            <!-- Start application before integration tests -->
+                            <execution>
+                                <id>start-integration-app</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Stop application after integration tests -->
+                            <execution>
+                                <id>stop-integration-app</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

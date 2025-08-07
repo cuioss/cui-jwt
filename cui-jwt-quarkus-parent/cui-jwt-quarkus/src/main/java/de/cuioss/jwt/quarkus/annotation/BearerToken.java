@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
  *             return Response.ok(token.getSubject()).build();
  *         } else {
  *             // Return appropriate OAuth-compliant error response
- *             return tokenResult.errorResponse();
+ *             return BearerTokenResponseFactory.createResponse(tokenResult);
  *         }
  *     }
  * }

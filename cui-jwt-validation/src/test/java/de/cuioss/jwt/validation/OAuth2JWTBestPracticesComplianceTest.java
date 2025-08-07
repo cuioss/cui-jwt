@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
@@ -61,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("OAuth 2.0 JWT Best Practices Compliance Tests")
 class OAuth2JWTBestPracticesComplianceTest {
     private TokenValidator tokenValidator;
+    private ValidationContext validationContext;
 
     @BeforeEach
     void setUp() {
@@ -76,7 +78,10 @@ class OAuth2JWTBestPracticesComplianceTest {
                 .build();
 
         // Create validation factory
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+
+        // Initialize validation context
+        validationContext = new ValidationContext(60);
     }
 
     @Nested
@@ -176,7 +181,7 @@ class OAuth2JWTBestPracticesComplianceTest {
 
             assertNotEquals(tamperedToken, token, "Token should be tampered");
 
-            TokenValidator validator = new TokenValidator(tokenHolder.getIssuerConfig());
+            TokenValidator validator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> validator.createAccessToken(tamperedToken),
@@ -200,7 +205,7 @@ class OAuth2JWTBestPracticesComplianceTest {
             );
 
             assertNotEquals(tamperedToken, token, "Token should be tampered");
-            TokenValidator validator = new TokenValidator(tokenHolder.getIssuerConfig());
+            TokenValidator validator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> validator.createIdToken(tamperedToken),
                     "Token with invalid signature should be rejected, offending validation: " + tamperedToken);
@@ -224,7 +229,7 @@ class OAuth2JWTBestPracticesComplianceTest {
             assertNotNull(result, "Token should be parsed successfully");
             assertNotNull(result.getExpirationTime(),
                     "Expiration time claim should be present");
-            assertFalse(result.isExpired(),
+            assertFalse(result.isExpired(validationContext),
                     "Token should not be expired");
         }
 
@@ -268,13 +273,16 @@ class OAuth2JWTBestPracticesComplianceTest {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxTokenSize(customMaxSize)
                     .build();
-            var factory = new TokenValidator(customConfig, IssuerConfig.builder()
-                    .issuerIdentifier("test-issuer")
-                    .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
-                    .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
-                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
-                    .algorithmPreferences(new SignatureAlgorithmPreferences())
-                    .build());
+            var factory = TokenValidator.builder()
+                    .parserConfig(customConfig)
+                    .issuerConfig(IssuerConfig.builder()
+                            .issuerIdentifier("test-issuer")
+                            .expectedAudience(TestTokenHolder.TEST_AUDIENCE)
+                            .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
+                            .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                            .algorithmPreferences(new SignatureAlgorithmPreferences())
+                            .build())
+                    .build();
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> factory.createAccessToken(largeToken),
                     "Token exceeding max size should be rejected");

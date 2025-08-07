@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus;
 
 import de.cuioss.tools.logging.LogRecord;
 import de.cuioss.tools.logging.LogRecordModel;
+
 import lombok.experimental.UtilityClass;
 
 /**
@@ -103,12 +104,47 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(22)
                 .build();
 
+
         // Bearer Token Messages (031-040)
         
         public static final LogRecord BEARER_TOKEN_VALIDATION_SUCCESS = LogRecordModel.builder()
                 .template("Bearer token validation successful")
                 .prefix(PREFIX)
                 .identifier(31)
+                .build();
+
+        // Cache Messages (041-050)
+        
+        public static final LogRecord RESOLVING_ACCESS_TOKEN_CACHE_CONFIG = LogRecordModel.builder()
+                .template("Resolving access token cache configuration from properties")
+                .prefix(PREFIX)
+                .identifier(41)
+                .build();
+
+        public static final LogRecord ACCESS_TOKEN_CACHE_DISABLED = LogRecordModel.builder()
+                .template("Access token cache disabled (maxSize=0)")
+                .prefix(PREFIX)
+                .identifier(42)
+                .build();
+
+        public static final LogRecord ACCESS_TOKEN_CACHE_CONFIGURED = LogRecordModel.builder()
+                .template("Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s")
+                .prefix(PREFIX)
+                .identifier(43)
+                .build();
+
+        // Metrics Clear Messages (051-060)
+        
+        public static final LogRecord CLEARING_JWT_METRICS = LogRecordModel.builder()
+                .template("Clearing all JWT metrics")
+                .prefix(PREFIX)
+                .identifier(51)
+                .build();
+
+        public static final LogRecord JWT_METRICS_CLEARED = LogRecordModel.builder()
+                .template("JWT metrics cleared successfully")
+                .prefix(PREFIX)
+                .identifier(52)
                 .build();
     }
 
@@ -132,6 +168,13 @@ public final class CuiJwtQuarkusLogMessages {
                 .template("SecurityEventCounter not available, metrics will not be collected")
                 .prefix(PREFIX)
                 .identifier(111)
+                .build();
+
+
+        public static final LogRecord HTTP_METRICS_MONITOR_NOT_AVAILABLE = LogRecordModel.builder()
+                .template("HttpMetricsMonitor not available, HTTP-level metrics will not be collected")
+                .prefix(PREFIX)
+                .identifier(113)
                 .build();
 
         // Bearer Token Warnings (121-130)

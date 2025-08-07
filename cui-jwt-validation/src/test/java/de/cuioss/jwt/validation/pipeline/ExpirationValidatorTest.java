@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -46,11 +47,13 @@ class ExpirationValidatorTest {
 
     private SecurityEventCounter securityEventCounter;
     private ExpirationValidator validator;
+    private ValidationContext context;
 
     @BeforeEach
     void setup() {
         securityEventCounter = new SecurityEventCounter();
         validator = new ExpirationValidator(securityEventCounter);
+        context = new ValidationContext(60); // 60 seconds clock skew
     }
 
     @Test
@@ -62,7 +65,7 @@ class ExpirationValidatorTest {
                 ClaimValue.forDateTime(String.valueOf(futureExpiration.toEpochSecond()), futureExpiration));
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
-        assertDoesNotThrow(() -> validator.validateNotExpired(token));
+        assertDoesNotThrow(() -> validator.validateNotExpired(token, context));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EXPIRED));
     }
 
@@ -76,7 +79,7 @@ class ExpirationValidatorTest {
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
         TokenValidationException exception = assertThrows(TokenValidationException.class,
-                () -> validator.validateNotExpired(token));
+                () -> validator.validateNotExpired(token, context));
         assertEquals(SecurityEventCounter.EventType.TOKEN_EXPIRED, exception.getEventType());
         assertTrue(exception.getMessage().contains("Token is expired"));
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EXPIRED));
@@ -90,7 +93,7 @@ class ExpirationValidatorTest {
         claims.remove(ClaimName.NOT_BEFORE.getName());
         AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
 
-        assertDoesNotThrow(() -> validator.validateNotBefore(token));
+        assertDoesNotThrow(() -> validator.validateNotBefore(token, context));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE));
     }
 
@@ -103,7 +106,7 @@ class ExpirationValidatorTest {
                 ClaimValue.forDateTime(String.valueOf(pastNotBefore.toEpochSecond()), pastNotBefore));
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
-        assertDoesNotThrow(() -> validator.validateNotBefore(token));
+        assertDoesNotThrow(() -> validator.validateNotBefore(token, context));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE));
     }
 
@@ -116,7 +119,7 @@ class ExpirationValidatorTest {
                 ClaimValue.forDateTime(String.valueOf(nearFutureNotBefore.toEpochSecond()), nearFutureNotBefore));
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
-        assertDoesNotThrow(() -> validator.validateNotBefore(token));
+        assertDoesNotThrow(() -> validator.validateNotBefore(token, context));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE));
     }
 
@@ -130,7 +133,7 @@ class ExpirationValidatorTest {
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
         TokenValidationException exception = assertThrows(TokenValidationException.class,
-                () -> validator.validateNotBefore(token));
+                () -> validator.validateNotBefore(token, context));
         assertEquals(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE, exception.getEventType());
         assertTrue(exception.getMessage().contains("Token not valid yet"));
         assertTrue(exception.getMessage().contains("more than 60 seconds in the future"));
@@ -141,12 +144,18 @@ class ExpirationValidatorTest {
     @DisplayName("Should pass validation at exact clock skew boundary")
     void shouldPassValidationAtExactClockSkewBoundary() {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-        OffsetDateTime exactBoundaryNotBefore = OffsetDateTime.now().plusSeconds(60);
+        // Use a fixed time for both the context and the token to avoid timing issues
+        OffsetDateTime fixedTime = OffsetDateTime.now();
+        OffsetDateTime exactBoundaryNotBefore = fixedTime.plusSeconds(60);
+
+        // Create a context with the fixed time
+        ValidationContext testContext = new ValidationContext(fixedTime, 60);
+
         tokenHolder.withClaim(ClaimName.NOT_BEFORE.getName(),
                 ClaimValue.forDateTime(String.valueOf(exactBoundaryNotBefore.toEpochSecond()), exactBoundaryNotBefore));
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
-        assertDoesNotThrow(() -> validator.validateNotBefore(token));
+        assertDoesNotThrow(() -> validator.validateNotBefore(token, testContext));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE));
     }
 
@@ -159,7 +168,7 @@ class ExpirationValidatorTest {
                 ClaimValue.forDateTime(String.valueOf(currentTime.toEpochSecond()), currentTime));
         AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
 
-        assertDoesNotThrow(() -> validator.validateNotBefore(token));
+        assertDoesNotThrow(() -> validator.validateNotBefore(token, context));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE));
     }
 }

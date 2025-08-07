@@ -13,22 +13,51 @@ echo "Root directory: ${ROOT_DIR}"
 
 cd "${PROJECT_DIR}"
 
-# Check build mode - Docker build vs Maven build
+# Check build approach - Native executable + Docker copy vs Docker build
 RUNNER_FILE=$(find target/ -name "*-runner" -type f 2>/dev/null | head -n 1)
-if [[ -n "$RUNNER_FILE" ]]; then
-    echo "📦 Using Maven-built native image from target directory: $RUNNER_FILE"
-    COMPOSE_FILE="docker-compose.yml"
-    MODE="native (Maven-built)"
+# Detect image type - prefer JFR if available, fallback to distroless
+JFR_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:jfr$" || true)
+DISTROLESS_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^cui-jwt-integration-tests:distroless$" || true)
+
+if [[ -n "$JFR_IMAGE" ]]; then
+    AVAILABLE_IMAGE="$JFR_IMAGE"
+    IMAGE_TYPE="jfr"
+    export DOCKER_IMAGE_TAG="jfr"
+    export DOCKERFILE="Dockerfile.native.jfr"
+elif [[ -n "$DISTROLESS_IMAGE" ]]; then
+    AVAILABLE_IMAGE="$DISTROLESS_IMAGE"
+    IMAGE_TYPE="distroless"
+    export DOCKER_IMAGE_TAG="distroless"
+    export DOCKERFILE="Dockerfile.native.distroless"
 else
-    echo "❌ No pre-built native executable found in target directory"
-    echo "The integration-tests profile should have built the native executable during the package phase"
-    echo "This script is called from the integration-tests profile which builds the native executable first"
+    AVAILABLE_IMAGE=""
+    IMAGE_TYPE="none"
+fi
+
+IMAGE_EXISTS=$([ ! -z "$AVAILABLE_IMAGE" ] && echo "true" || echo "false")
+
+if [[ -n "$RUNNER_FILE" ]] && [[ "$IMAGE_EXISTS" == "true" ]]; then
+    echo "📦 Using Maven-built native executable: $(basename "$RUNNER_FILE")"
+    echo "🐳 Docker image: $AVAILABLE_IMAGE ($IMAGE_TYPE mode)"
+    COMPOSE_FILE="docker-compose.yml"
+    MODE="native (Maven-built + Docker copy) - $IMAGE_TYPE"
+elif [[ "$IMAGE_EXISTS" == "true" ]]; then
+    echo "📦 Using Docker-built native image: $AVAILABLE_IMAGE ($IMAGE_TYPE mode)"
+    COMPOSE_FILE="docker-compose.yml"
+    MODE="native (Docker-built) - $IMAGE_TYPE"
+else
+    echo "❌ Neither native executable nor Docker image found"
+    echo "Expected: target/*-runner file and cui-jwt-integration-tests image"
+    echo "Available images:"
+    docker images | grep cui-jwt || echo "  No cui-jwt images found"
+    echo "Run: mvnw verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
     exit 1
 fi
 
+
 # Start with Docker Compose (includes Keycloak)
 echo "🐳 Starting Docker containers (Quarkus $MODE + Keycloak)..."
-docker compose -f "$COMPOSE_FILE" up -d
+(cd "${PROJECT_DIR}" && docker compose -f "$COMPOSE_FILE" up -d)
 
 # Wait for Keycloak to be ready first
 echo "⏳ Waiting for Keycloak to be ready..."
@@ -75,7 +104,7 @@ fi
 # Show actual image size
 IMAGE_SIZE=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep cui-jwt-integration-tests | awk '{print $2}' | head -1)
 if [ ! -z "$IMAGE_SIZE" ]; then
-    echo "📦 Image size: ${IMAGE_SIZE} (distroless native)"
+    echo "📦 Image size: ${IMAGE_SIZE} (native image)"
 fi
 
 echo ""

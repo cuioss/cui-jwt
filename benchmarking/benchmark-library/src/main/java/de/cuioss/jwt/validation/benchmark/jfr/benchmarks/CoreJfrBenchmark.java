@@ -1,0 +1,124 @@
+/*
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
+
+import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
+import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
+import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import org.openjdk.jmh.annotations.*;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Core JFR-instrumented benchmark for essential JWT validation performance.
+ * Split from UnifiedJfrBenchmark to eliminate JMH threading contention.
+ * Contains only core validation benchmarks (3 methods maximum).
+ *
+ * @author Oliver Wolff
+ * @since 1.0
+ */
+@State(Scope.Thread)
+@SuppressWarnings("java:S112")
+public class CoreJfrBenchmark extends AbstractJfrBenchmark {
+
+    private static final String[] BENCHMARK_NAMES = {
+            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr"
+    };
+
+    private static final String OPERATION_TYPE_VALIDATION = "validation";
+
+    private CoreValidationDelegate coreValidationDelegate;
+
+    @Override
+    protected String[] getBenchmarkMethodNames() {
+        return BENCHMARK_NAMES;
+    }
+
+    @Setup(Level.Trial)
+    public void setup() {
+        // Use base class setup with our benchmark names
+        setupJfrBase(BENCHMARK_NAMES);
+
+        // Initialize delegates
+        coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
+    }
+
+    // ========== Core Validation Benchmarks ==========
+
+    /**
+     * Measures average validation time for single-threaded token validation with JFR instrumentation using full token spectrum.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureAverageTimeWithJfr() {
+        return performValidationWithJfr("measureAverageTimeWithJfr", "full_spectrum",
+                () -> coreValidationDelegate.validateWithFullSpectrum());
+    }
+
+    /**
+     * Measures token validation throughput under concurrent load with JFR instrumentation using full token spectrum.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public AccessTokenContent measureThroughputWithJfr() {
+        return performValidationWithJfr("measureThroughputWithJfr", "full_spectrum",
+                () -> coreValidationDelegate.validateWithFullSpectrum());
+    }
+
+    /**
+     * Measures concurrent validation performance with token rotation and JFR instrumentation.
+     */
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureConcurrentValidationWithJfr() {
+        return performValidationWithJfr("measureConcurrentValidationWithJfr", "rotation",
+                () -> coreValidationDelegate.validateWithRotation());
+    }
+
+    /**
+     * Common method to perform validation with JFR instrumentation.
+     * 
+     * @param operationName the name of the operation for JFR recording
+     * @param tokenType the type of token to retrieve
+     * @param validationSupplier the validation operation to perform
+     * @return the validation result
+     */
+    private AccessTokenContent performValidationWithJfr(String operationName, String tokenType,
+            ValidationSupplier validationSupplier) {
+        String token = coreValidationDelegate.getCurrentToken(tokenType);
+
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation(operationName, OPERATION_TYPE_VALIDATION)) {
+            recorder.withTokenSize(token.length())
+                    .withIssuer(tokenRepository.getTokenIssuer(token));
+
+            AccessTokenContent result = validationSupplier.validate();
+            recorder.withSuccess(true);
+            return result;
+        }
+    }
+
+    /**
+     * Functional interface for validation operations.
+     */
+    @FunctionalInterface
+    private interface ValidationSupplier {
+        AccessTokenContent validate();
+    }
+}

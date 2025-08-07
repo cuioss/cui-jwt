@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.runtime;
 
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -97,7 +97,7 @@ class ClientConfusionAttackTest {
             // Error handling is done by the test assertions
         }
         // Create a token validator with the issuer config
-        tokenValidator = new TokenValidator(tokenHolder.getIssuerConfig());
+        tokenValidator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
         // Verify the token is accepted
         IdTokenContent result = tokenValidator.createIdToken(token);
@@ -119,7 +119,7 @@ class ClientConfusionAttackTest {
                 .build();
 
         // Create a token validator with the modified issuer config
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
 
         // Verify the token is rejected
         var exception = assertThrows(TokenValidationException.class, () -> tokenValidator.createIdToken(token),
@@ -203,7 +203,7 @@ class ClientConfusionAttackTest {
                 ", expectedClientId=" + issuerConfig.getExpectedClientId());
 
         // Create a token validator with the issuer config
-        tokenValidator = new TokenValidator(tokenHolder.getIssuerConfig());
+        tokenValidator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
         // Verify the token is accepted
         IdTokenContent result = tokenValidator.createIdToken(token);
@@ -218,7 +218,7 @@ class ClientConfusionAttackTest {
         String token = tokenHolder.getRawToken();
 
         // Create a token validator with the issuer config from tokenHolder
-        tokenValidator = new TokenValidator(tokenHolder.getIssuerConfig());
+        tokenValidator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
         // Verify the token is accepted
         IdTokenContent result = tokenValidator.createIdToken(token);
@@ -234,7 +234,7 @@ class ClientConfusionAttackTest {
         String token = tokenHolder.getRawToken();
 
         // Create a token validator with the issuer config from tokenHolder
-        tokenValidator = new TokenValidator(tokenHolder.getIssuerConfig());
+        tokenValidator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
         // Verify the token is rejected
         var exception = assertThrows(TokenValidationException.class, () -> tokenValidator.createIdToken(token),

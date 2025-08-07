@@ -56,7 +56,7 @@ class PsychicSignatureAttackTest {
                 .build();
 
         // Create validation factory
-        tokenValidator = new TokenValidator(ParserConfig.builder().build(), issuerConfig);
+        tokenValidator = TokenValidator.builder().parserConfig(ParserConfig.builder().build()).issuerConfig(issuerConfig).build();
     }
 
     @Test

@@ -16,14 +16,13 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-
-import java.time.OffsetDateTime;
 
 /**
  * Validator for JWT expiration and time-based claims.
@@ -50,53 +49,63 @@ public class ExpirationValidator {
     private final SecurityEventCounter securityEventCounter;
 
     /**
-     * Validates that the token is not expired.
+     * Validates that the token is not expired using the provided validation context.
+     * <p>
+     * This method eliminates synchronous OffsetDateTime.now() calls by using the cached
+     * current time from the ValidationContext, significantly improving performance under
+     * concurrent load.
      *
      * @param token the token to validate
+     * @param context the validation context containing cached current time
      * @throws TokenValidationException if the token is expired
      */
-    public void validateNotExpired(TokenContent token) {
+    public void validateNotExpired(TokenContent token, @NonNull ValidationContext context) {
         LOGGER.debug("validate expiration. Can be done directly, because ", token);
-        if (token.isExpired()) {
+        if (token.isExpired(context)) {
             LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED::format);
             securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EXPIRED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_EXPIRED,
-                    "Token is expired. Current time: " + OffsetDateTime.now() + " (with " + CLOCK_SKEW_SECONDS + "s clock skew tolerance)"
+                    "Token is expired. Current time: " + context.getCurrentTime() + " (with " + context.getClockSkewSeconds() + "s clock skew tolerance)"
             );
         }
         LOGGER.debug("Token is not expired");
     }
 
     /**
-     * Validates the "not before time" claim.
+     * Validates the "not before time" claim using the provided validation context.
+     * <p>
+     * This method eliminates synchronous OffsetDateTime.now() calls by using the cached
+     * current time from the ValidationContext, significantly improving performance under
+     * concurrent load.
      * <p>
      * The "nbf" (not before) claim identifies the time before which the JWT must not be accepted for processing.
      * This claim is optional, so if it's not present, the validation passes.
      * <p>
-     * If the claim is present, this method checks if the token's not-before time is more than 60 seconds
-     * in the future. This 60-second window allows for clock skew between the token issuer and the token validator.
-     * If the not-before time is more than 60 seconds in the future, the token is considered invalid.
-     * If the not-before time is in the past or less than 60 seconds in the future, the token is considered valid.
+     * If the claim is present, this method checks if the token's not-before time is more than the configured
+     * clock skew seconds in the future. This window allows for clock skew between the token issuer and the token validator.
+     * If the not-before time is more than the clock skew in the future, the token is considered invalid.
+     * If the not-before time is in the past or within the clock skew tolerance, the token is considered valid.
      *
      * @param token the JWT claims
+     * @param context the validation context containing cached current time
      * @throws TokenValidationException if the "not before" time is invalid
      */
-    public void validateNotBefore(TokenContent token) {
+    public void validateNotBefore(TokenContent token, @NonNull ValidationContext context) {
         var notBefore = token.getNotBefore();
         if (notBefore.isEmpty()) {
             LOGGER.debug("Not before claim is optional, so if it's not present, validation passes");
             return;
         }
 
-        if (notBefore.get().isAfter(OffsetDateTime.now().plusSeconds(CLOCK_SKEW_SECONDS))) {
+        if (context.isNotBeforeInvalid(notBefore.get())) {
             LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_NBF_FUTURE::format);
             securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_NBF_FUTURE,
-                    "Token not valid yet: not before time is more than 60 seconds in the future. Not before time: " + notBefore.get() + ", Current time: " + OffsetDateTime.now() + " (with " + CLOCK_SKEW_SECONDS + "s clock skew tolerance)"
+                    "Token not valid yet: not before time is more than " + context.getClockSkewSeconds() + " seconds in the future. Not before time: " + notBefore.get() + ", Current time: " + context.getCurrentTime() + " (with " + context.getClockSkewSeconds() + "s clock skew tolerance)"
             );
         }
-        LOGGER.debug("Not before claim is present, and not more than 60 seconds in the future");
+        LOGGER.debug("Not before claim is present, and not more than " + context.getClockSkewSeconds() + " seconds in the future");
     }
 }

@@ -15,13 +15,16 @@
  */
 package de.cuioss.jwt.quarkus.producer;
 
+import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -36,7 +39,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
 /**
  * CDI producer for JWT validation related instances.
  * <p>
- * This producer creates and manages all JWT validation components from
+ * This producer creates and manages JWT validation components from
  * configuration properties. Components are initialized during startup
  * via {@link PostConstruct} and exposed through field-based producers.
  * </p>
@@ -48,9 +51,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * <p>
  * Produced components:
  * <ul>
- *   <li>{@link TokenValidator} - Main JWT validation component</li>
+ *   <li>{@link TokenValidator} - Main JWT validation component (includes SecurityEventCounter)</li>
  *   <li>{@link List}&lt;{@link IssuerConfig}&gt; - Resolved issuer configurations</li>
- *   <li>{@link SecurityEventCounter} - Security event monitoring</li>
  * </ul>
  *
  * @since 1.0
@@ -103,8 +105,22 @@ public class TokenValidatorProducer {
         ParserConfigResolver parserConfigResolver = new ParserConfigResolver(config);
         ParserConfig parserConfig = parserConfigResolver.resolveParserConfig();
 
-        // Create TokenValidator directly - it handles internal initialization
-        tokenValidator = new TokenValidator(parserConfig, issuerConfigs.toArray(new IssuerConfig[0]));
+
+        // Resolve cache config using the dedicated resolver
+        AccessTokenCacheConfigResolver cacheConfigResolver = new AccessTokenCacheConfigResolver(config);
+        AccessTokenCacheConfig cacheConfig = cacheConfigResolver.resolveCacheConfig();
+
+        // Create TokenValidator using builder pattern - it handles internal initialization
+        TokenValidator.TokenValidatorBuilder builder = TokenValidator.builder()
+                .parserConfig(parserConfig)
+                .cacheConfig(cacheConfig);
+
+        // Add each issuer config to the builder
+        for (IssuerConfig issuerConfig : issuerConfigs) {
+            builder.issuerConfig(issuerConfig);
+        }
+
+        tokenValidator = builder.build();
 
         // Extract SecurityEventCounter from the TokenValidator
         securityEventCounter = tokenValidator.getSecurityEventCounter();

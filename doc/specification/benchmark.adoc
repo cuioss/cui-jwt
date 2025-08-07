@@ -97,7 +97,7 @@ The project provides a Maven profile for running benchmarks:
 
 [source,bash]
 ----
-mvn clean verify -Pbenchmark
+./mvnw --no-transfer-progress clean verify -pl cui-jwt-benchmarking -Pbenchmark
 ----
 
 This executes all benchmarks and generates results in `jmh-result.json`.

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * ETag-aware HTTP handler with stateful caching capabilities.
@@ -33,7 +34,7 @@ import java.net.http.HttpResponse;
  * This component provides HTTP-based caching using ETags and "If-None-Match" headers.
  * It tracks whether content was loaded from cache (304 Not Modified) or freshly fetched (200 OK).
  * <p>
- * Thread-safe implementation using volatile fields and synchronized methods.
+ * Thread-safe implementation using volatile fields and ReentrantLock for virtual thread compatibility.
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -98,6 +99,7 @@ public class ETagAwareHttpHandler {
     }
 
     private final HttpHandler httpHandler;
+    private final ReentrantLock lock = new ReentrantLock();
 
     private volatile String cachedContent;
     private volatile String cachedETag;
@@ -116,7 +118,53 @@ public class ETagAwareHttpHandler {
      *
      * @return LoadResult containing content and cache status, never null
      */
-    public synchronized LoadResult load() {
+    public LoadResult load() {
+        lock.lock();
+        try {
+            HttpFetchResult result = fetchJwksContentWithCache();
+
+            if (result.error) {
+                return handleErrorResult();
+            }
+
+            if (hasCachedContentWithETag() && result.notModified) {
+                return handleNotModifiedResult();
+            }
+
+            return handleSuccessResult(result);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Forces a reload of HTTP content, optionally clearing cache completely.
+     *
+     * @param clearCache if true, clears all cached content; if false, only bypasses ETag validation
+     * @return LoadResult with fresh content or error state, never null
+     */
+    public LoadResult reload(boolean clearCache) {
+        lock.lock();
+        try {
+            if (clearCache) {
+                LOGGER.debug("Clearing HTTP cache and reloading from %s", httpHandler.getUrl());
+                this.cachedContent = null;
+            } else {
+                LOGGER.debug("Bypassing ETag validation and reloading from %s", httpHandler.getUrl());
+            }
+            this.cachedETag = null;
+
+            return loadInternal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Internal load method that assumes the lock is already held.
+     * Used by reload() to avoid recursive locking.
+     */
+    private LoadResult loadInternal() {
         HttpFetchResult result = fetchJwksContentWithCache();
 
         if (result.error) {
@@ -128,24 +176,6 @@ public class ETagAwareHttpHandler {
         }
 
         return handleSuccessResult(result);
-    }
-
-    /**
-     * Forces a reload of HTTP content, optionally clearing cache completely.
-     *
-     * @param clearCache if true, clears all cached content; if false, only bypasses ETag validation
-     * @return LoadResult with fresh content or error state, never null
-     */
-    public synchronized LoadResult reload(boolean clearCache) {
-        if (clearCache) {
-            LOGGER.debug("Clearing HTTP cache and reloading from %s", httpHandler.getUrl());
-            this.cachedContent = null;
-        } else {
-            LOGGER.debug("Bypassing ETag validation and reloading from %s", httpHandler.getUrl());
-        }
-        this.cachedETag = null;
-
-        return load();
     }
 
     /**

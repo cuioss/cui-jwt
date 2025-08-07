@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -49,7 +50,7 @@ class IssuerConfigResolverPerformanceTest {
         issuerIdentifier = issuerConfig.getIssuerIdentifier();
 
         SecurityEventCounter securityEventCounter = new SecurityEventCounter();
-        issuerConfigResolver = new IssuerConfigResolver(new IssuerConfig[]{issuerConfig}, securityEventCounter);
+        issuerConfigResolver = new IssuerConfigResolver(List.of(issuerConfig), securityEventCounter);
     }
 
     @Test
@@ -139,7 +140,7 @@ class IssuerConfigResolverPerformanceTest {
         for (int i = 0; i < resolverCount; i++) {
             // Create a new resolver for each group
             TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-            IssuerConfigResolver resolver = new IssuerConfigResolver(new IssuerConfig[]{tokenHolder.getIssuerConfig()}, securityEventCounter);
+            IssuerConfigResolver resolver = new IssuerConfigResolver(List.of(tokenHolder.getIssuerConfig()), securityEventCounter);
             String issuerId = tokenHolder.getIssuerConfig().getIssuerIdentifier();
 
             // Launch multiple threads per resolver

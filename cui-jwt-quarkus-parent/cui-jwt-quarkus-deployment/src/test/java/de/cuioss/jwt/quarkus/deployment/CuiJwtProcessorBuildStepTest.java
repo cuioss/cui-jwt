@@ -59,7 +59,6 @@ class CuiJwtProcessorBuildStepTest {
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.TokenValidator"));
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.IssuerConfigResolver"));
         assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.security.SecurityEventCounter"));
-        // These classes are now in the configuration group
         assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.IssuerConfig"));
         assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.jwt.validation.ParserConfig"));
     }
@@ -105,7 +104,6 @@ class CuiJwtProcessorBuildStepTest {
     }
 
     // REMOVED: registerBearerTokenClassesForReflection test
-    // All cui-jwt-quarkus classes now use @RegisterForReflection annotation directly
     // This follows the standard: application-level classes use annotations,
     // infrastructure/library classes use deployment processor
 
@@ -126,8 +124,6 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(beanItem);
-        // No library classes are registered explicitly now - they are provided via producers
-        // cui-jwt-quarkus classes are now auto-discovered via @ApplicationScoped annotations
     }
 
     @Test
@@ -159,7 +155,7 @@ class CuiJwtProcessorBuildStepTest {
         // Act
         processor.registerUnremovableBeans(producer);
 
-        // Assert - We now have 1 core library unremovable bean: TokenValidator
+        // Assert - We have 3 core unremovable beans: TokenValidator, JwtMetricsCollector, MeterRegistry
         assertEquals(1, unremovableBeans.size());
     }
 }

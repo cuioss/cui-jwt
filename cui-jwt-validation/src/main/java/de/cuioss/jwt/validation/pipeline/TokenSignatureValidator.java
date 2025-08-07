@@ -19,15 +19,14 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.jwt.validation.util.EcdsaSignatureFormatConverter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
 import lombok.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.PSSParameterSpec;
-import java.util.Base64;
 
 /**
  * Validator for JWT Token signatures.
@@ -59,7 +58,6 @@ import java.util.Base64;
 public class TokenSignatureValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenSignatureValidator.class);
-    public static final String RSASSA_PSS = "RSASSA-PSS";
 
     @Getter
     @NonNull
@@ -68,19 +66,41 @@ public class TokenSignatureValidator {
     @NonNull
     private final SecurityEventCounter securityEventCounter;
 
+    @NonNull
+    private final SignatureTemplateManager signatureTemplateManager;
+
     /**
-     * Constructs a TokenSignatureValidator with the specified JwksLoader and SecurityEventCounter.
+     * Constructs a TokenSignatureValidator with the specified JwksLoader, SecurityEventCounter, and SignatureAlgorithmPreferences.
      *
-     * @param jwksLoader           the JWKS loader to use for key retrieval
-     * @param securityEventCounter the counter for security events
+     * @param jwksLoader             the JWKS loader to use for key retrieval
+     * @param securityEventCounter   the counter for security events
+     * @param algorithmPreferences   the signature algorithm preferences for provider optimization
      */
-    public TokenSignatureValidator(@NonNull JwksLoader jwksLoader, @NonNull SecurityEventCounter securityEventCounter) {
+    public TokenSignatureValidator(@NonNull JwksLoader jwksLoader,
+            @NonNull SecurityEventCounter securityEventCounter,
+            @NonNull SignatureAlgorithmPreferences algorithmPreferences) {
         this.jwksLoader = jwksLoader;
         this.securityEventCounter = securityEventCounter;
+        this.signatureTemplateManager = new SignatureTemplateManager(algorithmPreferences);
     }
 
     /**
      * Validates the signature of a decoded JWT Token.
+     * <p>
+     * <strong>Preconditions:</strong> This validator assumes that the following have already been validated:
+     * <ul>
+     *   <li>Token format (3 parts: header.payload.signature)</li>
+     *   <li>Algorithm (alg) claim presence and support  </li>
+     *   <li>Header structure and basic JWT format</li>
+     * </ul>
+     * <p>
+     * This validator is responsible for:
+     * <ul>
+     *   <li>Key ID (kid) claim presence validation</li>
+     *   <li>Key retrieval from JWKS</li>
+     *   <li>Algorithm compatibility between token and key</li>
+     *   <li>Cryptographic signature verification</li>
+     * </ul>
      *
      * @param decodedJwt the decoded JWT Token to validate
      * @throws TokenValidationException if the signature is invalid
@@ -89,64 +109,41 @@ public class TokenSignatureValidator {
     public void validateSignature(@NonNull DecodedJwt decodedJwt) {
         LOGGER.debug("Validating validation signature");
 
-        // Get the kid from the validation header
-        var kid = decodedJwt.getKid();
-        if (kid.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required key ID (kid) claim in token header. Available header claims: " + (decodedJwt.getHeader().isPresent() ? decodedJwt.getHeader().get().keySet() : "none")
-            );
-        }
+        // Get the kid from the validation header - precondition: already validated by TokenHeaderValidator
+        var kid = decodedJwt.getKid().orElseThrow(() ->
+                new IllegalStateException("Key ID (kid) should have been validated by TokenHeaderValidator"));
 
-        // Get the algorithm from the validation header
-        var algorithm = decodedJwt.getAlg();
-        if (algorithm.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("alg"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required algorithm (alg) claim in token header. Available header claims: " + (decodedJwt.getHeader().isPresent() ? decodedJwt.getHeader().get().keySet() : "none")
-            );
-        }
+        // Get the algorithm from the validation header - precondition: already validated by TokenHeaderValidator
+        var algorithm = decodedJwt.getAlg().orElseThrow(() ->
+                new IllegalStateException("Algorithm (alg) should have been validated by TokenHeaderValidator"));
 
-        // Get the signature from the validation
-        var signature = decodedJwt.getSignature();
-        if (signature.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("signature"));
-            securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Missing required signature in token. Token parts: " + (decodedJwt.parts() != null ? decodedJwt.parts().length : 0)
-            );
-        }
+        // Signature validation is performed in verifySignature method
 
         // Get the key from the JwksLoader
-        var keyInfo = jwksLoader.getKeyInfo(kid.get());
+        var keyInfo = jwksLoader.getKeyInfo(kid);
         if (keyInfo.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.KEY_NOT_FOUND.format(kid.get()));
+            LOGGER.warn(JWTValidationLogMessages.WARN.KEY_NOT_FOUND.format(kid));
             securityEventCounter.increment(SecurityEventCounter.EventType.KEY_NOT_FOUND);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.KEY_NOT_FOUND,
-                    "Key not found for key ID: %s. Please verify the key exists in the JWKS endpoint or configuration.".formatted(kid.get())
+                    "Key not found for key ID: %s. Please verify the key exists in the JWKS endpoint or configuration.".formatted(kid)
             );
         }
 
         // Verify that the key's algorithm matches the validation's algorithm
-        if (!isAlgorithmCompatible(algorithm.get(), keyInfo.get().algorithm())) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format(algorithm.get()));
+        if (!isAlgorithmCompatible(algorithm, keyInfo.get().algorithm())) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format(algorithm));
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
-                    "Algorithm not compatible with key: %s is not compatible with %s".formatted(algorithm.get(), keyInfo.get().algorithm())
+                    "Algorithm not compatible with key: %s is not compatible with %s".formatted(algorithm, keyInfo.get().algorithm())
             );
         }
 
         // Verify the signature
         try {
             LOGGER.debug("All checks passed, verifying signature");
-            verifySignature(decodedJwt, keyInfo.get().key(), algorithm.get());
+            verifySignature(decodedJwt, keyInfo.get().key(), algorithm);
         } catch (IllegalArgumentException e) {
             LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()), e);
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
@@ -168,31 +165,40 @@ public class TokenSignatureValidator {
      */
     private void verifySignature(DecodedJwt decodedJwt, PublicKey publicKey, String algorithm) {
         LOGGER.trace("Verifying signature:\nDecodedJwt: %s\nPublicKey: %s\nAlgorithm: %s", decodedJwt, publicKey, algorithm);
-        // Get the parts of the validation
-        String[] parts = decodedJwt.parts();
-        if (parts.length != 3) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.format(parts.length));
-            securityEventCounter.increment(SecurityEventCounter.EventType.INVALID_JWT_FORMAT);
+
+        // Get the data to verify and signature bytes from DecodedJwt
+        String dataToVerify;
+        byte[] signatureBytes;
+        try {
+            dataToVerify = decodedJwt.getDataToVerify();
+            signatureBytes = decodedJwt.getSignatureAsDecodedBytes();
+        } catch (IllegalStateException e) {
+            LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()), e);
+            securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
-                    SecurityEventCounter.EventType.INVALID_JWT_FORMAT,
-                    "Invalid JWT format: expected 3 parts but found %s".formatted(parts.length)
+                    SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
+                    "Failed to extract JWT data for signature verification: %s".formatted(e.getMessage()),
+                    e
             );
         }
 
-        // Get the data to verify (header.payload)
-        String dataToVerify = "%s.%s".formatted(parts[0], parts[1]);
         byte[] dataBytes = dataToVerify.getBytes(StandardCharsets.UTF_8);
-
-        // Get the signature bytes
-        byte[] signatureBytes = Base64.getUrlDecoder().decode(parts[2]);
 
         // Initialize the signature verifier with the appropriate algorithm
         try {
-            Signature verifier = getSignatureVerifier(algorithm);
+            Signature verifier = signatureTemplateManager.getSignatureInstance(algorithm);
             verifier.initVerify(publicKey);
             verifier.update(dataBytes);
+
+            // Convert ECDSA signatures from IEEE P1363 to ASN.1/DER format if needed
+            byte[] verificationSignature = signatureBytes;
+            if (isEcdsaAlgorithm(algorithm)) {
+                LOGGER.debug("Converting ECDSA signature from IEEE P1363 to ASN.1/DER format for algorithm: %s", algorithm);
+                verificationSignature = EcdsaSignatureFormatConverter.toJCACompatibleSignature(signatureBytes, algorithm);
+            }
+
             // Verify the signature
-            boolean isValid = verifier.verify(signatureBytes);
+            boolean isValid = verifier.verify(verificationSignature);
             if (isValid) {
                 LOGGER.debug("Signature is valid");
             } else {
@@ -203,7 +209,7 @@ public class TokenSignatureValidator {
                         "Invalid signature"
                 );
             }
-        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | InvalidAlgorithmParameterException e) {
+        } catch (InvalidKeyException | SignatureException e) {
             LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
@@ -211,42 +217,25 @@ public class TokenSignatureValidator {
                     "Signature validation failed: %s".formatted(e.getMessage()),
                     e
             );
+        } catch (SignatureTemplateManager.UnsupportedAlgorithmException e) {
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
+            securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
+            throw new TokenValidationException(
+                    SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
+                    "Algorithm not supported: %s".formatted(e.getMessage()),
+                    e
+            );
         }
     }
 
     /**
-     * Gets a Signature verifier for the specified algorithm.
+     * Checks if the algorithm is an ECDSA algorithm that requires signature format conversion.
      *
-     * @param algorithm the algorithm to use
-     * @return a Signature verifier
-     * @throws IllegalArgumentException if the algorithm is not supported
+     * @param algorithm the signature algorithm to check
+     * @return true if the algorithm is ECDSA (ES256, ES384, ES512), false otherwise
      */
-    private Signature getSignatureVerifier(String algorithm) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        Signature signature;
-
-        switch (algorithm) {
-            case "RS256" -> signature = Signature.getInstance("SHA256withRSA");
-            case "RS384" -> signature = Signature.getInstance("SHA384withRSA");
-            case "RS512" -> signature = Signature.getInstance("SHA512withRSA");
-            case "ES256" -> signature = Signature.getInstance("SHA256withECDSA");
-            case "ES384" -> signature = Signature.getInstance("SHA384withECDSA");
-            case "ES512" -> signature = Signature.getInstance("SHA512withECDSA");
-            case "PS256" -> {
-                signature = Signature.getInstance(RSASSA_PSS);
-                signature.setParameter(new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1));
-            }
-            case "PS384" -> {
-                signature = Signature.getInstance(RSASSA_PSS);
-                signature.setParameter(new PSSParameterSpec("SHA-384", "MGF1", MGF1ParameterSpec.SHA384, 48, 1));
-            }
-            case "PS512" -> {
-                signature = Signature.getInstance(RSASSA_PSS);
-                signature.setParameter(new PSSParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512, 64, 1));
-            }
-            default -> throw new IllegalArgumentException("Unsupported algorithm: %s".formatted(algorithm));
-        }
-
-        return signature;
+    private boolean isEcdsaAlgorithm(String algorithm) {
+        return "ES256".equals(algorithm) || "ES384".equals(algorithm) || "ES512".equals(algorithm);
     }
 
     /**

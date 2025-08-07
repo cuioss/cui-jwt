@@ -178,7 +178,9 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
     .jwksContent(jwksContent) // or other JWKS configuration
     .build(); // Validation happens automatically
 
-TokenValidator validator = new TokenValidator(issuerConfig);
+TokenValidator validator = TokenValidator.builder()
+    .issuerConfig(issuerConfig)
+    .build();
 ```
 
 === Algorithm Configuration
@@ -215,7 +217,9 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
     .jwksContent(jwksContent) // or other JWKS configuration
     .build(); // Validation happens automatically
 
-TokenValidator validator = new TokenValidator(issuerConfig);
+TokenValidator validator = TokenValidator.builder()
+    .issuerConfig(issuerConfig)
+    .build();
 ```
 
 == Key Management Best Practices

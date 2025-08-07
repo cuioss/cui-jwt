@@ -22,8 +22,13 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
+import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
+import de.cuioss.test.generator.Generators;
+import de.cuioss.test.generator.TypedGenerator;
+import de.cuioss.test.generator.impl.CollectionGenerator;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.tools.logging.CuiLogger;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -33,8 +38,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,7 +60,6 @@ class TokenBuilderTest {
 
     @BeforeEach
     void setUp() {
-        // Create a simple IssuerConfig for testing
         IssuerConfig issuerConfig = IssuerConfig.builder()
                 .issuerIdentifier("test-issuer")
                 .jwksContent("{\"keys\":[]}")
@@ -84,10 +94,8 @@ class TokenBuilderTest {
         @Test
         @DisplayName("createAccessToken should handle DecodedJwt with missing body")
         void createAccessTokenShouldHandleDecodedJwtWithMissingBody() {
-            // Given a DecodedJwt with null body
             DecodedJwt decodedJwt = new DecodedJwt(null, null, null, new String[]{"", "", ""}, "test-validation");
 
-            // When creating an AccessTokenContent
             Optional<AccessTokenContent> result = tokenBuilder.createAccessToken(decodedJwt);
             assertTrue(result.isEmpty(), "Should return empty Optional when body is missing");
         }
@@ -121,10 +129,8 @@ class TokenBuilderTest {
         @Test
         @DisplayName("createIdToken should handle DecodedJwt with missing body")
         void createIdTokenShouldHandleDecodedJwtWithMissingBody() {
-            // Given a DecodedJwt with null body
             DecodedJwt decodedJwt = new DecodedJwt(null, null, null, new String[]{"", "", ""}, "test-validation");
 
-            // When creating an IdTokenContent
             Optional<IdTokenContent> result = tokenBuilder.createIdToken(decodedJwt);
             assertTrue(result.isEmpty(), "Should return empty Optional when body is missing");
         }
@@ -137,27 +143,23 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should extract claims from JsonObject")
         void extractClaimsForRefreshTokenShouldExtractClaims() {
-            // Given a JsonObject with claims
             JsonObjectBuilder builder = Json.createObjectBuilder();
             builder.add("sub", "test-subject");
             builder.add("iss", "test-issuer");
             builder.add("custom-claim", "custom-value");
             JsonObject jsonObject = builder.build();
 
-            // When extracting claims
             Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
             assertNotNull(claims, "Claims should not be null");
             assertFalse(claims.isEmpty(), "Claims should not be empty");
             assertEquals(3, claims.size(), "Should extract all claims");
 
-            // Verify standard claims
             assertTrue(claims.containsKey("sub"), "Claims should contain subject");
             assertEquals("test-subject", claims.get("sub").getOriginalString(), "Subject claim value should match");
 
             assertTrue(claims.containsKey("iss"), "Claims should contain issuer");
             assertEquals("test-issuer", claims.get("iss").getOriginalString(), "Issuer claim value should match");
 
-            // Verify custom claim
             assertTrue(claims.containsKey("custom-claim"), "Claims should contain custom claim");
             assertEquals("custom-value", claims.get("custom-claim").getOriginalString(), "Custom claim value should match");
         }
@@ -165,13 +167,85 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should handle empty JsonObject")
         void extractClaimsForRefreshTokenShouldHandleEmptyJsonObject() {
-            // Given an empty JsonObject
             JsonObject jsonObject = Json.createObjectBuilder().build();
 
-            // When extracting claims
             Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
             assertNotNull(claims, "Claims should not be null");
             assertTrue(claims.isEmpty(), "Claims should be empty");
+        }
+    }
+
+    @Nested
+    @DisplayName("Thread Safety Tests")
+    class ThreadSafetyTests {
+
+        private static final CuiLogger log = new CuiLogger(ThreadSafetyTests.class);
+        private static final int CONCURRENT_THREADS = 8;
+
+        @Test
+        @DisplayName("TokenBuilder should be thread-safe under concurrent access")
+        void shouldBeThreadSafeUnderConcurrentAccess() throws InterruptedException {
+            log.info("Verifying thread safety of TokenBuilder implementation");
+
+            // Generate test tokens
+            TypedGenerator<TestTokenHolder> generator = TestTokenGenerators.accessTokens();
+            List<TestTokenHolder> tokenHolders = new CollectionGenerator<>(generator).list(100);
+            List<DecodedJwt> testTokens = tokenHolders.stream()
+                    .map(TestTokenHolder::asDecodedJwt)
+                    .toList();
+
+            final int concurrentIterations = 1000;
+            final AtomicInteger errorCount = new AtomicInteger(0);
+            final CountDownLatch startLatch = new CountDownLatch(1);
+            final CountDownLatch completionLatch = new CountDownLatch(CONCURRENT_THREADS);
+
+            ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_THREADS);
+
+            try {
+                for (int i = 0; i < CONCURRENT_THREADS; i++) {
+                    executor.submit(() -> {
+                        try {
+                            startLatch.await();
+                            // Each thread gets its own generator for thread-local random access
+                            TypedGenerator<DecodedJwt> localGenerator = Generators.fixedValues(testTokens);
+
+                            for (int j = 0; j < concurrentIterations; j++) {
+                                DecodedJwt token = localGenerator.next();
+
+                                try {
+                                    Optional<AccessTokenContent> result = tokenBuilder.createAccessToken(token);
+                                    assertTrue(result.isPresent(), "Token should be created");
+
+                                    // Verify basic claim presence
+                                    AccessTokenContent accessToken = result.get();
+                                    assertFalse(accessToken.getClaims().isEmpty(), "Claims should not be empty");
+                                    assertTrue(accessToken.getClaims().containsKey("iss"), "Should contain issuer");
+                                    assertTrue(accessToken.getClaims().containsKey("sub"), "Should contain subject");
+                                } catch (Exception e) {
+                                    log.error("Error in concurrent test", e);
+                                    errorCount.incrementAndGet();
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        } finally {
+                            completionLatch.countDown();
+                        }
+                    });
+                }
+
+                // Start all threads
+                startLatch.countDown();
+
+                // Wait for completion
+                assertTrue(completionLatch.await(30, TimeUnit.SECONDS), "Concurrent test should complete");
+                assertEquals(0, errorCount.get(), "No errors should occur during concurrent access");
+
+            } finally {
+                executor.shutdownNow();
+            }
+
+            log.info("Concurrent access verification completed successfully");
         }
     }
 

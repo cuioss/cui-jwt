@@ -64,7 +64,6 @@ class TokenValidatorTest {
     private IssuerConfig issuerConfig;
 
     private IssuerConfig createDefaultIssuerConfig() {
-        // Use TestTokenHolder's built-in configuration generation
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         return tokenHolder.getIssuerConfig();
     }
@@ -72,7 +71,7 @@ class TokenValidatorTest {
     @BeforeEach
     void setUp() {
         issuerConfig = createDefaultIssuerConfig();
-        tokenValidator = new TokenValidator(issuerConfig);
+        tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
     }
 
     @Nested
@@ -141,7 +140,7 @@ class TokenValidatorTest {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxTokenSize(customMaxSize)
                     .build();
-            var factory = new TokenValidator(customConfig, issuerConfig);
+            var factory = TokenValidator.builder().parserConfig(customConfig).issuerConfig(issuerConfig).build();
 
             var exception = assertThrows(TokenValidationException.class,
                     () -> factory.createAccessToken(largeToken));
@@ -157,7 +156,7 @@ class TokenValidatorTest {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxPayloadSize(100)
                     .build();
-            var factory = new TokenValidator(customConfig, issuerConfig);
+            var factory = TokenValidator.builder().parserConfig(customConfig).issuerConfig(issuerConfig).build();
 
             tokenHolder.withClaim("large-claim", ClaimValue.forPlainString("a".repeat(200)));
             String token = tokenHolder.getRawToken();
@@ -286,13 +285,11 @@ class TokenValidatorTest {
         void shouldLogWarningWhenKeyIsNotFound(TestTokenHolder tokenHolder) {
             String token = tokenHolder.getRawToken();
 
-            // Get issuer from the token holder to match the test issuer
             String issuer = TestTokenHolder.TEST_ISSUER;
             if (tokenHolder.getClaims().containsKey(ClaimName.ISSUER.getName())) {
                 issuer = tokenHolder.getClaims().get(ClaimName.ISSUER.getName()).getOriginalString();
             }
 
-            // Create JWKS with a different key ID so the issuer is healthy but key is not found
             String jwksContent = InMemoryJWKSFactory.createValidJwksWithKeyId("different-key-id");
 
             IssuerConfig newIssuerConfig = IssuerConfig.builder()
@@ -302,7 +299,7 @@ class TokenValidatorTest {
                     .expectedClientId(TestTokenHolder.TEST_CLIENT_ID)
                     .build();
 
-            TokenValidator newTokenValidator = new TokenValidator(newIssuerConfig);
+            TokenValidator newTokenValidator = TokenValidator.builder().issuerConfig(newIssuerConfig).build();
 
             var exception = assertThrows(TokenValidationException.class,
                     () -> newTokenValidator.createAccessToken(token));

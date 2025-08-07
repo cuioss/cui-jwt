@@ -24,8 +24,12 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,69 +56,53 @@ class KeycloakDefaultGroupsMapperTest {
         assertNotNull(result.getOriginalString());
     }
 
-    @Test
-    @DisplayName("Handle missing groups claim")
-    void shouldHandleMissingGroups() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .add("iss", "https://keycloak.example.com")
-                .build();
-
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("edgeCaseGroupsProvider")
+    @DisplayName("Handle edge cases for groups claim")
+    void shouldHandleGroupsEdgeCases(String testCase, JsonObject jsonObject, boolean shouldBePresent, String expectedOriginalString) {
         ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertFalse(result.isPresent());
+        assertEquals(shouldBePresent, result.isPresent());
         assertTrue(result.getAsList().isEmpty());
+
+        if (expectedOriginalString != null) {
+            assertEquals(expectedOriginalString, result.getOriginalString());
+        }
     }
 
-    @Test
-    @DisplayName("Handle empty groups array")
-    void shouldHandleEmptyGroupsArray() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .add("groups", Json.createArrayBuilder().build())
-                .build();
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertTrue(result.isPresent());
-        assertTrue(result.getAsList().isEmpty());
-        assertEquals("[]", result.getOriginalString());
-    }
-
-    @Test
-    @DisplayName("Handle non-array groups value")
-    void shouldHandleNonArrayGroups() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .add("groups", "test-group")
-                .build();
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertFalse(result.isPresent());
-        assertTrue(result.getAsList().isEmpty());
-    }
-
-    @Test
-    @DisplayName("Handle null groups")
-    void shouldHandleNullGroups() {
-        JsonObject jsonObject = Json.createObjectBuilder()
-                .add("sub", "user123")
-                .addNull("groups")
-                .build();
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertFalse(result.isPresent());
-        assertTrue(result.getAsList().isEmpty());
+    private static Stream<Arguments> edgeCaseGroupsProvider() {
+        return Stream.of(
+                Arguments.of("missing groups claim",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .add("iss", "https://keycloak.example.com")
+                                .build(),
+                        false,
+                        null),
+                Arguments.of("empty groups array",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .add("groups", Json.createArrayBuilder().build())
+                                .build(),
+                        true,
+                        "[]"),
+                Arguments.of("non-array groups value",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .add("groups", "test-group")
+                                .build(),
+                        false,
+                        null),
+                Arguments.of("null groups",
+                        Json.createObjectBuilder()
+                                .add("sub", "user123")
+                                .addNull("groups")
+                                .build(),
+                        false,
+                        null)
+        );
     }
 
     @Test
@@ -133,10 +121,10 @@ class KeycloakDefaultGroupsMapperTest {
         assertEquals("/admin-group", result.getAsList().getFirst());
     }
 
-    @Test
-    @DisplayName("Handle groups without path prefix")
-    void shouldHandleGroupsWithoutPathPrefix() {
-        List<String> expectedGroups = List.of("test-group", "admin-group", "user-group");
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("groupNameFormatsProvider")
+    @DisplayName("Handle various group name formats")
+    void shouldHandleVariousGroupNameFormats(String testCase, List<String> expectedGroups) {
         JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
 
         ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
@@ -147,46 +135,17 @@ class KeycloakDefaultGroupsMapperTest {
         assertEquals(expectedGroups, result.getAsList());
     }
 
-    @Test
-    @DisplayName("Handle mixed group name formats")
-    void shouldHandleMixedGroupNameFormats() {
-        List<String> expectedGroups = List.of("/full-path-group", "simple-group", "/nested/path/group");
-        JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertTrue(result.isPresent());
-        assertEquals(expectedGroups, result.getAsList());
-    }
-
-    @Test
-    @DisplayName("Handle complex group names")
-    void shouldHandleComplexGroupNames() {
-        List<String> expectedGroups = List.of("/realm-management", "/account-console", "/offline_access");
-        JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertTrue(result.isPresent());
-        assertEquals(expectedGroups, result.getAsList());
-    }
-
-    @Test
-    @DisplayName("Handle groups with special characters")
-    void shouldHandleGroupsWithSpecialCharacters() {
-        List<String> expectedGroups = List.of("/test-group_123", "/admin@domain", "/group.with.dots");
-        JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
-
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
-
-        assertNotNull(result);
-        assertEquals(ClaimValueType.STRING_LIST, result.getType());
-        assertTrue(result.isPresent());
-        assertEquals(expectedGroups, result.getAsList());
+    private static Stream<Arguments> groupNameFormatsProvider() {
+        return Stream.of(
+                Arguments.of("groups without path prefix",
+                        List.of("test-group", "admin-group", "user-group")),
+                Arguments.of("mixed group name formats",
+                        List.of("/full-path-group", "simple-group", "/nested/path/group")),
+                Arguments.of("complex group names",
+                        List.of("/realm-management", "/account-console", "/offline_access")),
+                Arguments.of("groups with special characters",
+                        List.of("/test-group_123", "/admin@domain", "/group.with.dots"))
+        );
     }
 
     private JsonObject createKeycloakTokenWithGroups(List<String> groups) {

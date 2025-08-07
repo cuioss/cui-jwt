@@ -1,0 +1,71 @@
+= Local Testing Guide
+:source-highlighter: highlight.js
+
+== Quick Start
+
+To test the benchmark visualization templates locally, use one of the provided HTTP server scripts:
+
+=== Option 1: Bash Script (Python-based)
+
+[source,bash]
+----
+cd benchmarking/scripts
+./serve-local.sh
+# Or specify a port:
+./serve-local.sh 3000
+----
+
+=== Option 2: Node.js Script
+
+[source,bash]
+----
+cd benchmarking/scripts
+node serve-local.js
+# Or specify a port:
+node serve-local.js 3000
+----
+
+=== Option 3: Manual Commands
+
+From the `doc/templates` directory:
+
+[source,bash]
+----
+cd benchmarking/doc/templates
+
+# Python 3
+python3 -m http.server 8080
+
+# Node.js (requires http-server)
+npx http-server -p 8080
+
+# PHP
+php -S localhost:8080
+----
+
+== Available Pages
+
+Once the server is running, open your browser to:
+
+* *Micro Benchmarks*: http://localhost:8080/index-visualizer.html
+* *Integration Tests*: http://localhost:8080/integration-index.html
+* *Step Metrics*: http://localhost:8080/step-metrics-visualizer.html
+* *Performance Trends*: http://localhost:8080/performance-trends.html
+
+== Test Data
+
+The templates expect JSON data files in the `doc/templates/data/` subdirectory:
+- `doc/templates/data/jmh-result.json` - Micro benchmark results
+- `doc/templates/data/integration-result.json` - Integration test results
+- `doc/templates/data/jwt-validation-metrics.json` - Step-by-step metrics
+- `doc/templates/data/performance-tracking.json` - Historical performance data
+
+== Why HTTP Server?
+
+Modern browsers enforce strict security policies that prevent JavaScript from loading local files directly (CORS policy). An HTTP server provides the proper protocol and headers for the templates to function correctly.
+
+== Troubleshooting
+
+* *"Failed to fetch" errors*: Make sure you're accessing via `http://localhost:8080`, not `file://`
+* *404 errors*: Ensure the JSON data files exist in the `doc/templates/data/` directory
+* *Port already in use*: Try a different port number

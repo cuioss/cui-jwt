@@ -20,6 +20,7 @@ import jakarta.json.JsonObject;
 import lombok.NonNull;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -121,6 +122,70 @@ String rawToken
         return header != null && header.containsKey("alg")
                 ? Optional.of(header.getString("alg"))
                 : Optional.empty();
+    }
+
+    /**
+     * Gets the decoded signature bytes from the JWT token.
+     * <p>
+     * This method decodes the Base64URL-encoded signature string to raw bytes.
+     * <p>
+     * <strong>Preconditions:</strong>
+     * <ul>
+     *   <li>The JWT must have been properly parsed with 3 parts (header.payload.signature)</li>
+     *   <li>The parts array must contain exactly 3 elements</li>
+     *   <li>The signature part (parts[2]) must be a valid Base64URL-encoded string</li>
+     * </ul>
+     *
+     * @return the decoded signature bytes, never null
+     * @throws IllegalStateException if the JWT format is invalid (not 3 parts) or if the signature
+     *                               cannot be decoded from Base64URL format
+     */
+    public byte[] getSignatureAsDecodedBytes() {
+        // Validate precondition: parts array must exist and have exactly 3 elements
+        if (parts == null || parts.length != 3) {
+            throw new IllegalStateException(
+                    "JWT format is invalid: expected 3 parts (header.payload.signature) but found %s"
+                            .formatted(parts == null ? "null" : parts.length)
+            );
+        }
+
+        // Decode the signature from Base64URL
+        try {
+            return Base64.getUrlDecoder().decode(parts[2]);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(
+                    "Failed to decode signature from Base64URL format: %s".formatted(e.getMessage()),
+                    e
+            );
+        }
+    }
+
+    /**
+     * Gets the data to verify for signature validation.
+     * <p>
+     * This method returns the concatenated header and payload parts (header.payload) that should
+     * be used for signature verification according to the JWT specification.
+     * <p>
+     * <strong>Preconditions:</strong>
+     * <ul>
+     *   <li>The JWT must have been properly parsed with 3 parts (header.payload.signature)</li>
+     *   <li>The parts array must contain exactly 3 elements</li>
+     * </ul>
+     *
+     * @return the data to verify as a string in the format "header.payload", never null
+     * @throws IllegalStateException if the JWT format is invalid (not 3 parts)
+     */
+    public String getDataToVerify() {
+        // Validate precondition: parts array must exist and have exactly 3 elements
+        if (parts == null || parts.length != 3) {
+            throw new IllegalStateException(
+                    "JWT format is invalid: expected 3 parts (header.payload.signature) but found %s"
+                            .formatted(parts == null ? "null" : parts.length)
+            );
+        }
+
+        // Return the concatenated header and payload
+        return "%s.%s".formatted(parts[0], parts[1]);
     }
 
     /**

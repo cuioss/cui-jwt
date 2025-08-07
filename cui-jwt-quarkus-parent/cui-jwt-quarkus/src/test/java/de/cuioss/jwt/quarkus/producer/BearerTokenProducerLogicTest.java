@@ -16,18 +16,22 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolverMock;
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenType;
+import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.string.Joiner;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -57,14 +61,21 @@ import static org.junit.jupiter.api.Assertions.*;
 class BearerTokenProducerLogicTest {
 
     private BearerTokenProducer underTest;
-    private MockTokenValidator mockTokenValidator;
+    private TokenValidator tokenValidator;
     private HttpServletRequestResolverMock requestResolverMock;
 
     @BeforeEach
     void setup() {
         requestResolverMock = new HttpServletRequestResolverMock();
-        mockTokenValidator = new MockTokenValidator();
-        underTest = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+        // Create a real TokenValidator with the same issuer as TestTokenHolder
+        IssuerConfig issuerConfig = IssuerConfig.builder()
+                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
+                .jwksContent(InMemoryKeyMaterialHandler.createDefaultJwks())
+                .build();
+        tokenValidator = TokenValidator.builder()
+                .issuerConfig(issuerConfig)
+                .build();
+        underTest = new BearerTokenProducer(tokenValidator, requestResolverMock);
     }
 
     @Nested
@@ -75,15 +86,16 @@ class BearerTokenProducerLogicTest {
         @DisplayName("should extract and validate token successfully")
         void shouldHandleHappyCase() {
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1", "role2");
-            mockTokenValidator.setAccessTokenContent(expected);
             requestResolverMock.setBearerToken(expected.getRawToken());
 
             // Only test the public API now
 
-            // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
             assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
+            // Compare the actual claim values instead of the entire object
+            var actual = resolved.get();
+            assertEquals(expected.getRawToken(), actual.getRawToken());
+            assertEquals(expected.getRoles(), actual.getRoles());
         }
 
         @ParameterizedTest
@@ -96,12 +108,23 @@ class BearerTokenProducerLogicTest {
         void shouldHandleTokenWithDifferentClaimTypes(ClaimName claimName, String claimValues) {
             String[] values = claimValues.split(",");
             AccessTokenContent expected = getAccessTokenWithClaims(claimName, values);
-            mockTokenValidator.setAccessTokenContent(expected);
             requestResolverMock.setBearerToken(expected.getRawToken());
 
             var resolved = underTest.getAccessTokenContent();
             assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
+            // Compare the actual claim values instead of the entire object
+            var actual = resolved.get();
+            assertEquals(expected.getRawToken(), actual.getRawToken());
+            // Compare the relevant claim based on type (sort to avoid order issues)
+            switch (claimName) {
+                case ROLES -> assertEquals(new ArrayList<>(expected.getRoles()).stream().sorted().toList(),
+                        new ArrayList<>(actual.getRoles()).stream().sorted().toList());
+                case SCOPE -> assertEquals(new ArrayList<>(expected.getScopes()).stream().sorted().toList(),
+                        new ArrayList<>(actual.getScopes()).stream().sorted().toList());
+                case GROUPS -> assertEquals(new ArrayList<>(expected.getGroups()).stream().sorted().toList(),
+                        new ArrayList<>(actual.getGroups()).stream().sorted().toList());
+                default -> fail("Test is not configured to handle claim type: " + claimName);
+            }
         }
     }
 
@@ -113,8 +136,7 @@ class BearerTokenProducerLogicTest {
         @DisplayName("should throw IllegalStateException when no request context available")
         void shouldThrowIllegalStateExceptionWhenNoRequestContext() {
             requestResolverMock.setRequestContextAvailable(false);
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
+
 
             // IllegalStateException should now bubble up
             assertThrows(IllegalStateException.class, () -> underTest.getAccessTokenContent());
@@ -124,12 +146,10 @@ class BearerTokenProducerLogicTest {
         @DisplayName("should return empty when no authorization header present")
         void shouldReturnEmptyWhenNoAuthorizationHeader() {
             requestResolverMock.clearHeaders();
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
+            getAccessTokenWithClaims(ClaimName.ROLES, "role1");
 
             // Only test the public API now
 
-            // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
             assertFalse(resolved.isPresent());
         }
@@ -138,8 +158,7 @@ class BearerTokenProducerLogicTest {
         @DisplayName("should return empty when authorization header is not Bearer type")
         void shouldReturnEmptyWhenAuthorizationHeaderIsNotBearer() {
             requestResolverMock.setHeader("Authorization", "Basic dXNlcjpwYXNz");
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
+            getAccessTokenWithClaims(ClaimName.ROLES, "role1");
 
             var resolved = underTest.getAccessTokenContent();
             assertFalse(resolved.isPresent());
@@ -148,14 +167,12 @@ class BearerTokenProducerLogicTest {
         @Test
         @DisplayName("should return empty when token validation fails")
         void shouldReturnEmptyWhenTokenValidationFails() {
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
-            mockTokenValidator.setShouldFail(true);
-            requestResolverMock.setBearerToken("invalid-token");
+            getAccessTokenWithClaims(ClaimName.ROLES, "role1");
+            // Use an invalid token to trigger validation failure
+            requestResolverMock.setBearerToken("invalid-jwt-token");
 
             // Only test the public API now
 
-            // Test deprecated method still works
             var resolved = underTest.getAccessTokenContent();
             assertFalse(resolved.isPresent());
         }
@@ -164,8 +181,7 @@ class BearerTokenProducerLogicTest {
         @DisplayName("should handle null authorization header")
         void shouldHandleNullAuthorizationHeader() {
             requestResolverMock.setHeader("Authorization", null);
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
+            getAccessTokenWithClaims(ClaimName.ROLES, "role1");
 
             var resolved = underTest.getAccessTokenContent();
             assertFalse(resolved.isPresent());
@@ -178,20 +194,15 @@ class BearerTokenProducerLogicTest {
 
         @ParameterizedTest
         @CsvSource({
-                "'Bearer ', true, 'should handle empty bearer token as token given'",
-                "'Bearer   token-with-spaces', true, 'should handle bearer token with extra spaces'"
+                "'Bearer ', false, 'should handle empty bearer token as invalid'",
+                "'Bearer   invalid-token', false, 'should handle invalid bearer token'"
         })
         @DisplayName("should handle Bearer token edge cases")
         void shouldHandleBearerTokenEdgeCases(String authorizationHeader, boolean shouldBePresent, String description) {
             requestResolverMock.setHeader("Authorization", authorizationHeader);
-            AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
 
             var resolved = underTest.getAccessTokenContent();
             assertEquals(shouldBePresent, resolved.isPresent(), description);
-            if (shouldBePresent && !"Bearer".equals(authorizationHeader.trim())) {
-                assertEquals(expected, resolved.get());
-            }
         }
 
         @ParameterizedTest
@@ -199,7 +210,6 @@ class BearerTokenProducerLogicTest {
         @DisplayName("should handle Authorization header in various cases with normalized keys")
         void shouldHandleAuthorizationHeaderInVariousCasesWithNormalizedKeys(String headerCase) {
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
 
             requestResolverMock.clearHeaders();
             requestResolverMock.setHeader(headerCase, "Bearer " + expected.getRawToken());
@@ -207,21 +217,26 @@ class BearerTokenProducerLogicTest {
             var resolved = underTest.getAccessTokenContent();
             assertTrue(resolved.isPresent(),
                     "Should find authorization header regardless of case: " + headerCase);
-            assertEquals(expected, resolved.get());
+            // Compare the actual claim values instead of the entire object
+            var actual = resolved.get();
+            assertEquals(expected.getRawToken(), actual.getRawToken());
+            assertEquals(expected.getRoles(), actual.getRoles());
         }
 
         @Test
         @DisplayName("should use direct lowercase lookup for authorization header")
         void shouldUseDirectLowercaseLookupForAuthorizationHeader() {
             AccessTokenContent expected = getAccessTokenWithClaims(ClaimName.ROLES, "role1");
-            mockTokenValidator.setAccessTokenContent(expected);
 
             // Set Authorization header in mixed case
             requestResolverMock.setHeader("Authorization", "Bearer " + expected.getRawToken());
 
             var resolved = underTest.getAccessTokenContent();
             assertTrue(resolved.isPresent());
-            assertEquals(expected, resolved.get());
+            // Compare the actual claim values instead of the entire object
+            var actual = resolved.get();
+            assertEquals(expected.getRawToken(), actual.getRawToken());
+            assertEquals(expected.getRoles(), actual.getRoles());
 
             // Verify that the header normalization happens at HttpServletRequestResolver level
             // by checking that the header map contains lowercase keys
@@ -282,21 +297,20 @@ class BearerTokenProducerLogicTest {
                 case FULLY_VERIFIED -> {
                     AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
                     yield BearerTokenResult.success(tokenContent,
-                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 }
                 case NO_TOKEN_GIVEN -> BearerTokenResult.noTokenGiven(
-                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 case PARSING_ERROR -> {
                     TokenValidationException ex = new TokenValidationException(
-                        SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
+                            SecurityEventCounter.EventType.INVALID_JWT_FORMAT, "Test");
                     yield BearerTokenResult.parsingError(ex,
-                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                            Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 }
                 case CONSTRAINT_VIOLATION -> BearerTokenResult.constraintViolation(
-                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
                 case COULD_NOT_ACCESS_REQUEST -> BearerTokenResult.couldNotAccessRequest(
-                    Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
-                default -> throw new IllegalStateException("Unknown status: " + status);
+                        Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
             };
 
             // Verify the methods are opposites
@@ -327,11 +341,10 @@ class BearerTokenProducerLogicTest {
         void shouldLogWarnWhenRequirementsNotMet() {
             // Setup a token with insufficient claims
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Use the CDI producer with requirements that will fail
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(tokenValidator, requestResolverMock);
             var result = producer.produceBearerTokenResult(new MockInjectionPoint(
                     Set.of("read"), Set.of("admin"), Set.of("managers")));
 
@@ -351,11 +364,10 @@ class BearerTokenProducerLogicTest {
         void shouldThrowIllegalStateExceptionWhenHeaderMapAccessFails() {
             // Setup mock to fail header map access
             requestResolverMock.setRequestContextAvailable(false);
-            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
+            getAccessTokenWithClaims(ClaimName.ROLES, "user");
 
             // Use the CDI producer
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(tokenValidator, requestResolverMock);
             MockInjectionPoint injectionPoint = new MockInjectionPoint(Set.of("read"), Set.of("admin"), Set.of("managers"));
 
             // IllegalStateException should now bubble up
@@ -371,11 +383,10 @@ class BearerTokenProducerLogicTest {
                     ClaimName.ROLES, List.of("admin"),
                     ClaimName.GROUPS, List.of("testers")
             ));
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Use the CDI producer with requirements that will partially fail
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(tokenValidator, requestResolverMock);
             var result = producer.produceBearerTokenResult(new MockInjectionPoint(
                     Set.of("read", "write"), Set.of("admin"), Set.of("developers")));
 
@@ -395,11 +406,10 @@ class BearerTokenProducerLogicTest {
         void shouldLogWarnWithEmptyCollectionsWhenNoSpecificRequirementsMissing() {
             // Setup a token without required scopes
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Use the CDI producer with only scope requirements
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer = new BearerTokenProducer(tokenValidator, requestResolverMock);
             var result = producer.produceBearerTokenResult(new MockInjectionPoint(
                     Set.of("read"), Set.of(), Set.of()));
 
@@ -427,7 +437,7 @@ class BearerTokenProducerLogicTest {
             trackingMock.setRequestContextAvailable(false);
 
             // Create producer with tracking mock
-            BearerTokenProducer producer = new BearerTokenProducer(mockTokenValidator, trackingMock);
+            BearerTokenProducer producer = new BearerTokenProducer(tokenValidator, trackingMock);
             MockInjectionPoint injectionPoint = new MockInjectionPoint(Set.of("read"), Set.of("admin"), Set.of("managers"));
 
             // IllegalStateException should now bubble up
@@ -439,14 +449,14 @@ class BearerTokenProducerLogicTest {
         void shouldProperlyDistinguishBetweenInfrastructureErrorsAndMissingTokens() {
             // Test infrastructure error case - should throw IllegalStateException
             requestResolverMock.setRequestContextAvailable(false);
-            BearerTokenProducer producer1 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer1 = new BearerTokenProducer(tokenValidator, requestResolverMock);
             MockInjectionPoint injectionPoint1 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
             assertThrows(IllegalStateException.class, () -> producer1.produceBearerTokenResult(injectionPoint1));
 
             // Test missing token case
             requestResolverMock.setRequestContextAvailable(true);
             requestResolverMock.clearHeaders(); // No Authorization header
-            BearerTokenProducer producer2 = new BearerTokenProducer(mockTokenValidator, requestResolverMock);
+            BearerTokenProducer producer2 = new BearerTokenProducer(tokenValidator, requestResolverMock);
             MockInjectionPoint injectionPoint2 = new MockInjectionPoint(Set.of("read"), Set.of(), Set.of());
             var result2 = producer2.produceBearerTokenResult(injectionPoint2);
             assertEquals(BearerTokenStatus.NO_TOKEN_GIVEN, result2.getStatus());
@@ -465,7 +475,6 @@ class BearerTokenProducerLogicTest {
 
             // Setup token content
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Should handle null annotation gracefully
@@ -482,8 +491,7 @@ class BearerTokenProducerLogicTest {
             // Add empty authorization header list - this requires direct access to headers map
             requestResolverMock.getHttpServletRequestMock().getHeaders().put("authorization", new ArrayList<>());
 
-            AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "admin");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
+            getAccessTokenWithClaims(ClaimName.ROLES, "admin");
 
             // Should return empty result for empty authorization header list
             var result = underTest.getAccessTokenContent();
@@ -495,7 +503,6 @@ class BearerTokenProducerLogicTest {
         void shouldHandleMixedConstraintViolations() {
             // Setup token with only some claims
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "user");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Test case 1: Only missing scopes (roles and groups empty)
@@ -531,7 +538,6 @@ class BearerTokenProducerLogicTest {
         void shouldHandleConstraintViolationWithSingleEmptyType() {
             // Setup token with no claims
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "none");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Test: scopes empty, but roles and groups not empty
@@ -549,7 +555,6 @@ class BearerTokenProducerLogicTest {
         void shouldHandleConstraintViolationWithTwoEmptyTypes() {
             // Setup token with no claims
             AccessTokenContent tokenContent = getAccessTokenWithClaims(ClaimName.ROLES, "none");
-            mockTokenValidator.setAccessTokenContent(tokenContent);
             requestResolverMock.setBearerToken(tokenContent.getRawToken());
 
             // Test: scopes and roles empty, but groups not empty

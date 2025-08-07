@@ -96,6 +96,12 @@ public final class JWTValidationLogMessages {
                 .identifier(507)
                 .template("Successfully fetched discovery document: %s")
                 .build();
+
+        public static final LogRecord ACCESS_TOKEN_CACHE_HIT = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(508)
+                .template("Access token retrieved from cache")
+                .build();
     }
 
     /**
@@ -170,6 +176,30 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(210)
                 .template("Issuer URL from discovery document is malformed: %s - %s")
+                .build();
+
+        public static final LogRecord CACHE_TOKEN_NO_EXPIRATION = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(211)
+                .template("Token passed validation but has no expiration time - this indicates a validation bug")
+                .build();
+
+        public static final LogRecord CACHE_TOKEN_STORE_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(212)
+                .template("Unexpected error while caching token")
+                .build();
+
+        public static final LogRecord CACHE_VALIDATION_FUNCTION_NULL = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(213)
+                .template("Validation function returned null instead of throwing exception")
+                .build();
+
+        public static final LogRecord CACHE_EVICTION_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(214)
+                .template("Error during cache eviction")
                 .build();
     }
 

@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.InjectionPoint;

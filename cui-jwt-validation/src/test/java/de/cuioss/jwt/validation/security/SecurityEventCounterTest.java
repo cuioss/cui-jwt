@@ -112,7 +112,6 @@ class SecurityEventCounterTest {
         var completedThreads = new AtomicInteger(0);
         var executor = Executors.newFixedThreadPool(threadCount);
 
-        // Submit all threads
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
@@ -128,17 +127,14 @@ class SecurityEventCounterTest {
             });
         }
 
-        // Start all threads simultaneously
         startLatch.countDown();
 
-        // Use Awaitility to wait for all threads to complete with better error reporting
         await("All threads to complete their increment operations")
                 .atMost(10, SECONDS)
                 .until(() -> completedThreads.get() == threadCount);
 
         executor.shutdown();
 
-        // Verify the final count using Awaitility for consistent state verification
         await("Counter to reach expected total from all threads")
                 .atMost(1, SECONDS)
                 .until(() -> counter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY) == expectedTotal);

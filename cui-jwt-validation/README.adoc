@@ -1,4 +1,4 @@
-= JWT Validation Module
+ t= JWT Validation Module
 :toc: macro
 :toclevels: 3
 :sectnumlevels: 1
@@ -93,13 +93,42 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
         .build(); // Validation happens automatically // Validate configuration
 
 // Create validator
-TokenValidator validator = new TokenValidator(issuerConfig);
+TokenValidator validator = TokenValidator.builder()
+        .issuerConfig(issuerConfig)
+        .build();
 
 // Validate tokens
 AccessTokenContent accessToken = validator.createAccessToken(tokenString);
 IdTokenContent idToken = validator.createIdToken(tokenString);
 RefreshTokenContent refreshToken = validator.createRefreshToken(tokenString);
 ----
+
+=== Access Token Caching
+
+The library includes built-in caching for validated access tokens to improve performance:
+
+[source,java]
+----
+// Configure access token cache (default: maxSize=1000, evictionIntervalSeconds=10)
+AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
+        .maxSize(500)  // Cache up to 500 tokens
+        .evictionIntervalSeconds(60L)  // Clean up expired tokens every minute
+        .build();
+
+// Create validator with custom cache configuration
+TokenValidator validator = TokenValidator.builder()
+        .issuerConfig(issuerConfig)
+        .cacheConfig(cacheConfig)
+        .build();
+
+// Or disable caching entirely
+TokenValidator validatorNoCache = TokenValidator.builder()
+        .issuerConfig(issuerConfig)
+        .cacheConfig(AccessTokenCacheConfig.disabled())  // maxSize=0
+        .build();
+----
+
+NOTE: Setting `maxSize` to 0 or using `AccessTokenCacheConfig.disabled()` disables the cache completely. The default configuration caches up to 1000 tokens.
 
 === Multi-Issuer Configuration
 
@@ -130,8 +159,11 @@ IssuerConfig issuerMemoryConfig = IssuerConfig.builder()
         .build(); // Validation happens automatically
 
 // Create validator supporting all issuers
-TokenValidator validator = new TokenValidator(
-        issuerHttpConfig, issuerFileConfig, issuerMemoryConfig);
+TokenValidator validator = TokenValidator.builder()
+        .issuerConfig(issuerHttpConfig)
+        .issuerConfig(issuerFileConfig)
+        .issuerConfig(issuerMemoryConfig)
+        .build();
 
 // Access security event counter for monitoring
 SecurityEventCounter securityEventCounter = validator.getSecurityEventCounter();
@@ -222,7 +254,9 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
     .httpJwksLoaderConfig(jwksConfig)       // Contains well-known resolver
     .build(); // Validation happens automatically during build
 
-TokenValidator validator = new TokenValidator(issuerConfig);
+TokenValidator validator = TokenValidator.builder()
+        .issuerConfig(issuerConfig)
+        .build();
 
 // The validator automatically uses the issuer identifier from the discovery document
 // for token validation - no manual configuration needed
@@ -258,7 +292,9 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
         .build(); // Validation happens automatically
 
 // Create a validator with the configured issuer
-TokenValidator validator = new TokenValidator(issuerConfig);
+TokenValidator validator = TokenValidator.builder()
+        .issuerConfig(issuerConfig)
+        .build();
 
 // The custom mapper will be used when processing tokens with the "role" claim
 // This method will throw TokenValidationException if validation fails
@@ -420,9 +456,10 @@ ParserConfig config = ParserConfig.builder()
         .maxDepth(5)                   // Limit JSON parsing depth to 5 levels (default is 10)
         .build();
 
-TokenValidator validator = new TokenValidator(
-        config,
-        issuerConfig);
+TokenValidator validator = TokenValidator.builder()
+        .parserConfig(config)
+        .issuerConfig(issuerConfig)
+        .build();
 ----
 
 These security settings provide multiple layers of protection:
@@ -540,7 +577,9 @@ The library automatically rejects insecure algorithms:
 * Enable background refresh to avoid blocking token validation
 * Use connection pooling for high-volume scenarios
 * Monitor performance metrics via SecurityEventCounter
-* Consider token caching for frequently validated tokens
+* Use built-in access token caching for frequently validated tokens
+* Configure cache size based on your application's token volume
+* Disable caching (`maxSize=0`) if tokens are rarely reused
 
 === Integration Recommendations
 
@@ -682,4 +721,5 @@ For a complete list of event types and categories, refer to the `SecurityEventCo
 * xref:../doc/specification/well-known.adoc[OIDC Discovery] - OpenID Connect Discovery specification
 * xref:../doc/security/security-specifications.adoc[Security Specifications] - Security implementation details
 * xref:../doc/security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations
-* xref:UnitTesting.adoc[Test Utilities] - Testing support documentation
+* xref:doc/UnitTesting.adoc[Test Utilities] - Testing support documentation
+* xref:doc/developing.adoc[Developer Guide] - Guide for extending the library

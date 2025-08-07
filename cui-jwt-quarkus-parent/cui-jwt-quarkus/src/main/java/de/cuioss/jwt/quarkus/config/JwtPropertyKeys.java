@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.jwks.JwksLoader;
+
 import lombok.experimental.UtilityClass;
 
 /**
@@ -433,6 +434,25 @@ public final class JwtPropertyKeys {
         public static final String VALIDATION_ERRORS = BASE + ".errors";
 
         /**
+         * Timer for JWT validation pipeline steps.
+         */
+        public static final String VALIDATION_DURATION = BASE + ".duration";
+
+        /**
+         * Interval for metrics collection in seconds.
+         * Template: "cui.jwt.metrics.collection.interval"
+         * <p>
+         * Controls how frequently the {@link de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector}
+         * updates Micrometer metrics from the internal counters and monitors.
+         * </p>
+         * <p>
+         * Default value is {@code 10s} for production environments.
+         * For integration tests, this can be set to {@code 2s} for faster testing.
+         * </p>
+         */
+        public static final String COLLECTION_INTERVAL = PREFIX + ".metrics.collection.interval";
+
+        /**
          * Base path for JWKS metrics.
          */
         public static final String JWKS_BASE = PREFIX + DOT_JWKS;
@@ -441,6 +461,50 @@ public final class JwtPropertyKeys {
          * Gauge for JWKS cache size.
          */
         public static final String JWKS_CACHE_SIZE = JWKS_BASE + ".cache.size";
+
+    }
+
+    /**
+     * Properties related to access token caching configuration.
+     */
+    @UtilityClass
+    public static final class CACHE {
+        /**
+         * Base path for cache configurations.
+         */
+        public static final String BASE = PREFIX + ".cache.access-token";
+
+        /**
+         * Maximum number of access tokens to cache.
+         * Template: "cui.jwt.cache.access-token.max-size"
+         * <p>
+         * Controls the maximum number of validated access tokens that will be cached
+         * to improve performance by avoiding redundant validations.
+         * Set to 0 to disable caching completely.
+         * </p>
+         * <p>
+         * Default value is {@code 1000}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.cache.AccessTokenCacheConfig
+         */
+        public static final String MAX_SIZE = BASE + ".max-size";
+
+        /**
+         * Interval in seconds between cache eviction runs.
+         * Template: "cui.jwt.cache.access-token.eviction-interval-seconds"
+         * <p>
+         * Controls how frequently the cache checks for and removes expired tokens.
+         * This helps maintain cache size and ensures expired tokens are not served
+         * from the cache.
+         * </p>
+         * <p>
+         * Default value is {@code 10} seconds.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.cache.AccessTokenCacheConfig
+         */
+        public static final String EVICTION_INTERVAL_SECONDS = BASE + ".eviction-interval-seconds";
     }
 
 }

@@ -70,9 +70,10 @@ Refer to the implementation and associated JavaDoc for detailed behavior.
 [source,java]
 ----
 // Create TokenValidator with default token size limits
-TokenValidator validator = new TokenValidator(
-    ParserConfig.builder().build(),
-    issuerConfigs);
+TokenValidator validator = TokenValidator.builder()
+    .parserConfig(ParserConfig.builder().build())
+    .issuerConfig(issuerConfigs)
+    .build();
 ----
 
 === Advanced Usage with Custom Token Size Limits
@@ -80,15 +81,16 @@ TokenValidator validator = new TokenValidator(
 [source,java]
 ----
 // Create TokenValidator with custom token size limits
-TokenValidator validator = new TokenValidator(
-    ParserConfig.builder()
+TokenValidator validator = TokenValidator.builder()
+    .parserConfig(ParserConfig.builder()
         .maxTokenSize(8 * 1024)    // 8KB - entire token string
         .maxPayloadSize(8 * 1024)  // 8KB - each decoded part
         .maxStringSize(4 * 1024)   // 4KB - individual JSON strings
         .maxArraySize(64)          // 64 - JSON array elements
         .maxDepth(10)              // 10 - JSON nesting depth
-        .build(),
-    issuerConfigs);
+        .build())
+    .issuerConfig(issuerConfigs)
+    .build();
 ----
 
 == Implementation Considerations

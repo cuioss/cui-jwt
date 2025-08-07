@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.util.*;
+import java.util.Locale;
 
 /**
  * Mock implementation of {@link HttpServletRequest} for testing purposes.
@@ -87,7 +88,7 @@ public class HttpServletRequestMock implements HttpServletRequest {
     public HttpServletRequestMock setHeader(String name, String value) {
         List<String> values = new ArrayList<>();
         values.add(value);
-        headers.put(name, values);
+        headers.put(name.toLowerCase(Locale.ROOT), values);
         return this;
     }
 
@@ -99,7 +100,7 @@ public class HttpServletRequestMock implements HttpServletRequest {
      * @return this mock for method chaining
      */
     public HttpServletRequestMock addHeader(String name, String value) {
-        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+        headers.computeIfAbsent(name.toLowerCase(Locale.ROOT), k -> new ArrayList<>()).add(value);
         return this;
     }
 
@@ -110,7 +111,7 @@ public class HttpServletRequestMock implements HttpServletRequest {
      * @return this mock for method chaining
      */
     public HttpServletRequestMock removeHeader(String name) {
-        headers.remove(name);
+        headers.remove(name.toLowerCase(Locale.ROOT));
         return this;
     }
 
@@ -140,13 +141,13 @@ public class HttpServletRequestMock implements HttpServletRequest {
 
     @Override
     public String getHeader(String name) {
-        List<String> values = headers.get(name);
+        List<String> values = headers.get(name.toLowerCase(Locale.ROOT));
         return values != null && !values.isEmpty() ? values.getFirst() : null;
     }
 
     @Override
     public Enumeration<String> getHeaders(String name) {
-        List<String> values = headers.get(name);
+        List<String> values = headers.get(name.toLowerCase(Locale.ROOT));
         return values != null ? Collections.enumeration(values) : Collections.enumeration(Collections.emptyList());
     }
 

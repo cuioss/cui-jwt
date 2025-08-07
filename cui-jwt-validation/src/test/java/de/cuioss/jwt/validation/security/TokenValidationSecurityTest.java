@@ -71,7 +71,7 @@ class TokenValidationSecurityTest {
 
         // Create validation factory
         ParserConfig config = ParserConfig.builder().build();
-        tokenValidator = new TokenValidator(config, issuerConfig);
+        tokenValidator = TokenValidator.builder().parserConfig(config).issuerConfig(issuerConfig).build();
     }
 
     @ParameterizedTest
@@ -101,9 +101,12 @@ class TokenValidationSecurityTest {
         String validToken = tokenHolder.getRawToken();
         String tamperedToken = JwtTokenTamperingUtil.applyTamperingStrategy(validToken, TamperingStrategy.MODIFY_SIGNATURE_RANDOM_CHAR);
 
+        // Ensure the token was actually tampered
+        assertNotEquals(validToken, tamperedToken, "Tampered token should be different from valid token");
+
         assertThrows(TokenValidationException.class, () ->
                         tokenValidator.createAccessToken(tamperedToken),
-                "Should reject token with tampered signature");
+                "Should reject token with tampered signature: " + tamperedToken);
     }
 
     @ParameterizedTest

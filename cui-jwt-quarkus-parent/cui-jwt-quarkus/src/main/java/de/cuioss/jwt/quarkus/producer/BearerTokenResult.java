@@ -19,8 +19,8 @@ import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import jakarta.ws.rs.core.Response;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
@@ -59,7 +59,7 @@ import java.util.Set;
  *         return Response.ok().build();
  *     } else {
  *         // Return appropriate error response
- *         return tokenResult.errorResponse();
+ *         return BearerTokenResponseFactory.createResponse(tokenResult);
  *     }
  * }
  * }</pre>
@@ -263,32 +263,5 @@ public class BearerTokenResult implements Serializable {
     public boolean isNotSuccessfullyAuthorized() {
         return status != BearerTokenStatus.FULLY_VERIFIED;
     }
-
-    /**
-     * Creates an appropriate HTTP error response based on the bearer token validation status.
-     * <p>
-     * This method delegates to the status-specific strategy implementation following
-     * OAuth 2.0 Bearer Token specification (RFC 6750) and OAuth Step-Up Authentication
-     * Challenge (draft-ietf-oauth-step-up-authn-challenge-17) best practices.
-     * <p>
-     * HTTP Status Code mappings:
-     * <ul>
-     *   <li>FULLY_VERIFIED: 200 (OK) - Should not be called for successful validation</li>
-     *   <li>COULD_NOT_ACCESS_REQUEST: 500 (Internal Server Error) - Server-side issue</li>
-     *   <li>NO_TOKEN_GIVEN: 401 (Unauthorized) - Missing Bearer token</li>
-     *   <li>PARSING_ERROR: 401 (Unauthorized) - Invalid or expired token</li>
-     *   <li>CONSTRAINT_VIOLATION: 401 (Unauthorized) for missing scopes, 403 (Forbidden) for missing roles/groups</li>
-     * </ul>
-     * <p>
-     * The response includes appropriate WWW-Authenticate headers following RFC 6750 and RFC 7235 standards.
-     * For scope-related constraint violations, the response follows OAuth Step-Up Authentication Challenge
-     * specification to provide actionable information to the client.
-     *
-     * @return Response object with appropriate HTTP status code, headers, and body
-     */
-    public Response errorResponse() {
-        return status.createResponse(this);
-    }
-
 
 }

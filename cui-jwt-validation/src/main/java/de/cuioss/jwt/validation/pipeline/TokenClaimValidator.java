@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -104,19 +105,24 @@ public class TokenClaimValidator {
 
 
     /**
-     * Validates a token against expected values for issuer, audience, and client ID.
+     * Validates a token against expected values for issuer, audience, and client ID using the provided validation context.
+     * <p>
+     * This method eliminates synchronous OffsetDateTime.now() calls by using the cached
+     * current time from the ValidationContext, significantly improving performance under
+     * concurrent load.
      *
      * @param token the token to validate
+     * @param context the validation context containing cached current time
      * @return The validated token content
      * @throws TokenValidationException if validation fails
      */
-    public TokenContent validate(@NonNull TokenContent token) {
+    public TokenContent validate(@NonNull TokenContent token, @NonNull ValidationContext context) {
         LOGGER.trace("Validating token: %s", token);
         mandatoryClaimsValidator.validateMandatoryClaims(token);
         audienceValidator.validateAudience(token);
         authorizedPartyValidator.validateAuthorizedParty(token);
-        expirationValidator.validateNotBefore(token);
-        expirationValidator.validateNotExpired(token);
+        expirationValidator.validateNotBefore(token, context);
+        expirationValidator.validateNotExpired(token, context);
         LOGGER.debug("Token is valid");
         return token;
     }

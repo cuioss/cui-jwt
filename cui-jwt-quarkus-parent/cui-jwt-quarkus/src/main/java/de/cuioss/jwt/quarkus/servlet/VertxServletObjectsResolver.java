@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.servlet;
 
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.enterprise.context.ApplicationScoped;

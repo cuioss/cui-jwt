@@ -1,0 +1,111 @@
+= JFR Instrumentation for Variance Analysis
+:source-highlighter: highlight.js
+
+== Quick Start
+
+[source,bash]
+----
+# Run JFR-instrumented benchmarks (from project root)
+./mvnw verify -Pbenchmark-jfr -pl benchmarking/benchmark-library
+
+# Analyze variance
+java -cp "target/classes:target/dependency/*" \
+  de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
+  target/benchmark-results/jfr-benchmark.jfr
+----
+
+== What's Measured
+
+=== Operation Events
+
+* Duration of each JWT validation
+* Token metadata (size, issuer)
+* Concurrent operations count
+* Success/failure status
+
+=== Statistics (1-second intervals)
+
+* Latency percentiles (P50, P95, P99)
+* Variance metrics (standard deviation, CV)
+* Throughput and concurrency
+
+== Variance Interpretation
+
+Coefficient of Variation (CV) indicates performance consistency:
+
+[cols="1,2,2", options="header"]
+|===
+|CV Range |Interpretation |Typical Cause
+
+|< 25%
+|Low variance
+|Well-optimized path
+
+|25-50%
+|Moderate variance
+|Normal contention
+
+|> 50%
+|High variance
+|Lock contention, GC
+|===
+
+== JFR Events
+
+=== de.cuioss.jwt.Operation
+
+Individual operation timing:
+
+* `operationType` - Operation type
+* `duration` - Auto-captured timing
+* `tokenSize` - JWT size in bytes
+* `success` - Operation result
+
+=== de.cuioss.jwt.OperationStatistics
+
+Periodic performance snapshot:
+
+* `p50Latency`, `p95Latency`, `p99Latency` - Percentiles
+* `coefficientOfVariation` - CV percentage
+* `concurrentThreads` - Active threads
+
+== Analysis Tools
+
+[source,bash]
+----
+# View JWT events
+jfr print --events de.cuioss.jwt.Operation benchmark.jfr
+
+# Export to JSON
+jfr print --json --events de.cuioss.jwt.* benchmark.jfr > events.json
+
+# JDK Mission Control
+# 1. Open JMC
+# 2. File > Open > benchmark.jfr
+# 3. Filter events: de.cuioss.jwt.*
+----
+
+== Configuration
+
+Custom JMH parameters:
+
+[source,bash]
+----
+./mvnw verify -Pbenchmark-jfr -pl benchmarking/benchmark-library \
+  -Djmh.iterations=10 \
+  -Djmh.threads=16 \
+  -Djmh.time=10s
+----
+
+== Troubleshooting
+
+* **No JFR file**: Check Java 11+, verify `-XX:StartFlightRecording` in output
+* **High overhead**: Increase statistics period, reduce event frequency
+* **Analysis errors**: Verify file integrity, check classpath
+
+== Best Practices
+
+1. Establish baseline without JFR first
+2. Run multiple recordings for validity
+3. Analyze variance patterns over time
+4. Correlate with GC and system events

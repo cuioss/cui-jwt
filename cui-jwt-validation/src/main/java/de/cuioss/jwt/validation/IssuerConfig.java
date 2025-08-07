@@ -788,6 +788,7 @@ public class IssuerConfig implements HealthStatusProvider {
      * Constructor for the validated IssuerConfig.
      * This is called only by the builder after validation.
      */
+    @SuppressWarnings("java:S107") // ok for private constructor
     private IssuerConfig(boolean enabled, String issuerIdentifier, Set<String> expectedAudience,
             Set<String> expectedClientId, boolean claimSubOptional, SignatureAlgorithmPreferences algorithmPreferences,
             Map<String, ClaimMapper> claimMappers, JwksLoader jwksLoader) {

@@ -52,8 +52,11 @@ import java.util.Optional;
  */
 public class TokenBuilder {
 
-    @NonNull
-    private final IssuerConfig issuerConfig;
+    // Singleton mapper for unknown claims
+    private static final IdentityMapper IDENTITY_MAPPER = new IdentityMapper();
+
+    // Combined mapper lookup to avoid runtime checks
+    private final Map<String, ClaimMapper> allMappers;
 
     /**
      * Constructs a TokenBuilder with the specified IssuerConfig.
@@ -61,7 +64,20 @@ public class TokenBuilder {
      * @param issuerConfig the issuer configuration
      */
     public TokenBuilder(@NonNull IssuerConfig issuerConfig) {
-        this.issuerConfig = issuerConfig;
+        Map<String, ClaimMapper> customMappers = issuerConfig.getClaimMappers() != null
+                ? Map.copyOf(issuerConfig.getClaimMappers())
+                : Map.of();
+
+        Map<String, ClaimMapper> tempMappers = new HashMap<>();
+
+        for (ClaimName claimName : ClaimName.values()) {
+            tempMappers.put(claimName.getName(), claimName.getClaimMapper());
+        }
+
+        // Add custom mappers, which override standard ones
+        tempMappers.putAll(customMappers);
+
+        this.allMappers = Map.copyOf(tempMappers);
     }
 
     /**
@@ -108,28 +124,11 @@ public class TokenBuilder {
      * @return a map of claim names to claim values
      */
     private Map<String, ClaimValue> extractClaims(JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = new HashMap<>();
+        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
 
-        // Process all keys in the JSON object
         for (String key : jsonObject.keySet()) {
-            // Check if there's a custom mapper for this claim
-            if (issuerConfig.getClaimMappers() != null && issuerConfig.getClaimMappers().containsKey(key)) {
-                ClaimMapper customMapper = issuerConfig.getClaimMappers().get(key);
-                ClaimValue claimValue = customMapper.map(jsonObject, key);
-                claims.put(key, claimValue);
-            } else {
-                // Try to map using known ClaimName
-                Optional<ClaimName> claimNameOption = ClaimName.fromString(key);
-                if (claimNameOption.isPresent()) {
-                    ClaimName claimName = claimNameOption.get();
-                    ClaimValue claimValue = claimName.map(jsonObject);
-                    claims.put(key, claimValue);
-                } else {
-                    // Use IdentityMapper for unknown claims
-                    ClaimValue claimValue = new IdentityMapper().map(jsonObject, key);
-                    claims.put(key, claimValue);
-                }
-            }
+            ClaimMapper mapper = allMappers.getOrDefault(key, IDENTITY_MAPPER);
+            claims.put(key, mapper.map(jsonObject, key));
         }
 
         return claims;
@@ -142,12 +141,12 @@ public class TokenBuilder {
      * @return a map of claim names to claim values
      */
     public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = new HashMap<>();
+        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
+
         for (String key : jsonObject.keySet()) {
-            // Use IdentityMapper for unknown claims
-            ClaimValue claimValue = new IdentityMapper().map(jsonObject, key);
-            claims.put(key, claimValue);
+            claims.put(key, IDENTITY_MAPPER.map(jsonObject, key));
         }
+
         return claims;
     }
 }

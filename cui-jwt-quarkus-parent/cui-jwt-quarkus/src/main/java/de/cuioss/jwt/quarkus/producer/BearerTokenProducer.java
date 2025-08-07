@@ -17,11 +17,14 @@ package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
+import de.cuioss.jwt.quarkus.metrics.MetricIdentifier;
 import de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
+
+import io.micrometer.core.annotation.Timed;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -61,7 +64,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *             return Response.ok(token.getSubject().orElse("unknown")).build();
  *         } else {
  *             // Return appropriate error response
- *             return tokenResult.errorResponse();
+ *             return BearerTokenResponseFactory.createResponse(tokenResult);
  *         }
  *     }
  * }
@@ -94,7 +97,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *         // Use validated token
  *     } else {
  *         // Handle validation failure with detailed status information
- *         return tokenResult.errorResponse();
+ *         return BearerTokenResponseFactory.createResponse(tokenResult);
  *     }
  * }
  * }</pre>
@@ -138,7 +141,8 @@ public class BearerTokenProducer {
      * @return BearerTokenResult containing detailed validation information
      */
     @NonNull
-    private BearerTokenResult getBearerTokenResult(
+    @Timed(value = MetricIdentifier.BEARERTOKEN.VALIDATION, description = "Bearer token validation duration")
+    BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
         LOGGER.debug("Validating bearer token with required scopes: %s, roles: %s, groups: %s",
@@ -161,7 +165,6 @@ public class BearerTokenProducer {
             Set<String> missingScopes = tokenContent.determineMissingScopes(requiredScopes);
             Set<String> missingRoles = tokenContent.determineMissingRoles(requiredRoles);
             Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
-
 
             if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
                 LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);

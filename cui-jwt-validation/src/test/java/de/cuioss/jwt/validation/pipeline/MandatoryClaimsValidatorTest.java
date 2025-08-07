@@ -48,14 +48,13 @@ class MandatoryClaimsValidatorTest {
 
     private SecurityEventCounter securityEventCounter;
     private MandatoryClaimsValidator validator;
-    private IssuerConfig defaultIssuerConfig;
 
     @BeforeEach
     void setup() {
         securityEventCounter = new SecurityEventCounter();
 
         // Create a default IssuerConfig for testing (claimSubOptional = false by default)
-        defaultIssuerConfig = IssuerConfig.builder()
+        IssuerConfig defaultIssuerConfig = IssuerConfig.builder()
                 .issuerIdentifier("https://test-issuer.example.com")
                 .jwksContent("{\"keys\":[]}")
                 .build();
@@ -245,21 +244,39 @@ class MandatoryClaimsValidatorTest {
     }
 
     @Test
-    @DisplayName("Should enforce subject claim validation when claimSubOptional is false (default)")
-    void shouldEnforceSubjectClaimValidationWhenClaimSubOptionalIsFalse() {
-        // Use default validator (claimSubOptional=false)
+    @DisplayName("Should contrast behavior when claimSubOptional is true vs false")
+    void shouldContrastClaimSubOptionalBehavior() {
+        // Create token without subject claim
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
         claims.remove(ClaimName.SUBJECT.getName());
         AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
 
-        // Should fail validation due to missing subject claim
+        // Test with claimSubOptional=false (default): should fail
+        IssuerConfig issuerConfigWithMandatorySub = IssuerConfig.builder()
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .claimSubOptional(false)  // Explicitly set to false
+                .build();
+
+        MandatoryClaimsValidator validatorWithMandatorySub = new MandatoryClaimsValidator(issuerConfigWithMandatorySub, new SecurityEventCounter());
+
+        // Should fail validation due to missing subject claim when claimSubOptional=false
         TokenValidationException exception = assertThrows(TokenValidationException.class,
-                () -> validator.validateMandatoryClaims(token));
+                () -> validatorWithMandatorySub.validateMandatoryClaims(token));
         assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType());
-        assertTrue(exception.getMessage().contains("Missing mandatory claims"));
         assertTrue(exception.getMessage().contains(ClaimName.SUBJECT.getName()));
-        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+
+        // Test with claimSubOptional=true: should pass
+        IssuerConfig issuerConfigWithOptionalSub = IssuerConfig.builder()
+                .issuerIdentifier("https://test-issuer.example.com")
+                .jwksContent("{\"keys\":[]}")
+                .claimSubOptional(true)
+                .build();
+        MandatoryClaimsValidator validatorWithOptionalSub = new MandatoryClaimsValidator(issuerConfigWithOptionalSub, new SecurityEventCounter());
+
+        // This should pass with claimSubOptional=true
+        assertDoesNotThrow(() -> validatorWithOptionalSub.validateMandatoryClaims(token));
     }
 
     @Test

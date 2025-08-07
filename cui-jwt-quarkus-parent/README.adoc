@@ -7,6 +7,22 @@ A Quarkus extension for the CUI JWT validation library.
 
 toc::[]
 
+== Building and Running
+
+=== Quick Start
+
+[source,bash]
+----
+# Production build (distroless native image) - from project root
+./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+
+# JFR profiling build (UBI-based native image) - from project root
+./mvnw clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+
+# Run unit tests only
+./mvnw test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus
+----
+
 == Maven Coordinates
 
 [source,xml]
@@ -101,7 +117,7 @@ public class InstanceEndpoint {
             }
         }
         // Token missing, invalid, or lacks required scope
-        return tokenResult.errorResponse();
+        return BearerTokenResponseFactory.createResponse(tokenResult);
     }
 }
 
@@ -206,9 +222,12 @@ xref:doc/development/quarkus-test-setup.adoc[Quarkus Test Setup]
 
 === Native Image Support
 
-The extension supports GraalVM Native Image compilation. More information can be found here:
+The extension supports GraalVM Native Image compilation with dual-image builds for production and profiling:
 
-xref:doc/configuration/native-image-configuration.adoc[Native Image Support]
+* **Production**: Distroless images (104MB) with minimal attack surface
+* **Profiling**: UBI-based images (187MB) with full JFR support
+
+More information: xref:doc/configuration/native-image-configuration.adoc[Native Image Support]
 
 === Health Checks
 
@@ -224,4 +243,4 @@ The project consists of the following modules:
 * xref:cui-jwt-quarkus/README.adoc[cui-jwt-quarkus] - Contains the runtime code for the extension
 * xref:cui-jwt-quarkus-integration-tests/README.adoc[cui-jwt-quarkus-integration-tests] - Provides integration tests
 * xref:doc/README.adoc[doc] - Contains additional documentation
-* xref:quarkus-integration-benchmark/README.adoc[quarkus-integration-benchmark] - Performance benchmarking for the extension
+* xref:quarkus-integration-jmh/README.adoc[quarkus-integration-jmh] - Performance benchmarking for the extension

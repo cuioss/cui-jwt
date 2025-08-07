@@ -476,35 +476,72 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        // Extract parameters from query string
         Map<String, List<String>> paramMap = new HashMap<>();
-        String query = vertxRequest.query();
-        if (query != null && !query.isEmpty()) {
-            String[] pairs = query.split("&");
-            for (String pair : pairs) {
-                String[] keyValue = pair.split("=", 2);
-                if (keyValue.length >= 1) {
-                    String key = keyValue[0];
-                    String value = keyValue.length == 2 ? keyValue[1] : "";
-                    value = URLDecoder.decode(value, StandardCharsets.UTF_8);
-                    paramMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
-                }
-            }
-        }
 
-        // Add parameters from Vertx's built-in parameter handling for keys not found in query string
-        if (vertxRequest.params() != null && !vertxRequest.params().isEmpty()) {
-            for (String name : vertxRequest.params().names()) {
-                if (!paramMap.containsKey(name)) {
-                    List<String> values = vertxRequest.params().getAll(name);
-                    if (values != null && !values.isEmpty()) {
-                        paramMap.put(name, new ArrayList<>(values));
-                    }
-                }
-            }
-        }
+        // Extract parameters from query string
+        extractQueryParameters(paramMap);
+
+        // Add parameters from Vertx's built-in parameter handling
+        addVertxParameters(paramMap);
 
         // Convert to String[] values
+        return convertToStringArrayMap(paramMap);
+    }
+
+    /**
+     * Extracts parameters from the query string and adds them to the parameter map.
+     */
+    private void extractQueryParameters(Map<String, List<String>> paramMap) {
+        String query = vertxRequest.query();
+        if (query == null || query.isEmpty()) {
+            return;
+        }
+
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            processQueryPair(pair, paramMap);
+        }
+    }
+
+    /**
+     * Processes a single key-value pair from the query string.
+     */
+    private void processQueryPair(String pair, Map<String, List<String>> paramMap) {
+        String[] keyValue = pair.split("=", 2);
+        if (keyValue.length == 0) {
+            return;
+        }
+
+        String key = keyValue[0];
+        String value = keyValue.length == 2 ? keyValue[1] : "";
+        String decodedValue = URLDecoder.decode(value, StandardCharsets.UTF_8);
+        paramMap.computeIfAbsent(key, k -> new ArrayList<>()).add(decodedValue);
+    }
+
+    /**
+     * Adds parameters from Vertx's built-in parameter handling for keys not found in query string.
+     */
+    private void addVertxParameters(Map<String, List<String>> paramMap) {
+        if (vertxRequest.params() == null || vertxRequest.params().isEmpty()) {
+            return;
+        }
+
+        for (String name : vertxRequest.params().names()) {
+            if (paramMap.containsKey(name)) {
+                continue;
+            }
+
+            List<String> values = vertxRequest.params().getAll(name);
+            if (values != null && !values.isEmpty()) {
+                paramMap.put(name, new ArrayList<>(values));
+            }
+        }
+    }
+
+    /**
+     * Converts a map with List values to a map with String[] values.
+     */
+    private Map<String, String[]> convertToStringArrayMap(Map<String, List<String>> paramMap) {
         Map<String, String[]> result = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : paramMap.entrySet()) {
             result.put(entry.getKey(), entry.getValue().toArray(new String[0]));
@@ -610,38 +647,7 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
     @Override
     public Enumeration<Locale> getLocales() {
-        List<Locale> locales = new ArrayList<>();
-        // Use headers().get() instead of getHeader() to work with the test setup
-        String acceptLanguage = vertxRequest.headers().get("Accept-Language");
-        if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
-            // Parse Accept-Language header according to RFC 7231
-            // Format: language-tag[;q=weight], language-tag[;q=weight], ...
-            String[] languages = acceptLanguage.split(",");
-
-            // Parse each language tag and its quality value
-            for (String lang : languages) {
-                String trimmedLang = lang.trim();
-
-                // Extract quality value if present
-                int semicolonIndex = trimmedLang.indexOf(';');
-                if (semicolonIndex > 0) {
-                    trimmedLang = trimmedLang.substring(0, semicolonIndex).trim();
-                }
-
-                // Only add valid language tags
-                if (!trimmedLang.isEmpty()) {
-                    try {
-                        Locale locale = Locale.forLanguageTag(trimmedLang);
-                        // Ensure we don't add empty locales
-                        if (!locale.getLanguage().isEmpty()) {
-                            locales.add(locale);
-                        }
-                    } catch (IllegalArgumentException e) {
-                        // Skip invalid locale tags
-                    }
-                }
-            }
-        }
+        List<Locale> locales = parseAcceptLanguageHeader();
 
         // Add default locale if no valid locales were found
         if (locales.isEmpty()) {
@@ -649,6 +655,73 @@ public class VertxHttpServletRequestAdapter implements HttpServletRequest {
         }
 
         return Collections.enumeration(locales);
+    }
+
+    /**
+     * Parses the Accept-Language header and returns a list of locales.
+     */
+    private List<Locale> parseAcceptLanguageHeader() {
+        List<Locale> locales = new ArrayList<>();
+        String acceptLanguage = vertxRequest.headers().get("Accept-Language");
+
+        if (acceptLanguage == null || acceptLanguage.isEmpty()) {
+            return locales;
+        }
+
+        // Parse Accept-Language header according to RFC 7231
+        // Format: language-tag[;q=weight], language-tag[;q=weight], ...
+        String[] languages = acceptLanguage.split(",");
+        for (String lang : languages) {
+            Locale locale = parseLanguageTag(lang);
+            if (locale != null) {
+                locales.add(locale);
+            }
+        }
+
+        return locales;
+    }
+
+    /**
+     * Parses a single language tag from the Accept-Language header.
+     */
+    private Locale parseLanguageTag(String lang) {
+        String trimmedLang = lang.trim();
+
+        // Extract language tag without quality value
+        trimmedLang = extractLanguageWithoutQuality(trimmedLang);
+
+        if (trimmedLang.isEmpty()) {
+            return null;
+        }
+
+        return createLocaleFromTag(trimmedLang);
+    }
+
+    /**
+     * Extracts the language tag portion, removing any quality value.
+     */
+    private String extractLanguageWithoutQuality(String lang) {
+        int semicolonIndex = lang.indexOf(';');
+        if (semicolonIndex > 0) {
+            return lang.substring(0, semicolonIndex).trim();
+        }
+        return lang;
+    }
+
+    /**
+     * Creates a Locale from a language tag, returning null if invalid.
+     */
+    private Locale createLocaleFromTag(String languageTag) {
+        try {
+            Locale locale = Locale.forLanguageTag(languageTag);
+            // Ensure we don't add empty locales
+            if (!locale.getLanguage().isEmpty()) {
+                return locale;
+            }
+        } catch (IllegalArgumentException e) {
+            // Skip invalid locale tags
+        }
+        return null;
     }
 
     @Override

@@ -23,6 +23,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.ToString;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
@@ -72,10 +73,10 @@ public class IssuerConfigResolver {
      * Only enabled configurations are added to the pending queue for lazy processing.
      * Disabled configurations are logged and ignored.
      *
-     * @param issuerConfigs array of issuer configurations to manage, must not be null
+     * @param issuerConfigs collection of issuer configurations to manage, must not be null
      * @param securityEventCounter counter for security events, must not be null
      */
-    IssuerConfigResolver(@NonNull IssuerConfig[] issuerConfigs,
+    IssuerConfigResolver(@NonNull Collection<IssuerConfig> issuerConfigs,
             @NonNull SecurityEventCounter securityEventCounter) {
         this.securityEventCounter = securityEventCounter;
         this.mutableCache = new ConcurrentHashMap<>();
@@ -86,6 +87,7 @@ public class IssuerConfigResolver {
 
         // Add enabled configurations to pending queue for lazy processing
         int enabledCount = 0;
+        int totalCount = issuerConfigs.size();
         for (IssuerConfig config : issuerConfigs) {
             if (config.isEnabled()) {
                 config.initSecurityEventCounter(securityEventCounter);
@@ -97,7 +99,7 @@ public class IssuerConfigResolver {
             }
         }
 
-        LOGGER.debug("IssuerConfigResolver initialized with %s enabled configurations (%s total)", enabledCount, issuerConfigs.length);
+        LOGGER.debug("IssuerConfigResolver initialized with %s enabled configurations (%s total)", enabledCount, totalCount);
     }
 
     /**

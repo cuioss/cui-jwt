@@ -1,0 +1,140 @@
+= Benchmark Workflow
+:source-highlighter: highlight.js
+
+Complete workflow guide for running and processing benchmarks.
+
+== CI/CD Pipeline
+
+The benchmark processing is automatically triggered in GitHub Actions:
+
+=== Triggers
+
+* **Pull Request Merge** - Runs on merged PRs to main branch
+* **Tag Push** - Runs on all tag pushes
+* **Manual Dispatch** - Can be triggered manually
+
+=== Workflow Steps
+
+1. **Environment Setup**
+   - Checkout code with full history
+   - Set up JDK 21 with Maven cache
+   - Build cui-jwt-validation module
+
+2. **Micro Benchmarks**
+   - Run JMH benchmarks using `benchmark` profile
+   - Generate performance badges and trends
+   - Create micro benchmark results
+
+3. **Integration Benchmarks**
+   - Build native Quarkus image
+   - Run integration tests with health checks
+   - Calculate JWT validation overhead
+
+4. **Result Processing**
+   - Process all benchmark results using orchestration script
+   - Generate performance badges and trends
+   - Create unified GitHub Pages structure
+
+5. **Deployment**
+   - Deploy results to cuioss.github.io
+   - Update performance tracking history
+
+== Local Development
+
+=== Running Benchmarks Locally
+
+[source,bash]
+----
+# Full benchmark suite
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+
+# Quick test (1 iteration)
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.iterations=1 -Djmh.warmupIterations=1
+
+# With profiling
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+----
+
+=== Testing Visualizations
+
+[source,bash]
+----
+cd benchmarking/scripts
+./serve-local.sh
+# Open http://localhost:8080
+----
+
+=== Manual Processing
+
+You can run the processing scripts manually on existing results:
+
+[source,bash]
+----
+cd benchmarking/scripts
+
+# Process all results
+./process-all-benchmarks.sh \
+  path/to/benchmark-results \
+  doc/templates \
+  output-directory \
+  commit-hash \
+  "2024-01-15" \
+  "2024-01-15 10:35 UTC"
+----
+
+== Result Artifacts
+
+=== Generated Files
+
+* **performance-badge.json** - Overall performance score
+* **trend-badge.json** - Performance trend indicator
+* **integration-*.json** - Integration-specific badges
+* **all-benchmarks.json** - General status badge
+* **last-run-badge.json** - Timestamp badge
+
+=== Data Files
+
+* **jmh-result.json** - Raw JMH benchmark results
+* **integration-result.json** - Combined integration results
+* **performance-tracking.json** - Historical trend data
+* **jwt-validation-metrics.json** - Step-by-step metrics
+
+=== Visualization Pages
+
+* **index-visualizer.html** - Interactive JMH results
+* **integration-index.html** - Integration test results
+* **performance-trends.html** - Historical performance
+* **step-metrics-visualizer.html** - Detailed metrics breakdown
+
+== Performance Scoring
+
+The benchmark system uses a weighted scoring approach:
+
+* **Throughput (60%)** - Operations per second
+* **Latency (40%)** - Average response time
+* **Error Resilience (3%)** - Error handling performance (when available)
+
+See link:performance-scoring.adoc[Performance Scoring] for detailed methodology.
+
+== Troubleshooting
+
+=== Build Issues
+
+* Ensure JDK 21 is used
+* Verify Maven dependencies are up to date
+* Check that cui-jwt-validation module builds successfully
+
+=== Benchmark Failures
+
+* Increase warmup iterations for unstable results
+* Check system resources (CPU, memory)
+* Verify no background processes affecting performance
+
+=== Visualization Problems
+
+* Ensure HTTP server is used (not file:// protocol)
+* Check that JSON data files exist in expected locations
+* Verify browser console for JavaScript errors
+
+See link:local-testing.adoc[Local Testing Guide] for detailed troubleshooting steps.

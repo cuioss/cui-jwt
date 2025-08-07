@@ -34,15 +34,26 @@ services:
       - jwt-integration
 
   cui-jwt-integration-tests:
+    # Use separate Dockerfiles for different variants
+    # For distroless: DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless
+    # For JFR:       DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr
+    image: "cui-jwt-integration-tests:${DOCKER_IMAGE_TAG:-distroless}"
     build:
-      context: .
-      dockerfile: src/main/docker/Dockerfile.native
-      # Simple copy-based build - no compilation in Docker
+      context: ../..
+      dockerfile: cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/${DOCKERFILE:-Dockerfile.native.distroless}
       cache_from:
         - quay.io/quarkus/quarkus-distroless-image:2.0
+        - registry.access.redhat.com/ubi8/ubi-minimal:8.10
+        - quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21
 
     ports:
       - "10443:8443"  # External test port for integration tests
+
+    environment:
+      # JVM SSL Session Cache Optimization for TLS Performance
+      # JFR configuration handled by image variant (distroless vs JFR-enabled)
+      - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true -Djdk.tls.maxHandshakeMessageSize=65536 -Djdk.tls.maxCertificateChainLength=10 -Djdk.tls.useExtendedMasterSecret=true
+      - QUARKUS_LOG_LEVEL=INFO
 
     depends_on:
       - keycloak
@@ -50,9 +61,8 @@ services:
     volumes:
       # Read-only certificate mount (production pattern)
       - ./src/main/docker/certificates:/app/certificates:ro
-
-    environment:
-      - QUARKUS_LOG_LEVEL=INFO
+      # JFR output volume - mount directly to benchmark target directory
+      - ../quarkus-integration-jmh/target/benchmark-results/jfr-recordings:/tmp/jfr-output:rw
 
     # OWASP Security hardening (production-grade)
     security_opt:
@@ -66,17 +76,16 @@ services:
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=100m
-      - /app/tmp:rw,noexec,nosuid,size=50m
 
     # Resource limitations (DoS protection - production values)
     deploy:
       resources:
         limits:
+          memory: 512M
+          cpus: '4.0'
+        reservations:
           memory: 256M
           cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.5'
 
     # Health check using internal script (optimized for fast native startup)
     healthcheck:
@@ -98,3 +107,7 @@ networks:
     driver: bridge
     # Control inter-container communication (production setting)
     internal: false
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.driver.mtu: "1500"

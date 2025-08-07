@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.JwtTokenTamperingUtil;
@@ -63,7 +64,7 @@ class TokenSignatureValidatorAlgorithmTest {
         jwksLoader.initJWKSLoader(securityEventCounter);
 
         // Create the validator with the in-memory JwksLoader and security event counter
-        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter);
+        validator = new TokenSignatureValidator(jwksLoader, securityEventCounter, new SignatureAlgorithmPreferences());
     }
 
     /**
@@ -86,11 +87,10 @@ class TokenSignatureValidatorAlgorithmTest {
     }
 
     @ParameterizedTest
-    // Note: EC algorithms (ES256, ES384, ES512) are excluded because InMemoryKeyMaterialHandler uses dummy x and y coordinates
-    // in the JWKS representation, which causes validation failures. The TokenSignatureValidator itself supports EC algorithms,
-    // but we can't properly test them without extracting real EC key coordinates.
+    // Note: EC algorithms (ES256, ES384, ES512) are excluded because JJWT generates IEEE P1363 format signatures
+    // but the JDK expects ASN.1/DER format, causing validation failures. This will be fixed with signature format conversion.
     @EnumSource(value = InMemoryKeyMaterialHandler.Algorithm.class, names = {"RS256", "RS384", "RS512", "PS256", "PS384", "PS512"})
-    @DisplayName("Should validate token with valid signature for different algorithms")
+    @DisplayName("Should validate token with valid signature for RSA algorithms")
     void shouldValidateTokenWithValidSignature(InMemoryKeyMaterialHandler.Algorithm algorithm) {
         // Create a valid token with the specified algorithm
         String token = createToken(algorithm);
@@ -105,11 +105,10 @@ class TokenSignatureValidatorAlgorithmTest {
     }
 
     @ParameterizedTest
-    // Note: EC algorithms (ES256, ES384, ES512) are excluded because InMemoryKeyMaterialHandler uses dummy x and y coordinates
-    // in the JWKS representation, which causes validation failures. The TokenSignatureValidator itself supports EC algorithms,
-    // but we can't properly test them without extracting real EC key coordinates.
+    // Note: EC algorithms (ES256, ES384, ES512) are excluded because JJWT generates IEEE P1363 format signatures
+    // but the JDK expects ASN.1/DER format, causing validation failures. This will be fixed with signature format conversion.
     @EnumSource(value = InMemoryKeyMaterialHandler.Algorithm.class, names = {"RS256", "RS384", "RS512", "PS256", "PS384", "PS512"})
-    @DisplayName("Should reject token with tampered signature for different algorithms")
+    @DisplayName("Should reject token with tampered signature for RSA algorithms")
     void shouldRejectTokenWithTamperedSignature(InMemoryKeyMaterialHandler.Algorithm algorithm) {
         // Get initial count
         long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
@@ -140,5 +139,20 @@ class TokenSignatureValidatorAlgorithmTest {
         // Verify security event was recorded
         assertTrue(securityEventCounter.getCount(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED) > initialCount,
                 "SIGNATURE_VALIDATION_FAILED event should be incremented");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = InMemoryKeyMaterialHandler.Algorithm.class, names = {"ES256", "ES384", "ES512"})
+    @DisplayName("Should validate token with valid signature for EC algorithms with format conversion")
+    void shouldValidateTokenWithValidSignatureForEcAlgorithms(InMemoryKeyMaterialHandler.Algorithm algorithm) {
+        // Create a token with ECDSA algorithm (JJWT uses IEEE P1363 format, but now converted to ASN.1/DER)
+        String token = createToken(algorithm);
+
+        // Parse the token
+        DecodedJwt decodedJwt = jwtParser.decode(token);
+
+        // This should now succeed with signature format conversion
+        assertDoesNotThrow(() -> validator.validateSignature(decodedJwt),
+                "Token with valid " + algorithm + " signature should be validated without exceptions");
     }
 }

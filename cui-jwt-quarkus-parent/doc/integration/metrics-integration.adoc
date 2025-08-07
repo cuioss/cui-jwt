@@ -13,8 +13,10 @@ All metrics follow Quarkus and Micrometer naming conventions and are compatible 
 The metrics integration is implemented through the `JwtMetricsCollector` class which:
 
 * Registers Micrometer counters for each security event type from the underlying JWT validation library
-* Uses scheduled polling (every 10 seconds) to update metrics from the `SecurityEventCounter`
+Did * Registers Micrometer timers for each validation pipeline step from the `TokenValidatorMonitor`
+* Uses scheduled polling (every 10 seconds) to update metrics from both the `SecurityEventCounter` and `TokenValidatorMonitor`
 * Provides detailed error categorization and tagging for filtering and alerting
+* Provides performance measurement data for validation pipeline optimization
 
 == Available Metrics
 
@@ -24,15 +26,28 @@ Currently, the extension exposes the following metrics:
 |Metric Name |Type |Description |Tags
 
 |`cui.jwt.validation.errors` |Counter |Number of JWT validation errors by type |event_type, result, category
+|`cui.jwt.validation.duration` |Timer |Duration of JWT validation pipeline steps |step
 |===
 
 === Metric Tags
 
 Each metric includes the following tags for filtering and analysis:
 
+==== Error Metrics (`cui.jwt.validation.errors`)
+
 * **`event_type`**: The specific type of validation error (e.g., `TOKEN_EXPIRED`, `SIGNATURE_VALIDATION_FAILED`)
 * **`result`**: Always "failure" for error metrics  
 * **`category`**: The error category (`STRUCTURE`, `SIGNATURE`, `SEMANTIC`) when available
+
+==== Performance Metrics (`cui.jwt.validation.duration`)
+
+* **`step`**: The validation pipeline step being measured:
+  ** `complete_validation` - Complete token validation from start to finish
+  ** `token_parsing` - JWT token parsing and structure validation
+  ** `header_validation` - JWT header validation
+  ** `signature_validation` - JWT signature verification (typically most expensive)
+  ** `claims_validation` - JWT claims validation
+  ** `jwks_operations` - JWKS key retrieval and processing operations
 
 === Supported Event Types
 
@@ -89,6 +104,15 @@ sum(cui_jwt_validation_errors_total{event_type="SIGNATURE_VALIDATION_FAILED"})
 
 # Token expiration issues
 rate(cui_jwt_validation_errors_total{event_type="TOKEN_EXPIRED"}[5m])
+
+# Average signature validation duration (performance monitoring)
+rate(cui_jwt_validation_duration_seconds_sum{step="signature_validation"}[5m]) / rate(cui_jwt_validation_duration_seconds_count{step="signature_validation"}[5m])
+
+# 95th percentile of complete validation duration
+histogram_quantile(0.95, rate(cui_jwt_validation_duration_seconds_bucket{step="complete_validation"}[5m]))
+
+# JWKS operations duration (network performance indicator)
+rate(cui_jwt_validation_duration_seconds_sum{step="jwks_operations"}[5m]) / rate(cui_jwt_validation_duration_seconds_count{step="jwks_operations"}[5m])
 ----
 
 === Alerting Examples
@@ -114,6 +138,16 @@ rate(cui_jwt_validation_errors_total{event_type="TOKEN_EXPIRED"}[5m])
   annotations:
     summary: "High JWT validation error rate"
     description: "JWT validation errors are occurring at a high rate (>5/minute)"
+
+# Alert on slow signature validation (performance issue)
+- alert: JwtSlowSignatureValidation
+  expr: histogram_quantile(0.95, rate(cui_jwt_validation_duration_seconds_bucket{step="signature_validation"}[5m])) > 0.1
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "JWT signature validation is slow"
+    description: "95th percentile of signature validation duration is above 100ms"
 ----
 
 == Grafana Dashboard
@@ -124,14 +158,17 @@ A pre-configured Grafana dashboard is available at link:jwt-metrics-grafana-dash
 * Error type distribution
 * Time series for security-relevant events
 * Alert indicators for potential security issues
+* Performance metrics for validation pipeline steps
+* Duration histograms and percentiles for performance analysis
+* JWKS operations timing for network performance monitoring
 
 == Future Enhancements
 
 The metrics implementation may be extended in future versions to include:
 
 * Success rate and attempt counters
-* Validation duration timers
 * JWKS cache size gauges
 * Issuer-specific tagging
+* Request rate limiting metrics
 
-For the current implementation, focus on the error metrics which provide the most valuable security monitoring insights.
+The current implementation provides comprehensive coverage of both security monitoring (error metrics) and performance monitoring (duration timers) for JWT validation operations.
