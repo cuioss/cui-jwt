@@ -72,11 +72,28 @@ fi
 
 # Process integration benchmarks
 echo "🔗 Checking for integration benchmark results..."
+# Check for either separate files or combined file
 if [ -f "$BENCHMARK_RESULTS_DIR/health-check-results.json" ] && [ -f "$BENCHMARK_RESULTS_DIR/jwt-validation-results.json" ]; then
-    echo "✅ Found integration benchmark results, processing..."
+    echo "✅ Found separate integration benchmark results, processing..."
     
-    # Process integration benchmarks
+    # Process integration benchmarks with separate files
     if bash "$SCRIPT_DIR/process-integration-benchmarks.sh" "$BENCHMARK_RESULTS_DIR/health-check-results.json" "$BENCHMARK_RESULTS_DIR/jwt-validation-results.json" "$OUTPUT_DIR" "$COMMIT_HASH"; then
+        # Update results file with success
+        jq '.processing.integration = {"status": "success", "message": "Integration benchmarks processed successfully"}' "$RESULTS_FILE" > "${RESULTS_FILE}.tmp" && mv "${RESULTS_FILE}.tmp" "$RESULTS_FILE"
+        echo "✅ Integration benchmarks processed successfully"
+        
+        # Add integration benchmark link to main page
+        echo "- [Integration Benchmark Results](integration-index.html)" >> "$OUTPUT_DIR/badge-markdown.txt"
+    else
+        # Update results file with error
+        jq '.processing.integration = {"status": "error", "message": "Failed to process integration benchmarks"} | .errors += ["Integration benchmark processing failed"]' "$RESULTS_FILE" > "${RESULTS_FILE}.tmp" && mv "${RESULTS_FILE}.tmp" "$RESULTS_FILE"
+        echo "❌ Failed to process integration benchmarks"
+    fi
+elif [ -f "$BENCHMARK_RESULTS_DIR/integration-benchmark-result.json" ]; then
+    echo "✅ Found combined integration benchmark results, processing..."
+    
+    # Process the combined JMH benchmark file for integration tests
+    if bash "$SCRIPT_DIR/process-integration-jmh-benchmarks.sh" "$BENCHMARK_RESULTS_DIR/integration-benchmark-result.json" "$OUTPUT_DIR" "$COMMIT_HASH" "$TIMESTAMP"; then
         # Update results file with success
         jq '.processing.integration = {"status": "success", "message": "Integration benchmarks processed successfully"}' "$RESULTS_FILE" > "${RESULTS_FILE}.tmp" && mv "${RESULTS_FILE}.tmp" "$RESULTS_FILE"
         echo "✅ Integration benchmarks processed successfully"

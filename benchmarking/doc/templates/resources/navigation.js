@@ -5,7 +5,7 @@ class BenchmarkNavigation {
     this.currentPage = currentPage;
     this.pages = [
       { id: 'micro', title: 'Micro Benchmarks', file: 'index-visualizer.html', description: 'JMH unit-level performance testing' },
-      { id: 'integration', title: 'Integration Tests', file: 'integration-index.html', description: 'End-to-end containerized testing' },
+      { id: 'integration', title: 'Integration Benchmarks', file: 'integration-benchmark-visualizer.html', description: 'End-to-end containerized testing' },
       { id: 'step-metrics', title: 'Step Metrics', file: 'step-metrics-visualizer.html', description: 'Detailed step-by-step analysis' },
       { id: 'trends', title: 'Performance Trends', file: 'performance-trends.html', description: 'Historical performance tracking' }
     ];
@@ -55,6 +55,7 @@ function getCurrentPageType() {
   const path = window.location.pathname;
   const filename = path.split('/').pop() || 'index-visualizer.html';
   
+  if (filename.includes('integration-benchmark-visualizer')) return 'integration';
   if (filename.includes('integration')) return 'integration';
   if (filename.includes('step-metrics')) return 'step-metrics';  
   if (filename.includes('performance-trends')) return 'trends';
