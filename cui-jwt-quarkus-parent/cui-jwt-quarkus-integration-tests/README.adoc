@@ -2,7 +2,7 @@
 :toc:
 :toclevels: 3
 :sectnums:
-:source-highlighter: highlightjs
+:source-highlighter: highlight.js
 
 == Overview
 
@@ -12,34 +12,34 @@ Integration tests for the CUI JWT Quarkus extension with native container testin
 
 * **Application Internal**: `8443` (HTTPS inside container)
 * **External Test**: `10443` (Docker mapped port)
-* **Configuration**: Maven property `test.https.port`
+* **Keycloak External**: `1443` (Docker mapped HTTPS port)
 
 == Features
 
 * Native container testing with production-like behavior
 * HTTPS with self-signed certificates
-* Memory-based JWKS for isolated testing
+* Keycloak integration with two test realms
 * Health check and metrics validation
-* Manual testing scripts
+* Automated build and test scripts
 
 == Quick Start
 
 === Prerequisites
 
-* Java 17+, Maven 3.8+ (or `./mvnw`), Docker, `keytool`
+* Java 21+, Maven 3.9+ (via `./mvnw`), Docker
 
 === Test Execution
 
 [source,bash]
 ----
-# Native tests (5-10 minutes) -am=also make -> build all modules that are required
+# Native integration tests (requires Docker)
 ./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
 
-# JVM tests only
+# JVM unit tests only (no Docker required)
 ./mvnw clean test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
-# Manual testing
-cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh
+# Manual container testing
+./scripts/start-integration-container.sh
 curl -k https://localhost:10443/q/health
 ./scripts/stop-integration-container.sh
 ----
@@ -52,7 +52,7 @@ The integration tests support two optimized container variants for different use
 
 * **Dockerfile**: `Dockerfile.native.distroless`
 * **Base Image**: Quarkus Distroless (security-hardened)
-* **Size**: ~104MB
+* **Size**: 104MB
 * **Use Case**: Production deployments, CI/CD pipelines
 * **Features**: Minimal attack surface, fast startup, optimized security
 
@@ -68,8 +68,8 @@ DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compo
 === JFR-Enabled (Profiling)
 
 * **Dockerfile**: `Dockerfile.native.jfr`
-* **Base Image**: UBI 8 Minimal with debugging tools
-* **Size**: ~189MB
+* **Base Image**: UBI 9 Micro with debugging tools
+* **Size**: 96MB
 * **Use Case**: Performance analysis, profiling, debugging
 * **Features**: Full JFR profiling, debugging tools, monitoring capabilities
 
@@ -90,10 +90,10 @@ ls -la -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/jfr-r
 |===
 |Feature |Distroless |JFR-Enabled
 
-|Size |~104MB |~189MB
-|Base Image |Distroless |UBI 8 Minimal
+|Size |104MB |96MB
+|Base Image |Distroless |UBI 9 Micro
 |Security |Minimal attack surface |Standard
-|Startup Time |<3s |<5s
+|Startup Time |~0.2s |~0.2s
 |JFR Profiling |❌ |✅
 |Debugging Tools |❌ |✅
 |Production Ready |✅ |⚠️ (Development/Profiling)
@@ -107,19 +107,29 @@ cui-jwt-quarkus-integration-tests/
 ├── src/main/
 │   ├── java/de/cuioss/jwt/integration/
 │   │   ├── TestApplication.java
-│   │   ├── config/JwtTestConfiguration.java
 │   │   └── endpoint/JwtValidationEndpoint.java
-│   ├── resources/application*.properties
+│   ├── resources/application.properties
 │   └── docker/
+│       ├── Dockerfile.jvm
 │       ├── Dockerfile.native.distroless
 │       ├── Dockerfile.native.jfr
-│       └── certificates/generate-certificates.sh
+│       ├── certificates/
+│       │   ├── generate-certificates.sh
+│       │   └── generate-truststore.sh
+│       ├── health-check.sh
+│       └── keycloak/
+│           ├── benchmark-realm.json
+│           └── integration-realm.json
 ├── src/test/java/de/cuioss/jwt/integration/
-│   ├── *IntegrationIT.java
-│   └── DevUI*IT.java
+│   ├── HealthCheckIntegrationIT.java
+│   ├── JwtValidationEndpoint*IT.java
+│   ├── AbstractJwtValidationEndpointTest.java
+│   └── BaseIntegrationTest.java
 └── scripts/
     ├── start-integration-container.sh
-    └── stop-integration-container.sh
+    ├── stop-integration-container.sh
+    ├── build-native-if-needed.sh
+    └── verify-environment.sh
 ----
 
 === Maven Clean Integration
@@ -140,22 +150,22 @@ The module integrates Docker cleanup with Maven's clean phase to prevent file lo
 
 This ensures reliable cleanup of native executables and build artifacts without "file in use" errors.
 
-== Test Categories
+== Test Classes
 
 * **HealthCheckIntegrationIT**: Health endpoint validation
-* **HttpsJwtValidationIT**: HTTPS JWT validation testing
-* **JwtValidationKeycloakIT**: Benchmark realm validation (well-known discovery)
-* **JwtValidationIntegrationIT**: Integration realm validation (direct JWKS URL)
-* **DevUI*IT**: Development UI component testing
+* **JwtValidationEndpointApiValidationIT**: API validation testing
+* **JwtValidationEndpointBenchmarkIT**: Benchmark realm validation
+* **JwtValidationEndpointIntegrationIT**: Integration realm validation
+* **JwtValidationEndpointTokenRequestIT**: Token request testing
 
-=== Keycloak Integration Tests
+=== Test Inheritance Structure
 
-Both Keycloak test classes inherit from `BaseKeycloakIT` to avoid code duplication while testing different realm configurations:
+Test classes inherit from base classes to share common functionality:
 
-* **JwtValidationKeycloakIT**: Uses benchmark realm with well-known discovery
-* **JwtValidationIntegrationIT**: Uses integration realm with direct JWKS URL
+* **BaseIntegrationTest**: Common integration test setup
+* **AbstractJwtValidationEndpointTest**: JWT endpoint testing base
 
-This approach validates both JWT validation pathways in a single test run.
+This structure validates both Keycloak realms (benchmark and integration) with different JWT configuration patterns.
 
 == Configuration
 
@@ -193,40 +203,35 @@ Both realms are automatically imported into Keycloak during container startup vi
 
 === URL Adaptation for Docker Networking
 
-==== Issue Background
+==== Docker Networking Configuration
 
-The integration tests encountered 401 validation failures due to issuer identifier mismatches between JWT tokens and application configuration. This was caused by Docker networking complexities where:
+The integration tests use HTTPS throughout with proper certificate validation:
 
-* **External access**: Tests and browsers access Keycloak via `localhost:1080` (Docker port mapping)
-* **Internal access**: Application container accesses Keycloak via `keycloak:8080` (Docker network hostname)
-* **Token issuer claims**: JWT tokens contain the issuer URL as seen by the client obtaining the token
+* **External access**: Tests access Keycloak via `localhost:1443` (Docker HTTPS port mapping)
+* **Internal access**: Application container accesses Keycloak via `keycloak:8443` (Docker network HTTPS hostname)
+* **Certificate validation**: Self-signed certificates are used with proper truststore configuration
 
-==== Root Cause
+==== Current Configuration
 
-JWT tokens obtained from `http://localhost:1080/realms/integration` contain an `iss` (issuer) claim of `http://localhost:1080/realms/integration`. However, the application was initially configured with `issuer-identifier=http://keycloak:8080/realms/integration`, causing validation to fail with 401 errors because the token's issuer claim didn't match the configured issuer identifier.
-
-==== Solution
-
-The configuration was adapted to use **mixed URL patterns**:
-
-* **Issuer identifiers**: Use `localhost:1080` to match the `iss` claim in JWT tokens
-* **JWKS URLs**: Use `keycloak:8080` for internal Docker container-to-container communication
+Both realms use consistent HTTPS configuration:
 
 [source,properties]
 ----
-# Issuer identifier MUST match the 'iss' claim in tokens
-cui.jwt.issuers.integration.issuer-identifier=http://localhost:1080/realms/integration
+# Benchmark realm with well-known discovery
+cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak:8443/realms/benchmark
+cui.jwt.issuers.keycloak.jwks.http.well-known-url=https://keycloak:8443/realms/benchmark/.well-known/openid-configuration
 
-# JWKS URL uses internal Docker hostname for efficient container communication
-cui.jwt.issuers.integration.jwks.http.url=http://keycloak:8080/realms/integration/protocol/openid-connect/certs
+# Integration realm with direct JWKS URL
+cui.jwt.issuers.integration.issuer-identifier=https://keycloak:8443/realms/integration
+cui.jwt.issuers.integration.jwks.http.url=https://keycloak:8443/realms/integration/protocol/openid-connect/certs
 ----
 
-==== Key Learnings
+==== Key Points
 
-1. **Issuer validation is strict**: The `issuer-identifier` must exactly match the `iss` claim in JWT tokens
-2. **Docker networking complexity**: External and internal hostnames differ in containerized environments
-3. **Mixed URL strategy**: Different URLs for token validation vs. key retrieval optimize both correctness and performance
-4. **Native image rebuilds required**: Configuration changes require rebuilding the native image with `./mvnw verify -Pintegration-tests`
+1. **HTTPS enforcement**: All communication uses HTTPS with certificate validation
+2. **Consistent internal URLs**: All issuer identifiers and JWKS URLs use internal Docker hostname
+3. **Certificate trust**: Application trusts Keycloak certificates via configured truststore
+4. **Token validation**: JWT issuer claims match the configured issuer identifiers
 
 === HTTPS Setup
 
@@ -239,29 +244,36 @@ Self-signed certificates via `generate-certificates.sh`:
 
 [source,properties]
 ----
-# JWT - Default test issuer
+# JWT - Default test issuer (disabled for Keycloak testing)
 cui.jwt.issuers.default.issuer-identifier=https://test-auth.example.com
+cui.jwt.issuers.default.enabled=false
 cui.jwt.issuers.default.jwks.file-path=classpath:test-jwks.json
 
 # JWT - Keycloak issuers (both realms)
 cui.jwt.issuers.keycloak.enabled=true
 cui.jwt.issuers.integration.enabled=true
 
-# Health & Metrics
-quarkus.smallrye-health.enabled=true
-quarkus.micrometer.export.prometheus.enabled=true
+# Health checks
+cui.jwt.health.enabled=true
+
+# HTTPS configuration
+quarkus.http.ssl-port=8443
+quarkus.http.insecure-requests=redirect
 ----
 
 == Script Usage
 
 [source,bash]
 ----
-# Environment
+# Environment verification
 ./scripts/verify-environment.sh
 
-# Application
-./scripts/start-integration-container.sh [--native]
-./scripts/stop-integration-container.sh [--clean-logs]
+# Application container management
+./scripts/start-integration-container.sh
+./scripts/stop-integration-container.sh
+
+# Native build helper
+./scripts/build-native-if-needed.sh
 
 # Testing
 ../../mvnw clean verify -Pintegration-tests
@@ -286,41 +298,27 @@ curl -k https://localhost:10443/q/metrics | grep cui_jwt
 
 == Docker Integration
 
-=== Maven Profile-Based Builds
+=== Docker Image Variants
 
-The module supports dual-image builds via Maven profiles:
+Build different image variants using environment variables:
 
 [source,bash]
 ----
-# Production build (104MB distroless image)
-./mvnw clean package -Pdocker-distroless
+# Production build (distroless image, 104MB)
+DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build
 
-# JFR profiling build (187MB UBI-based image)
-./mvnw clean package -Pdocker-jfr
+# JFR profiling build (UBI 9 micro image, 96MB)
+DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
 
-# Run with Docker Compose (uses built image)
-docker compose up
+# JVM development build
+docker compose build --build-arg DOCKERFILE=Dockerfile.jvm
 ----
 
 **Image Characteristics**:
 
-* **Distroless** (`docker-distroless`): 
-  - Minimal attack surface for production
-  - 104MB image size
-  - JFR limited by filesystem permissions
-  - 0.263s startup time
-
-* **UBI-based** (`docker-jfr`):
-  - Full JFR support for profiling
-  - 187MB image size
-  - JFR files generated in `/tmp/jfr-output/`
-  - 0.296s startup time
-
-[source,bash]
-----
-# Extract JFR recordings (JFR variant only)
-docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./target/jfr-results/
-----
+* **Distroless**: Minimal production image with fast startup (~0.2s)
+* **JFR-enabled**: Full profiling support with debugging tools (~0.2s startup)
+* **JVM**: Development image with full JVM capabilities
 
 == Troubleshooting
 
@@ -328,31 +326,30 @@ docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./tar
 ----
 # Certificate issues
 cd src/main/docker/certificates && ./generate-certificates.sh
-keytool -list -keystore keystore.p12 -storetype PKCS12
+keytool -list -keystore localhost-truststore.p12 -storetype PKCS12
 
 # Build issues
 ../../mvnw clean && ./scripts/verify-environment.sh
-native-image --version
+docker --version
 
 # Runtime issues
-tail -f target/application.log | grep "de.cuioss.jwt"
+docker logs cui-jwt-integration-tests
 lsof -i :10443
-curl -k https://localhost:10443/validate/health
+curl -k https://localhost:10443/q/health
 ----
 
-== Performance
+== Performance Metrics
 
-* Native compilation: 4-5 minutes
-* Memory: ~50MB RSS (both image variants)
-* Startup: 0.263s (distroless) / 0.296s (JFR-enabled)
-* Image sizes: 104MB (distroless) / 187MB (UBI-based)
-* JFR overhead: <1% performance impact
+* **Native compilation**: 4-5 minutes
+* **Memory usage**: ~50MB RSS
+* **Startup time**: ~0.2s (both variants)
+* **Image size**: 96-104MB (native)
 
-== Security
+== Security Notes
 
 * Self-signed certificates for testing only
-* Memory-based JWKS (no external dependencies)
-* Test tokens expire per test run
+* Keycloak realms with test users
+* HTTPS enforced throughout the stack
 
 == Standards Compliance
 
@@ -360,13 +357,13 @@ Follows link:https://github.com/cuioss/cui-llm-rules/tree/main/standards/cdi-qua
 
 == Related Modules
 
-=== Integration Benchmarking
+=== Performance Benchmarking
 
-The xref:../quarkus-integration-jmh/README.adoc[JWT Quarkus Integration JMH Benchmarking Module] builds upon this module's containerized infrastructure to provide performance benchmarking capabilities. It reuses:
+The sibling module `quarkus-integration-jmh` builds upon this module's infrastructure for JMH performance benchmarking. It shares:
 
-* Container setup and Docker Compose configuration
-* Keycloak integration patterns
-* HTTPS and certificate management
-* Application startup scripts
+* Docker Compose and container configuration
+* Keycloak realm setup and integration patterns
+* HTTPS certificate management
+* Application deployment scripts
 
-While this module focuses on functional integration testing, the benchmarking module measures end-to-end performance using the same containerized environment.
+This module provides functional validation while the benchmarking module measures performance using the same environment.
