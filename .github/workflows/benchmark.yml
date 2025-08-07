@@ -70,9 +70,9 @@ jobs:
 
       - name: Run Integration Benchmarks
         run: |
-          # Run integration benchmarks with native image using profile
+          # Run integration benchmarks with native image using profile that includes container startup
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing -DskipTests
 
           # Move integration benchmark results to expected location for upload
           if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results" ]; then
