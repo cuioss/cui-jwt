@@ -16,6 +16,7 @@
     <description>Integration tests for the CUI JWT Quarkus extension including native container testing with HTTPS support</description>
 
     <properties>
+        <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.integration.tests</maven.jar.plugin.automatic.module.name>
         <!-- Configure test execution - surefire skip, failsafe disabled by default -->
         <skipITs>true</skipITs>
 
