@@ -88,6 +88,22 @@ else
   jq --argjson newrun "$CURRENT_RUN" '.runs += [$newrun] | .runs = (.runs | sort_by(.timestamp) | .[-10:])' "$TRACKING_FILE" > "$TRACKING_FILE.tmp" && mv "$TRACKING_FILE.tmp" "$TRACKING_FILE"
 fi
 
+# Log the final state for debugging
+FINAL_RUN_COUNT=$(jq '.runs | length' "$TRACKING_FILE" 2>/dev/null || echo "0")
+echo "Performance tracking file now contains $FINAL_RUN_COUNT runs"
+
+# Verify the file is actually written and contains data
+if [ -f "$TRACKING_FILE" ]; then
+    echo "✅ Performance tracking file exists at: $TRACKING_FILE"
+    FILE_SIZE=$(wc -c < "$TRACKING_FILE")
+    echo "   File size: $FILE_SIZE bytes"
+    if [ "$FINAL_RUN_COUNT" -eq "0" ]; then
+        echo "⚠️  WARNING: Tracking file exists but contains no runs!"
+    fi
+else
+    echo "❌ ERROR: Performance tracking file was not created!"
+fi
+
 # Calculate trends and create trend badge using unified script
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 bash "$SCRIPT_DIR/create-unified-trend-badge.sh" micro "$TRACKING_FILE" "$OUTPUT_DIR/badges"
