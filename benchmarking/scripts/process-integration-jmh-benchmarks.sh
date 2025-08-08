@@ -144,6 +144,7 @@ EOF
     # Create trend badge
     TREND_MESSAGE="${TREND_SYMBOL} ${SCORE_VALUE}%"
     echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"$TREND_MESSAGE\",\"color\":\"$TREND_COLOR\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
+    fi  # End of update-integration-performance-trends.sh if block
 else
     echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
 fi
