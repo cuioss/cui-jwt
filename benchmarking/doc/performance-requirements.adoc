@@ -1,0 +1,130 @@
+= JWT Validation Performance Requirements
+:source-highlighter: highlight.js
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+
+== Overview
+_See Requirement xref:../../doc/Requirements.adoc#CUI-JWT-5[CUI-JWT-5: Performance]_
+
+This document defines the performance requirements for the JWT Token Validation library that are verified through benchmarking.
+
+== Performance Requirements
+
+=== Token Validation Performance
+_See Requirement xref:../../doc/Requirements.adoc#CUI-JWT-5.1[CUI-JWT-5.1: Token Validation Performance]_
+
+==== Status: IMPLEMENTED
+
+The library requires efficient token validation to ensure minimal performance impact on applications:
+
+* Access token validation: < 1ms average time
+* ID token validation: < 1.5ms average time
+* 99th percentile: < 5ms
+
+The following classes implement this specification:
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator]
+
+Performance is verified through JMH benchmarks in the benchmarking module.
+
+=== JWKS Key Retrieval Performance
+_See Requirement xref:../../doc/Requirements.adoc#CUI-JWT-5.3[CUI-JWT-5.3: Performance Monitoring]_
+
+==== Status: IMPLEMENTED
+
+The JWKS client must efficiently retrieve and cache keys to support high-volume token validation:
+
+* Key retrieval (cached): < 0.1ms
+* Key retrieval (uncached): < 50ms
+* JWKS refresh: < 200ms
+
+The following classes implement this specification:
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader]
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory]
+
+Performance is verified through JMH benchmarks in the benchmarking module.
+
+=== Concurrent Performance
+_See Requirement xref:../../doc/Requirements.adoc#CUI-JWT-5.2[CUI-JWT-5.2: Concurrent Token Processing]_
+
+==== Status: IMPLEMENTED
+
+The library must scale efficiently with concurrent validation requests:
+
+* Linear scaling up to 16 threads
+* No more than 50% degradation at 100 threads
+
+The following class implements this specification:
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
+
+Performance is verified through concurrent benchmarks.
+
+=== Failure Handling Performance
+
+==== Status: IMPLEMENTED
+
+Error cases must be handled efficiently to prevent performance degradation during attack scenarios:
+
+* Invalid token validation: < 2ms average time
+* Non-existent key lookup: < 0.5ms (cached mode)
+* Server error recovery: < 100ms
+* Exception generation overhead: < 0.5ms per exception
+* Maximum throughput degradation during 50% error rate: < 40%
+
+The following classes implement this specification:
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader]
+
+Performance is verified through error-load benchmarks.
+
+== Benchmark Scenarios
+
+The following key scenarios are benchmarked to verify these requirements:
+
+=== Token Validation Performance
+* Access token validation (varying sizes)
+* ID token validation (varying sizes)
+* Multi-issuer validation
+
+=== JWKS Client Performance
+* Key retrieval (cached)
+* Key retrieval (uncached)
+* JWKS refresh operations
+
+=== Concurrent Performance
+* Sequential vs. concurrent validation
+* Different thread counts (1, 2, 4, 8, 16, 32, 64, 100)
+
+=== Failure Scenarios
+* Invalid signatures
+* Expired tokens
+* Wrong issuer/audience
+* Malformed tokens
+* Missing key IDs (kid)
+* Non-existent key lookups
+* Server errors
+* High error rates (10%, 50%, 90%)
+
+== Verification
+
+Performance requirements are verified through:
+
+1. Automated benchmark execution in CI/CD
+2. Performance regression detection
+3. Historical trend analysis
+4. Performance scoring and badges
+
+See link:workflow.adoc[Benchmark Workflow] for details on running and verifying performance benchmarks.
+
+== Related Documentation
+
+* xref:../../doc/Requirements.adoc#CUI-JWT-5[CUI-JWT-5: Performance] - Performance requirements
+* link:README.adoc[Benchmarks Documentation] - Main benchmarking documentation
+* link:performance-scoring.adoc[Performance Scoring] - Weighted metrics methodology
+* link:workflow.adoc[Benchmark Workflow] - Complete workflow guide

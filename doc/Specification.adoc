@@ -32,7 +32,7 @@ This specification is organized into the following documents:
 * xref:specification/testing.adoc[Testing] - Unit, integration, and security testing approach
 * xref:specification/token-size-validation.adoc[Token Size Validation] - Specifications for token size validation
 * xref:specification/jwks-size-recommendations.adoc[JWKS Size Recommendations] - JWKS size limits and recommendations
-* xref:specification/benchmark.adoc[Performance Benchmarks] - Performance requirements, methodology, and verification
+* xref:../benchmarking/doc/README.adoc[Performance Benchmarks] - Comprehensive benchmarking documentation and performance requirements
 
 == Architecture
 

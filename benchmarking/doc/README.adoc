@@ -33,6 +33,7 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 === Core Documentation
 
+* link:performance-requirements.adoc[Performance Requirements] - Specific performance targets and verification criteria
 * link:workflow.adoc[Benchmark Workflow] - Complete workflow guide for running and processing benchmarks
 * link:scripts-architecture.adoc[Scripts Architecture] - Detailed script documentation and architecture
 * link:local-testing.adoc[Local Testing Guide] - How to test visualizations locally
