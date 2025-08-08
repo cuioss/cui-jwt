@@ -108,30 +108,30 @@ if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ] && [ "$PERF_SCORE" != "" ]; 
         echo "⚠️  Failed to update integration performance trends, using fallback..."
         # Fallback to old method
         TRENDS_FILE="$OUTPUT_DIR/data/integration-trends.json"
-    if [ -f "$TRENDS_FILE" ]; then
-        # Read existing trends
-        PREV_SCORE=$(jq -r '.latest_score // "0"' "$TRENDS_FILE" 2>/dev/null || echo "0")
-        PREV_SCORE_VALUE=$(echo "$PREV_SCORE" | sed 's/[^0-9.]//g')
-        SCORE_VALUE=$(echo "$PERF_SCORE" | sed 's/[^0-9.]//g')
-        
-        # Calculate trend
-        if (( $(echo "$SCORE_VALUE > $PREV_SCORE_VALUE + 1" | bc -l) )); then
-            TREND_SYMBOL="↗"
-            TREND_COLOR="green"
-        elif (( $(echo "$SCORE_VALUE < $PREV_SCORE_VALUE - 1" | bc -l) )); then
-            TREND_SYMBOL="↘"
-            TREND_COLOR="orange"
+        if [ -f "$TRENDS_FILE" ]; then
+            # Read existing trends
+            PREV_SCORE=$(jq -r '.latest_score // "0"' "$TRENDS_FILE" 2>/dev/null || echo "0")
+            PREV_SCORE_VALUE=$(echo "$PREV_SCORE" | sed 's/[^0-9.]//g')
+            SCORE_VALUE=$(echo "$PERF_SCORE" | sed 's/[^0-9.]//g')
+            
+            # Calculate trend
+            if (( $(echo "$SCORE_VALUE > $PREV_SCORE_VALUE + 1" | bc -l) )); then
+                TREND_SYMBOL="↗"
+                TREND_COLOR="green"
+            elif (( $(echo "$SCORE_VALUE < $PREV_SCORE_VALUE - 1" | bc -l) )); then
+                TREND_SYMBOL="↘"
+                TREND_COLOR="orange"
+            else
+                TREND_SYMBOL="→"
+                TREND_COLOR="blue"
+            fi
         else
             TREND_SYMBOL="→"
             TREND_COLOR="blue"
         fi
-    else
-        TREND_SYMBOL="→"
-        TREND_COLOR="blue"
-    fi
-    
-    # Update trends file
-    cat > "$TRENDS_FILE" << EOF
+        
+        # Update trends file
+        cat > "$TRENDS_FILE" << EOF
 {
   "latest_score": "$PERF_SCORE",
   "latest_throughput": "$PERF_THROUGHPUT",
@@ -140,11 +140,11 @@ if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ] && [ "$PERF_SCORE" != "" ]; 
   "updated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 }
 EOF
-    
-    # Create trend badge
-    TREND_MESSAGE="${TREND_SYMBOL} ${SCORE_VALUE}%"
-    echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"$TREND_MESSAGE\",\"color\":\"$TREND_COLOR\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
-    fi  # End of update-integration-performance-trends.sh if block
+        
+        # Create trend badge
+        TREND_MESSAGE="${TREND_SYMBOL} ${SCORE_VALUE}%"
+        echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"$TREND_MESSAGE\",\"color\":\"$TREND_COLOR\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
+    fi
 else
     echo "{\"schemaVersion\":1,\"label\":\"Integration Trend\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/badges/integration-trend-badge.json"
 fi
