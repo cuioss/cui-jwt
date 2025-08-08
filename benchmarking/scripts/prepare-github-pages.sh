@@ -62,6 +62,11 @@ if [ -f "$TEMPLATES_DIR/performance-trends.html" ]; then
   echo "Copied performance trends template"
 fi
 
+if [ -f "$TEMPLATES_DIR/integration-performance-trends.html" ]; then
+  cp "$TEMPLATES_DIR/integration-performance-trends.html" "$OUTPUT_DIR/integration-performance-trends.html"
+  echo "Copied integration performance trends template"
+fi
+
 # Copy shared resources
 if [ -d "$TEMPLATES_DIR/resources" ]; then
   cp -r "$TEMPLATES_DIR/resources"/* "$OUTPUT_DIR/resources"/

@@ -95,11 +95,19 @@ else
     echo "{\"schemaVersion\":1,\"label\":\"Integration Performance\",\"message\":\"No Data\",\"color\":\"red\"}" > "$OUTPUT_DIR/badges/integration-performance-badge.json"
 fi
 
-# Update integration trends and create trend badge
+# Update integration trends using unified tracking system
 if [ -n "$PERF_SCORE" ] && [ "$PERF_SCORE" != "0" ] && [ "$PERF_SCORE" != "" ]; then
     echo "📈 Updating integration performance trends..."
-    # Create a separate trends file for integration benchmarks
-    TRENDS_FILE="$OUTPUT_DIR/data/integration-trends.json"
+    
+    # Use unified tracking system for integration benchmarks
+    # Create a separate tracking file for integration benchmarks
+    INTEGRATION_TRACKING_DIR="$OUTPUT_DIR"
+    if bash "$SCRIPT_DIR/update-integration-performance-trends.sh" "$TEMPLATES_DIR" "$INTEGRATION_TRACKING_DIR" "$COMMIT_HASH" "$PERF_SCORE" "$PERF_THROUGHPUT" "$PERF_LATENCY" "$PERF_RESILIENCE"; then
+        echo "✅ Integration performance trends updated successfully"
+    else
+        echo "⚠️  Failed to update integration performance trends, using fallback..."
+        # Fallback to old method
+        TRENDS_FILE="$OUTPUT_DIR/data/integration-trends.json"
     if [ -f "$TRENDS_FILE" ]; then
         # Read existing trends
         PREV_SCORE=$(jq -r '.latest_score // "0"' "$TRENDS_FILE" 2>/dev/null || echo "0")

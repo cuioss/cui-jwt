@@ -65,21 +65,25 @@ calculate_trend() {
         
         # Create trend badge with benchmark type context
         local label="Performance Trend"
+        local badge_file="trend-badge.json"
         if [ "$BENCHMARK_TYPE" = "integration" ]; then
             label="Integration Performance Trend"
+            badge_file="integration-trend-badge.json"
         fi
         
-        echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"$trend_symbol $formatted_change% ($trend_direction)\",\"color\":\"$trend_color\"}" > "$OUTPUT_DIR/trend-badge.json"
+        echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"$trend_symbol $formatted_change% ($trend_direction)\",\"color\":\"$trend_color\"}" > "$OUTPUT_DIR/$badge_file"
         
         echo "Created trend badge: $trend_direction ($formatted_change%)"
     else
         # Not enough data for trend
         local label="Performance Trend"
+        local badge_file="trend-badge.json"
         if [ "$BENCHMARK_TYPE" = "integration" ]; then
             label="Integration Performance Trend"
+            badge_file="integration-trend-badge.json"
         fi
         
-        echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"→ Insufficient Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/trend-badge.json"
+        echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"→ Insufficient Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/$badge_file"
         echo "Created trend badge: insufficient data"
     fi
 }
@@ -116,10 +120,12 @@ fi
 if [ "$SCORE_COUNT" -eq 0 ] || [ -z "$SCORES" ]; then
     echo "Warning: No performance scores found in tracking file"
     label="Performance Trend"
+    badge_file="trend-badge.json"
     if [ "$BENCHMARK_TYPE" = "integration" ]; then
         label="Integration Performance Trend"
+        badge_file="integration-trend-badge.json"
     fi
-    echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/trend-badge.json"
+    echo "{\"schemaVersion\":1,\"label\":\"$label\",\"message\":\"→ No Data\",\"color\":\"lightgrey\"}" > "$OUTPUT_DIR/$badge_file"
     echo "Created placeholder trend badge: no performance data"
     exit 0
 fi
