@@ -14,11 +14,54 @@ CURRENT_RESILIENCE="$7"
 
 echo "Updating consolidated performance tracking..."
 
+# Ensure output directories exist
+mkdir -p "$OUTPUT_DIR/data"
+mkdir -p "$OUTPUT_DIR/badges"
+
 # Download existing tracking file if it exists
 TRACKING_FILE="$OUTPUT_DIR/data/performance-tracking.json"
 # Try to download from the deployed GitHub Pages URL
 GITHUB_PAGES_URL="https://cuioss.github.io/cui-jwt/benchmarks/data/performance-tracking.json"
-curl -f -s "$GITHUB_PAGES_URL" -o "$TRACKING_FILE" 2>/dev/null || echo '{"runs":[]}' > "$TRACKING_FILE"
+
+# Check if we already have a local tracking file with data
+if [ -f "$TRACKING_FILE" ]; then
+    LOCAL_RUN_COUNT=$(jq '.runs | length' "$TRACKING_FILE" 2>/dev/null || echo "0")
+    if [ "$LOCAL_RUN_COUNT" -gt "0" ]; then
+        echo "Using existing local tracking file with $LOCAL_RUN_COUNT runs"
+    else
+        # Local file exists but is empty, try to download from GitHub Pages
+        echo "Local tracking file is empty, checking GitHub Pages..."
+        TEMP_FILE=$(mktemp)
+        if curl -f -s "$GITHUB_PAGES_URL" -o "$TEMP_FILE" 2>/dev/null; then
+            REMOTE_RUN_COUNT=$(jq '.runs | length' "$TEMP_FILE" 2>/dev/null || echo "0")
+            if [ "$REMOTE_RUN_COUNT" -gt "0" ]; then
+                echo "Downloaded existing performance tracking file with $REMOTE_RUN_COUNT runs"
+                mv "$TEMP_FILE" "$TRACKING_FILE"
+            else
+                echo "Remote tracking file is also empty, starting fresh"
+                rm -f "$TEMP_FILE"
+                echo '{"runs":[]}' > "$TRACKING_FILE"
+            fi
+        else
+            echo "No remote tracking file found, starting fresh"
+            rm -f "$TEMP_FILE"
+            echo '{"runs":[]}' > "$TRACKING_FILE"
+        fi
+    fi
+else
+    # No local file, try to download from GitHub Pages
+    echo "No local tracking file, downloading from GitHub Pages..."
+    if curl -f -s "$GITHUB_PAGES_URL" -o "$TRACKING_FILE" 2>/dev/null; then
+        REMOTE_RUN_COUNT=$(jq '.runs | length' "$TRACKING_FILE" 2>/dev/null || echo "0")
+        echo "Downloaded existing performance tracking file with $REMOTE_RUN_COUNT runs"
+        if [ "$REMOTE_RUN_COUNT" -eq "0" ]; then
+            echo "Warning: Remote tracking file is empty"
+        fi
+    else
+        echo "No remote tracking file found, starting fresh"
+        echo '{"runs":[]}' > "$TRACKING_FILE"
+    fi
+fi
 
 # Add current run to tracking data
 CURRENT_RUN=$(cat <<EOF

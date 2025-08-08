@@ -115,7 +115,7 @@ fi
 # Validate extracted scores
 if [ "$SCORE_COUNT" -eq 0 ] || [ -z "$SCORES" ]; then
     echo "Warning: No performance scores found in tracking file"
-    local label="Performance Trend"
+    label="Performance Trend"
     if [ "$BENCHMARK_TYPE" = "integration" ]; then
         label="Integration Performance Trend"
     fi
