@@ -349,7 +349,6 @@ The following tests verify the implementation:
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest]
 
 === TokenValidatorMonitor
-_See Requirement xref:../Requirements.adoc#CUI-JWT-7.4[CUI-JWT-7.4: Performance Monitoring]_
 
 ==== Status: IMPLEMENTED
 
