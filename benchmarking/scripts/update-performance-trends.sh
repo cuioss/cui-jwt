@@ -63,6 +63,21 @@ else
     fi
 fi
 
+# Convert formatted values to raw numbers
+# Remove 'k' suffix and multiply by 1000 if present
+if [[ "$CURRENT_THROUGHPUT" == *"k" ]]; then
+    CURRENT_THROUGHPUT=$(echo "$CURRENT_THROUGHPUT" | sed 's/k$//' | awk '{print $1 * 1000}')
+fi
+if [[ "$CURRENT_RESILIENCE" == *"k" ]]; then
+    CURRENT_RESILIENCE=$(echo "$CURRENT_RESILIENCE" | sed 's/k$//' | awk '{print $1 * 1000}')
+fi
+
+# Ensure values are numeric (default to 0 if not)
+CURRENT_SCORE=$(echo "$CURRENT_SCORE" | grep -o '[0-9.]*' | head -1 || echo "0")
+CURRENT_THROUGHPUT=$(echo "$CURRENT_THROUGHPUT" | grep -o '[0-9.]*' | head -1 || echo "0")
+CURRENT_LATENCY=$(echo "$CURRENT_LATENCY" | grep -o '[0-9.]*' | head -1 || echo "0")
+CURRENT_RESILIENCE=$(echo "$CURRENT_RESILIENCE" | grep -o '[0-9.]*' | head -1 || echo "0")
+
 # Add current run to tracking data
 CURRENT_RUN=$(cat <<EOF
 {
