@@ -157,36 +157,7 @@ For detailed architectural information, see:
 * xref:doc/Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:doc/security/Threat-Model.adoc[Threat Model] - Security analysis
 
-== Configuration
-
-=== Runtime Dependencies
-
-The library requires a Jakarta JSON API implementation:
-
-[source,xml]
-----
-<dependency>
-    <groupId>org.eclipse.parsson</groupId>
-    <artifactId>parsson</artifactId>
-    <version>1.1.7</version>
-</dependency>
-----
-
-=== Test Support
-
-Test utilities are available via:
-
-[source,xml]
-----
-<dependency>
-    <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-validation</artifactId>
-    <classifier>generators</classifier>
-    <scope>test</scope>
-</dependency>
-----
-
-See xref:cui-jwt-validation/doc/UnitTesting.adoc[Test Utilities Documentation] for details.
+For configuration details including runtime dependencies and test support, see the xref:cui-jwt-validation/README.adoc[JWT Validation Module documentation].
 
 == Performance
 
