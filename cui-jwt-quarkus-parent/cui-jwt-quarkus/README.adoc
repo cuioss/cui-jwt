@@ -31,14 +31,14 @@ For Maven dependency information, see xref:../README.adoc#maven-coordinates[Mave
 * Built-in health checks for JWT validation endpoints
 * JWKS endpoint connectivity monitoring
 * Token validator status verification
-* See xref:../doc/health-checks.adoc[Health Checks Documentation] for detailed configuration and usage
+* See xref:../doc/integration/health-checks.adoc[Health Checks Documentation] for detailed configuration and usage
 
 === Metrics Collection
 
 * Integration with Micrometer for JWT validation metrics
 * Token validation success/failure counters
 * Performance metrics for validation operations
-* See xref:../doc/metrics-integration.adoc[Metrics Integration Documentation] for comprehensive monitoring setup
+* See xref:../doc/integration/metrics-integration.adoc[Metrics Integration Documentation] for comprehensive monitoring setup
 
 == Detailed Component Documentation
 
@@ -81,11 +81,11 @@ Factory for issuer-specific configurations:
 
 === Health Checks
 
-For comprehensive health check configuration, implementation details, and Kubernetes integration, see xref:../doc/health-checks.adoc[Health Checks Documentation].
+For comprehensive health check configuration, implementation details, and Kubernetes integration, see xref:../doc/integration/health-checks.adoc[Health Checks Documentation].
 
 === Metrics Integration
 
-For comprehensive metrics configuration, Prometheus queries, alerting examples, and Grafana dashboard setup, see xref:../doc/metrics-integration.adoc[Metrics Integration Documentation].
+For comprehensive metrics configuration, Prometheus queries, alerting examples, and Grafana dashboard setup, see xref:../doc/integration/metrics-integration.adoc[Metrics Integration Documentation].
 
 === Runtime Services
 
@@ -275,15 +275,15 @@ cui.jwt.issuers.my-issuer.parser.allowed-algorithms=RS256,RS384,RS512
 
 * Full GraalVM native image compatibility
 * Automatic reflection and runtime initialization configuration
-* See xref:../doc/native-image-support.adoc[Native Image Support Documentation] for detailed configuration and testing information
+* See xref:../doc/configuration/native-image-configuration.adoc[Native Image Configuration] for detailed configuration and testing information
 
 == Related Documentation
 
 * xref:../cui-jwt-quarkus-deployment/README.adoc[Deployment Module Documentation]
-* xref:../doc/quarkus-integration.adoc[Quarkus Integration Architecture]
-* xref:../doc/health-checks.adoc[Health Checks Documentation]
-* xref:../doc/metrics-integration.adoc[Metrics Integration Documentation]
-* xref:../doc/native-image-support.adoc[Native Image Support Documentation]
-* xref:../doc/devui-testing.adoc[DevUI Testing Guide]
-* xref:../../doc/specification/technical-components.adoc[Technical Components Specification]
-* xref:../../doc/security/security-specifications.adoc[Security Specification]
+* xref:../doc/integration/quarkus-integration.adoc[Quarkus Integration Architecture]
+* xref:../doc/integration/health-checks.adoc[Health Checks Documentation]
+* xref:../doc/integration/metrics-integration.adoc[Metrics Integration Documentation]
+* xref:../doc/configuration/native-image-configuration.adoc[Native Image Configuration]
+* xref:../doc/development/devui-testing.adoc[DevUI Testing Guide]
+* xref:../../../doc/specification/technical-components.adoc[Technical Components Specification]
+* xref:../../../doc/security/security-specifications.adoc[Security Specification]

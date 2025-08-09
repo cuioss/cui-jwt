@@ -102,7 +102,7 @@ The extension supports GraalVM native image compilation with:
 * Runtime initialization for network-dependent components
 * Proper resource inclusion
 
-See xref:native-image-support.adoc[Native Image Support] for detailed information.
+See xref:../configuration/native-image-configuration.adoc[Native Image Configuration] for detailed information.
 
 == Best Practices
 
@@ -140,7 +140,7 @@ The extension includes comprehensive tests:
 * Health check validation
 * Metrics collection verification
 
-See xref:quarkus-test-setup.adoc[Quarkus Test Setup] for information on testing the extension.
+See xref:../development/quarkus-test-setup.adoc[Quarkus Test Setup] for information on testing the extension.
 
 == Maven Configuration
 
@@ -150,4 +150,4 @@ The extension is configured as a standard Quarkus extension with:
 * Proper dependency management
 * Build plugin configuration
 
-See xref:maven-build-configuration.adoc[Maven Build Configuration] for detailed information.
+See xref:../configuration/maven-build-configuration.adoc[Maven Build Configuration] for detailed information.

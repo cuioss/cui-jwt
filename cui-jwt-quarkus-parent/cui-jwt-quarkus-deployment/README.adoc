@@ -97,7 +97,7 @@ Automatically registers these classes for reflection:
 === Native Image Support
 Configures GraalVM native image compilation with automatic reflection registration and runtime initialization.
 
-For detailed configuration, reflection classes, and testing information, see xref:../doc/native-image-support.adoc[Native Image Support Documentation].
+For detailed configuration, reflection classes, and testing information, see xref:../doc/configuration/native-image-configuration.adoc[Native Image Configuration].
 
 == Best Practices
 
@@ -129,5 +129,5 @@ For detailed configuration, reflection classes, and testing information, see xre
 * xref:../doc/quarkus-integration.adoc[Quarkus Integration Architecture]
 * xref:../doc/devui-implementation.adoc[DevUI Implementation Documentation]
 * xref:../doc/devui-testing.adoc[DevUI Testing Guide]
-* xref:../doc/native-image-support.adoc[Native Image Support Documentation]
-* xref:../../doc/specification/technical-components.adoc[Technical Components Specification]
+* xref:../doc/configuration/native-image-configuration.adoc[Native Image Configuration]
+* xref:../../../doc/specification/technical-components.adoc[Technical Components Specification]
