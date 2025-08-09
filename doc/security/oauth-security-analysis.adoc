@@ -32,6 +32,7 @@ The client confusion attack occurs when a token issued for one client is used wi
 The library has implemented protections against client confusion attacks. For implementation details, see link:security-specifications.adoc#client-confusion-attack[Client Confusion Attack] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:233-249] - Audience claim validation prevents token misuse across clients
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:387-413] - Authorized Party (azp) validation verifies token was issued for the specific client
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] - Configuration enforces expectedClientId and expectedAudience validation
@@ -61,6 +62,7 @@ The scope upgrade attack occurs when an attacker attempts to add additional scop
 The library provides tools for scope validation but requires proper implementation at the application level. For implementation details, see link:security-specifications.adoc#scope-upgrade-attack[Scope Upgrade Attack] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent.java] - Provides access to scope claims from validated tokens
 * Scope validation must be implemented at the application level using the parsed token content
 * The library validates token integrity but does not enforce scope restrictions (authorization server responsibility)
@@ -84,6 +86,7 @@ OAuth CSRF is an attack against OAuth flows, where the browser consuming the aut
 CSRF protection is primarily a concern at the application level, not in the token validation library. For best practices on preventing CSRF attacks, see link:jwt-security-best-practices.adoc#token-lifecycle-management[Token Lifecycle Management] in the JWT Security Best Practices Guide.
 
 **Implementation Details:**
+
 * CSRF attacks occur during OAuth authorization flows, before token issuance
 * Token validation libraries operate after tokens are issued and do not handle OAuth flows
 * Applications must implement state parameter validation and proper CSRF tokens during OAuth flows
@@ -123,6 +126,7 @@ The mutable claims attack exploits the fact that some OAuth providers allow user
 The library enforces validation of the `sub` claim to mitigate mutable claims attacks. For implementation details, see link:security-specifications.adoc#mutable-claims-attack[Mutable Claims Attack] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java] - Validates presence and format of subject (sub) claim
 * All token types (AccessTokenContent, IdTokenContent, RefreshTokenContent) expose the immutable `sub` claim
 * Applications are guided to use `getSubject()` method for user identification rather than mutable claims like email
@@ -150,6 +154,7 @@ When OAuth is used in mobile applications, developers often use custom URL schem
 Mobile app redirect scheme handling is outside the scope of the token validation library. For best practices on securing mobile OAuth flows, see link:jwt-security-best-practices.adoc#secure-token-handling-on-the-client[Secure Token Handling on the Client] in the JWT Security Best Practices Guide.
 
 **Implementation Details:**
+
 * Redirect scheme hijacking occurs during OAuth authorization flows, before token issuance
 * Token validation libraries operate after tokens are issued and do not handle mobile redirect schemes
 * Mobile applications must implement proper redirect URI validation and use platform-specific secure mechanisms
@@ -185,5 +190,3 @@ The library currently implements good mitigations for client confusion attacks b
 2. Enhance documentation about the importance of using the immutable `sub` claim for user identification
 3. Consider adding explicit warnings when applications use mutable claims for user identification
 4. Maintain clear documentation about which OAuth vulnerabilities are addressed by the library and which are the responsibility of the application developer
-
-These recommendations have been captured in the TODO.adoc document.
