@@ -36,7 +36,7 @@ TokenValidator tokenValidator = TokenValidator.builder()
     .build();
 
 // Validator automatically selects correct issuer based on token's "iss" claim
-ValidationResult<AccessToken> result = tokenValidator.validateAccessToken(jwtString);
+AccessTokenContent token = tokenValidator.createAccessToken(jwtString);
 ----
 
 == Issuer Detection
@@ -184,8 +184,8 @@ public class DynamicTokenValidator {
         this.validator = builder.build();
     }
 
-    public ValidationResult<AccessToken> validate(String token) {
-        return validator.validateAccessToken(token);
+    public AccessTokenContent validate(String token) throws TokenValidationException {
+        return validator.createAccessToken(token);
     }
 }
 ----

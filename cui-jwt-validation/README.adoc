@@ -29,13 +29,14 @@ TokenValidator tokenValidator = TokenValidator.builder()
         .build())
     .build();
 
-// Validate token
-ValidationResult<AccessToken> result = tokenValidator.validateAccessToken(jwtString);
-
-if (result.isValid()) {
-    AccessToken token = result.getToken();
+// Validate and create token (throws TokenValidationException if invalid)
+try {
+    AccessTokenContent token = tokenValidator.createAccessToken(jwtString);
     String subject = token.getSubject();
-    Set<String> roles = token.getRoles();
+    List<String> roles = token.getRoles();
+} catch (TokenValidationException e) {
+    // Handle validation failure
+    System.err.println("Token validation failed: " + e.getMessage());
 }
 ----
 

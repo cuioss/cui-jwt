@@ -17,16 +17,11 @@ public class TokenValidator {
     // Builder pattern for configuration
     public static Builder builder() { ... }
 
-    // Validation methods
-    public ValidationResult<AccessToken> validateAccessToken(String token);
-    public ValidationResult<IdToken> validateIdToken(String token);
-    public ValidationResult<RefreshToken> validateRefreshToken(String token);
-
-    // Token creation methods (performs validation)
+    // Token creation methods (performs validation and returns validated token)
+    // These methods throw TokenValidationException if validation fails
     public AccessTokenContent createAccessToken(String token);
     public IdTokenContent createIdToken(String token);
     public RefreshTokenContent createRefreshToken(String token);
-}
 ----
 
 === AccessTokenContent
@@ -37,23 +32,26 @@ Represents a validated access token with its claims.
 ----
 public class AccessTokenContent {
     // Standard claims
-    public String getSubject();
+    public Optional<String> getSubject();     // Subject may be optional based on issuer config
     public String getIssuer();
-    public List<String> getAudience();
-    public Instant getExpiration();
-    public Instant getIssuedAt();
+    public Optional<List<String>> getAudience();
+    public OffsetDateTime getExpirationTime();
+    public OffsetDateTime getIssuedAtTime();
 
     // Access token specific
     public List<String> getRoles();
     public List<String> getGroups();
-    public String getScope();
-    public String getClientId();
+    public List<String> getScopes();          // Note: plural form
+    public Optional<String> getEmail();
+    public Optional<String> getPreferredUsername();
 
     // Authorization checks
     public boolean providesRoles(Collection<String> requiredRoles);
     public boolean providesGroups(Collection<String> requiredGroups);
+    public boolean providesScopes(Collection<String> requiredScopes);
     public Set<String> determineMissingRoles(Collection<String> required);
     public Set<String> determineMissingGroups(Collection<String> required);
+    public Set<String> determineMissingScopes(Collection<String> required);
 }
 ----
 
@@ -197,45 +195,19 @@ public interface ClaimMapper {
 }
 ----
 
-== Validation Results
+== Error Handling
 
-=== ValidationResult
+The library uses exceptions to indicate validation failures rather than result objects.
 
-Container for validation results.
+=== TokenValidationException
 
-[source,java]
-----
-public class ValidationResult<T> {
-    public boolean isValid();
-    public T getToken();
-    public List<ValidationError> getErrors();
-    public String getErrorMessage();
-}
-----
-
-=== ValidationError
-
-Represents a validation failure.
+Main exception for validation failures.
 
 [source,java]
 ----
-public class ValidationError {
-    public String getCode();
+public class TokenValidationException extends Exception {
     public String getMessage();
-    public ErrorCategory getCategory();
-}
-----
-
-=== ErrorCategory
-
-Categories of validation errors.
-
-[source,java]
-----
-public enum ErrorCategory {
-    STRUCTURE,   // Token format issues
-    SIGNATURE,   // Cryptographic validation failures
-    SEMANTIC     // Claim validation failures
+    // Contains detailed error information
 }
 ----
 
@@ -289,21 +261,7 @@ These limits provide defense-in-depth against:
 * Memory exhaustion
 * JSON parsing vulnerabilities
 
-== Exception Handling
-
-=== TokenValidationException
-
-Main exception for validation failures.
-
-[source,java]
-----
-public class TokenValidationException extends Exception {
-    public List<ValidationError> getErrors();
-    public ErrorCategory getCategory();
-}
-----
-
-=== WellKnownDiscoveryException
+=== WellKnownDiscoveryException  
 
 Exception for OpenID Connect discovery failures.
 

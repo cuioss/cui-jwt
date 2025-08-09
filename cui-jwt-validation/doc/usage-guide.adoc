@@ -19,13 +19,14 @@ TokenValidator tokenValidator = TokenValidator.builder()
         .build())
     .build();
 
-// Validate token
-ValidationResult<AccessToken> result = tokenValidator.validateAccessToken(jwtString);
-
-if (result.isValid()) {
-    AccessToken token = result.getToken();
+// Validate and create token (throws TokenValidationException if invalid)
+try {
+    AccessTokenContent token = tokenValidator.createAccessToken(jwtString);
     String subject = token.getSubject();
-    Set<String> roles = token.getRoles();
+    List<String> roles = token.getRoles();
+} catch (TokenValidationException e) {
+    // Handle validation failure
+    System.err.println("Token validation failed: " + e.getMessage());
 }
 ----
 
@@ -47,8 +48,8 @@ TokenValidator tokenValidator = TokenValidator.builder()
     .build();
 
 // Subsequent validations of the same token are cached
-ValidationResult<AccessToken> result1 = tokenValidator.validateAccessToken(jwtString);
-ValidationResult<AccessToken> result2 = tokenValidator.validateAccessToken(jwtString); // From cache
+AccessTokenContent token1 = tokenValidator.createAccessToken(jwtString);
+AccessTokenContent token2 = tokenValidator.createAccessToken(jwtString); // From cache
 ----
 
 == Multi-Issuer Configuration
@@ -69,7 +70,7 @@ TokenValidator tokenValidator = TokenValidator.builder()
     .build();
 
 // Validator automatically selects correct issuer based on token
-ValidationResult<AccessToken> result = tokenValidator.validateAccessToken(jwtString);
+AccessTokenContent token = tokenValidator.createAccessToken(jwtString);
 ----
 
 == OpenID Connect Discovery
@@ -178,8 +179,7 @@ TokenValidator validator = TokenValidator.builder()
     .build();
 
 // Token claims are automatically mapped
-ValidationResult<AccessToken> result = validator.validateAccessToken(jwtString);
-AccessToken token = result.getToken();
+AccessTokenContent token = validator.createAccessToken(jwtString);
 Set<String> roles = token.getRoles(); // From realm_access/roles
 Set<String> groups = token.getGroups(); // From groups claim
 ----
