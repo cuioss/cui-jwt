@@ -36,6 +36,7 @@ The library's design enforces signature verification:
 * The `NonValidatingJwtParser` is only used internally as part of the validation pipeline
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator.java:264-333] - Enforces ordered validation pipeline with mandatory signature validation
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:80-148] - Validates signatures using secure cryptographic operations with standard JDK providers
 * No public API methods expose token decoding without signature verification
@@ -61,6 +62,7 @@ The JWT specification allows tokens to specify the signing algorithm in their he
 The library explicitly rejects the "none" algorithm. For implementation details, see xref:security-specifications.adoc#none-algorithm-attack[None Algorithm Attack] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - "none" algorithm is explicitly listed in REJECTED_ALGORITHMS
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:229-241] - Signature validator rejects tokens with unsupported algorithms
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:110-132] - Header validator checks algorithm support before signature validation
@@ -83,6 +85,7 @@ When using HMAC-based algorithms like `HS256`, the integrity of the JWT depends 
 The library provides protection against weak keys. For implementation details, see xref:security-specifications.adoc#trivial-secret-weak-hmac-keys[Trivial Secret] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms (HS256, HS384, HS512) are explicitly rejected to prevent weak secret vulnerabilities
 * Library exclusively supports asymmetric algorithms (RS*, ES*, PS*) eliminating shared secret vulnerabilities
 * No support for HMAC-based algorithms removes the risk of weak key attacks entirely
@@ -106,6 +109,7 @@ This attack exploits the fact that the JWT header includes a user-controlled `al
 The library implements several protections against algorithm confusion attacks. For implementation details, see xref:security-specifications.adoc#algorithm-confusion[Algorithm Confusion] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms are explicitly rejected, preventing RSA-to-HMAC confusion attacks
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:250-262] - Algorithm compatibility validation ensures token algorithm matches key type
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:140-148] - Strict algorithm-key matching prevents confusion attacks
@@ -135,6 +139,7 @@ The library implements several protections against Key ID injection attacks. For
 * Keys are pre-loaded and cached, limiting the impact of manipulated `kid` values
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:96-105] - Mandatory Key ID validation rejects tokens without valid kid
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:129-138] - Key retrieval through secure JwksLoader abstraction prevents direct file/DB access
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader.java:116-128] - Keys are pre-loaded and cached via HTTPS, eliminating dynamic key fetching based on kid values
@@ -143,6 +148,7 @@ The library implements several protections against Key ID injection attacks. For
 
 * link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests rejection of tokens with invalid `kid` values in `shouldRejectTokenWhenKeyNotFound()`
 * link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest] - Comprehensive tests for KID injection attacks:
+
 ** Tests path traversal via `kid` header
 ** Tests SQL injection via `kid` header
 ** Tests null byte injection via `kid` header
@@ -163,6 +169,7 @@ JWTs can optionally include a JWK (JSON Web Key) directly inside the token heade
 The library mitigates this vulnerability by refusing to accept keys from tokens. For implementation details, see xref:security-specifications.adoc#embedded-jwk[Embedded JWK] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:93-102] - Embedded JWK detection explicitly rejects tokens containing "jwk" in header
 * All keys must be obtained through secure JwksLoader implementations, never from token headers
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter.java] - Tracks UNSUPPORTED_ALGORITHM events when embedded JWK tokens are detected
@@ -186,6 +193,7 @@ JWT supports additional headers like `jku` (JWK Set URL) and `x5u` (X.509 certif
 The library prevents JKU/X5U header abuse by not following arbitrary URLs in tokens. For implementation details, see xref:security-specifications.adoc#jku-x5u-header-abuse[JKU/X5U Header Abuse] in the Security Specifications document.
 
 **Implementation Details:**
+
 * The library does not process `jku` or `x5u` headers from tokens - these headers are ignored
 * All JWKS URLs must be explicitly configured in link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] during application setup
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader.java] - Only fetches keys from pre-configured, trusted JWKS endpoints with TLS enforcement
@@ -209,6 +217,7 @@ In 2022, a critical vulnerability was discovered in the Java JDK's ECDSA signatu
 The library is protected against the "Psychic Signature" vulnerability. For implementation details, see xref:security-specifications.adoc#psychic-signature[Psychic Signature] in the Security Specifications document.
 
 **Implementation Details:**
+
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java] - Uses Java 21 standard JDK cryptographic providers which include fixes for CVE-2022-21449
 * Java 21 properly validates ECDSA signature components and rejects all-zero signatures
 * The library enforces use of standard JDK providers with Java 21, which includes comprehensive security fixes

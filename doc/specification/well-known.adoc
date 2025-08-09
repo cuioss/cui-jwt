@@ -116,6 +116,23 @@ A critical security measure in OIDC discovery is the validation of the `issuer` 
 
 This validation step helps prevent man-in-the-middle and DNS-based attacks where an attacker might try to impersonate a legitimate OP by providing a malicious discovery document. The `issuer` value from the discovery document must also match the `iss` claim in the ID Tokens issued by that OP.
 
+=== Implementation and Testing
+
+The issuer validation is implemented in:
+
+* **Core Implementation**: `HttpWellKnownResolver.java:172-176` - Validates issuer during discovery
+* **Validation Logic**: `WellKnownParser.validateIssuer()` - Performs comprehensive URL validation
+* **Token Validation**: `TokenValidator.validateAndExtractIssuer()` - Ensures JWT contains issuer claim
+
+Test coverage includes:
+
+* **Well-Known Tests**: `WellKnownParserTest` - Tests issuer validation scenarios:
+** `shouldValidateMatchingIssuerSuccessfully()` - Valid issuer scenarios
+** `shouldReturnErrorForMalformedIssuerUrl()` - Malformed issuer URLs
+** `shouldReturnErrorForIssuerValidationFailures()` - Protocol, host, port, and path mismatches
+* **Integration Tests**: `HttpWellKnownResolverTest` - Tests complete discovery flow with issuer validation
+* **Compliance Tests**: `RFC7519JWTComplianceTest` - Validates RFC 7519 Section 4.1.1 issuer claim handling
+
 == Implementation Details
 
 === Well-Known Discovery Process
