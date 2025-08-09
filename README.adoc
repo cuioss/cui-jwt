@@ -99,7 +99,6 @@ The xref:cui-jwt-quarkus-parent/README.adoc[Quarkus Extension] provides:
 [source,properties]
 ----
 # application.properties
-cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
 cui.jwt.issuers.keycloak.jwks.http.well-known-url=https://keycloak.example.com/realms/master/.well-known/openid-configuration
 ----
 
