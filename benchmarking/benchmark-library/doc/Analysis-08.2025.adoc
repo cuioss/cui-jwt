@@ -54,7 +54,7 @@ This analysis documents the baseline performance metrics for the JWT validation 
 The benchmark results show varying P99 latencies across different workloads:
 - *Complete Validation*: P99 ranges from 112μs to 31,675μs depending on workload (152μs in average-time mode)
 - *Signature Validation*: P99 spikes up to 10,195μs in mixed token scenarios (124μs in average-time mode)
-- *Most Stable*: Token parsing and claims validation maintain consistent P99/P50 ratios &lt; 4x
+- *Most Stable*: Token parsing and claims validation maintain consistent P99/P50 ratios < 4x
 - *Mode Comparison*: Average-time mode shows stable P99 of 152μs vs up to 31,675μs in throughput mode (both using 100 threads)
 
 == Key Performance Characteristics
@@ -90,13 +90,13 @@ The benchmark results show varying P99 latencies across different workloads:
 
 . *P99 Latency Spikes*: Address 31.7ms spikes in throughput mode (average-time mode shows stable 152μs with same 100 threads)
 . *Signature Validation*: Reduce 10.2ms+ P99 spikes in mixed scenarios (average-time mode shows stable 124μs)
-. *P99/P50 Ratios*: Target &lt; 50x for predictable performance (average-time mode already achieves this)
+. *P99/P50 Ratios*: Target < 50x for predictable performance (average-time mode already achieves this)
 
 === Medium Priority
 
-. *Throughput Enhancement*: Target &gt;200k ops/s baseline (current: 100,673 ops/s)
-. *Thread Efficiency*: Improve from 1,007 to &gt;2,000 ops/s/thread
-. *Average Latency*: Reduce from 860μs to &lt;500μs
+. *Throughput Enhancement*: Target >200k ops/s baseline (current: 100,673 ops/s)
+. *Thread Efficiency*: Improve from 1,007 to >2,000 ops/s/thread
+. *Average Latency*: Reduce from 860μs to <500μs
 
 === Low Priority
 
@@ -108,7 +108,8 @@ The benchmark results show varying P99 latencies across different workloads:
 
 === Completed Tasks
 
-*Architecture &amp; Performance*:
+*Architecture & Performance*:
+
 - ✅ Field-based TokenSignatureValidator with Provider bypass optimization
 - ✅ Virtual thread compatibility with ReentrantLock patterns, immutable Map.copyOf()
 - ✅ JFR instrumentation with variance analysis, ValidationContext time caching
@@ -116,6 +117,7 @@ The benchmark results show varying P99 latencies across different workloads:
 - ✅ Benchmark profile separation with distinct output directories
 
 *Library Analysis*:
+
 - ✅ Analyzed jjwt, smallrye-jwt, jose4j, auth0 - all use JCA without Signature caching
 - ✅ Component performance breakdown completed
 
@@ -173,9 +175,9 @@ The benchmark results show varying P99 latencies across different workloads:
 === Low Priority - Production Hardening
 
 * [ ] *JFR Overhead Reduction*
-* [ ] Conditional recording (&gt;100μs threshold)
+* [ ] Conditional recording (>100μs threshold)
 * [ ] Batch event recording
-* [ ] *Memory &amp; GC Optimization*
+* [ ] *Memory & GC Optimization*
 
 * [ ] Reduce allocation rate
 * [ ] Optimize hot allocation sites
