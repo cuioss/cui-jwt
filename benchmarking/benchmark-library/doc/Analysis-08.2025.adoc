@@ -52,6 +52,7 @@ This analysis documents the baseline performance metrics for the JWT validation 
 === 📊 Variance Analysis
 
 The benchmark results show varying P99 latencies across different workloads:
+
 - *Complete Validation*: P99 ranges from 112μs to 31,675μs depending on workload (152μs in average-time mode)
 - *Signature Validation*: P99 spikes up to 10,195μs in mixed token scenarios (124μs in average-time mode)
 - *Most Stable*: Token parsing and claims validation maintain consistent P99/P50 ratios < 4x
@@ -445,6 +446,7 @@ quarkus.native.additional-build-args=--initialize-at-run-time=sun.security.provi
 === Critical Analysis: Why Semaphores Won't Help
 
 *The Data Shows:*
+
 - P50: 52μs, P95: 71μs, P99: 67,066μs
 - 99% of operations complete normally (≤71μs)
 - Only 1% experience extreme delays (67ms = 1,000x slower)
