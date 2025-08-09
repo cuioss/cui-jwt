@@ -41,239 +41,38 @@ https://cuioss.github.io/cui-jwt/about.html[Generated Documentation on github-pa
 [.discrete]
 == What is it?
 
-A comprehensive library for validating JWT tokens in multi-issuer environments.
-The core idea is to leverage offline-validation of JWT tokens.
+A comprehensive library for validating JWT tokens in multi-issuer environments with a focus on offline validation.
 
 toc::[]
 
-== Maven Coordinates
+== Motivation
 
-[source,xml]
-----
-<dependency>
-    <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-validation</artifactId>
-</dependency>
-----
+Modern microservice architectures often need to validate JWT tokens from multiple identity providers without making synchronous calls to authorization servers. This library addresses several key challenges:
 
-== Core Concepts
+=== Why Offline Validation?
 
-Key features include:
+* **Performance**: No network round-trips for token validation, enabling sub-millisecond validation times
+* **Resilience**: Service remains functional even when identity providers are temporarily unavailable
+* **Scalability**: Validation scales with your application, not limited by identity provider capacity
+* **Cost**: Reduces load on identity providers, avoiding rate limiting and additional infrastructure costs
 
-* Multi-issuer support for handling tokens from different identity providers
-* Automatic JWKS (JSON Web Key Set) key management and rotation, with JWKS URI configurable directly or via OpenID Connect (OIDC) Discovery.
-* Type-safe token parsing and validation
-* Scope-based authorization support
-* Protection against common JWT attacks
-* Configurable security settings
-* Tested compatibility with Keycloak as identity provider
+=== Key Problems Solved
+
+* **Multi-Issuer Complexity**: Seamlessly handle tokens from Keycloak, Auth0, Azure AD, and other providers in a single application
+* **Key Rotation**: Automatic JWKS key fetching and caching with configurable refresh strategies
+* **Security**: Protection against common JWT vulnerabilities through comprehensive validation pipeline
+* **Configuration Overhead**: OpenID Connect Discovery for automatic configuration from well-known endpoints
 
 [NOTE]
 ====
-This library is not meant as a replacement for a full-fledged OAuth2 or OpenID Connect library.
-Therefore it will never be capable of creating tokens itself.
+This library focuses on JWT validation and is not meant as a replacement for full OAuth2 or OpenID Connect libraries. It will never create tokens, only validate them.
 ====
 
-=== Multi-Issuer Support
+== Quick Start
 
-* Support for multiple identity providers in a single application
-* Independent configuration for each issuer
-* Automatic issuer detection from token claims
-* Isolated key management per issuer
+=== Quarkus Integration (Recommended)
 
-=== Security-First Design
-
-* Protection against common JWT vulnerabilities
-* Comprehensive validation pipeline
-* Configurable security settings
-* Extensive security event monitoring
-
-=== Key Management
-
-* Automatic JWKS key rotation
-* Multiple key source options (HTTP, file, in-memory)
-* OpenID Connect Discovery support
-* Secure key caching and refresh mechanisms
-
-=== Performance Optimized
-
-* Efficient token validation pipeline
-* Concurrent validation support
-* Comprehensive performance monitoring
-* Memory-efficient token processing
-
-== Configuration
-
-=== Runtime Dependencies
-
-This library requires an implementation of the `jakarta.json-api` to be present at runtime.
-The library itself includes the API as a provided dependency, but you need to provide an implementation such as Eclipse Parsson:
-
-[source,xml]
-----
-    <dependency>
-        <groupId>org.eclipse.parsson</groupId>
-        <artifactId>parsson</artifactId>
-        <version>1.1.7</version> <!-- Use appropriate version -->
-    </dependency>
-----
-
-Alternatively, you can use any other Jakarta JSON API implementation.
-
-=== Test Artifact
-
-The library also provides a test artifact with utilities for testing JWT validation in your applications:
-
-[source,xml]
-----
-    <dependency>
-        <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-validation</artifactId>
-        <classifier>generators</classifier>
-        <scope>test</scope>
-    </dependency>
-----
-
-This artifact contains utility classes for creating and manipulating JWT tokens for testing purposes.
-See the xref:cui-jwt-validation/UnitTesting.adoc[Test Utilities Documentation] for more details.
-
-== Usage Examples
-
-=== Basic Configuration
-
-Here's a minimal example:
-
-[source,java]
-----
-// Create issuer configuration
-IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuerIdentifier("https://your-issuer.com")
-        .httpJwksLoaderConfig(httpJwksLoaderConfig)
-        .build(); // Validation happens automatically
-
-// Create validator
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuerConfig)
-        .build();
-
-// Validate token
-// This will throw TokenValidationException if validation fails
-AccessTokenContent accessToken = validator.createAccessToken(tokenString);
-
-// For configuration using OIDC Discovery, see the Usage Guide.
-----
-
-=== Multi-Issuer Configuration
-
-[source,java]
-----
-// Configure multiple issuers
-IssuerConfig issuer1 = IssuerConfig.builder()
-        .issuerIdentifier("https://issuer1.com")
-        .httpJwksLoaderConfig(httpConfig1)
-        .build(); // Validation happens automatically
-
-IssuerConfig issuer2 = IssuerConfig.builder()
-        .issuerIdentifier("https://issuer2.com")
-        .jwksFilePath("/path/to/jwks.json")
-        .build(); // Validation happens automatically
-
-// Create validator supporting both issuers
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuer1)
-        .issuerConfig(issuer2)
-        .build();
-----
-
-For more detailed examples and best practices, see the xref:cui-jwt-validation/README.adoc[Usage Guide].
-
-== Architecture Overview
-
-image::doc/plantuml/component-overview.png[Component Overview]
-
-The library is designed around a pipeline architecture for token validation, with each component handling a specific aspect of the validation process. The main components are:
-
-* **TokenValidator**: The primary entry point for all token operations
-* **Token Validation Pipeline**: A series of validators for headers, signatures, and claims
-* **Multi-Issuer Support**: Configuration for multiple identity providers
-* **Key Management**: Handling of cryptographic keys for token validation, including discovery of JWKS URI via OIDC
-
-For detailed information about the architecture and components, see the xref:doc/specification/technical-components.adoc[Technical Components] documentation.
-The library also supports configuration of JWKS URI via xref:doc/specification/well-known.adoc[OpenID Connect Discovery], simplifying setup in compatible environments.
-
-== Best Practices
-
-=== Security Considerations
-
-* Always use HTTPS for JWKS endpoints in production
-* Configure appropriate token size limits
-* Validate all required claims (audience, issuer, expiration)
-* Implement proper error handling for security events
-* Use strong cryptographic algorithms (RS256, ES256, etc.)
-
-=== Performance Considerations
-
-* Configure appropriate JWKS refresh intervals
-* Use background key refresh to avoid blocking validation
-* Monitor performance metrics and security events
-* Consider token caching strategies for high-volume scenarios
-
-=== Integration Patterns
-
-* Use dependency injection for TokenValidator instances
-* Implement centralized error handling for validation failures
-* Configure metrics collection for monitoring
-* Use health checks for validation components
-
-== Technical Details
-
-=== Thread Safety
-
-* TokenValidator is thread-safe after construction
-* Concurrent token validation is supported
-* JWKS key refresh happens in background threads
-* Security event counters use thread-safe implementations
-
-=== Memory Management
-
-* Configurable token size limits prevent memory exhaustion
-* Efficient JSON parsing with depth and array size limits
-* Automatic cleanup of expired cached keys
-* Memory-efficient token content representation
-
-=== Performance Characteristics
-
-* Sub-millisecond token validation performance
-* Support for thousands of concurrent validations per second
-* Efficient JWKS key caching and refresh
-* Comprehensive performance monitoring via benchmarking module
-
-== Related Documentation
-
-* xref:doc/navigation.adoc[Documentation Navigation] - Complete guide to all documentation
-* xref:cui-jwt-validation/README.adoc[Usage Guide] - Complete usage examples and configuration
-* xref:doc/Requirements.adoc[Requirements] - Functional and non-functional requirements
-* xref:doc/specification/technical-components.adoc[Technical Components] - Detailed component specifications
-* xref:doc/specification/well-known.adoc[OIDC Discovery Support] - Specification for OIDC .well-known endpoint interaction
-* xref:doc/security/security-specifications.adoc[Security Specifications] - Security standards and requirements
-* xref:doc/security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations
-* xref:doc/LogMessages.adoc[Log Messages] - Logging and troubleshooting
-* xref:doc/Build.adoc[Building and Development] - Information for contributors
-* xref:cui-jwt-validation/UnitTesting.adoc[Test Utilities] - Documentation for the test artifact and utilities
-
-== Additional Modules
-
-The project includes several additional modules that extend the core JWT validation functionality:
-
-=== Quarkus Integration
-
-The xref:cui-jwt-quarkus-parent/README.adoc[Quarkus Extension] provides seamless integration of the JWT validation library into Quarkus applications. It includes:
-
-* CDI producers for easy dependency injection
-* Configuration support via Quarkus properties
-* Metrics integration with Micrometer for monitoring JWT validation events
-* Health checks for validation components
-* Native image support for GraalVM compilation
+For Quarkus applications, use our dedicated extension for seamless integration:
 
 [source,xml]
 ----
@@ -283,36 +82,120 @@ The xref:cui-jwt-quarkus-parent/README.adoc[Quarkus Extension] provides seamless
 </dependency>
 ----
 
-=== Performance Benchmarking
+The xref:cui-jwt-quarkus-parent/README.adoc[Quarkus Extension] provides:
 
-The project includes two complementary benchmarking modules that use identical performance scoring for comparable results:
+* Zero-configuration setup with sensible defaults
+* CDI injection of validated tokens
+* Automatic metrics and health checks
+* Native image support for GraalVM
+* Dev UI integration for testing
 
-==== Micro-Benchmarks
+[source,java]
+----
+@Inject
+@BearerToken(requiredScopes = {"read"})
+private BearerTokenResult tokenResult;
 
-The xref:benchmarking/benchmark-library/README.adoc[JWT Benchmark Library] provides in-memory performance measurements using JMH (Java Microbenchmark Harness). It measures:
+// Token is automatically validated and injected
+if (tokenResult.isSuccessfullyAuthorized()) {
+    AccessToken token = tokenResult.getAccessTokenContent().get();
+    // Use validated token
+}
+----
 
-* Token validation performance across different scenarios
-* JWKS key retrieval and caching performance  
-* Multi-issuer validation performance
-* Concurrent validation capabilities
-* Error handling performance impact
+=== Standalone Library
 
-==== Integration Benchmarks
+For non-Quarkus applications, use the core validation library:
 
-The xref:benchmarking/benchmark-integration-quarkus/README.adoc[JWT Quarkus Integration Benchmarks] provides end-to-end performance testing using containerized environments. It measures:
+[source,xml]
+----
+<dependency>
+    <groupId>de.cuioss.jwt</groupId>
+    <artifactId>cui-jwt-validation</artifactId>
+</dependency>
+----
 
-* HTTP-based JWT validation performance
-* Real Keycloak integration performance
-* Container and network overhead impact
-* System-level concurrent validation
-* End-to-end error handling performance
+[source,java]
+----
+// Create validator with OIDC Discovery
+TokenValidator validator = TokenValidator.builder()
+    .issuerConfig(IssuerConfig.builder()
+        .issuerIdentifier("https://your-issuer.com")
+        .httpJwksLoaderConfig(httpJwksLoaderConfig)
+        .build())
+    .build();
 
-Both modules use the **identical weighted scoring formula**: `Performance Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience × 0.03)`
+// Validate token
+AccessTokenContent accessToken = validator.createAccessToken(tokenString);
+----
 
-Benchmark results are automatically published to GitHub Pages and can be used to track performance regressions over time.
+== Core Features
 
-xref:benchmarking/doc/performance-scoring.adoc[Understand Performance Metrics]
+* **Multi-issuer support** for handling tokens from different identity providers
+* **Automatic JWKS key management** with rotation support
+* **OpenID Connect Discovery** for automatic configuration
+* **Type-safe token parsing** with strongly typed Access, ID, and Refresh tokens
+* **Comprehensive security** with configurable validation pipeline
+* **High performance** with sub-millisecond validation and built-in caching
+* **Production ready** with extensive testing against Keycloak
+
+== Architecture
+
+For detailed architectural information, see:
+
+* xref:doc/specification/technical-components.adoc[Technical Components] - Complete architecture documentation
+* xref:doc/plantuml/component-overview.png[Component Diagram] - Visual architecture overview
+
+== Documentation
+
+* xref:doc/navigation.adoc[📚 Documentation Navigation] - Complete guide to all documentation
+* xref:cui-jwt-validation/README.adoc[Usage Guide] - Detailed usage examples
+* xref:doc/Requirements.adoc[Requirements] - Functional and non-functional requirements
+* xref:doc/security/Threat-Model.adoc[Threat Model] - Security analysis
+
+== Configuration
+
+=== Runtime Dependencies
+
+The library requires a Jakarta JSON API implementation:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.eclipse.parsson</groupId>
+    <artifactId>parsson</artifactId>
+    <version>1.1.7</version>
+</dependency>
+----
+
+=== Test Support
+
+Test utilities are available via:
+
+[source,xml]
+----
+<dependency>
+    <groupId>de.cuioss.jwt</groupId>
+    <artifactId>cui-jwt-validation</artifactId>
+    <classifier>generators</classifier>
+    <scope>test</scope>
+</dependency>
+----
+
+See xref:cui-jwt-validation/doc/UnitTesting.adoc[Test Utilities Documentation] for details.
+
+== Performance
+
+The library is continuously benchmarked with results published to GitHub Pages:
+
+* xref:benchmarking/benchmark-library/README.adoc[Micro-benchmarks] - In-memory performance testing
+* xref:benchmarking/benchmark-integration-quarkus/README.adoc[Integration benchmarks] - End-to-end containerized testing
+* xref:benchmarking/doc/performance-scoring.adoc[Performance Metrics] - Understanding the scoring system
+
+Both benchmark types use identical weighted scoring for comparable results.
 
 == External Resources
 
 * https://cuioss.github.io/cui-jwt/about.html[Generated Documentation on GitHub Pages]
+* https://github.com/cuioss/cui-jwt[GitHub Repository]
+* https://central.sonatype.com/artifact/de.cuioss.jwt/cui-jwt-parent[Maven Central]
