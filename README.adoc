@@ -47,6 +47,12 @@ toc::[]
 
 == Motivation
 
+=== Why another JWT-Library?
+
+This project started as an instrumentation of smallrye-jwt, then shifted to jjwt with the goal to implement robust multi-issuer handling. With a strong focus on security (see xref:doc/Requirements.adoc[Requirements]), the project evolved through several iterations until it became an entirely new library with its own implementation. The main differentiator is the comprehensive approach to security in multi-issuer environments.
+
+=== The Challenge
+
 Modern microservice architectures often need to validate JWT tokens from multiple identity providers without making synchronous calls to authorization servers. This library addresses several key challenges:
 
 === Why Offline Validation?
