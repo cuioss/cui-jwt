@@ -1,8 +1,8 @@
 = Maven Build Configuration
-:toc:
+:toc: left
 :toclevels: 3
 :sectnums:
-:source-highlighter: highlightjs
+:source-highlighter: highlight.js
 
 Maven build configuration for the CUI JWT Quarkus extension project.
 
@@ -63,4 +63,4 @@ quarkus.log.category."de.cuioss.jwt".level=DEBUG
 quarkus.log.console.format=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n
 ----
 
-See xref:quarkus-test-setup.adoc[Quarkus Test Setup] for detailed framework configuration.
+See xref:../development/quarkus-test-setup.adoc[Quarkus Test Setup] for detailed framework configuration.

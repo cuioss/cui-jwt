@@ -172,7 +172,7 @@ native-image -march=native -O2
 **Implementation Challenges**:
 
 - ❌ **GraalVM JNI Configuration**: Complex metadata requirements
-- ❌ **Dynamic Loading**: Native library deployment complexity  
+- ❌ **Dynamic Loading**: Native library deployment complexity
 - ❌ **Maintenance**: Custom code maintenance burden
 - ❌ **Security**: Additional attack surface
 
@@ -197,7 +197,7 @@ native-image -march=native -O2
 **Expected Impact**:
 
 - **Performance**: 230ms → 5-10ms (95%+ improvement)
-- **Token Size**: 4x reduction with ECDSA, 8x with EdDSA  
+- **Token Size**: 4x reduction with ECDSA, 8x with EdDSA
 - **Throughput**: 918 → >5000 req/sec
 
 **Implementation Steps**:
@@ -243,7 +243,7 @@ native-image -march=native -O2
 3. **Performance Analysis**: Measure improvement vs RS256
 4. **Compatibility Validation**: Verify end-to-end functionality
 
-=== Phase 2: EdDSA Evaluation (2-3 days)  
+=== Phase 2: EdDSA Evaluation (2-3 days)
 1. **Ed25519 Configuration**: Update Keycloak and JWT library
 2. **Performance Comparison**: Benchmark against ES256 and RS256
 3. **Security Analysis**: Validate security level and compliance

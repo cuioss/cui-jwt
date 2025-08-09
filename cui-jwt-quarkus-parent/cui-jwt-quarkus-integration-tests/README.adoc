@@ -1,5 +1,5 @@
 = CUI JWT Quarkus Integration Tests
-:toc:
+:toc: left
 :toclevels: 3
 :sectnums:
 :source-highlighter: highlight.js

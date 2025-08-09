@@ -14,7 +14,7 @@ Performance analysis and optimization tracking for JWT validation in Quarkus nat
 **Key Insights**:
 
 * Integration benchmarks complement microbenchmarks by testing real-world scenarios
-* Native compilation provides excellent memory efficiency (~6MB heap usage)  
+* Native compilation provides excellent memory efficiency (~6MB heap usage)
 * Network and HTTP processing dominate total latency (~80% of request time)
 * JWT validation overhead is only ~200μs of total request time
 * Performance is highly dependent on system resources and containerization
@@ -30,7 +30,7 @@ Performance analysis and optimization tracking for JWT validation in Quarkus nat
 |Core JWT validation logic only
 |End-to-end HTTP request/response cycle
 
-|**Environment** 
+|**Environment**
 |JVM with isolated validation
 |Quarkus native in Docker container
 
@@ -66,7 +66,7 @@ The integration benchmarks have shown various performance patterns:
 
 **JWT Validation Performance**:
 
-* Target range: 8,000-11,000 ops/s  
+* Target range: 8,000-11,000 ops/s
 * More variable due to cryptographic complexity
 * P95 latencies typically 2-4ms
 * Includes full JWT validation overhead
@@ -158,7 +158,7 @@ The integration benchmarks have shown various performance patterns:
 **Good Performance Conditions** (M4, 4 CPU, optimal config):
 
 * Health endpoint: 11,000-12,500 ops/s
-* JWT validation: 9,000-11,000 ops/s  
+* JWT validation: 9,000-11,000 ops/s
 * P95 latencies: 1.5-2.5ms
 * CPU usage: 60-75%
 
@@ -185,7 +185,7 @@ The integration benchmarks have shown various performance patterns:
 Total Request Time: 2,000μs (P95)
 ├─ HTTP/TLS Processing: ~1,600μs (80%)
 │   ├─ Network latency: ~400μs
-│   ├─ TLS handshake amortized: ~200μs  
+│   ├─ TLS handshake amortized: ~200μs
 │   ├─ HTTP parsing: ~500μs
 │   └─ Response generation: ~500μs
 ├─ JWT Validation: ~300μs (15%)
@@ -240,7 +240,7 @@ git checkout <baseline-commit>
 ./mvnw clean package -DskipTests
 # Run baseline benchmarks and save results
 
-git checkout <current-commit>  
+git checkout <current-commit>
 ./mvnw clean package -DskipTests
 # Run current benchmarks and compare
 ----
@@ -286,7 +286,7 @@ The integration benchmarks establish a baseline for:
 **Integration Insights for Micro Benchmarks**:
 
 * Real-world latency budgets for validation
-* Network vs compute optimization priorities  
+* Network vs compute optimization priorities
 * Error handling performance requirements
 * Production-like load patterns
 

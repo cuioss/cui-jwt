@@ -1,6 +1,7 @@
 = Log Messages for CUI JWT Quarkus Parent
 :toc: left
 :toclevels: 2
+:source-highlighter: highlight.js
 
 == Overview
 
@@ -17,8 +18,8 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 
 == CUI JWT Quarkus Runtime Module
 
-**Module:** `cui-jwt-quarkus`  
-**Prefix:** `CUI_JWT_QUARKUS`  
+**Module:** `cui-jwt-quarkus`
+**Prefix:** `CUI_JWT_QUARKUS`
 **Class:** `de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages`
 
 === INFO Level (001-099)
@@ -98,8 +99,8 @@ Currently no ERROR level messages are defined in the runtime module.
 
 == CUI JWT Quarkus Deployment Module
 
-**Module:** `cui-jwt-quarkus-deployment`  
-**Prefix:** `CUI_JWT_QUARKUS_DEPLOYMENT`  
+**Module:** `cui-jwt-quarkus-deployment`
+**Prefix:** `CUI_JWT_QUARKUS_DEPLOYMENT`
 **Class:** `de.cuioss.jwt.quarkus.deployment.CuiJwtQuarkusDeploymentLogMessages`
 
 === INFO Level (001-099)

@@ -27,15 +27,15 @@ public class JwtTestProfile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
         Map<String, String> config = new HashMap<>();
-        
+
         // Test issuer configuration
         config.put("cui.jwt.issuers.default.url", "https://test.example.com/auth");
         config.put("cui.jwt.issuers.default.enabled", "true");
         config.put("cui.jwt.issuers.default.public-key-location", "");
-        
+
         // Test parser configuration
         config.put("cui.jwt.parser.audience", "test-application");
-        
+
         return config;
     }
 }
@@ -48,10 +48,10 @@ public class JwtTestProfile implements QuarkusTestProfile {
 @QuarkusTest
 @TestProfile(JwtTestProfile.class)
 class JwtValidationTest {
-    
+
     @Inject
     TokenValidator tokenValidator;
-    
+
     // Test methods
 }
 ----
@@ -66,20 +66,20 @@ public class MultiIssuerTestProfile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
         Map<String, String> config = new HashMap<>();
-        
+
         // Primary test issuer
         config.put("cui.jwt.issuers.primary.url", "https://primary-auth.example.com");
         config.put("cui.jwt.issuers.primary.enabled", "true");
         config.put("cui.jwt.issuers.primary.audience", "primary-app");
-        
+
         // Secondary test issuer
         config.put("cui.jwt.issuers.secondary.url", "https://secondary-auth.example.com");
         config.put("cui.jwt.issuers.secondary.enabled", "true");
         config.put("cui.jwt.issuers.secondary.audience", "secondary-app");
-        
+
         // Parser configuration
         config.put("cui.jwt.parser.max-token-size", "16384");
-        
+
         return config;
     }
 }
@@ -103,7 +103,7 @@ void shouldValidateBasicToken() {
         .addClaim("scope", "read write")
         .build()
         .getToken();
-    
+
     // Validate token
     ValidationResult result = tokenValidator.validate(token);
     assertTrue(result.isValid());
@@ -125,7 +125,7 @@ void shouldExtractCustomClaims() {
         .addClaim("organization", "test-org")
         .build()
         .getToken();
-    
+
     // Validate and extract claims
     ValidationResult result = tokenValidator.validate(token);
     assertTrue(result.isValid());
@@ -149,7 +149,7 @@ void shouldRejectExpiredToken() {
         .expirationTime(Instant.now().minusSeconds(3600)) // 1 hour ago
         .build()
         .getToken();
-    
+
     // Validation should fail
     ValidationResult result = tokenValidator.validate(expiredToken);
     assertFalse(result.isValid());
@@ -170,7 +170,7 @@ void shouldRejectInvalidSignature() {
         .invalidSignature() // Method to create invalid signature
         .build()
         .getToken();
-    
+
     // Validation should fail
     assertThrows(TokenValidationException.class, () -> {
         tokenValidator.validate(invalidToken);
@@ -189,7 +189,7 @@ void shouldRejectInvalidSignature() {
 @QuarkusTest
 @TestProfile(MockJwksTestProfile.class)
 class JwksIntegrationTest {
-    
+
     @Test
     void shouldLoadJwksFromMockEndpoint() {
         // Test with mock JWKS endpoint
@@ -199,7 +199,7 @@ class JwksIntegrationTest {
             .signWithMockKey() // Use mock key that matches JWKS
             .build()
             .getToken();
-        
+
         ValidationResult result = tokenValidator.validate(token);
         assertTrue(result.isValid());
     }
@@ -221,7 +221,7 @@ void shouldRejectTokenWithMissingClaims() {
         .subject("test-user")
         .build()
         .getToken();
-    
+
     // Validation should fail
     ValidationResult result = tokenValidator.validate(incompleteToken);
     assertFalse(result.isValid());
@@ -241,7 +241,7 @@ void shouldRejectUnknownIssuer() {
         .subject("test-user")
         .build()
         .getToken();
-    
+
     assertThrows(TokenValidationException.class, () -> {
         tokenValidator.validate(tokenFromUnknownIssuer);
     });
@@ -267,17 +267,17 @@ void shouldHandleHighVolumeValidation() {
             .build()
             .getToken())
         .collect(Collectors.toList());
-    
+
     // Validate all tokens
     long start = System.currentTimeMillis();
     List<ValidationResult> results = tokens.parallelStream()
         .map(tokenValidator::validate)
         .collect(Collectors.toList());
     long duration = System.currentTimeMillis() - start;
-    
+
     // Assert all validations succeeded
     assertTrue(results.stream().allMatch(ValidationResult::isValid));
-    
+
     // Performance assertion (example: <1000ms for 1000 tokens)
     assertTrue(duration < 1000, "Validation took " + duration + "ms");
 }
@@ -298,18 +298,18 @@ void shouldHandleMemoryPressure() {
         .addClaim("large_data", "x".repeat(8192)) // 8KB claim
         .build()
         .getToken();
-    
+
     // Validate multiple large tokens
     for (int i = 0; i < 100; i++) {
         ValidationResult result = tokenValidator.validate(largeToken);
         assertTrue(result.isValid());
     }
-    
+
     // Force garbage collection and verify no memory leaks
     System.gc();
     Runtime runtime = Runtime.getRuntime();
     long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-    
+
     // Memory usage should be reasonable (adjust threshold as needed)
     assertTrue(usedMemory < 100 * 1024 * 1024, "Memory usage: " + usedMemory + " bytes");
 }
@@ -324,18 +324,18 @@ void shouldHandleMemoryPressure() {
 [source,java]
 ----
 public class JwtAssertions {
-    
+
     public static void assertValidJwt(String token, TokenValidator validator) {
         ValidationResult result = validator.validate(token);
         assertTrue(result.isValid(), "JWT validation failed: " + result.getErrors());
     }
-    
+
     public static void assertJwtHasClaim(String token, String claimName, Object expectedValue) {
         ValidationResult result = tokenValidator.validate(token);
         assertTrue(result.isValid());
         assertEquals(expectedValue, result.getClaims().get(claimName));
     }
-    
+
     public static void assertJwtFromIssuer(String token, String expectedIssuer) {
         ValidationResult result = tokenValidator.validate(token);
         assertTrue(result.isValid());
@@ -354,22 +354,22 @@ public class TestJwtBuilder {
     private String issuer = "https://test.example.com/auth";
     private String audience = "test-application";
     private Map<String, Object> claims = new HashMap<>();
-    
+
     public TestJwtBuilder withIssuer(String issuer) {
         this.issuer = issuer;
         return this;
     }
-    
+
     public TestJwtBuilder withAudience(String audience) {
         this.audience = audience;
         return this;
     }
-    
+
     public TestJwtBuilder withClaim(String name, Object value) {
         this.claims.put(name, value);
         return this;
     }
-    
+
     public String build() {
         return TestTokenHolder.builder()
             .issuer(issuer)

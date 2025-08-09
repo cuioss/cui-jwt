@@ -27,7 +27,7 @@ native-image --pgo-instrument
 # Step 2: Run application to collect profile
 ./application-instrumented
 
-# Step 3: Build optimized executable  
+# Step 3: Build optimized executable
 native-image --pgo=default.iprof -O3
 ```
 
@@ -46,7 +46,7 @@ native-image --pgo=default.iprof -O3
 **Advantages**:
 
 - ✅ **Native Image Optimized**: Specifically designed for GraalVM native image
-- ✅ **FIPS Compliant**: FIPS 140-2 validated cryptographic operations  
+- ✅ **FIPS Compliant**: FIPS 140-2 validated cryptographic operations
 - ✅ **OpenSSL Integration**: Leverages optimized OpenSSL 3.0 implementations
 - ✅ **Oracle Support**: Official Oracle product with enterprise support
 
@@ -201,13 +201,13 @@ native-image \
 
 == Conclusion
 
-**Enterprise Edition Value**: 
+**Enterprise Edition Value**:
 
 Provides incremental performance improvements (15-25%) over Community Edition
 
 **Primary Limitation**: Cannot solve fundamental RSA performance issues in AOT compilation
 
-**Optimal Strategy**: 
+**Optimal Strategy**:
 
 1. Algorithm migration (95% improvement, zero cost)
 2. Enterprise features (additional 15-25% improvement, commercial cost)
@@ -217,5 +217,5 @@ Provides incremental performance improvements (15-25%) over Community Edition
 == See Also
 
 * xref:graalvm-rsa-optimization-analysis.adoc[Main GraalVM RSA Optimization Analysis]
-* xref:jwt-validation-performance.adoc[JWT Validation Performance Baselines]  
+* xref:jwt-validation-performance.adoc[JWT Validation Performance Baselines]
 * xref:native-optimization-guide.adoc[Community Edition Native Optimization Guide]

@@ -1,4 +1,7 @@
 = Understanding Benchmark Results
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
 
 == Result Files Structure
 
@@ -72,7 +75,7 @@ Comprehensive metrics including security events:
 Higher is better:
 
 * *Excellent*: >10,000 ops/s
-* *Good*: 5,000-10,000 ops/s  
+* *Good*: 5,000-10,000 ops/s
 * *Acceptable*: 1,000-5,000 ops/s
 * *Poor*: <1,000 ops/s
 
@@ -88,7 +91,7 @@ Example analysis:
 [source,bash]
 ----
 # Extract p99 latency
-jq '.[] | select(.mode == "sample") | 
+jq '.[] | select(.mode == "sample") |
   {benchmark: .benchmark, p99: .primaryMetric.scorePercentiles."99.0"}' \
   integration-benchmark-result.json
 ----
@@ -99,8 +102,8 @@ Calculate from security metrics:
 [source,bash]
 ----
 # Cache effectiveness = (total - cache_misses) / total
-jq '.benchmarks[] | 
-  {name: .name, 
+jq '.benchmarks[] |
+  {name: .name,
    hit_rate: (1 - (.metrics.cache_misses / .metrics.jwt_validation_success))}' \
   integration-metrics.json
 ----
@@ -180,9 +183,9 @@ jq -r '.[] | [.benchmark, .primaryMetric.score] | @csv' \
   integration-benchmark-result.json > benchmark-scores.csv
 
 # Plot latency distribution
-jq -r '.[] | select(.mode == "sample") | 
-  .primaryMetric.scorePercentiles | 
-  to_entries | 
-  map([.key, .value]) | 
+jq -r '.[] | select(.mode == "sample") |
+  .primaryMetric.scorePercentiles |
+  to_entries |
+  map([.key, .value]) |
   .[] | @csv' integration-benchmark-result.json > latency-percentiles.csv
 ----

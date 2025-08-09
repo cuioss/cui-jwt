@@ -336,12 +336,12 @@ quarkus.native.reuse-existing=true
   * Native image size: ~104MB
   * Startup time: 0.263s
   * JFR support: Limited (filesystem restrictions)
-  
+
 * **UBI-based Profiling Image**:
   * Native image size: ~187MB
-  * Startup time: 0.296s  
+  * Startup time: 0.296s
   * JFR support: Full (file generation works)
-  
+
 * Memory usage: ~50MB RSS (both variants)
 * CPU utilization: 90%+ under load
 * Build time: 4m 30s (both variants)

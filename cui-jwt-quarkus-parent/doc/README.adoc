@@ -121,8 +121,8 @@ private BearerTokenResult tokenWithGroups;
 // With multiple requirements
 @Inject
 @BearerToken(
-    requiredScopes = {"read"}, 
-    requiredRoles = {"user"}, 
+    requiredScopes = {"read"},
+    requiredRoles = {"user"},
     requiredGroups = {"test-group"}
 )
 private BearerTokenResult tokenWithAllRequirements;
@@ -175,8 +175,8 @@ public class MyEndpoint {
     @Path("/data")
     public Response getData() {
         BearerTokenResult result = tokenProducer.getBearerTokenResult(
-            List.of("read"), 
-            List.of("user"), 
+            List.of("read"),
+            List.of("user"),
             List.of("employees")
         );
 

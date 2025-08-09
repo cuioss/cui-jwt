@@ -1,6 +1,7 @@
 = CUI JWT DevUI Implementation
-:toc:
+:toc: left
 :toclevels: 3
+:source-highlighter: highlight.js
 :toc-title: Table of Contents
 :sectnums:
 
@@ -19,7 +20,7 @@ The DevUI implementation consists of frontend web components and backend service
 cui-jwt-quarkus-deployment/src/main/resources/dev-ui/
 └── components/
     ├── qwc-jwt-validation-status.js  # Real-time validation status monitoring
-    ├── qwc-jwks-endpoints.js         # JWKS endpoint status and monitoring  
+    ├── qwc-jwks-endpoints.js         # JWKS endpoint status and monitoring
     ├── qwc-jwt-debugger.js           # Token validation and debugging tools
     └── qwc-jwt-config.js             # Configuration viewer
 ----
@@ -35,14 +36,14 @@ DevUI components are registered during build time in `CuiJwtProcessor.java`:
 @BuildStep(onlyIf = IsDevelopment.class)
 CardPageBuildItem createJwtDevUICard() {
     CardPageBuildItem cardPageBuildItem = new CardPageBuildItem();
-    
+
     // Register web component pages with icons and component links
     cardPageBuildItem.addPage(Page.webComponentPageBuilder()
         .icon("font-awesome-solid:shield-check")
         .title("JWT Validation Status")
         .componentLink("components/qwc-jwt-validation-status.js")
         .staticLabel("View Status"));
-    
+
     // Additional pages...
     return cardPageBuildItem;
 }
@@ -147,7 +148,7 @@ The backend service provides the following methods for frontend components:
 |`{ enabled, healthEnabled, buildTime, parser, httpJwksLoader, issuers }`
 
 |`getJwksStatus()`
-|JWKS endpoint connectivity status  
+|JWKS endpoint connectivity status
 |`{ status, message, issuers: {...} }`
 
 |`validateToken(token)`
@@ -181,14 +182,14 @@ http://localhost:8080/q/dev-ui/
 
 . Access the following pages:
 - **JWT Validation Status**: Real-time monitoring and statistics
-- **JWKS Endpoints**: Endpoint health and connectivity  
+- **JWKS Endpoints**: Endpoint health and connectivity
 - **Token Debugger**: Interactive token validation testing
 - **Configuration**: Complete configuration overview
 
 === Development Workflow
 
 . **Configuration Debugging**: Use the Configuration page to verify extension settings
-. **Endpoint Monitoring**: Monitor JWKS connectivity through the JWKS Endpoints page  
+. **Endpoint Monitoring**: Monitor JWKS connectivity through the JWKS Endpoints page
 . **Token Testing**: Validate JWT tokens using the Token Debugger
 . **Status Monitoring**: Track validation performance via the Validation Status page
 
@@ -204,7 +205,7 @@ http://localhost:8080/q/dev-ui/
 === Error Handling Strategy
 
 - **Connection failures**: Graceful degradation with informative error messages
-- **Invalid responses**: Robust parsing with fallback to default values  
+- **Invalid responses**: Robust parsing with fallback to default values
 - **Component errors**: Isolated error boundaries prevent cascading failures
 - **User feedback**: Clear error messages with actionable guidance
 
