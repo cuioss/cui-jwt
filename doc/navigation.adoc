@@ -9,7 +9,6 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 
 === Core Validation Module
 * xref:../cui-jwt-validation/README.adoc[JWT Validation Module] - Core validation library
-* xref:../cui-jwt-validation/doc/overview.adoc[Architecture Overview]
 * xref:../cui-jwt-validation/doc/usage-guide.adoc[Usage Guide]
 * xref:../cui-jwt-validation/doc/api-reference.adoc[API Reference]
 * xref:../cui-jwt-validation/doc/UnitTesting.adoc[Testing Guide]

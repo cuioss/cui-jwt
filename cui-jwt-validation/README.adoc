@@ -51,7 +51,6 @@ try {
 
 == Documentation
 
-* xref:doc/overview.adoc[Module Overview] - Architecture and components
 * xref:doc/usage-guide.adoc[Usage Guide] - Examples and patterns
 * xref:doc/api-reference.adoc[API Reference] - Complete API documentation
 * xref:doc/UnitTesting.adoc[Unit Testing] - Testing utilities and generators
