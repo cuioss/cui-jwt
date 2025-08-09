@@ -1,8 +1,7 @@
 = Keycloak Integration FAQ
 :toc: left
 :toclevels: 3
-:sectlinks:
-:sectanchors:
+:sectnums:
 :source-highlighter: highlight.js
 
 Common issues and solutions when integrating the CUI JWT library with Keycloak.
@@ -36,6 +35,7 @@ cui.jwt.issuers.keycloak.claim-sub-optional=true
 ----
 
 *Benefits:*
+
 - No Keycloak realm configuration changes needed
 - Works immediately with default Keycloak token structure
 - Maintains RFC compliance warnings for awareness
@@ -70,6 +70,7 @@ Alternatively, configure a subject mapper in your Keycloak realm:
 ----
 
 *Via Admin Console:*
+
 1. Go to *Client Scopes* → *roles* → *Mappers*
 2. Create a new *User Property* mapper
 3. Set Property to `id` and Token Claim Name to `sub`
@@ -166,17 +167,20 @@ Expected token structure after configuration:
 ----
 
 **Why this matters:**
+
 - `@BearerToken(requiredGroups = {"test-group"})` expects `"test-group"`
 - But Keycloak's default produces `"/test-group"` with leading slash
 - This causes authorization failures even for valid group memberships
 
 **Common symptoms:**
+
 - BearerToken validation fails with `CONSTRAINT_VIOLATION` status
 - Error: `Bearer token requirements not met - missing groups: [test-group]`
 - Tests pass for roles but fail for groups
 - User is definitely assigned to the group in Keycloak admin console
 
 **Resolution verified:**
+
 Adding the group membership mapper with `"full.path": "false"` to your Keycloak realm configuration resolves this issue completely. The integration tests confirm that tokens now contain group names without leading slashes, making them compatible with `@BearerToken` annotations.
 
 == Alternative: CUI JWT Default Mappers
@@ -191,10 +195,12 @@ cui.jwt.issuers.my-keycloak.keycloak.mappers.default-groups.enabled=true
 ----
 
 This automatically maps:
+
 - `realm_access.roles` → `roles`
 - Standard `groups` claim processing
 
 Benefits:
+
 - Per-issuer configuration flexibility
 - No Keycloak realm modification needed
 - Works with standard Keycloak token structure
