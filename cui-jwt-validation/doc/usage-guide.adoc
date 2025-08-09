@@ -26,7 +26,7 @@ try {
     List<String> roles = token.getRoles();
 } catch (TokenValidationException e) {
     // Handle validation failure
-    System.err.println("Token validation failed: " + e.getMessage());
+    LOGGER.error("Token validation failed: {}", e.getMessage(), e);
 }
 ----
 
