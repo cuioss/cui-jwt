@@ -41,7 +41,7 @@ The `TestTokenHolder` class provides semantically correct constants for OAuth2/O
 // Audience - identifies resource servers that should accept the token
 public static final String TEST_AUDIENCE = "test-audience";
 
-// Client ID - identifies the OAuth2 client application that requested the token  
+// Client ID - identifies the OAuth2 client application that requested the token
 public static final String TEST_CLIENT_ID = "test-client-app";
 
 // Issuer - identifies the token issuer/authorization server
@@ -55,7 +55,7 @@ These constants properly model the semantic distinctions required by RFC 7519, R
 [source,java]
 ----
 // Create a token holder with default parameters
-TestTokenHolder tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN, 
+TestTokenHolder tokenHolder = new TestTokenHolder(TokenType.ACCESS_TOKEN,
     ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN));
 
 // Get the raw JWT token
@@ -307,7 +307,7 @@ class MyServiceUsingWellKnownTest {
 
     @Getter
     private static final WellKnownDispatcher wellKnownDispatcher = new WellKnownDispatcher();
-    
+
     /**
      * Returns the WellKnownDispatcher for the ModuleDispatcher annotation.
      * This method is called by the ModuleDispatcher framework.
@@ -317,12 +317,12 @@ class MyServiceUsingWellKnownTest {
     public ModuleDispatcherElement getModuleDispatcher() {
         return wellKnownDispatcher;
     }
-    
+
     @BeforeEach
     void setUp(URIBuilder uriBuilder) {
         // Reset the dispatcher to its default state
         wellKnownDispatcher.returnDefault();
-        
+
         // Reset the call counter
         wellKnownDispatcher.setCallCounter(0);
     }
@@ -333,19 +333,20 @@ class MyServiceUsingWellKnownTest {
         URL wellKnownUrl = URI.create(uriBuilder
                 .addPathSegment("/.well-known/openid-configuration")
                 .buildAsString()).toURL();
-        
+
         // Create HttpWellKnownResolver instance using the mock server's URL
         ParserConfig parserConfig = ParserConfig.builder().build();
-        HttpWellKnownResolver resolver = HttpWellKnownResolver.builder()
-            .url(wellKnownUrl)
+        WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+            .wellKnownUrl(wellKnownUrl.toString())
             .parserConfig(parserConfig)
             .build();
+        HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
 
         // Assertions for the resolver
         String baseUrl = uriBuilder.buildAsString();
         assertEquals(baseUrl, resolver.getIssuer().getUrl().toString());
         assertEquals(baseUrl + "/oidc/jwks.json", resolver.getJwksUri().getUrl().toString());
-        
+
         // Verify the dispatcher was called
         wellKnownDispatcher.assertCallsAnswered(1);
 
@@ -364,44 +365,48 @@ class MyServiceUsingWellKnownTest {
     void testOidcDiscoveryError(URIBuilder uriBuilder) throws Exception {
         // Configure the dispatcher to return an error
         wellKnownDispatcher.returnError();
-        
+
         // Build the URL for the well-known endpoint
         URL wellKnownUrl = URI.create(uriBuilder
                 .addPathSegment("/.well-known/openid-configuration")
                 .buildAsString()).toURL();
-        
+
         // Verify that HttpWellKnownResolver throws an exception
         ParserConfig parserConfig = ParserConfig.builder().build();
-        var builder = HttpWellKnownResolver.builder()
-            .url(wellKnownUrl)
-            .parserConfig(parserConfig);
-        assertThrows(WellKnownDiscoveryException.class, builder::build);
-        
+        WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+            .wellKnownUrl(wellKnownUrl.toString())
+            .parserConfig(parserConfig)
+            .build();
+        assertThrows(WellKnownDiscoveryException.class, 
+            () -> new HttpWellKnownResolver(wellKnownConfig));
+
         // Verify the dispatcher was called
         wellKnownDispatcher.assertCallsAnswered(1);
     }
-    
+
     @Test
     void testMissingJwksUri(URIBuilder uriBuilder) throws Exception {
         // Configure the dispatcher to return a response without jwks_uri
         wellKnownDispatcher.returnMissingJwksUri();
-        
+
         // Build the URL for the well-known endpoint
         URL wellKnownUrl = URI.create(uriBuilder
                 .addPathSegment("/.well-known/openid-configuration")
                 .buildAsString()).toURL();
-        
+
         // Verify that HttpWellKnownResolver throws an exception
         ParserConfig parserConfig = ParserConfig.builder().build();
-        var builder = HttpWellKnownResolver.builder()
-            .url(wellKnownUrl)
-            .parserConfig(parserConfig);
+        WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+            .wellKnownUrl(wellKnownUrl.toString())
+            .parserConfig(parserConfig)
+            .build();
         WellKnownDiscoveryException exception = assertThrows(
-                WellKnownDiscoveryException.class, builder::build);
-                
+                WellKnownDiscoveryException.class, 
+                () -> new HttpWellKnownResolver(wellKnownConfig));
+
         // Verify exception message
         assertTrue(exception.getMessage().contains("Required URL field 'jwks_uri' is missing"));
-        
+
         // Verify the dispatcher was called
         wellKnownDispatcher.assertCallsAnswered(1);
     }

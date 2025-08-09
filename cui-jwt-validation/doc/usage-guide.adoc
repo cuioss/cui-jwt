@@ -78,18 +78,25 @@ Automatic configuration using OpenID Connect discovery:
 
 [source,java]
 ----
-// Create HTTP client for well-known endpoint
-HttpClient httpClient = HttpClient.newHttpClient();
-WellKnownResolver resolver = new HttpWellKnownResolver(httpClient);
+// Create well-known configuration
+String issuerUrl = "https://accounts.google.com";
+URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
 
-// Fetch configuration
-String issuer = "https://accounts.google.com";
-WellKnownConfig wellKnown = resolver.resolve(issuer);
+WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+    .wellKnownUrl(wellKnownUrl.toString())
+    .build();
+
+// Create resolver and configure JWKS loader
+HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
+
+HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
+    .wellKnown(resolver)
+    .build();
 
 // Build issuer config from discovery
 IssuerConfig issuerConfig = IssuerConfig.builder()
-    .issuer(wellKnown.getIssuer())
-    .jwksUri(wellKnown.getJwksUri())
+    .expectedAudience("your-client-id")
+    .httpJwksLoaderConfig(jwksConfig)
     .build();
 ----
 
@@ -97,16 +104,23 @@ IssuerConfig issuerConfig = IssuerConfig.builder()
 
 [source,java]
 ----
-HttpClient httpClient = HttpClient.newHttpClient();
-HttpWellKnownResolver resolver = new HttpWellKnownResolver(httpClient);
+String issuerUrl = "https://example.com";
+URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
 
-String issuer = "https://example.com";
-WellKnownConfig config = resolver.resolve(issuer);
+WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+    .wellKnownUrl(wellKnownUrl.toString())
+    .build();
 
-// Use config for IssuerConfig
+HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
+
+// Use resolver with HttpJwksLoaderConfig
+HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
+    .wellKnown(resolver)
+    .build();
+
 IssuerConfig issuerConfig = IssuerConfig.builder()
-    .issuer(config.getIssuer())
-    .jwksUri(config.getJwksUri())
+    .expectedAudience("your-client-id")
+    .httpJwksLoaderConfig(jwksConfig)
     .build();
 ----
 

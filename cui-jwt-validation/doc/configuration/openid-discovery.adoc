@@ -18,28 +18,29 @@ OpenID Connect Discovery enables automatic configuration by fetching metadata fr
 
 [source,java]
 ----
-// Create HTTP client for discovery
-HttpClient httpClient = HttpClient.newHttpClient();
-
-// Build well-known resolver
+// 1. Create well-known configuration for discovery
 String issuerUrl = "https://accounts.google.com";
 URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
 
-HttpWellKnownResolver wellKnownResolver = HttpWellKnownResolver.builder()
-    .url(wellKnownUrl)
+WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+    .wellKnownUrl(wellKnownUrl.toString())
     .build();
 
-// Extract JWKS URI from discovery
+// 2. Create resolver with the configuration
+HttpWellKnownResolver wellKnownResolver = new HttpWellKnownResolver(wellKnownConfig);
+
+// 3. Configure JWKS loader to use the resolver
 HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
     .wellKnown(wellKnownResolver)
     .build();
 
-// Configure issuer with discovered settings
+// 4. Build issuer configuration with expected audience
 IssuerConfig issuerConfig = IssuerConfig.builder()
     .expectedAudience("your-client-id")
     .httpJwksLoaderConfig(jwksConfig)
     .build();
 
+// 5. Create the token validator
 TokenValidator validator = TokenValidator.builder()
     .issuerConfig(issuerConfig)
     .build();
@@ -70,22 +71,26 @@ The `HttpWellKnownResolver` handles the discovery process:
 [source,java]
 ----
 try {
-    // Parse configuration for resolver
+    // Configure parser for large discovery documents
     ParserConfig parserConfig = ParserConfig.builder()
         .maxPayloadSize(4096)  // Adjust for large discovery documents
         .build();
-    
-    HttpWellKnownResolver wellKnownResolver = HttpWellKnownResolver.builder()
-        .url(wellKnownUrl)
+
+    // Create well-known configuration with custom parser
+    WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+        .wellKnownUrl(wellKnownUrl.toString())
         .parserConfig(parserConfig)
         .build();
-    
+
+    // Create resolver with the configuration
+    HttpWellKnownResolver wellKnownResolver = new HttpWellKnownResolver(wellKnownConfig);
+
     // The resolver validates issuer consistency automatically
     // Access discovered endpoints if needed
-    // HttpHandler jwksHandler = wellKnownResolver.getJwksUri();
-    // HttpHandler issuerHandler = wellKnownResolver.getIssuer();
-    
-} catch (WellKnownDiscoveryException e) {
+    Optional<HttpHandler> jwksHandler = wellKnownResolver.getJwksUri();
+    Optional<HttpHandler> issuerHandler = wellKnownResolver.getIssuer();
+
+} catch (IOException e) {
     // Handle discovery failures
     LOGGER.error("OIDC Discovery failed: %s", e.getMessage());
 }
@@ -111,29 +116,32 @@ HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
 [source,java]
 ----
 public class OpenIDConnectValidator {
-    
-    public static TokenValidator createFromDiscovery(String issuerUrl, String clientId) 
-            throws WellKnownDiscoveryException {
-        
+
+    public static TokenValidator createFromDiscovery(String issuerUrl, String clientId)
+            throws IOException {
+
         // Perform discovery
         URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-        HttpWellKnownResolver resolver = HttpWellKnownResolver.builder()
-            .url(wellKnownUrl)
-            .build();
         
+        WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+            .wellKnownUrl(wellKnownUrl.toString())
+            .build();
+            
+        HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
+
         // Configure JWKS loading
         HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
             .wellKnown(resolver)
             .refreshIntervalSeconds(300)
             .build();
-        
+
         // Build issuer configuration
         IssuerConfig issuerConfig = IssuerConfig.builder()
             .expectedAudience(clientId)
             .expectedClientId(clientId)
             .httpJwksLoaderConfig(jwksConfig)
             .build();
-        
+
         // Create validator
         return TokenValidator.builder()
             .issuerConfig(issuerConfig)
@@ -149,49 +157,52 @@ Configure multiple providers using discovery:
 [source,java]
 ----
 public class MultiProviderDiscovery {
-    
+
     public static TokenValidator createMultiProvider() {
         TokenValidator.Builder builder = TokenValidator.builder();
-        
+
         // Google
-        addProviderFromDiscovery(builder, 
-            "https://accounts.google.com", 
+        addProviderFromDiscovery(builder,
+            "https://accounts.google.com",
             "google-client-id");
-        
+
         // Microsoft
-        addProviderFromDiscovery(builder, 
-            "https://login.microsoftonline.com/common/v2.0", 
+        addProviderFromDiscovery(builder,
+            "https://login.microsoftonline.com/common/v2.0",
             "microsoft-client-id");
-        
+
         // Okta
-        addProviderFromDiscovery(builder, 
-            "https://dev-123456.okta.com", 
+        addProviderFromDiscovery(builder,
+            "https://dev-123456.okta.com",
             "okta-client-id");
-        
+
         return builder.build();
     }
-    
+
     private static void addProviderFromDiscovery(
-            TokenValidator.Builder builder, 
-            String issuerUrl, 
+            TokenValidator.Builder builder,
+            String issuerUrl,
             String clientId) {
         try {
             URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-            HttpWellKnownResolver resolver = HttpWellKnownResolver.builder()
-                .url(wellKnownUrl)
-                .build();
             
+            WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl.toString())
+                .build();
+                
+            HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
+
             HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
                 .wellKnown(resolver)
                 .build();
-            
+
             IssuerConfig issuerConfig = IssuerConfig.builder()
                 .expectedAudience(clientId)
                 .httpJwksLoaderConfig(jwksConfig)
                 .build();
-            
+
             builder.issuerConfig(issuerConfig);
-            
+
         } catch (Exception e) {
             LOGGER.warn("Failed to configure provider %s: %s", issuerUrl, e.getMessage());
         }
@@ -209,29 +220,32 @@ public class CachedDiscoveryResolver {
     private final Map<String, HttpWellKnownResolver> cache = new ConcurrentHashMap<>();
     private final Duration cacheExpiry = Duration.ofHours(24);
     private final Map<String, Instant> cacheTimestamps = new ConcurrentHashMap<>();
-    
-    public HttpWellKnownResolver getResolver(String issuerUrl) 
-            throws WellKnownDiscoveryException {
-        
+
+    public HttpWellKnownResolver getResolver(String issuerUrl)
+            throws IOException {
+
         // Check cache
         HttpWellKnownResolver cached = cache.get(issuerUrl);
         Instant cachedAt = cacheTimestamps.get(issuerUrl);
-        
-        if (cached != null && cachedAt != null && 
+
+        if (cached != null && cachedAt != null &&
             Duration.between(cachedAt, Instant.now()).compareTo(cacheExpiry) < 0) {
             return cached;
         }
-        
+
         // Perform discovery
         URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-        HttpWellKnownResolver resolver = HttpWellKnownResolver.builder()
-            .url(wellKnownUrl)
-            .build();
         
+        WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+            .wellKnownUrl(wellKnownUrl.toString())
+            .build();
+            
+        HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
+
         // Update cache
         cache.put(issuerUrl, resolver);
         cacheTimestamps.put(issuerUrl, Instant.now());
-        
+
         return resolver;
     }
 }
@@ -244,12 +258,14 @@ Handle discovery failures gracefully:
 [source,java]
 ----
 try {
-    HttpWellKnownResolver resolver = HttpWellKnownResolver.builder()
-        .url(wellKnownUrl)
+    WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
+        .wellKnownUrl(wellKnownUrl.toString())
         .build();
+        
+    HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
     // Use resolver
-    
-} catch (WellKnownDiscoveryException e) {
+
+} catch (IOException e) {
     // Specific discovery failures
     if (e.getCause() instanceof IOException) {
         // Network issue - maybe retry
@@ -261,7 +277,7 @@ try {
         // Other discovery issues
         LOGGER.error("Discovery failed: %s", e.getMessage());
     }
-    
+
     // Fall back to manual configuration
     useManualConfiguration();
 }
