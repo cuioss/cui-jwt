@@ -49,7 +49,7 @@ quarkus.http.insecure-requests=redirect
 [source,dockerfile]
 ----
 # Both Dockerfile.native.distroless and Dockerfile.native.jfr use:
-ENTRYPOINT ["/app/application", 
+ENTRYPOINT ["/app/application",
   "-Djavax.net.ssl.trustStore=/app/certificates/localhost-truststore.p12",
   "-Djavax.net.ssl.trustStorePassword=localhost-trust",
   "-Djavax.net.ssl.trustStoreType=PKCS12"]

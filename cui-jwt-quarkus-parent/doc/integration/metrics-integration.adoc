@@ -39,7 +39,7 @@ Each metric includes the following tags for filtering and analysis:
 ==== Error Metrics (`cui.jwt.validation.errors`)
 
 * **`event_type`**: The specific type of validation error (e.g., `TOKEN_EXPIRED`, `SIGNATURE_VALIDATION_FAILED`)
-* **`result`**: Always "failure" for error metrics  
+* **`result`**: Always "failure" for error metrics
 * **`category`**: The error category (`STRUCTURE`, `SIGNATURE`, `SEMANTIC`) when available
 
 ==== Performance Metrics (`cui.jwt.validation.duration`)
@@ -133,7 +133,7 @@ rate(cui_jwt_validation_duration_seconds_sum{step="jwks_operations"}[5m]) / rate
     description: "Potential security issue: JWT tokens with invalid signatures are being processed at a high rate"
 
 # Alert on high error rates
-- alert: JwtHighErrorRate  
+- alert: JwtHighErrorRate
   expr: rate(cui_jwt_validation_errors_total[5m]) > 5
   for: 10m
   labels:

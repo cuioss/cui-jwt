@@ -34,7 +34,7 @@ The cui-jwt-quarkus extension provides MicroProfile Health checks for JWT valida
 === Token Validator Health Check
 
 * **Type:** Liveness (`@Liveness`)
-* **Name:** `jwt-validator`  
+* **Name:** `jwt-validator`
 * **Endpoint:** `/q/health/live`
 * **Purpose:** Validates TokenValidator configuration and availability
 
@@ -42,7 +42,7 @@ The cui-jwt-quarkus extension provides MicroProfile Health checks for JWT valida
 [source,json]
 ----
 {
-  "status": "UP", 
+  "status": "UP",
   "name": "jwt-validator",
   "data": {
     "issuerCount": 3
@@ -92,7 +92,7 @@ spec:
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
-              path: /q/health/ready  
+              path: /q/health/ready
               port: 8080
             periodSeconds: 20
             timeoutSeconds: 5
@@ -126,7 +126,7 @@ spec:
 
 **Health Checks:**
 * Binary UP/DOWN status for operational decisions
-* Used by Kubernetes probes and load balancers  
+* Used by Kubernetes probes and load balancers
 * Minimal data focused on health status
 * Cached to prevent performance impact
 

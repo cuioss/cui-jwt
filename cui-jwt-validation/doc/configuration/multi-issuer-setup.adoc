@@ -18,21 +18,21 @@ TokenValidator tokenValidator = TokenValidator.builder()
         .jwksUri("https://keycloak.example.com/auth/realms/main/protocol/openid-connect/certs")
         .expectedAudience("my-app")
         .build())
-    
+
     // Auth0 issuer
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://auth0.example.com/")
         .jwksUri("https://auth0.example.com/.well-known/jwks.json")
         .expectedAudience("my-app-auth0")
         .build())
-    
+
     // Azure AD issuer
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://login.microsoftonline.com/tenant-id/v2.0")
         .jwksUri("https://login.microsoftonline.com/tenant-id/discovery/v2.0/keys")
         .expectedAudience("api://my-app-azure")
         .build())
-    
+
     .build();
 
 // Validator automatically selects correct issuer based on token's "iss" claim
@@ -62,19 +62,19 @@ TokenValidator tokenValidator = TokenValidator.builder()
         .issuer("https://internal.example.com")
         .signatureKey("static-secret-key")
         .build())
-    
+
     // Issuer with JWKS endpoint
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://external.example.com")
         .jwksUri("https://external.example.com/.well-known/jwks.json")
         .build())
-    
+
     // Issuer with embedded JWKS
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://partner.example.com")
         .jwksContent(jwksJsonString)
         .build())
-    
+
     .build();
 ----
 
@@ -90,14 +90,14 @@ TokenValidator tokenValidator = TokenValidator.builder()
         .expectedClientId("internal-client")
         .clockSkew(Duration.ofSeconds(10))
         .build())
-    
+
     // Relaxed validation for partner issuer
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://partner.example.com")
         .expectedAudience("partner-app", "legacy-app")
         .clockSkew(Duration.ofMinutes(5))
         .build())
-    
+
     .build();
 ----
 
@@ -125,17 +125,17 @@ TokenValidator tokenValidator = TokenValidator.builder()
         .issuer("https://keycloak.example.com/auth/realms/main")
         .rolesGroupsConfig(keycloakConfig)
         .build())
-    
+
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://auth0.example.com/")
         .rolesGroupsConfig(auth0Config)
         .build())
-    
+
     .issuerConfig(IssuerConfig.builder()
         .issuer("https://login.microsoftonline.com/tenant-id/v2.0")
         .claimMapper("wids", azureRoleMapper)  // Azure workspace IDs
         .build())
-    
+
     .build();
 ----
 
@@ -149,14 +149,14 @@ TokenValidator tokenValidator = TokenValidator.builder()
     // Production issuers
     .issuerConfig(productionIssuer1)
     .issuerConfig(productionIssuer2)
-    
+
     // Fallback for development/testing
     .issuerConfig(IssuerConfig.builder()
         .issuer("*")  // Matches any issuer not already configured
         .signatureKey("dev-secret")
         .expectedAudience("dev-app")
         .build())
-    
+
     .build();
 ----
 
@@ -170,20 +170,20 @@ For environments with changing issuers, implement dynamic loading:
 ----
 public class DynamicTokenValidator {
     private volatile TokenValidator validator;
-    
+
     public void reloadIssuers() {
         TokenValidator.Builder builder = TokenValidator.builder();
-        
+
         // Load issuer configurations from database or config service
         List<IssuerConfig> issuers = loadIssuersFromDatabase();
-        
+
         for (IssuerConfig issuer : issuers) {
             builder.issuerConfig(issuer);
         }
-        
+
         this.validator = builder.build();
     }
-    
+
     public ValidationResult<AccessToken> validate(String token) {
         return validator.validateAccessToken(token);
     }

@@ -274,7 +274,7 @@ _See TestTokenHolder Constants in xref:../../cui-jwt-validation/UnitTesting.adoc
 JWT semantic correctness testing has been implemented to ensure proper distinction between OAuth2/OIDC concepts:
 
 * **Audience (`aud`) Testing**: Validates that audience claims identify resource servers correctly
-* **Client ID (`azp`) Testing**: Validates that authorized party claims identify OAuth2 clients correctly  
+* **Client ID (`azp`) Testing**: Validates that authorized party claims identify OAuth2 clients correctly
 * **Semantic Separation**: Tests verify that audience and client ID serve different purposes and use distinct values
 
 The test constants properly model real-world OAuth2/OIDC scenarios:

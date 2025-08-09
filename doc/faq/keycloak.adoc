@@ -141,7 +141,7 @@ Expected token structure after configuration:
 ----
 {
   "name": "groups",
-  "protocol": "openid-connect", 
+  "protocol": "openid-connect",
   "protocolMapper": "oidc-group-membership-mapper",
   "config": {
     "full.path": "false",  // ← Critical: Removes leading slash
@@ -159,7 +159,7 @@ Expected token structure after configuration:
   "groups": ["/test-group", "/admin-group"]
 }
 
-// With "full.path": "false" - CORRECT  
+// With "full.path": "false" - CORRECT
 {
   "groups": ["test-group", "admin-group"]
 }

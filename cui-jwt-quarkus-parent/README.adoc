@@ -88,8 +88,8 @@ private BearerTokenResult tokenWithGroups;
 // With multiple requirements
 @Inject
 @BearerToken(
-    requiredScopes = {"read"}, 
-    requiredRoles = {"user"}, 
+    requiredScopes = {"read"},
+    requiredRoles = {"user"},
     requiredGroups = {"test-group"}
 )
 private BearerTokenResult tokenWithAllRequirements;
@@ -163,7 +163,7 @@ public class JwtAuthenticationService {
 
 == Metrics Integration
 
-The extension includes integration with Micrometer to expose JWT validation security events as metrics. 
+The extension includes integration with Micrometer to expose JWT validation security events as metrics.
 This allows you to monitor and alert on security-related incidents.
 
 The following metrics are available:

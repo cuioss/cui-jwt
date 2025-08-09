@@ -49,11 +49,11 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 The library includes two types of benchmarks:
 
 ==== Micro Benchmarks
-- `TokenValidatorBenchmark` - Core JWT validation performance  
+- `TokenValidatorBenchmark` - Core JWT validation performance
 - `JwksClientBenchmark` - JWKS key retrieval performance
 - Performance scoring based on throughput, latency, and error resilience
 
-==== Integration Benchmarks  
+==== Integration Benchmarks
 - End-to-end JWT validation with Quarkus native image
 - Health check performance baselines
 - JWT validation overhead calculations

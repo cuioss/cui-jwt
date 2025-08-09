@@ -166,7 +166,7 @@ public Optional<String> getIssuerIdentifier() {
             return jwksLoaderIssuer;
         }
     }
-    
+
     // Fall back to configured issuer identifier (for file-based, in-memory, etc.)
     return Optional.ofNullable(issuerIdentifier);
 }
@@ -195,7 +195,7 @@ IssuerConfig config = IssuerConfig.builder()
 * `issuerIdentifier` is optional for well-known discovery (extracted from discovery document)
 * `issuerIdentifier` is required for custom JwksLoaders unless they provide their own identifier
 
-===== Phase 2: JwksLoader Initialization  
+===== Phase 2: JwksLoader Initialization
 
 The `initJWKSLoader()` method handles pure initialization:
 
@@ -215,7 +215,7 @@ config.initJWKSLoader(securityEventCounter);  // ✅ Pure initialization
 This separation provides several benefits:
 
 * **Automatic Validation**: Configuration errors are caught immediately during object construction
-* **Clear Semantics**: Configuration validation is separate from resource initialization  
+* **Clear Semantics**: Configuration validation is separate from resource initialization
 * **Fail-Fast Behavior**: Invalid configurations are rejected before they can be used
 * **Better Developer Experience**: No need to remember to call separate validation methods
 * **Simplified Initialization**: The initialization method focuses only on creating JwksLoader instances

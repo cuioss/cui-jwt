@@ -70,8 +70,8 @@ Where appropriate, this guide will reference these documents for more detailed i
 
 ```java
 // Server-side code to set an HttpOnly cookie
-response.setHeader("Set-Cookie", 
-    "refresh_token=" + refreshToken + 
+response.setHeader("Set-Cookie",
+    "refresh_token=" + refreshToken +
     "; HttpOnly; Secure; SameSite=strict; Path=/; Max-Age=86400");
 ```
 

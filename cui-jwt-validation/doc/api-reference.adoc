@@ -16,12 +16,12 @@ The main entry point for token validation operations.
 public class TokenValidator {
     // Builder pattern for configuration
     public static Builder builder() { ... }
-    
+
     // Validation methods
     public ValidationResult<AccessToken> validateAccessToken(String token);
     public ValidationResult<IdToken> validateIdToken(String token);
     public ValidationResult<RefreshToken> validateRefreshToken(String token);
-    
+
     // Token creation methods (performs validation)
     public AccessTokenContent createAccessToken(String token);
     public IdTokenContent createIdToken(String token);
@@ -42,13 +42,13 @@ public class AccessTokenContent {
     public List<String> getAudience();
     public Instant getExpiration();
     public Instant getIssuedAt();
-    
+
     // Access token specific
     public List<String> getRoles();
     public List<String> getGroups();
     public String getScope();
     public String getClientId();
-    
+
     // Authorization checks
     public boolean providesRoles(Collection<String> requiredRoles);
     public boolean providesGroups(Collection<String> requiredGroups);
@@ -65,27 +65,27 @@ Configuration for a specific token issuer.
 ----
 public class IssuerConfig {
     public static Builder builder() { ... }
-    
+
     public static class Builder {
         // Issuer identification
         public Builder issuerIdentifier(String issuer);
-        
+
         // Key configuration
         public Builder signatureKey(String key);
         public Builder jwksContent(String jwks);
         public Builder jwksUri(String uri);
         public Builder httpJwksLoaderConfig(HttpJwksLoaderConfig config);
-        
+
         // Validation configuration
         public Builder expectedAudience(String... audience);
         public Builder expectedClientId(String clientId);
         public Builder clockSkew(Duration skew);
-        
+
         // Claim mapping
         public Builder claimMapper(String claim, ClaimMapper mapper);
         public Builder rolesPath(String path);
         public Builder groupsPath(String path);
-        
+
         public IssuerConfig build();
     }
 }
@@ -101,14 +101,14 @@ Security configuration for token parsing.
 ----
 public class ParserConfig {
     public static Builder builder() { ... }
-    
+
     public static class Builder {
         public Builder maxTokenSize(int bytes);      // Default: 8192
         public Builder maxPayloadSize(int bytes);    // Default: 2048
         public Builder maxStringSize(int bytes);     // Default: 1024
         public Builder maxArraySize(int elements);   // Default: 64
         public Builder maxDepth(int levels);         // Default: 10
-        
+
         public ParserConfig build();
     }
 }
@@ -122,12 +122,12 @@ Configuration for access token caching.
 ----
 public class AccessTokenCacheConfig {
     public static Builder builder() { ... }
-    
+
     public static class Builder {
         public Builder maxSize(long entries);        // Default: 1000
         public Builder ttlSeconds(long seconds);     // Default: 300
         public Builder enabled(boolean enabled);     // Default: true
-        
+
         public AccessTokenCacheConfig build();
     }
 }
@@ -141,7 +141,7 @@ Configuration for JWKS endpoint loading.
 ----
 public class HttpJwksLoaderConfig {
     public static Builder builder() { ... }
-    
+
     public static class Builder {
         public Builder jwksUri(String uri);
         public Builder wellKnown(HttpWellKnownResolver resolver);
@@ -149,7 +149,7 @@ public class HttpJwksLoaderConfig {
         public Builder readTimeoutSeconds(int seconds);
         public Builder refreshIntervalSeconds(int seconds);
         public Builder sslContext(SSLContext context);
-        
+
         public HttpJwksLoaderConfig build();
     }
 }
@@ -179,7 +179,7 @@ Splits delimited strings into collections.
 ----
 public class StringSplitterMapper implements ClaimMapper {
     public StringSplitterMapper(char separator);
-    
+
     // Splits strings like:
     // "admin,user,manager" with ',' separator
     // "admin:user:manager" with ':' separator
