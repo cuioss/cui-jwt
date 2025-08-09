@@ -145,7 +145,6 @@ cui:
 [source, java]
 ----
 @Inject
-@Named("my-issuer")
 TokenValidator tokenValidator;
 
 public boolean validateToken(String token) {
