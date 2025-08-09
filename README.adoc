@@ -197,9 +197,3 @@ The library is continuously benchmarked with results published to GitHub Pages:
 * xref:benchmarking/doc/performance-scoring.adoc[Performance Metrics] - Understanding the scoring system
 
 Both benchmark types use identical weighted scoring for comparable results.
-
-== External Resources
-
-* https://cuioss.github.io/cui-jwt/about.html[Generated Documentation on GitHub Pages]
-* https://github.com/cuioss/cui-jwt[GitHub Repository]
-* https://central.sonatype.com/artifact/de.cuioss.jwt/cui-jwt-parent[Maven Central]
