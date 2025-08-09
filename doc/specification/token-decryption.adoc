@@ -1,8 +1,9 @@
 = JWT Token Handling Token Decryption
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 xref:../Specification.adoc[Back to Main Specification]
 
@@ -17,9 +18,9 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-1.4[CUI-JWT-1.4: Token Decryp
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
 * xref:../Build.adoc[Building and Development] - Information for contributors
-* link:technical-components.adoc[Technical Components] - Implementation details
+* xref:technical-components.adoc[Technical Components] - Implementation details
 * xref:../security/security-specifications.adoc[Security] - Security measures implementation
-* link:testing.adoc[Testing] - Testing approach and coverage
+* xref:testing.adoc[Testing] - Testing approach and coverage
 
 ==== Status: NOT IMPLEMENTED
 

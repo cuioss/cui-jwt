@@ -1,8 +1,9 @@
 = JWT Token Handling Library Specification
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 == Overview
 _See Requirement xref:Requirements.adoc#CUI-JWT-1[CUI-JWT-1: Token Parsing and Validation]_

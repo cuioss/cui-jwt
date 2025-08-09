@@ -1,5 +1,5 @@
 = OpenID Connect Discovery and Well-Known Configuration Endpoint
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:

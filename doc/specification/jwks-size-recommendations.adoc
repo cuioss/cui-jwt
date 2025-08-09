@@ -1,8 +1,9 @@
 = JWKS Content Size Recommendations
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 xref:../Specification.adoc[Back to Main Specification]
 
@@ -19,11 +20,11 @@ This document provides recommendations for sensible upper bounds for JWKS (JSON 
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
 * xref:../Build.adoc[Building and Development] - Information for contributors
-* link:technical-components.adoc[Technical Components] - Implementation details
-* link:security-specifications.adoc[Security] - Security measures implementation
-* link:testing.adoc[Testing] - Testing approach and coverage
-* link:token-size-validation.adoc[Token Size Validation] - Token size validation details
-* link:token-decryption.adoc[Token Decryption] - Future JWE support
+* xref:technical-components.adoc[Technical Components] - Implementation details
+* xref:../security/security-specifications.adoc[Security] - Security measures implementation
+* xref:testing.adoc[Testing] - Testing approach and coverage
+* xref:token-size-validation.adoc[Token Size Validation] - Token size validation details
+* xref:token-decryption.adoc[Token Decryption] - Future JWE support
 
 == Analysis of JWKS Content Size
 

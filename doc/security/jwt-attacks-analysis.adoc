@@ -1,19 +1,19 @@
 = JWT Vulnerabilities and Attacks Analysis
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
 :source-highlighter: highlight.js
 
-link:../Specification.adoc[Back to Main Specification]
+xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
 
 This document provides a comprehensive analysis of common JWT vulnerabilities and attacks as documented in the article "The Ultimate Guide to JWT Vulnerabilities and Attacks" from PentesterLab (https://pentesterlab.com/blog/jwt-vulnerabilities-attacks-guide). Each vulnerability is analyzed, the current mitigation approach in our library is documented, and test coverage is assessed.
 
-For detailed implementation information on how these mitigations are implemented, see the link:security-specifications.adoc#jwt-attack-mitigations[JWT Attack Mitigations] section in the Security Specifications document.
+For detailed implementation information on how these mitigations are implemented, see the xref:security-specifications.adoc#jwt-attack-mitigations[JWT Attack Mitigations] section in the Security Specifications document.
 
-For guidance on secure token handling practices for application developers, see the link:jwt-security-best-practices.adoc[JWT Security Best Practices Guide].
+For guidance on secure token handling practices for application developers, see the xref:jwt-security-best-practices.adoc[JWT Security Best Practices Guide].
 
 == Vulnerability Analysis
 
@@ -58,7 +58,7 @@ The JWT specification allows tokens to specify the signing algorithm in their he
 * Authorization bypass
 
 ==== Current Implementation Status: MITIGATED
-The library explicitly rejects the "none" algorithm. For implementation details, see link:security-specifications.adoc#none-algorithm-attack[None Algorithm Attack] in the Security Specifications document.
+The library explicitly rejects the "none" algorithm. For implementation details, see xref:security-specifications.adoc#none-algorithm-attack[None Algorithm Attack] in the Security Specifications document.
 
 **Implementation Details:**
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - "none" algorithm is explicitly listed in REJECTED_ALGORITHMS
@@ -80,7 +80,7 @@ When using HMAC-based algorithms like `HS256`, the integrity of the JWT depends 
 * Authentication bypass
 
 ==== Current Implementation Status: MITIGATED
-The library provides protection against weak keys. For implementation details, see link:security-specifications.adoc#trivial-secret-weak-hmac-keys[Trivial Secret] in the Security Specifications document.
+The library provides protection against weak keys. For implementation details, see xref:security-specifications.adoc#trivial-secret-weak-hmac-keys[Trivial Secret] in the Security Specifications document.
 
 **Implementation Details:**
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms (HS256, HS384, HS512) are explicitly rejected to prevent weak secret vulnerabilities
@@ -103,7 +103,7 @@ This attack exploits the fact that the JWT header includes a user-controlled `al
 * Authorization bypass
 
 ==== Current Implementation Status: MITIGATED
-The library implements several protections against algorithm confusion attacks. For implementation details, see link:security-specifications.adoc#algorithm-confusion[Algorithm Confusion] in the Security Specifications document.
+The library implements several protections against algorithm confusion attacks. For implementation details, see xref:security-specifications.adoc#algorithm-confusion[Algorithm Confusion] in the Security Specifications document.
 
 **Implementation Details:**
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms are explicitly rejected, preventing RSA-to-HMAC confusion attacks
@@ -127,7 +127,7 @@ The JWT header supports a field called `kid` (Key ID) that allows the token to i
 * SQL Injection
 
 ==== Current Implementation Status: MITIGATED
-The library implements several protections against Key ID injection attacks. For implementation details, see link:security-specifications.adoc#kid-injection[Key ID Injection] in the Security Specifications document.
+The library implements several protections against Key ID injection attacks. For implementation details, see xref:security-specifications.adoc#kid-injection[Key ID Injection] in the Security Specifications document.
 
 * The `kid` value is validated and sanitized
 * Direct file or database lookups based on the `kid` value are not supported
@@ -160,7 +160,7 @@ JWTs can optionally include a JWK (JSON Web Key) directly inside the token heade
 * Authorization bypass
 
 ==== Current Implementation Status: MITIGATED
-The library mitigates this vulnerability by refusing to accept keys from tokens. For implementation details, see link:security-specifications.adoc#embedded-jwk[Embedded JWK] in the Security Specifications document.
+The library mitigates this vulnerability by refusing to accept keys from tokens. For implementation details, see xref:security-specifications.adoc#embedded-jwk[Embedded JWK] in the Security Specifications document.
 
 **Implementation Details:**
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:93-102] - Embedded JWK detection explicitly rejects tokens containing "jwk" in header
@@ -183,7 +183,7 @@ JWT supports additional headers like `jku` (JWK Set URL) and `x5u` (X.509 certif
 * Server-Side Request Forgery
 
 ==== Current Implementation Status: MITIGATED
-The library prevents JKU/X5U header abuse by not following arbitrary URLs in tokens. For implementation details, see link:security-specifications.adoc#jku-x5u-header-abuse[JKU/X5U Header Abuse] in the Security Specifications document.
+The library prevents JKU/X5U header abuse by not following arbitrary URLs in tokens. For implementation details, see xref:security-specifications.adoc#jku-x5u-header-abuse[JKU/X5U Header Abuse] in the Security Specifications document.
 
 **Implementation Details:**
 * The library does not process `jku` or `x5u` headers from tokens - these headers are ignored
@@ -206,7 +206,7 @@ In 2022, a critical vulnerability was discovered in the Java JDK's ECDSA signatu
 * Authorization bypass
 
 ==== Current Implementation Status: MITIGATED
-The library is protected against the "Psychic Signature" vulnerability. For implementation details, see link:security-specifications.adoc#psychic-signature[Psychic Signature] in the Security Specifications document.
+The library is protected against the "Psychic Signature" vulnerability. For implementation details, see xref:security-specifications.adoc#psychic-signature[Psychic Signature] in the Security Specifications document.
 
 **Implementation Details:**
 * link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java] - Uses Java 21 standard JDK cryptographic providers which include fixes for CVE-2022-21449
