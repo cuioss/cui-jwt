@@ -1,4 +1,7 @@
 = JWT Validation Metrics
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
 
 This document describes the metrics exposed by the cui-jwt-quarkus extension for monitoring JWT token validation and security events.
 

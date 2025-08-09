@@ -1,0 +1,173 @@
+= JWT Validation Usage Guide
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+
+This guide provides practical examples and patterns for using the JWT validation library.
+
+== Basic Token Validation
+
+The simplest way to validate a JWT token:
+
+[source,java]
+----
+// Create TokenValidator
+TokenValidator tokenValidator = TokenValidator.builder()
+    .issuerConfig(IssuerConfig.builder()
+        .issuer("https://example.com")
+        .signatureKey("your-secret-key")
+        .build())
+    .build();
+
+// Validate token
+ValidationResult<AccessToken> result = tokenValidator.validateAccessToken(jwtString);
+
+if (result.isValid()) {
+    AccessToken token = result.getToken();
+    String subject = token.getSubject();
+    Set<String> roles = token.getRoles();
+}
+----
+
+== Access Token Caching
+
+The library provides built-in caching for validated access tokens:
+
+[source,java]
+----
+// Enable caching with configuration
+AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
+    .maxSize(1000)
+    .ttlSeconds(300)
+    .build();
+
+TokenValidator tokenValidator = TokenValidator.builder()
+    .accessTokenCacheConfig(cacheConfig)
+    .issuerConfig(issuerConfig)
+    .build();
+
+// Subsequent validations of the same token are cached
+ValidationResult<AccessToken> result1 = tokenValidator.validateAccessToken(jwtString);
+ValidationResult<AccessToken> result2 = tokenValidator.validateAccessToken(jwtString); // From cache
+----
+
+== Multi-Issuer Configuration
+
+Configure multiple identity providers:
+
+[source,java]
+----
+TokenValidator tokenValidator = TokenValidator.builder()
+    .issuerConfig(IssuerConfig.builder()
+        .issuer("https://keycloak.example.com/auth/realms/main")
+        .jwksUri("https://keycloak.example.com/auth/realms/main/protocol/openid-connect/certs")
+        .build())
+    .issuerConfig(IssuerConfig.builder()
+        .issuer("https://auth0.example.com/")
+        .jwksUri("https://auth0.example.com/.well-known/jwks.json")
+        .build())
+    .build();
+
+// Validator automatically selects correct issuer based on token
+ValidationResult<AccessToken> result = tokenValidator.validateAccessToken(jwtString);
+----
+
+== OpenID Connect Discovery
+
+Automatic configuration using OpenID Connect discovery:
+
+[source,java]
+----
+// Create HTTP client for well-known endpoint
+HttpClient httpClient = HttpClient.newHttpClient();
+WellKnownResolver resolver = new HttpWellKnownResolver(httpClient);
+
+// Fetch configuration
+String issuer = "https://accounts.google.com";
+WellKnownConfig wellKnown = resolver.resolve(issuer);
+
+// Build issuer config from discovery
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .issuer(wellKnown.getIssuer())
+    .jwksUri(wellKnown.getJwksUri())
+    .build();
+----
+
+=== Using HttpWellKnownResolver
+
+[source,java]
+----
+HttpClient httpClient = HttpClient.newHttpClient();
+HttpWellKnownResolver resolver = new HttpWellKnownResolver(httpClient);
+
+String issuer = "https://example.com";
+WellKnownConfig config = resolver.resolve(issuer);
+
+// Use config for IssuerConfig
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .issuer(config.getIssuer())
+    .jwksUri(config.getJwksUri())
+    .build();
+----
+
+=== Configuring HttpJwksLoaderConfig
+
+[source,java]
+----
+HttpJwksLoaderConfig loaderConfig = HttpJwksLoaderConfig.builder()
+    .connectTimeoutMs(5000)
+    .readTimeoutMs(5000)
+    .maxRetries(3)
+    .retryDelayMs(1000)
+    .build();
+
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .issuer("https://example.com")
+    .jwksUri("https://example.com/.well-known/jwks.json")
+    .jwksLoaderConfig(loaderConfig)
+    .build();
+----
+
+=== Configuring TokenValidator
+
+[source,java]
+----
+TokenValidator tokenValidator = TokenValidator.builder()
+    .issuerConfig(issuerConfig)
+    .parserConfig(ParserConfig.builder()
+        .maxTokenSize(16384)
+        .maxPayloadSize(8192)
+        .build())
+    .clockSkew(Duration.ofSeconds(30))
+    .build();
+----
+
+== Custom Claim Mapping
+
+Map custom claims to roles and groups:
+
+[source,java]
+----
+// Configure custom claim paths
+RolesGroupsConfig rolesConfig = RolesGroupsConfig.builder()
+    .rolesPath("realm_access/roles")
+    .groupsPath("groups")
+    .build();
+
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .issuer("https://example.com")
+    .rolesGroupsConfig(rolesConfig)
+    .build();
+
+TokenValidator validator = TokenValidator.builder()
+    .issuerConfig(issuerConfig)
+    .build();
+
+// Token claims are automatically mapped
+ValidationResult<AccessToken> result = validator.validateAccessToken(jwtString);
+AccessToken token = result.getToken();
+Set<String> roles = token.getRoles(); // From realm_access/roles
+Set<String> groups = token.getGroups(); // From groups claim
+----
+
+For more examples, see the xref:api-reference.adoc[API Reference].

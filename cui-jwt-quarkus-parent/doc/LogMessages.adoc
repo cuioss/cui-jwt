@@ -1,6 +1,7 @@
 = Log Messages for CUI JWT Quarkus Parent
 :toc: left
 :toclevels: 2
+:source-highlighter: highlight.js
 
 == Overview
 

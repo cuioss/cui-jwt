@@ -1,0 +1,59 @@
+= JWT Validation Module Overview
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+
+This module provides comprehensive JWT token validation capabilities for multi-issuer environments. It offers type-safe token parsing, comprehensive security validation, and flexible configuration options.
+
+== Key Features
+
+* **Multi-Issuer Support**: Validate tokens from multiple identity providers simultaneously
+* **Type-Safe Token Parsing**: Strongly typed token representations for Access, ID, and Refresh tokens
+* **Security Pipeline**: Comprehensive validation including structure, signature, and semantic checks
+* **Flexible Key Management**: Support for static keys, JWKS endpoints, and OpenID Connect discovery
+* **Performance Optimized**: Built-in caching and efficient validation pipelines
+* **Extensible Architecture**: Plugin custom validators and claim mappers
+
+== Core Components
+
+=== TokenValidator
+
+The primary entry point for all token operations:
+
+* Centralized token creation and validation
+* Support for multiple token types (Access, ID, Refresh)
+* Pipeline-based token validation
+* Support for multiple issuers
+
+=== Multi-Issuer Support
+
+Configure and validate tokens from multiple identity providers:
+
+* Per-issuer configuration
+* Automatic issuer detection from token
+* Fallback mechanisms for unknown issuers
+
+=== Security Pipeline
+
+Comprehensive validation pipeline:
+
+1. **Structure Validation**: Token format and encoding
+2. **Signature Verification**: Cryptographic validation
+3. **Semantic Validation**: Claims, expiration, audience
+
+=== Key Management
+
+Flexible key resolution strategies:
+
+* Static key configuration
+* JWKS endpoint integration
+* OpenID Connect discovery
+* Key rotation support
+
+== Getting Started
+
+For quick start instructions, see xref:../README.adoc[README].
+
+For detailed usage examples, see xref:usage-guide.adoc[Usage Guide].
+
+For API reference, see xref:api-reference.adoc[API Reference].
