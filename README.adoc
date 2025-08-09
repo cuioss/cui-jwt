@@ -250,6 +250,7 @@ The library also supports configuration of JWKS URI via xref:doc/specification/w
 
 == Related Documentation
 
+* xref:doc/navigation.adoc[Documentation Navigation] - Complete guide to all documentation
 * xref:cui-jwt-validation/README.adoc[Usage Guide] - Complete usage examples and configuration
 * xref:doc/Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:doc/specification/technical-components.adoc[Technical Components] - Detailed component specifications
