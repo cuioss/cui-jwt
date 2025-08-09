@@ -32,7 +32,7 @@ A Quarkus extension for the CUI JWT validation library, consisting of:
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-quarkus</artifactId>
+    <artifactId>cui-jwt-quarkus-deployment</artifactId>
 </dependency>
 ----
 
