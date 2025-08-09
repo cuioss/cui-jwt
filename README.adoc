@@ -94,12 +94,12 @@ The xref:cui-jwt-quarkus-parent/README.adoc[Quarkus Extension] provides:
 * Native image support for GraalVM
 * Dev UI integration for testing
 
-.Minimal Configuration Example
+.Minimal Configuration Example (using OpenID Connect Discovery)
 [source,properties]
 ----
 # application.properties
-cui.jwt.issuer.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
-cui.jwt.issuer.keycloak.http-jwks-loader-config.jwks-uri=https://keycloak.example.com/realms/master/protocol/openid-connect/certs
+cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
+cui.jwt.issuers.keycloak.jwks.http.well-known-url=https://keycloak.example.com/realms/master/.well-known/openid-configuration
 ----
 
 [source,java]
@@ -113,8 +113,6 @@ if (tokenResult.isSuccessfullyAuthorized()) {
     // The call is authorized and verified to contain the scope "read"
 }
 ----
-
-For a complete working example, see the xref:cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/README.adoc[integration tests module].
 
 For a complete working example, see the xref:cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/README.adoc[integration tests module].
 
