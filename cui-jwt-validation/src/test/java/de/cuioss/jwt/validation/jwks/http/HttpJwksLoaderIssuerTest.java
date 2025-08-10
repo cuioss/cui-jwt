@@ -15,11 +15,8 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
-import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
-import de.cuioss.jwt.validation.well_known.WellKnownConfig;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
@@ -169,7 +166,7 @@ class HttpJwksLoaderIssuerTest {
 
         int threadCount = 10;
         Thread[] threads = new Thread[threadCount];
-        Optional<String>[] results = new Optional[threadCount];
+        @SuppressWarnings("unchecked") Optional<String>[] results = new Optional[threadCount];
 
         for (int i = 0; i < threadCount; i++) {
             final int index = i;
@@ -200,27 +197,8 @@ class HttpJwksLoaderIssuerTest {
     @Test
     @DisplayName("Should return empty when well-known resolver returns empty issuer")
     void shouldReturnEmptyWhenResolverReturnsEmptyIssuer() {
-        // Create a mock well-known resolver that has OK status but returns empty issuer
-        HttpWellKnownResolver mockResolver = new HttpWellKnownResolver(
-                WellKnownConfig.builder()
-                        .wellKnownUrl("https://invalid.example.com/.well-known/openid-configuration")
-                        .build()
-        ) {
-            @Override
-            public LoaderStatus isHealthy() {
-                // Override to return OK status
-                return LoaderStatus.OK;
-            }
-
-            @Override
-            public Optional<String> getIssuer() {
-                // Return empty issuer
-                return Optional.empty();
-            }
-        };
-
-        // Create HttpJwksLoader with custom well-known resolver using reflection
-        // Since we can't inject it directly, we'll test the behavior through the real implementation
+        // Create HttpJwksLoader with an invalid well-known URL
+        // This will cause the resolver to fail and return empty issuer
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://invalid.example.com/.well-known/openid-configuration")
                 .build();

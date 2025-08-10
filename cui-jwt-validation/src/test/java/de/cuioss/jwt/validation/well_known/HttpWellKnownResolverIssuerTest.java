@@ -36,7 +36,7 @@ class HttpWellKnownResolverIssuerTest {
 
     @Getter
     private final WellKnownDispatcher moduleDispatcher = new WellKnownDispatcher();
-    
+
     private HttpWellKnownResolver resolver;
 
     @BeforeEach
@@ -61,7 +61,7 @@ class HttpWellKnownResolverIssuerTest {
         assertTrue(issuer.isPresent(), "Issuer should be present");
         assertNotNull(issuer.get(), "Issuer should not be null");
         assertTrue(issuer.get().startsWith("http"), "Issuer should be a URL string");
-        
+
         // Verify health status is OK
         assertEquals(LoaderStatus.OK, resolver.isHealthy());
     }
@@ -81,7 +81,7 @@ class HttpWellKnownResolverIssuerTest {
         // Verify issuer is empty
         Optional<String> issuer = resolver.getIssuer();
         assertFalse(issuer.isPresent(), "Issuer should not be present when missing from response");
-        
+
         // Verify health status is ERROR since issuer is required
         assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
     }
@@ -101,7 +101,7 @@ class HttpWellKnownResolverIssuerTest {
         // When issuer validation fails, issuer should not be set
         Optional<String> issuer = resolver.getIssuer();
         assertFalse(issuer.isPresent(), "Issuer should not be present when validation fails");
-        
+
         // Verify health status is ERROR
         assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
     }
@@ -121,14 +121,14 @@ class HttpWellKnownResolverIssuerTest {
         // First call - should load from server
         Optional<String> issuer1 = resolver.getIssuer();
         assertTrue(issuer1.isPresent());
-        
+
         // Second call - should return cached value
         Optional<String> issuer2 = resolver.getIssuer();
         assertTrue(issuer2.isPresent());
-        
+
         // Both should be the same
         assertEquals(issuer1.get(), issuer2.get());
-        
+
         // Verify only one request was made
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
@@ -147,7 +147,7 @@ class HttpWellKnownResolverIssuerTest {
 
         int threadCount = 10;
         Thread[] threads = new Thread[threadCount];
-        Optional<String>[] results = new Optional[threadCount];
+        @SuppressWarnings("unchecked") Optional<String>[] results = new Optional[threadCount];
 
         for (int i = 0; i < threadCount; i++) {
             final int index = i;

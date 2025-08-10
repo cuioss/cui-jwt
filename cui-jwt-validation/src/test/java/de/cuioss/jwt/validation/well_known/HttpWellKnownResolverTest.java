@@ -132,13 +132,13 @@ class HttpWellKnownResolverTest {
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
-        
+
         // Call getIssuer() which will trigger ensureLoaded()
         Optional<String> issuer = resolver.getIssuer();
-        
+
         // Should return empty since the server doesn't exist
         assertFalse(issuer.isPresent(), "Issuer should not be present when server is unavailable");
-        
+
         // Health status should be ERROR after failed loading
         assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
     }
