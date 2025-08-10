@@ -21,6 +21,8 @@ import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -119,6 +121,25 @@ class HttpWellKnownResolverTest {
         }
 
         // Should complete without exceptions
+        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+    }
+
+    @Test
+    @DisplayName("Should return empty issuer when not available")
+    void shouldReturnEmptyIssuerWhenNotAvailable() {
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl("https://nonexistent.example.com/.well-known/openid-configuration")
+                .build();
+
+        HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
+        
+        // Call getIssuer() which will trigger ensureLoaded()
+        Optional<String> issuer = resolver.getIssuer();
+        
+        // Should return empty since the server doesn't exist
+        assertFalse(issuer.isPresent(), "Issuer should not be present when server is unavailable");
+        
+        // Health status should be ERROR after failed loading
         assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
     }
 }
