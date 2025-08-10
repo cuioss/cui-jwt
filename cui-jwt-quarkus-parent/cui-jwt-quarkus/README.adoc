@@ -114,13 +114,11 @@ cui:
   jwt:
     issuers:
       my-issuer:
-        url: "https://auth.example.com"
+        issuer-identifier: "https://auth.example.com"
         jwks:
-          url: "https://auth.example.com/.well-known/jwks.json"
-          cache-ttl-seconds: 300
-        parser:
-          audience: "my-app"
-          leeway-seconds: 30
+          http:
+            url: "https://auth.example.com/.well-known/jwks.json"
+            refresh-interval-seconds: 300
 ----
 
 === Multiple Issuers
@@ -131,12 +129,12 @@ cui:
   jwt:
     issuers:
       issuer-one:
-        url: "https://auth1.example.com"
-        jwks:
-          well-known-url: "https://auth1.example.com/.well-known/openid_configuration"
+        issuer-identifier: "https://auth1.example.com"
+        well-known-url: "https://auth1.example.com/.well-known/openid-configuration"
       issuer-two:
-        url: "https://auth2.example.com"
-        public-key-location: "classpath:keys/public-key.pem"
+        issuer-identifier: "https://auth2.example.com"
+        jwks:
+          file-path: "classpath:keys/public-key.pem"
 ----
 
 === CDI Usage
@@ -146,31 +144,19 @@ cui:
 @Inject
 TokenValidator tokenValidator;
 
-public boolean validateToken(String token) {
+public void processRequest(String jwtString) {
     try {
-        var result = tokenValidator.validate(token);
-        return result.isValid();
-    } catch (Exception e) {
-        log.error("Token validation failed", e);
-        return false;
+        AccessTokenContent token = tokenValidator.createAccessToken(jwtString);
+        String subject = token.getSubject();
+        List<String> roles = token.getRoles();
+        // Process valid token
+    } catch (TokenValidationException e) {
+        // Handle validation failure
+        LOGGER.error("Token validation failed: {}", e.getMessage(), e);
     }
 }
 ----
 
-=== Health Check Integration
-
-[source, java]
-----
-@Inject
-TokenValidatorHealthCheck healthCheck;
-
-public void checkSystemHealth() {
-    var outcome = healthCheck.call();
-    if (outcome.getStatus() == HealthCheckResponse.Status.UP) {
-        log.info("JWT validation is healthy");
-    }
-}
-----
 
 == Configuration
 
