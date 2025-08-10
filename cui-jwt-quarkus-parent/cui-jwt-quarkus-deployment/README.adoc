@@ -81,17 +81,20 @@ The deployment module automatically configures build-time settings. No additiona
 Automatically registers these classes for reflection:
 
 **Classes with Methods and Constructors:**
+
 * `de.cuioss.jwt.validation.TokenValidator` - Main validation component
 * `de.cuioss.jwt.quarkus.config.IssuerConfigResolver` - Configuration resolver
 * `de.cuioss.jwt.validation.security.SecurityEventCounter` - Security metrics
 * `io.micrometer.core.instrument.MeterRegistry` - Metrics registry
 
 **Configuration Classes (Methods Only):**
+
 * `de.cuioss.jwt.validation.IssuerConfig` - Issuer configuration
 * `de.cuioss.jwt.validation.ParserConfig` - Parser settings
 * `de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig` - JWKS loader configuration
 
 **Runtime Initialization:**
+
 * `de.cuioss.jwt.validation.jwks.http.HttpJwksLoader` (runtime initialized for native image compatibility)
 
 === Native Image Support
