@@ -64,6 +64,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     private final WellKnownEndpointMapper mapper;
 
     private final Map<String, HttpHandler> endpoints = new ConcurrentHashMap<>();
+    private volatile String issuerIdentifier;
     private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
 
     /**
@@ -105,9 +106,9 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     }
 
     @Override
-    public Optional<HttpHandler> getIssuer() {
+    public Optional<String> getIssuer() {
         ensureLoaded();
-        return Optional.ofNullable(endpoints.get(ISSUER_KEY));
+        return Optional.ofNullable(issuerIdentifier);
     }
 
     @Override
@@ -120,16 +121,16 @@ public class HttpWellKnownResolver implements WellKnownResolver {
 
 
     private void ensureLoaded() {
-        if (endpoints.isEmpty()) {
+        if (endpoints.isEmpty() && issuerIdentifier == null) {
             loadEndpointsIfNeeded();
         }
     }
 
     private void loadEndpointsIfNeeded() {
         // Double-checked locking pattern with ConcurrentHashMap
-        if (endpoints.isEmpty()) {
+        if (endpoints.isEmpty() && issuerIdentifier == null) {
             synchronized (this) {
-                if (endpoints.isEmpty()) {
+                if (endpoints.isEmpty() && issuerIdentifier == null) {
                     loadEndpoints();
                 }
             }
@@ -175,12 +176,6 @@ public class HttpWellKnownResolver implements WellKnownResolver {
             return;
         }
 
-        if (!mapper.addHttpHandlerToMap(parsedEndpoints, ISSUER_KEY, issuerString, wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
         // JWKS URI (Required)
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, JWKS_URI_KEY,
                 parser.getString(discoveryDocument, JWKS_URI_KEY).orElse(null), wellKnownUrl, true)) {
@@ -211,9 +206,10 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         // Accessibility check for jwks_uri
         mapper.performAccessibilityCheck(JWKS_URI_KEY, parsedEndpoints.get(JWKS_URI_KEY));
 
-        // Success - save the endpoints
+        // Success - save the endpoints and issuer identifier
         this.endpoints.clear();
         this.endpoints.putAll(parsedEndpoints);
+        this.issuerIdentifier = issuerString;
         this.status = LoaderStatus.OK;
 
         LOGGER.info(JWTValidationLogMessages.INFO.WELL_KNOWN_ENDPOINTS_LOADED.format(wellKnownUrl));

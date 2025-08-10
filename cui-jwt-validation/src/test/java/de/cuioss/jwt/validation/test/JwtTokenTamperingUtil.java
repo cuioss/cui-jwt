@@ -228,9 +228,41 @@ public class JwtTokenTamperingUtil {
             return token;
         }
 
-        int randomIndex = Generators.integers(0, signature.length() - 1).next();
+        // For base64url, we need to ensure we modify a character that will actually
+        // change the decoded bytes. The last character in base64url might only 
+        // contribute 2 bits when the signature length is certain values.
+        // To ensure tampering always changes the decoded bytes, we avoid the last character
+        // and pick from the rest of the signature.
+        
+        int maxIndex = signature.length() - 1;
+        // If signature is long enough, avoid the last character to ensure we change decoded bytes
+        if (signature.length() > 4) {
+            maxIndex = signature.length() - 2;
+        }
+
+        int randomIndex = Generators.integers(0, maxIndex).next();
         char originalChar = signature.charAt(randomIndex);
-        char newChar = generateDifferentChar(originalChar, CHAR_GENERATOR_A_B);
+
+        // Use a character that will definitely change the decoded value
+        // We need to ensure the new character differs in more than just the trailing bits
+        char newChar;
+        if (Character.isDigit(originalChar)) {
+            // If it's a digit, change to a letter
+            newChar = CHAR_GENERATOR_A_B.next();
+        } else if (originalChar >= 'A' && originalChar <= 'Z') {
+            // If uppercase, change to lowercase or digit
+            newChar = (originalChar == 'A') ? 'z' : 'a';
+        } else if (originalChar >= 'a' && originalChar <= 'z') {
+            // If lowercase, change to uppercase or digit  
+            newChar = (originalChar == 'a') ? 'Z' : 'A';
+        } else if (originalChar == '-') {
+            newChar = '_';
+        } else if (originalChar == '_') {
+            newChar = '-';
+        } else {
+            // Default: use the generator but ensure it's different
+            newChar = generateDifferentChar(originalChar, CHAR_GENERATOR_X_Y);
+        }
 
         String tamperedSignature = signature.substring(0, randomIndex) + newChar +
                 (randomIndex < signature.length() - 1 ? signature.substring(randomIndex + 1) : "");

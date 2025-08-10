@@ -73,10 +73,12 @@ public interface WellKnownResolver extends HealthStatusProvider {
     Optional<HttpHandler> getUserinfoEndpoint();
 
     /**
-     * Gets the issuer endpoint handler.
-     * This represents the issuer identifier from the discovery document.
+     * Gets the issuer identifier.
+     * This represents the issuer identifier string from the discovery document.
+     * According to OpenID Connect Core 1.0 Section 2, the issuer is a case-sensitive URL
+     * used as a unique identifier for the authorization server, not an HTTP endpoint.
      *
-     * @return Optional containing the issuer HttpHandler, empty if not available
+     * @return Optional containing the issuer identifier string, empty if not available
      */
-    Optional<HttpHandler> getIssuer();
+    Optional<String> getIssuer();
 }
