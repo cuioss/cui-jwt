@@ -61,21 +61,21 @@ See xref:metrics-integration.adoc[Metrics Integration] for detailed information.
 
 == Configuration
 
-The extension uses Quarkus configuration mechanisms with the `jwt.validation` prefix:
+The extension uses MicroProfile Config API with the `cui.jwt` prefix:
 
 [source,properties]
 ----
 # Basic configuration
-jwt.validation.enabled=true
-jwt.validation.parser.allow-unsafe-algorithms=false
-jwt.validation.parser.max-token-size-kb=8
+cui.jwt.enabled=true
+cui.jwt.parser.allow-unsafe-algorithms=false
+cui.jwt.parser.max-token-size-bytes=8192
 
 # Issuer configuration
-jwt.validation.issuers.keycloak.url=https://keycloak.example.com/auth/realms/master
-jwt.validation.issuers.keycloak.jwks-url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
+cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/auth/realms/master
+cui.jwt.issuers.keycloak.jwks.http.url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
 ----
 
-Configuration is handled through the `JwtValidationConfig` class and its nested configuration classes.
+Configuration is resolved through dedicated resolver classes that access properties via MicroProfile Config.
 
 == DevUI Integration
 

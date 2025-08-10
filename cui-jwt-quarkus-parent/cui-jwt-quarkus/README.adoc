@@ -14,17 +14,17 @@ For Maven dependency information, see xref:../README.adoc#maven-coordinates[Mave
 
 === Configuration Management
 
-* Type-safe configuration properties using Quarkus ConfigMapping
+* Direct configuration access through MicroProfile Config API
 * Support for multiple JWT issuers with individual configurations
 * Flexible parser settings for token validation
 * HTTP JWKS loader configuration with caching and retry mechanisms
 
 === CDI Integration
 
-* CDI producers for token validators and issuer configurations
-* Automatic bean registration for JWT validation components
+* CDI producers for TokenValidator and BearerTokenResult
+* Field-based producers for JWT validation components
 * Integration with Quarkus dependency injection container
-* Support for multiple named validators per issuer
+* Request-scoped bearer token validation
 
 === Health Monitoring
 

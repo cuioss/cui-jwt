@@ -51,15 +51,17 @@ For detailed component architecture, implementation details, and testing framewo
 == Usage Examples
 
 === Basic Extension Usage
-The deployment module is automatically included when using the runtime extension:
+To use the Quarkus extension, add the deployment module dependency:
 
 [source, xml]
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-quarkus</artifactId>
+    <artifactId>cui-jwt-quarkus-deployment</artifactId>
 </dependency>
 ----
+
+This will automatically include the runtime module as a transitive dependency.
 
 === Development Mode
 Access DevUI components during development:
@@ -78,18 +80,16 @@ The deployment module automatically configures build-time settings. No additiona
 === Reflection Configuration
 Automatically registers these classes for reflection:
 
-**Quarkus Configuration Classes:**
-* `de.cuioss.jwt.quarkus.config.JwtValidationConfig`
-* `de.cuioss.jwt.quarkus.config.JwtValidationConfig$IssuerConfig`
-* `de.cuioss.jwt.quarkus.config.JwtValidationConfig$ParserConfig`
-* `de.cuioss.jwt.quarkus.config.JwtValidationConfig$HttpJwksLoaderConfig`
+**Classes with Methods and Constructors:**
+* `de.cuioss.jwt.validation.TokenValidator` - Main validation component
+* `de.cuioss.jwt.quarkus.config.IssuerConfigResolver` - Configuration resolver
+* `de.cuioss.jwt.validation.security.SecurityEventCounter` - Security metrics
+* `io.micrometer.core.instrument.MeterRegistry` - Metrics registry
 
-**Core Validation Classes:**
-* `de.cuioss.jwt.validation.TokenValidator`
-* `de.cuioss.jwt.validation.IssuerConfig`
-* `de.cuioss.jwt.validation.ParserConfig`
-* `de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig`
-* `de.cuioss.jwt.validation.security.SecurityEventCounter`
+**Configuration Classes (Methods Only):**
+* `de.cuioss.jwt.validation.IssuerConfig` - Issuer configuration
+* `de.cuioss.jwt.validation.ParserConfig` - Parser settings
+* `de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig` - JWKS loader configuration
 
 **Runtime Initialization:**
 * `de.cuioss.jwt.validation.jwks.http.HttpJwksLoader` (runtime initialized for native image compatibility)
