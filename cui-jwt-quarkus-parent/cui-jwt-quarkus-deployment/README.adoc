@@ -22,7 +22,7 @@ For Maven dependency information, see xref:../README.adoc#maven-coordinates[Mave
 * Development-time debugging interface for JWT validation
 * JSON-RPC services for interactive token analysis
 * Web components for JWT configuration inspection
-* See xref:../doc/devui-implementation.adoc[DevUI Implementation Documentation] for comprehensive technical details
+* See xref:../doc/development/devui-implementation.adoc[DevUI Implementation Documentation] for comprehensive technical details
 
 === Extension Architecture
 * Follows Quarkus extension patterns with separate deployment and runtime modules
@@ -46,7 +46,7 @@ Development interface components:
 * link:src/main/java/de/cuioss/jwt/quarkus/deployment/CuiJwtDevUIJsonRPCService.java[CuiJwtDevUIJsonRPCService] - JSON-RPC service for DevUI communication
 * Web components in `src/main/resources/dev-ui/` for interactive JWT debugging
 
-For detailed component architecture, implementation details, and testing framework, see xref:../doc/devui-implementation.adoc[DevUI Implementation Documentation].
+For detailed component architecture, implementation details, and testing framework, see xref:../doc/development/devui-implementation.adoc[DevUI Implementation Documentation].
 
 == Usage Examples
 
@@ -129,8 +129,8 @@ For detailed configuration, reflection classes, and testing information, see xre
 == Related Documentation
 
 * xref:../cui-jwt-quarkus/README.adoc[Runtime Module Documentation]
-* xref:../doc/quarkus-integration.adoc[Quarkus Integration Architecture]
-* xref:../doc/devui-implementation.adoc[DevUI Implementation Documentation]
-* xref:../doc/devui-testing.adoc[DevUI Testing Guide]
+* xref:../doc/integration/quarkus-integration.adoc[Quarkus Integration Architecture]
+* xref:../doc/development/devui-implementation.adoc[DevUI Implementation Documentation]
+* xref:../doc/development/devui-testing.adoc[DevUI Testing Guide]
 * xref:../doc/configuration/native-image-configuration.adoc[Native Image Configuration]
 * xref:../../../doc/specification/technical-components.adoc[Technical Components Specification]

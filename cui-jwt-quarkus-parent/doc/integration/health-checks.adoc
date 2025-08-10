@@ -54,7 +54,7 @@ The cui-jwt-quarkus extension provides MicroProfile Health checks for JWT valida
 
 === Health Check Configuration
 
-For health check configuration options, see the xref:../cui-jwt-quarkus/src/main/resources/META-INF/quarkus-config-doc.adoc#health-check-configuration[Health Check Configuration] section in the main configuration reference.
+For health check configuration options, see the xref:../../cui-jwt-quarkus/src/main/resources/META-INF/quarkus-config-doc.adoc#health-check-configuration[Health Check Configuration] section in the main configuration reference.
 
 === Required Dependency
 
