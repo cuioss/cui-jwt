@@ -82,8 +82,7 @@ For Quarkus applications, use our dedicated extension for seamless integration:
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-quarkus-deployment</artifactId>
-    <scope>provided</scope>
+    <artifactId>cui-jwt-quarkus</artifactId>
 </dependency>
 ----
 
