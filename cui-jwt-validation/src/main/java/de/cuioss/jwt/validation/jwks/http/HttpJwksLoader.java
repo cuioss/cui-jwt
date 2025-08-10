@@ -104,9 +104,9 @@ public class HttpJwksLoader implements JwksLoader {
     public Optional<String> getIssuerIdentifier() {
         // Return issuer identifier from well-known resolver if configured
         if (config.getWellKnownResolver() != null && config.getWellKnownResolver().isHealthy() == LoaderStatus.OK) {
-            Optional<HttpHandler> issuerResult = config.getWellKnownResolver().getIssuer();
+            Optional<String> issuerResult = config.getWellKnownResolver().getIssuer();
             if (issuerResult.isPresent()) {
-                return Optional.of(issuerResult.get().getUri().toString());
+                return issuerResult;
             } else {
                 LOGGER.debug("Failed to retrieve issuer identifier from well-known resolver: issuer not available");
             }
