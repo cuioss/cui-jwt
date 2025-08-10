@@ -44,14 +44,13 @@ For Maven dependency information, see xref:../README.adoc#maven-coordinates[Mave
 
 === Configuration Classes
 
-==== JwtValidationConfig
-Main configuration interface providing type-safe access to JWT settings:
+==== Configuration Resolvers
+Configuration resolution is handled by dedicated resolver classes:
 
-* link:src/main/java/de/cuioss/jwt/quarkus/config/JwtValidationConfig.java[JwtValidationConfig]
-* Supports multiple issuer configurations
-* Parser settings for token validation rules
-* HTTP JWKS loader configuration
-* Health check configuration options
+* link:src/main/java/de/cuioss/jwt/quarkus/config/IssuerConfigResolver.java[IssuerConfigResolver] - Resolves issuer configurations from properties
+* link:src/main/java/de/cuioss/jwt/quarkus/config/ParserConfigResolver.java[ParserConfigResolver] - Handles parser configuration
+* link:src/main/java/de/cuioss/jwt/quarkus/config/AccessTokenCacheConfigResolver.java[AccessTokenCacheConfigResolver] - Manages cache configuration
+* link:src/main/java/de/cuioss/jwt/quarkus/config/KeycloakMapperConfigResolver.java[KeycloakMapperConfigResolver] - Keycloak-specific configuration
 
 ==== JwtPropertyKeys
 Configuration property key constants:
@@ -71,13 +70,13 @@ CDI producer for JWT token validators:
 * Handles validator lifecycle management
 * Provides named qualifiers for multiple issuers
 
-==== IssuerConfigFactory
-Factory for issuer-specific configurations:
+==== BearerTokenProducer
+CDI producer for bearer token validation:
 
-* link:src/main/java/de/cuioss/jwt/quarkus/producer/IssuerConfigFactory.java[IssuerConfigFactory]
-* Transforms configuration properties to validation objects
-* Handles JWKS loader setup
-* Manages issuer-specific parser configurations
+* link:src/main/java/de/cuioss/jwt/quarkus/producer/BearerTokenProducer.java[BearerTokenProducer]
+* Produces BearerTokenResult instances for injection
+* Handles token extraction from HTTP requests
+* Supports scope, role, and group validation
 
 === Health Checks
 
