@@ -1,8 +1,9 @@
 = JWT Token Handling Testing
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 xref:../Specification.adoc[Back to Main Specification]
 
@@ -83,13 +84,11 @@ Unit tests have been implemented for the core functionality, providing comprehen
 The following test classes implement these unit tests:
 
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Tests for the TokenValidator
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenTypeTest.java[TokenTypeTest.java] - Tests for token type enumeration
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/BaseTokenContentTest.java[BaseTokenContentTest.java] - Tests for the base token content
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/AccessTokenContentTest.java[AccessTokenContentTest.java] - Tests for access token content
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/IdTokenContentTest.java[IdTokenContentTest.java] - Tests for ID token content
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContentTest.java[RefreshTokenContentTest.java] - Tests for refresh token content
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/CustomClaimMapperTest.java[CustomClaimMapperTest.java] - Tests for custom claim mapping
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/ParserConfigTest.java[ParserConfigTest.java] - Tests for ParserConfig
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/ParserConfigTest.java[ParserConfigTest.java] - Tests for ParserConfig configuration validation
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/DecodedJwtTest.java[DecodedJwtTest.java] - Tests for DecodedJwt
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactoryTest.java[JwksLoaderFactoryTest.java] - Tests for JwksLoaderFactory
 
@@ -275,7 +274,7 @@ _See TestTokenHolder Constants in xref:../../cui-jwt-validation/UnitTesting.adoc
 JWT semantic correctness testing has been implemented to ensure proper distinction between OAuth2/OIDC concepts:
 
 * **Audience (`aud`) Testing**: Validates that audience claims identify resource servers correctly
-* **Client ID (`azp`) Testing**: Validates that authorized party claims identify OAuth2 clients correctly  
+* **Client ID (`azp`) Testing**: Validates that authorized party claims identify OAuth2 clients correctly
 * **Semantic Separation**: Tests verify that audience and client ID serve different purposes and use distinct values
 
 The test constants properly model real-world OAuth2/OIDC scenarios:

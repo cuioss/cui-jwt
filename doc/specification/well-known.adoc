@@ -1,8 +1,62 @@
 = OpenID Connect Discovery and Well-Known Configuration Endpoint
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
+xref:../Specification.adoc[Back to Main Specification]
+
+== Overview
+_See Requirements xref:../Requirements.adoc#CUI-JWT-4[CUI-JWT-4: Key Management] and xref:../Requirements.adoc#CUI-JWT-4.1[CUI-JWT-4.1: JWKS Endpoint Support]_
 
 An integral part of OpenID Connect (OIDC) is the discovery mechanism, which allows Relying Parties (RPs) to dynamically discover information about OpenID Providers (OPs). This process simplifies the configuration of RPs and enhances the interoperability of OIDC implementations.
 
 The primary means of discovering OP information is through a well-known URI, specifically `/.well-known/openid-configuration`, appended to the OP's Issuer Identifier. This endpoint returns a JSON document containing metadata about the provider's configuration.
+
+=== Document Navigation
+
+* xref:../../README.adoc[README] - Project overview and introduction
+* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
+* xref:../Specification.adoc[Specification] - Technical specifications
+* xref:technical-components.adoc[Technical Components] - Implementation details
+
+== Implementation Status
+
+=== Status: IMPLEMENTED
+
+The well-known discovery functionality has been implemented in the following classes:
+
+==== Core Components
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownResolver.java[WellKnownResolver] - Interface for resolving well-known configuration
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/well_known/HttpWellKnownResolver.java[HttpWellKnownResolver] - HTTP-based implementation for fetching well-known configuration
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownParser.java[WellKnownParser] - Parser for OpenID Connect discovery documents
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownConfig.java[WellKnownConfig] - Configuration data model for well-known metadata
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownEndpointMapper.java[WellKnownEndpointMapper] - Maps issuer URLs to well-known endpoints
+
+==== Integration Components
+
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] - Integrates with well-known discovery for JWKS retrieval
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfig.java[HttpJwksLoaderConfig] - Configuration supporting well-known URLs
+* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] - Supports well-known discovery for issuer configuration
+
+For implementation details, see the JavaDoc of the implementation classes listed above.
+
+==== Test Coverage
+
+The following tests verify the implementation:
+
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownParserTest.java[WellKnownParserTest]
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownEndpointMapperTest.java[WellKnownEndpointMapperTest]
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownConfigTest.java[WellKnownConfigTest]
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/well_known/HttpWellKnownResolverTest.java[HttpWellKnownResolverTest]
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfigWellKnownTest.java[HttpJwksLoaderConfigWellKnownTest]
+
+==== Test Utilities
+
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/dispatcher/WellKnownDispatcher.java[WellKnownDispatcher] - WireMock-based test utility for simulating OIDC providers
 
 == Purpose of `/.well-known/openid-configuration`
 
@@ -61,6 +115,60 @@ This process ensures the authenticity and integrity of the information received 
 A critical security measure in OIDC discovery is the validation of the `issuer` value. When an RP retrieves the configuration document from the `/.well-known/openid-configuration` endpoint, it MUST verify that the `issuer` value within the JSON document exactly matches the Issuer URL that was used to construct the `.well-known` URI.
 
 This validation step helps prevent man-in-the-middle and DNS-based attacks where an attacker might try to impersonate a legitimate OP by providing a malicious discovery document. The `issuer` value from the discovery document must also match the `iss` claim in the ID Tokens issued by that OP.
+
+=== Implementation and Testing
+
+The issuer validation is implemented in:
+
+* **Core Implementation**: `HttpWellKnownResolver.java:172-176` - Validates issuer during discovery
+* **Validation Logic**: `WellKnownParser.validateIssuer()` - Performs comprehensive URL validation
+* **Token Validation**: `TokenValidator.validateAndExtractIssuer()` - Ensures JWT contains issuer claim
+
+Test coverage includes:
+
+* **Well-Known Tests**: `WellKnownParserTest` - Tests issuer validation scenarios:
+** `shouldValidateMatchingIssuerSuccessfully()` - Valid issuer scenarios
+** `shouldReturnErrorForMalformedIssuerUrl()` - Malformed issuer URLs
+** `shouldReturnErrorForIssuerValidationFailures()` - Protocol, host, port, and path mismatches
+* **Integration Tests**: `HttpWellKnownResolverTest` - Tests complete discovery flow with issuer validation
+* **Compliance Tests**: `RFC7519JWTComplianceTest` - Validates RFC 7519 Section 4.1.1 issuer claim handling
+
+== Implementation Details
+
+=== Well-Known Discovery Process
+
+The library implements the well-known discovery process through the following workflow:
+
+. **Endpoint Mapping**: The `WellKnownEndpointMapper` constructs the well-known configuration URL from an issuer URL
+. **Configuration Retrieval**: The `HttpWellKnownResolver` fetches the discovery document from the constructed URL
+. **Document Parsing**: The `WellKnownParser` parses the JSON response and validates required fields
+. **Issuer Validation**: The implementation verifies that the `issuer` field matches the expected issuer URL
+. **JWKS Integration**: The `HttpJwksLoader` uses the discovered `jwks_uri` to fetch public keys
+
+=== Usage Example
+
+[source,java]
+----
+// Configure issuer with well-known discovery
+IssuerConfig config = IssuerConfig.builder()
+    .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
+        .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+        .build())
+    .expectedAudience(Set.of("my-client-id"))
+    .build();
+
+// The issuer identifier is automatically extracted from the discovery document
+Optional<String> issuer = config.getIssuerIdentifier();
+----
+
+=== Security Considerations
+
+The implementation enforces several security measures:
+
+* **HTTPS Requirement**: Only HTTPS URLs are accepted for well-known endpoints
+* **Issuer Validation**: The `issuer` field from the discovery document is validated against expectations
+* **Timeout Protection**: Configurable timeouts prevent hanging on slow or unresponsive endpoints
+* **Cache Management**: Discovery documents are cached with appropriate expiration to balance performance and freshness
 
 == References
 

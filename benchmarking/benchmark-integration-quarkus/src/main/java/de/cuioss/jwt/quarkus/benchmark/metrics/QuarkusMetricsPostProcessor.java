@@ -429,7 +429,7 @@ public class QuarkusMetricsPostProcessor {
             throw new IOException("Metrics download directory not found: " + metricsDownloadBaseDir);
         }
 
-        // Look for context directories (legacy format with numbers)
+        // Look for context directories (numbered format)
         File[] contextDirs = baseDir.listFiles(file ->
                 file.isDirectory() && file.getName().matches("\\d+-.*"));
 
@@ -448,8 +448,8 @@ public class QuarkusMetricsPostProcessor {
                     latestDir.getAbsolutePath(), baseDirectory);
             processor.parseAndExportQuarkusMetrics(Instant.now());
         } else {
-            // Fallback to old flat directory structure
-            LOGGER.info("No legacy directories found, using flat metrics-download structure");
+            // Use flat directory structure
+            LOGGER.info("No numbered directories found, using flat metrics-download structure");
             QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(
                     metricsDownloadBaseDir, baseDirectory);
             processor.parseAndExportQuarkusMetrics(Instant.now());

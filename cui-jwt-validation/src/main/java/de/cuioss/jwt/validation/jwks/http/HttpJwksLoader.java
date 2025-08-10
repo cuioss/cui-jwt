@@ -268,7 +268,7 @@ public class HttpJwksLoader implements JwksLoader {
      * @return Optional containing the ETagAwareHttpHandler if healthy, empty if sources are not healthy
      */
     private Optional<ETagAwareHttpHandler> ensureHttpCache() {
-        // Fast path - already have a cache (set by direct constructor or previous initialization)
+        // Fast path - already have a cache
         ETagAwareHttpHandler cache = httpCache.get();
         if (cache != null) {
             return Optional.of(cache);

@@ -1,11 +1,14 @@
 = CUI JWT Quarkus Integration
-:toc: macro
+:toc: left
 :toclevels: 3
 :sectnumlevels: 1
+:source-highlighter: highlight.js
 
-A Quarkus extension for the CUI JWT validation library.
+A Quarkus extension for the CUI JWT validation library, consisting of:
 
-toc::[]
+* xref:cui-jwt-quarkus/README.adoc[cui-jwt-quarkus] - Runtime module with CDI producers and JWT validation
+* xref:cui-jwt-quarkus-deployment/README.adoc[cui-jwt-quarkus-deployment] - Build-time deployment processor
+* xref:cui-jwt-quarkus-integration-tests/README.adoc[cui-jwt-quarkus-integration-tests] - Integration test suite
 
 == Building and Running
 
@@ -29,7 +32,7 @@ toc::[]
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-quarkus</artifactId>
+    <artifactId>cui-jwt-quarkus-deployment</artifactId>
 </dependency>
 ----
 
@@ -85,8 +88,8 @@ private BearerTokenResult tokenWithGroups;
 // With multiple requirements
 @Inject
 @BearerToken(
-    requiredScopes = {"read"}, 
-    requiredRoles = {"user"}, 
+    requiredScopes = {"read"},
+    requiredRoles = {"user"},
     requiredGroups = {"test-group"}
 )
 private BearerTokenResult tokenWithAllRequirements;
@@ -160,7 +163,7 @@ public class JwtAuthenticationService {
 
 == Metrics Integration
 
-The extension includes integration with Micrometer to expose JWT validation security events as metrics. 
+The extension includes integration with Micrometer to expose JWT validation security events as metrics.
 This allows you to monitor and alert on security-related incidents.
 
 The following metrics are available:
@@ -243,4 +246,4 @@ The project consists of the following modules:
 * xref:cui-jwt-quarkus/README.adoc[cui-jwt-quarkus] - Contains the runtime code for the extension
 * xref:cui-jwt-quarkus-integration-tests/README.adoc[cui-jwt-quarkus-integration-tests] - Provides integration tests
 * xref:doc/README.adoc[doc] - Contains additional documentation
-* xref:quarkus-integration-jmh/README.adoc[quarkus-integration-jmh] - Performance benchmarking for the extension
+* xref:../benchmarking/benchmark-integration-quarkus/README.adoc[benchmark-integration-quarkus] - Performance benchmarking for the extension

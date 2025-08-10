@@ -1,4 +1,7 @@
 = Quarkus Integration JMH Benchmarks
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
 
 Real-world JWT validation performance testing against live Quarkus applications in containers.
 
@@ -9,7 +12,7 @@ Real-world JWT validation performance testing against live Quarkus applications 
 # Run benchmarks with automatic container management (from project root)
 ./mvnw clean verify -Pbenchmark-testing -pl benchmarking/benchmark-integration-quarkus
 
-# Quick validation run  
+# Quick validation run
 ./mvnw clean verify -Pbenchmark-testing -Djmh.iterations=1 -Djmh.threads=1 -pl benchmarking/benchmark-integration-quarkus
 
 # With JFR profiling (local development only - not available in CI)
@@ -42,7 +45,7 @@ Pre-initialized `TokenRepository` with 100-token pool for realistic cache testin
 [source,bash]
 ----
 -Djmh.iterations=5         # Measurement iterations (default: 5)
--Djmh.warmupIterations=1   # Warmup iterations (default: 1)  
+-Djmh.warmupIterations=1   # Warmup iterations (default: 1)
 -Djmh.threads=24          # Concurrent threads (default: 24)
 -Djmh.time=10s            # Time per iteration (default: 10s)
 -Djmh.forks=2             # JVM forks (default: 2)

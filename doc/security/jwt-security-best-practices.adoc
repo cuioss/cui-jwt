@@ -1,10 +1,11 @@
 = JWT Security Best Practices Guide
-:toc:
+:toc: left
 :toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
-link:../Specification.adoc[Back to Main Specification]
+xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
 
@@ -12,21 +13,21 @@ This document provides a comprehensive guide on security best practices for JWT 
 
 This guide focuses on application-level security practices rather than internal library implementation details. For information about how the library internally mitigates security vulnerabilities, please refer to:
 
-* link:security-specifications.adoc[Security Specifications] - Detailed implementation of security measures
-* link:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Analysis of common JWT vulnerabilities
-* link:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Analysis of OAuth-related security vulnerabilities
+* xref:security-specifications.adoc[Security Specifications] - Detailed implementation of security measures
+* xref:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Analysis of common JWT vulnerabilities
+* xref:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Analysis of OAuth-related security vulnerabilities
 
 === Document Navigation
 
-* link:../../README.adoc[README] - Project overview and introduction
-* link:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
-* link:../Requirements.adoc[Requirements] - Functional and non-functional requirements
-* link:../Specification.adoc[Specification] - Technical specifications
-* link:../LogMessages.adoc[Log Messages] - Reference for all log messages
-* link:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Analysis of common JWT vulnerabilities
-* link:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Analysis of OAuth security considerations
-* link:Threat-Model.adoc[Threat Model] - Security analysis and mitigations
-* link:../TODO.adoc[TODO] - List of planned enhancements and tasks
+* xref:../../README.adoc[README] - Project overview and introduction
+* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
+* xref:../Specification.adoc[Specification] - Technical specifications
+* xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
+* xref:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Analysis of common JWT vulnerabilities
+* xref:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Analysis of OAuth security considerations
+* xref:Threat-Model.adoc[Threat Model] - Security analysis and mitigations
+* xref:../TODO.adoc[TODO] - List of planned enhancements and tasks
 
 === Document Scope and Related Documentation
 
@@ -39,9 +40,9 @@ This guide is primarily intended for **application developers** who are using th
 This document complements the following security-focused documents:
 
 * link:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Detailed analysis of JWT vulnerabilities from a security research perspective
-* link:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Detailed analysis of OAuth vulnerabilities
-* link:security-specifications.adoc[Security Specifications] - Technical implementation details of security measures in the library
-* link:Threat-Model.adoc[Threat Model] - Comprehensive threat modeling for the library
+* xref:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Detailed analysis of OAuth vulnerabilities
+* xref:security-specifications.adoc[Security Specifications] - Technical implementation details of security measures in the library
+* xref:Threat-Model.adoc[Threat Model] - Comprehensive threat modeling for the library
 
 Where appropriate, this guide will reference these documents for more detailed information on specific topics.
 
@@ -69,8 +70,8 @@ Where appropriate, this guide will reference these documents for more detailed i
 
 ```java
 // Server-side code to set an HttpOnly cookie
-response.setHeader("Set-Cookie", 
-    "refresh_token=" + refreshToken + 
+response.setHeader("Set-Cookie",
+    "refresh_token=" + refreshToken +
     "; HttpOnly; Secure; SameSite=strict; Path=/; Max-Age=86400");
 ```
 
@@ -142,7 +143,7 @@ function logout() {
 
 === Token Validation Settings
 
-This section provides guidance on configuring the library for secure token validation. For details on the internal implementation of these validation mechanisms, see link:security-specifications.adoc#signature-validation[Signature Validation] and link:security-specifications.adoc#claims-validation[Claims Validation] in the Security Specifications document.
+This section provides guidance on configuring the library for secure token validation. For details on the internal implementation of these validation mechanisms, see xref:security-specifications.adoc#signature-validation[Signature Validation] and xref:security-specifications.adoc#claims-validation[Claims Validation] in the Security Specifications document.
 
 ==== Recommendations
 
@@ -185,7 +186,7 @@ TokenValidator validator = TokenValidator.builder()
 
 === Algorithm Configuration
 
-This section provides guidance on securely configuring JWT algorithms. For detailed information on how the library prevents algorithm-based attacks, see link:security-specifications.adoc#none-algorithm-attack[None Algorithm Attack], link:security-specifications.adoc#trivial-secret[Trivial Secret], and link:security-specifications.adoc#algorithm-confusion[Algorithm Confusion] in the Security Specifications document.
+This section provides guidance on securely configuring JWT algorithms. For detailed information on how the library prevents algorithm-based attacks, see xref:security-specifications.adoc#none-algorithm-attack[None Algorithm Attack], xref:security-specifications.adoc#trivial-secret[Trivial Secret], and xref:security-specifications.adoc#algorithm-confusion[Algorithm Confusion] in the Security Specifications document.
 
 ==== Recommendations
 
@@ -226,7 +227,7 @@ TokenValidator validator = TokenValidator.builder()
 
 === Key Storage and Protection
 
-This section provides guidance on secure key management practices. For information on how the library implements key management internally, see link:security-specifications.adoc#key-management[Key Management] in the Security Specifications document.
+This section provides guidance on secure key management practices. For information on how the library implements key management internally, see xref:security-specifications.adoc#key-management[Key Management] in the Security Specifications document.
 
 ==== Recommendations
 
@@ -259,7 +260,7 @@ JwksLoader jwksLoader = new CachedJwksLoader(
 
 === JWKS Configuration
 
-This section provides guidance on securely configuring JWKS endpoints. For details on how the library protects against JWKS-related vulnerabilities, see link:security-specifications.adoc#jku-x5u-header-abuse[JKU / X5U Header Abuse] and link:security-specifications.adoc#embedded-jwk[Embedded JWK] in the Security Specifications document.
+This section provides guidance on securely configuring JWKS endpoints. For details on how the library protects against JWKS-related vulnerabilities, see xref:security-specifications.adoc#jku-x5u-header-abuse[JKU / X5U Header Abuse] and xref:security-specifications.adoc#embedded-jwk[Embedded JWK] in the Security Specifications document.
 
 ==== Recommendations
 
@@ -296,7 +297,7 @@ JwksLoader jwksLoader = new CachedJwksLoader(
 
 === Security Logging
 
-This section provides guidance on implementing effective security logging. For information on how the library implements security event logging, see link:security-specifications.adoc#security-event-counter[Security Event Counter] in the Security Specifications document.
+This section provides guidance on implementing effective security logging. For information on how the library implements security event logging, see xref:security-specifications.adoc#security-event-counter[Security Event Counter] in the Security Specifications document.
 
 ==== Recommendations
 
@@ -360,7 +361,7 @@ tokenValidator.setMetricsCollector(metrics -> {
 
 === Security Pitfalls
 
-This section outlines common security pitfalls to avoid. For a comprehensive analysis of JWT vulnerabilities and how they are mitigated in the library, see the link:security-specifications.adoc[Security Specifications] document.
+This section outlines common security pitfalls to avoid. For a comprehensive analysis of JWT vulnerabilities and how they are mitigated in the library, see the xref:security-specifications.adoc[Security Specifications] document.
 
 ==== Recommendations
 
@@ -434,10 +435,10 @@ try {
 
 === Project Documentation
 
-* link:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Analysis of common JWT vulnerabilities
-* link:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Analysis of OAuth security considerations
-* link:security-specifications.adoc[Security Specifications] - Technical implementation details of security measures
-* link:Threat-Model.adoc[Threat Model] - Comprehensive threat modeling for the library
+* xref:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] - Analysis of common JWT vulnerabilities
+* xref:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] - Analysis of OAuth security considerations
+* xref:security-specifications.adoc[Security Specifications] - Technical implementation details of security measures
+* xref:Threat-Model.adoc[Threat Model] - Comprehensive threat modeling for the library
 
 === External References
 

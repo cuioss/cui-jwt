@@ -155,7 +155,6 @@ public class ClaimValue implements Serializable {
 
     /**
      * Creates a ClaimValue for a sorted set of strings. With {@link ClaimValueType#STRING_LIST}.
-     * This method is provided for backward compatibility with code that previously used STRING_SET.
      *
      * @param originalString the original string representation of the claim value
      * @param sortedSet      the sorted set of string values

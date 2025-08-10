@@ -1,13 +1,13 @@
- t= JWT Validation Module
-:toc: macro
-:toclevels: 3
-:sectnumlevels: 1
+= JWT Validation Module
+:toc: left
+:toclevels: 2
+:source-highlighter: highlight.js
 
-This module provides comprehensive JWT token validation capabilities for multi-issuer environments. It offers type-safe token parsing, comprehensive security validation, and flexible configuration options.
+Comprehensive JWT token validation library for multi-issuer environments with type-safe parsing and flexible configuration.
 
-toc::[]
+== Quick Start
 
-== Maven Coordinates
+=== Maven Coordinates
 
 [source,xml]
 ----
@@ -17,7 +17,53 @@ toc::[]
 </dependency>
 ----
 
-=== Runtime Dependencies
+=== Basic Usage
+
+[source,java]
+----
+// Create TokenValidator
+TokenValidator tokenValidator = TokenValidator.builder()
+    .issuerConfig(IssuerConfig.builder()
+        .issuer("https://example.com")
+        .signatureKey("your-secret-key")
+        .build())
+    .build();
+
+// Validate and create token (throws TokenValidationException if invalid)
+try {
+    AccessTokenContent token = tokenValidator.createAccessToken(jwtString);
+    String subject = token.getSubject();
+    List<String> roles = token.getRoles();
+} catch (TokenValidationException e) {
+    // Handle validation failure
+    LOGGER.error("Token validation failed: {}", e.getMessage(), e);
+}
+----
+
+== Key Features
+
+* **Multi-Issuer Support**: Validate tokens from multiple identity providers
+* **Type-Safe Tokens**: Strongly typed Access, ID, and Refresh tokens
+* **Security Pipeline**: Structure, signature, and semantic validation
+* **Flexible Key Management**: Static keys, JWKS endpoints, OpenID Connect
+* **Built-in Caching**: Performance-optimized token validation
+* **Custom Claim Mapping**: Extensible claim processing
+
+== Documentation
+
+* xref:doc/usage-guide.adoc[Usage Guide] - Examples and patterns
+* xref:doc/api-reference.adoc[API Reference] - Complete API documentation
+* xref:doc/UnitTesting.adoc[Unit Testing] - Testing utilities and generators
+* xref:doc/developing.adoc[Development Guide] - Contributing and building
+
+== Configuration Topics
+
+* xref:doc/configuration/roles-groups-mapping.adoc[Roles and Groups Mapping]
+* xref:doc/configuration/security-settings.adoc[Security Configuration]
+* xref:doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
+* xref:doc/configuration/openid-discovery.adoc[OpenID Connect Discovery]
+
+== Runtime Dependencies
 
 [source,xml]
 ----
@@ -28,7 +74,9 @@ toc::[]
 </dependency>
 ----
 
-=== Test Artifact
+== Test Support
+
+The module provides test utilities via a classifier artifact:
 
 [source,xml]
 ----
@@ -40,686 +88,8 @@ toc::[]
 </dependency>
 ----
 
-=== TokenValidator
+See xref:doc/UnitTesting.adoc[Unit Testing Guide] for details on using test generators and utilities.
 
-The primary entry point for all token operations:
+== Support
 
-* Centralized token creation and validation
-* Support for multiple token types (Access, ID, Refresh)
-* Pipeline-based token validation
-* Support for multiple issuers
-
-See xref:../doc/specification/technical-components.adoc#_tokenvalidator[TokenValidator Technical Specification]
-
-=== Multi-Issuer Support
-
-Robust support for multiple identity providers:
-
-* Independent configuration per issuer
-* Automatic issuer detection from token claims
-* Isolated key management and security settings
-* Concurrent validation across issuers
-
-=== Security Pipeline
-
-Comprehensive validation pipeline protecting against common JWT vulnerabilities:
-
-* Header validation and sanitization
-* Signature verification with algorithm restrictions
-* Claims validation including temporal and audience checks
-* Security event monitoring and logging
-
-=== Key Management
-
-Flexible key source options:
-
-* HTTP-based JWKS with automatic rotation
-* File-based JWKS for offline scenarios
-* In-memory JWKS for testing and embedded scenarios
-* OpenID Connect Discovery support
-
-== Usage Examples
-
-=== Basic Token Validation
-
-[source,java]
-----
-// Create issuer configuration
-IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuerIdentifier("https://your-issuer.com")
-        .expectedAudience("target-Audience")
-        .expectedClientId("client-id")
-        .httpJwksLoaderConfig(httpJwksLoaderConfig)
-        .build(); // Validation happens automatically // Validate configuration
-
-// Create validator
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuerConfig)
-        .build();
-
-// Validate tokens
-AccessTokenContent accessToken = validator.createAccessToken(tokenString);
-IdTokenContent idToken = validator.createIdToken(tokenString);
-RefreshTokenContent refreshToken = validator.createRefreshToken(tokenString);
-----
-
-=== Access Token Caching
-
-The library includes built-in caching for validated access tokens to improve performance:
-
-[source,java]
-----
-// Configure access token cache (default: maxSize=1000, evictionIntervalSeconds=10)
-AccessTokenCacheConfig cacheConfig = AccessTokenCacheConfig.builder()
-        .maxSize(500)  // Cache up to 500 tokens
-        .evictionIntervalSeconds(60L)  // Clean up expired tokens every minute
-        .build();
-
-// Create validator with custom cache configuration
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuerConfig)
-        .cacheConfig(cacheConfig)
-        .build();
-
-// Or disable caching entirely
-TokenValidator validatorNoCache = TokenValidator.builder()
-        .issuerConfig(issuerConfig)
-        .cacheConfig(AccessTokenCacheConfig.disabled())  // maxSize=0
-        .build();
-----
-
-NOTE: Setting `maxSize` to 0 or using `AccessTokenCacheConfig.disabled()` disables the cache completely. The default configuration caches up to 1000 tokens.
-
-=== Multi-Issuer Configuration
-
-[source,java]
-----
-// HTTP-based JWKS loader with automatic rotation
-HttpJwksLoaderConfig httpConfig = HttpJwksLoaderConfig.builder()
-        .jwksUrl("https://issuer1.com/.well-known/jwks.json")
-        .refreshIntervalSeconds(60)
-        .build();
-
-// Configure multiple issuers
-// HTTP-based JWKS (well-known discovery - issuerIdentifier optional)
-IssuerConfig issuerHttpConfig = IssuerConfig.builder()
-        .httpJwksLoaderConfig(httpConfig) // For well-known discovery
-        .build(); // Validation happens automatically
-
-// File-based JWKS (issuerIdentifier required)
-IssuerConfig issuerFileConfig = IssuerConfig.builder()
-        .issuerIdentifier("https://issuer2.com")
-        .jwksFilePath("/path/to/jwks.json")
-        .build(); // Validation happens automatically
-
-// In-memory JWKS (issuerIdentifier required)
-IssuerConfig issuerMemoryConfig = IssuerConfig.builder()
-        .issuerIdentifier("https://issuer3.com")
-        .jwksContent("{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"key-id\",\"use\":\"sig\",\"alg\":\"RS256\",\"n\":\"...\",\"e\":\"...\"}]}")
-        .build(); // Validation happens automatically
-
-// Create validator supporting all issuers
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuerHttpConfig)
-        .issuerConfig(issuerFileConfig)
-        .issuerConfig(issuerMemoryConfig)
-        .build();
-
-// Access security event counter for monitoring
-SecurityEventCounter securityEventCounter = validator.getSecurityEventCounter();
-----
-
-=== OpenID Connect Discovery
-
-See xref:../doc/specification/well-known.adoc[OIDC Discovery Specification Details]
-
-OpenID Connect Discovery provides a standardized way for clients (Relying Parties) to dynamically discover information about an OpenID Provider (OP), such as its issuer identifier and JWKS URI. This is typically done by fetching a JSON document from a well-known endpoint: `/.well-known/openid-configuration` relative to the issuer's base URL.
-
-This library supports configuring the `HttpJwksLoaderConfig` (and subsequently the `TokenValidator`) using the information retrieved from such an endpoint via the `HttpWellKnownResolver`.
-
-=== Benefits
-
-* **Simplified Configuration**: Reduces the need to manually configure the `jwks_uri` and `issuerIdentifier` if they are discoverable via well-known endpoints.
-* **Dynamic Updates**: Although `HttpWellKnownResolver` itself performs a one-time fetch, the principle of discovery allows for more dynamic setups if the handler is re-initialized based on external triggers (not covered by default).
-* **Standard Compliance**: Aligns with OIDC standards for provider information retrieval.
-
-==== Using HttpWellKnownResolver
-
-The `de.cuioss.jwt.validation.wellKnown.HttpWellKnownResolver` class is responsible for fetching and parsing the OIDC discovery document.
-
-[source,java]
-----
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
-import de.cuioss.jwt.validation.well_known.WellKnownDiscoveryException;
-
-// ...
-
-try {
-    String wellKnownUrl = "https://your-idp.com/realms/my-realm/.well-known/openid-configuration";
-    ParserConfig parserConfig = ParserConfig.builder().build(); // Use defaults or customize as needed
-    HttpWellKnownResolver wellKnownResolver = HttpWellKnownResolver.builder()
-            .url(wellKnownUrl)
-            .parserConfig(parserConfig)
-            .build();
-
-    // The resolver now contains the discovered metadata, e.g.:
-    // HttpHandler jwksHandler = wellKnownResolver.getJwksUri();
-    // HttpHandler issuerHandler = wellKnownResolver.getIssuer();
-    // URL jwksUri = jwksHandler.getUrl();
-    // URL issuerUrl = issuerHandler.getUrl();
-
-    // This resolver can then be used to configure HttpJwksLoaderConfig
-} catch (WellKnownDiscoveryException e) {
-    // Handle exceptions related to discovery, e.g., network issues, malformed JSON, missing required fields
-    LOGGER.error("OIDC Discovery failed: %s", e.getMessage());
-}
-----
-The `HttpWellKnownResolver.builder().url().build()` pattern will fetch the document, parse it, and validate key aspects like the issuer consistency. It may throw a `WellKnownDiscoveryException` if the process fails.
-
-==== Configuring HttpJwksLoaderConfig
-
-Once you have a `HttpWellKnownResolver` instance, you can use it to configure the `HttpJwksLoaderConfig`:
-
-[source,java]
-----
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-// Assuming wellKnownResolver is already initialized as shown above
-
-HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-    .wellKnown(wellKnownResolver) // This extracts the jwks_uri from the handler
-    // Optionally set other HttpJwksLoaderConfig properties like:
-    // .refreshIntervalSeconds(300)
-    // .connectTimeoutSeconds(30) // Connection timeout in seconds (default: system default)
-    // .readTimeoutSeconds(60)    // Read timeout in seconds (default: system default)
-    // .sslContext(yourSslContext) // If custom SSL context is needed for JWKS endpoint
-    .build();
-----
-
-==== Configuring TokenValidator
-
-The `HttpJwksLoaderConfig` (configured via `HttpWellKnownResolver`) is then used with `IssuerConfig` to set up the `TokenValidator`. For well-known discovery, the issuer identifier is automatically extracted from the discovery document, so you don't need to specify it explicitly.
-
-[source,java]
-----
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.IssuerConfig;
-
-// Assuming jwksConfig is configured using wellKnownResolver as shown above
-
-// For well-known discovery, issuerIdentifier is automatically extracted
-IssuerConfig issuerConfig = IssuerConfig.builder()
-    .expectedAudience("your-client-id")     // Set your expected audience(s)
-    .expectedClientId("your-client-id")     // If you need to check 'azp' or 'client_id' claims
-    .httpJwksLoaderConfig(jwksConfig)       // Contains well-known resolver
-    .build(); // Validation happens automatically during build
-
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuerConfig)
-        .build();
-
-// The validator automatically uses the issuer identifier from the discovery document
-// for token validation - no manual configuration needed
-----
-
-==== Considerations
-
-* **Initial Latency**: The call to `HttpWellKnownResolver.builder().url().build()` involves a network request to fetch the discovery document. This adds a one-time latency during initialization
-* **Error Handling**: Robust error handling for `WellKnownDiscoveryException` is important during application startup or when initializing the handler
-* **SSL/TLS**: Ensure the JVM running the application trusts the SSL certificate of the OIDC provider if its well-known endpoint is served over HTTPS. For fetching the JWKS via `HttpJwksLoader`, you can provide a custom `SSLContext` in `HttpJwksLoaderConfig`
-
-=== Custom Claim Mapping
-
-See xref:../doc/specification/technical-components.adoc[Technical Specification] for details
-
-The module supports custom claim mappers that take precedence over the default ones:
-
-* Configure custom ClaimMapper instances for specific claims
-* Handle non-standard claims like "role" from specific identity providers
-* Extend the system with custom claim mapping logic
-
-[source,java]
-----
-// Create a custom claim mapper for the "role" claim
-ClaimMapper roleMapper = new JsonCollectionMapper();
-
-// Add the custom mapper to the issuer configuration
-IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuerIdentifier("https://issuer.com")
-        .jwksContent(jwksContent) // or other JWKS configuration
-        // Add custom claim mapper for "role" claim
-        .claimMapper("role", roleMapper)
-        .build(); // Validation happens automatically
-
-// Create a validator with the configured issuer
-TokenValidator validator = TokenValidator.builder()
-        .issuerConfig(issuerConfig)
-        .build();
-
-// The custom mapper will be used when processing tokens with the "role" claim
-// This method will throw TokenValidationException if validation fails
-AccessTokenContent accessToken = validator.createAccessToken(tokenString);
-----
-
-== Roles and Groups Configuration
-
-The library provides built-in support for role-based and group-based access control through the "roles" and "groups" claims. These claims are common in many JWT implementations but are not part of the core JWT or OpenID Connect specifications.
-
-=== Default Mapping Behavior
-
-By default, both "roles" and "groups" claims use the `JsonCollectionMapper`, which can automatically detect:
-
-* JSON arrays of strings: `"roles": ["admin", "user"]`
-* JSON strings (treated as a single value): `"roles": "admin"`
-
-The `JsonCollectionMapper` has the following limitations:
-
-* It only detects JSON arrays and JSON strings
-* It does not split space-separated or comma-separated strings
-* It treats nested structures as single string values
-
-=== Supported JSON Structures
-
-The following JSON structures are automatically detected and properly mapped:
-
-[source]
-----
-# JSON array of strings - each element becomes a separate role/group
-{
-  "roles": ["admin", "user", "manager"],
-  "groups": ["group1", "group2", "group3"]
-}
-
-# Single string value - becomes a single-element list
-{
-  "roles": "admin",
-  "groups": "group1"
-}
-
-# JSON array with mixed types - non-string values are converted to strings
-{
-  "roles": ["admin", 123, true],
-  "groups": ["group1", {"id": "group2"}]
-}
-----
-
-=== Unsupported JSON Structures
-
-The following JSON structures are NOT automatically split into multiple values by the default `JsonCollectionMapper`:
-
-[source]
-----
-# Space-separated string - treated as a single value "admin user manager"
-{
-  "roles": "admin user manager"
-}
-
-# Comma-separated string - treated as a single value "admin,user,manager"
-{
-  "roles": "admin,user,manager"
-}
-
-# Nested arrays - inner arrays are converted to string representation
-{
-  "roles": [["admin"], ["user"]]
-}
-
-# Custom format - treated as a single value
-{
-  "roles": "admin:user:manager"
-}
-----
-
-NOTE: Character-separated strings (like comma or colon-separated) can be handled using the `StringSplitterMapper`. See the <<Using StringSplitterMapper for Delimited Strings>> section for details.
-
-=== Using Roles and Groups
-
-The `AccessTokenContent` class provides methods for working with roles and groups:
-
-[source,java]
-----
-// Get all roles from the token
-List<String> roles = accessToken.getRoles();
-
-// Get all groups from the token
-List<String> groups = accessToken.getGroups();
-
-// Check if the token has specific roles
-boolean hasRoles = accessToken.providesRoles(List.of("admin", "user"));
-
-// Check if the token has specific groups
-boolean hasGroups = accessToken.providesGroups(List.of("group1", "group2"));
-
-// Get missing roles
-Set<String> missingRoles = accessToken.determineMissingRoles(requiredRoles);
-
-// Get missing groups
-Set<String> missingGroups = accessToken.determineMissingGroups(requiredGroups);
-----
-
-=== Custom Mapping for Roles and Groups
-
-If your identity provider uses a different format for roles or groups, you can configure a custom mapper:
-
-==== Using StringSplitterMapper for Delimited Strings
-
-The library provides a `StringSplitterMapper` that can split string claims by a specified character. This is useful when roles or groups are provided as a single string with values separated by a specific character:
-
-[source,java]
-----
-// Create a mapper that splits by comma
-StringSplitterMapper commaMapper = new StringSplitterMapper(',');
-
-// Create a mapper that splits by colon
-StringSplitterMapper colonMapper = new StringSplitterMapper(':');
-
-// Configure the issuer to use the custom mappers
-IssuerConfig issuerConfig = IssuerConfig.builder()
-        .issuerIdentifier("https://issuer.com")
-        .jwksContent(jwksContent) // or other JWKS configuration
-        .claimMapper("roles", commaMapper) // For comma-separated roles
-        .claimMapper("groups", colonMapper) // For colon-separated groups
-        .build(); // Validation happens automatically
-----
-
-The `StringSplitterMapper` is particularly useful for handling formats that the default `JsonCollectionMapper` doesn't support:
-
-* Comma-separated strings: `"roles": "admin,user,manager"` → `["admin", "user", "manager"]`
-* Colon-separated strings: `"roles": "admin:user:manager"` → `["admin", "user", "manager"]`
-* Any other character-separated strings
-
-The mapper:
-
-* Only works with string values (not arrays or other types)
-* Trims whitespace from each value
-* Omits empty values
-* Preserves the original string in the claim value
-
-==== Using Other Custom Mappers
-
-You can also implement your own custom mappers for special formats:
-
-=== Security Configuration
-
-See xref:../doc/specification/technical-components.adoc[Technical Specification] for details
-
-The `ParserConfig` class provides important security settings for token processing:
-
-[source,java]
-----
-// Create a TokenValidator with custom security settings
-ParserConfig config = ParserConfig.builder()
-        .maxTokenSize(4 * 1024)        // Limit token size to 4KB (default is 8KB)
-        .maxPayloadSize(1 * 1024)      // Limit payload size to 1KB (default is 2KB)
-        .maxStringSize(512)            // Limit JSON string size to 512B (default is 1KB)
-        .maxArraySize(32)              // Limit JSON array size to 32 elements (default is 64)
-        .maxDepth(5)                   // Limit JSON parsing depth to 5 levels (default is 10)
-        .build();
-
-TokenValidator validator = TokenValidator.builder()
-        .parserConfig(config)
-        .issuerConfig(issuerConfig)
-        .build();
-----
-
-These security settings provide multiple layers of protection:
-
-=== Security Layers and Size Relationships
-
-The parser configuration implements defense-in-depth with three distinct size limits:
-
-[cols="1,3,1,3"]
-|===
-|Setting |Purpose |Default |Applied When
-
-|`maxTokenSize`
-|Limits entire JWT token string
-|8KB
-|Before any processing, applied to the raw token string
-
-|`maxPayloadSize`
-|Limits each decoded JWT part
-|2KB
-|After Base64 decoding, applied to header and payload separately
-
-|`maxStringSize`
-|Limits individual JSON string values
-|1KB
-|During JSON parsing, applied to each string field
-|===
-
-*Size Logic:* Since Base64 encoding increases size by ~33%, an 8KB token yields ~6KB of decoded content. With 2KB limits per part, we can accommodate reasonable header and payload sizes while preventing oversized decoded content.
-
-*Attack Prevention:*
-
-* `maxTokenSize`: Prevents denial-of-service via extremely large token strings
-* `maxPayloadSize`: Prevents memory exhaustion from oversized decoded parts  
-* `maxStringSize`: Prevents JSON parsing attacks where individual fields contain massive strings
-* `maxArraySize`, `maxDepth`: Prevent JSON structure-based attacks
-
-== Configuration
-
-=== JWKS Configuration Options
-
-[cols="1,3,1"]
-|===
-|Option |Description |Default
-
-|refreshIntervalSeconds
-|Automatic key refresh interval
-|3600
-
-|connectTimeoutSeconds
-|Connection timeout for JWKS endpoints
-|System default
-
-|readTimeoutSeconds
-|Read timeout for JWKS endpoints
-|System default
-
-|backgroundRefresh
-|Enable background key refresh
-|true
-
-|cacheSize
-|Maximum cached JWKS entries
-|10
-|===
-
-=== Security Configuration Options
-
-[cols="1,3,1"]
-|===
-|Option |Description |Default
-
-|maxTokenSize
-|Maximum token size in bytes
-|8KB
-
-|maxPayloadSize
-|Maximum payload size in bytes
-|8KB
-
-|maxStringSize
-|Maximum JSON string size
-|4KB
-
-|maxArraySize
-|Maximum JSON array elements
-|64
-
-|maxDepth
-|Maximum JSON parsing depth
-|10
-|===
-
-=== Algorithm Configuration
-
-The library automatically rejects insecure algorithms:
-
-* **Supported**: RS256, RS384, RS512, ES256, ES384, ES512, PS256, PS384, PS512
-* **Rejected**: HS256, HS384, HS512, none
-
-== Best Practices
-
-=== Security Recommendations
-
-* Use HTTPS for all JWKS endpoints in production environments
-* Configure appropriate token size limits to prevent DoS attacks
-* Validate audience and client ID claims for enhanced security
-* Implement comprehensive error handling for security events
-* Monitor security event counters for potential attacks
-* Use strong asymmetric algorithms (RS256, ES256, etc.)
-
-=== Performance Recommendations
-
-* Configure appropriate JWKS refresh intervals (300-3600 seconds)
-* Enable background refresh to avoid blocking token validation
-* Use connection pooling for high-volume scenarios
-* Monitor performance metrics via SecurityEventCounter
-* Use built-in access token caching for frequently validated tokens
-* Configure cache size based on your application's token volume
-* Disable caching (`maxSize=0`) if tokens are rarely reused
-
-=== Integration Recommendations
-
-* Use dependency injection for TokenValidator instances
-* Implement centralized exception handling
-* Configure logging for security events
-* Use health checks for validation components
-* Integrate with application metrics systems
-
-== Exception Handling
-
-=== Comprehensive Error Handling
-
-The library uses `TokenValidationException` to signal validation failures. This exception contains detailed information about the failure, including an `EventType` that categorizes the issue:
-
-[source,java]
-----
-// Import statements
-import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import java.util.Set;
-
-// Initialize logger
-private static final CuiLogger LOGGER = new CuiLogger(YourClassName.class);
-
-try {
-    // Attempt to validate and create a token
-    AccessTokenContent accessToken = validator.createAccessToken(tokenString);
-
-    // If validation succeeds, use the token
-    LOGGER.info("Token validated successfully for subject: %s", accessToken.getSubject());
-
-    // Check if token has required roles
-    if (accessToken.providesRoles(requiredRoles)) {
-        // Proceed with authorized operation
-    } else {
-        // Handle insufficient permissions
-        Set<String> missingRoles = accessToken.determineMissingRoles(requiredRoles);
-        LOGGER.info("Missing required roles: %s", missingRoles);
-    }
-
-} catch (TokenValidationException e) {
-    // Handle validation failure based on the event category first, then type for finer control
-    SecurityEventCounter.EventType eventType = e.getEventType();
-    SecurityEventCounter.EventCategory category = eventType.getCategory();
-
-    // First handle based on category
-    switch (category) {
-        case INVALID_STRUCTURE:
-            // Handle structure issues (malformed tokens, size violations, etc.)
-            LOGGER.warn("Token structure issue: %s (Event type: %s)", e.getMessage(), eventType);
-            // Implement appropriate response for invalid token structure
-            break;
-
-        case INVALID_SIGNATURE:
-            // Handle signature issues with finer-grained control
-            if (eventType == SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED) {
-                // Handle invalid signature
-                LOGGER.error("Token signature validation failed: %s", e.getMessage());
-                // Log security event, possibly trigger alerts for potential tampering
-            } else if (eventType == SecurityEventCounter.EventType.KEY_NOT_FOUND) {
-                // Handle missing key
-                LOGGER.warn("Key not found: %s", e.getMessage());
-                // Implement appropriate response
-            } else {
-                // Handle other signature issues
-                LOGGER.warn("Signature issue: %s (Event type: %s)", e.getMessage(), eventType);
-            }
-            break;
-
-        case SEMANTIC_ISSUES:
-            // Handle semantic issues with finer-grained control
-            if (eventType == SecurityEventCounter.EventType.TOKEN_EXPIRED) {
-                // Handle expired token
-                LOGGER.warn("Token has expired: %s", e.getMessage());
-                // Prompt user to refresh their session
-            } else if (eventType == SecurityEventCounter.EventType.ISSUER_MISMATCH) {
-                // Handle issuer mismatch
-                LOGGER.warn("Token issuer not recognized: %s", e.getMessage());
-                // Log security event, possibly block repeated attempts
-            } else if (eventType == SecurityEventCounter.EventType.AUDIENCE_MISMATCH) {
-                // Handle audience mismatch
-                LOGGER.warn("Token audience doesn't match expected value: %s", e.getMessage());
-                // Log security event
-            } else {
-                // Handle other semantic issues
-                LOGGER.warn("Token validation failed: %s (Event type: %s)", e.getMessage(), eventType);
-            }
-            break;
-
-        default:
-            // Handle other validation failures
-            LOGGER.warn("Token validation failed: %s (Event type: %s)", e.getMessage(), eventType);
-            // Log the event for monitoring
-            break;
-    }
-}
-----
-
-This example demonstrates how to:
-
-1. Attempt to validate a token using the TokenValidator
-2. Handle successful validation by using the token content
-3. Catch TokenValidationException and handle different failure scenarios based on the event type
-4. Implement specific handling for common validation failures
-5. Use the event category for broader classification of issues
-
-For a complete list of event types and categories, refer to the `SecurityEventCounter.EventType` and `SecurityEventCounter.EventCategory` enums.
-
-== Technical Details
-
-=== Thread Safety
-
-* TokenValidator is thread-safe after construction
-* Concurrent token validation is fully supported
-* JWKS key refresh happens in background threads
-* SecurityEventCounter uses atomic operations
-
-=== Memory Management
-
-* Configurable limits prevent memory exhaustion attacks
-* Efficient JSON parsing with depth and size controls
-* Automatic cleanup of expired cached keys
-* Memory-efficient token content representation
-
-=== Performance Characteristics
-
-* Sub-millisecond validation performance for typical tokens
-* Support for thousands of concurrent validations per second
-* Efficient JWKS caching with minimal memory overhead
-* Optimized validation pipeline with fail-fast behavior
-
-== Related Documentation
-
-* xref:../README.adoc[Project Overview] - Main project documentation
-* xref:../doc/specification/technical-components.adoc[Technical Components] - Detailed architecture documentation
-* xref:../doc/specification/well-known.adoc[OIDC Discovery] - OpenID Connect Discovery specification
-* xref:../doc/security/security-specifications.adoc[Security Specifications] - Security implementation details
-* xref:../doc/security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations
-* xref:doc/UnitTesting.adoc[Test Utilities] - Testing support documentation
-* xref:doc/developing.adoc[Developer Guide] - Guide for extending the library
+For issues and contributions, see the project repository.
