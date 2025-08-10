@@ -152,7 +152,7 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 
 == Keycloak Integration
 
-The extension provides optional default claim mappers for seamless integration with Keycloak's standard token structure. These mappers are configured per-issuer and are disabled by default to maintain backward compatibility.
+The extension provides optional default claim mappers for seamless integration with Keycloak's standard token structure. These mappers are configured per-issuer and are disabled by default.
 
 [cols="2,1,5"]
 |===
@@ -184,7 +184,7 @@ cui.jwt.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
 
 * **Per-Issuer Configuration**: Each issuer can have different Keycloak mapper settings
 * **Zero Configuration**: Works with Keycloak's default token structure without custom protocol mappers
-* **Backward Compatibility**: Disabled by default, existing configurations remain unchanged
+* **Opt-in Feature**: Disabled by default, enabled when needed
 * **Simplified Integration**: Reduces Keycloak realm configuration complexity
 * **Standards Compliance**: Maintains compatibility with standard JWT claim names
 * **Flexible Deployment**: Mix Keycloak and non-Keycloak issuers with appropriate configurations

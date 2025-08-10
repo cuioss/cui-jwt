@@ -156,8 +156,8 @@ class ComprehensiveMetricsPostProcessorTest {
     }
 
     @Test
-    @DisplayName("Should provide backward compatibility with HTTP-only method")
-    void shouldProvideBackwardCompatibility() throws IOException {
+    @DisplayName("Should support HTTP-only export method")
+    void shouldSupportHttpOnlyExport() throws IOException {
         // Arrange
         String baseDirectory = createHttpOnlyTestStructure();
 
@@ -168,7 +168,7 @@ class ComprehensiveMetricsPostProcessorTest {
         File httpMetricsFile = new File(baseDirectory, "http-metrics.json");
         File quarkusMetricsFile = new File(baseDirectory, "quarkus-metrics.json");
 
-        assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json for backward compatibility");
+        assertTrue(httpMetricsFile.exists(), "Should create http-metrics.json");
         assertFalse(quarkusMetricsFile.exists(), "Should not create quarkus-metrics.json with HTTP-only method");
     }
 

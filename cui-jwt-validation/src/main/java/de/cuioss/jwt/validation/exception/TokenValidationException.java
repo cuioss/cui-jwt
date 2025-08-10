@@ -35,7 +35,7 @@ import java.io.Serial;
  * the appropriate HTTP status code or other response mechanism.
  * <p>
  * This exception is thrown by the validation pipeline when a token fails
- * validation, replacing the previous Optional-based error signaling approach.
+ * validation.
  *
  * @author Oliver Wolff
  * @since 1.0

@@ -237,7 +237,6 @@ String rawToken
 
     /**
      * Creates a builder for constructing DecodedJwt instances.
-     * This method provides backward compatibility with the previous builder pattern.
      *
      * @return a new DecodedJwtBuilder instance
      */
