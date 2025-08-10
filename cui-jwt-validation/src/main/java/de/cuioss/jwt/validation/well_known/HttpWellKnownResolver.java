@@ -176,10 +176,6 @@ public class HttpWellKnownResolver implements WellKnownResolver {
             return;
         }
 
-        // Store issuer as a string identifier, not as an HttpHandler
-        // The issuer is an identifier, not an endpoint per OpenID Connect Core 1.0 Section 2
-        this.issuerIdentifier = issuerString;
-
         // JWKS URI (Required)
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, JWKS_URI_KEY,
                 parser.getString(discoveryDocument, JWKS_URI_KEY).orElse(null), wellKnownUrl, true)) {
@@ -210,9 +206,10 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         // Accessibility check for jwks_uri
         mapper.performAccessibilityCheck(JWKS_URI_KEY, parsedEndpoints.get(JWKS_URI_KEY));
 
-        // Success - save the endpoints (issuer is stored separately as a string)
+        // Success - save the endpoints and issuer identifier
         this.endpoints.clear();
         this.endpoints.putAll(parsedEndpoints);
+        this.issuerIdentifier = issuerString;
         this.status = LoaderStatus.OK;
 
         LOGGER.info(JWTValidationLogMessages.INFO.WELL_KNOWN_ENDPOINTS_LOADED.format(wellKnownUrl));
