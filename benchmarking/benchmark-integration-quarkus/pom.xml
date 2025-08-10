@@ -39,6 +39,12 @@
     </properties>
 
     <dependencies>
+        <!-- CUI Benchmarking Common Infrastructure -->
+        <dependency>
+            <groupId>de.cuioss.jwt</groupId>
+            <artifactId>cui-benchmarking-common</artifactId>
+        </dependency>
+        
         <!-- JMH dependencies -->
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

@@ -16,6 +16,7 @@
     <description>Parent module for all benchmarking related modules including library and integration benchmarks</description>
 
     <modules>
+        <module>cui-benchmarking-common</module>
         <module>benchmark-library</module>
         <module>benchmark-integration-quarkus</module>
     </modules>
@@ -36,6 +37,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- CUI Benchmarking Common Infrastructure -->
+            <dependency>
+                <groupId>de.cuioss.jwt</groupId>
+                <artifactId>cui-benchmarking-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            
             <!-- JMH dependencies -->
             <dependency>
                 <groupId>org.openjdk.jmh</groupId>
