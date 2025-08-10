@@ -133,8 +133,10 @@ For non-Quarkus applications, use the core validation library:
 // Create validator with OIDC Discovery
 TokenValidator validator = TokenValidator.builder()
     .issuerConfig(IssuerConfig.builder()
-        .issuerIdentifier("https://your-issuer.com")
-        .httpJwksLoaderConfig(httpJwksLoaderConfig)
+        .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
+            .wellKnownUrl("https://your-issuer.com/.well-known/openid-configuration")
+            .build())
+        .expectedAudience("your-client-id") // Add expected audience
         .build())
     .build();
 

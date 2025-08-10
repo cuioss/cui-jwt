@@ -79,44 +79,25 @@ Automatic configuration using OpenID Connect discovery:
 
 [source,java]
 ----
-// Create well-known configuration
-String issuerUrl = "https://accounts.google.com";
-URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-
-WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
-    .wellKnownUrl(wellKnownUrl.toString())
-    .build();
-
-// Create resolver and configure JWKS loader
-HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
-
-HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-    .wellKnown(resolver)
-    .build();
-
-// Build issuer config from discovery
+// Configure issuer with OIDC discovery - issuer identifier is automatically extracted
 IssuerConfig issuerConfig = IssuerConfig.builder()
-    .expectedAudience("your-client-id")
-    .httpJwksLoaderConfig(jwksConfig)
+    .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
+        .wellKnownUrl("https://accounts.google.com/.well-known/openid-configuration")
+        .build())
+    .expectedAudience("your-google-client-id") // Replace with your actual client ID
     .build();
 ----
 
-=== Using HttpWellKnownResolver
+=== Using Well-Known Discovery
 
 [source,java]
 ----
-String issuerUrl = "https://example.com";
-URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-
-WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
-    .wellKnownUrl(wellKnownUrl.toString())
-    .build();
-
-HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
-
-// Use resolver with HttpJwksLoaderConfig
-HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-    .wellKnown(resolver)
+// Simple well-known discovery - just provide the URL as a string
+IssuerConfig issuerConfig = IssuerConfig.builder()
+    .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
+        .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+        .build())
+    .expectedAudience("your-client-id")
     .build();
 
 IssuerConfig issuerConfig = IssuerConfig.builder()

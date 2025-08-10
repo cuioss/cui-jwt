@@ -18,29 +18,19 @@ OpenID Connect Discovery enables automatic configuration by fetching metadata fr
 
 [source,java]
 ----
-// 1. Create well-known configuration for discovery
-String issuerUrl = "https://accounts.google.com";
-URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-
-WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
-    .wellKnownUrl(wellKnownUrl.toString())
-    .build();
-
-// 2. Create resolver with the configuration
-HttpWellKnownResolver wellKnownResolver = new HttpWellKnownResolver(wellKnownConfig);
-
-// 3. Configure JWKS loader to use the resolver
+// 1. Configure JWKS loader with well-known discovery URL
 HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-    .wellKnown(wellKnownResolver)
+    .wellKnownUrl("https://accounts.google.com/.well-known/openid-configuration")
     .build();
 
-// 4. Build issuer configuration with expected audience
+// 2. Build issuer configuration with expected audience
+// The issuer identifier will be automatically discovered from the well-known endpoint
 IssuerConfig issuerConfig = IssuerConfig.builder()
     .expectedAudience("your-client-id")
     .httpJwksLoaderConfig(jwksConfig)
     .build();
 
-// 5. Create the token validator
+// 3. Create the token validator
 TokenValidator validator = TokenValidator.builder()
     .issuerConfig(issuerConfig)
     .build();
@@ -103,7 +93,7 @@ Once discovery is complete, configure the JWKS loader:
 [source,java]
 ----
 HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-    .wellKnown(wellKnownResolver)  // Extracts jwks_uri automatically
+    .wellKnownUrl("https://your-issuer.com/.well-known/openid-configuration")
     .refreshIntervalSeconds(300)    // Refresh keys every 5 minutes
     .connectTimeoutSeconds(30)      // Connection timeout
     .readTimeoutSeconds(60)         // Read timeout
@@ -117,21 +107,10 @@ HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
 ----
 public class OpenIDConnectValidator {
 
-    public static TokenValidator createFromDiscovery(String issuerUrl, String clientId)
-            throws IOException {
-
-        // Perform discovery
-        URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-        
-        WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
-            .wellKnownUrl(wellKnownUrl.toString())
-            .build();
-            
-        HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
-
-        // Configure JWKS loading
+    public static TokenValidator createFromDiscovery(String issuerUrl, String clientId) {
+        // Configure JWKS loading with well-known discovery
         HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-            .wellKnown(resolver)
+            .wellKnownUrl(issuerUrl + "/.well-known/openid-configuration")
             .refreshIntervalSeconds(300)
             .build();
 
@@ -184,21 +163,12 @@ public class MultiProviderDiscovery {
             String issuerUrl,
             String clientId) {
         try {
-            URL wellKnownUrl = new URL(issuerUrl + "/.well-known/openid-configuration");
-            
-            WellKnownConfig wellKnownConfig = WellKnownConfig.builder()
-                .wellKnownUrl(wellKnownUrl.toString())
-                .build();
-                
-            HttpWellKnownResolver resolver = new HttpWellKnownResolver(wellKnownConfig);
-
-            HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-                .wellKnown(resolver)
-                .build();
-
+            // Simple configuration with well-known URL as string
             IssuerConfig issuerConfig = IssuerConfig.builder()
                 .expectedAudience(clientId)
-                .httpJwksLoaderConfig(jwksConfig)
+                .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
+                    .wellKnownUrl(issuerUrl + "/.well-known/openid-configuration")
+                    .build())
                 .build();
 
             builder.issuerConfig(issuerConfig);

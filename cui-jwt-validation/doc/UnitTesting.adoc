@@ -350,13 +350,12 @@ class MyServiceUsingWellKnownTest {
         // Verify the dispatcher was called
         wellKnownDispatcher.assertCallsAnswered(1);
 
-        // Example: Configure HttpJwksLoaderConfig using the resolver
+        // Example: Configure HttpJwksLoaderConfig using the well-known URL directly
         HttpJwksLoaderConfig jwksConfig = HttpJwksLoaderConfig.builder()
-            .wellKnown(resolver)
+            .wellKnownUrl(wellKnownUrl.toString())
             .build();
 
-        // Assertions for the jwksConfig
-        assertEquals(resolver.getJwksUri().getUrl().toString(), jwksConfig.getJwksUri().toString());
+        // Note: The JWKS URI will be discovered automatically from the well-known endpoint
 
         // ... your further test logic using the resolver or jwksConfig ...
     }
