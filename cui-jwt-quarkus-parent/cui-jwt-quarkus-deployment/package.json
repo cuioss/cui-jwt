@@ -50,7 +50,7 @@
     "css-tree": "^3.1.0",
     "eslint": "^9.14.0",
     "@eslint/js": "^9.14.0",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jest": "^28.8.3",
     "eslint-plugin-jsdoc": "^46.8.0",
