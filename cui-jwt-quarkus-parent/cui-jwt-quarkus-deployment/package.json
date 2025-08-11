@@ -46,7 +46,7 @@
     "@babel/preset-env": "^7.28.0",
     "@testing-library/jest-dom": "^6.6.3",
     "babel-jest": "^29.7.0",
-    "core-js": "^3.44.0",
+    "core-js": "^3.45.0",
     "css-tree": "^3.1.0",
     "eslint": "^9.14.0",
     "@eslint/js": "^9.14.0",
