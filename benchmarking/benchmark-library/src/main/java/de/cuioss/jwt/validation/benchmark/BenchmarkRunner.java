@@ -15,30 +15,36 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.jwt.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.util.Collection;
+
 /**
- * Main class for running optimized benchmarks.
+ * Main class for running optimized benchmarks with integrated artifact generation.
  * <p>
  * This class collects and runs all benchmark classes in the package.
  * It configures JMH with optimized settings for fast execution (&lt;10 minutes)
- * and produces a combined JSON report.
+ * and produces a combined JSON report with all badges, metrics, and reports.
  * <p>
  * Optimized benchmark classes:
  * <ul>
  *   <li><strong>SimpleCoreValidationBenchmark</strong>: Essential validation performance metrics</li>
  *   <li><strong>SimpleErrorLoadBenchmark</strong>: Streamlined error handling scenarios</li>
  * </ul>
+ * 
+ * @since 1.0
  */
 public class BenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
 
     /**
-     * Main method to run all benchmarks.
+     * Main method to run all benchmarks with complete artifact generation.
      *
      * @param args command line arguments (not used)
      * @throws Exception if an error occurs during benchmark execution
@@ -49,6 +55,9 @@ public class BenchmarkRunner {
         LOGGER.info("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
         LOGGER.info("Key cache initialized. Starting benchmarks...");
+
+        var outputDir = getBenchmarkResultsDir();
+        LOGGER.info("Output directory: %s", outputDir);
 
         // Configure JMH options
         Options options = new OptionsBuilder()
@@ -72,16 +81,43 @@ public class BenchmarkRunner {
                 // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
                 // Configure result output - create a combined report for all benchmarks
                 .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json"))
+                .result(outputDir + "/micro-benchmark-result.json")
                 // Add logging configuration to suppress verbose logs
                 .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir())
+                        "-Dbenchmark.results.dir=" + outputDir,
+                        "-Dbenchmark.output.dir=" + outputDir,
+                        "-Dbenchmark.generate.badges=true",
+                        "-Dbenchmark.generate.reports=true",
+                        "-Dbenchmark.generate.github.pages=true")
                 .build();
 
         // Run the benchmarks
-        new Runner(options).run();
+        Collection<RunResult> results = new Runner(options).run();
 
-        // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
+        // Process results to generate all artifacts using the new infrastructure
+        LOGGER.info("Processing benchmark results to generate artifacts...");
+        var processor = new BenchmarkResultProcessor();
+        processor.processResults(results, outputDir);
+
+        // Legacy metrics export for backward compatibility
+        LOGGER.info("Exporting legacy metrics for backward compatibility...");
+        exportLegacyMetrics(results, outputDir);
+
+        LOGGER.info("Benchmark execution and artifact generation completed successfully");
+    }
+
+    /**
+     * Exports legacy metrics for backward compatibility with existing processes.
+     */
+    private static void exportLegacyMetrics(Collection<RunResult> results, String outputDir) {
+        try {
+            // Use existing SimplifiedMetricsExporter for backward compatibility
+            var exporter = new SimplifiedMetricsExporter();
+            exporter.exportMetrics(results, outputDir);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to export legacy metrics: %s", e.getMessage());
+            // Don't fail the build - new infrastructure is primary
+        }
     }
 
     /**

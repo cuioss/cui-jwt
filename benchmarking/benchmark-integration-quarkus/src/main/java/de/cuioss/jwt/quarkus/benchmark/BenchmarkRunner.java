@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.jwt.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -140,8 +141,13 @@ public class BenchmarkRunner {
 
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
 
-            // Process and download final metrics after successful benchmark execution
-            processMetrics();
+            // Process results to generate all artifacts using the new infrastructure
+            LOGGER.info("Processing benchmark results to generate artifacts...");
+            var processor = new BenchmarkResultProcessor();
+            processor.processResults(results, getBenchmarkResultsDir());
+
+            // Process and download final metrics after successful benchmark execution (legacy compatibility)
+            processLegacyMetrics();
         } catch (RuntimeException e) {
             LOGGER.error("Benchmark execution failed", e);
             throw e;
@@ -152,8 +158,9 @@ public class BenchmarkRunner {
      * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
      * Uses QuarkusMetricsFetcher to download metrics and SimpleMetricsExporter to export them.
      * Also processes JMH benchmark results to create http-metrics.json.
+     * This is maintained for backward compatibility with existing processes.
      */
-    private static void processMetrics() {
+    private static void processLegacyMetrics() {
         String quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl(DEFAULT_SERVICE_URL);
         String outputDirectory = getBenchmarkResultsDir();
 
