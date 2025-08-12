@@ -306,7 +306,7 @@ public class BadgeGenerator {
         
         Path badgeFile = badgeDir.resolve(filename);
         String json = GSON.toJson(badge);
-        Files.write(badgeFile, json.getBytes());
+        Files.write(badgeFile, json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     /**
