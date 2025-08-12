@@ -148,7 +148,7 @@ public class GitHubPagesGenerator {
               is_project_page: true
             """;
 
-        Files.write(deployment.resolve("_config.yml"), jekyllConfig.getBytes());
+        Files.write(deployment.resolve("_config.yml"), jekyllConfig.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
         // Create .nojekyll file to bypass Jekyll processing if needed
         Files.write(deployment.resolve(".nojekyll"), "".getBytes());
