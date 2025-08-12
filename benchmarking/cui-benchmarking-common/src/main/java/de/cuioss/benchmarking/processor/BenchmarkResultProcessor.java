@@ -146,20 +146,20 @@ public class BenchmarkResultProcessor {
      */
     private void writeSummaryFile(Collection<RunResult> results, BenchmarkType type, String outputDir) throws IOException {
         Path summaryFile = Paths.get(outputDir, "benchmark-summary.json");
-        
-        StringBuilder summary = new StringBuilder();
-        summary.append("{\n");
-        summary.append("  \"timestamp\": \"").append(Instant.now().toString()).append("\",\n");
-        summary.append("  \"benchmarkType\": \"").append(type.toString().toLowerCase()).append("\",\n");
-        summary.append("  \"benchmarkCount\": ").append(results.size()).append(",\n");
-        summary.append("  \"artifactsGenerated\": {\n");
-        summary.append("    \"badges\": ").append(BenchmarkOptionsHelper.shouldGenerateBadges()).append(",\n");
-        summary.append("    \"reports\": ").append(BenchmarkOptionsHelper.shouldGenerateReports()).append(",\n");
-        summary.append("    \"githubPages\": ").append(BenchmarkOptionsHelper.shouldGenerateGitHubPages()).append("\n");
-        summary.append("  }\n");
-        summary.append("}\n");
 
-        Files.write(summaryFile, summary.toString().getBytes());
+        java.util.Map<String, Object> summary = new java.util.LinkedHashMap<>();
+        summary.put("timestamp", Instant.now().toString());
+        summary.put("benchmarkType", type.toString().toLowerCase());
+        summary.put("benchmarkCount", results.size());
+
+        java.util.Map<String, Object> artifacts = new java.util.LinkedHashMap<>();
+        artifacts.put("badges", BenchmarkOptionsHelper.shouldGenerateBadges());
+        artifacts.put("reports", BenchmarkOptionsHelper.shouldGenerateReports());
+        artifacts.put("githubPages", BenchmarkOptionsHelper.shouldGenerateGitHubPages());
+        summary.put("artifactsGenerated", artifacts);
+
+        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+        java.nio.file.Files.writeString(summaryFile, gson.toJson(summary), java.nio.charset.StandardCharsets.UTF_8);
         LOGGER.info("Written benchmark summary to: %s", summaryFile);
     }
 }
