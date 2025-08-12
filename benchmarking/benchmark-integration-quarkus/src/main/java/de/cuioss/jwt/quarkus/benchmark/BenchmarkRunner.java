@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.jwt.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -140,7 +141,19 @@ public class BenchmarkRunner {
 
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
 
-            // Process and download final metrics after successful benchmark execution
+            // Process results using the new common infrastructure
+            LOGGER.info("Processing benchmark results with new common infrastructure...");
+            BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+            String outputDir = getBenchmarkResultsDir();
+            
+            boolean generateBadges = Boolean.parseBoolean(System.getProperty("benchmark.generate.badges", "true"));
+            boolean generateReports = Boolean.parseBoolean(System.getProperty("benchmark.generate.reports", "true"));
+            boolean generateGitHubPages = Boolean.parseBoolean(System.getProperty("benchmark.generate.github.pages", "true"));
+            
+            processor.processResults(results, outputDir, generateBadges, generateReports, generateGitHubPages);
+            LOGGER.info("New infrastructure processing completed successfully");
+
+            // Process and download final metrics after successful benchmark execution (legacy support)
             processMetrics();
         } catch (RuntimeException e) {
             LOGGER.error("Benchmark execution failed", e);

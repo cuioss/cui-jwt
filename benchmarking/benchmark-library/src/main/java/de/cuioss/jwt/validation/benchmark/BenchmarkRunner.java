@@ -15,10 +15,15 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.jwt.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import java.util.Collection;
 
 /**
  * Main class for running optimized benchmarks.
@@ -78,10 +83,24 @@ public class BenchmarkRunner {
                         "-Dbenchmark.results.dir=" + getBenchmarkResultsDir())
                 .build();
 
-        // Run the benchmarks
-        new Runner(options).run();
+        // Run the benchmarks and capture results
+        LOGGER.info("Executing JMH benchmarks with new infrastructure...");
+        Collection<RunResult> results = new Runner(options).run();
+        LOGGER.info("JMH benchmarks completed, processing results...");
 
-        // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
+        // Process results using the new common infrastructure
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        String outputDir = getBenchmarkResultsDir();
+        
+        boolean generateBadges = Boolean.parseBoolean(System.getProperty("benchmark.generate.badges", "true"));
+        boolean generateReports = Boolean.parseBoolean(System.getProperty("benchmark.generate.reports", "true"));
+        boolean generateGitHubPages = Boolean.parseBoolean(System.getProperty("benchmark.generate.github.pages", "true"));
+        
+        processor.processResults(results, outputDir, generateBadges, generateReports, generateGitHubPages);
+        
+        LOGGER.info("Benchmark execution and artifact generation completed successfully");
+        
+        // Legacy metrics are still exported by PerformanceIndicatorBenchmark @TearDown for backward compatibility
     }
 
     /**
