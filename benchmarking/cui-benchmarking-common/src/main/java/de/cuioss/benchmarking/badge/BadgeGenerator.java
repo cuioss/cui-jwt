@@ -275,18 +275,24 @@ public class BadgeGenerator {
         }
     }
 
+    private static final long SCORE_THRESHOLD_BRIGHTGREEN = 1_000_000;
+    private static final long SCORE_THRESHOLD_GREEN = 100_000;
+    private static final long SCORE_THRESHOLD_YELLOW = 10_000;
+    private static final long SCORE_THRESHOLD_ORANGE = 1_000;
+
     private String getPerformanceColor(long score) {
-        if (score >= 1_000_000) {
+        if (score >= SCORE_THRESHOLD_BRIGHTGREEN) {
             return "brightgreen";
-        } else if (score >= 100_000) {
+        } else if (score >= SCORE_THRESHOLD_GREEN) {
             return "green";
-        } else if (score >= 10_000) {
+        } else if (score >= SCORE_THRESHOLD_YELLOW) {
             return "yellow";
-        } else if (score >= 1_000) {
+        } else if (score >= SCORE_THRESHOLD_ORANGE) {
             return "orange";
         } else {
             return "red";
         }
+    }
     }
 
     private String formatTrendMessage(TrendAnalysis trend) {
