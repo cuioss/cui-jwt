@@ -15,10 +15,15 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.benchmarking.processor.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import java.util.Collection;
 
 /**
  * Main class for running optimized benchmarks.
@@ -38,7 +43,7 @@ public class BenchmarkRunner {
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
 
     /**
-     * Main method to run all benchmarks.
+     * Main method to run all benchmarks with comprehensive artifact generation.
      *
      * @param args command line arguments (not used)
      * @throws Exception if an error occurs during benchmark execution
@@ -49,6 +54,9 @@ public class BenchmarkRunner {
         LOGGER.info("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
         LOGGER.info("Key cache initialized. Starting benchmarks...");
+
+        String outputDir = getBenchmarkResultsDir();
+        LOGGER.info("Output directory: %s", outputDir);
 
         // Configure JMH options
         Options options = new OptionsBuilder()
@@ -68,20 +76,34 @@ public class BenchmarkRunner {
                 .warmupTime(BenchmarkOptionsHelper.getWarmupTime("2s"))
                 // Set number of threads
                 .threads(BenchmarkOptionsHelper.getThreadCount(8))
-                // Use benchmark mode specified in individual benchmark annotations
-                // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
-                // Configure result output - create a combined report for all benchmarks
-                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json"))
+                // Configure result output
+                .resultFormat(ResultFormatType.JSON)
+                .result(outputDir + "/raw-result.json")
                 // Add logging configuration to suppress verbose logs
                 .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir())
+                        "-Dbenchmark.output.dir=" + outputDir,
+                        "-Dbenchmark.generate.badges=true",
+                        "-Dbenchmark.generate.reports=true",
+                        "-Dbenchmark.generate.github.pages=true")
                 .build();
 
         // Run the benchmarks
-        new Runner(options).run();
+        LOGGER.info("Executing benchmarks...");
+        Collection<RunResult> results = new Runner(options).run();
 
-        // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
+        if (results.isEmpty()) {
+            LOGGER.error("No benchmark results were produced");
+            throw new IllegalStateException("Benchmark execution failed: No results produced");
+        }
+
+        LOGGER.info("Benchmarks completed successfully: %d benchmarks executed", results.size());
+
+        // Process results using new infrastructure
+        LOGGER.info("Processing results and generating artifacts...");
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        processor.processResults(results, outputDir);
+
+        LOGGER.info("Benchmark execution and artifact generation completed successfully");
     }
 
     /**

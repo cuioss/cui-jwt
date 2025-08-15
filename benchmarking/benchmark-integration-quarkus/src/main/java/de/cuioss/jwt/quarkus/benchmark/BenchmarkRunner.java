@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.processor.BenchmarkResultProcessor;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -23,6 +24,7 @@ import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -97,12 +99,15 @@ public class BenchmarkRunner {
                 // Set number of threads
                 .threads(BenchmarkOptionsHelper.getThreadCount(10))
                 // Configure result output
-                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME))
+                .resultFormat(ResultFormatType.JSON)
+                .result(getBenchmarkResultsDir() + "/raw-result.json")
                 // Add JVM arguments
                 .jvmArgs("-Djava.util.logging.manager=java.util.logging.LogManager",
                         "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir(),
+                        "-Dbenchmark.output.dir=" + getBenchmarkResultsDir(),
+                        "-Dbenchmark.generate.badges=true",
+                        "-Dbenchmark.generate.reports=true",
+                        "-Dbenchmark.generate.github.pages=true",
                         "-Dintegration.service.url=" + BenchmarkOptionsHelper.getIntegrationServiceUrl(DEFAULT_SERVICE_URL),
                         "-Dkeycloak.url=" + BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"),
                         "-Dquarkus.metrics.url=" + BenchmarkOptionsHelper.getQuarkusMetricsUrl(DEFAULT_SERVICE_URL))
@@ -138,10 +143,17 @@ public class BenchmarkRunner {
 
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
 
+            // Process results using new infrastructure
+            LOGGER.info("Processing results and generating artifacts...");
+            BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+            processor.processResults(results, benchmarkResultsDir);
+
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
 
-            // Process and download final metrics after successful benchmark execution
+            // Process and download final metrics after successful benchmark execution (legacy support)
             processMetrics();
+            
+            LOGGER.info("Benchmark execution and artifact generation completed successfully");
         } catch (RuntimeException e) {
             LOGGER.error("Benchmark execution failed", e);
             throw e;
