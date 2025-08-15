@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.jwt.benchmarking.BenchmarkRunner as CommonBenchmarkRunner;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -109,38 +110,18 @@ public class BenchmarkRunner {
                 .build();
 
         try {
-            LOGGER.info("Starting JMH runner...");
-            // Run the benchmarks
-            Collection<RunResult> results = new Runner(options).run();
+            LOGGER.info("Starting JMH runner with new infrastructure...");
+            
+            // Use new common infrastructure for artifact generation
+            String includePattern = System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*");
+            String outputDir = getBenchmarkResultsDir();
+            
+            LOGGER.info("Running integration benchmarks with new infrastructure: %s", outputDir);
+            CommonBenchmarkRunner.runWithArtifactGeneration(includePattern, outputDir, options);
+            
+            LOGGER.info("Benchmark execution and artifact generation completed");
 
-            LOGGER.info("JMH runner completed, checking results...");
-
-            // Check if any benchmarks actually ran
-            if (results.isEmpty()) {
-                LOGGER.error("No benchmark results were produced - all benchmarks failed");
-                throw new IllegalStateException("Benchmark execution failed: No results produced");
-            }
-
-            LOGGER.debug("Found {} benchmark results", results.size());
-
-            // Check if all benchmarks have valid primary results
-            long benchmarksWithoutResults = results.stream()
-                    .filter(result -> result.getPrimaryResult() == null ||
-                            result.getPrimaryResult().getStatistics() == null ||
-                            result.getPrimaryResult().getStatistics().getN() == 0)
-                    .count();
-
-            if (benchmarksWithoutResults > 0) {
-                LOGGER.error("Benchmark execution failed: {} out of {} benchmarks produced no valid results",
-                        benchmarksWithoutResults, results.size());
-                throw new IllegalStateException("Benchmark execution failed: " + benchmarksWithoutResults + " benchmarks produced no valid results");
-            }
-
-            LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
-
-            LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
-
-            // Process and download final metrics after successful benchmark execution
+            // Still process legacy Quarkus metrics for backward compatibility
             processMetrics();
         } catch (RuntimeException e) {
             LOGGER.error("Benchmark execution failed", e);

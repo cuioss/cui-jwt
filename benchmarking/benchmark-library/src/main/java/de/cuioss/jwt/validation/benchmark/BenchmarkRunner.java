@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.jwt.benchmarking.BenchmarkRunner as CommonBenchmarkRunner;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
@@ -50,7 +51,7 @@ public class BenchmarkRunner {
         BenchmarkKeyCache.initialize();
         LOGGER.info("Key cache initialized. Starting benchmarks...");
 
-        // Configure JMH options
+        // Configure JMH options for legacy compatibility
         Options options = new OptionsBuilder()
                 // Include only standard benchmark classes
                 .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*")
@@ -68,20 +69,19 @@ public class BenchmarkRunner {
                 .warmupTime(BenchmarkOptionsHelper.getWarmupTime("2s"))
                 // Set number of threads
                 .threads(BenchmarkOptionsHelper.getThreadCount(8))
-                // Use benchmark mode specified in individual benchmark annotations
-                // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
-                // Configure result output - create a combined report for all benchmarks
-                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json"))
                 // Add logging configuration to suppress verbose logs
                 .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
                         "-Dbenchmark.results.dir=" + getBenchmarkResultsDir())
                 .build();
 
-        // Run the benchmarks
-        new Runner(options).run();
-
-        // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
+        // Use new common infrastructure for artifact generation
+        String includePattern = "de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*";
+        String outputDir = getBenchmarkResultsDir();
+        
+        LOGGER.info("Running benchmarks with new infrastructure: %s", outputDir);
+        CommonBenchmarkRunner.runWithArtifactGeneration(includePattern, outputDir, options);
+        
+        LOGGER.info("Benchmark execution and artifact generation completed");
     }
 
     /**

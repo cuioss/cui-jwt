@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>de.cuioss.jwt</groupId>
+        <artifactId>benchmarking</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>cui-benchmarking-common</artifactId>
+    <packaging>jar</packaging>
+    <name>CUI Benchmarking Common Infrastructure</name>
+    <description>Common benchmarking infrastructure with JMH integration for badge generation and artifact processing</description>
+
+    <properties>
+        <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.benchmarking.common</maven.jar.plugin.automatic.module.name>
+    </properties>
+
+    <dependencies>
+        <!-- JMH Core Dependencies -->
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- JSON Processing -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+
+        <!-- File and IO Operations -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>de.cuioss.java.tools</groupId>
+            <artifactId>cui-java-tools-logging</artifactId>
+        </dependency>
+
+        <!-- Testing Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.cuioss.java.tools</groupId>
+            <artifactId>cui-java-tools-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Standard Maven plugins inherited from parent -->
+        </plugins>
+    </build>
+</project>

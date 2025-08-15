@@ -16,6 +16,7 @@
     <description>Parent module for all benchmarking related modules including library and integration benchmarks</description>
 
     <modules>
+        <module>cui-benchmarking-common</module>
         <module>benchmark-library</module>
         <module>benchmark-integration-quarkus</module>
     </modules>
