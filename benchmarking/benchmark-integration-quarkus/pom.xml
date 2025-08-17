@@ -55,6 +55,11 @@
             <artifactId>cui-java-tools</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>de.cuioss.jwt</groupId>
+            <artifactId>cui-benchmarking-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- JSON processing -->
         <dependency>

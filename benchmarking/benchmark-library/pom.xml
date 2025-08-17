@@ -69,6 +69,11 @@
             <groupId>de.cuioss.jwt</groupId>
             <artifactId>cui-jwt-validation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>de.cuioss.jwt</groupId>
+            <artifactId>cui-benchmarking-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Test dependencies from validation module -->
         <dependency>
