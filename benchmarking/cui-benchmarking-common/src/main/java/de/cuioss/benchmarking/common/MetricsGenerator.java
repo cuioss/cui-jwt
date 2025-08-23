@@ -23,7 +23,6 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -60,16 +59,16 @@ public class MetricsGenerator {
      */
     public void generateMetricsJson(Collection<RunResult> results, String outputDir) throws IOException {
         LOGGER.info("Generating metrics JSON for {} benchmark results", results.size());
-        
+
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
         metrics.put("benchmarks", processBenchmarkResults(results));
         metrics.put("summary", generateSummaryMetrics(results));
-        
-        Path metricsFile = Paths.get(outputDir, "metrics.json");
+
+        Path metricsFile = Path.of(outputDir, "metrics.json");
         Files.writeString(metricsFile, GSON.toJson(metrics));
         LOGGER.info("Generated metrics file: {}", metricsFile);
-        
+
         // Also generate individual benchmark files for detailed analysis
         generateIndividualMetrics(results, outputDir);
     }
@@ -79,13 +78,13 @@ public class MetricsGenerator {
      */
     private Map<String, Object> processBenchmarkResults(Collection<RunResult> results) {
         Map<String, Object> benchmarks = new LinkedHashMap<>();
-        
+
         for (RunResult result : results) {
             String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
             Map<String, Object> benchmarkMetrics = processSingleBenchmark(result);
             benchmarks.put(benchmarkName, benchmarkMetrics);
         }
-        
+
         return benchmarks;
     }
 
@@ -94,15 +93,15 @@ public class MetricsGenerator {
      */
     private Map<String, Object> processSingleBenchmark(RunResult result) {
         Map<String, Object> metrics = new LinkedHashMap<>();
-        
+
         if (result.getPrimaryResult() != null) {
             var primaryResult = result.getPrimaryResult();
             var statistics = primaryResult.getStatistics();
-            
+
             metrics.put("score", primaryResult.getScore());
             metrics.put("unit", primaryResult.getScoreUnit());
             metrics.put("mode", result.getParams().getMode().toString());
-            
+
             if (statistics != null) {
                 Map<String, Object> stats = new LinkedHashMap<>();
                 stats.put("mean", statistics.getMean());
@@ -110,19 +109,19 @@ public class MetricsGenerator {
                 stats.put("min", statistics.getMin());
                 stats.put("max", statistics.getMax());
                 stats.put("n", statistics.getN());
-                
+
                 // Add percentiles if available
                 stats.put("p50", statistics.getPercentile(50.0));
                 stats.put("p95", statistics.getPercentile(95.0));
                 stats.put("p99", statistics.getPercentile(99.0));
-                
+
                 metrics.put("statistics", stats);
             }
-            
+
             // Add normalized metrics for comparison
             metrics.put("normalized", normalizeMetrics(primaryResult));
         }
-        
+
         // Add secondary results if available
         if (!result.getSecondaryResults().isEmpty()) {
             Map<String, Object> secondary = new LinkedHashMap<>();
@@ -134,7 +133,7 @@ public class MetricsGenerator {
             });
             metrics.put("secondary_results", secondary);
         }
-        
+
         return metrics;
     }
 
@@ -143,10 +142,10 @@ public class MetricsGenerator {
      */
     private Map<String, Object> normalizeMetrics(org.openjdk.jmh.results.Result primaryResult) {
         Map<String, Object> normalized = new LinkedHashMap<>();
-        
+
         double score = primaryResult.getScore();
         String unit = primaryResult.getScoreUnit();
-        
+
         // Convert to standard units
         if (unit.contains("ops/s") || unit.contains("ops/sec")) {
             normalized.put("throughput_ops_per_sec", score);
@@ -161,7 +160,7 @@ public class MetricsGenerator {
             normalized.put("throughput_ops_per_sec", 1_000_000.0 / score);
             normalized.put("latency_ms_per_op", score / 1000.0);
         }
-        
+
         return normalized;
     }
 
@@ -170,12 +169,12 @@ public class MetricsGenerator {
      */
     private Map<String, Object> generateSummaryMetrics(Collection<RunResult> results) {
         Map<String, Object> summary = new LinkedHashMap<>();
-        
+
         summary.put("total_benchmarks", results.size());
         summary.put("total_score", calculateTotalScore(results));
         summary.put("average_throughput", calculateAverageThroughput(results));
         summary.put("performance_grade", calculatePerformanceGrade(results));
-        
+
         return summary;
     }
 
@@ -186,11 +185,11 @@ public class MetricsGenerator {
         for (RunResult result : results) {
             String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
             Map<String, Object> benchmarkMetrics = processSingleBenchmark(result);
-            
-            Path individualFile = Paths.get(outputDir, benchmarkName + "-metrics.json");
+
+            Path individualFile = Path.of(outputDir, benchmarkName + "-metrics.json");
             Files.writeString(individualFile, GSON.toJson(benchmarkMetrics));
         }
-        
+
         LOGGER.info("Generated {} individual metric files", results.size());
     }
 
@@ -201,21 +200,21 @@ public class MetricsGenerator {
         if (fullBenchmarkName == null) {
             return "unknown";
         }
-        
+
         // Extract class name and method
         String[] parts = fullBenchmarkName.split("\\.");
         if (parts.length >= 2) {
             String className = parts[parts.length - 2];
             String methodName = parts[parts.length - 1];
-            
+
             // Remove "Benchmark" suffix from class name if present
             if (className.endsWith("Benchmark")) {
                 className = className.substring(0, className.length() - 9);
             }
-            
+
             return className + "_" + methodName;
         }
-        
+
         return fullBenchmarkName.replaceAll("\\.", "_");
     }
 
@@ -224,9 +223,9 @@ public class MetricsGenerator {
      */
     private double calculateTotalScore(Collection<RunResult> results) {
         return results.stream()
-            .filter(r -> r.getPrimaryResult() != null)
-            .mapToDouble(r -> r.getPrimaryResult().getScore())
-            .sum();
+                .filter(r -> r.getPrimaryResult() != null)
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .sum();
     }
 
     /**
@@ -234,11 +233,11 @@ public class MetricsGenerator {
      */
     private double calculateAverageThroughput(Collection<RunResult> results) {
         return results.stream()
-            .filter(r -> r.getPrimaryResult() != null)
-            .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-            .mapToDouble(r -> r.getPrimaryResult().getScore())
-            .average()
-            .orElse(0.0);
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .average()
+                .orElse(0.0);
     }
 
     /**
@@ -246,7 +245,7 @@ public class MetricsGenerator {
      */
     private String calculatePerformanceGrade(Collection<RunResult> results) {
         double avgThroughput = calculateAverageThroughput(results);
-        
+
         if (avgThroughput >= 1_000_000) {
             return "A+";
         } else if (avgThroughput >= 100_000) {

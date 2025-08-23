@@ -21,7 +21,6 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -44,8 +43,8 @@ import java.util.Collection;
 public class ReportGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
-    private static final DateTimeFormatter DISPLAY_FORMATTER = 
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'");
+    private static final DateTimeFormatter DISPLAY_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'");
 
     /**
      * Generates the main index page with performance overview.
@@ -56,15 +55,15 @@ public class ReportGenerator {
      */
     public void generateIndexPage(Collection<RunResult> results, String outputDir) throws IOException {
         LOGGER.info("Generating index page for {} benchmark results", results.size());
-        
+
         StringBuilder html = new StringBuilder();
         html.append(generateHtmlHeader("CUI Benchmarking Results", true));
         html.append(generateNavigationMenu());
         html.append(generateOverviewSection(results));
         html.append(generateBenchmarkTable(results));
         html.append(generateHtmlFooter());
-        
-        Path indexFile = Paths.get(outputDir, "index.html");
+
+        Path indexFile = Path.of(outputDir, "index.html");
         Files.writeString(indexFile, html.toString());
         LOGGER.info("Generated index page: {}", indexFile);
     }
@@ -78,14 +77,14 @@ public class ReportGenerator {
      */
     public void generateTrendsPage(Collection<RunResult> results, String outputDir) throws IOException {
         LOGGER.info("Generating trends page");
-        
+
         StringBuilder html = new StringBuilder();
         html.append(generateHtmlHeader("Performance Trends", false));
         html.append(generateNavigationMenu());
         html.append(generateTrendsSection(results));
         html.append(generateHtmlFooter());
-        
-        Path trendsFile = Paths.get(outputDir, "trends.html");
+
+        Path trendsFile = Path.of(outputDir, "trends.html");
         Files.writeString(trendsFile, html.toString());
         LOGGER.info("Generated trends page: {}", trendsFile);
     }
@@ -104,14 +103,14 @@ public class ReportGenerator {
         header.append("    <style>\n");
         header.append(getEmbeddedCSS());
         header.append("    </style>\n");
-        
+
         if (includeCharts) {
             header.append("    <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n");
         }
-        
+
         header.append("</head>\n");
         header.append("<body>\n");
-        
+
         return header.toString();
     }
 
@@ -125,7 +124,7 @@ public class ReportGenerator {
         footer.append("    </footer>\n");
         footer.append("</body>\n");
         footer.append("</html>\n");
-        
+
         return footer.toString();
     }
 
@@ -144,7 +143,7 @@ public class ReportGenerator {
         nav.append("            </ul>\n");
         nav.append("        </div>\n");
         nav.append("    </nav>\n");
-        
+
         return nav.toString();
     }
 
@@ -157,32 +156,32 @@ public class ReportGenerator {
         overview.append("        <section class=\"overview\">\n");
         overview.append("            <h2>Performance Overview</h2>\n");
         overview.append("            <div class=\"stats-grid\">\n");
-        
+
         // Summary statistics
         overview.append("                <div class=\"stat-card\">\n");
         overview.append("                    <h3>Total Benchmarks</h3>\n");
         overview.append("                    <p class=\"stat-value\">").append(results.size()).append("</p>\n");
         overview.append("                </div>\n");
-        
+
         double avgThroughput = calculateAverageThroughput(results);
         overview.append("                <div class=\"stat-card\">\n");
         overview.append("                    <h3>Average Throughput</h3>\n");
         overview.append("                    <p class=\"stat-value\">").append(formatThroughput(avgThroughput)).append("</p>\n");
         overview.append("                </div>\n");
-        
+
         overview.append("                <div class=\"stat-card\">\n");
         overview.append("                    <h3>Performance Grade</h3>\n");
         overview.append("                    <p class=\"stat-value\">").append(calculatePerformanceGrade(avgThroughput)).append("</p>\n");
         overview.append("                </div>\n");
-        
+
         overview.append("                <div class=\"stat-card\">\n");
         overview.append("                    <h3>Status</h3>\n");
         overview.append("                    <p class=\"stat-value success\">✓ All Passed</p>\n");
         overview.append("                </div>\n");
-        
+
         overview.append("            </div>\n");
         overview.append("        </section>\n");
-        
+
         return overview.toString();
     }
 
@@ -205,16 +204,16 @@ public class ReportGenerator {
         table.append("                        </tr>\n");
         table.append("                    </thead>\n");
         table.append("                    <tbody>\n");
-        
+
         for (RunResult result : results) {
             table.append(generateBenchmarkRow(result));
         }
-        
+
         table.append("                    </tbody>\n");
         table.append("                </table>\n");
         table.append("            </div>\n");
         table.append("        </section>\n");
-        
+
         return table.toString();
     }
 
@@ -224,15 +223,15 @@ public class ReportGenerator {
     private String generateBenchmarkRow(RunResult result) {
         StringBuilder row = new StringBuilder();
         row.append("                        <tr>\n");
-        
+
         String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
         row.append("                            <td>").append(benchmarkName).append("</td>\n");
-        
+
         if (result.getPrimaryResult() != null) {
             var primaryResult = result.getPrimaryResult();
             row.append("                            <td>").append(String.format("%.2f", primaryResult.getScore())).append("</td>\n");
             row.append("                            <td>").append(primaryResult.getScoreUnit()).append("</td>\n");
-            
+
             if (primaryResult.getStatistics() != null) {
                 double error = primaryResult.getStatistics().getStandardDeviation();
                 row.append("                            <td>±").append(String.format("%.2f", error)).append("</td>\n");
@@ -244,9 +243,9 @@ public class ReportGenerator {
         } else {
             row.append("                            <td colspan=\"4\">No data</td>\n");
         }
-        
+
         row.append("                        </tr>\n");
-        
+
         return row.toString();
     }
 
@@ -264,7 +263,7 @@ public class ReportGenerator {
         trends.append("            </div>\n");
         trends.append("        </section>\n");
         trends.append("    </main>\n");
-        
+
         return trends.toString();
     }
 
@@ -437,11 +436,11 @@ public class ReportGenerator {
 
     private double calculateAverageThroughput(Collection<RunResult> results) {
         return results.stream()
-            .filter(r -> r.getPrimaryResult() != null)
-            .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-            .mapToDouble(r -> r.getPrimaryResult().getScore())
-            .average()
-            .orElse(0.0);
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .average()
+                .orElse(0.0);
     }
 
     private String formatThroughput(double throughput) {
@@ -455,10 +454,7 @@ public class ReportGenerator {
     }
 
     private String calculatePerformanceGrade(double throughput) {
-        if (throughput >= 1_000_000) return "A+";
-        else if (throughput >= 100_000) return "A";
-        else if (throughput >= 10_000) return "B";
-        else if (throughput >= 1_000) return "C";
+        if (throughput >= 1_000_000) return "A+"; else if (throughput >= 100_000) return "A"; else if (throughput >= 10_000) return "B"; else if (throughput >= 1_000) return "C";
         else return "D";
     }
 

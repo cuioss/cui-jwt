@@ -17,14 +17,12 @@ package de.cuioss.benchmarking.common;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mockito;
 import org.openjdk.jmh.results.RunResult;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -42,39 +40,39 @@ class BenchmarkResultProcessorTest {
     void testCompleteArtifactGeneration(@TempDir Path tempDir) throws Exception {
         // Run minimal benchmark for testing
         var options = new OptionsBuilder()
-            .include(TestBenchmark.class.getSimpleName())
-            .warmupIterations(1)
-            .measurementIterations(1)
-            .forks(1)
-            .build();
-            
+                .include(TestBenchmark.class.getSimpleName())
+                .warmupIterations(1)
+                .measurementIterations(1)
+                .forks(1)
+                .build();
+
         Collection<RunResult> results = new Runner(options).run();
-        
+
         // Process results
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
-        
+
         // Verify all artifacts were created using JUnit Jupiter assertions
-        assertTrue(Files.exists(Paths.get(outputDir, "badges/performance-badge.json")),
-                  "Performance badge should be generated");
-        assertTrue(Files.exists(Paths.get(outputDir, "badges/trend-badge.json")),
-                  "Trend badge should be generated");
-        assertTrue(Files.exists(Paths.get(outputDir, "badges/last-run-badge.json")),
-                  "Last run badge should be generated");
-        assertTrue(Files.exists(Paths.get(outputDir, "data/metrics.json")),
-                  "Metrics file should be generated");
-        assertTrue(Files.exists(Paths.get(outputDir, "index.html")),
-                  "Index HTML report should be generated");
-        assertTrue(Files.exists(Paths.get(outputDir, "trends.html")),
-                  "Trends HTML report should be generated");
-        assertTrue(Files.isDirectory(Paths.get(outputDir, "gh-pages-ready")),
-                  "GitHub Pages directory should be created");
-        assertTrue(Files.exists(Paths.get(outputDir, "benchmark-summary.json")),
-                  "Benchmark summary should be generated");
-        
+        assertTrue(Files.exists(Path.of(outputDir, "badges/performance-badge.json")),
+                "Performance badge should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "badges/trend-badge.json")),
+                "Trend badge should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "badges/last-run-badge.json")),
+                "Last run badge should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "data/metrics.json")),
+                "Metrics file should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "index.html")),
+                "Index HTML report should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "trends.html")),
+                "Trends HTML report should be generated");
+        assertTrue(Files.isDirectory(Path.of(outputDir, "gh-pages-ready")),
+                "GitHub Pages directory should be created");
+        assertTrue(Files.exists(Path.of(outputDir, "benchmark-summary.json")),
+                "Benchmark summary should be generated");
+
         // Verify badge content structure
-        String badgeContent = Files.readString(Paths.get(outputDir, "badges/performance-badge.json"));
+        String badgeContent = Files.readString(Path.of(outputDir, "badges/performance-badge.json"));
         assertNotNull(badgeContent, "Badge content should not be null");
         assertFalse(badgeContent.isEmpty(), "Badge content should not be empty");
         assertTrue(badgeContent.contains("\"schemaVersion\""), "Badge should have schema version");
@@ -84,85 +82,39 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test
-    void testBenchmarkTypeDetection() {
-        String microBenchmark = "de.cuioss.benchmark.core.ValidationBenchmark.measureValidation";
-        String integrationBenchmark = "de.cuioss.benchmark.integration.HealthBenchmark.measureHealth";
-        String quarkusIntegrationBenchmark = "de.cuioss.jwt.quarkus.benchmark.JwtValidation.measureJwtValidation";
-        
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-        
-        // Create mock results to test type detection
-        RunResult microResult = createMockResult(microBenchmark);
-        RunResult integrationResult = createMockResult(integrationBenchmark);
-        RunResult quarkusResult = createMockResult(quarkusIntegrationBenchmark);
-        
-        // Test type detection logic through processing (indirect test)
-        // In a real implementation, the detectBenchmarkType method would be package-private or public
-        assertNotNull(microResult, "Micro benchmark result should be created");
-        assertNotNull(integrationResult, "Integration benchmark result should be created");
-        assertNotNull(quarkusResult, "Quarkus benchmark result should be created");
-    }
-
-    @Test
     void testEmptyResultsHandling(@TempDir Path tempDir) throws Exception {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
         List<RunResult> emptyResults = List.of();
-        
+
         String outputDir = tempDir.toString();
-        
+
         // Should handle empty results gracefully
         assertDoesNotThrow(() -> processor.processResults(emptyResults, outputDir),
-                          "Processing empty results should not throw exception");
-        
+                "Processing empty results should not throw exception");
+
         // Basic directory structure should still be created
-        assertTrue(Files.exists(Paths.get(outputDir, "badges")),
-                  "Badges directory should be created even with empty results");
-        assertTrue(Files.exists(Paths.get(outputDir, "data")),
-                  "Data directory should be created even with empty results");
+        assertTrue(Files.exists(Path.of(outputDir, "badges")),
+                "Badges directory should be created even with empty results");
+        assertTrue(Files.exists(Path.of(outputDir, "data")),
+                "Data directory should be created even with empty results");
     }
 
     @Test
     void testDirectoryCreation(@TempDir Path tempDir) throws Exception {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
         String outputDir = tempDir.resolve("nested/benchmark/results").toString();
-        
+
         // Use empty results to test directory creation
         processor.processResults(List.of(), outputDir);
-        
+
         // Verify nested directories are created
-        assertTrue(Files.exists(Paths.get(outputDir, "badges")),
-                  "Nested badges directory should be created");
-        assertTrue(Files.exists(Paths.get(outputDir, "data")),
-                  "Nested data directory should be created");
-        assertTrue(Files.exists(Paths.get(outputDir, "reports")),
-                  "Nested reports directory should be created");
-        assertTrue(Files.exists(Paths.get(outputDir, "gh-pages-ready")),
-                  "Nested GitHub Pages directory should be created");
-    }
-
-    /**
-     * Creates a mock RunResult for testing purposes.
-     */
-    private RunResult createMockResult(String benchmarkName) {
-        // Create a minimal mock - in a real test, you'd use more sophisticated mocking
-        RunResult result = Mockito.mock(RunResult.class);
-        var params = Mockito.mock(org.openjdk.jmh.runner.BenchmarkParams.class);
-        Mockito.when(params.getBenchmark()).thenReturn(benchmarkName);
-        Mockito.when(result.getParams()).thenReturn(params);
-        return result;
-    }
-
-    /**
-     * Simple benchmark class for testing the artifact generation pipeline.
-     */
-    @org.openjdk.jmh.annotations.BenchmarkMode(org.openjdk.jmh.annotations.Mode.Throughput)
-    @org.openjdk.jmh.annotations.State(org.openjdk.jmh.annotations.Scope.Benchmark)
-    public static class TestBenchmark {
-        
-        @org.openjdk.jmh.annotations.Benchmark
-        public int measureSimpleOperation() {
-            // Simple operation for testing
-            return 42;
-        }
+        assertTrue(Files.exists(Path.of(outputDir, "badges")),
+                "Nested badges directory should be created");
+        assertTrue(Files.exists(Path.of(outputDir, "data")),
+                "Nested data directory should be created");
+        assertTrue(Files.exists(Path.of(outputDir, "reports")),
+                "Nested reports directory should be created");
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready")),
+                "Nested GitHub Pages directory should be created");
     }
 }

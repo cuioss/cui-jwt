@@ -23,7 +23,6 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -58,19 +57,19 @@ public class BadgeGenerator {
      * @param outputDir the output directory for the badge file
      * @throws IOException if writing the badge file fails
      */
-    public void generatePerformanceBadge(Collection<RunResult> results, BenchmarkType type, String outputDir) 
+    public void generatePerformanceBadge(Collection<RunResult> results, BenchmarkType type, String outputDir)
             throws IOException {
         PerformanceScore score = calculatePerformanceScore(results);
-        
+
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put("schemaVersion", 1);
         badge.put("label", type.getBadgeLabel());
         badge.put("message", formatPerformanceMessage(score));
         badge.put("color", getColorForScore(score));
-        
+
         String filename = type.getPerformanceBadgeFileName();
-        Path badgeFile = Paths.get(outputDir, filename);
-        
+        Path badgeFile = Path.of(outputDir, filename);
+
         Files.writeString(badgeFile, GSON.toJson(badge));
         LOGGER.info("Generated performance badge: {}", badgeFile);
     }
@@ -83,21 +82,21 @@ public class BadgeGenerator {
      * @param outputDir the output directory for the badge file
      * @throws IOException if writing the badge file fails
      */
-    public void generateTrendBadge(Collection<RunResult> results, BenchmarkType type, String outputDir) 
+    public void generateTrendBadge(Collection<RunResult> results, BenchmarkType type, String outputDir)
             throws IOException {
         // Load previous results for trend analysis
         PerformanceHistory history = loadPerformanceHistory(outputDir + "/../history");
         TrendAnalysis trend = analyzeTrend(results, history);
-        
+
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put("schemaVersion", 1);
         badge.put("label", "Performance Trend");
         badge.put("message", formatTrendMessage(trend));
         badge.put("color", getTrendColor(trend));
-        
+
         String filename = type.getTrendBadgeFileName();
-        Path badgeFile = Paths.get(outputDir, filename);
-        
+        Path badgeFile = Path.of(outputDir, filename);
+
         Files.writeString(badgeFile, GSON.toJson(badge));
         LOGGER.info("Generated trend badge: {}", badgeFile);
     }
@@ -110,14 +109,14 @@ public class BadgeGenerator {
      */
     public void generateLastRunBadge(String outputDir) throws IOException {
         String timestamp = ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC));
-        
+
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put("schemaVersion", 1);
         badge.put("label", "Last Run");
         badge.put("message", formatTimestamp(timestamp));
         badge.put("color", "blue");
-        
-        Path badgeFile = Paths.get(outputDir, "last-run-badge.json");
+
+        Path badgeFile = Path.of(outputDir, "last-run-badge.json");
         Files.writeString(badgeFile, GSON.toJson(badge));
         LOGGER.info("Generated last run badge: {}", badgeFile);
     }
@@ -139,7 +138,7 @@ public class BadgeGenerator {
             if (result.getPrimaryResult() != null && result.getPrimaryResult().getStatistics() != null) {
                 double score = result.getPrimaryResult().getScore();
                 String unit = result.getPrimaryResult().getScoreUnit();
-                
+
                 // Convert to common units for scoring
                 if (unit.contains("ops/s") || unit.contains("ops/sec")) {
                     totalThroughput += score;
@@ -164,10 +163,10 @@ public class BadgeGenerator {
 
         double avgThroughput = totalThroughput / count;
         double avgLatency = totalLatency / count;
-        
+
         // Calculate composite score (higher is better)
         long compositeScore = Math.round(avgThroughput);
-        
+
         return new PerformanceScore(compositeScore, avgThroughput, avgLatency);
     }
 
@@ -178,7 +177,7 @@ public class BadgeGenerator {
         if (score.getCompositeScore() == 0) {
             return "No Data";
         }
-        
+
         // Format with appropriate units
         if (score.getCompositeScore() >= 1_000_000) {
             return String.format("%.1fM ops/s", score.getCompositeScore() / 1_000_000.0);
@@ -194,7 +193,7 @@ public class BadgeGenerator {
      */
     private String getColorForScore(PerformanceScore score) {
         long composite = score.getCompositeScore();
-        
+
         if (composite >= 1_000_000) {
             return "brightgreen";
         } else if (composite >= 100_000) {
@@ -279,9 +278,17 @@ public class BadgeGenerator {
             this.latency = latency;
         }
 
-        long getCompositeScore() { return compositeScore; }
-        double getThroughput() { return throughput; }
-        double getLatency() { return latency; }
+        long getCompositeScore() {
+            return compositeScore;
+        }
+
+        double getThroughput() {
+            return throughput;
+        }
+
+        double getLatency() {
+            return latency;
+        }
     }
 
     private static class PerformanceHistory {
@@ -297,8 +304,13 @@ public class BadgeGenerator {
             this.percentageChange = percentageChange;
         }
 
-        TrendDirection getDirection() { return direction; }
-        double getPercentageChange() { return percentageChange; }
+        TrendDirection getDirection() {
+            return direction;
+        }
+
+        double getPercentageChange() {
+            return percentageChange;
+        }
     }
 
     private enum TrendDirection {

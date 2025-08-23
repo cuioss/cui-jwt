@@ -23,7 +23,6 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -61,30 +60,30 @@ public class SummaryGenerator {
      * @param outputFile the output file path
      * @throws IOException if writing the summary file fails
      */
-    public void writeSummary(Collection<RunResult> results, BenchmarkType type, 
-                           Instant timestamp, String outputFile) throws IOException {
+    public void writeSummary(Collection<RunResult> results, BenchmarkType type,
+            Instant timestamp, String outputFile) throws IOException {
         LOGGER.info("Writing benchmark summary for {} {} results", results.size(), type.getDisplayName());
-        
+
         Map<String, Object> summary = new LinkedHashMap<>();
-        
+
         // Basic information
         summary.put("timestamp", ISO_FORMATTER.format(timestamp.atOffset(ZoneOffset.UTC)));
         summary.put("benchmark_type", type.getIdentifier());
         summary.put("execution_status", determineExecutionStatus(results));
-        
+
         // Performance metrics
         summary.put("metrics", generateSummaryMetrics(results));
-        
+
         // Quality gates
         summary.put("quality_gates", evaluateQualityGates(results, type));
-        
+
         // Recommendations
         summary.put("recommendations", generateRecommendations(results, type));
-        
+
         // Artifact information
         summary.put("artifacts", listGeneratedArtifacts());
-        
-        Path summaryPath = Paths.get(outputFile);
+
+        Path summaryPath = Path.of(outputFile);
         Files.writeString(summaryPath, GSON.toJson(summary));
         LOGGER.info("Generated summary file: {}", summaryPath);
     }
@@ -96,13 +95,13 @@ public class SummaryGenerator {
         if (results.isEmpty()) {
             return "FAILED";
         }
-        
+
         // Check if all benchmarks have valid results
         boolean allHaveResults = results.stream()
-            .allMatch(r -> r.getPrimaryResult() != null && 
-                          r.getPrimaryResult().getStatistics() != null &&
-                          r.getPrimaryResult().getStatistics().getN() > 0);
-        
+                .allMatch(r -> r.getPrimaryResult() != null &&
+                        r.getPrimaryResult().getStatistics() != null &&
+                        r.getPrimaryResult().getStatistics().getN() > 0);
+
         return allHaveResults ? "SUCCESS" : "PARTIAL";
     }
 
@@ -111,13 +110,13 @@ public class SummaryGenerator {
      */
     private Map<String, Object> generateSummaryMetrics(Collection<RunResult> results) {
         Map<String, Object> metrics = new LinkedHashMap<>();
-        
+
         metrics.put("total_benchmarks", results.size());
         metrics.put("successful_benchmarks", countSuccessfulBenchmarks(results));
         metrics.put("average_throughput", calculateAverageThroughput(results));
         metrics.put("total_execution_time", calculateTotalExecutionTime(results));
         metrics.put("performance_score", calculateOverallPerformanceScore(results));
-        
+
         return metrics;
     }
 
@@ -126,32 +125,32 @@ public class SummaryGenerator {
      */
     private Map<String, Object> evaluateQualityGates(Collection<RunResult> results, BenchmarkType type) {
         Map<String, Object> gates = new LinkedHashMap<>();
-        
+
         // Define thresholds based on benchmark type
         double throughputThreshold = type == BenchmarkType.MICRO ? 10_000 : 1_000;
         double regressionThreshold = 10.0; // 10% regression threshold
         
         double avgThroughput = calculateAverageThroughput(results);
-        
+
         // Throughput gate
         Map<String, Object> throughputGate = new LinkedHashMap<>();
         throughputGate.put("threshold", throughputThreshold);
         throughputGate.put("actual", avgThroughput);
         throughputGate.put("status", avgThroughput >= throughputThreshold ? "PASS" : "FAIL");
         gates.put("throughput", throughputGate);
-        
+
         // Regression gate (placeholder - would need historical data)
         Map<String, Object> regressionGate = new LinkedHashMap<>();
         regressionGate.put("threshold_percent", regressionThreshold);
         regressionGate.put("actual_percent", 0.0); // Placeholder
         regressionGate.put("status", "PASS"); // Placeholder
         gates.put("regression", regressionGate);
-        
+
         // Overall gate status
         boolean allPassed = gates.values().stream()
-            .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get("status")));
+                .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get("status")));
         gates.put("overall_status", allPassed ? "PASS" : "FAIL");
-        
+
         return gates;
     }
 
@@ -160,9 +159,9 @@ public class SummaryGenerator {
      */
     private Map<String, Object> generateRecommendations(Collection<RunResult> results, BenchmarkType type) {
         Map<String, Object> recommendations = new LinkedHashMap<>();
-        
+
         double avgThroughput = calculateAverageThroughput(results);
-        
+
         // Performance recommendations
         if (avgThroughput < 1_000) {
             recommendations.put("performance", "Consider performance optimization - throughput below baseline");
@@ -171,22 +170,22 @@ public class SummaryGenerator {
         } else {
             recommendations.put("performance", "Performance within acceptable range");
         }
-        
+
         // Deployment recommendations
         boolean deploymentReady = determineExecutionStatus(results).equals("SUCCESS") &&
-                                avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 1_000);
-        
-        recommendations.put("deployment", deploymentReady ? 
-            "Ready for deployment - all quality gates passed" :
-            "Review performance before deployment");
-        
+                avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 1_000);
+
+        recommendations.put("deployment", deploymentReady ?
+                "Ready for deployment - all quality gates passed" :
+                "Review performance before deployment");
+
         // Monitoring recommendations
         if (results.size() < 5) {
             recommendations.put("monitoring", "Consider increasing benchmark coverage");
         } else {
             recommendations.put("monitoring", "Benchmark coverage adequate");
         }
-        
+
         return recommendations;
     }
 
@@ -195,28 +194,28 @@ public class SummaryGenerator {
      */
     private Map<String, Object> listGeneratedArtifacts() {
         Map<String, Object> artifacts = new LinkedHashMap<>();
-        
+
         artifacts.put("badges", Map.of(
-            "performance", "badges/performance-badge.json",
-            "trend", "badges/trend-badge.json",
-            "last_run", "badges/last-run-badge.json"
+                "performance", "badges/performance-badge.json",
+                "trend", "badges/trend-badge.json",
+                "last_run", "badges/last-run-badge.json"
         ));
-        
+
         artifacts.put("reports", Map.of(
-            "overview", "index.html",
-            "trends", "trends.html"
+                "overview", "index.html",
+                "trends", "trends.html"
         ));
-        
+
         artifacts.put("data", Map.of(
-            "metrics", "data/metrics.json",
-            "raw_results", "raw-result.json"
+                "metrics", "data/metrics.json",
+                "raw_results", "raw-result.json"
         ));
-        
+
         artifacts.put("api", Map.of(
-            "latest", "gh-pages-ready/api/latest.json",
-            "status", "gh-pages-ready/api/status.json"
+                "latest", "gh-pages-ready/api/latest.json",
+                "status", "gh-pages-ready/api/status.json"
         ));
-        
+
         return artifacts;
     }
 
@@ -225,10 +224,10 @@ public class SummaryGenerator {
      */
     private long countSuccessfulBenchmarks(Collection<RunResult> results) {
         return results.stream()
-            .filter(r -> r.getPrimaryResult() != null)
-            .filter(r -> r.getPrimaryResult().getStatistics() != null)
-            .filter(r -> r.getPrimaryResult().getStatistics().getN() > 0)
-            .count();
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getStatistics() != null)
+                .filter(r -> r.getPrimaryResult().getStatistics().getN() > 0)
+                .count();
     }
 
     /**
@@ -236,11 +235,11 @@ public class SummaryGenerator {
      */
     private double calculateAverageThroughput(Collection<RunResult> results) {
         return results.stream()
-            .filter(r -> r.getPrimaryResult() != null)
-            .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-            .mapToDouble(r -> r.getPrimaryResult().getScore())
-            .average()
-            .orElse(0.0);
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .average()
+                .orElse(0.0);
     }
 
     /**
@@ -257,7 +256,7 @@ public class SummaryGenerator {
      */
     private double calculateOverallPerformanceScore(Collection<RunResult> results) {
         double avgThroughput = calculateAverageThroughput(results);
-        
+
         // Normalize to a 0-100 scale
         if (avgThroughput >= 1_000_000) {
             return 100.0;

@@ -21,8 +21,8 @@ import org.apache.commons.io.FileUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
 
 /**
  * Generates GitHub Pages ready deployment structure from benchmark artifacts.
@@ -54,31 +54,31 @@ public class GitHubPagesGenerator {
         LOGGER.info("Preparing GitHub Pages deployment structure");
         LOGGER.info("Source: {}", sourceDir);
         LOGGER.info("Deploy: {}", deployDir);
-        
-        Path deployPath = Paths.get(deployDir);
-        Path sourcePath = Paths.get(sourceDir);
-        
+
+        Path deployPath = Path.of(deployDir);
+        Path sourcePath = Path.of(sourceDir);
+
         // Clean and create deployment directory
         if (Files.exists(deployPath)) {
             FileUtils.deleteDirectory(deployPath.toFile());
         }
         Files.createDirectories(deployPath);
-        
+
         // Copy HTML reports to root
         copyHtmlFiles(sourcePath, deployPath);
-        
+
         // Create API endpoints
         createApiEndpoints(sourcePath, deployPath);
-        
+
         // Copy badge files
         copyBadgeFiles(sourcePath, deployPath);
-        
+
         // Copy data files
         copyDataFiles(sourcePath, deployPath);
-        
+
         // Generate additional pages
         generateAdditionalPages(deployPath);
-        
+
         LOGGER.info("GitHub Pages deployment structure ready");
     }
 
@@ -87,24 +87,24 @@ public class GitHubPagesGenerator {
      */
     private void copyHtmlFiles(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug("Copying HTML files");
-        
+
         // Copy main reports
         copyIfExists(sourceDir.resolve("index.html"), deployDir.resolve("index.html"));
         copyIfExists(sourceDir.resolve("trends.html"), deployDir.resolve("trends.html"));
-        
+
         // Copy any additional HTML files
         if (Files.exists(sourceDir.resolve("reports"))) {
             Files.walk(sourceDir.resolve("reports"))
-                .filter(path -> path.toString().endsWith(".html"))
-                .forEach(htmlFile -> {
-                    try {
-                        Path targetFile = deployDir.resolve(sourceDir.resolve("reports").relativize(htmlFile));
-                        Files.createDirectories(targetFile.getParent());
-                        Files.copy(htmlFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        LOGGER.warn("Failed to copy HTML file: {}", htmlFile, e);
-                    }
-                });
+                    .filter(path -> path.toString().endsWith(".html"))
+                    .forEach(htmlFile -> {
+                        try {
+                            Path targetFile = deployDir.resolve(sourceDir.resolve("reports").relativize(htmlFile));
+                            Files.createDirectories(targetFile.getParent());
+                            Files.copy(htmlFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            LOGGER.warn("Failed to copy HTML file: {}", htmlFile, e);
+                        }
+                    });
         }
     }
 
@@ -113,10 +113,10 @@ public class GitHubPagesGenerator {
      */
     private void createApiEndpoints(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug("Creating API endpoints");
-        
+
         Path apiDir = deployDir.resolve("api");
         Files.createDirectories(apiDir);
-        
+
         // Create API structure
         createLatestEndpoint(sourceDir, apiDir);
         createBenchmarksEndpoint(sourceDir, apiDir);
@@ -129,7 +129,7 @@ public class GitHubPagesGenerator {
      */
     private void createLatestEndpoint(Path sourceDir, Path apiDir) throws IOException {
         Path latestFile = apiDir.resolve("latest.json");
-        
+
         // Create a simplified latest results JSON
         String latestJson = """
             {
@@ -146,11 +146,11 @@ public class GitHubPagesGenerator {
               }
             }
             """.formatted(
-                java.time.Instant.now().toString(),
+                Instant.now().toString(),
                 countBenchmarks(sourceDir),
                 "A" // Placeholder grade
-            );
-        
+        );
+
         Files.writeString(latestFile, latestJson);
         LOGGER.debug("Created API endpoint: {}", latestFile);
     }
@@ -162,7 +162,7 @@ public class GitHubPagesGenerator {
         // Copy existing benchmarks data or create minimal structure
         Path sourceMetrics = sourceDir.resolve("data/metrics.json");
         Path benchmarksFile = apiDir.resolve("benchmarks.json");
-        
+
         if (Files.exists(sourceMetrics)) {
             Files.copy(sourceMetrics, benchmarksFile, StandardCopyOption.REPLACE_EXISTING);
         } else {
@@ -172,10 +172,10 @@ public class GitHubPagesGenerator {
                   "benchmarks": {},
                   "generated": "%s"
                 }
-                """.formatted(java.time.Instant.now().toString());
+                """.formatted(Instant.now().toString());
             Files.writeString(benchmarksFile, benchmarksJson);
         }
-        
+
         LOGGER.debug("Created API endpoint: {}", benchmarksFile);
     }
 
@@ -185,7 +185,7 @@ public class GitHubPagesGenerator {
     private void createMetricsEndpoint(Path sourceDir, Path apiDir) throws IOException {
         Path sourceMetrics = sourceDir.resolve("data/metrics.json");
         Path metricsFile = apiDir.resolve("metrics.json");
-        
+
         copyIfExists(sourceMetrics, metricsFile);
         LOGGER.debug("Created API endpoint: {}", metricsFile);
     }
@@ -195,7 +195,7 @@ public class GitHubPagesGenerator {
      */
     private void createStatusEndpoint(Path sourceDir, Path apiDir) throws IOException {
         Path statusFile = apiDir.resolve("status.json");
-        
+
         String statusJson = """
             {
               "status": "healthy",
@@ -206,8 +206,8 @@ public class GitHubPagesGenerator {
                 "reports": "operational"
               }
             }
-            """.formatted(java.time.Instant.now().toString());
-        
+            """.formatted(Instant.now().toString());
+
         Files.writeString(statusFile, statusJson);
         LOGGER.debug("Created API endpoint: {}", statusFile);
     }
@@ -217,23 +217,23 @@ public class GitHubPagesGenerator {
      */
     private void copyBadgeFiles(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug("Copying badge files");
-        
+
         Path sourceBadges = sourceDir.resolve("badges");
         Path deployBadges = deployDir.resolve("badges");
-        
+
         if (Files.exists(sourceBadges)) {
             Files.createDirectories(deployBadges);
-            
+
             Files.walk(sourceBadges)
-                .filter(path -> path.toString().endsWith(".json"))
-                .forEach(badgeFile -> {
-                    try {
-                        Path targetFile = deployBadges.resolve(sourceBadges.relativize(badgeFile));
-                        Files.copy(badgeFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        LOGGER.warn("Failed to copy badge file: {}", badgeFile, e);
-                    }
-                });
+                    .filter(path -> path.toString().endsWith(".json"))
+                    .forEach(badgeFile -> {
+                        try {
+                            Path targetFile = deployBadges.resolve(sourceBadges.relativize(badgeFile));
+                            Files.copy(badgeFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            LOGGER.warn("Failed to copy badge file: {}", badgeFile, e);
+                        }
+                    });
         }
     }
 
@@ -242,24 +242,24 @@ public class GitHubPagesGenerator {
      */
     private void copyDataFiles(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug("Copying data files");
-        
+
         Path sourceData = sourceDir.resolve("data");
         Path deployData = deployDir.resolve("data");
-        
+
         if (Files.exists(sourceData)) {
             Files.createDirectories(deployData);
-            
+
             Files.walk(sourceData)
-                .filter(Files::isRegularFile)
-                .forEach(dataFile -> {
-                    try {
-                        Path targetFile = deployData.resolve(sourceData.relativize(dataFile));
-                        Files.createDirectories(targetFile.getParent());
-                        Files.copy(dataFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        LOGGER.warn("Failed to copy data file: {}", dataFile, e);
-                    }
-                });
+                    .filter(Files::isRegularFile)
+                    .forEach(dataFile -> {
+                        try {
+                            Path targetFile = deployData.resolve(sourceData.relativize(dataFile));
+                            Files.createDirectories(targetFile.getParent());
+                            Files.copy(dataFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            LOGGER.warn("Failed to copy data file: {}", dataFile, e);
+                        }
+                    });
         }
     }
 
@@ -268,13 +268,13 @@ public class GitHubPagesGenerator {
      */
     private void generateAdditionalPages(Path deployDir) throws IOException {
         LOGGER.debug("Generating additional pages");
-        
+
         // Generate 404 page
         generate404Page(deployDir);
-        
+
         // Generate robots.txt
         generateRobotsTxt(deployDir);
-        
+
         // Generate sitemap.xml (basic)
         generateSitemap(deployDir);
     }
@@ -304,7 +304,7 @@ public class GitHubPagesGenerator {
             </body>
             </html>
             """;
-        
+
         Files.writeString(deployDir.resolve("404.html"), html404);
     }
 
@@ -318,7 +318,7 @@ public class GitHubPagesGenerator {
             
             Sitemap: /sitemap.xml
             """;
-        
+
         Files.writeString(deployDir.resolve("robots.txt"), robotsTxt);
     }
 
@@ -346,7 +346,7 @@ public class GitHubPagesGenerator {
                 </url>
             </urlset>
             """;
-        
+
         Files.writeString(deployDir.resolve("sitemap.xml"), sitemap);
     }
 

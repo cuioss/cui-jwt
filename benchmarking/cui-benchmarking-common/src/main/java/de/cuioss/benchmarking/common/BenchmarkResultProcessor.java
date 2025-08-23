@@ -21,7 +21,6 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -53,28 +52,28 @@ public class BenchmarkResultProcessor {
      */
     public void processResults(Collection<RunResult> results, String outputDir) throws IOException {
         LOGGER.info("Processing {} benchmark results to generate artifacts", results.size());
-        
+
         BenchmarkType type = detectBenchmarkType(results);
         LOGGER.info("Detected benchmark type: {}", type);
-        
+
         // Create output directories
         createOutputDirectories(outputDir);
-        
+
         // Generate all badges
         generateBadges(results, type, outputDir);
-        
+
         // Generate performance metrics
         generateMetrics(results, outputDir);
-        
+
         // Generate HTML reports
         generateReports(results, outputDir);
-        
+
         // Generate GitHub Pages structure
         generateGitHubPagesStructure(outputDir);
-        
+
         // Write summary file for CI
         writeSummaryFile(results, type, outputDir);
-        
+
         LOGGER.info("All artifacts generated successfully");
     }
 
@@ -88,17 +87,17 @@ public class BenchmarkResultProcessor {
      */
     private BenchmarkType detectBenchmarkType(Collection<RunResult> results) {
         return results.stream()
-            .map(r -> r.getParams().getBenchmark())
-            .findFirst()
-            .map(benchmark -> {
-                if (benchmark.contains(".integration.") || 
-                    benchmark.contains(".quarkus.") ||
-                    benchmark.contains("Integration")) {
-                    return BenchmarkType.INTEGRATION;
-                }
-                return BenchmarkType.MICRO;
-            })
-            .orElse(BenchmarkType.MICRO);
+                .map(r -> r.getParams().getBenchmark())
+                .findFirst()
+                .map(benchmark -> {
+                    if (benchmark.contains(".integration.") ||
+                            benchmark.contains(".quarkus.") ||
+                            benchmark.contains("Integration")) {
+                        return BenchmarkType.INTEGRATION;
+                    }
+                    return BenchmarkType.MICRO;
+                })
+                .orElse(BenchmarkType.MICRO);
     }
 
     /**
@@ -106,24 +105,24 @@ public class BenchmarkResultProcessor {
      */
     private void createOutputDirectories(String outputDir) throws IOException {
         String[] directories = {
-            outputDir + "/badges",
-            outputDir + "/data", 
-            outputDir + "/reports",
-            outputDir + "/gh-pages-ready"
+                outputDir + "/badges",
+                outputDir + "/data",
+                outputDir + "/reports",
+                outputDir + "/gh-pages-ready"
         };
-        
+
         for (String dir : directories) {
-            Files.createDirectories(Paths.get(dir));
+            Files.createDirectories(Path.of(dir));
         }
     }
 
     /**
      * Generates all types of badges.
      */
-    private void generateBadges(Collection<RunResult> results, BenchmarkType type, String outputDir) 
+    private void generateBadges(Collection<RunResult> results, BenchmarkType type, String outputDir)
             throws IOException {
         BadgeGenerator badgeGen = new BadgeGenerator();
-        
+
         LOGGER.info("Generating performance badges for {} benchmarks", results.size());
         badgeGen.generatePerformanceBadge(results, type, outputDir + "/badges");
         badgeGen.generateTrendBadge(results, type, outputDir + "/badges");
@@ -135,7 +134,7 @@ public class BenchmarkResultProcessor {
      */
     private void generateMetrics(Collection<RunResult> results, String outputDir) throws IOException {
         MetricsGenerator metricsGen = new MetricsGenerator();
-        
+
         LOGGER.info("Generating performance metrics");
         metricsGen.generateMetricsJson(results, outputDir + "/data");
     }
@@ -145,7 +144,7 @@ public class BenchmarkResultProcessor {
      */
     private void generateReports(Collection<RunResult> results, String outputDir) throws IOException {
         ReportGenerator reportGen = new ReportGenerator();
-        
+
         LOGGER.info("Generating HTML reports");
         reportGen.generateIndexPage(results, outputDir);
         reportGen.generateTrendsPage(results, outputDir);
@@ -156,7 +155,7 @@ public class BenchmarkResultProcessor {
      */
     private void generateGitHubPagesStructure(String outputDir) throws IOException {
         GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
-        
+
         LOGGER.info("Generating GitHub Pages deployment structure");
         ghGen.prepareDeploymentStructure(outputDir, outputDir + "/gh-pages-ready");
     }
@@ -164,10 +163,10 @@ public class BenchmarkResultProcessor {
     /**
      * Writes a summary file for CI consumption.
      */
-    private void writeSummaryFile(Collection<RunResult> results, BenchmarkType type, String outputDir) 
+    private void writeSummaryFile(Collection<RunResult> results, BenchmarkType type, String outputDir)
             throws IOException {
         SummaryGenerator summaryGen = new SummaryGenerator();
-        
+
         LOGGER.info("Writing benchmark summary file");
         summaryGen.writeSummary(results, type, Instant.now(), outputDir + "/benchmark-summary.json");
     }

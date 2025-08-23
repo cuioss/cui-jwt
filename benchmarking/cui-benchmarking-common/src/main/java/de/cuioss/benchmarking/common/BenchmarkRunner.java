@@ -54,47 +54,47 @@ public class BenchmarkRunner {
      */
     public static void main(String[] args) throws Exception {
         String outputDir = getOutputDirectory();
-        
+
         LOGGER.info("Starting CUI benchmark runner...");
         LOGGER.info("Output directory: {}", outputDir);
-        
+
         // Ensure output directory exists
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
-        
+
         // Configure JMH options with artifact generation
         Options options = new OptionsBuilder()
-            .include(BenchmarkOptionsHelper.getInclude())
-            .forks(BenchmarkOptionsHelper.getForks())
-            .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations())
-            .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations())
-            .measurementTime(BenchmarkOptionsHelper.getMeasurementTime())
-            .warmupTime(BenchmarkOptionsHelper.getWarmupTime())
-            .threads(BenchmarkOptionsHelper.getThreadCount())
-            .resultFormat(ResultFormatType.JSON)
-            .result(outputDir + "/raw-result.json")
-            .jvmArgs("-Dbenchmark.output.dir=" + outputDir,
-                    "-Dbenchmark.generate.badges=true",
-                    "-Dbenchmark.generate.reports=true",
-                    "-Dbenchmark.generate.github.pages=true")
-            .build();
+                .include(BenchmarkOptionsHelper.getInclude())
+                .forks(BenchmarkOptionsHelper.getForks())
+                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations())
+                .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations())
+                .measurementTime(BenchmarkOptionsHelper.getMeasurementTime())
+                .warmupTime(BenchmarkOptionsHelper.getWarmupTime())
+                .threads(BenchmarkOptionsHelper.getThreadCount())
+                .resultFormat(ResultFormatType.JSON)
+                .result(outputDir + "/raw-result.json")
+                .jvmArgs("-Dbenchmark.output.dir=" + outputDir,
+                        "-Dbenchmark.generate.badges=true",
+                        "-Dbenchmark.generate.reports=true",
+                        "-Dbenchmark.generate.github.pages=true")
+                .build();
 
         try {
             // Run the benchmarks
             Collection<RunResult> results = new Runner(options).run();
-            
+
             if (results.isEmpty()) {
                 throw new IllegalStateException("No benchmark results produced");
             }
-            
+
             LOGGER.info("Benchmarks completed successfully with {} results", results.size());
-            
+
             // Process results to generate all artifacts
             BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
             processor.processResults(results, outputDir);
-            
+
             LOGGER.info("All artifacts generated successfully");
-            
+
         } catch (Exception e) {
             LOGGER.error("Benchmark execution failed", e);
             throw e;
