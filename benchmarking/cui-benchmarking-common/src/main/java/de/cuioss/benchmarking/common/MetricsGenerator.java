@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.results.Result;
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -140,7 +141,7 @@ public class MetricsGenerator {
     /**
      * Normalizes metrics for cross-benchmark comparison.
      */
-    private Map<String, Object> normalizeMetrics(org.openjdk.jmh.results.Result primaryResult) {
+    private Map<String, Object> normalizeMetrics(Result primaryResult) {
         Map<String, Object> normalized = new LinkedHashMap<>();
 
         double score = primaryResult.getScore();

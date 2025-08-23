@@ -36,7 +36,7 @@ class BadgeGeneratorTest {
     private final Gson gson = new Gson();
 
     @Test
-    void testLastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
+    void lastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
         BadgeGenerator generator = new BadgeGenerator();
 
         String outputDir = tempDir.toString();
@@ -61,7 +61,7 @@ class BadgeGeneratorTest {
     }
 
     @Test
-    void testBenchmarkTypeFileNames() {
+    void benchmarkTypeFileNames() {
         // Test that different benchmark types generate correct file names
         assertEquals("performance-badge.json", BenchmarkType.MICRO.getPerformanceBadgeFileName(),
                 "Micro benchmark should use standard performance badge filename");

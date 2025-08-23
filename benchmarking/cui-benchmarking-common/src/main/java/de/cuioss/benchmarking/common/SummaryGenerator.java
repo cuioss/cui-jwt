@@ -148,7 +148,7 @@ public class SummaryGenerator {
 
         // Overall gate status
         boolean allPassed = gates.values().stream()
-                .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get("status")));
+                .allMatch(gate -> "PASS".equals(((Map<?, ?>)gate).get("status")));
         gates.put("overall_status", allPassed ? "PASS" : "FAIL");
 
         return gates;
@@ -172,7 +172,7 @@ public class SummaryGenerator {
         }
 
         // Deployment recommendations
-        boolean deploymentReady = determineExecutionStatus(results).equals("SUCCESS") &&
+        boolean deploymentReady = "SUCCESS".equals(determineExecutionStatus(results)) &&
                 avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 1_000);
 
         recommendations.put("deployment", deploymentReady ?

@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BenchmarkResultProcessorTest {
 
     @Test
-    void testCompleteArtifactGeneration(@TempDir Path tempDir) throws Exception {
+    void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
         // Run minimal benchmark for testing
         var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
@@ -82,7 +82,7 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test
-    void testEmptyResultsHandling(@TempDir Path tempDir) throws Exception {
+    void emptyResultsHandling(@TempDir Path tempDir) throws Exception {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
         List<RunResult> emptyResults = List.of();
 
@@ -100,7 +100,7 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test
-    void testDirectoryCreation(@TempDir Path tempDir) throws Exception {
+    void directoryCreation(@TempDir Path tempDir) throws Exception {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
         String outputDir = tempDir.resolve("nested/benchmark/results").toString();
 

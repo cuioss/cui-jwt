@@ -180,11 +180,11 @@ public class BadgeGenerator {
 
         // Format with appropriate units
         if (score.getCompositeScore() >= 1_000_000) {
-            return String.format("%.1fM ops/s", score.getCompositeScore() / 1_000_000.0);
+            return "%.1fM ops/s".formatted(score.getCompositeScore() / 1_000_000.0);
         } else if (score.getCompositeScore() >= 1_000) {
-            return String.format("%.1fK ops/s", score.getCompositeScore() / 1_000.0);
+            return "%.1fK ops/s".formatted(score.getCompositeScore() / 1_000.0);
         } else {
-            return String.format("%d ops/s", score.getCompositeScore());
+            return "%d ops/s".formatted(score.getCompositeScore());
         }
     }
 
@@ -231,9 +231,9 @@ public class BadgeGenerator {
     private String formatTrendMessage(TrendAnalysis trend) {
         switch (trend.getDirection()) {
             case IMPROVING:
-                return String.format("↗ +%.1f%%", Math.abs(trend.getPercentageChange()));
+                return "↗ +%.1f%%".formatted(Math.abs(trend.getPercentageChange()));
             case DECLINING:
-                return String.format("↘ -%.1f%%", Math.abs(trend.getPercentageChange()));
+                return "↘ -%.1f%%".formatted(Math.abs(trend.getPercentageChange()));
             case STABLE:
             default:
                 return "→ Stable";

@@ -17,8 +17,6 @@ package de.cuioss.benchmarking.common;
 
 import org.openjdk.jmh.runner.options.TimeValue;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Helper class for configuring JMH benchmark options via system properties.
  * <p>

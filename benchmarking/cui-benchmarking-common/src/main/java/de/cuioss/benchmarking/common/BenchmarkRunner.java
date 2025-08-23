@@ -16,13 +16,15 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.tools.logging.CuiLogger;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.ERROR;
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -44,7 +46,8 @@ import java.util.Collection;
  */
 public class BenchmarkRunner {
 
-    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
+    private static final CuiLogger LOGGER = 
+            new CuiLogger(BenchmarkRunner.class);
 
     /**
      * Main method to run benchmarks with complete artifact generation.
@@ -55,8 +58,8 @@ public class BenchmarkRunner {
     public static void main(String[] args) throws Exception {
         String outputDir = getOutputDirectory();
 
-        LOGGER.info("Starting CUI benchmark runner...");
-        LOGGER.info("Output directory: {}", outputDir);
+        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING::format);
+        LOGGER.info(INFO.OUTPUT_DIRECTORY.format(outputDir));
 
         // Ensure output directory exists
         Path outputPath = Path.of(outputDir);
@@ -87,16 +90,17 @@ public class BenchmarkRunner {
                 throw new IllegalStateException("No benchmark results produced");
             }
 
-            LOGGER.info("Benchmarks completed successfully with {} results", results.size());
+            LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(
+                    results.size()));
 
             // Process results to generate all artifacts
             BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
             processor.processResults(results, outputDir);
 
-            LOGGER.info("All artifacts generated successfully");
+            LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
 
         } catch (Exception e) {
-            LOGGER.error("Benchmark execution failed", e);
+            LOGGER.error(ERROR.BENCHMARK_EXECUTION_FAILED.format(), e);
             throw e;
         }
     }

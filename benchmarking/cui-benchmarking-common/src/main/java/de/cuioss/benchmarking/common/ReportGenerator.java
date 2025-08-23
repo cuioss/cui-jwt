@@ -229,12 +229,12 @@ public class ReportGenerator {
 
         if (result.getPrimaryResult() != null) {
             var primaryResult = result.getPrimaryResult();
-            row.append("                            <td>").append(String.format("%.2f", primaryResult.getScore())).append("</td>\n");
+            row.append("                            <td>").append("%.2f".formatted(primaryResult.getScore())).append("</td>\n");
             row.append("                            <td>").append(primaryResult.getScoreUnit()).append("</td>\n");
 
             if (primaryResult.getStatistics() != null) {
                 double error = primaryResult.getStatistics().getStandardDeviation();
-                row.append("                            <td>±").append(String.format("%.2f", error)).append("</td>\n");
+                row.append("                            <td>±").append("%.2f".formatted(error)).append("</td>\n");
                 row.append("                            <td>").append(primaryResult.getStatistics().getN()).append("</td>\n");
             } else {
                 row.append("                            <td>N/A</td>\n");
@@ -445,11 +445,11 @@ public class ReportGenerator {
 
     private String formatThroughput(double throughput) {
         if (throughput >= 1_000_000) {
-            return String.format("%.1fM ops/s", throughput / 1_000_000);
+            return "%.1fM ops/s".formatted(throughput / 1_000_000);
         } else if (throughput >= 1_000) {
-            return String.format("%.1fK ops/s", throughput / 1_000);
+            return "%.1fK ops/s".formatted(throughput / 1_000);
         } else {
-            return String.format("%.0f ops/s", throughput);
+            return "%.0f ops/s".formatted(throughput);
         }
     }
 

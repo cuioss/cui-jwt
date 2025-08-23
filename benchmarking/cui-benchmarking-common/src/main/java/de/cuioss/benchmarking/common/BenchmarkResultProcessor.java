@@ -16,6 +16,8 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.tools.logging.CuiLogger;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -41,7 +43,8 @@ import java.util.Collection;
  */
 public class BenchmarkResultProcessor {
 
-    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkResultProcessor.class);
+    private static final CuiLogger LOGGER = 
+            new CuiLogger(BenchmarkResultProcessor.class);
 
     /**
      * Processes benchmark results to generate all artifacts.
@@ -51,10 +54,10 @@ public class BenchmarkResultProcessor {
      * @throws IOException if file operations fail
      */
     public void processResults(Collection<RunResult> results, String outputDir) throws IOException {
-        LOGGER.info("Processing {} benchmark results to generate artifacts", results.size());
+        LOGGER.info(INFO.PROCESSING_RESULTS.format(results.size()));
 
         BenchmarkType type = detectBenchmarkType(results);
-        LOGGER.info("Detected benchmark type: {}", type);
+        LOGGER.info(INFO.BENCHMARK_TYPE_DETECTED.format(type));
 
         // Create output directories
         createOutputDirectories(outputDir);
@@ -74,7 +77,7 @@ public class BenchmarkResultProcessor {
         // Write summary file for CI
         writeSummaryFile(results, type, outputDir);
 
-        LOGGER.info("All artifacts generated successfully");
+        LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
     }
 
     /**
@@ -123,7 +126,7 @@ public class BenchmarkResultProcessor {
             throws IOException {
         BadgeGenerator badgeGen = new BadgeGenerator();
 
-        LOGGER.info("Generating performance badges for {} benchmarks", results.size());
+        LOGGER.info(INFO.GENERATING_BADGES.format(results.size()));
         badgeGen.generatePerformanceBadge(results, type, outputDir + "/badges");
         badgeGen.generateTrendBadge(results, type, outputDir + "/badges");
         badgeGen.generateLastRunBadge(outputDir + "/badges");
@@ -135,7 +138,7 @@ public class BenchmarkResultProcessor {
     private void generateMetrics(Collection<RunResult> results, String outputDir) throws IOException {
         MetricsGenerator metricsGen = new MetricsGenerator();
 
-        LOGGER.info("Generating performance metrics");
+        LOGGER.info(INFO.GENERATING_METRICS::format);
         metricsGen.generateMetricsJson(results, outputDir + "/data");
     }
 
@@ -145,7 +148,7 @@ public class BenchmarkResultProcessor {
     private void generateReports(Collection<RunResult> results, String outputDir) throws IOException {
         ReportGenerator reportGen = new ReportGenerator();
 
-        LOGGER.info("Generating HTML reports");
+        LOGGER.info(INFO.GENERATING_REPORTS::format);
         reportGen.generateIndexPage(results, outputDir);
         reportGen.generateTrendsPage(results, outputDir);
     }
@@ -156,7 +159,7 @@ public class BenchmarkResultProcessor {
     private void generateGitHubPagesStructure(String outputDir) throws IOException {
         GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
 
-        LOGGER.info("Generating GitHub Pages deployment structure");
+        LOGGER.info(INFO.GENERATING_GITHUB_PAGES::format);
         ghGen.prepareDeploymentStructure(outputDir, outputDir + "/gh-pages-ready");
     }
 
@@ -167,7 +170,7 @@ public class BenchmarkResultProcessor {
             throws IOException {
         SummaryGenerator summaryGen = new SummaryGenerator();
 
-        LOGGER.info("Writing benchmark summary file");
+        LOGGER.info(INFO.WRITING_SUMMARY::format);
         summaryGen.writeSummary(results, type, Instant.now(), outputDir + "/benchmark-summary.json");
     }
 }
