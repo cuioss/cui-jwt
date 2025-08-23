@@ -16,6 +16,7 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -25,6 +26,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
  * Generates self-contained HTML reports with embedded CSS and JavaScript.
@@ -42,7 +45,8 @@ import java.util.Collection;
  */
 public class ReportGenerator {
 
-    private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
+    private static final CuiLogger LOGGER =
+            new CuiLogger(ReportGenerator.class);
     private static final DateTimeFormatter DISPLAY_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'");
 
@@ -54,18 +58,19 @@ public class ReportGenerator {
      * @throws IOException if writing HTML files fails
      */
     public void generateIndexPage(Collection<RunResult> results, String outputDir) throws IOException {
-        LOGGER.info("Generating index page for {} benchmark results", results.size());
+        LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(results.size()));
 
-        StringBuilder html = new StringBuilder();
-        html.append(generateHtmlHeader("CUI Benchmarking Results", true));
-        html.append(generateNavigationMenu());
-        html.append(generateOverviewSection(results));
-        html.append(generateBenchmarkTable(results));
-        html.append(generateHtmlFooter());
+        String html = generateHtmlHeader("CUI Benchmarking Results", true) +
+                generateNavigationMenu() +
+                generateOverviewSection(results) +
+                generateBenchmarkTable(results) +
+                generateHtmlFooter();
 
-        Path indexFile = Path.of(outputDir, "index.html");
-        Files.writeString(indexFile, html.toString());
-        LOGGER.info("Generated index page: {}", indexFile);
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+        Path indexFile = outputPath.resolve("index.html");
+        Files.writeString(indexFile, html);
+        LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
     }
 
     /**
@@ -76,80 +81,66 @@ public class ReportGenerator {
      * @throws IOException if writing HTML files fails
      */
     public void generateTrendsPage(Collection<RunResult> results, String outputDir) throws IOException {
-        LOGGER.info("Generating trends page");
+        LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
 
-        StringBuilder html = new StringBuilder();
-        html.append(generateHtmlHeader("Performance Trends", false));
-        html.append(generateNavigationMenu());
-        html.append(generateTrendsSection(results));
-        html.append(generateHtmlFooter());
+        String html = generateHtmlHeader("Performance Trends", false) +
+                generateNavigationMenu() +
+                generateTrendsSection(results) +
+                generateHtmlFooter();
 
-        Path trendsFile = Path.of(outputDir, "trends.html");
-        Files.writeString(trendsFile, html.toString());
-        LOGGER.info("Generated trends page: {}", trendsFile);
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+        Path trendsFile = outputPath.resolve("trends.html");
+        Files.writeString(trendsFile, html);
+        LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
 
-    /**
-     * Generates the HTML header with embedded CSS.
-     */
     private String generateHtmlHeader(String title, boolean includeCharts) {
-        StringBuilder header = new StringBuilder();
-        header.append("<!DOCTYPE html>\n");
-        header.append("<html lang=\"en\">\n");
-        header.append("<head>\n");
-        header.append("    <meta charset=\"UTF-8\">\n");
-        header.append("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
-        header.append("    <title>").append(title).append("</title>\n");
-        header.append("    <style>\n");
-        header.append(getEmbeddedCSS());
-        header.append("    </style>\n");
-
-        if (includeCharts) {
-            header.append("    <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n");
-        }
-
-        header.append("</head>\n");
-        header.append("<body>\n");
-
-        return header.toString();
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>%s</title>
+                <style>
+            %s
+                </style>
+            %s
+            </head>
+            <body>
+            """.formatted(
+                title,
+                getEmbeddedCSS(),
+                includeCharts ? "    <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n" : ""
+        );
     }
 
-    /**
-     * Generates the HTML footer.
-     */
     private String generateHtmlFooter() {
-        StringBuilder footer = new StringBuilder();
-        footer.append("    <footer>\n");
-        footer.append("        <p>Generated on ").append(getCurrentTimestamp()).append(" by CUI Benchmarking Infrastructure</p>\n");
-        footer.append("    </footer>\n");
-        footer.append("</body>\n");
-        footer.append("</html>\n");
-
-        return footer.toString();
+        return """
+                <footer>
+                    <p>Generated on %s by CUI Benchmarking Infrastructure</p>
+                </footer>
+            </body>
+            </html>
+            """.formatted(getCurrentTimestamp());
     }
 
-    /**
-     * Generates the navigation menu.
-     */
     private String generateNavigationMenu() {
-        StringBuilder nav = new StringBuilder();
-        nav.append("    <nav class=\"navbar\">\n");
-        nav.append("        <div class=\"nav-container\">\n");
-        nav.append("            <h1>CUI Benchmarking</h1>\n");
-        nav.append("            <ul class=\"nav-menu\">\n");
-        nav.append("                <li><a href=\"index.html\">Overview</a></li>\n");
-        nav.append("                <li><a href=\"trends.html\">Trends</a></li>\n");
-        nav.append("                <li><a href=\"data/metrics.json\">Raw Data</a></li>\n");
-        nav.append("            </ul>\n");
-        nav.append("        </div>\n");
-        nav.append("    </nav>\n");
-
-        return nav.toString();
+        return """
+                <nav class="navbar">
+                    <div class="nav-container">
+                        <h1>CUI Benchmarking</h1>
+                        <ul class="nav-menu">
+                            <li><a href="index.html">Overview</a></li>
+                            <li><a href="trends.html">Trends</a></li>
+                            <li><a href="data/metrics.json">Raw Data</a></li>
+                        </ul>
+                    </div>
+                </nav>
+            """;
     }
 
-    /**
-     * Generates the overview section with summary statistics.
-     */
     private String generateOverviewSection(Collection<RunResult> results) {
         StringBuilder overview = new StringBuilder();
         overview.append("    <main class=\"main-content\">\n");
@@ -185,9 +176,6 @@ public class ReportGenerator {
         return overview.toString();
     }
 
-    /**
-     * Generates a table of benchmark results.
-     */
     private String generateBenchmarkTable(Collection<RunResult> results) {
         StringBuilder table = new StringBuilder();
         table.append("        <section class=\"results\">\n");
@@ -217,9 +205,6 @@ public class ReportGenerator {
         return table.toString();
     }
 
-    /**
-     * Generates a single row in the benchmark results table.
-     */
     private String generateBenchmarkRow(RunResult result) {
         StringBuilder row = new StringBuilder();
         row.append("                        <tr>\n");
@@ -249,27 +234,28 @@ public class ReportGenerator {
         return row.toString();
     }
 
-    /**
-     * Generates the trends section with historical analysis.
-     */
     private String generateTrendsSection(Collection<RunResult> results) {
-        StringBuilder trends = new StringBuilder();
-        trends.append("    <main class=\"main-content\">\n");
-        trends.append("        <section class=\"trends\">\n");
-        trends.append("            <h2>Performance Trends</h2>\n");
-        trends.append("            <p>Historical performance analysis and trend visualization.</p>\n");
-        trends.append("            <div class=\"chart-container\">\n");
-        trends.append("                <canvas id=\"trendsChart\"></canvas>\n");
-        trends.append("            </div>\n");
-        trends.append("        </section>\n");
-        trends.append("    </main>\n");
-
-        return trends.toString();
+        return """
+                <main class="main-content">
+                    <section class="trends">
+                        <h2>Performance Trends</h2>
+                        <p>Historical performance analysis and trend visualization.</p>
+                        <div class="chart-container">
+                            <canvas id="trendsChart"></canvas>
+                        </div>
+                        <div class="trends-summary">
+                            <h3>Trend Analysis</h3>
+                            <p>%d benchmarks analyzed</p>
+                            <p>Performance Grade: %s</p>
+                        </div>
+                    </section>
+                </main>
+            """.formatted(
+                results.size(),
+                calculatePerformanceGrade(calculateAverageThroughput(results))
+        );
     }
 
-    /**
-     * Gets embedded CSS for styling the reports.
-     */
     private String getEmbeddedCSS() {
         return """
             body {
@@ -427,7 +413,6 @@ public class ReportGenerator {
             """;
     }
 
-    // Helper methods
     private String extractBenchmarkName(String fullName) {
         if (fullName == null) return "Unknown";
         String[] parts = fullName.split("\\.");
@@ -454,8 +439,13 @@ public class ReportGenerator {
     }
 
     private String calculatePerformanceGrade(double throughput) {
-        if (throughput >= 1_000_000) return "A+"; else if (throughput >= 100_000) return "A"; else if (throughput >= 10_000) return "B"; else if (throughput >= 1_000) return "C";
-        else return "D";
+        return switch ((int) Math.log10(Math.max(1, throughput))) {
+            case 6, 7, 8, 9 -> "A+";
+            case 5 -> "A";
+            case 4 -> "B";
+            case 3 -> "C";
+            default -> "D";
+        };
     }
 
     private String getCurrentTimestamp() {

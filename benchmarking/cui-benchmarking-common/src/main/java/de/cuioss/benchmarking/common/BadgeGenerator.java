@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -29,6 +30,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
  * Generates shields.io compatible badges for benchmark performance metrics.
@@ -45,8 +48,12 @@ import java.util.Map;
  */
 public class BadgeGenerator {
 
-    private static final CuiLogger LOGGER = new CuiLogger(BadgeGenerator.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final CuiLogger LOGGER =
+            new CuiLogger(BadgeGenerator.class);
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     /**
@@ -71,7 +78,7 @@ public class BadgeGenerator {
         Path badgeFile = Path.of(outputDir, filename);
 
         Files.writeString(badgeFile, GSON.toJson(badge));
-        LOGGER.info("Generated performance badge: {}", badgeFile);
+        LOGGER.info(INFO.BADGE_GENERATED.format("performance", badgeFile));
     }
 
     /**
@@ -98,7 +105,7 @@ public class BadgeGenerator {
         Path badgeFile = Path.of(outputDir, filename);
 
         Files.writeString(badgeFile, GSON.toJson(badge));
-        LOGGER.info("Generated trend badge: {}", badgeFile);
+        LOGGER.info(INFO.BADGE_GENERATED.format("trend", badgeFile));
     }
 
     /**
@@ -118,12 +125,9 @@ public class BadgeGenerator {
 
         Path badgeFile = Path.of(outputDir, "last-run-badge.json");
         Files.writeString(badgeFile, GSON.toJson(badge));
-        LOGGER.info("Generated last run badge: {}", badgeFile);
+        LOGGER.info(INFO.BADGE_GENERATED.format("last run", badgeFile));
     }
 
-    /**
-     * Calculates a composite performance score from benchmark results.
-     */
     private PerformanceScore calculatePerformanceScore(Collection<RunResult> results) {
         if (results.isEmpty()) {
             return new PerformanceScore(0, 0, 0);
@@ -170,147 +174,102 @@ public class BadgeGenerator {
         return new PerformanceScore(compositeScore, avgThroughput, avgLatency);
     }
 
-    /**
-     * Formats the performance score for display in badges.
-     */
     private String formatPerformanceMessage(PerformanceScore score) {
-        if (score.getCompositeScore() == 0) {
+        if (score.compositeScore() == 0) {
             return "No Data";
         }
 
-        // Format with appropriate units
-        if (score.getCompositeScore() >= 1_000_000) {
-            return "%.1fM ops/s".formatted(score.getCompositeScore() / 1_000_000.0);
-        } else if (score.getCompositeScore() >= 1_000) {
-            return "%.1fK ops/s".formatted(score.getCompositeScore() / 1_000.0);
-        } else {
-            return "%d ops/s".formatted(score.getCompositeScore());
-        }
+        return switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
+            case 6, 7, 8, 9 -> "%.1fM ops/s".formatted(score.compositeScore() / 1_000_000.0);
+            case 3, 4, 5 -> "%.1fK ops/s".formatted(score.compositeScore() / 1_000.0);
+            default -> "%d ops/s".formatted(score.compositeScore());
+        };
     }
 
-    /**
-     * Gets the badge color based on performance score.
-     */
     private String getColorForScore(PerformanceScore score) {
-        long composite = score.getCompositeScore();
-
-        if (composite >= 1_000_000) {
-            return "brightgreen";
-        } else if (composite >= 100_000) {
-            return "green";
-        } else if (composite >= 10_000) {
-            return "yellow";
-        } else if (composite >= 1_000) {
-            return "orange";
-        } else {
-            return "red";
-        }
+        return switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
+            case 6, 7, 8, 9 -> "brightgreen";
+            case 5 -> "green";
+            case 4 -> "yellow";
+            case 3 -> "orange";
+            default -> "red";
+        };
     }
 
-    /**
-     * Loads performance history for trend analysis.
-     */
     private PerformanceHistory loadPerformanceHistory(String historyDir) {
-        // Placeholder implementation - in a real scenario, this would load
-        // historical performance data from previous benchmark runs
-        return new PerformanceHistory();
+        Path historyPath = Path.of(historyDir);
+        if (Files.exists(historyPath)) {
+            try {
+                Path latestHistory = Files.list(historyPath)
+                        .filter(path -> path.toString().endsWith(".json"))
+                        .sorted((a, b) -> b.getFileName().compareTo(a.getFileName()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (latestHistory != null) {
+                    String content = Files.readString(latestHistory);
+                    var data = GSON.fromJson(content, Map.class);
+                    return new PerformanceHistory(
+                            ((Number) data.getOrDefault("averageThroughput", 0.0)).doubleValue(),
+                            ((Number) data.getOrDefault("totalScore", 0.0)).doubleValue()
+                    );
+                }
+            } catch (IOException e) {
+                LOGGER.debug("Failed to load performance history", e);
+            }
+        }
+        return new PerformanceHistory(0.0, 0.0);
     }
 
-    /**
-     * Analyzes performance trends compared to historical data.
-     */
     private TrendAnalysis analyzeTrend(Collection<RunResult> results, PerformanceHistory history) {
-        // Placeholder implementation - in a real scenario, this would compare
-        // current results with historical data to determine trends
-        return new TrendAnalysis(TrendDirection.STABLE, 0.0);
+        if (history.averageThroughput() == 0) {
+            return new TrendAnalysis(TrendDirection.STABLE, 0.0);
+        }
+
+        double currentThroughput = results.stream()
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .average()
+                .orElse(0.0);
+
+        double percentageChange = ((currentThroughput - history.averageThroughput()) / history.averageThroughput()) * 100;
+
+        TrendDirection direction = switch (Double.compare(Math.abs(percentageChange), 5.0)) {
+            case -1, 0 -> TrendDirection.STABLE;
+            default -> percentageChange > 0 ? TrendDirection.IMPROVING : TrendDirection.DECLINING;
+        };
+
+        return new TrendAnalysis(direction, percentageChange);
     }
 
-    /**
-     * Formats trend information for badge display.
-     */
     private String formatTrendMessage(TrendAnalysis trend) {
-        switch (trend.getDirection()) {
-            case IMPROVING:
-                return "↗ +%.1f%%".formatted(Math.abs(trend.getPercentageChange()));
-            case DECLINING:
-                return "↘ -%.1f%%".formatted(Math.abs(trend.getPercentageChange()));
-            case STABLE:
-            default:
-                return "→ Stable";
-        }
+        return switch (trend.direction()) {
+            case IMPROVING -> "↗ +%.1f%%".formatted(Math.abs(trend.percentageChange()));
+            case DECLINING -> "↘ -%.1f%%".formatted(Math.abs(trend.percentageChange()));
+            case STABLE -> "→ Stable";
+        };
     }
 
-    /**
-     * Gets the badge color for trend analysis.
-     */
     private String getTrendColor(TrendAnalysis trend) {
-        switch (trend.getDirection()) {
-            case IMPROVING:
-                return "brightgreen";
-            case DECLINING:
-                return "red";
-            case STABLE:
-            default:
-                return "blue";
-        }
+        return switch (trend.direction()) {
+            case IMPROVING -> "brightgreen";
+            case DECLINING -> "red";
+            case STABLE -> "blue";
+        };
     }
 
-    /**
-     * Formats timestamp for display in badges.
-     */
     private String formatTimestamp(String isoTimestamp) {
-        // Extract date part for badge display
-        if (isoTimestamp.length() >= 10) {
-            return isoTimestamp.substring(0, 10);
-        }
-        return isoTimestamp;
+        return isoTimestamp.length() >= 10 ? isoTimestamp.substring(0, 10) : isoTimestamp;
     }
 
-    // Helper classes for data structures
-    private static class PerformanceScore {
-        private final long compositeScore;
-        private final double throughput;
-        private final double latency;
-
-        PerformanceScore(long compositeScore, double throughput, double latency) {
-            this.compositeScore = compositeScore;
-            this.throughput = throughput;
-            this.latency = latency;
-        }
-
-        long getCompositeScore() {
-            return compositeScore;
-        }
-
-        double getThroughput() {
-            return throughput;
-        }
-
-        double getLatency() {
-            return latency;
-        }
+    private record PerformanceScore(long compositeScore, double throughput, double latency) {
     }
 
-    private static class PerformanceHistory {
-        // Placeholder for historical performance data
+    private record PerformanceHistory(double averageThroughput, double totalScore) {
     }
 
-    private static class TrendAnalysis {
-        private final TrendDirection direction;
-        private final double percentageChange;
-
-        TrendAnalysis(TrendDirection direction, double percentageChange) {
-            this.direction = direction;
-            this.percentageChange = percentageChange;
-        }
-
-        TrendDirection getDirection() {
-            return direction;
-        }
-
-        double getPercentageChange() {
-            return percentageChange;
-        }
+    private record TrendAnalysis(TrendDirection direction, double percentageChange) {
     }
 
     private enum TrendDirection {

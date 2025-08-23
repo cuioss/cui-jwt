@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.openjdk.jmh.results.Result;
 import org.openjdk.jmh.results.RunResult;
 
@@ -30,6 +31,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
  * Generates structured performance metrics in JSON format from JMH benchmark results.
@@ -47,8 +50,12 @@ import java.util.Map;
  */
 public class MetricsGenerator {
 
-    private static final CuiLogger LOGGER = new CuiLogger(MetricsGenerator.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final CuiLogger LOGGER =
+            new CuiLogger(MetricsGenerator.class);
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     /**
@@ -59,39 +66,33 @@ public class MetricsGenerator {
      * @throws IOException if writing metrics files fails
      */
     public void generateMetricsJson(Collection<RunResult> results, String outputDir) throws IOException {
-        LOGGER.info("Generating metrics JSON for {} benchmark results", results.size());
+        LOGGER.info(INFO.GENERATING_METRICS_JSON.format(results.size()));
 
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
         metrics.put("benchmarks", processBenchmarkResults(results));
         metrics.put("summary", generateSummaryMetrics(results));
 
-        Path metricsFile = Path.of(outputDir, "metrics.json");
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+        Path metricsFile = outputPath.resolve("metrics.json");
         Files.writeString(metricsFile, GSON.toJson(metrics));
-        LOGGER.info("Generated metrics file: {}", metricsFile);
+        LOGGER.info(INFO.METRICS_FILE_GENERATED.format(metricsFile));
 
         // Also generate individual benchmark files for detailed analysis
         generateIndividualMetrics(results, outputDir);
     }
 
-    /**
-     * Processes individual benchmark results into structured metrics.
-     */
     private Map<String, Object> processBenchmarkResults(Collection<RunResult> results) {
-        Map<String, Object> benchmarks = new LinkedHashMap<>();
-
-        for (RunResult result : results) {
-            String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
-            Map<String, Object> benchmarkMetrics = processSingleBenchmark(result);
-            benchmarks.put(benchmarkName, benchmarkMetrics);
-        }
-
-        return benchmarks;
+        return results.stream()
+                .collect(LinkedHashMap::new,
+                        (map, result) -> {
+                            String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
+                            map.put(benchmarkName, processSingleBenchmark(result));
+                        },
+                        LinkedHashMap::putAll);
     }
 
-    /**
-     * Processes a single benchmark result into metrics.
-     */
     private Map<String, Object> processSingleBenchmark(RunResult result) {
         Map<String, Object> metrics = new LinkedHashMap<>();
 
@@ -111,7 +112,6 @@ public class MetricsGenerator {
                 stats.put("max", statistics.getMax());
                 stats.put("n", statistics.getN());
 
-                // Add percentiles if available
                 stats.put("p50", statistics.getPercentile(50.0));
                 stats.put("p95", statistics.getPercentile(95.0));
                 stats.put("p99", statistics.getPercentile(99.0));
@@ -119,11 +119,9 @@ public class MetricsGenerator {
                 metrics.put("statistics", stats);
             }
 
-            // Add normalized metrics for comparison
             metrics.put("normalized", normalizeMetrics(primaryResult));
         }
 
-        // Add secondary results if available
         if (!result.getSecondaryResults().isEmpty()) {
             Map<String, Object> secondary = new LinkedHashMap<>();
             result.getSecondaryResults().forEach((key, value) -> {
@@ -138,36 +136,35 @@ public class MetricsGenerator {
         return metrics;
     }
 
-    /**
-     * Normalizes metrics for cross-benchmark comparison.
-     */
     private Map<String, Object> normalizeMetrics(Result primaryResult) {
-        Map<String, Object> normalized = new LinkedHashMap<>();
+        record MetricConversion(double throughputOpsPerSec, double latencyMsPerOp) {
+        }
 
         double score = primaryResult.getScore();
         String unit = primaryResult.getScoreUnit();
 
-        // Convert to standard units
-        if (unit.contains("ops/s") || unit.contains("ops/sec")) {
-            normalized.put("throughput_ops_per_sec", score);
-            normalized.put("latency_ms_per_op", 1000.0 / score);
-        } else if (unit.contains("s/op")) {
-            normalized.put("throughput_ops_per_sec", 1.0 / score);
-            normalized.put("latency_ms_per_op", score * 1000.0);
-        } else if (unit.contains("ms/op")) {
-            normalized.put("throughput_ops_per_sec", 1000.0 / score);
-            normalized.put("latency_ms_per_op", score);
-        } else if (unit.contains("us/op")) {
-            normalized.put("throughput_ops_per_sec", 1_000_000.0 / score);
-            normalized.put("latency_ms_per_op", score / 1000.0);
-        }
+        MetricConversion conversion = switch (unit) {
+            case String u when u.contains("ops/s") || u.contains("ops/sec") ->
+                new MetricConversion(score, 1000.0 / score);
+            case String u when u.contains("s/op") ->
+                new MetricConversion(1.0 / score, score * 1000.0);
+            case String u when u.contains("ms/op") ->
+                new MetricConversion(1000.0 / score, score);
+            case String u when u.contains("us/op") || u.contains("µs/op") ->
+                new MetricConversion(1_000_000.0 / score, score / 1000.0);
+            case String u when u.contains("ns/op") ->
+                new MetricConversion(1_000_000_000.0 / score, score / 1_000_000.0);
+            default -> new MetricConversion(0.0, 0.0);
+        };
 
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        if (conversion.throughputOpsPerSec > 0) {
+            normalized.put("throughput_ops_per_sec", conversion.throughputOpsPerSec);
+            normalized.put("latency_ms_per_op", conversion.latencyMsPerOp);
+        }
         return normalized;
     }
 
-    /**
-     * Generates summary metrics across all benchmarks.
-     */
     private Map<String, Object> generateSummaryMetrics(Collection<RunResult> results) {
         Map<String, Object> summary = new LinkedHashMap<>();
 
@@ -179,36 +176,31 @@ public class MetricsGenerator {
         return summary;
     }
 
-    /**
-     * Generates individual metric files for each benchmark.
-     */
     private void generateIndividualMetrics(Collection<RunResult> results, String outputDir) throws IOException {
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+
         for (RunResult result : results) {
             String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
             Map<String, Object> benchmarkMetrics = processSingleBenchmark(result);
 
-            Path individualFile = Path.of(outputDir, benchmarkName + "-metrics.json");
+            Path individualFile = outputPath.resolve(benchmarkName + "-metrics.json");
             Files.writeString(individualFile, GSON.toJson(benchmarkMetrics));
         }
 
-        LOGGER.info("Generated {} individual metric files", results.size());
+        LOGGER.info(INFO.INDIVIDUAL_METRICS_GENERATED.format(results.size()));
     }
 
-    /**
-     * Extracts a clean benchmark name from the full benchmark class path.
-     */
     private String extractBenchmarkName(String fullBenchmarkName) {
         if (fullBenchmarkName == null) {
             return "unknown";
         }
 
-        // Extract class name and method
         String[] parts = fullBenchmarkName.split("\\.");
         if (parts.length >= 2) {
             String className = parts[parts.length - 2];
             String methodName = parts[parts.length - 1];
 
-            // Remove "Benchmark" suffix from class name if present
             if (className.endsWith("Benchmark")) {
                 className = className.substring(0, className.length() - 9);
             }
@@ -219,9 +211,6 @@ public class MetricsGenerator {
         return fullBenchmarkName.replaceAll("\\.", "_");
     }
 
-    /**
-     * Calculates total score across all benchmarks.
-     */
     private double calculateTotalScore(Collection<RunResult> results) {
         return results.stream()
                 .filter(r -> r.getPrimaryResult() != null)
@@ -229,9 +218,6 @@ public class MetricsGenerator {
                 .sum();
     }
 
-    /**
-     * Calculates average throughput across benchmarks.
-     */
     private double calculateAverageThroughput(Collection<RunResult> results) {
         return results.stream()
                 .filter(r -> r.getPrimaryResult() != null)
@@ -241,22 +227,14 @@ public class MetricsGenerator {
                 .orElse(0.0);
     }
 
-    /**
-     * Calculates a performance grade based on results.
-     */
     private String calculatePerformanceGrade(Collection<RunResult> results) {
         double avgThroughput = calculateAverageThroughput(results);
-
-        if (avgThroughput >= 1_000_000) {
-            return "A+";
-        } else if (avgThroughput >= 100_000) {
-            return "A";
-        } else if (avgThroughput >= 10_000) {
-            return "B";
-        } else if (avgThroughput >= 1_000) {
-            return "C";
-        } else {
-            return "D";
-        }
+        return switch ((int) Math.log10(Math.max(1, avgThroughput))) {
+            case 6, 7, 8, 9 -> "A+";
+            case 5 -> "A";
+            case 4 -> "B";
+            case 3 -> "C";
+            default -> "D";
+        };
     }
 }

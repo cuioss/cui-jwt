@@ -15,10 +15,14 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import java.util.Collection;
 
 /**
  * Main class for running optimized benchmarks.
@@ -79,7 +83,18 @@ public class BenchmarkRunner {
                 .build();
 
         // Run the benchmarks
-        new Runner(options).run();
+        Collection<RunResult> results = new Runner(options).run();
+        
+        // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
+        try {
+            LOGGER.info("Generating benchmark artifacts...");
+            BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+            processor.processResults(results, getBenchmarkResultsDir());
+            LOGGER.info("Benchmark artifacts generated successfully in: " + getBenchmarkResultsDir());
+        } catch (Exception e) {
+            LOGGER.error("Failed to generate benchmark artifacts", e);
+            // Don't fail the benchmark run if artifact generation fails
+        }
 
         // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
     }

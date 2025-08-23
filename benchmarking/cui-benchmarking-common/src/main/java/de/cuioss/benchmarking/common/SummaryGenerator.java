@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -29,6 +30,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
  * Generates summary files for CI/CD pipeline consumption.
@@ -47,8 +51,12 @@ import java.util.Map;
  */
 public class SummaryGenerator {
 
-    private static final CuiLogger LOGGER = new CuiLogger(SummaryGenerator.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final CuiLogger LOGGER =
+            new CuiLogger(SummaryGenerator.class);
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     /**
@@ -62,7 +70,8 @@ public class SummaryGenerator {
      */
     public void writeSummary(Collection<RunResult> results, BenchmarkType type,
             Instant timestamp, String outputFile) throws IOException {
-        LOGGER.info("Writing benchmark summary for {} {} results", results.size(), type.getDisplayName());
+        LOGGER.info(INFO.WRITING_BENCHMARK_SUMMARY.format(
+                results.size(), type.getDisplayName()));
 
         Map<String, Object> summary = new LinkedHashMap<>();
 
@@ -72,7 +81,11 @@ public class SummaryGenerator {
         summary.put("execution_status", determineExecutionStatus(results));
 
         // Performance metrics
-        summary.put("metrics", generateSummaryMetrics(results));
+        var summaryMetrics = generateSummaryMetrics(results);
+        summary.put("metrics", summaryMetrics);
+        summary.put("total_benchmarks", summaryMetrics.get("total_benchmarks"));
+        summary.put("performance_grade", calculatePerformanceGrade(results));
+        summary.put("average_throughput", summaryMetrics.get("average_throughput"));
 
         // Quality gates
         summary.put("quality_gates", evaluateQualityGates(results, type));
@@ -85,7 +98,7 @@ public class SummaryGenerator {
 
         Path summaryPath = Path.of(outputFile);
         Files.writeString(summaryPath, GSON.toJson(summary));
-        LOGGER.info("Generated summary file: {}", summaryPath);
+        LOGGER.info(INFO.SUMMARY_FILE_GENERATED.format(summaryPath));
     }
 
     /**
@@ -139,16 +152,16 @@ public class SummaryGenerator {
         throughputGate.put("status", avgThroughput >= throughputThreshold ? "PASS" : "FAIL");
         gates.put("throughput", throughputGate);
 
-        // Regression gate (placeholder - would need historical data)
         Map<String, Object> regressionGate = new LinkedHashMap<>();
         regressionGate.put("threshold_percent", regressionThreshold);
-        regressionGate.put("actual_percent", 0.0); // Placeholder
-        regressionGate.put("status", "PASS"); // Placeholder
+        regressionGate.put("actual_percent", 0.0);
+        regressionGate.put("status", "PASS");
+        regressionGate.put("note", "Historical comparison not available");
         gates.put("regression", regressionGate);
 
         // Overall gate status
         boolean allPassed = gates.values().stream()
-                .allMatch(gate -> "PASS".equals(((Map<?, ?>)gate).get("status")));
+                .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get("status")));
         gates.put("overall_status", allPassed ? "PASS" : "FAIL");
 
         return gates;
@@ -242,13 +255,18 @@ public class SummaryGenerator {
                 .orElse(0.0);
     }
 
-    /**
-     * Calculates total execution time (placeholder implementation).
-     */
     private double calculateTotalExecutionTime(Collection<RunResult> results) {
-        // Placeholder - in a real implementation, this would aggregate
-        // actual execution times from the benchmark results
-        return results.size() * 30.0; // Approximate 30 seconds per benchmark
+        return results.stream()
+                .mapToDouble(result -> {
+                    if (result.getParams() != null && result.getParams().getMeasurement() != null) {
+                        var measurement = result.getParams().getMeasurement();
+                        int iterations = measurement.getCount();
+                        var timeValue = measurement.getTime().convertTo(TimeUnit.SECONDS);
+                        return iterations * timeValue;
+                    }
+                    return 30.0;
+                })
+                .sum();
     }
 
     /**
@@ -256,18 +274,23 @@ public class SummaryGenerator {
      */
     private double calculateOverallPerformanceScore(Collection<RunResult> results) {
         double avgThroughput = calculateAverageThroughput(results);
+        return switch ((int) Math.log10(Math.max(1, avgThroughput))) {
+            case 6, 7, 8, 9 -> 100.0;
+            case 5 -> 90.0;
+            case 4 -> 80.0;
+            case 3 -> 70.0;
+            default -> Math.min(60.0, avgThroughput / 1_000.0 * 70.0);
+        };
+    }
 
-        // Normalize to a 0-100 scale
-        if (avgThroughput >= 1_000_000) {
-            return 100.0;
-        } else if (avgThroughput >= 100_000) {
-            return 90.0;
-        } else if (avgThroughput >= 10_000) {
-            return 80.0;
-        } else if (avgThroughput >= 1_000) {
-            return 70.0;
-        } else {
-            return Math.max(0.0, avgThroughput / 1_000.0 * 70.0);
-        }
+    private String calculatePerformanceGrade(Collection<RunResult> results) {
+        double score = calculateOverallPerformanceScore(results);
+        return switch ((int) (score / 10)) {
+            case 10, 9 -> "A+";
+            case 8 -> "A";
+            case 7 -> "B";
+            case 6 -> "C";
+            default -> "D";
+        };
     }
 }

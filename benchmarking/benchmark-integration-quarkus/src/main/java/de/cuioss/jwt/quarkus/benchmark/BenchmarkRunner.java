@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -139,6 +140,17 @@ public class BenchmarkRunner {
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
 
             LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
+
+            // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
+            try {
+                LOGGER.info("Generating benchmark artifacts...");
+                BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+                processor.processResults(results, getBenchmarkResultsDir());
+                LOGGER.info("Benchmark artifacts generated successfully in: {}", getBenchmarkResultsDir());
+            } catch (Exception e) {
+                LOGGER.error("Failed to generate benchmark artifacts", e);
+                // Don't fail the benchmark run if artifact generation fails
+            }
 
             // Process and download final metrics after successful benchmark execution
             processMetrics();

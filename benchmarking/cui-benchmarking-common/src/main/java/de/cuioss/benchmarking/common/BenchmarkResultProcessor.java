@@ -17,7 +17,6 @@ package de.cuioss.benchmarking.common;
 
 import de.cuioss.tools.logging.CuiLogger;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -25,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collection;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
  * Processes JMH benchmark results to generate all required artifacts during execution.
@@ -43,7 +44,7 @@ import java.util.Collection;
  */
 public class BenchmarkResultProcessor {
 
-    private static final CuiLogger LOGGER = 
+    private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkResultProcessor.class);
 
     /**

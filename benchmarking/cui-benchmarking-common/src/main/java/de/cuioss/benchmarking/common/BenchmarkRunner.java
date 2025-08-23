@@ -17,8 +17,6 @@ package de.cuioss.benchmarking.common;
 
 import de.cuioss.tools.logging.CuiLogger;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.ERROR;
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
@@ -28,6 +26,9 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.ERROR;
+import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
  * Standardized JMH benchmark runner that integrates with CUI benchmarking infrastructure.
@@ -46,7 +47,7 @@ import java.util.Collection;
  */
 public class BenchmarkRunner {
 
-    private static final CuiLogger LOGGER = 
+    private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkRunner.class);
 
     /**
