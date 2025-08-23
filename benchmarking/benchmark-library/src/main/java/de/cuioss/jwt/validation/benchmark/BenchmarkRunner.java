@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkOptionsHelper;
 import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;

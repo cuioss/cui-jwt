@@ -15,9 +15,10 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkLoggingSetup;
+import de.cuioss.benchmarking.common.BenchmarkOptionsHelper;
 import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
-import de.cuioss.jwt.quarkus.benchmark.logging.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;

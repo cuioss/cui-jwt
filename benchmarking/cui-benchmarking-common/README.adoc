@@ -1,0 +1,174 @@
+= CUI Benchmarking Common Infrastructure
+:source-highlighter: highlight.js
+
+Common utilities and infrastructure for JMH benchmark modules.
+
+== Overview
+
+This module provides centralized components used by all benchmark modules to ensure consistency and reduce code duplication.
+
+== Components
+
+=== Configuration Management
+
+* **BenchmarkOptionsHelper** - Centralized JMH configuration via system properties
+  - Supports all JMH parameters (forks, iterations, warmup, threads, etc.)
+  - Integration-specific properties (service URLs, metrics endpoints)
+  - Time value parsing for various units (ms, s, m)
+
+=== Logging Infrastructure
+
+* **BenchmarkLoggingSetup** - Unified logging configuration
+  - Dual output to console and timestamped log files
+  - Captures System.out/err and JMH output
+  - Configurable log levels and package filtering
+  - Automatic cleanup and reset capabilities
+
+=== Artifact Generation
+
+* **BenchmarkResultProcessor** - Main orchestrator for artifact generation
+  - Processes JMH results into multiple output formats
+  - Coordinates all generators for complete artifact set
+  - Creates GitHub Pages deployment structure
+
+* **BadgeGenerator** - Creates shields.io compatible badges
+  - Performance score badges with color coding
+  - Trend indicators with historical comparison
+  - Last run timestamp badges
+
+* **MetricsGenerator** - Produces detailed metrics JSON
+  - Individual benchmark metrics extraction
+  - Throughput, latency, and percentile calculations
+  - Normalized units for comparison
+
+* **ReportGenerator** - Creates HTML reports
+  - Interactive visualizations
+  - Performance summaries
+  - Trend analysis charts
+
+* **SummaryGenerator** - Produces overall benchmark summary
+  - Quality gate evaluation
+  - Performance grading (A+ to D)
+  - Recommendations based on results
+
+* **GitHubPagesGenerator** - Creates deployment-ready structure
+  - Complete website structure with navigation
+  - API endpoints for programmatic access
+  - SEO optimization (robots.txt, sitemap.xml)
+
+=== Utilities
+
+* **JsonSerializationHelper** - Consistent JSON formatting
+  - Smart number formatting (integers without decimals)
+  - ISO instant formatting
+  - Badge and metric object creation helpers
+
+* **BenchmarkType** - Enumeration for benchmark categorization
+  - MICRO - Library-level benchmarks
+  - INTEGRATION - End-to-end benchmarks
+  - Affects thresholds and quality gates
+
+== Usage
+
+=== Configure JMH Options
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.BenchmarkOptionsHelper;
+
+Options options = new OptionsBuilder()
+    .include(BenchmarkOptionsHelper.getInclude())
+    .forks(BenchmarkOptionsHelper.getForks(1))
+    .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(5))
+    .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(5))
+    .measurementTime(BenchmarkOptionsHelper.getMeasurementTime("2s"))
+    .threads(BenchmarkOptionsHelper.getThreadCount(8))
+    .resultFormat(BenchmarkOptionsHelper.getResultFormat())
+    .result(BenchmarkOptionsHelper.getResultFile(defaultFile))
+    .build();
+----
+
+=== Setup Logging
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.BenchmarkLoggingSetup;
+
+// Configure logging to benchmark-results directory
+BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
+
+// With custom log level
+BenchmarkLoggingSetup.configureLogging("target/benchmark-results", 
+                                       Level.DEBUG, 
+                                       "de.cuioss.jwt");
+
+// Reset after benchmarks complete
+BenchmarkLoggingSetup.resetLogging();
+----
+
+=== Process Results
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
+
+Collection<RunResult> results = new Runner(options).run();
+
+// Generate all artifacts
+BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+processor.processResults(results, "target/benchmark-results");
+----
+
+== System Properties
+
+The following system properties control benchmark execution:
+
+* `jmh.include` - Benchmark class include pattern (default: `.*Benchmark.*`)
+* `jmh.result.format` - Result format: JSON, CSV, etc. (default: JSON)
+* `jmh.result.filePrefix` - Result file prefix
+* `jmh.forks` - Number of forks (default: 1)
+* `jmh.warmupIterations` - Warmup iterations (default: 3)
+* `jmh.iterations` - Measurement iterations (default: 5)
+* `jmh.time` - Measurement time per iteration (default: 2s)
+* `jmh.warmupTime` - Warmup time per iteration (default: 1s)
+* `jmh.threads` - Thread count, supports "MAX" (default: 4)
+* `benchmark.results.dir` - Output directory for results
+
+Integration-specific:
+* `integration.service.url` - Target service URL
+* `keycloak.url` - Keycloak server URL
+* `quarkus.metrics.url` - Metrics endpoint URL
+
+== Generated Artifacts
+
+The processor generates a complete artifact set:
+
+[source]
+----
+target/benchmark-results/
+├── badges/                      # Performance badges
+├── data/                        # Metrics JSON files
+├── reports/                     # HTML reports
+├── gh-pages-ready/             # GitHub Pages structure
+├── benchmark-summary.json       # Overall summary
+└── *-benchmark-result.json     # Raw JMH results
+----
+
+== Quality Gates
+
+Each benchmark run is evaluated against configurable thresholds:
+
+* **Throughput** - Minimum operations per second
+* **Latency** - Maximum response times
+* **Regression** - Performance change from baseline
+* **Overall Score** - Weighted composite metric
+
+Thresholds vary by benchmark type (micro vs integration).
+
+== Dependencies
+
+This module depends on:
+* JMH Core - Benchmark framework
+* Gson - JSON serialization
+* Apache Commons IO - File operations
+* CUI Tools - Logging utilities
