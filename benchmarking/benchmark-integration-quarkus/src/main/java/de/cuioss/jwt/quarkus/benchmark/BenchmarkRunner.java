@@ -15,8 +15,8 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.BenchmarkLoggingSetup;
-import de.cuioss.benchmarking.common.BenchmarkOptionsHelper;
 import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -27,7 +27,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -74,41 +74,35 @@ public class BenchmarkRunner {
         String benchmarkResultsDir = getBenchmarkResultsDir();
         BenchmarkLoggingSetup.configureLogging(benchmarkResultsDir);
 
+        // Create configuration from system properties
+        var config = BenchmarkConfiguration.fromSystemProperties()
+                .withResultsDirectory(benchmarkResultsDir)
+                .withIntegrationServiceUrl(DEFAULT_SERVICE_URL)
+                .withKeycloakUrl("http://localhost:8080")
+                .build();
+        
         LOGGER.info("BenchmarkRunner.main() invoked - starting Quarkus JWT integration benchmarks...");
-        LOGGER.info("Service URL: {}", BenchmarkOptionsHelper.getIntegrationServiceUrl(DEFAULT_SERVICE_URL));
-        LOGGER.info("Keycloak URL: {}", BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"));
-        LOGGER.info("Results file: {}", BenchmarkOptionsHelper.getResultFile(benchmarkResultsDir + BENCHMARK_RESULT_FILENAME));
+        LOGGER.info("Service URL: {}", config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL));
+        LOGGER.info("Keycloak URL: {}", config.keycloakUrl().orElse("http://localhost:8080"));
+        LOGGER.info("Results file: {}", config.resultFile());
 
         // Pre-initialize the shared TokenRepository instance
         initializeSharedTokenRepository();
 
-        // Configure JMH options using system properties passed from Maven
-        Options options = new OptionsBuilder()
-                // Include all benchmark classes in this package - can be overridden with system property
-                .include(System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*"))
-                // Set number of forks
-                .forks(BenchmarkOptionsHelper.getForks(1))
-                // Minimal warmup for external services
-                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(1))
-                // Set measurement iterations
-                .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(2))
-                // Set measurement time based on profile
-                .measurementTime(BenchmarkOptionsHelper.getMeasurementTime("5s"))
-                // Set warmup time
-                .warmupTime(BenchmarkOptionsHelper.getWarmupTime("1s"))
-                // Set number of threads
-                .threads(BenchmarkOptionsHelper.getThreadCount(10))
-                // Configure result output
-                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME))
-                // Add JVM arguments
-                .jvmArgs("-Djava.util.logging.manager=java.util.logging.LogManager",
-                        "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir(),
-                        "-Dintegration.service.url=" + BenchmarkOptionsHelper.getIntegrationServiceUrl(DEFAULT_SERVICE_URL),
-                        "-Dkeycloak.url=" + BenchmarkOptionsHelper.getKeycloakUrl("http://localhost:8080"),
-                        "-Dquarkus.metrics.url=" + BenchmarkOptionsHelper.getQuarkusMetricsUrl(DEFAULT_SERVICE_URL))
+        // Configure JMH options using modern configuration API
+        config = config.toBuilder()
+                .withIncludePattern(System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*"))
+                .withForks(1)
+                .withWarmupIterations(1)
+                .withMeasurementIterations(2)
+                .withMeasurementTime(TimeValue.seconds(5))
+                .withWarmupTime(TimeValue.seconds(1))
+                .withThreads(10)
+                .withResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME)
+                .withMetricsUrl(config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL))
                 .build();
+                
+        Options options = config.toJmhOptions();
 
         try {
             LOGGER.info("Starting JMH runner...");
@@ -140,7 +134,7 @@ public class BenchmarkRunner {
 
             LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
 
-            LOGGER.info("Results should be written to: {}", BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME));
+            LOGGER.info("Results should be written to: {}", config.resultFile());
 
             // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
             try {
@@ -167,7 +161,8 @@ public class BenchmarkRunner {
      * Also processes JMH benchmark results to create http-metrics.json.
      */
     private static void processMetrics() {
-        String quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl(DEFAULT_SERVICE_URL);
+        var config = BenchmarkConfiguration.fromSystemProperties().build();
+        String quarkusMetricsUrl = config.metricsUrl().orElse(DEFAULT_SERVICE_URL);
         String outputDirectory = getBenchmarkResultsDir();
 
         LOGGER.info("Processing final cumulative metrics from Quarkus...");
@@ -185,7 +180,7 @@ public class BenchmarkRunner {
             exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
 
             // Process JMH benchmark results to create http-metrics.json
-            String benchmarkResultsFile = BenchmarkOptionsHelper.getResultFile(outputDirectory + BENCHMARK_RESULT_FILENAME);
+            String benchmarkResultsFile = config.resultFile();
             LOGGER.info("Processing JMH benchmark results from: {}", benchmarkResultsFile);
 
             MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
@@ -214,7 +209,8 @@ public class BenchmarkRunner {
     private static void initializeSharedTokenRepository() {
         LOGGER.info("Pre-initializing shared TokenRepository instance for benchmarks");
 
-        String keycloakUrl = BenchmarkOptionsHelper.getKeycloakUrl("https://localhost:1443");
+        var benchConfig = BenchmarkConfiguration.fromSystemProperties().build();
+        String keycloakUrl = benchConfig.keycloakUrl().orElse("https://localhost:1443");
 
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl(keycloakUrl)

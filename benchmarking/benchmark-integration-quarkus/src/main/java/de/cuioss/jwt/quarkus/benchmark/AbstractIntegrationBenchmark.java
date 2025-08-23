@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
 import de.cuioss.tools.logging.CuiLogger;
@@ -52,7 +53,8 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
         LOGGER.info("Setting up integration benchmark with token repository");
 
         // Get Keycloak configuration
-        keycloakUrl = BenchmarkOptionsHelper.getKeycloakUrl("https://localhost:1443");
+        var config = BenchmarkConfiguration.fromSystemProperties().build();
+        keycloakUrl = config.keycloakUrl().orElse("https://localhost:1443");
 
         // Initialize token repository using shared instance if available
         initializeTokenRepository();

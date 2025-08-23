@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * <p>For benchmarks that require JWT authentication, use {@link AbstractIntegrationBenchmark} instead.</p>
  *
  * <p>Benchmark execution parameters (iterations, threads, warmup, etc.) are configured dynamically
- * via {@link BenchmarkRunner} and {@link BenchmarkOptionsHelper} using system properties.</p>
+ * via {@link BenchmarkRunner} and {@link BenchmarkConfiguration} using system properties.</p>
  *
  * @since 1.0
  */
@@ -67,9 +68,10 @@ public abstract class AbstractBaseBenchmark {
         LOGGER.info("Setting up base benchmark");
 
         // Get configuration from system properties with correct docker-compose ports
-        serviceUrl = BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:10443");
-        quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:10443");
-        benchmarkResultsDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+        var config = BenchmarkConfiguration.fromSystemProperties().build();
+        serviceUrl = config.integrationServiceUrl().orElse("https://localhost:10443");
+        quarkusMetricsUrl = config.metricsUrl().orElse("https://localhost:10443");
+        benchmarkResultsDir = config.resultsDirectory();
 
         LOGGER.info("Service URL: {}", serviceUrl);
         LOGGER.info("Quarkus Metrics URL: {}", quarkusMetricsUrl);

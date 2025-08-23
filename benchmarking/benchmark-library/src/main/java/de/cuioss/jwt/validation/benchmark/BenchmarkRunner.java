@@ -15,13 +15,13 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
-import de.cuioss.benchmarking.common.BenchmarkOptionsHelper;
+import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.util.Collection;
 
@@ -55,33 +55,20 @@ public class BenchmarkRunner {
         BenchmarkKeyCache.initialize();
         LOGGER.info("Key cache initialized. Starting benchmarks...");
 
-        // Configure JMH options
-        Options options = new OptionsBuilder()
-                // Include only standard benchmark classes
-                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*")
-                // Exclude JFR benchmarks
-                .exclude(".*Jfr.*")
-                // Set number of forks
-                .forks(BenchmarkOptionsHelper.getForks(1))
-                // Set warmup iterations
-                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(5))
-                // Set measurement iterations
-                .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(5))
-                // Set measurement time
-                .measurementTime(BenchmarkOptionsHelper.getMeasurementTime("2s"))
-                // Set warmup time
-                .warmupTime(BenchmarkOptionsHelper.getWarmupTime("2s"))
-                // Set number of threads
-                .threads(BenchmarkOptionsHelper.getThreadCount(8))
-                // Use benchmark mode specified in individual benchmark annotations
-                // (removed .mode(Mode.AverageTime) to allow individual benchmarks to specify their own mode)
-                // Configure result output - create a combined report for all benchmarks
-                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(BenchmarkOptionsHelper.getResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json"))
-                // Add logging configuration to suppress verbose logs
-                .jvmArgs("-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir())
+        // Configure JMH options using modern API
+        var config = BenchmarkConfiguration.fromSystemProperties()
+                .withIncludePattern("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*")
+                .withForks(1)
+                .withWarmupIterations(5)
+                .withMeasurementIterations(5)
+                .withMeasurementTime(TimeValue.seconds(2))
+                .withWarmupTime(TimeValue.seconds(2))
+                .withThreads(8)
+                .withResultsDirectory(getBenchmarkResultsDir())
+                .withResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json")
                 .build();
+        
+        Options options = config.toJmhOptions();
 
         // Run the benchmarks
         Collection<RunResult> results = new Runner(options).run();
