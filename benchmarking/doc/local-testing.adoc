@@ -3,9 +3,22 @@
 
 == Quick Start
 
-To test the benchmark visualization templates locally, use one of the provided HTTP server scripts:
+To view benchmark results locally after running benchmarks:
 
-=== Option 1: Bash Script (Python-based)
+=== Step 1: Run Benchmarks
+
+[source,bash]
+----
+# Run micro benchmarks
+./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
+
+# Run integration benchmarks
+./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+----
+
+=== Step 2: Serve Results Locally
+
+The benchmarks automatically generate HTML pages and artifacts. To view them:
 
 [source,bash]
 ----
@@ -15,7 +28,7 @@ cd benchmarking/scripts
 ./serve-local.sh 3000
 ----
 
-=== Option 2: Node.js Script
+Alternative using Node.js:
 
 [source,bash]
 ----
@@ -25,47 +38,101 @@ node serve-local.js
 node serve-local.js 3000
 ----
 
-=== Option 3: Manual Commands
+=== Step 3: View Results
 
-From the `doc/templates` directory:
+Open your browser to http://localhost:8080 to view the generated artifacts.
+
+== Generated Artifacts Location
+
+After running benchmarks, artifacts are generated in:
+
+* **Micro Benchmarks**: `benchmarking/benchmark-library/target/benchmark-results/`
+* **Integration Benchmarks**: `benchmarking/benchmark-integration-quarkus/target/benchmark-results/`
+
+Each location contains:
+- `index.html` - Main results page
+- `trends.html` - Historical trends visualization
+- `badges/` - Performance badges
+- `data/` - Metrics JSON files
+- `gh-pages-ready/` - GitHub Pages deployment structure
+
+== Manual HTTP Server Options
+
+You can also serve the results directly from the benchmark directories:
 
 [source,bash]
 ----
-cd benchmarking/doc/templates
-
-# Python 3
+# For micro benchmark results
+cd benchmarking/benchmark-library/target/benchmark-results
 python3 -m http.server 8080
 
+# For integration benchmark results
+cd benchmarking/benchmark-integration-quarkus/target/benchmark-results
+python3 -m http.server 8081
+----
+
+Alternative servers:
+
+[source,bash]
+----
 # Node.js (requires http-server)
 npx http-server -p 8080
 
 # PHP
 php -S localhost:8080
+
+# Ruby
+ruby -run -ehttpd . -p8080
 ----
-
-== Available Pages
-
-Once the server is running, open your browser to:
-
-* *Micro Benchmarks*: http://localhost:8080/index-visualizer.html
-* *Integration Tests*: http://localhost:8080/integration-index.html
-* *Step Metrics*: http://localhost:8080/step-metrics-visualizer.html
-* *Performance Trends*: http://localhost:8080/performance-trends.html
-
-== Test Data
-
-The templates expect JSON data files in the `doc/templates/data/` subdirectory:
-- `doc/templates/data/jmh-result.json` - Micro benchmark results
-- `doc/templates/data/integration-result.json` - Integration test results
-- `doc/templates/data/jwt-validation-metrics.json` - Step-by-step metrics
-- `doc/templates/data/performance-tracking.json` - Historical performance data
 
 == Why HTTP Server?
 
 Modern browsers enforce strict security policies that prevent JavaScript from loading local files directly (CORS policy). An HTTP server provides the proper protocol and headers for the templates to function correctly.
 
+== Viewing Specific Components
+
+The generated artifacts include:
+
+* **Performance Badges** - View in `badges/` directory
+* **Metrics Data** - JSON files in `data/` directory  
+* **Summary Report** - `benchmark-summary.json` with quality gates
+* **Raw Results** - JMH output in `*-benchmark-result.json`
+
 == Troubleshooting
 
-* *"Failed to fetch" errors*: Make sure you're accessing via `http://localhost:8080`, not `file://`
-* *404 errors*: Ensure the JSON data files exist in the `doc/templates/data/` directory
-* *Port already in use*: Try a different port number
+=== No Results Generated
+
+- Ensure benchmarks ran successfully
+- Check for compilation errors
+- Verify the correct Maven profile was used
+
+=== "Failed to fetch" Errors
+
+- Make sure you're accessing via `http://localhost:8080`, not `file://`
+- Check that the HTTP server is running
+
+=== 404 Errors
+
+- Verify benchmark results were generated
+- Check the correct directory is being served
+- Ensure artifacts exist in `target/benchmark-results/`
+
+=== Port Already in Use
+
+- Try a different port number
+- Check for other running servers: `lsof -i :8080`
+
+== Development Tips
+
+For rapid iteration during development:
+
+[source,bash]
+----
+# Quick benchmark run (1 iteration only)
+./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.iterations=1 -Djmh.warmupIterations=1
+
+# View results immediately
+cd benchmarking/benchmark-library/target/benchmark-results && \
+  python3 -m http.server 8080
+----
