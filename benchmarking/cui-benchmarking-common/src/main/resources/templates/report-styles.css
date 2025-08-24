@@ -128,6 +128,66 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Performance Grade Classes */
+.grade-a-plus {
+    color: #00c851;
+    font-weight: bold;
+}
+
+.grade-a {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.grade-b {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.grade-c {
+    color: #ff8800;
+    font-weight: bold;
+}
+
+.grade-d {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.grade-f {
+    color: #c30000;
+    font-weight: bold;
+}
+
+/* Performance Score Badges */
+.performance-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.performance-badge.excellent {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.performance-badge.good {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.performance-badge.average {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.performance-badge.poor {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
 footer {
     text-align: center;
     padding: 2rem;

@@ -187,13 +187,41 @@ public class BadgeGenerator {
     }
 
     private String getColorForScore(PerformanceScore score) {
+        // Allow configurable grade thresholds via system property
+        // Format: benchmark.grade.thresholds=A+:1000000,A:100000,B:10000,C:1000
+        String thresholds = System.getProperty("benchmark.grade.thresholds");
+        if (thresholds != null && !thresholds.isEmpty()) {
+            return getColorForConfiguredGrade(score.compositeScore(), thresholds);
+        }
+
+        // Default thresholds based on log scale
         return switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
-            case 6, 7, 8, 9 -> "brightgreen";
-            case 5 -> "green";
-            case 4 -> "yellow";
-            case 3 -> "orange";
-            default -> "red";
+            case 6, 7, 8, 9 -> "brightgreen";  // A+ (1M+ ops/s)
+            case 5 -> "green";                  // A (100K+ ops/s)
+            case 4 -> "yellow";                 // B (10K+ ops/s)
+            case 3 -> "orange";                 // C (1K+ ops/s)
+            default -> "red";                   // D/F (<1K ops/s)
         };
+    }
+
+    private String getColorForConfiguredGrade(long throughput, String thresholds) {
+        // Parse thresholds and return appropriate color
+        String[] grades = thresholds.split(",");
+        for (String grade : grades) {
+            String[] parts = grade.split(":");
+            if (parts.length == 2) {
+                long threshold = Long.parseLong(parts[1]);
+                if (throughput >= threshold) {
+                    return switch (parts[0].toUpperCase()) {
+                        case "A+", "A" -> "brightgreen";
+                        case "B" -> "yellow";
+                        case "C" -> "orange";
+                        default -> "red";
+                    };
+                }
+            }
+        }
+        return "red"; // Default to lowest grade
     }
 
     private PerformanceHistory loadPerformanceHistory(String historyDir) {

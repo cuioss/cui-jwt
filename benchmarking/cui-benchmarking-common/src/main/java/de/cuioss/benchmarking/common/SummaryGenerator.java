@@ -140,7 +140,8 @@ public class SummaryGenerator {
         Map<String, Object> gates = new LinkedHashMap<>();
 
         // Define thresholds based on benchmark type
-        double throughputThreshold = type == BenchmarkType.MICRO ? 10_000 : 1_000;
+        // Integration benchmarks include network/TLS overhead and should have lower thresholds
+        double throughputThreshold = type == BenchmarkType.MICRO ? 10_000 : 5_000; // 5 ops/ms = 5000 ops/s for HTTP
         double regressionThreshold = 10.0; // 10% regression threshold
         
         double avgThroughput = calculateAverageThroughput(results);
@@ -186,7 +187,7 @@ public class SummaryGenerator {
 
         // Deployment recommendations
         boolean deploymentReady = "SUCCESS".equals(determineExecutionStatus(results)) &&
-                avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 1_000);
+                avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 5_000);
 
         recommendations.put("deployment", deploymentReady ?
                 "Ready for deployment - all quality gates passed" :
@@ -244,13 +245,33 @@ public class SummaryGenerator {
     }
 
     /**
-     * Calculates average throughput across all benchmarks.
+     * Calculates average throughput across all benchmarks, normalized to ops/s.
      */
     private double calculateAverageThroughput(Collection<RunResult> results) {
         return results.stream()
                 .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .mapToDouble(r -> {
+                    double score = r.getPrimaryResult().getScore();
+                    String unit = r.getPrimaryResult().getScoreUnit();
+
+                    // Convert to ops/s based on unit
+                    if (unit.contains("ops/s") || unit.contains("ops/sec")) {
+                        return score;
+                    } else if (unit.contains("ops/ms")) {
+                        return score * 1000.0; // Convert ops/ms to ops/s
+                    } else if (unit.contains("ops/us")) {
+                        return score * 1_000_000.0; // Convert ops/us to ops/s
+                    } else if (unit.contains("s/op")) {
+                        return 1.0 / score; // Convert s/op to ops/s
+                    } else if (unit.contains("ms/op")) {
+                        return 1000.0 / score; // Convert ms/op to ops/s
+                    } else if (unit.contains("us/op")) {
+                        return 1_000_000.0 / score; // Convert us/op to ops/s
+                    } else {
+                        return score; // Default to raw score
+                    }
+                })
+                .filter(score -> score > 0)
                 .average()
                 .orElse(0.0);
     }

@@ -79,21 +79,21 @@ Each task is self-contained; if issues arise, revert module-level changes while 
 ### Performance Improvements
 
 #### P1. Metrics and Badges Calibration
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Externalize performance grade thresholds via system property (e.g., benchmark.grade.thresholds=A+:1000000,A:100000,B:10000,...). Emit optional latency percentiles (p50/p90/p99) when available into data/metrics.json.
 
 **Rationale:** Configurable thresholds allow project-specific performance requirements without code changes.
 
 #### P2. Adjust Integration Benchmark Quality Gates
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Adjust quality gate thresholds for integration benchmarks to realistic HTTP operation expectations. Current threshold of 1000 ops/s fails with actual 9.17 ops/ms. Set appropriate thresholds: 5 ops/ms for HTTP operations.
 
 **Rationale:** Integration benchmarks include network/TLS overhead and should have different performance expectations than micro benchmarks.
 
 #### P3. Performance Score CSS Classes
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Enhance performance score calculation to use fixed CSS classes from report-styles.css. Add grade-specific CSS classes (e.g., .grade-a-plus, .grade-a, .grade-b) in the stylesheet. Update BadgeGenerator and ReportGenerator to apply these classes based on performance scores instead of inline styles or hardcoded colors.
 

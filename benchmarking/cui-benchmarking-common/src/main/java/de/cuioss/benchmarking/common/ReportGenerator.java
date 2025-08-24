@@ -242,13 +242,26 @@ public class ReportGenerator {
     }
 
     private String calculatePerformanceGrade(double throughput) {
-        return switch ((int) Math.log10(Math.max(1, throughput))) {
+        String grade = switch ((int) Math.log10(Math.max(1, throughput))) {
             case 6, 7, 8, 9 -> "A+";
             case 5 -> "A";
             case 4 -> "B";
             case 3 -> "C";
-            default -> "D";
+            case 2 -> "D";
+            default -> "F";
         };
+
+        // Apply CSS class based on grade
+        String cssClass = switch (grade) {
+            case "A+" -> "grade-a-plus";
+            case "A" -> "grade-a";
+            case "B" -> "grade-b";
+            case "C" -> "grade-c";
+            case "D" -> "grade-d";
+            default -> "grade-f";
+        };
+
+        return "<span class=\"" + cssClass + "\">" + grade + "</span>";
     }
 
     private String getCurrentTimestamp() {
