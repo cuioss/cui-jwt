@@ -56,6 +56,20 @@ public class BadgeGenerator {
             .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
+    // Badge JSON field constants
+    private static final String SCHEMA_VERSION = "schemaVersion";
+    private static final String LABEL = "label";
+    private static final String MESSAGE = "message";
+    private static final String COLOR = "color";
+
+    // Color constants
+    private static final String COLOR_BRIGHT_GREEN = "brightgreen";
+    private static final String COLOR_GREEN = "green";
+    private static final String COLOR_YELLOW = "yellow";
+    private static final String COLOR_ORANGE = "orange";
+    private static final String COLOR_RED = "red";
+    private static final String COLOR_BLUE = "blue";
+
     /**
      * Generates a performance badge showing current benchmark performance.
      *
@@ -69,10 +83,10 @@ public class BadgeGenerator {
         PerformanceScore score = calculatePerformanceScore(results);
 
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", type.getBadgeLabel());
-        badge.put("message", formatPerformanceMessage(score));
-        badge.put("color", getColorForScore(score));
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, type.getBadgeLabel());
+        badge.put(MESSAGE, formatPerformanceMessage(score));
+        badge.put(COLOR, getColorForScore(score));
 
         String filename = type.getPerformanceBadgeFileName();
         Path badgeFile = Path.of(outputDir, filename);
@@ -96,10 +110,10 @@ public class BadgeGenerator {
         TrendAnalysis trend = analyzeTrend(results, history);
 
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", "Performance Trend");
-        badge.put("message", formatTrendMessage(trend));
-        badge.put("color", getTrendColor(trend));
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, "Performance Trend");
+        badge.put(MESSAGE, formatTrendMessage(trend));
+        badge.put(COLOR, getTrendColor(trend));
 
         String filename = type.getTrendBadgeFileName();
         Path badgeFile = Path.of(outputDir, filename);
@@ -118,10 +132,10 @@ public class BadgeGenerator {
         String timestamp = ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC));
 
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", "Last Run");
-        badge.put("message", formatTimestamp(timestamp));
-        badge.put("color", "blue");
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, "Last Run");
+        badge.put(MESSAGE, formatTimestamp(timestamp));
+        badge.put(COLOR, COLOR_BLUE);
 
         Path badgeFile = Path.of(outputDir, "last-run-badge.json");
         Files.writeString(badgeFile, GSON.toJson(badge));
@@ -139,24 +153,12 @@ public class BadgeGenerator {
         int count = 0;
 
         for (RunResult result : results) {
-            if (result.getPrimaryResult() != null && result.getPrimaryResult().getStatistics() != null) {
+            if (hasValidPrimaryResult(result)) {
                 double score = result.getPrimaryResult().getScore();
                 String unit = result.getPrimaryResult().getScoreUnit();
 
-                // Convert to common units for scoring
-                if (unit.contains("ops/s") || unit.contains("ops/sec")) {
-                    totalThroughput += score;
-                } else if (unit.contains("s/op") || unit.contains("ms/op") || unit.contains("us/op")) {
-                    // Convert to operations per second for consistency
-                    if (unit.contains("s/op")) {
-                        totalThroughput += 1.0 / score;
-                    } else if (unit.contains("ms/op")) {
-                        totalThroughput += 1000.0 / score;
-                    } else if (unit.contains("us/op")) {
-                        totalThroughput += 1_000_000.0 / score;
-                    }
-                    totalLatency += score;
-                }
+                totalThroughput += convertToOpsPerSecond(score, unit);
+                totalLatency += extractLatency(score, unit);
                 count++;
             }
         }
@@ -172,6 +174,30 @@ public class BadgeGenerator {
         long compositeScore = Math.round(avgThroughput);
 
         return new PerformanceScore(compositeScore, avgThroughput, avgLatency);
+    }
+
+    private boolean hasValidPrimaryResult(RunResult result) {
+        return result.getPrimaryResult() != null && result.getPrimaryResult().getStatistics() != null;
+    }
+
+    private double convertToOpsPerSecond(double score, String unit) {
+        if (unit.contains("ops/s") || unit.contains("ops/sec")) {
+            return score;
+        } else if (unit.contains("s/op")) {
+            return 1.0 / score;
+        } else if (unit.contains("ms/op")) {
+            return 1000.0 / score;
+        } else if (unit.contains("us/op")) {
+            return 1_000_000.0 / score;
+        }
+        return 0;
+    }
+
+    private double extractLatency(double score, String unit) {
+        if (unit.contains("s/op") || unit.contains("ms/op") || unit.contains("us/op")) {
+            return score;
+        }
+        return 0;
     }
 
     private String formatPerformanceMessage(PerformanceScore score) {
@@ -196,11 +222,11 @@ public class BadgeGenerator {
 
         // Default thresholds based on log scale
         return switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
-            case 6, 7, 8, 9 -> "brightgreen";  // A+ (1M+ ops/s)
-            case 5 -> "green";                  // A (100K+ ops/s)
-            case 4 -> "yellow";                 // B (10K+ ops/s)
-            case 3 -> "orange";                 // C (1K+ ops/s)
-            default -> "red";                   // D/F (<1K ops/s)
+            case 6, 7, 8, 9 -> COLOR_BRIGHT_GREEN;  // A+ (1M+ ops/s)
+            case 5 -> COLOR_GREEN;                  // A (100K+ ops/s)
+            case 4 -> COLOR_YELLOW;                 // B (10K+ ops/s)
+            case 3 -> COLOR_ORANGE;                 // C (1K+ ops/s)
+            default -> COLOR_RED;                   // D/F (<1K ops/s)
         };
     }
 
@@ -213,30 +239,29 @@ public class BadgeGenerator {
                 long threshold = Long.parseLong(parts[1]);
                 if (throughput >= threshold) {
                     return switch (parts[0].toUpperCase()) {
-                        case "A+", "A" -> "brightgreen";
-                        case "B" -> "yellow";
-                        case "C" -> "orange";
-                        default -> "red";
+                        case "A+", "A" -> COLOR_BRIGHT_GREEN;
+                        case "B" -> COLOR_YELLOW;
+                        case "C" -> COLOR_ORANGE;
+                        default -> COLOR_RED;
                     };
                 }
             }
         }
-        return "red"; // Default to lowest grade
+        return COLOR_RED; // Default to lowest grade
     }
 
     private PerformanceHistory loadPerformanceHistory(String historyDir) {
         Path historyPath = Path.of(historyDir);
         if (Files.exists(historyPath)) {
-            try {
-                Path latestHistory = Files.list(historyPath)
+            try (var pathStream = Files.list(historyPath)) {
+                Path latestHistory = pathStream
                         .filter(path -> path.toString().endsWith(".json"))
-                        .sorted((a, b) -> b.getFileName().compareTo(a.getFileName()))
-                        .findFirst()
+                        .min((a, b) -> b.getFileName().compareTo(a.getFileName()))
                         .orElse(null);
 
                 if (latestHistory != null) {
                     String content = Files.readString(latestHistory);
-                    var data = GSON.fromJson(content, Map.class);
+                    @SuppressWarnings("unchecked") Map<String, Object> data = GSON.fromJson(content, Map.class);
                     return new PerformanceHistory(
                             ((Number) data.getOrDefault("averageThroughput", 0.0)).doubleValue(),
                             ((Number) data.getOrDefault("totalScore", 0.0)).doubleValue()
@@ -281,9 +306,9 @@ public class BadgeGenerator {
 
     private String getTrendColor(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> "brightgreen";
-            case DECLINING -> "red";
-            case STABLE -> "blue";
+            case IMPROVING -> COLOR_BRIGHT_GREEN;
+            case DECLINING -> COLOR_RED;
+            case STABLE -> COLOR_BLUE;
         };
     }
 

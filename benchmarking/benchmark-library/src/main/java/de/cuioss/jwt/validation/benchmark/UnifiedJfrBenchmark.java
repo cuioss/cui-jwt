@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -40,8 +41,29 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class UnifiedJfrBenchmark {
 
+    private static final CuiLogger LOGGER = new CuiLogger(UnifiedJfrBenchmark.class);
+
+    // Operation type constants
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
     private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
+    private static final String VALIDATION_OPERATION = "validation";
+
+    // Token type constants
+    private static final String TOKEN_TYPE_FULL_SPECTRUM = "full_spectrum";
+    private static final String TOKEN_TYPE_ROTATION = "rotation";
+
+    // Issuer constants
+    private static final String BENCHMARK_ISSUER = "benchmark-issuer";
+    private static final String UNKNOWN_ISSUER = "unknown";
+
+    // Error type constants
+    private static final String ERROR_EXPIRED = "expired";
+    private static final String ERROR_MALFORMED = "malformed";
+    private static final String ERROR_INVALID_SIGNATURE = "invalid_signature";
+    private static final String ERROR_TYPE_VALID = "valid";
+
+    // Configuration constants
+    private static final int APPROXIMATE_TOKEN_SIZE = 200;
 
     private TokenRepository tokenRepository;
     private TokenValidator tokenValidator;
@@ -93,7 +115,7 @@ public class UnifiedJfrBenchmark {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
-                // Ignore errors during metrics export - likely file I/O issues
+                LOGGER.debug("Failed to export metrics during teardown", e);
             }
         }
 
@@ -110,9 +132,9 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureAverageTimeWithJfr() {
-        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
+        String token = coreValidationDelegate.getCurrentToken(TOKEN_TYPE_FULL_SPECTRUM);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", "validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
@@ -129,9 +151,9 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public AccessTokenContent measureThroughputWithJfr() {
-        String token = coreValidationDelegate.getCurrentToken("full_spectrum");
+        String token = coreValidationDelegate.getCurrentToken(TOKEN_TYPE_FULL_SPECTRUM);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", "validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
@@ -148,9 +170,9 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent measureConcurrentValidationWithJfr() {
-        String token = coreValidationDelegate.getCurrentToken("rotation");
+        String token = coreValidationDelegate.getCurrentToken(TOKEN_TYPE_ROTATION);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureConcurrentValidationWithJfr", "validation")) {
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("measureConcurrentValidationWithJfr", VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
@@ -169,8 +191,8 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public AccessTokenContent validateValidTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", "validation")) {
-            String token = coreValidationDelegate.getCurrentToken("full_spectrum");
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", VALIDATION_OPERATION)) {
+            String token = coreValidationDelegate.getCurrentToken(TOKEN_TYPE_FULL_SPECTRUM);
             recorder.withTokenSize(token.length())
                     .withIssuer(tokenRepository.getTokenIssuer(token));
 
@@ -188,9 +210,9 @@ public class UnifiedJfrBenchmark {
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateExpiredTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(200) // Approximate size
-                    .withIssuer("benchmark-issuer")
-                    .withError("expired");
+            recorder.withTokenSize(APPROXIMATE_TOKEN_SIZE)
+                    .withIssuer(BENCHMARK_ISSUER)
+                    .withError(ERROR_EXPIRED);
 
             Object result = errorLoadDelegate0.validateExpired();
             recorder.withSuccess(false);
@@ -207,8 +229,8 @@ public class UnifiedJfrBenchmark {
     public Object validateMalformedTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(25) // Length of malformed token
-                    .withIssuer("unknown")
-                    .withError("malformed");
+                    .withIssuer(UNKNOWN_ISSUER)
+                    .withError(ERROR_MALFORMED);
 
             Object result = errorLoadDelegate0.validateMalformed();
             recorder.withSuccess(false);
@@ -224,9 +246,9 @@ public class UnifiedJfrBenchmark {
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateInvalidSignatureTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(200) // Approximate size
-                    .withIssuer("benchmark-issuer")
-                    .withError("invalid_signature");
+            recorder.withTokenSize(APPROXIMATE_TOKEN_SIZE)
+                    .withIssuer(BENCHMARK_ISSUER)
+                    .withError(ERROR_INVALID_SIGNATURE);
 
             Object result = errorLoadDelegate0.validateInvalidSignature();
             recorder.withSuccess(false);
@@ -241,22 +263,7 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateMixedTokens0WithJfr(Blackhole blackhole) {
-        String token = errorLoadDelegate0.selectToken();
-        String errorType = errorLoadDelegate0.getErrorType(token);
-        boolean isValid = "valid".equals(errorType);
-
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", MIXED_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
-
-            if (!isValid) {
-                recorder.withError(errorType);
-            }
-
-            Object result = errorLoadDelegate0.validateMixed(blackhole);
-            recorder.withSuccess(isValid);
-            return result;
-        }
+        return validateMixedTokensWithJfr(blackhole, errorLoadDelegate0, "validateMixedTokens0WithJfr");
     }
 
     /**
@@ -266,19 +273,23 @@ public class UnifiedJfrBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public Object validateMixedTokens50WithJfr(Blackhole blackhole) {
-        String token = errorLoadDelegate50.selectToken();
-        String errorType = errorLoadDelegate50.getErrorType(token);
-        boolean isValid = "valid".equals(errorType);
+        return validateMixedTokensWithJfr(blackhole, errorLoadDelegate50, "validateMixedTokens50WithJfr");
+    }
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", MIXED_VALIDATION_OPERATION)) {
+    private Object validateMixedTokensWithJfr(Blackhole blackhole, ErrorLoadDelegate delegate, String operationName) {
+        String token = delegate.selectToken();
+        String errorType = delegate.getErrorType(token);
+        boolean isValid = ERROR_TYPE_VALID.equals(errorType);
+
+        try (OperationRecorder recorder = jfrInstrumentation.recordOperation(operationName, MIXED_VALIDATION_OPERATION)) {
             recorder.withTokenSize(token.length())
-                    .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
+                    .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : BENCHMARK_ISSUER);
 
             if (!isValid) {
                 recorder.withError(errorType);
             }
 
-            Object result = errorLoadDelegate50.validateMixed(blackhole);
+            Object result = delegate.validateMixed(blackhole);
             recorder.withSuccess(isValid);
             return result;
         }
