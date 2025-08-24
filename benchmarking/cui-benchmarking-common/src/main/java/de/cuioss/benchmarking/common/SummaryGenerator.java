@@ -59,6 +59,16 @@ public class SummaryGenerator {
             .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
+    // Performance score constants
+    private static final double PERFECT_SCORE = 100.0;
+    private static final double EXCELLENT_SCORE = 90.0;
+    private static final double GOOD_SCORE = 80.0;
+    private static final double FAIR_SCORE = 70.0;
+    private static final double MINIMUM_SCORE = 60.0;
+    private static final double THROUGHPUT_NORMALIZATION_FACTOR = 1_000.0;
+    private static final double SCORE_MULTIPLIER = 70.0;
+    private static final int GRADE_DIVISOR = 10;
+
     /**
      * Writes a comprehensive summary file for CI consumption.
      *
@@ -296,17 +306,17 @@ public class SummaryGenerator {
     private double calculateOverallPerformanceScore(Collection<RunResult> results) {
         double avgThroughput = calculateAverageThroughput(results);
         return switch ((int) Math.log10(Math.max(1, avgThroughput))) {
-            case 6, 7, 8, 9 -> 100.0;
-            case 5 -> 90.0;
-            case 4 -> 80.0;
-            case 3 -> 70.0;
-            default -> Math.min(60.0, avgThroughput / 1_000.0 * 70.0);
+            case 6, 7, 8, 9 -> PERFECT_SCORE;
+            case 5 -> EXCELLENT_SCORE;
+            case 4 -> GOOD_SCORE;
+            case 3 -> FAIR_SCORE;
+            default -> Math.min(MINIMUM_SCORE, avgThroughput / THROUGHPUT_NORMALIZATION_FACTOR * SCORE_MULTIPLIER);
         };
     }
 
     private String calculatePerformanceGrade(Collection<RunResult> results) {
         double score = calculateOverallPerformanceScore(results);
-        return switch ((int) (score / 10)) {
+        return switch ((int) (score / GRADE_DIVISOR)) {
             case 10, 9 -> "A+";
             case 8 -> "A";
             case 7 -> "B";

@@ -116,9 +116,11 @@ Each task is self-contained; if issues arise, revert module-level changes while 
 **Rationale:** Template and CSS handling are critical for report generation and must fail explicitly when resources are missing.
 
 #### T3. Review Java and HTML Code Quality
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Use IDE diagnostics to find potential errors and warnings in all Java and HTML code across all benchmark modules. Fix all identified issues. This includes:
+**Caution:** It is vital to use Use IDE diagnostics for identifying issues. If this does not work prompt user
+- First run pre-commit on all benchnmark modules
 - Fix all SonarQube warnings shown in IDE diagnostics (code smells, vulnerabilities, bugs)
 - Remove obvious/nonsense comments (e.g., "// Constructor", "// Getter methods", "// This method does X")
 - Fix IDE warnings and code inspection issues
@@ -126,6 +128,7 @@ Each task is self-contained; if issues arise, revert module-level changes while 
 - Remove any remaining TODO/FIXME/HACK comments
 - Verify proper JavaDoc without stating the obvious
 - Address SonarQube issues like: cognitive complexity, duplicated code blocks, unused imports, magic numbers
+- Finally, run pre-commit on all benchnmark modules
 
 **Rationale:** Proactive quality checks prevent runtime issues and improve code maintainability. Clean code without redundant comments improves readability. SonarQube compliance ensures consistent code quality standards.
 

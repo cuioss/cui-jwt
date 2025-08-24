@@ -65,19 +65,15 @@ public final class BenchmarkLoggingSetup {
             Path resultsPath = Path.of(benchmarkResultsDir);
             Files.createDirectories(resultsPath);
 
-            // Create log file with timestamp
             String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
             String logFileName = "benchmark-run_%s.log".formatted(timestamp);
             Path logFile = resultsPath.resolve(logFileName);
 
-            // Create output file stream
             FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true);
 
-            // Create TeeOutputStream for System.out (writes to both console and file)
             TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
             PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
 
-            // Create TeeOutputStream for System.err (writes to both console and file)
             TeeOutputStream teeErr = new TeeOutputStream(ORIGINAL_ERR, fileOut);
             PrintStream newErr = new PrintStream(teeErr, true); // auto-flush enabled
 
@@ -120,22 +116,18 @@ public final class BenchmarkLoggingSetup {
     }
 
     private static void configureJavaUtilLogging(Path resultsPath, String timestamp) throws IOException {
-        // Get root logger
         Logger rootLogger = Logger.getLogger("");
 
-        // Remove existing handlers
         Handler[] handlers = rootLogger.getHandlers();
         for (Handler handler : handlers) {
             rootLogger.removeHandler(handler);
         }
 
-        // Add console handler
         ConsoleHandler consoleHandler = new ConsoleHandler();
         consoleHandler.setLevel(Level.INFO);
         consoleHandler.setFormatter(new SimpleFormatter());
         rootLogger.addHandler(consoleHandler);
 
-        // Add file handler for java.util.logging
         String logFileName = "benchmark-jul_%s.log".formatted(timestamp);
         Path julLogFile = resultsPath.resolve(logFileName);
         FileHandler fileHandler = new FileHandler(julLogFile.toString(), true);
@@ -143,7 +135,6 @@ public final class BenchmarkLoggingSetup {
         fileHandler.setFormatter(new SimpleFormatter());
         rootLogger.addHandler(fileHandler);
 
-        // Set root logger level
         rootLogger.setLevel(Level.INFO);
 
         // Configure de.cuioss packages

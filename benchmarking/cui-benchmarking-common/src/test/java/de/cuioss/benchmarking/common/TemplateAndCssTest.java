@@ -17,7 +17,10 @@ package de.cuioss.benchmarking.common;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
 import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TemplateAndCssTest {
 
     @Test
-    void testTemplateLoadingFailsLoudly() throws Exception {
+    void templateLoadingFailsLoudly() throws Exception {
         // Use reflection to test private loadTemplate method
         ReportGenerator generator = new ReportGenerator();
         Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
@@ -65,7 +68,7 @@ class TemplateAndCssTest {
     }
 
     @Test
-    void testValidTemplatesLoad() throws Exception {
+    void validTemplatesLoad() throws Exception {
         // Use reflection to test private loadTemplate method
         ReportGenerator generator = new ReportGenerator();
         Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
@@ -89,7 +92,7 @@ class TemplateAndCssTest {
             assertNotNull(trendsTemplate, "Trends template should load");
             assertTrue(trendsTemplate.contains("<"), "Template should contain HTML");
         }, "Loading existing trends template should not throw");
-        
+
         assertDoesNotThrow(() -> {
             String footerTemplate = (String) loadTemplate.invoke(generator, "report-footer.html");
             assertNotNull(footerTemplate, "Footer template should load");
@@ -97,12 +100,12 @@ class TemplateAndCssTest {
     }
 
     @Test
-    void testCssFileIsIncludedInResources() {
+    void cssFileIsIncludedInResources() {
         // Verify CSS file exists in resources
         try (InputStream cssStream = getClass().getClassLoader()
                 .getResourceAsStream("templates/report-styles.css")) {
             assertNotNull(cssStream, "CSS file should exist in resources");
-            
+
             // Read and verify CSS content
             String cssContent = new String(cssStream.readAllBytes());
             assertTrue(cssContent.contains("body"), "CSS should contain body styles");
@@ -115,20 +118,20 @@ class TemplateAndCssTest {
     }
 
     @Test
-    void testCssIsEmbeddedInGeneratedHtml(@TempDir Path tempDir) throws Exception {
+    void cssIsEmbeddedInGeneratedHtml(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
-        
+
         List<RunResult> emptyResults = List.of();
         generator.generateIndexPage(emptyResults, outputDir);
-        
+
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
-        
+
         // Verify CSS is embedded
         assertTrue(content.contains("<style>"), "Should have style tag");
         assertTrue(content.contains("</style>"), "Should close style tag");
-        
+
         // Verify critical CSS classes are present
         assertTrue(content.contains(".navbar"), "Should include navbar styles");
         assertTrue(content.contains(".stats-grid"), "Should include stats-grid styles");
@@ -138,60 +141,60 @@ class TemplateAndCssTest {
     }
 
     @Test
-    void testDeploymentStructureIncludesCss(@TempDir Path tempDir) throws Exception {
+    void deploymentStructureIncludesCss(@TempDir Path tempDir) throws Exception {
         // Simulate a full report generation with all artifacts
         ReportGenerator generator = new ReportGenerator();
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-        
+
         // Use test benchmark results
-        var options = new org.openjdk.jmh.runner.options.OptionsBuilder()
+        var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .warmupIterations(1)
                 .measurementIterations(1)
                 .forks(1)
                 .build();
-        
-        var results = new org.openjdk.jmh.runner.Runner(options).run();
+
+        var results = new Runner(options).run();
         String outputDir = tempDir.toString();
-        
+
         // Process results to generate full deployment structure
         processor.processResults(results, outputDir);
-        
+
         // Verify HTML files exist
         assertTrue(Files.exists(Path.of(outputDir, "index.html")),
                 "Index page should exist in deployment");
         assertTrue(Files.exists(Path.of(outputDir, "trends.html")),
                 "Trends page should exist in deployment");
-        
+
         // Verify HTML files contain embedded CSS
         String indexContent = Files.readString(Path.of(outputDir, "index.html"));
         assertTrue(indexContent.contains("<style>"), "Index should have embedded CSS");
         assertTrue(indexContent.contains(".navbar"), "Index CSS should be complete");
-        
+
         String trendsContent = Files.readString(Path.of(outputDir, "trends.html"));
         assertTrue(trendsContent.contains("<style>"), "Trends should have embedded CSS");
         assertTrue(trendsContent.contains(".navbar"), "Trends CSS should be complete");
     }
 
     @Test
-    void testCssClassesForPerformanceGrades(@TempDir Path tempDir) throws Exception {
+    void cssClassesForPerformanceGrades(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
-        
+
         // Generate with test results
-        var options = new org.openjdk.jmh.runner.options.OptionsBuilder()
+        var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .warmupIterations(1)
                 .measurementIterations(1)
                 .forks(1)
                 .build();
-        
-        var results = new org.openjdk.jmh.runner.Runner(options).run();
+
+        var results = new Runner(options).run();
         generator.generateIndexPage(results, outputDir);
-        
+
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
-        
+
         // Verify performance grade CSS classes are defined
         assertTrue(content.contains(".grade-a-plus"), "Should define A+ grade style");
         assertTrue(content.contains(".grade-a"), "Should define A grade style");
@@ -199,7 +202,7 @@ class TemplateAndCssTest {
         assertTrue(content.contains(".grade-c"), "Should define C grade style");
         assertTrue(content.contains(".grade-d"), "Should define D grade style");
         assertTrue(content.contains(".grade-f"), "Should define F grade style");
-        
+
         // Verify color values for grades
         assertTrue(content.contains("#00c851"), "A+ should use green color");
         assertTrue(content.contains("#ffc107"), "B should use yellow color");
@@ -207,35 +210,35 @@ class TemplateAndCssTest {
     }
 
     @Test
-    void testResponsiveCssStyles(@TempDir Path tempDir) throws Exception {
+    void responsiveCssStyles(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
-        
+
         List<RunResult> emptyResults = List.of();
         generator.generateIndexPage(emptyResults, outputDir);
-        
+
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
-        
+
         // Verify responsive CSS is included
         assertTrue(content.contains("@media"), "Should have media queries");
         assertTrue(content.contains("max-width: 768px"), "Should have mobile breakpoint");
         assertTrue(content.contains("grid-template-columns"), "Should have responsive grid");
-        
+
         // Verify viewport meta tag
         assertTrue(content.contains("viewport"), "Should have viewport meta tag");
         assertTrue(content.contains("width=device-width"), "Should set device width");
     }
 
     @Test
-    void testMissingCssFileHandling() throws Exception {
+    void missingCssFileHandling() throws Exception {
         // Test that missing CSS is handled gracefully with fallback
         ReportGenerator generator = new ReportGenerator();
-        
+
         // Use reflection to access private method
         Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
         loadTemplate.setAccessible(true);
-        
+
         // Test that we can load the CSS file
         assertDoesNotThrow(() -> {
             String cssContent = (String) loadTemplate.invoke(generator, "report-styles.css");
