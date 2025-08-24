@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.benchmark;
 
 import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
+import de.cuioss.benchmarking.common.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
@@ -67,17 +68,18 @@ public class BenchmarkRunner {
                 .withResultsDirectory(getBenchmarkResultsDir())
                 .withResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json")
                 .build();
-        
+
         Options options = config.toJmhOptions();
 
         // Run the benchmarks
         Collection<RunResult> results = new Runner(options).run();
-        
+
         // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
         try {
             LOGGER.info("Generating benchmark artifacts...");
             BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-            processor.processResults(results, getBenchmarkResultsDir());
+            // Micro benchmarks always specify their type explicitly
+            processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.MICRO);
             LOGGER.info("Benchmark artifacts generated successfully in: " + getBenchmarkResultsDir());
         } catch (Exception e) {
             LOGGER.error("Failed to generate benchmark artifacts", e);

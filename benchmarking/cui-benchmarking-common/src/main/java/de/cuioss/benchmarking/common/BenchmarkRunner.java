@@ -18,10 +18,8 @@ package de.cuioss.benchmarking.common;
 import de.cuioss.tools.logging.CuiLogger;
 
 import org.openjdk.jmh.results.RunResult;
-import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +55,12 @@ public class BenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
-        String outputDir = getOutputDirectory();
+        // Use BenchmarkConfiguration for all configuration
+        BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties()
+                .withResultFile(null) // Let it use the default
+                .build();
+
+        String outputDir = config.resultsDirectory();
 
         LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING::format);
         LOGGER.info(INFO.OUTPUT_DIRECTORY.format(outputDir));
@@ -66,22 +69,11 @@ public class BenchmarkRunner {
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
 
-        // Configure JMH options with artifact generation
-        Options options = new OptionsBuilder()
-                .include(BenchmarkOptionsHelper.getInclude())
-                .forks(BenchmarkOptionsHelper.getForks())
-                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations())
-                .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations())
-                .measurementTime(BenchmarkOptionsHelper.getMeasurementTime())
-                .warmupTime(BenchmarkOptionsHelper.getWarmupTime())
-                .threads(BenchmarkOptionsHelper.getThreadCount())
-                .resultFormat(ResultFormatType.JSON)
-                .result(outputDir + "/raw-result.json")
-                .jvmArgs("-Dbenchmark.output.dir=" + outputDir,
-                        "-Dbenchmark.generate.badges=true",
-                        "-Dbenchmark.generate.reports=true",
-                        "-Dbenchmark.generate.github.pages=true")
-                .build();
+        // Configure JMH options using BenchmarkConfiguration
+        Options options = config.toBuilder()
+                .withResultFile(outputDir + "/raw-result.json")
+                .build()
+                .toJmhOptions();
 
         try {
             // Run the benchmarks
@@ -104,14 +96,5 @@ public class BenchmarkRunner {
             LOGGER.error(ERROR.BENCHMARK_EXECUTION_FAILED.format(), e);
             throw e;
         }
-    }
-
-    /**
-     * Gets the benchmark output directory from system property or defaults to target/benchmark-results.
-     * 
-     * @return the benchmark output directory path
-     */
-    private static String getOutputDirectory() {
-        return System.getProperty("benchmark.output.dir", "target/benchmark-results");
     }
 }

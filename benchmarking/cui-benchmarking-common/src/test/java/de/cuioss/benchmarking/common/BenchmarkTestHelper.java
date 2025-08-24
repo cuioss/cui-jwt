@@ -30,11 +30,11 @@ import java.util.Map;
  * Test helper for benchmark result validation.
  */
 public class BenchmarkTestHelper {
-    
+
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .create();
-    
+
     /**
      * Loads raw JMH JSON results from a resource file.
      */
@@ -43,11 +43,11 @@ public class BenchmarkTestHelper {
             if (is == null) {
                 throw new IOException("Resource not found: " + resourcePath);
             }
-            
+
             return GSON.fromJson(new InputStreamReader(is), List.class);
         }
     }
-    
+
     /**
      * Writes JMH JSON results to a file for processing.
      */
@@ -55,7 +55,7 @@ public class BenchmarkTestHelper {
         Files.createDirectories(outputFile.getParent());
         Files.writeString(outputFile, GSON.toJson(results));
     }
-    
+
     /**
      * Copies test resource to target directory.
      */
@@ -64,7 +64,7 @@ public class BenchmarkTestHelper {
             if (is == null) {
                 throw new IOException("Resource not found: " + resourcePath);
             }
-            
+
             Files.createDirectories(targetPath.getParent());
             Files.copy(is, targetPath);
         }

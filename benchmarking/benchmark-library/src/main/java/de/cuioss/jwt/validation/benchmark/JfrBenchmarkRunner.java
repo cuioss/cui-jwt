@@ -15,12 +15,12 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
-import de.cuioss.benchmarking.common.BenchmarkOptionsHelper;
+import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.File;
 
@@ -60,33 +60,38 @@ public class JfrBenchmarkRunner {
         BenchmarkKeyCache.initialize();
         log.info("Key cache initialized. Starting JFR benchmarks...\n");
 
-        // Configure JMH options
-        ChainedOptionsBuilder builder = new OptionsBuilder()
-                // Include only JFR benchmarks from jfr.benchmarks package
-                .include("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.jfr\\.benchmarks\\..*")
-                // Set number of forks
-                .forks(BenchmarkOptionsHelper.getForks(1))
-                // Set warmup iterations
-                .warmupIterations(BenchmarkOptionsHelper.getWarmupIterations(5))
-                // Set measurement iterations
-                .measurementIterations(BenchmarkOptionsHelper.getMeasurementIterations(5))
-                // Set measurement time
-                .measurementTime(BenchmarkOptionsHelper.getMeasurementTime("5s"))
-                // Set warmup time
-                .warmupTime(BenchmarkOptionsHelper.getWarmupTime("3s"))
-                // Set number of threads
-                .threads(BenchmarkOptionsHelper.getThreadCount(16))
-                // Configure result output
-                .resultFormat(BenchmarkOptionsHelper.getResultFormat())
-                .result(getJfrResultFile())
-                // Add JVM args for better JFR profiling and logging configuration
+        // Configure JMH options using BenchmarkConfiguration
+        String resultsDir = getBenchmarkResultsDir();
+
+        BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties()
+                .withIncludePattern("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.jfr\\.benchmarks\\..*")
+                .withForks(1)
+                .withWarmupIterations(5)
+                .withMeasurementIterations(5)
+                .withMeasurementTime(TimeValue.seconds(5))
+                .withWarmupTime(TimeValue.seconds(3))
+                .withThreads(16)
+                .withResultFile(getJfrResultFile())
+                .withResultsDirectory(resultsDir)
+                .build();
+
+        // Build options with JFR-specific JVM arguments
+        Options options = new OptionsBuilder()
+                .include(config.includePattern())
+                .resultFormat(config.resultFormat())
+                .result(config.resultFile())
+                .forks(config.forks())
+                .warmupIterations(config.warmupIterations())
+                .measurementIterations(config.measurementIterations())
+                .measurementTime(config.measurementTime())
+                .warmupTime(config.warmupTime())
+                .threads(config.threads())
                 .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
                         "-XX:+DebugNonSafepoints",
-                        "-XX:StartFlightRecording=filename=" + getBenchmarkResultsDir() + "/jfr-benchmark.jfr,settings=profile",
+                        "-XX:StartFlightRecording=filename=" + resultsDir + "/jfr-benchmark.jfr,settings=profile",
                         "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + getBenchmarkResultsDir());
-
-        Options options = builder.build();
+                        "-Dbenchmark.results.dir=" + resultsDir)
+                .build();
 
         // Run the benchmarks
         log.info("Running JFR-instrumented benchmarks...");

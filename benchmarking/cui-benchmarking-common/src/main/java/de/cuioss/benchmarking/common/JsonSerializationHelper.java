@@ -32,7 +32,7 @@ import java.time.format.DateTimeFormatter;
 public final class JsonSerializationHelper {
 
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
-    
+
     /**
      * Gson instance configured for benchmark result serialization.
      * Features:
@@ -88,7 +88,7 @@ public final class JsonSerializationHelper {
         if (value == (long) value) {
             return String.valueOf((long) value);
         }
-        return String.format("%.2f", value);
+        return "%.2f".formatted(value);
     }
 
     /**

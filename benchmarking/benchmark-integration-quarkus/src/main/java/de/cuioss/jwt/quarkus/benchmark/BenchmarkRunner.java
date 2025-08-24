@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark;
 import de.cuioss.benchmarking.common.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.BenchmarkLoggingSetup;
 import de.cuioss.benchmarking.common.BenchmarkResultProcessor;
+import de.cuioss.benchmarking.common.BenchmarkType;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
 import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
@@ -80,7 +81,7 @@ public class BenchmarkRunner {
                 .withIntegrationServiceUrl(DEFAULT_SERVICE_URL)
                 .withKeycloakUrl("http://localhost:8080")
                 .build();
-        
+
         LOGGER.info("BenchmarkRunner.main() invoked - starting Quarkus JWT integration benchmarks...");
         LOGGER.info("Service URL: {}", config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL));
         LOGGER.info("Keycloak URL: {}", config.keycloakUrl().orElse("http://localhost:8080"));
@@ -101,7 +102,7 @@ public class BenchmarkRunner {
                 .withResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME)
                 .withMetricsUrl(config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL))
                 .build();
-                
+
         Options options = config.toJmhOptions();
 
         try {
@@ -140,7 +141,8 @@ public class BenchmarkRunner {
             try {
                 LOGGER.info("Generating benchmark artifacts...");
                 BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-                processor.processResults(results, getBenchmarkResultsDir());
+                // Integration benchmarks always specify their type explicitly
+                processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.INTEGRATION);
                 LOGGER.info("Benchmark artifacts generated successfully in: {}", getBenchmarkResultsDir());
             } catch (Exception e) {
                 LOGGER.error("Failed to generate benchmark artifacts", e);

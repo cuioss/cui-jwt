@@ -49,28 +49,28 @@ Each task is self-contained; if issues arise, revert module-level changes while 
 ### Code Structure and Design
 
 #### C2. Property and Path Unification
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Standardize on benchmark.results.dir across code and POMs; remove legacy aliases. Update de.cuioss.benchmarking.common.BenchmarkRunner#getOutputDirectory() to read benchmark.results.dir first, then fall back to existing defaults. Ensure the JFR runner respects the same property and uses ${jmh.result.filePrefix} consistently.
 
 **Rationale:** Consistent property naming reduces confusion and simplifies configuration management across modules.
 
 #### C3. Runner Consolidation and Config Builder Adoption
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Prefer BenchmarkConfiguration.fromSystemProperties() in all runners over direct BenchmarkOptionsHelper calls. Make the common BenchmarkRunner the default entrypoint for both modules by controlling include and jmh.* properties via POM/system properties. Keep a dedicated JFR runner but extract shared logic into common code; optionally support -Djfr.enabled=true in the common runner. Remove redundant module-specific option parsing.
 
 **Rationale:** Reduces code duplication and provides a unified configuration approach across all benchmark modules.
 
 #### C4. API Cleanup
-[ ] **Priority:** Low
+[x] **Priority:** Low
 
 **Description:** Remove BenchmarkOptionsHelper methods where superseded by BenchmarkConfiguration (no deprecation in pre-1.0). Clarify BenchmarkResultProcessor type detection and allow explicit override via property benchmark.type=micro|integration.
 
 **Rationale:** Clean APIs without deprecated code reduce confusion and technical debt.
 
 #### C5. Explicit Benchmark Type Parameter
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Modify benchmark runners to explicitly pass benchmark type as a parameter instead of relying on auto-detection. The calling benchmark knows whether it's micro or integration. Add benchmark.type parameter to BenchmarkResultProcessor and require it to be set explicitly by the runners.
 

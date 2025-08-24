@@ -48,7 +48,7 @@ public final class BenchmarkLoggingSetup {
     // Keep references to original streams
     private static final PrintStream ORIGINAL_OUT = System.out;
     private static final PrintStream ORIGINAL_ERR = System.err;
-    
+
     private BenchmarkLoggingSetup() {
         // Utility class
     }
@@ -67,12 +67,12 @@ public final class BenchmarkLoggingSetup {
 
             // Create log file with timestamp
             String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-            String logFileName = String.format("benchmark-run_%s.log", timestamp);
+            String logFileName = "benchmark-run_%s.log".formatted(timestamp);
             Path logFile = resultsPath.resolve(logFileName);
 
             // Create output file stream
             FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true);
-            
+
             // Create TeeOutputStream for System.out (writes to both console and file)
             TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
             PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
@@ -108,11 +108,11 @@ public final class BenchmarkLoggingSetup {
      */
     public static void configureLogging(String benchmarkResultsDir, Level logLevel, String packageFilter) {
         configureLogging(benchmarkResultsDir);
-        
+
         // Apply custom log level
         Logger rootLogger = Logger.getLogger("");
         rootLogger.setLevel(logLevel);
-        
+
         // Enable detailed logging for specific package
         if (packageFilter != null && !packageFilter.isEmpty()) {
             Logger.getLogger(packageFilter).setLevel(Level.ALL);
@@ -136,7 +136,7 @@ public final class BenchmarkLoggingSetup {
         rootLogger.addHandler(consoleHandler);
 
         // Add file handler for java.util.logging
-        String logFileName = String.format("benchmark-jul_%s.log", timestamp);
+        String logFileName = "benchmark-jul_%s.log".formatted(timestamp);
         Path julLogFile = resultsPath.resolve(logFileName);
         FileHandler fileHandler = new FileHandler(julLogFile.toString(), true);
         fileHandler.setLevel(Level.ALL);
@@ -166,7 +166,7 @@ public final class BenchmarkLoggingSetup {
     public static void resetLogging() {
         System.setOut(ORIGINAL_OUT);
         System.setErr(ORIGINAL_ERR);
-        
+
         // Reset java.util.logging
         Logger rootLogger = Logger.getLogger("");
         Handler[] handlers = rootLogger.getHandlers();
@@ -174,7 +174,7 @@ public final class BenchmarkLoggingSetup {
             handler.close();
             rootLogger.removeHandler(handler);
         }
-        
+
         // Add back default console handler
         ConsoleHandler consoleHandler = new ConsoleHandler();
         rootLogger.addHandler(consoleHandler);

@@ -162,19 +162,19 @@ public class ReportGenerator {
         try {
             String template = loadTemplate("benchmark-row.html");
             String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
-            
+
             if (result.getPrimaryResult() != null) {
                 var primaryResult = result.getPrimaryResult();
                 String score = "%.2f".formatted(primaryResult.getScore());
                 String unit = primaryResult.getScoreUnit();
                 String error = "N/A";
                 String samples = "N/A";
-                
+
                 if (primaryResult.getStatistics() != null) {
                     error = "±%.2f".formatted(primaryResult.getStatistics().getStandardDeviation());
                     samples = String.valueOf(primaryResult.getStatistics().getN());
                 }
-                
+
                 return template
                         .replace("${benchmarkName}", benchmarkName)
                         .replace("${score}", score)
