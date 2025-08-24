@@ -108,15 +108,8 @@ Each task is self-contained; if issues arise, revert module-level changes while 
 
 ### Testing Improvements
 
-#### T1. Baseline and Safety Verification
-[ ] **Priority:** High
-
-**Description:** Capture current behavior and artifacts as a baseline for comparison. Ensure ANALYSIS.md reflects the actual state; keep for traceability. Verify that fresh runs produce target/benchmark-results with badges, reports, data, gh-pages-ready, summary.
-
-**Rationale:** Establishes a reference point for validating that refactoring doesn't introduce regressions.
-
 #### T2. Template and CSS Linking Tests
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Add specific tests for template loading failures and CSS linking behavior. Test that missing templates fail loudly with exceptions (not warnings). Verify external CSS file linking works correctly. Test that deployment structure includes CSS files.
 
