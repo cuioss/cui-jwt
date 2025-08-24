@@ -110,7 +110,7 @@ public class TokenRepository {
             tokenPool.add(new TokenInfo(token));
         }
 
-        LOGGER.info("Token pool initialized with {} tokens", tokenPool.size());
+        LOGGER.debug("Token pool initialized with {} tokens", tokenPool.size());
     }
 
     private String fetchSingleToken() {
@@ -160,7 +160,7 @@ public class TokenRepository {
             LOGGER.debug("Shared TokenRepository instance already initialized, skipping re-initialization");
             return;
         }
-        LOGGER.info("Initializing shared TokenRepository instance for benchmarking");
+        LOGGER.debug("Initializing shared TokenRepository instance for benchmarking");
         sharedInstance = new TokenRepository(config);
     }
 

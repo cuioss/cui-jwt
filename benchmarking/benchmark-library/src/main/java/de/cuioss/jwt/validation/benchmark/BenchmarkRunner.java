@@ -52,9 +52,7 @@ public class BenchmarkRunner {
     public static void main(String[] args) throws Exception {
 
         // Initialize key cache before benchmarks start
-        LOGGER.info("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
-        LOGGER.info("Key cache initialized. Starting benchmarks...");
 
         // Configure JMH options using modern API
         var config = BenchmarkConfiguration.fromSystemProperties()
@@ -69,22 +67,19 @@ public class BenchmarkRunner {
                 .withResultFile(getBenchmarkResultsDir() + "/micro-benchmark-result.json")
                 .build();
 
+        LOGGER.info("Starting JWT validation micro benchmarks - Output: {}", getBenchmarkResultsDir());
+
         Options options = config.toJmhOptions();
 
         // Run the benchmarks
         Collection<RunResult> results = new Runner(options).run();
 
         // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
-        try {
-            LOGGER.info("Generating benchmark artifacts...");
-            BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-            // Micro benchmarks always specify their type explicitly
-            processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.MICRO);
-            LOGGER.info("Benchmark artifacts generated successfully in: " + getBenchmarkResultsDir());
-        } catch (Exception e) {
-            LOGGER.error("Failed to generate benchmark artifacts", e);
-            // Don't fail the benchmark run if artifact generation fails
-        }
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.MICRO);
+
+        LOGGER.info("Benchmarks completed: {} benchmarks executed, artifacts in {}",
+                results.size(), getBenchmarkResultsDir());
 
         // Metrics are now exported by PerformanceIndicatorBenchmark @TearDown
     }

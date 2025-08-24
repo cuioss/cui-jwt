@@ -65,16 +65,14 @@ public abstract class AbstractBaseBenchmark {
      */
     @Setup(Level.Trial)
     public void setupBenchmark() {
-        LOGGER.info("Setting up base benchmark");
-
         // Get configuration from system properties with correct docker-compose ports
         var config = BenchmarkConfiguration.fromSystemProperties().build();
         serviceUrl = config.integrationServiceUrl().orElse("https://localhost:10443");
         quarkusMetricsUrl = config.metricsUrl().orElse("https://localhost:10443");
         benchmarkResultsDir = config.resultsDirectory();
 
-        LOGGER.info("Service URL: {}", serviceUrl);
-        LOGGER.info("Quarkus Metrics URL: {}", quarkusMetricsUrl);
+        LOGGER.debug("Service URL: {}", serviceUrl);
+        LOGGER.debug("Quarkus Metrics URL: {}", quarkusMetricsUrl);
 
         // Get cached HttpClient from factory (insecure for self-signed certs)
         httpClient = HttpClientFactory.getInsecureClient();
@@ -84,7 +82,7 @@ public abstract class AbstractBaseBenchmark {
         metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
                 new QuarkusMetricsFetcher(quarkusMetricsUrl));
 
-        LOGGER.info("Base benchmark setup completed");
+        LOGGER.debug("Base benchmark setup completed");
     }
 
 

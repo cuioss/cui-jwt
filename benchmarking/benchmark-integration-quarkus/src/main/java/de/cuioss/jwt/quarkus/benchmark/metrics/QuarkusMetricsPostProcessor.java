@@ -69,7 +69,7 @@ public class QuarkusMetricsPostProcessor {
         this.outputDirectory = outputDirectory;
         File dir = new File(outputDirectory);
         dir.mkdirs();
-        LOGGER.info("QuarkusMetricsPostProcessor initialized with metrics directory: {} and output directory: {}",
+        LOGGER.debug("QuarkusMetricsPostProcessor initialized with metrics directory: {} and output directory: {}",
                 metricsDownloadDirectory, dir.getAbsolutePath());
     }
 
@@ -80,7 +80,7 @@ public class QuarkusMetricsPostProcessor {
      * @throws IOException if file operations fail
      */
     public void parseAndExportQuarkusMetrics(Instant timestamp) throws IOException {
-        LOGGER.info("Parsing Quarkus metrics from directory: {}", metricsDownloadDirectory);
+        LOGGER.debug("Parsing Quarkus metrics from directory: {}", metricsDownloadDirectory);
 
         File metricsDir = new File(metricsDownloadDirectory);
         if (!metricsDir.exists() || !metricsDir.isDirectory()) {
@@ -96,7 +96,7 @@ public class QuarkusMetricsPostProcessor {
             throw new IOException("No Quarkus metrics files found in: " + metricsDownloadDirectory);
         }
 
-        LOGGER.info("Found {} metrics files to process", metricsFiles.length);
+        LOGGER.debug("Found {} metrics files to process", metricsFiles.length);
 
         // Process all metrics files and aggregate data
         QuarkusResourceMetrics aggregatedMetrics = new QuarkusResourceMetrics();
@@ -110,7 +110,7 @@ public class QuarkusMetricsPostProcessor {
         // Generate output file
         generateQuarkusMetricsFile(aggregatedMetrics, timestamp);
 
-        LOGGER.info("Successfully exported Quarkus metrics from {} files", metricsFiles.length);
+        LOGGER.debug("Successfully exported Quarkus metrics from {} files", metricsFiles.length);
     }
 
     private void processMetricsFile(File metricsFile, QuarkusResourceMetrics aggregatedMetrics) throws IOException {
@@ -239,7 +239,7 @@ public class QuarkusMetricsPostProcessor {
         try (FileWriter writer = new FileWriter(outputFile)) {
             GSON.toJson(output, writer);
             writer.flush();
-            LOGGER.info("Generated quarkus-metrics.json at: {}", outputFile.getAbsolutePath());
+            LOGGER.debug("Generated quarkus-metrics.json at: {}", outputFile.getAbsolutePath());
         }
     }
 
@@ -443,13 +443,13 @@ public class QuarkusMetricsPostProcessor {
                     })
                     .orElse(contextDirs[0]);
 
-            LOGGER.info("Processing metrics directory: {}", latestDir.getName());
+            LOGGER.debug("Processing metrics directory: {}", latestDir.getName());
             QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(
                     latestDir.getAbsolutePath(), baseDirectory);
             processor.parseAndExportQuarkusMetrics(Instant.now());
         } else {
             // Use flat directory structure
-            LOGGER.info("No numbered directories found, using flat metrics-download structure");
+            LOGGER.debug("No numbered directories found, using flat metrics-download structure");
             QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(
                     metricsDownloadBaseDir, baseDirectory);
             processor.parseAndExportQuarkusMetrics(Instant.now());

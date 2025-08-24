@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.ERROR;
 import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
 
 /**
@@ -62,8 +61,7 @@ public class BenchmarkRunner {
 
         String outputDir = config.resultsDirectory();
 
-        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING::format);
-        LOGGER.info(INFO.OUTPUT_DIRECTORY.format(outputDir));
+        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Output: " + outputDir);
 
         // Ensure output directory exists
         Path outputPath = Path.of(outputDir);
@@ -75,26 +73,17 @@ public class BenchmarkRunner {
                 .build()
                 .toJmhOptions();
 
-        try {
-            // Run the benchmarks
-            Collection<RunResult> results = new Runner(options).run();
+        // Run the benchmarks
+        Collection<RunResult> results = new Runner(options).run();
 
-            if (results.isEmpty()) {
-                throw new IllegalStateException("No benchmark results produced");
-            }
-
-            LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(
-                    results.size()));
-
-            // Process results to generate all artifacts
-            BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-            processor.processResults(results, outputDir);
-
-            LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
-
-        } catch (Exception e) {
-            LOGGER.error(ERROR.BENCHMARK_EXECUTION_FAILED.format(), e);
-            throw e;
+        if (results.isEmpty()) {
+            throw new IllegalStateException("No benchmark results produced");
         }
+
+        // Process results to generate all artifacts
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        processor.processResults(results, outputDir);
+
+        LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(results.size()) + ", artifacts in " + outputDir);
     }
 }

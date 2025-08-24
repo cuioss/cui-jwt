@@ -58,7 +58,29 @@ public class BenchmarkRunner {
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
 
     private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
+    private static final String DEFAULT_KEYCLOAK_URL = "http://localhost:8080";
+    private static final String DEFAULT_KEYCLOAK_SECURE_URL = "https://localhost:1443";
     private static final String BENCHMARK_RESULT_FILENAME = "/integration-benchmark-result.json";
+    private static final String BENCHMARK_RESULTS_DIR_PROPERTY = "benchmark.results.dir";
+    private static final String DEFAULT_BENCHMARK_RESULTS_DIR = "target/benchmark-results";
+
+    // Benchmark configuration constants
+    private static final int BENCHMARK_FORKS = 1;
+    private static final int WARMUP_ITERATIONS = 1;
+    private static final int MEASUREMENT_ITERATIONS = 2;
+    private static final int MEASUREMENT_TIME_SECONDS = 5;
+    private static final int WARMUP_TIME_SECONDS = 1;
+    private static final int THREAD_COUNT = 10;
+
+    // Token repository configuration constants
+    private static final String KEYCLOAK_REALM = "benchmark";
+    private static final String KEYCLOAK_CLIENT_ID = "benchmark-client";
+    private static final String KEYCLOAK_CLIENT_SECRET = "benchmark-secret";
+    private static final String KEYCLOAK_USERNAME = "benchmark-user";
+    private static final String KEYCLOAK_PASSWORD = "benchmark-password";
+    private static final int CONNECTION_TIMEOUT_MS = 5000;
+    private static final int REQUEST_TIMEOUT_MS = 10000;
+    private static final int TOKEN_REFRESH_THRESHOLD_SECONDS = 300;
 
     /**
      * Main method to run all integration benchmarks.
@@ -67,8 +89,6 @@ public class BenchmarkRunner {
      * @throws Exception if an error occurs during benchmark execution
      */
     public static void main(String[] args) throws Exception {
-        // Set the logging manager explicitly before anything else to prevent the error
-        System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
 
         // Configure logging to write to benchmark-results directory
         // This captures all console output (System.out/err and JMH) to both console and file
@@ -79,13 +99,13 @@ public class BenchmarkRunner {
         var config = BenchmarkConfiguration.fromSystemProperties()
                 .withResultsDirectory(benchmarkResultsDir)
                 .withIntegrationServiceUrl(DEFAULT_SERVICE_URL)
-                .withKeycloakUrl("http://localhost:8080")
+                .withKeycloakUrl(DEFAULT_KEYCLOAK_URL)
                 .build();
 
-        LOGGER.info("BenchmarkRunner.main() invoked - starting Quarkus JWT integration benchmarks...");
-        LOGGER.info("Service URL: {}", config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL));
-        LOGGER.info("Keycloak URL: {}", config.keycloakUrl().orElse("http://localhost:8080"));
-        LOGGER.info("Results file: {}", config.resultFile());
+        LOGGER.info("Starting Quarkus JWT integration benchmarks - Service: {}, Keycloak: {}, Output: {}",
+                config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL),
+                config.keycloakUrl().orElse(DEFAULT_KEYCLOAK_URL),
+                getBenchmarkResultsDir());
 
         // Pre-initialize the shared TokenRepository instance
         initializeSharedTokenRepository();
@@ -93,106 +113,76 @@ public class BenchmarkRunner {
         // Configure JMH options using modern configuration API
         config = config.toBuilder()
                 .withIncludePattern(System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*"))
-                .withForks(1)
-                .withWarmupIterations(1)
-                .withMeasurementIterations(2)
-                .withMeasurementTime(TimeValue.seconds(5))
-                .withWarmupTime(TimeValue.seconds(1))
-                .withThreads(10)
+                .withForks(BENCHMARK_FORKS)
+                .withWarmupIterations(WARMUP_ITERATIONS)
+                .withMeasurementIterations(MEASUREMENT_ITERATIONS)
+                .withMeasurementTime(TimeValue.seconds(MEASUREMENT_TIME_SECONDS))
+                .withWarmupTime(TimeValue.seconds(WARMUP_TIME_SECONDS))
+                .withThreads(THREAD_COUNT)
                 .withResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME)
                 .withMetricsUrl(config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL))
                 .build();
 
         Options options = config.toJmhOptions();
 
-        try {
-            LOGGER.info("Starting JMH runner...");
-            // Run the benchmarks
-            Collection<RunResult> results = new Runner(options).run();
+        // Run the benchmarks
+        Collection<RunResult> results = new Runner(options).run();
 
-            LOGGER.info("JMH runner completed, checking results...");
-
-            // Check if any benchmarks actually ran
-            if (results.isEmpty()) {
-                LOGGER.error("No benchmark results were produced - all benchmarks failed");
-                throw new IllegalStateException("Benchmark execution failed: No results produced");
-            }
-
-            LOGGER.debug("Found {} benchmark results", results.size());
-
-            // Check if all benchmarks have valid primary results
-            long benchmarksWithoutResults = results.stream()
-                    .filter(result -> result.getPrimaryResult() == null ||
-                            result.getPrimaryResult().getStatistics() == null ||
-                            result.getPrimaryResult().getStatistics().getN() == 0)
-                    .count();
-
-            if (benchmarksWithoutResults > 0) {
-                LOGGER.error("Benchmark execution failed: {} out of {} benchmarks produced no valid results",
-                        benchmarksWithoutResults, results.size());
-                throw new IllegalStateException("Benchmark execution failed: " + benchmarksWithoutResults + " benchmarks produced no valid results");
-            }
-
-            LOGGER.info("Benchmarks completed successfully: {} benchmarks executed", results.size());
-
-            LOGGER.info("Results should be written to: {}", config.resultFile());
-
-            // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
-            try {
-                LOGGER.info("Generating benchmark artifacts...");
-                BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-                // Integration benchmarks always specify their type explicitly
-                processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.INTEGRATION);
-                LOGGER.info("Benchmark artifacts generated successfully in: {}", getBenchmarkResultsDir());
-            } catch (Exception e) {
-                LOGGER.error("Failed to generate benchmark artifacts", e);
-                // Don't fail the benchmark run if artifact generation fails
-            }
-
-            // Process and download final metrics after successful benchmark execution
-            processMetrics();
-        } catch (RuntimeException e) {
-            LOGGER.error("Benchmark execution failed", e);
-            throw e;
+        // Check if any benchmarks actually ran
+        if (results.isEmpty()) {
+            throw new IllegalStateException("Benchmark execution failed: No results produced");
         }
+
+        LOGGER.debug("Found {} benchmark results", results.size());
+
+        // Check if all benchmarks have valid primary results
+        long benchmarksWithoutResults = results.stream()
+                .filter(result -> result.getPrimaryResult() == null ||
+                        result.getPrimaryResult().getStatistics() == null ||
+                        result.getPrimaryResult().getStatistics().getN() == 0)
+                .count();
+
+        if (benchmarksWithoutResults > 0) {
+            throw new IllegalStateException("Benchmark execution failed: " + benchmarksWithoutResults +
+                    " out of " + results.size() + " benchmarks produced no valid results");
+        }
+
+        // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.INTEGRATION);
+
+        // Process and download final metrics after successful benchmark execution
+        processMetrics();
+
+        LOGGER.info("Benchmarks completed successfully: {} benchmarks executed, artifacts generated in {}",
+                results.size(), getBenchmarkResultsDir());
     }
 
     /**
      * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
      * Uses QuarkusMetricsFetcher to download metrics and SimpleMetricsExporter to export them.
      * Also processes JMH benchmark results to create http-metrics.json.
+     * 
+     * @throws IOException if metrics processing fails
      */
-    private static void processMetrics() {
+    private static void processMetrics() throws IOException {
         var config = BenchmarkConfiguration.fromSystemProperties().build();
         String quarkusMetricsUrl = config.metricsUrl().orElse(DEFAULT_SERVICE_URL);
         String outputDirectory = getBenchmarkResultsDir();
 
-        LOGGER.info("Processing final cumulative metrics from Quarkus...");
-        LOGGER.info("Metrics URL: {}", quarkusMetricsUrl);
-        LOGGER.info("Output directory: {}", outputDirectory);
+        LOGGER.debug("Processing metrics from {} to {}", quarkusMetricsUrl, outputDirectory);
 
-        try {
-            // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
-            QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(quarkusMetricsUrl);
+        // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
+        QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(quarkusMetricsUrl);
 
-            // Use SimpleMetricsExporter to export JWT validation metrics
-            SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
+        // Use SimpleMetricsExporter to export JWT validation metrics
+        SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
+        exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
 
-            // Export the JWT validation metrics with current timestamp
-            exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
-
-            // Process JMH benchmark results to create http-metrics.json
-            String benchmarkResultsFile = config.resultFile();
-            LOGGER.info("Processing JMH benchmark results from: {}", benchmarkResultsFile);
-
-            MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
-            metricsPostProcessor.parseAndExportHttpMetrics(Instant.now());
-
-            LOGGER.info("Final metrics processing completed successfully");
-        } catch (IOException e) {
-            // Log the error but don't fail the entire benchmark run
-            LOGGER.error("Failed to process final metrics due to I/O error - continuing without metrics", e);
-        }
+        // Process JMH benchmark results to create http-metrics.json
+        String benchmarkResultsFile = config.resultFile();
+        MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
+        metricsPostProcessor.parseAndExportHttpMetrics(Instant.now());
     }
 
     /**
@@ -201,7 +191,7 @@ public class BenchmarkRunner {
      * @return the benchmark results directory path
      */
     private static String getBenchmarkResultsDir() {
-        return System.getProperty("benchmark.results.dir", "target/benchmark-results");
+        return System.getProperty(BENCHMARK_RESULTS_DIR_PROPERTY, DEFAULT_BENCHMARK_RESULTS_DIR);
     }
 
     /**
@@ -209,25 +199,23 @@ public class BenchmarkRunner {
      * This avoids multiple initializations during benchmark setup phases.
      */
     private static void initializeSharedTokenRepository() {
-        LOGGER.info("Pre-initializing shared TokenRepository instance for benchmarks");
-
         var benchConfig = BenchmarkConfiguration.fromSystemProperties().build();
-        String keycloakUrl = benchConfig.keycloakUrl().orElse("https://localhost:1443");
+        String keycloakUrl = benchConfig.keycloakUrl().orElse(DEFAULT_KEYCLOAK_SECURE_URL);
 
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl(keycloakUrl)
-                .realm("benchmark")
-                .clientId("benchmark-client")
-                .clientSecret("benchmark-secret")
-                .username("benchmark-user")
-                .password("benchmark-password")
-                .connectionTimeoutMs(5000)
-                .requestTimeoutMs(10000)
+                .realm(KEYCLOAK_REALM)
+                .clientId(KEYCLOAK_CLIENT_ID)
+                .clientSecret(KEYCLOAK_CLIENT_SECRET)
+                .username(KEYCLOAK_USERNAME)
+                .password(KEYCLOAK_PASSWORD)
+                .connectionTimeoutMs(CONNECTION_TIMEOUT_MS)
+                .requestTimeoutMs(REQUEST_TIMEOUT_MS)
                 .verifySsl(false)
-                .tokenRefreshThresholdSeconds(300)
+                .tokenRefreshThresholdSeconds(TOKEN_REFRESH_THRESHOLD_SECONDS)
                 .build();
 
         TokenRepository.initializeSharedInstance(config);
-        LOGGER.info("Shared TokenRepository instance pre-initialized successfully");
+        LOGGER.debug("TokenRepository initialized with Keycloak at {}", keycloakUrl);
     }
 }

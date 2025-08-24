@@ -72,7 +72,7 @@ public class SimpleMetricsExporter {
      * Updates the aggregated integration-metrics.json file.
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
-        LOGGER.info("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
+        LOGGER.debug("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
 
         // Always save raw metrics for ALL benchmarks
         try {
@@ -99,7 +99,7 @@ public class SimpleMetricsExporter {
                 // Update aggregated file
                 updateAggregatedMetrics(simpleBenchmarkName, benchmarkData);
             } else {
-                LOGGER.info("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
+                LOGGER.debug("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
             }
 
         } catch (IOException e) {
@@ -127,13 +127,13 @@ public class SimpleMetricsExporter {
 
         // Write back
         File outputFile = new File(filename);
-        LOGGER.info("Writing metrics to: {} (parent exists: {})",
+        LOGGER.debug("Writing metrics to: {} (parent exists: {})",
                 outputFile.getAbsolutePath(), outputFile.getParentFile().exists());
 
         try (FileWriter writer = new FileWriter(outputFile)) {
             GSON.toJson(allMetrics, writer);
             writer.flush();
-            LOGGER.info("Updated integration-metrics.json with {} benchmarks at: {}",
+            LOGGER.debug("Updated integration-metrics.json with {} benchmarks at: {}",
                     allMetrics.size(), outputFile.getAbsolutePath());
         }
     }
@@ -222,7 +222,7 @@ public class SimpleMetricsExporter {
             }
         }
 
-        LOGGER.info("Metrics scan summary: {} error metrics, {} success_total metrics, {} success_operations metrics",
+        LOGGER.debug("Metrics scan summary: {} error metrics, {} success_total metrics, {} success_operations metrics",
                 errorMetricsFound, successMetricsFound, successOperationsMetricsFound);
 
         securityMetrics.put("total_errors", formatNumber(totalErrors));
@@ -230,7 +230,7 @@ public class SimpleMetricsExporter {
         securityMetrics.put("errors_by_category", errorsByCategory);
         securityMetrics.put("success_by_type", successByType);
 
-        LOGGER.info("Extracted security event metrics: {} total errors across {} categories, {} total successes across {} types",
+        LOGGER.debug("Extracted security event metrics: {} total errors across {} categories, {} total successes across {} types",
                 totalErrors, errorsByCategory.size(), totalSuccess, successByType.size());
 
         return securityMetrics;
@@ -322,7 +322,7 @@ public class SimpleMetricsExporter {
             timedMetrics.put(measurementType.toLowerCase(), metric);
         }
 
-        LOGGER.info("Extracted {} timed metrics with count={}, avg={}μs",
+        LOGGER.debug("Extracted {} timed metrics with count={}, avg={}μs",
                 timedMetrics.size(),
                 count != null ? count.longValue() : 0,
                 count != null && count > 0 ? "%.2f".formatted((sum / count) * 1_000_000) : "N/A");
