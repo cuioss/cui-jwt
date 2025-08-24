@@ -21,6 +21,8 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -307,28 +309,7 @@ public class GitHubPagesGenerator {
      * Generates a 404 error page.
      */
     private void generate404Page(Path deployDir) throws IOException {
-        String html404 = """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Page Not Found - CUI Benchmarking</title>
-                <style>
-                    body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
-                    h1 { color: #e74c3c; }
-                    a { color: #3498db; text-decoration: none; }
-                    a:hover { text-decoration: underline; }
-                </style>
-            </head>
-            <body>
-                <h1>404 - Page Not Found</h1>
-                <p>The requested page could not be found.</p>
-                <p><a href="/">Return to Benchmark Overview</a></p>
-            </body>
-            </html>
-            """;
-
+        String html404 = loadTemplate("404.html");
         Files.writeString(deployDir.resolve("404.html"), html404);
     }
 
@@ -336,13 +317,7 @@ public class GitHubPagesGenerator {
      * Generates robots.txt for search engines.
      */
     private void generateRobotsTxt(Path deployDir) throws IOException {
-        String robotsTxt = """
-            User-agent: *
-            Allow: /
-            
-            Sitemap: /sitemap.xml
-            """;
-
+        String robotsTxt = loadTemplate("robots.txt");
         Files.writeString(deployDir.resolve("robots.txt"), robotsTxt);
     }
 
@@ -350,27 +325,7 @@ public class GitHubPagesGenerator {
      * Generates a basic sitemap.xml.
      */
     private void generateSitemap(Path deployDir) throws IOException {
-        String sitemap = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-                <url>
-                    <loc>/</loc>
-                    <changefreq>daily</changefreq>
-                    <priority>1.0</priority>
-                </url>
-                <url>
-                    <loc>/trends.html</loc>
-                    <changefreq>daily</changefreq>
-                    <priority>0.8</priority>
-                </url>
-                <url>
-                    <loc>/api/latest.json</loc>
-                    <changefreq>daily</changefreq>
-                    <priority>0.6</priority>
-                </url>
-            </urlset>
-            """;
-
+        String sitemap = loadTemplate("sitemap.xml");
         Files.writeString(deployDir.resolve("sitemap.xml"), sitemap);
     }
 
@@ -415,5 +370,22 @@ public class GitHubPagesGenerator {
         }
 
         return 0;
+    }
+
+    /**
+     * Loads a template from the classpath resources.
+     * 
+     * @param templateName the name of the template file
+     * @return the template content as a string
+     * @throws IOException if the template cannot be loaded
+     */
+    private String loadTemplate(String templateName) throws IOException {
+        String resourcePath = "/templates/" + templateName;
+        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new IOException("Template not found: " + resourcePath);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 }

@@ -20,6 +20,8 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -96,321 +98,122 @@ public class ReportGenerator {
     }
 
     private String generateHtmlHeader(String title, boolean includeCharts) {
-        return """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>%s</title>
-                <style>
-            %s
-                </style>
-            %s
-            </head>
-            <body>
-            """.formatted(
-                title,
-                getEmbeddedCSS(),
-                includeCharts ? "    <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n" : ""
-        );
+        try {
+            String template = loadTemplate("report-header.html");
+            String chartScript = includeCharts ? "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>" : "";
+            return template
+                    .replace("${title}", title)
+                    .replace("${css}", getEmbeddedCSS())
+                    .replace("${chartScript}", chartScript);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load header template, using fallback", e);
+            return "<html><head><title>" + title + "</title></head><body>";
+        }
     }
 
     private String generateHtmlFooter() {
-        return """
-                <footer>
-                    <p>Generated on %s by CUI Benchmarking Infrastructure</p>
-                </footer>
-            </body>
-            </html>
-            """.formatted(getCurrentTimestamp());
+        try {
+            String template = loadTemplate("report-footer.html");
+            return template.replace("${timestamp}", getCurrentTimestamp());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load footer template, using fallback", e);
+            return "</body></html>";
+        }
     }
 
     private String generateNavigationMenu() {
-        return """
-                <nav class="navbar">
-                    <div class="nav-container">
-                        <h1>CUI Benchmarking</h1>
-                        <ul class="nav-menu">
-                            <li><a href="index.html">Overview</a></li>
-                            <li><a href="trends.html">Trends</a></li>
-                            <li><a href="data/metrics.json">Raw Data</a></li>
-                        </ul>
-                    </div>
-                </nav>
-            """;
+        try {
+            return loadTemplate("navigation-menu.html");
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load navigation template, using fallback", e);
+            return "<nav><h1>CUI Benchmarking</h1></nav>";
+        }
     }
 
     private String generateOverviewSection(Collection<RunResult> results) {
-        StringBuilder overview = new StringBuilder();
-        overview.append("    <main class=\"main-content\">\n");
-        overview.append("        <section class=\"overview\">\n");
-        overview.append("            <h2>Performance Overview</h2>\n");
-        overview.append("            <div class=\"stats-grid\">\n");
-
-        // Summary statistics
-        overview.append("                <div class=\"stat-card\">\n");
-        overview.append("                    <h3>Total Benchmarks</h3>\n");
-        overview.append("                    <p class=\"stat-value\">").append(results.size()).append("</p>\n");
-        overview.append("                </div>\n");
-
-        double avgThroughput = calculateAverageThroughput(results);
-        overview.append("                <div class=\"stat-card\">\n");
-        overview.append("                    <h3>Average Throughput</h3>\n");
-        overview.append("                    <p class=\"stat-value\">").append(formatThroughput(avgThroughput)).append("</p>\n");
-        overview.append("                </div>\n");
-
-        overview.append("                <div class=\"stat-card\">\n");
-        overview.append("                    <h3>Performance Grade</h3>\n");
-        overview.append("                    <p class=\"stat-value\">").append(calculatePerformanceGrade(avgThroughput)).append("</p>\n");
-        overview.append("                </div>\n");
-
-        overview.append("                <div class=\"stat-card\">\n");
-        overview.append("                    <h3>Status</h3>\n");
-        overview.append("                    <p class=\"stat-value success\">✓ All Passed</p>\n");
-        overview.append("                </div>\n");
-
-        overview.append("            </div>\n");
-        overview.append("        </section>\n");
-
-        return overview.toString();
+        try {
+            String template = loadTemplate("overview-section.html");
+            double avgThroughput = calculateAverageThroughput(results);
+            return template
+                    .replace("${totalBenchmarks}", String.valueOf(results.size()))
+                    .replace("${avgThroughput}", formatThroughput(avgThroughput))
+                    .replace("${performanceGrade}", calculatePerformanceGrade(avgThroughput));
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load overview template, using fallback", e);
+            return "<main><section><h2>Performance Overview</h2></section></main>";
+        }
     }
 
     private String generateBenchmarkTable(Collection<RunResult> results) {
-        StringBuilder table = new StringBuilder();
-        table.append("        <section class=\"results\">\n");
-        table.append("            <h2>Benchmark Results</h2>\n");
-        table.append("            <div class=\"table-container\">\n");
-        table.append("                <table class=\"results-table\">\n");
-        table.append("                    <thead>\n");
-        table.append("                        <tr>\n");
-        table.append("                            <th>Benchmark</th>\n");
-        table.append("                            <th>Score</th>\n");
-        table.append("                            <th>Unit</th>\n");
-        table.append("                            <th>Error</th>\n");
-        table.append("                            <th>Samples</th>\n");
-        table.append("                        </tr>\n");
-        table.append("                    </thead>\n");
-        table.append("                    <tbody>\n");
-
-        for (RunResult result : results) {
-            table.append(generateBenchmarkRow(result));
+        try {
+            String template = loadTemplate("benchmark-table.html");
+            StringBuilder rows = new StringBuilder();
+            for (RunResult result : results) {
+                rows.append(generateBenchmarkRow(result));
+            }
+            return template.replace("${tableRows}", rows.toString());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load benchmark table template, using fallback", e);
+            return "<section><h2>Benchmark Results</h2><table></table></section>";
         }
-
-        table.append("                    </tbody>\n");
-        table.append("                </table>\n");
-        table.append("            </div>\n");
-        table.append("        </section>\n");
-
-        return table.toString();
     }
 
     private String generateBenchmarkRow(RunResult result) {
-        StringBuilder row = new StringBuilder();
-        row.append("                        <tr>\n");
-
-        String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
-        row.append("                            <td>").append(benchmarkName).append("</td>\n");
-
-        if (result.getPrimaryResult() != null) {
-            var primaryResult = result.getPrimaryResult();
-            row.append("                            <td>").append("%.2f".formatted(primaryResult.getScore())).append("</td>\n");
-            row.append("                            <td>").append(primaryResult.getScoreUnit()).append("</td>\n");
-
-            if (primaryResult.getStatistics() != null) {
-                double error = primaryResult.getStatistics().getStandardDeviation();
-                row.append("                            <td>±").append("%.2f".formatted(error)).append("</td>\n");
-                row.append("                            <td>").append(primaryResult.getStatistics().getN()).append("</td>\n");
+        try {
+            String template = loadTemplate("benchmark-row.html");
+            String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
+            
+            if (result.getPrimaryResult() != null) {
+                var primaryResult = result.getPrimaryResult();
+                String score = "%.2f".formatted(primaryResult.getScore());
+                String unit = primaryResult.getScoreUnit();
+                String error = "N/A";
+                String samples = "N/A";
+                
+                if (primaryResult.getStatistics() != null) {
+                    error = "±%.2f".formatted(primaryResult.getStatistics().getStandardDeviation());
+                    samples = String.valueOf(primaryResult.getStatistics().getN());
+                }
+                
+                return template
+                        .replace("${benchmarkName}", benchmarkName)
+                        .replace("${score}", score)
+                        .replace("${unit}", unit)
+                        .replace("${error}", error)
+                        .replace("${samples}", samples);
             } else {
-                row.append("                            <td>N/A</td>\n");
-                row.append("                            <td>N/A</td>\n");
+                return template
+                        .replace("${benchmarkName}", benchmarkName)
+                        .replace("${score}", "No data")
+                        .replace("${unit}", "")
+                        .replace("${error}", "")
+                        .replace("${samples}", "");
             }
-        } else {
-            row.append("                            <td colspan=\"4\">No data</td>\n");
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load benchmark row template, using fallback", e);
+            return "<tr><td>" + extractBenchmarkName(result.getParams().getBenchmark()) + "</td><td colspan='4'>Error</td></tr>";
         }
-
-        row.append("                        </tr>\n");
-
-        return row.toString();
     }
 
     private String generateTrendsSection(Collection<RunResult> results) {
-        return """
-                <main class="main-content">
-                    <section class="trends">
-                        <h2>Performance Trends</h2>
-                        <p>Historical performance analysis and trend visualization.</p>
-                        <div class="chart-container">
-                            <canvas id="trendsChart"></canvas>
-                        </div>
-                        <div class="trends-summary">
-                            <h3>Trend Analysis</h3>
-                            <p>%d benchmarks analyzed</p>
-                            <p>Performance Grade: %s</p>
-                        </div>
-                    </section>
-                </main>
-            """.formatted(
-                results.size(),
-                calculatePerformanceGrade(calculateAverageThroughput(results))
-        );
+        try {
+            String template = loadTemplate("trends-section.html");
+            return template
+                    .replace("${benchmarkCount}", String.valueOf(results.size()))
+                    .replace("${performanceGrade}", calculatePerformanceGrade(calculateAverageThroughput(results)));
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load trends template, using fallback", e);
+            return "<main><section><h2>Performance Trends</h2><p>" + results.size() + " benchmarks analyzed</p></section></main>";
+        }
     }
 
     private String getEmbeddedCSS() {
-        return """
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                margin: 0;
-                padding: 0;
-                background-color: #f5f5f5;
-                color: #333;
-            }
-            
-            .navbar {
-                background-color: #2c3e50;
-                color: white;
-                padding: 1rem 0;
-            }
-            
-            .nav-container {
-                max-width: 1200px;
-                margin: 0 auto;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0 2rem;
-            }
-            
-            .nav-menu {
-                list-style: none;
-                display: flex;
-                gap: 2rem;
-                margin: 0;
-                padding: 0;
-            }
-            
-            .nav-menu a {
-                color: white;
-                text-decoration: none;
-                font-weight: 500;
-            }
-            
-            .nav-menu a:hover {
-                text-decoration: underline;
-            }
-            
-            .main-content {
-                max-width: 1200px;
-                margin: 2rem auto;
-                padding: 0 2rem;
-            }
-            
-            .overview {
-                background: white;
-                border-radius: 8px;
-                padding: 2rem;
-                margin-bottom: 2rem;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1.5rem;
-                margin-top: 1.5rem;
-            }
-            
-            .stat-card {
-                background: #f8f9fa;
-                padding: 1.5rem;
-                border-radius: 8px;
-                text-align: center;
-            }
-            
-            .stat-card h3 {
-                margin: 0 0 1rem 0;
-                color: #6c757d;
-                font-size: 0.9rem;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            
-            .stat-value {
-                font-size: 2rem;
-                font-weight: bold;
-                margin: 0;
-                color: #2c3e50;
-            }
-            
-            .stat-value.success {
-                color: #28a745;
-            }
-            
-            .results {
-                background: white;
-                border-radius: 8px;
-                padding: 2rem;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            .table-container {
-                overflow-x: auto;
-                margin-top: 1.5rem;
-            }
-            
-            .results-table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            
-            .results-table th,
-            .results-table td {
-                padding: 1rem;
-                text-align: left;
-                border-bottom: 1px solid #dee2e6;
-            }
-            
-            .results-table th {
-                background-color: #f8f9fa;
-                font-weight: 600;
-                color: #495057;
-            }
-            
-            .results-table tbody tr:hover {
-                background-color: #f8f9fa;
-            }
-            
-            .chart-container {
-                margin-top: 2rem;
-                background: white;
-                padding: 2rem;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            footer {
-                text-align: center;
-                padding: 2rem;
-                color: #6c757d;
-                font-size: 0.9rem;
-            }
-            
-            @media (max-width: 768px) {
-                .nav-container {
-                    flex-direction: column;
-                    gap: 1rem;
-                }
-                
-                .stats-grid {
-                    grid-template-columns: 1fr;
-                }
-                
-                .main-content {
-                    margin: 1rem;
-                    padding: 0 1rem;
-                }
-            }
-            """;
+        try {
+            return loadTemplate("report-styles.css");
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load CSS template, using fallback", e);
+            return "/* CSS loading failed */";
+        }
     }
 
     private String extractBenchmarkName(String fullName) {
@@ -450,5 +253,22 @@ public class ReportGenerator {
 
     private String getCurrentTimestamp() {
         return DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC));
+    }
+
+    /**
+     * Loads a template from the classpath resources.
+     * 
+     * @param templateName the name of the template file
+     * @return the template content as a string
+     * @throws IOException if the template cannot be loaded
+     */
+    private String loadTemplate(String templateName) throws IOException {
+        String resourcePath = "/templates/" + templateName;
+        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new IOException("Template not found: " + resourcePath);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 }
