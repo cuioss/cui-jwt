@@ -146,7 +146,7 @@ Each task is self-contained; if issues arise, revert module-level changes while 
 ### Dependency Management
 
 #### D1. Build Portability and Duplication Reduction
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Remove exec-maven-plugin "mkdir" executions; let code create directories or use build-helper-maven-plugin/maven-antrun-plugin as needed. Move common exec-maven-plugin and maven-dependency-plugin config into benchmarking/pom.xml under <pluginManagement>; reference from modules with minimal overrides.
 

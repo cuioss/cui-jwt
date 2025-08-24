@@ -224,21 +224,6 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>create-benchmark-dir</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>mkdir</executable>
-                            <arguments>
-                                <argument>-p</argument>
-                                <argument>${benchmark.results.dir}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>run-benchmarks</id>
                         <phase>verify</phase>
                         <goals>
@@ -273,21 +258,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                </executions>
+                <!-- Configuration inherited from parent pluginManagement -->
             </plugin>
         </plugins>
     </build>
