@@ -47,6 +47,13 @@ public class BenchmarkResultProcessor {
     private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkResultProcessor.class);
 
+    // Directory name constants
+    private static final String BADGES_DIR = "/badges";
+    private static final String DATA_DIR = "/data";
+    private static final String REPORTS_DIR = "/reports";
+    private static final String GH_PAGES_DIR = "/gh-pages-ready";
+    private static final String SUMMARY_FILE = "/benchmark-summary.json";
+
     private final BenchmarkType benchmarkType;
 
     /**
@@ -96,10 +103,10 @@ public class BenchmarkResultProcessor {
      */
     private void createOutputDirectories(String outputDir) throws IOException {
         String[] directories = {
-                outputDir + "/badges",
-                outputDir + "/data",
-                outputDir + "/reports",
-                outputDir + "/gh-pages-ready"
+                outputDir + BADGES_DIR,
+                outputDir + DATA_DIR,
+                outputDir + REPORTS_DIR,
+                outputDir + GH_PAGES_DIR
         };
 
         for (String dir : directories) {
@@ -115,9 +122,9 @@ public class BenchmarkResultProcessor {
         BadgeGenerator badgeGen = new BadgeGenerator();
 
         LOGGER.info(INFO.GENERATING_BADGES.format(results.size()));
-        badgeGen.generatePerformanceBadge(results, type, outputDir + "/badges");
-        badgeGen.generateTrendBadge(results, type, outputDir + "/badges");
-        badgeGen.generateLastRunBadge(outputDir + "/badges");
+        badgeGen.generatePerformanceBadge(results, type, outputDir + BADGES_DIR);
+        badgeGen.generateTrendBadge(results, type, outputDir + BADGES_DIR);
+        badgeGen.generateLastRunBadge(outputDir + BADGES_DIR);
     }
 
     /**
@@ -127,7 +134,7 @@ public class BenchmarkResultProcessor {
         MetricsGenerator metricsGen = new MetricsGenerator();
 
         LOGGER.info(INFO.GENERATING_METRICS::format);
-        metricsGen.generateMetricsJson(results, outputDir + "/data");
+        metricsGen.generateMetricsJson(results, outputDir + DATA_DIR);
     }
 
     /**
@@ -148,7 +155,7 @@ public class BenchmarkResultProcessor {
         GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
 
         LOGGER.info(INFO.GENERATING_GITHUB_PAGES::format);
-        ghGen.prepareDeploymentStructure(outputDir, outputDir + "/gh-pages-ready");
+        ghGen.prepareDeploymentStructure(outputDir, outputDir + GH_PAGES_DIR);
     }
 
     /**
@@ -159,6 +166,6 @@ public class BenchmarkResultProcessor {
         SummaryGenerator summaryGen = new SummaryGenerator();
 
         LOGGER.info(INFO.WRITING_SUMMARY::format);
-        summaryGen.writeSummary(results, type, Instant.now(), outputDir + "/benchmark-summary.json");
+        summaryGen.writeSummary(results, type, Instant.now(), outputDir + SUMMARY_FILE);
     }
 }
