@@ -44,6 +44,11 @@ import java.util.logging.*;
 public final class BenchmarkLoggingSetup {
 
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+    private static final String ROOT_LOGGER_NAME = "";
+    private static final String DE_PACKAGE = "de";
+    private static final String DE_CUIOSS_PACKAGE = "de.cuioss";
+    private static final String DE_CUIOSS_BENCHMARKING_PACKAGE = "de.cuioss.benchmarking";
+    private static final String JMH_PACKAGE = "org.openjdk.jmh";
 
     // Keep references to original streams
     private static final PrintStream ORIGINAL_OUT = System.out;
@@ -106,7 +111,7 @@ public final class BenchmarkLoggingSetup {
         configureLogging(benchmarkResultsDir);
 
         // Apply custom log level
-        Logger rootLogger = Logger.getLogger("");
+        Logger rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
         rootLogger.setLevel(logLevel);
 
         // Enable detailed logging for specific package
@@ -116,7 +121,7 @@ public final class BenchmarkLoggingSetup {
     }
 
     private static void configureJavaUtilLogging(Path resultsPath, String timestamp) throws IOException {
-        Logger rootLogger = Logger.getLogger("");
+        Logger rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
 
         Handler[] handlers = rootLogger.getHandlers();
         for (Handler handler : handlers) {
@@ -138,12 +143,12 @@ public final class BenchmarkLoggingSetup {
         rootLogger.setLevel(Level.INFO);
 
         // Configure de.cuioss packages
-        configurePackageLogging("de", Level.INFO);
-        configurePackageLogging("de.cuioss", Level.INFO);
-        configurePackageLogging("de.cuioss.benchmarking", Level.INFO);
+        configurePackageLogging(DE_PACKAGE, Level.INFO);
+        configurePackageLogging(DE_CUIOSS_PACKAGE, Level.INFO);
+        configurePackageLogging(DE_CUIOSS_BENCHMARKING_PACKAGE, Level.INFO);
 
         // Disable verbose JMH internal logging
-        configurePackageLogging("org.openjdk.jmh", Level.WARNING);
+        configurePackageLogging(JMH_PACKAGE, Level.WARNING);
     }
 
     private static void configurePackageLogging(String packageName, Level level) {
@@ -159,7 +164,7 @@ public final class BenchmarkLoggingSetup {
         System.setErr(ORIGINAL_ERR);
 
         // Reset java.util.logging
-        Logger rootLogger = Logger.getLogger("");
+        Logger rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
         Handler[] handlers = rootLogger.getHandlers();
         for (Handler handler : handlers) {
             handler.close();
