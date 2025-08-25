@@ -76,10 +76,13 @@ public class JfrBenchmarkRunner {
                 .build();
 
         // Build options with JFR-specific JVM arguments
+        // Note: We cannot reuse config.toJmhOptions() directly because JMH's OptionsBuilder
+        // doesn't support inheritance/parent options. We must configure all parameters
+        // explicitly but with JFR-specific JVM arguments.
         Options options = new OptionsBuilder()
                 .include(config.includePattern())
                 .resultFormat(config.resultFormat())
-                .result(config.resultFile())
+                .result(getJfrResultFile())  // Use JFR-specific result file
                 .forks(config.forks())
                 .warmupIterations(config.warmupIterations())
                 .measurementIterations(config.measurementIterations())

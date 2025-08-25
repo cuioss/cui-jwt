@@ -152,7 +152,7 @@ public class BenchmarkRunner {
         processor.processResults(results, getBenchmarkResultsDir());
 
         // Process and download final metrics after successful benchmark execution
-        processMetrics();
+        processMetrics(config);
 
         LOGGER.info("Benchmarks completed successfully: {} benchmarks executed, artifacts generated in {}",
                 results.size(), getBenchmarkResultsDir());
@@ -163,10 +163,10 @@ public class BenchmarkRunner {
      * Uses QuarkusMetricsFetcher to download metrics and SimpleMetricsExporter to export them.
      * Also processes JMH benchmark results to create http-metrics.json.
      * 
+     * @param config the benchmark configuration
      * @throws IOException if metrics processing fails
      */
-    private static void processMetrics() throws IOException {
-        var config = BenchmarkConfiguration.fromSystemProperties().build();
+    private static void processMetrics(BenchmarkConfiguration config) throws IOException {
         String quarkusMetricsUrl = config.metricsUrl().orElse(DEFAULT_SERVICE_URL);
         String outputDirectory = getBenchmarkResultsDir();
 

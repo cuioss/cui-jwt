@@ -173,11 +173,11 @@ Optional<String> metricsUrl
 
         // Add integration-specific properties if present
         integrationServiceUrl.ifPresent(url ->
-                builder.jvmArgs("-Dintegration.service.url=" + url));
+                builder.jvmArgsAppend("-Dintegration.service.url=" + url));
         keycloakUrl.ifPresent(url ->
-                builder.jvmArgs("-Dkeycloak.url=" + url));
+                builder.jvmArgsAppend("-Dkeycloak.url=" + url));
         metricsUrl.ifPresent(url ->
-                builder.jvmArgs("-Dquarkus.metrics.url=" + url));
+                builder.jvmArgsAppend("-Dquarkus.metrics.url=" + url));
 
         return builder.build();
     }
