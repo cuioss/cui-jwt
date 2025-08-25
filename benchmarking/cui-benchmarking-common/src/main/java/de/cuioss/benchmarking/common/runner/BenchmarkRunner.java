@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.benchmarking.common;
+package de.cuioss.benchmarking.common.runner;
 
+import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 
 import org.openjdk.jmh.results.RunResult;
@@ -25,7 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
  * Standardized JMH benchmark runner that integrates with CUI benchmarking infrastructure.

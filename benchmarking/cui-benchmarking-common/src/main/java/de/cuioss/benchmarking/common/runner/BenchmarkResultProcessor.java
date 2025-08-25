@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.benchmarking.common;
+package de.cuioss.benchmarking.common.runner;
 
+import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.report.BadgeGenerator;
+import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
+import de.cuioss.benchmarking.common.report.MetricsGenerator;
+import de.cuioss.benchmarking.common.report.ReportGenerator;
+import de.cuioss.benchmarking.common.report.SummaryGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 
 import org.openjdk.jmh.results.RunResult;
@@ -25,7 +31,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collection;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
  * Processes JMH benchmark results to generate all required artifacts during execution.

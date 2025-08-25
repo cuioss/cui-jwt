@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.benchmarking.common;
+package de.cuioss.benchmarking.common.report;
 
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -29,7 +29,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
  * Generates self-contained HTML reports with embedded CSS and JavaScript.

@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.benchmarking.common.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
 import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
 import de.cuioss.tools.logging.CuiLogger;

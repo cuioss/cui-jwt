@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.benchmarking.common;
+package de.cuioss.benchmarking.common.report;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -30,9 +30,9 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.DEBUG;
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.INFO;
-import static de.cuioss.benchmarking.common.BenchmarkingLogMessages.WARN;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.DEBUG;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
 
 /**
  * Generates GitHub Pages ready deployment structure from benchmark artifacts.
