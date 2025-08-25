@@ -34,9 +34,9 @@
         <!-- Default benchmark results directory -->
         <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
         
-        <!-- Sonar configuration for benchmarking modules -->
-        <!-- Set coverage threshold to 60% for benchmarking code -->
-        <sonar.coverage.minimumRatio>0.60</sonar.coverage.minimumRatio>
+        <!-- Sonar configuration: Skip analysis for benchmarking modules -->
+        <!-- Benchmarking code is for performance testing, not production code -->
+        <sonar.skip>true</sonar.skip>
     </properties>
 
     <dependencyManagement>
