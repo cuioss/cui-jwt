@@ -33,7 +33,7 @@
         <skip.benchmark>true</skip.benchmark>
         <!-- Default benchmark results directory -->
         <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
-        
+
         <!-- Sonar configuration: Skip analysis for benchmarking modules -->
         <!-- Benchmarking code is for performance testing, not production code -->
         <sonar.skip>true</sonar.skip>
@@ -41,7 +41,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- JMH dependencies -->
             <dependency>
                 <groupId>org.openjdk.jmh</groupId>
                 <artifactId>jmh-core</artifactId>
@@ -53,8 +52,6 @@
                 <version>${version.jmh}</version>
                 <scope>provided</scope>
             </dependency>
-
-            <!-- Common benchmarking dependencies -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
@@ -76,8 +73,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Common exec plugin configuration for benchmarks -->
-                <!-- Version inherited from parent: ${exec.maven.plugin.version} -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
@@ -85,9 +80,6 @@
                         <skip>${skip.benchmark}</skip>
                     </configuration>
                 </plugin>
-
-                <!-- Common dependency plugin configuration -->
-                <!-- Version inherited from parent pluginManagement -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
