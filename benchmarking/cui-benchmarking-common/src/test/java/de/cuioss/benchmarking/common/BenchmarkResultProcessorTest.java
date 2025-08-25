@@ -40,8 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BenchmarkResultProcessorTest {
 
-    @Test
-    void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
+    @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
         // Run minimal benchmark for testing
         var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
@@ -85,8 +84,7 @@ class BenchmarkResultProcessorTest {
         assertTrue(badgeContent.contains("\"color\""), "Badge should have color");
     }
 
-    @Test
-    void emptyResultsHandling(@TempDir Path tempDir) {
+    @Test void emptyResultsHandling(@TempDir Path tempDir) {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         List<RunResult> emptyResults = List.of();
 
@@ -103,8 +101,7 @@ class BenchmarkResultProcessorTest {
                 "Data directory should be created even with empty results");
     }
 
-    @Test
-    void directoryCreation(@TempDir Path tempDir) throws Exception {
+    @Test void directoryCreation(@TempDir Path tempDir) throws Exception {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         String outputDir = tempDir.resolve("nested/benchmark/results").toString();
 

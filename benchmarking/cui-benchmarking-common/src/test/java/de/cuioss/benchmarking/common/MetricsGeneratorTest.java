@@ -40,8 +40,7 @@ class MetricsGeneratorTest {
 
     private final Gson gson = new Gson();
 
-    @Test
-    void generateMetricsJsonWithResults(@TempDir Path tempDir) throws Exception {
+    @Test void generateMetricsJsonWithResults(@TempDir Path tempDir) throws Exception {
         // Run a minimal benchmark to get real results
         var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
@@ -75,8 +74,7 @@ class MetricsGeneratorTest {
                 "Timestamp should be ISO formatted");
     }
 
-    @Test
-    void generateMetricsJsonWithEmptyResults(@TempDir Path tempDir) throws Exception {
+    @Test void generateMetricsJsonWithEmptyResults(@TempDir Path tempDir) throws Exception {
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
@@ -97,8 +95,7 @@ class MetricsGeneratorTest {
                 "Benchmarks object should be empty");
     }
 
-    @Test
-    void verifyMetricsStructure(@TempDir Path tempDir) throws Exception {
+    @Test void verifyMetricsStructure(@TempDir Path tempDir) throws Exception {
         // Run benchmark to get results
         var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
@@ -126,8 +123,7 @@ class MetricsGeneratorTest {
                 "Benchmarks object should not be empty with results");
     }
 
-    @Test
-    void ensureDirectoryCreation(@TempDir Path tempDir) {
+    @Test void ensureDirectoryCreation(@TempDir Path tempDir) {
         MetricsGenerator generator = new MetricsGenerator();
         String nestedDir = tempDir.resolve("nested/deep/path").toString();
 

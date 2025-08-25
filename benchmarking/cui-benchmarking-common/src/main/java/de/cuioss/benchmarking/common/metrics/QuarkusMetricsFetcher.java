@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.benchmark.metrics;
+package de.cuioss.benchmarking.common.metrics;
 
-import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
+import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.File;
@@ -51,8 +51,7 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         LOGGER.debug("Using insecure HttpClient from factory for metrics fetching");
     }
 
-    @Override
-    public Map<String, Double> fetchMetrics() {
+    @Override public Map<String, Double> fetchMetrics() {
         Map<String, Double> results = new HashMap<>();
 
         try {

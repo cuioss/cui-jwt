@@ -96,8 +96,7 @@ public final class JsonSerializationHelper {
      * Serializes whole numbers without decimal point.
      */
     private static class DoubleSerializer implements JsonSerializer<Double> {
-        @Override
-        public JsonElement serialize(Double src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+        @Override public JsonElement serialize(Double src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             if (src == null) {
                 return JsonNull.INSTANCE;
             }
@@ -116,8 +115,7 @@ public final class JsonSerializationHelper {
      * Serializes to ISO-8601 format.
      */
     private static class InstantSerializer implements JsonSerializer<Instant> {
-        @Override
-        public JsonElement serialize(Instant src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+        @Override public JsonElement serialize(Instant src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             if (src == null) {
                 return JsonNull.INSTANCE;
             }

@@ -16,8 +16,8 @@
 package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
-import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
+import de.cuioss.benchmarking.common.http.HttpClientFactory;
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.*;

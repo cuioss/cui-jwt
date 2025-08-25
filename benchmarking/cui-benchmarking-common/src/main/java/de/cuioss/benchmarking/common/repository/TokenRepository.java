@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.benchmark.repository;
+package de.cuioss.benchmarking.common.repository;
+
+import de.cuioss.benchmarking.common.http.HttpClientFactory;
+import de.cuioss.tools.logging.CuiLogger;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
-import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
-import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
 import java.io.IOException;
@@ -82,8 +82,7 @@ public class TokenRepository {
      *
      * @return a JWT access token
      */
-    @NonNull
-    public String getNextToken() {
+    @NonNull public String getNextToken() {
         if (tokenPool.isEmpty()) {
             LOGGER.warn("Token pool is empty, fetching single token");
             return fetchSingleToken();
@@ -170,8 +169,7 @@ public class TokenRepository {
      * @return the shared instance
      * @throws IllegalStateException if the shared instance has not been initialized
      */
-    @NonNull
-    public static TokenRepository getSharedInstance() {
+    @NonNull public static TokenRepository getSharedInstance() {
         if (sharedInstance == null) {
             throw new IllegalStateException("Shared TokenRepository instance not initialized. " +
                     "Call initializeSharedInstance() before using getSharedInstance()");
@@ -195,8 +193,7 @@ public class TokenRepository {
 
     }
 
-    @NonNull
-    private String extractAccessToken(@NonNull HttpResponse<String> response) {
+    @NonNull private String extractAccessToken(@NonNull HttpResponse<String> response) {
         String responseBody = response.body();
         if (responseBody == null || responseBody.isEmpty()) {
             throw new TokenFetchException("Empty response body from token endpoint");

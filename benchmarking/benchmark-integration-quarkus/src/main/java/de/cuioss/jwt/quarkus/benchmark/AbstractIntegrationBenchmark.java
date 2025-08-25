@@ -16,10 +16,13 @@
 package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
-import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
+import de.cuioss.benchmarking.common.repository.TokenRepository;
+import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
 
 import java.net.http.HttpRequest;
 

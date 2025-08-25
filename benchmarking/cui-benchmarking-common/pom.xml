@@ -37,6 +37,13 @@
             <version>${version.cui.java.tools}</version>
         </dependency>
         
+        <!-- Lombok for annotations -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
         <!-- Common dependencies -->
         <dependency>
             <groupId>com.google.code.gson</groupId>

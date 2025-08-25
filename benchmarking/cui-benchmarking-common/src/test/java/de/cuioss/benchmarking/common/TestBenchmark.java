@@ -22,8 +22,7 @@ import org.openjdk.jmh.annotations.*;
  */
 @BenchmarkMode(Mode.Throughput) @State(Scope.Benchmark) public class TestBenchmark {
 
-    @Benchmark
-    public int measureSimpleOperation() {
+    @Benchmark public int measureSimpleOperation() {
         // Simple operation for testing
         return 42;
     }

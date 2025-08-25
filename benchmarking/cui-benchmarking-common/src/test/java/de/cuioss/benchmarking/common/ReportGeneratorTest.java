@@ -37,8 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ReportGeneratorTest {
 
-    @Test
-    void generateIndexPageWithResults(@TempDir Path tempDir) throws Exception {
+    @Test void generateIndexPageWithResults(@TempDir Path tempDir) throws Exception {
         // Run benchmark to get results
         var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
@@ -66,8 +65,7 @@ class ReportGeneratorTest {
         assertTrue(content.contains("<style>"), "Should have embedded CSS");
     }
 
-    @Test
-    void generateIndexPageWithEmptyResults(@TempDir Path tempDir) throws Exception {
+    @Test void generateIndexPageWithEmptyResults(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -85,8 +83,7 @@ class ReportGeneratorTest {
         assertTrue(content.contains("<html"), "Should have HTML tag");
     }
 
-    @Test
-    void generateTrendsPage(@TempDir Path tempDir) throws Exception {
+    @Test void generateTrendsPage(@TempDir Path tempDir) throws Exception {
         // Run benchmark to get results
         var options = new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
@@ -113,8 +110,7 @@ class ReportGeneratorTest {
         assertTrue(content.contains("<style>"), "Should have embedded CSS");
     }
 
-    @Test
-    void generatePagesWithNestedDirectory(@TempDir Path tempDir) {
+    @Test void generatePagesWithNestedDirectory(@TempDir Path tempDir) {
         ReportGenerator generator = new ReportGenerator();
         String nestedDir = tempDir.resolve("reports/html/output").toString();
 
@@ -132,8 +128,7 @@ class ReportGeneratorTest {
                 "Trends page should be created in nested directory");
     }
 
-    @Test
-    void generateResponsiveHtml(@TempDir Path tempDir) throws Exception {
+    @Test void generateResponsiveHtml(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -149,8 +144,7 @@ class ReportGeneratorTest {
         assertTrue(content.contains("max-width"), "Should have max-width for responsive layout");
     }
 
-    @Test
-    void generateHtmlWithValidCss(@TempDir Path tempDir) throws Exception {
+    @Test void generateHtmlWithValidCss(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 

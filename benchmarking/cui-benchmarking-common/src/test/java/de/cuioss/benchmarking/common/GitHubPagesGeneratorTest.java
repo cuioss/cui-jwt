@@ -34,8 +34,7 @@ class GitHubPagesGeneratorTest {
 
     private final Gson gson = new Gson();
 
-    @Test
-    void prepareDeploymentStructureCreatesDirectories(@TempDir Path tempDir) throws Exception {
+    @Test void prepareDeploymentStructureCreatesDirectories(@TempDir Path tempDir) throws Exception {
         GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         Path sourceDir = tempDir.resolve("source");
@@ -57,8 +56,7 @@ class GitHubPagesGeneratorTest {
         assertTrue(Files.exists(deployDir.resolve("data")), "Data directory should be created");
     }
 
-    @Test
-    void prepareDeploymentStructureCopiesHtmlFiles(@TempDir Path tempDir) throws Exception {
+    @Test void prepareDeploymentStructureCopiesHtmlFiles(@TempDir Path tempDir) throws Exception {
         GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         Path sourceDir = tempDir.resolve("source");
@@ -79,8 +77,7 @@ class GitHubPagesGeneratorTest {
         assertEquals("<html>Index</html>", indexContent, "HTML content should be preserved");
     }
 
-    @Test
-    void prepareDeploymentStructureCreatesApiEndpoints(@TempDir Path tempDir) throws Exception {
+    @Test void prepareDeploymentStructureCreatesApiEndpoints(@TempDir Path tempDir) throws Exception {
         GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         Path sourceDir = tempDir.resolve("source");
@@ -109,8 +106,7 @@ class GitHubPagesGeneratorTest {
         assertNotNull(status.get("timestamp"), "Timestamp should be present");
     }
 
-    @Test
-    void prepareDeploymentStructureHandlesMissingSourceFiles(@TempDir Path tempDir) throws Exception {
+    @Test void prepareDeploymentStructureHandlesMissingSourceFiles(@TempDir Path tempDir) throws Exception {
         GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         Path sourceDir = tempDir.resolve("source");
@@ -129,8 +125,7 @@ class GitHubPagesGeneratorTest {
         assertTrue(Files.exists(deployDir.resolve("api")), "API directory should be created");
     }
 
-    @Test
-    void prepareDeploymentStructureCopiesBadgeFiles(@TempDir Path tempDir) throws Exception {
+    @Test void prepareDeploymentStructureCopiesBadgeFiles(@TempDir Path tempDir) throws Exception {
         GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         Path sourceDir = tempDir.resolve("source");

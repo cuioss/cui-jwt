@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.benchmark.http;
+package de.cuioss.benchmarking.common.http;
 
 import de.cuioss.tools.logging.CuiLogger;
+
 import lombok.experimental.UtilityClass;
 
 import javax.net.ssl.SSLContext;
@@ -46,8 +47,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@UtilityClass
-public class HttpClientFactory {
+@UtilityClass public class HttpClientFactory {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpClientFactory.class);
 
@@ -192,20 +192,17 @@ public class HttpClientFactory {
      */
     @SuppressWarnings("java:S4830") // Server certificate validation is intentionally disabled for benchmark testing
     private static class TrustAllManager implements X509TrustManager {
-        @Override
-        @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks
+        @Override @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks
         public void checkClientTrusted(X509Certificate[] chain, String authType) {
             // Accept all - only for testing with self-signed certificates in benchmark environments
         }
 
-        @Override
-        @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks  
+        @Override @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks  
         public void checkServerTrusted(X509Certificate[] chain, String authType) {
             // Accept all - only for testing with self-signed certificates in benchmark environments
         }
 
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
+        @Override public X509Certificate[] getAcceptedIssuers() {
             return new X509Certificate[0];
         }
     }

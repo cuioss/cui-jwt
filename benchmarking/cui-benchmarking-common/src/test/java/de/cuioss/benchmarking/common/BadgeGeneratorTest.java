@@ -38,8 +38,7 @@ class BadgeGeneratorTest {
 
     private final Gson gson = new Gson();
 
-    @Test
-    void lastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
+    @Test void lastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
         BadgeGenerator generator = new BadgeGenerator();
 
         String outputDir = tempDir.toString();
@@ -63,8 +62,7 @@ class BadgeGeneratorTest {
         assertTrue(message.matches("\\d{4}-\\d{2}-\\d{2}"), "Message should be in YYYY-MM-DD format");
     }
 
-    @Test
-    void benchmarkTypeFileNames() {
+    @Test void benchmarkTypeFileNames() {
         // Test that different benchmark types generate correct file names
         assertEquals("performance-badge.json", BenchmarkType.MICRO.getPerformanceBadgeFileName(),
                 "Micro benchmark should use standard performance badge filename");

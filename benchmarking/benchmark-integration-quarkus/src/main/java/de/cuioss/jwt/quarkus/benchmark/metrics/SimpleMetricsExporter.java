@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
+import de.cuioss.benchmarking.common.metrics.MetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.constants.MetricConstants;
 import de.cuioss.tools.logging.CuiLogger;
 

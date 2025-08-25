@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.benchmark.config;
+package de.cuioss.benchmarking.common.repository;
 
 import lombok.Builder;
 import lombok.Value;
@@ -24,9 +24,7 @@ import lombok.Value;
  *
  * @since 1.0
  */
-@Value
-@Builder
-public class TokenRepositoryConfig {
+@Value @Builder public class TokenRepositoryConfig {
 
     /**
      * The base URL of the Keycloak server.

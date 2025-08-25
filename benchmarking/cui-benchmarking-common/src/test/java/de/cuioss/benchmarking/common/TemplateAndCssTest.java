@@ -48,8 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TemplateAndCssTest {
 
-    @Test
-    void templateLoadingFailsLoudly() throws Exception {
+    @Test void templateLoadingFailsLoudly() throws Exception {
         // Use reflection to test private loadTemplate method
         ReportGenerator generator = new ReportGenerator();
         Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
@@ -71,8 +70,7 @@ class TemplateAndCssTest {
         }
     }
 
-    @Test
-    void validTemplatesLoad() throws Exception {
+    @Test void validTemplatesLoad() throws Exception {
         // Use reflection to test private loadTemplate method
         ReportGenerator generator = new ReportGenerator();
         Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
@@ -103,8 +101,7 @@ class TemplateAndCssTest {
         }, "Loading existing footer template should not throw");
     }
 
-    @Test
-    void cssFileIsIncludedInResources() {
+    @Test void cssFileIsIncludedInResources() {
         // Verify CSS file exists in resources
         try (InputStream cssStream = getClass().getClassLoader()
                 .getResourceAsStream("templates/report-styles.css")) {
@@ -121,8 +118,7 @@ class TemplateAndCssTest {
         }
     }
 
-    @Test
-    void cssIsEmbeddedInGeneratedHtml(@TempDir Path tempDir) throws Exception {
+    @Test void cssIsEmbeddedInGeneratedHtml(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -144,8 +140,7 @@ class TemplateAndCssTest {
         assertTrue(content.contains(".performance-badge"), "Should include performance-badge styles");
     }
 
-    @Test
-    void deploymentStructureIncludesCss(@TempDir Path tempDir) throws Exception {
+    @Test void deploymentStructureIncludesCss(@TempDir Path tempDir) throws Exception {
         // Simulate a full report generation with all artifacts
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
 
@@ -179,8 +174,7 @@ class TemplateAndCssTest {
         assertTrue(trendsContent.contains(".navbar"), "Trends CSS should be complete");
     }
 
-    @Test
-    void cssClassesForPerformanceGrades(@TempDir Path tempDir) throws Exception {
+    @Test void cssClassesForPerformanceGrades(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -212,8 +206,7 @@ class TemplateAndCssTest {
         assertTrue(content.contains("#dc3545"), "D should use red color");
     }
 
-    @Test
-    void responsiveCssStyles(@TempDir Path tempDir) throws Exception {
+    @Test void responsiveCssStyles(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -233,8 +226,7 @@ class TemplateAndCssTest {
         assertTrue(content.contains("width=device-width"), "Should set device width");
     }
 
-    @Test
-    void missingCssFileHandling() throws Exception {
+    @Test void missingCssFileHandling() throws Exception {
         // Test that missing CSS is handled gracefully with fallback
         ReportGenerator generator = new ReportGenerator();
 
