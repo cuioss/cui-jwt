@@ -54,6 +54,9 @@ public final class BenchmarkLoggingSetup {
     private static final PrintStream ORIGINAL_OUT = System.out;
     private static final PrintStream ORIGINAL_ERR = System.err;
 
+    // Keep reference to file output stream for proper cleanup
+    private static FileOutputStream currentFileOut = null;
+
     private BenchmarkLoggingSetup() {
         // Utility class
     }
@@ -65,21 +68,31 @@ public final class BenchmarkLoggingSetup {
      * @param benchmarkResultsDir the directory where benchmark results are stored
      */
     public static void configureLogging(String benchmarkResultsDir) {
+        // Prepare paths and directories
+        Path resultsPath = Path.of(benchmarkResultsDir);
         try {
-            // Ensure directory exists
-            Path resultsPath = Path.of(benchmarkResultsDir);
             Files.createDirectories(resultsPath);
+        } catch (IOException e) {
+            System.err.println("Failed to create benchmark results directory: " + e.getMessage());
+            System.err.println("Continuing with console-only logging");
+            return;
+        }
 
-            String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
-            String logFileName = "benchmark-run_%s.log".formatted(timestamp);
-            Path logFile = resultsPath.resolve(logFileName);
+        String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
+        String logFileName = "benchmark-run_%s.log".formatted(timestamp);
+        Path logFile = resultsPath.resolve(logFileName);
 
-            FileOutputStream fileOut = new FileOutputStream(logFile.toFile(), true);
+        try {
+            // Close any previous file output stream
+            closeCurrentFileOut();
 
-            TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, fileOut);
+            // Create new file output stream - kept open for the duration of the benchmark
+            currentFileOut = new FileOutputStream(logFile.toFile(), true);
+
+            TeeOutputStream teeOut = new TeeOutputStream(ORIGINAL_OUT, currentFileOut);
             PrintStream newOut = new PrintStream(teeOut, true); // auto-flush enabled
 
-            TeeOutputStream teeErr = new TeeOutputStream(ORIGINAL_ERR, fileOut);
+            TeeOutputStream teeErr = new TeeOutputStream(ORIGINAL_ERR, currentFileOut);
             PrintStream newErr = new PrintStream(teeErr, true); // auto-flush enabled
 
             // Redirect System.out and System.err
@@ -97,28 +110,22 @@ public final class BenchmarkLoggingSetup {
             // System.err is appropriate here as logging infrastructure may not be set up yet
             System.err.println("Failed to configure file logging: " + e.getMessage());
             System.err.println("Continuing with console-only logging");
+            closeCurrentFileOut();
         }
     }
 
-    /**
-     * Configures logging with custom log level and package filtering.
-     * 
-     * @param benchmarkResultsDir the directory where benchmark results are stored
-     * @param logLevel the desired log level (e.g., Level.INFO, Level.DEBUG)
-     * @param packageFilter optional package name to enable detailed logging for
-     */
-    public static void configureLogging(String benchmarkResultsDir, Level logLevel, String packageFilter) {
-        configureLogging(benchmarkResultsDir);
-
-        // Apply custom log level
-        Logger rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
-        rootLogger.setLevel(logLevel);
-
-        // Enable detailed logging for specific package
-        if (packageFilter != null && !packageFilter.isEmpty()) {
-            Logger.getLogger(packageFilter).setLevel(Level.ALL);
+    private static void closeCurrentFileOut() {
+        if (currentFileOut != null) {
+            try {
+                currentFileOut.close();
+            } catch (IOException e) {
+                // Ignore close errors
+            } finally {
+                currentFileOut = null;
+            }
         }
     }
+
 
     private static void configureJavaUtilLogging(Path resultsPath, String timestamp) throws IOException {
         Logger rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
@@ -155,25 +162,4 @@ public final class BenchmarkLoggingSetup {
         Logger.getLogger(packageName).setLevel(level);
     }
 
-    /**
-     * Resets logging to original console-only output.
-     * Useful for cleanup after benchmarks complete.
-     */
-    public static void resetLogging() {
-        System.setOut(ORIGINAL_OUT);
-        System.setErr(ORIGINAL_ERR);
-
-        // Reset java.util.logging
-        Logger rootLogger = Logger.getLogger(ROOT_LOGGER_NAME);
-        Handler[] handlers = rootLogger.getHandlers();
-        for (Handler handler : handlers) {
-            handler.close();
-            rootLogger.removeHandler(handler);
-        }
-
-        // Add back default console handler
-        ConsoleHandler consoleHandler = new ConsoleHandler();
-        rootLogger.addHandler(consoleHandler);
-        rootLogger.setLevel(Level.INFO);
-    }
 }
