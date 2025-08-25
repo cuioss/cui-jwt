@@ -77,20 +77,20 @@
         <pluginManagement>
             <plugins>
                 <!-- Common exec plugin configuration for benchmarks -->
+                <!-- Version inherited from parent: ${exec.maven.plugin.version} -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.2.0</version>
                     <configuration>
                         <skip>${skip.benchmark}</skip>
                     </configuration>
                 </plugin>
 
                 <!-- Common dependency plugin configuration -->
+                <!-- Version inherited from parent pluginManagement -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.8.1</version>
                     <executions>
                         <execution>
                             <id>copy-dependencies</id>
