@@ -33,6 +33,15 @@
         <skip.benchmark>true</skip.benchmark>
         <!-- Default benchmark results directory -->
         <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
+        
+        <!-- Sonar coverage configuration for benchmarking modules -->
+        <!-- Benchmarking code has lower coverage requirements as it's primarily performance testing -->
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.exclusions>**/*Benchmark.java,**/*BenchmarkRunner.java</sonar.coverage.exclusions>
+        <sonar.cpd.exclusions>**/*Benchmark.java</sonar.cpd.exclusions>
+        <!-- Set coverage threshold to 60% for benchmarking modules -->
+        <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+        <sonar.coverage.minimum>60</sonar.coverage.minimum>
     </properties>
 
     <dependencyManagement>
