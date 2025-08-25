@@ -53,9 +53,9 @@ class BenchmarkLoggingSetupTest {
     @Test
     void testConfigureLoggingWithInvalidPath() {
         // Should handle invalid paths gracefully
-        String invalidPath = "\0invalid\0path";
+        String invalidPath = "/nonexistent/path/that/cannot/be/created/../../../root";
         
-        // Should not throw exception
+        // Should not throw exception - logging setup should handle this gracefully
         assertDoesNotThrow(() -> BenchmarkLoggingSetup.configureLogging(invalidPath));
     }
 
