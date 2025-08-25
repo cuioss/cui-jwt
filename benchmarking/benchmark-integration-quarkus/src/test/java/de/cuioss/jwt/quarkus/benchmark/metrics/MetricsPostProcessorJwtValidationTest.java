@@ -46,14 +46,12 @@ class MetricsPostProcessorJwtValidationTest {
     private Gson gson;
     private String jwtValidationBenchmarkFile;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         gson = new GsonBuilder().create();
         jwtValidationBenchmarkFile = "src/test/resources/sample-jwt-validation-benchmark.json";
     }
 
-    @Test
-    void shouldParseJwtValidationSampleModeData() throws IOException {
+    @Test void shouldParseJwtValidationSampleModeData() throws IOException {
         // Given - parser with JWT validation sample mode data
         MetricsPostProcessor parser = new MetricsPostProcessor(jwtValidationBenchmarkFile, tempDir.toString());
 
@@ -79,8 +77,7 @@ class MetricsPostProcessorJwtValidationTest {
                 jwtMetrics.getSampleCount(), jwtMetrics.getP50(), jwtMetrics.getP95(), jwtMetrics.getP99());
     }
 
-    @Test
-    void shouldExportCompleteHttpMetricsWithJwtValidation() throws IOException {
+    @Test void shouldExportCompleteHttpMetricsWithJwtValidation() throws IOException {
         // Given - combined benchmark data with all three endpoint types
         String combinedBenchmarkData = createCombinedBenchmarkData();
         MetricsPostProcessor parser = new MetricsPostProcessor("dummy", tempDir.toString());
@@ -147,8 +144,7 @@ class MetricsPostProcessorJwtValidationTest {
         }
     }
 
-    @Test
-    void shouldHandleJwtValidationPercentileValues() throws IOException {
+    @Test void shouldHandleJwtValidationPercentileValues() throws IOException {
         // Given - parser with JWT validation data
         MetricsPostProcessor parser = new MetricsPostProcessor(jwtValidationBenchmarkFile, tempDir.toString());
 

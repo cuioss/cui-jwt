@@ -43,14 +43,12 @@ class QuarkusMetricsPostProcessorTest {
     private Gson gson;
     private String metricsDownloadDir;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeEach void setUp() throws IOException {
         gson = new GsonBuilder().create();
         metricsDownloadDir = createTestMetricsDirectory();
     }
 
-    @Test
-    void shouldParseQuarkusMetricsFiles() throws IOException {
+    @Test void shouldParseQuarkusMetricsFiles() throws IOException {
         // Given - processor with test metrics directory
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
 
@@ -96,8 +94,7 @@ class QuarkusMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    void shouldHandlePercentageFormatting() throws IOException {
+    @Test void shouldHandlePercentageFormatting() throws IOException {
         // Given - processor with test metrics
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
 
@@ -119,8 +116,7 @@ class QuarkusMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    void shouldHandleMemoryCalculations() throws IOException {
+    @Test void shouldHandleMemoryCalculations() throws IOException {
         // Given - processor with test metrics
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
 
@@ -145,8 +141,7 @@ class QuarkusMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    void shouldUseConvenienceMethod() throws IOException {
+    @Test void shouldUseConvenienceMethod() throws IOException {
         // Given - test metrics in base directory structure
         String baseDir = tempDir.toString();
         File metricsDir = new File(baseDir, "metrics-download");

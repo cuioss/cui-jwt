@@ -44,18 +44,15 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
 
-    @Override
-    protected String[] getBenchmarkMethodNames() {
+    @Override protected String[] getBenchmarkMethodNames() {
         return BENCHMARK_NAMES;
     }
 
-    @Override
-    protected String getJfrPhase() {
+    @Override protected String getJfrPhase() {
         return "mixed-measurement";
     }
 
-    @Setup(Level.Trial)
-    public void setup() {
+    @Setup(Level.Trial) public void setup() {
         // Use base class setup with our benchmark names
         setupJfrBase(BENCHMARK_NAMES);
 
@@ -69,10 +66,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures validation performance with mixed valid/invalid tokens (0% error rate) with JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public Object validateMixedTokens0WithJfr(Blackhole blackhole) {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMixedTokens0WithJfr(Blackhole blackhole) {
         String token = errorLoadDelegate0.selectToken();
         String errorType = errorLoadDelegate0.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
@@ -94,10 +88,7 @@ public class MixedJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures validation performance with mixed valid/invalid tokens (50% error rate) with JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public Object validateMixedTokens50WithJfr(Blackhole blackhole) {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMixedTokens50WithJfr(Blackhole blackhole) {
         String token = errorLoadDelegate50.selectToken();
         String errorType = errorLoadDelegate50.getErrorType(token);
         boolean isValid = "valid".equals(errorType);

@@ -18,11 +18,10 @@ package de.cuioss.jwt.quarkus.benchmark;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLSession;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
-
-import javax.net.ssl.SSLSession;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
@@ -34,13 +33,11 @@ class AbstractBaseBenchmarkTest {
 
     private TestBenchmark benchmark;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         benchmark = new TestBenchmark();
     }
 
-    @Test
-    void setupBenchmark() {
+    @Test void setupBenchmark() {
         // Setup with default values
         assertDoesNotThrow(() -> benchmark.setupBenchmark());
 
@@ -54,8 +51,7 @@ class AbstractBaseBenchmarkTest {
         assertEquals("https://localhost:10443", benchmark.quarkusMetricsUrl);
     }
 
-    @Test
-    void setupBenchmarkWithSystemProperties() {
+    @Test void setupBenchmarkWithSystemProperties() {
         // Set system properties
         System.setProperty("integration.service.url", "https://test:8080");
         System.setProperty("quarkus.metrics.url", "https://metrics:9090");
@@ -75,8 +71,7 @@ class AbstractBaseBenchmarkTest {
         }
     }
 
-    @Test
-    void createBaseRequest() {
+    @Test void createBaseRequest() {
         benchmark.setupBenchmark();
 
         HttpRequest.Builder requestBuilder = benchmark.createBaseRequest("/test/path");
@@ -96,8 +91,7 @@ class AbstractBaseBenchmarkTest {
         assertEquals(30, request.timeout().get().getSeconds());
     }
 
-    @Test
-    void validateResponse() {
+    @Test void validateResponse() {
         benchmark.setupBenchmark();
 
         // Create a mock response with expected status
@@ -113,8 +107,7 @@ class AbstractBaseBenchmarkTest {
         assertTrue(exception.getMessage().contains("Not Found"));
     }
 
-    @Test
-    void validateResponseWithDifferentStatuses() {
+    @Test void validateResponseWithDifferentStatuses() {
         benchmark.setupBenchmark();
 
         // Test various status codes
@@ -130,8 +123,7 @@ class AbstractBaseBenchmarkTest {
         assertTrue(exception.getMessage().contains("500"));
     }
 
-    @Test
-    void loggingManagerProperty() {
+    @Test void loggingManagerProperty() {
         // Verify that the static block sets the logging manager property
         assertEquals("java.util.logging.LogManager",
                 System.getProperty("java.util.logging.manager"));
@@ -140,13 +132,11 @@ class AbstractBaseBenchmarkTest {
     // Test implementation of AbstractBaseBenchmark
     private static class TestBenchmark extends AbstractBaseBenchmark {
         // Expose protected methods for testing
-        @Override
-        public HttpRequest.Builder createBaseRequest(String path) {
+        @Override public HttpRequest.Builder createBaseRequest(String path) {
             return super.createBaseRequest(path);
         }
 
-        @Override
-        public void validateResponse(HttpResponse<String> response, int expectedStatus) {
+        @Override public void validateResponse(HttpResponse<String> response, int expectedStatus) {
             super.validateResponse(response, expectedStatus);
         }
     }
@@ -161,43 +151,35 @@ class AbstractBaseBenchmarkTest {
             this.body = body;
         }
 
-        @Override
-        public int statusCode() {
+        @Override public int statusCode() {
             return statusCode;
         }
 
-        @Override
-        public HttpRequest request() {
+        @Override public HttpRequest request() {
             return null;
         }
 
-        @Override
-        public Optional<HttpResponse<String>> previousResponse() {
+        @Override public Optional<HttpResponse<String>> previousResponse() {
             return Optional.empty();
         }
 
-        @Override
-        public HttpHeaders headers() {
+        @Override public HttpHeaders headers() {
             return HttpHeaders.of(Map.of(), (s1, s2) -> true);
         }
 
-        @Override
-        public String body() {
+        @Override public String body() {
             return body;
         }
 
-        @Override
-        public Optional<SSLSession> sslSession() {
+        @Override public Optional<SSLSession> sslSession() {
             return Optional.empty();
         }
 
-        @Override
-        public URI uri() {
+        @Override public URI uri() {
             return URI.create("https://localhost");
         }
 
-        @Override
-        public HttpClient.Version version() {
+        @Override public HttpClient.Version version() {
             return HttpClient.Version.HTTP_1_1;
         }
     }

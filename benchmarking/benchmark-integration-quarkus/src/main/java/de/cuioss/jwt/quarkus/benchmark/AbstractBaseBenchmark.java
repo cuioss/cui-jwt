@@ -63,8 +63,7 @@ public abstract class AbstractBaseBenchmark {
      * Setup method called once before all benchmark iterations.
      * Initializes HttpClient and metrics exporter.
      */
-    @Setup(Level.Trial)
-    public void setupBenchmark() {
+    @Setup(Level.Trial) public void setupBenchmark() {
         // Get configuration from system properties with correct docker-compose ports
         var config = BenchmarkConfiguration.fromSystemProperties().build();
         serviceUrl = config.integrationServiceUrl().orElse("https://localhost:10443");

@@ -47,9 +47,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
      * Setup method called once before all benchmark iterations.
      * Extends parent setup and initializes or reuses the shared token repository.
      */
-    @Override
-    @Setup(Level.Trial)
-    public void setupBenchmark() {
+    @Override @Setup(Level.Trial) public void setupBenchmark() {
         // Call parent setup first
         super.setupBenchmark();
 

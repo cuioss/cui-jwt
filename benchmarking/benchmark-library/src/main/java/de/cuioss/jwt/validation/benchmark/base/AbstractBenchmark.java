@@ -73,8 +73,7 @@ public abstract class AbstractBenchmark {
      * Export metrics directly from this benchmark's monitor.
      * Called at the end of each benchmark trial.
      */
-    @TearDown(Level.Trial)
-    public void exportBenchmarkMetrics() {
+    @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
         if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());

@@ -47,16 +47,13 @@ class SimpleMetricsExporterTest {
     private SimpleMetricsExporter exporter;
     private Gson gson;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         MetricsFetcher testFetcher = new TestMetricsFetcher();
         exporter = new SimpleMetricsExporter(tempDir.toString(), testFetcher);
         gson = new GsonBuilder().create();
     }
 
-    @Test
-    @DisplayName("Should export JWT bearer token validation metrics")
-    void shouldExportRealJwtValidationMetrics() throws Exception {
+    @Test @DisplayName("Should export JWT bearer token validation metrics") void shouldExportRealJwtValidationMetrics() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
@@ -91,9 +88,7 @@ class SimpleMetricsExporterTest {
         }
     }
 
-    @Test
-    @DisplayName("Should handle multiple benchmarks correctly")
-    void shouldHandleMultipleBenchmarks() throws Exception {
+    @Test @DisplayName("Should handle multiple benchmarks correctly") void shouldHandleMultipleBenchmarks() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
@@ -124,9 +119,7 @@ class SimpleMetricsExporterTest {
         }
     }
 
-    @Test
-    @DisplayName("Should format numbers correctly in JSON output")
-    void shouldFormatNumbersCorrectly() throws Exception {
+    @Test @DisplayName("Should format numbers correctly in JSON output") void shouldFormatNumbersCorrectly() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
@@ -142,9 +135,7 @@ class SimpleMetricsExporterTest {
         assertTrue(jsonContent.contains("\"validation\""), "Should contain bearer token validation metrics");
     }
 
-    @Test
-    @DisplayName("Should format numbers with correct decimal rules")
-    void shouldFormatNumbersCorrectlyWithDecimalRules() throws Exception {
+    @Test @DisplayName("Should format numbers with correct decimal rules") void shouldFormatNumbersCorrectlyWithDecimalRules() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("validateJwtThroughput", Instant.now());
 
@@ -164,9 +155,7 @@ class SimpleMetricsExporterTest {
         assertTrue(jsonContent.contains("\"security_event_counter_metrics\""), "Should contain security event counter metrics");
     }
 
-    @Test
-    @DisplayName("Should only include JWT validation benchmarks")
-    void shouldOnlyIncludeJwtValidationBenchmarks() throws Exception {
+    @Test @DisplayName("Should only include JWT validation benchmarks") void shouldOnlyIncludeJwtValidationBenchmarks() throws Exception {
         // Arrange
         MetricsFetcher multiTypeFetcher = new TestMetricsFetcher();
         SimpleMetricsExporter filteringExporter = new SimpleMetricsExporter(tempDir.toString(), multiTypeFetcher);
@@ -192,9 +181,7 @@ class SimpleMetricsExporterTest {
         assertEquals(3, aggregatedData.size());
     }
 
-    @Test
-    @DisplayName("Should include HTTP metrics in output")
-    void shouldIncludeHttpMetricsInOutput() throws Exception {
+    @Test @DisplayName("Should include HTTP metrics in output") void shouldIncludeHttpMetricsInOutput() throws Exception {
         // Act
         exporter.exportJwtValidationMetrics("JwtValidationBenchmark.validateJwtThroughput", Instant.now());
 
@@ -237,9 +224,7 @@ class SimpleMetricsExporterTest {
         assertTrue(totalErrors.longValue() > 0, "Should have some security events recorded");
     }
 
-    @Test
-    @DisplayName("Should handle empty metrics data gracefully")
-    void shouldHandleEmptyMetricsData() throws Exception {
+    @Test @DisplayName("Should handle empty metrics data gracefully") void shouldHandleEmptyMetricsData() throws Exception {
         // Arrange
         MetricsFetcher emptyFetcher = () -> new HashMap<>();
         SimpleMetricsExporter emptyExporter = new SimpleMetricsExporter(tempDir.toString(), emptyFetcher);
@@ -271,8 +256,7 @@ class SimpleMetricsExporterTest {
 
     private static class TestMetricsFetcher implements MetricsFetcher {
 
-        @Override
-        public Map<String, Double> fetchMetrics() {
+        @Override public Map<String, Double> fetchMetrics() {
             try {
                 String testDataPath = "src/test/resources/sample-jwt-validation-metrics.txt";
                 String content = Files.readString(Path.of(testDataPath));
