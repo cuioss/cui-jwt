@@ -161,6 +161,13 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Jakarta JSON API -->
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        
         <!-- Implementation of jakarta.json-api -->
         <dependency>
             <groupId>org.eclipse.parsson</groupId>

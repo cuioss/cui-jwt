@@ -15,9 +15,10 @@
  */
 package de.cuioss.benchmarking.common.report;
 
+import de.cuioss.tools.logging.CuiLogger;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import de.cuioss.tools.logging.CuiLogger;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;

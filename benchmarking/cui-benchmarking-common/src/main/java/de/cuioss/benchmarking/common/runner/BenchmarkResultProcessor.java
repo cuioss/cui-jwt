@@ -16,11 +16,7 @@
 package de.cuioss.benchmarking.common.runner;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.BadgeGenerator;
-import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
-import de.cuioss.benchmarking.common.report.MetricsGenerator;
-import de.cuioss.benchmarking.common.report.ReportGenerator;
-import de.cuioss.benchmarking.common.report.SummaryGenerator;
+import de.cuioss.benchmarking.common.report.*;
 import de.cuioss.tools.logging.CuiLogger;
 
 import org.openjdk.jmh.results.RunResult;
