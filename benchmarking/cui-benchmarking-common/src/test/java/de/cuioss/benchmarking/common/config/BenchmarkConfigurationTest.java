@@ -186,4 +186,126 @@ class BenchmarkConfigurationTest {
         BenchmarkConfiguration config3 = BenchmarkConfiguration.defaults().build();
         assertTrue(config3.resultFile().endsWith("benchmark-result.json"));
     }
+
+    @Test
+    void testInvalidResultFormat() {
+        System.setProperty("jmh.result.format", "INVALID_FORMAT");
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            // Should default to JSON when invalid format is provided
+            assertEquals(ResultFormatType.JSON, config.resultFormat());
+        } finally {
+            System.clearProperty("jmh.result.format");
+        }
+    }
+
+    @Test
+    void testTimeValueParsingEdgeCases() {
+        // Test various time formats
+        System.setProperty("jmh.time", "100ms");
+        System.setProperty("jmh.warmupTime", "5m");
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            assertNotNull(config.measurementTime());
+            assertNotNull(config.warmupTime());
+        } finally {
+            System.clearProperty("jmh.time");
+            System.clearProperty("jmh.warmupTime");
+        }
+
+        // Test invalid time format - should default
+        System.setProperty("jmh.time", "invalid");
+        System.setProperty("jmh.warmupTime", "");
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            assertNotNull(config.measurementTime());
+            assertNotNull(config.warmupTime());
+        } finally {
+            System.clearProperty("jmh.time");
+            System.clearProperty("jmh.warmupTime");
+        }
+
+        // Test numeric value without unit
+        System.setProperty("jmh.time", "10");
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            assertNotNull(config.measurementTime());
+        } finally {
+            System.clearProperty("jmh.time");
+        }
+    }
+
+    @Test
+    void testAllSystemProperties() {
+        // Set all possible system properties
+        System.setProperty("jmh.include", ".*AllTests.*");
+        System.setProperty("jmh.result.format", "CSV");
+        System.setProperty("jmh.result.filePrefix", "all-tests");
+        System.setProperty("jmh.forks", "2");
+        System.setProperty("jmh.warmupIterations", "10");
+        System.setProperty("jmh.iterations", "20");
+        System.setProperty("jmh.time", "3s");
+        System.setProperty("jmh.warmupTime", "2s");
+        System.setProperty("jmh.threads", "8");
+        System.setProperty("benchmark.results.dir", "/tmp/results");
+        System.setProperty("integration.service.url", "http://service:8080");
+        System.setProperty("keycloak.url", "http://keycloak:8180");
+        System.setProperty("quarkus.metrics.url", "http://metrics:9090");
+        
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            
+            assertEquals(".*AllTests.*", config.includePattern());
+            assertEquals(ResultFormatType.CSV, config.resultFormat());
+            assertEquals("all-tests.json", config.resultFile());
+            assertEquals(2, config.forks());
+            assertEquals(10, config.warmupIterations());
+            assertEquals(20, config.measurementIterations());
+            assertNotNull(config.measurementTime());
+            assertNotNull(config.warmupTime());
+            assertEquals(8, config.threads());
+            assertEquals("/tmp/results", config.resultsDirectory());
+            assertEquals("http://service:8080", config.integrationServiceUrl().orElse(null));
+            assertEquals("http://keycloak:8180", config.keycloakUrl().orElse(null));
+            assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
+        } finally {
+            // Clean up all properties
+            System.clearProperty("jmh.include");
+            System.clearProperty("jmh.result.format");
+            System.clearProperty("jmh.result.filePrefix");
+            System.clearProperty("jmh.forks");
+            System.clearProperty("jmh.warmupIterations");
+            System.clearProperty("jmh.iterations");
+            System.clearProperty("jmh.time");
+            System.clearProperty("jmh.warmupTime");
+            System.clearProperty("jmh.threads");
+            System.clearProperty("benchmark.results.dir");
+            System.clearProperty("integration.service.url");
+            System.clearProperty("keycloak.url");
+            System.clearProperty("quarkus.metrics.url");
+        }
+    }
+
+    @Test
+    void testRecordEquality() {
+        BenchmarkConfiguration config1 = BenchmarkConfiguration.defaults()
+                .withIncludePattern(".*Test.*")
+                .withForks(2)
+                .build();
+        
+        BenchmarkConfiguration config2 = BenchmarkConfiguration.defaults()
+                .withIncludePattern(".*Test.*")
+                .withForks(2)
+                .build();
+        
+        BenchmarkConfiguration config3 = BenchmarkConfiguration.defaults()
+                .withIncludePattern(".*Different.*")
+                .withForks(2)
+                .build();
+        
+        // Records should have equals/hashCode automatically
+        assertEquals(config1, config2);
+        assertEquals(config1.hashCode(), config2.hashCode());
+        assertNotEquals(config1, config3);
+    }
 }
