@@ -17,7 +17,6 @@
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
-        <sonar.skip>true</sonar.skip>
 
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.BenchmarkRunner</benchmark.runner>

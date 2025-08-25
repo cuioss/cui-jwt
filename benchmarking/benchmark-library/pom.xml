@@ -17,7 +17,6 @@
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.validation.benchmark</maven.jar.plugin.automatic.module.name>
-        <sonar.skip>true</sonar.skip>
         <version.mockwebserver3>5.0.0-alpha.12</version.mockwebserver3>
 
         <!-- Default benchmark runner -->
