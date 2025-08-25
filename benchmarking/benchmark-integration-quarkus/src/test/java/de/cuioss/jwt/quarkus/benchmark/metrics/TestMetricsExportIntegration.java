@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import de.cuioss.tools.logging.CuiLogger;
+import org.awaitility.Awaitility;
 
 import java.io.File;
 import java.io.FileReader;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test class to verify the JWT validation metrics export functionality
@@ -38,7 +40,7 @@ public class TestMetricsExportIntegration {
     private static final CuiLogger LOGGER = new CuiLogger(TestMetricsExportIntegration.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
         // Create temporary directory for output
         Path tempDir = Files.createTempDirectory("metrics-test");
         LOGGER.info("Using temp directory: %s", tempDir);
@@ -59,8 +61,13 @@ public class TestMetricsExportIntegration {
         };
 
         for (String benchmark : benchmarks) {
-            exporter.exportJwtValidationMetrics(benchmark, Instant.now());
-            Thread.sleep(100); // Small delay to ensure different timestamps
+            Instant exportTime = Instant.now();
+            exporter.exportJwtValidationMetrics(benchmark, exportTime);
+            // Use Awaitility to ensure different timestamps between exports
+            Awaitility.await()
+                    .atMost(200, TimeUnit.MILLISECONDS)
+                    .pollDelay(100, TimeUnit.MILLISECONDS)
+                    .until(() -> Instant.now().isAfter(exportTime.plusMillis(100)));
         }
 
         // Read and display the result
