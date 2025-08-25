@@ -255,18 +255,10 @@ Thresholds vary by benchmark type (micro vs integration).
 == Dependencies
 
 This module depends on:
+
 * JMH Core - Benchmark framework
 * Gson - JSON serialization
 * Apache Commons IO - File operations
 * CUI Tools - Logging utilities
 * Lombok - Annotation processing (provided scope)
 * HdrHistogram - High Dynamic Range histograms
-
-== Recent Changes
-
-* Reorganized into logical sub-packages for better maintainability
-* Added HTTP client factory with caching and SSL support
-* Moved metrics collection interfaces from integration module
-* Added token repository for JWT benchmark support
-* Enhanced configuration with builder pattern
-* Improved artifact generation with quality gates
