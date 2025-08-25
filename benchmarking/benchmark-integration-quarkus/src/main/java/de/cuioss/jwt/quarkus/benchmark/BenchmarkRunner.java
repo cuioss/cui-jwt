@@ -148,8 +148,8 @@ public class BenchmarkRunner {
         }
 
         // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-        processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.INTEGRATION);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.INTEGRATION);
+        processor.processResults(results, getBenchmarkResultsDir());
 
         // Process and download final metrics after successful benchmark execution
         processMetrics();

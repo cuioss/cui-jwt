@@ -47,35 +47,33 @@ public class BenchmarkResultProcessor {
     private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkResultProcessor.class);
 
+    private final BenchmarkType benchmarkType;
+
     /**
-     * Processes benchmark results to generate all artifacts with auto-detected benchmark type.
+     * Creates a processor for the specified benchmark type.
+     *
+     * @param benchmarkType the type of benchmarks being processed
+     */
+    public BenchmarkResultProcessor(BenchmarkType benchmarkType) {
+        this.benchmarkType = benchmarkType;
+    }
+
+    /**
+     * Processes benchmark results to generate all artifacts.
      *
      * @param results the JMH benchmark results
      * @param outputDir the output directory for generated artifacts
      * @throws IOException if file operations fail
      */
     public void processResults(Collection<RunResult> results, String outputDir) throws IOException {
-        BenchmarkType type = detectBenchmarkType(results);
-        processResults(results, outputDir, type);
-    }
-
-    /**
-     * Processes benchmark results to generate all artifacts with explicit benchmark type.
-     *
-     * @param results the JMH benchmark results
-     * @param outputDir the output directory for generated artifacts
-     * @param type the explicit benchmark type to use
-     * @throws IOException if file operations fail
-     */
-    public void processResults(Collection<RunResult> results, String outputDir, BenchmarkType type) throws IOException {
         LOGGER.info(INFO.PROCESSING_RESULTS.format(results.size()));
-        LOGGER.info(INFO.BENCHMARK_TYPE_DETECTED.format(type));
+        LOGGER.info(INFO.BENCHMARK_TYPE_DETECTED.format(benchmarkType));
 
         // Create output directories
         createOutputDirectories(outputDir);
 
         // Generate all badges
-        generateBadges(results, type, outputDir);
+        generateBadges(results, benchmarkType, outputDir);
 
         // Generate performance metrics
         generateMetrics(results, outputDir);
@@ -87,46 +85,11 @@ public class BenchmarkResultProcessor {
         generateGitHubPagesStructure(outputDir);
 
         // Write summary file for CI
-        writeSummaryFile(results, type, outputDir);
+        writeSummaryFile(results, benchmarkType, outputDir);
 
         LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
     }
 
-    /**
-     * Detects the benchmark type based on the benchmark names.
-     * <p>
-     * First checks for explicit benchmark.type property, then falls back to
-     * smart detection based on package structure rather than hardcoded class names.
-     *
-     * @param results the benchmark results
-     * @return the detected or configured benchmark type
-     */
-    private BenchmarkType detectBenchmarkType(Collection<RunResult> results) {
-        // Check for explicit type override via property
-        String explicitType = System.getProperty("benchmark.type");
-        if (explicitType != null) {
-            try {
-                return BenchmarkType.valueOf(explicitType.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                LOGGER.warn("Invalid benchmark.type property value: " + explicitType +
-                        ". Falling back to auto-detection.");
-            }
-        }
-
-        // Fall back to auto-detection based on patterns
-        return results.stream()
-                .map(r -> r.getParams().getBenchmark())
-                .findFirst()
-                .map(benchmark -> {
-                    if (benchmark.contains(".integration.") ||
-                            benchmark.contains(".quarkus.") ||
-                            benchmark.contains("Integration")) {
-                        return BenchmarkType.INTEGRATION;
-                    }
-                    return BenchmarkType.MICRO;
-                })
-                .orElse(BenchmarkType.MICRO);
-    }
 
     /**
      * Creates all necessary output directories.

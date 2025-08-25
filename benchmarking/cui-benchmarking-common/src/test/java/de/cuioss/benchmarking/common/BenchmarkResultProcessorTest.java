@@ -50,7 +50,7 @@ class BenchmarkResultProcessorTest {
         Collection<RunResult> results = new Runner(options).run();
 
         // Process results
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
 
@@ -84,7 +84,7 @@ class BenchmarkResultProcessorTest {
 
     @Test
     void emptyResultsHandling(@TempDir Path tempDir) throws Exception {
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         List<RunResult> emptyResults = List.of();
 
         String outputDir = tempDir.toString();
@@ -102,7 +102,7 @@ class BenchmarkResultProcessorTest {
 
     @Test
     void directoryCreation(@TempDir Path tempDir) throws Exception {
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         String outputDir = tempDir.resolve("nested/benchmark/results").toString();
 
         // Use empty results to test directory creation

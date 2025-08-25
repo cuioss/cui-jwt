@@ -81,7 +81,11 @@ public class BenchmarkRunner {
         }
 
         // Process results to generate all artifacts
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+        // This is a generic runner - concrete implementations should specify their benchmark type
+        BenchmarkType type = BenchmarkType.valueOf(
+                System.getProperty("benchmark.type", "MICRO").toUpperCase()
+        );
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(type);
         processor.processResults(results, outputDir);
 
         LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(results.size()) + ", artifacts in " + outputDir);

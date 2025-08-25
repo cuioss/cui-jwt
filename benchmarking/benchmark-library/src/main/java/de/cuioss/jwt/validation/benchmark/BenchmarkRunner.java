@@ -75,8 +75,8 @@ public class BenchmarkRunner {
         Collection<RunResult> results = new Runner(options).run();
 
         // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
-        processor.processResults(results, getBenchmarkResultsDir(), BenchmarkType.MICRO);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        processor.processResults(results, getBenchmarkResultsDir());
 
         LOGGER.info("Benchmarks completed: {} benchmarks executed, artifacts in {}",
                 results.size(), getBenchmarkResultsDir());
