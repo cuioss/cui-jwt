@@ -83,7 +83,7 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test
-    void emptyResultsHandling(@TempDir Path tempDir) throws Exception {
+    void emptyResultsHandling(@TempDir Path tempDir) {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         List<RunResult> emptyResults = List.of();
 
