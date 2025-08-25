@@ -58,6 +58,12 @@ public class SummaryGenerator {
             .serializeSpecialFloatingPointValues()
             .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+    
+    // Constants for JSON field names
+    private static final String FIELD_TOTAL_BENCHMARKS = "total_benchmarks";
+    private static final String FIELD_AVERAGE_THROUGHPUT = "average_throughput";
+    private static final String FIELD_STATUS = "status";
+    private static final String FIELD_PERFORMANCE = "performance";
 
     // Performance score constants
     private static final double PERFECT_SCORE = 100.0;
@@ -93,9 +99,9 @@ public class SummaryGenerator {
         // Performance metrics
         var summaryMetrics = generateSummaryMetrics(results);
         summary.put("metrics", summaryMetrics);
-        summary.put("total_benchmarks", summaryMetrics.get("total_benchmarks"));
+        summary.put(FIELD_TOTAL_BENCHMARKS, summaryMetrics.get(FIELD_TOTAL_BENCHMARKS));
         summary.put("performance_grade", calculatePerformanceGrade(results));
-        summary.put("average_throughput", summaryMetrics.get("average_throughput"));
+        summary.put(FIELD_AVERAGE_THROUGHPUT, summaryMetrics.get(FIELD_AVERAGE_THROUGHPUT));
 
         // Quality gates
         summary.put("quality_gates", evaluateQualityGates(results, type));
@@ -134,9 +140,9 @@ public class SummaryGenerator {
     private Map<String, Object> generateSummaryMetrics(Collection<RunResult> results) {
         Map<String, Object> metrics = new LinkedHashMap<>();
 
-        metrics.put("total_benchmarks", results.size());
+        metrics.put(FIELD_TOTAL_BENCHMARKS, results.size());
         metrics.put("successful_benchmarks", countSuccessfulBenchmarks(results));
-        metrics.put("average_throughput", calculateAverageThroughput(results));
+        metrics.put(FIELD_AVERAGE_THROUGHPUT, calculateAverageThroughput(results));
         metrics.put("total_execution_time", calculateTotalExecutionTime(results));
         metrics.put("performance_score", calculateOverallPerformanceScore(results));
 
@@ -160,19 +166,19 @@ public class SummaryGenerator {
         Map<String, Object> throughputGate = new LinkedHashMap<>();
         throughputGate.put("threshold", throughputThreshold);
         throughputGate.put("actual", avgThroughput);
-        throughputGate.put("status", avgThroughput >= throughputThreshold ? "PASS" : "FAIL");
+        throughputGate.put(FIELD_STATUS, avgThroughput >= throughputThreshold ? "PASS" : "FAIL");
         gates.put("throughput", throughputGate);
 
         Map<String, Object> regressionGate = new LinkedHashMap<>();
         regressionGate.put("threshold_percent", regressionThreshold);
         regressionGate.put("actual_percent", 0.0);
-        regressionGate.put("status", "PASS");
+        regressionGate.put(FIELD_STATUS, "PASS");
         regressionGate.put("note", "Historical comparison not available");
         gates.put("regression", regressionGate);
 
         // Overall gate status
         boolean allPassed = gates.values().stream()
-                .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get("status")));
+                .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get(FIELD_STATUS)));
         gates.put("overall_status", allPassed ? "PASS" : "FAIL");
 
         return gates;
@@ -188,11 +194,11 @@ public class SummaryGenerator {
 
         // Performance recommendations
         if (avgThroughput < 1_000) {
-            recommendations.put("performance", "Consider performance optimization - throughput below baseline");
+            recommendations.put(FIELD_PERFORMANCE, "Consider performance optimization - throughput below baseline");
         } else if (avgThroughput > 100_000) {
-            recommendations.put("performance", "Excellent performance - consider this as new baseline");
+            recommendations.put(FIELD_PERFORMANCE, "Excellent performance - consider this as new baseline");
         } else {
-            recommendations.put("performance", "Performance within acceptable range");
+            recommendations.put(FIELD_PERFORMANCE, "Performance within acceptable range");
         }
 
         // Deployment recommendations

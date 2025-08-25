@@ -143,7 +143,6 @@ class TemplateAndCssTest {
     @Test
     void deploymentStructureIncludesCss(@TempDir Path tempDir) throws Exception {
         // Simulate a full report generation with all artifacts
-        ReportGenerator generator = new ReportGenerator();
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
 
         // Use test benchmark results

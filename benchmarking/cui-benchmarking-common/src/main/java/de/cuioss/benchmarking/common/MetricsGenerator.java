@@ -136,7 +136,7 @@ public class MetricsGenerator {
         return metrics;
     }
 
-    private Map<String, Object> normalizeMetrics(Result primaryResult) {
+    private Map<String, Object> normalizeMetrics(Result<?> primaryResult) {
         record MetricConversion(double throughputOpsPerSec, double latencyMsPerOp) {
         }
 
@@ -208,7 +208,7 @@ public class MetricsGenerator {
             return className + "_" + methodName;
         }
 
-        return fullBenchmarkName.replaceAll("\\.", "_");
+        return fullBenchmarkName.replace(".", "_");
     }
 
     private double calculateTotalScore(Collection<RunResult> results) {

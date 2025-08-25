@@ -112,7 +112,7 @@ class ReportGeneratorTest {
     }
 
     @Test
-    void generatePagesWithNestedDirectory(@TempDir Path tempDir) throws Exception {
+    void generatePagesWithNestedDirectory(@TempDir Path tempDir) {
         ReportGenerator generator = new ReportGenerator();
         String nestedDir = tempDir.resolve("reports/html/output").toString();
 

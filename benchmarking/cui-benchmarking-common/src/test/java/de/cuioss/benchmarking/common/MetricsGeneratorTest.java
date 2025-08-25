@@ -125,7 +125,7 @@ class MetricsGeneratorTest {
     }
 
     @Test
-    void ensureDirectoryCreation(@TempDir Path tempDir) throws Exception {
+    void ensureDirectoryCreation(@TempDir Path tempDir) {
         MetricsGenerator generator = new MetricsGenerator();
         String nestedDir = tempDir.resolve("nested/deep/path").toString();
 
