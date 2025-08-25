@@ -96,65 +96,40 @@ public class ReportGenerator {
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
 
-    private String generateHtmlHeader(String title, boolean includeCharts) {
-        try {
-            String template = loadTemplate("report-header.html");
-            String chartScript = includeCharts ? "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>" : "";
-            return template
-                    .replace("${title}", title)
-                    .replace("${css}", getEmbeddedCSS())
-                    .replace("${chartScript}", chartScript);
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load header template, using fallback", e);
-            return "<html><head><title>" + title + "</title></head><body>";
-        }
+    private String generateHtmlHeader(String title, boolean includeCharts) throws IOException {
+        String template = loadTemplate("report-header.html");
+        String chartScript = includeCharts ? "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>" : "";
+        return template
+                .replace("${title}", title)
+                .replace("${css}", getEmbeddedCSS())
+                .replace("${chartScript}", chartScript);
     }
 
-    private String generateHtmlFooter() {
-        try {
-            String template = loadTemplate("report-footer.html");
-            return template.replace("${timestamp}", getCurrentTimestamp());
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load footer template, using fallback", e);
-            return "</body></html>";
-        }
+    private String generateHtmlFooter() throws IOException {
+        String template = loadTemplate("report-footer.html");
+        return template.replace("${timestamp}", getCurrentTimestamp());
     }
 
-    private String generateNavigationMenu() {
-        try {
-            return loadTemplate("navigation-menu.html");
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load navigation template, using fallback", e);
-            return "<nav><h1>CUI Benchmarking</h1></nav>";
-        }
+    private String generateNavigationMenu() throws IOException {
+        return loadTemplate("navigation-menu.html");
     }
 
-    private String generateOverviewSection(Collection<RunResult> results) {
-        try {
-            String template = loadTemplate("overview-section.html");
-            double avgThroughput = calculateAverageThroughput(results);
-            return template
-                    .replace("${totalBenchmarks}", String.valueOf(results.size()))
-                    .replace("${avgThroughput}", formatThroughput(avgThroughput))
-                    .replace("${performanceGrade}", calculatePerformanceGrade(avgThroughput));
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load overview template, using fallback", e);
-            return "<main><section><h2>Performance Overview</h2></section></main>";
-        }
+    private String generateOverviewSection(Collection<RunResult> results) throws IOException {
+        String template = loadTemplate("overview-section.html");
+        double avgThroughput = calculateAverageThroughput(results);
+        return template
+                .replace("${totalBenchmarks}", String.valueOf(results.size()))
+                .replace("${avgThroughput}", formatThroughput(avgThroughput))
+                .replace("${performanceGrade}", calculatePerformanceGrade(avgThroughput));
     }
 
-    private String generateBenchmarkTable(Collection<RunResult> results) {
-        try {
-            String template = loadTemplate("benchmark-table.html");
-            StringBuilder rows = new StringBuilder();
-            for (RunResult result : results) {
-                rows.append(generateBenchmarkRow(result));
-            }
-            return template.replace("${tableRows}", rows.toString());
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load benchmark table template, using fallback", e);
-            return "<section><h2>Benchmark Results</h2><table></table></section>";
+    private String generateBenchmarkTable(Collection<RunResult> results) throws IOException {
+        String template = loadTemplate("benchmark-table.html");
+        StringBuilder rows = new StringBuilder();
+        for (RunResult result : results) {
+            rows.append(generateBenchmarkRow(result));
         }
+        return template.replace("${tableRows}", rows.toString());
     }
 
     private String generateBenchmarkRow(RunResult result) {
@@ -194,16 +169,11 @@ public class ReportGenerator {
         }
     }
 
-    private String generateTrendsSection(Collection<RunResult> results) {
-        try {
-            String template = loadTemplate("trends-section.html");
-            return template
-                    .replace("${benchmarkCount}", String.valueOf(results.size()))
-                    .replace("${performanceGrade}", calculatePerformanceGrade(calculateAverageThroughput(results)));
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load trends template, using fallback", e);
-            return "<main><section><h2>Performance Trends</h2><p>" + results.size() + " benchmarks analyzed</p></section></main>";
-        }
+    private String generateTrendsSection(Collection<RunResult> results) throws IOException {
+        String template = loadTemplate("trends-section.html");
+        return template
+                .replace("${benchmarkCount}", String.valueOf(results.size()))
+                .replace("${performanceGrade}", calculatePerformanceGrade(calculateAverageThroughput(results)));
     }
 
     private String getEmbeddedCSS() {
