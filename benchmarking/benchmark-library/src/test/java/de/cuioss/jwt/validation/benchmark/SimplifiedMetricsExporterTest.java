@@ -116,13 +116,12 @@ class SimplifiedMetricsExporterTest {
     }
 
     @Test
-    void shouldHandleNullMonitor() throws IOException {
-        // Should not throw exception
-        SimplifiedMetricsExporter.exportMetrics(null);
+    void shouldHandleNullMonitor() {
+        assertDoesNotThrow(() -> SimplifiedMetricsExporter.exportMetrics(null));
     }
 
     @Test
-    void shouldFormatNumbersCorrectly() throws IOException, InterruptedException {
+    void shouldFormatNumbersCorrectly() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
                 .measurementType(MeasurementType.TOKEN_PARSING)

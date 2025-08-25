@@ -20,6 +20,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -36,7 +38,7 @@ import java.util.regex.Pattern;
 /**
  * Post-processor for Quarkus metrics that extracts CPU and RAM usage data
  * from Prometheus format metrics files and generates quarkus-metrics.json.
- * 
+ *
  * This processor analyzes metrics-download directory containing timestamped
  * Quarkus metrics files and extracts system resource usage information.
  *
@@ -75,7 +77,7 @@ public class QuarkusMetricsPostProcessor {
 
     /**
      * Parse Quarkus metrics files and generate quarkus-metrics.json with CPU and RAM usage data
-     * 
+     *
      * @param timestamp Timestamp for the metrics output
      * @throws IOException if file operations fail
      */
@@ -276,18 +278,25 @@ public class QuarkusMetricsPostProcessor {
      * Class to accumulate resource metrics across multiple files
      */
     public static class QuarkusResourceMetrics {
+        public static final String HEAP = "heap:";
+        public static final String NONHEAP = "nonheap:";
         // CPU metrics
         private double totalCpuUsage = 0.0;
+        @Getter
         private double maxCpuUsage = 0.0;
         private int cpuUsageCount = 0;
 
         private double totalProcessCpuUsage = 0.0;
+        @Getter
         private double maxProcessCpuUsage = 0.0;
         private int processCpuUsageCount = 0;
 
+        @Setter
+        @Getter
         private int cpuCount = 0;
 
         private double totalLoadAverage = 0.0;
+        @Getter
         private double maxLoadAverage = 0.0;
         private int loadAverageCount = 0;
 
@@ -296,6 +305,7 @@ public class QuarkusMetricsPostProcessor {
         private final Map<String, Long> memoryCommitted = new LinkedHashMap<>();
         private final Map<String, Long> memoryMax = new LinkedHashMap<>();
 
+        @Getter
         private int filesProcessed = 0;
 
         // CPU methods
@@ -309,10 +319,6 @@ public class QuarkusMetricsPostProcessor {
             totalProcessCpuUsage += processCpuUsage;
             maxProcessCpuUsage = Math.max(maxProcessCpuUsage, processCpuUsage);
             processCpuUsageCount++;
-        }
-
-        public void setCpuCount(int cpuCount) {
-            this.cpuCount = cpuCount;
         }
 
         public void addLoadAverage(double loadAverage) {
@@ -346,75 +352,56 @@ public class QuarkusMetricsPostProcessor {
             return cpuUsageCount > 0 ? totalCpuUsage / cpuUsageCount : 0.0;
         }
 
-        public double getMaxCpuUsage() {
-            return maxCpuUsage;
-        }
-
         public double getAverageProcessCpuUsage() {
             return processCpuUsageCount > 0 ? totalProcessCpuUsage / processCpuUsageCount : 0.0;
-        }
-
-        public double getMaxProcessCpuUsage() {
-            return maxProcessCpuUsage;
-        }
-
-        public int getCpuCount() {
-            return cpuCount;
         }
 
         public double getAverageLoadAverage() {
             return loadAverageCount > 0 ? totalLoadAverage / loadAverageCount : 0.0;
         }
 
-        public double getMaxLoadAverage() {
-            return maxLoadAverage;
-        }
-
         public long getTotalHeapUsed() {
             return memoryUsed.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("heap:"))
+                    .filter(entry -> entry.getKey().startsWith(HEAP))
                     .mapToLong(Map.Entry::getValue)
                     .sum();
         }
 
         public long getTotalHeapCommitted() {
             return memoryCommitted.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("heap:"))
+                    .filter(entry -> entry.getKey().startsWith(HEAP))
                     .mapToLong(Map.Entry::getValue)
                     .sum();
         }
 
         public long getTotalHeapMax() {
             return memoryMax.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("heap:"))
+                    .filter(entry -> entry.getKey().startsWith(HEAP))
                     .mapToLong(Map.Entry::getValue)
                     .sum();
         }
 
         public long getTotalNonHeapUsed() {
             return memoryUsed.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("nonheap:"))
+                    .filter(entry -> entry.getKey().startsWith(NONHEAP))
                     .mapToLong(Map.Entry::getValue)
                     .sum();
         }
 
         public long getTotalNonHeapCommitted() {
             return memoryCommitted.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("nonheap:"))
+                    .filter(entry -> entry.getKey().startsWith(NONHEAP))
                     .mapToLong(Map.Entry::getValue)
                     .sum();
         }
 
         public long getTotalNonHeapMax() {
             return memoryMax.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("nonheap:"))
+                    .filter(entry -> entry.getKey().startsWith(NONHEAP))
                     .mapToLong(Map.Entry::getValue)
                     .sum();
         }
 
-        public int getFilesProcessed() {
-            return filesProcessed;
-        }
     }
 
     /**

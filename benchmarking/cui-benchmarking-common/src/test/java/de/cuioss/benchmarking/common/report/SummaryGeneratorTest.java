@@ -20,7 +20,7 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.openjdk.jmh.results.*;
+import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,14 +40,12 @@ class SummaryGeneratorTest {
     private SummaryGenerator generator;
     private Gson gson;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         generator = new SummaryGenerator();
         gson = new Gson();
     }
 
-    @Test
-    void testWriteSummaryWithEmptyResults() throws IOException {
+    @Test void writeSummaryWithEmptyResults() throws IOException {
         Collection<RunResult> results = new ArrayList<>();
 
         // Generate summary with empty results
@@ -67,8 +65,7 @@ class SummaryGeneratorTest {
         assertNotNull(summary.get("timestamp"));
     }
 
-    @Test
-    void testWriteSummaryWithIntegrationBenchmark() throws IOException {
+    @Test void writeSummaryWithIntegrationBenchmark() throws IOException {
         Collection<RunResult> results = new ArrayList<>();
 
         Path summaryFile = tempDir.resolve("summary.json");
@@ -80,22 +77,20 @@ class SummaryGeneratorTest {
         assertEquals("integration", summary.get("benchmark_type"));
     }
 
-    @Test
-    void testWriteSummaryThrowsIOException() {
+    @Test void writeSummaryThrowsIOException() {
         Collection<RunResult> results = new ArrayList<>();
 
         // Use invalid path to trigger IOException
         String invalidPath = "/invalid/path/that/does/not/exist/summary.json";
-        
+
         // Should throw IOException
-        assertThrows(IOException.class, () -> 
-            generator.writeSummary(results, BenchmarkType.INTEGRATION, Instant.now(), invalidPath));
+        assertThrows(IOException.class, () ->
+                generator.writeSummary(results, BenchmarkType.INTEGRATION, Instant.now(), invalidPath));
     }
 
-    @Test
-    void testWriteSummaryCreatesRequiredFields() throws IOException {
+    @Test void writeSummaryCreatesRequiredFields() throws IOException {
         Collection<RunResult> results = new ArrayList<>();
-        
+
         Path summaryFile = tempDir.resolve("summary.json");
         generator.writeSummary(results, BenchmarkType.MICRO, Instant.now(), summaryFile.toString());
 

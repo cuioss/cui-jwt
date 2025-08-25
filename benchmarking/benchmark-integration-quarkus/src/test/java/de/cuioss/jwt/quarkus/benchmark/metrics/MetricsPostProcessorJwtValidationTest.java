@@ -95,12 +95,6 @@ class MetricsPostProcessorJwtValidationTest {
 
         // Generate output file
         File outputFile = new File(tempDir.toFile(), "complete-http-metrics.json");
-        MetricsPostProcessor exportParser = new MetricsPostProcessor("dummy", tempDir.toString()) {
-            @Override
-            public Map<String, HttpEndpointMetrics> parseBenchmarkResults(FileReader reader) {
-                return endpointMetrics; // Use our pre-parsed data
-            }
-        };
 
         Map<String, Object> output = new LinkedHashMap<>();
         Instant timestamp = Instant.now();

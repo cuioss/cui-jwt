@@ -18,10 +18,8 @@ package de.cuioss.benchmarking.common;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;

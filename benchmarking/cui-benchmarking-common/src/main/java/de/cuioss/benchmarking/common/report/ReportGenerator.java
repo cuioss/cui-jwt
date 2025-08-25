@@ -16,7 +16,6 @@
 package de.cuioss.benchmarking.common.report;
 
 import de.cuioss.tools.logging.CuiLogger;
-
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -270,7 +269,7 @@ public class ReportGenerator {
 
     /**
      * Loads a template from the classpath resources.
-     * 
+     *
      * @param templateName the name of the template file
      * @return the template content as a string
      * @throws IOException if the template cannot be loaded

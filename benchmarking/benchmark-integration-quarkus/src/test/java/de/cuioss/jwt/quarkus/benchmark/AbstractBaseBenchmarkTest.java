@@ -18,8 +18,15 @@ package de.cuioss.jwt.quarkus.benchmark;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+
+import javax.net.ssl.SSLSession;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,30 +40,30 @@ class AbstractBaseBenchmarkTest {
     }
 
     @Test
-    void testSetupBenchmark() {
+    void setupBenchmark() {
         // Setup with default values
         assertDoesNotThrow(() -> benchmark.setupBenchmark());
-        
+
         assertNotNull(benchmark.serviceUrl);
         assertNotNull(benchmark.quarkusMetricsUrl);
         assertNotNull(benchmark.metricsExporter);
         assertNotNull(benchmark.benchmarkResultsDir);
-        
+
         // Check default values
         assertEquals("https://localhost:10443", benchmark.serviceUrl);
         assertEquals("https://localhost:10443", benchmark.quarkusMetricsUrl);
     }
 
     @Test
-    void testSetupBenchmarkWithSystemProperties() {
+    void setupBenchmarkWithSystemProperties() {
         // Set system properties
         System.setProperty("integration.service.url", "https://test:8080");
         System.setProperty("quarkus.metrics.url", "https://metrics:9090");
         System.setProperty("benchmark.results.dir", "/test/results");
-        
+
         try {
             benchmark.setupBenchmark();
-            
+
             assertEquals("https://test:8080", benchmark.serviceUrl);
             assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
             assertEquals("/test/results", benchmark.benchmarkResultsDir);
@@ -69,54 +76,54 @@ class AbstractBaseBenchmarkTest {
     }
 
     @Test
-    void testCreateBaseRequest() {
+    void createBaseRequest() {
         benchmark.setupBenchmark();
-        
+
         HttpRequest.Builder requestBuilder = benchmark.createBaseRequest("/test/path");
         HttpRequest request = requestBuilder.build();
-        
+
         assertNotNull(request);
         assertEquals("https://localhost:10443/test/path", request.uri().toString());
-        
+
         // Check headers
         assertTrue(request.headers().map().containsKey("Content-Type"));
         assertTrue(request.headers().map().containsKey("Accept"));
         assertEquals("application/json", request.headers().firstValue("Content-Type").orElse(""));
         assertEquals("application/json", request.headers().firstValue("Accept").orElse(""));
-        
+
         // Check timeout is set
         assertTrue(request.timeout().isPresent());
         assertEquals(30, request.timeout().get().getSeconds());
     }
 
     @Test
-    void testValidateResponse() {
+    void validateResponse() {
         benchmark.setupBenchmark();
-        
+
         // Create a mock response with expected status
         TestHttpResponse response200 = new TestHttpResponse(200, "OK");
         assertDoesNotThrow(() -> benchmark.validateResponse(response200, 200));
-        
+
         // Test with unexpected status
         TestHttpResponse response404 = new TestHttpResponse(404, "Not Found");
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> benchmark.validateResponse(response404, 200));
-        
+
         assertTrue(exception.getMessage().contains("Expected status 200 but got 404"));
         assertTrue(exception.getMessage().contains("Not Found"));
     }
 
     @Test
-    void testValidateResponseWithDifferentStatuses() {
+    void validateResponseWithDifferentStatuses() {
         benchmark.setupBenchmark();
-        
+
         // Test various status codes
         TestHttpResponse response201 = new TestHttpResponse(201, "Created");
         assertDoesNotThrow(() -> benchmark.validateResponse(response201, 201));
-        
+
         TestHttpResponse response400 = new TestHttpResponse(400, "Bad Request");
         assertDoesNotThrow(() -> benchmark.validateResponse(response400, 400));
-        
+
         TestHttpResponse response500 = new TestHttpResponse(500, "Internal Server Error");
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> benchmark.validateResponse(response500, 200));
@@ -124,9 +131,9 @@ class AbstractBaseBenchmarkTest {
     }
 
     @Test
-    void testLoggingManagerProperty() {
+    void loggingManagerProperty() {
         // Verify that the static block sets the logging manager property
-        assertEquals("java.util.logging.LogManager", 
+        assertEquals("java.util.logging.LogManager",
                 System.getProperty("java.util.logging.manager"));
     }
 
@@ -137,7 +144,7 @@ class AbstractBaseBenchmarkTest {
         public HttpRequest.Builder createBaseRequest(String path) {
             return super.createBaseRequest(path);
         }
-        
+
         @Override
         public void validateResponse(HttpResponse<String> response, int expectedStatus) {
             super.validateResponse(response, expectedStatus);
@@ -165,13 +172,13 @@ class AbstractBaseBenchmarkTest {
         }
 
         @Override
-        public java.util.Optional<HttpResponse<String>> previousResponse() {
-            return java.util.Optional.empty();
+        public Optional<HttpResponse<String>> previousResponse() {
+            return Optional.empty();
         }
 
         @Override
-        public java.net.http.HttpHeaders headers() {
-            return java.net.http.HttpHeaders.of(java.util.Map.of(), (s1, s2) -> true);
+        public HttpHeaders headers() {
+            return HttpHeaders.of(Map.of(), (s1, s2) -> true);
         }
 
         @Override
@@ -180,18 +187,18 @@ class AbstractBaseBenchmarkTest {
         }
 
         @Override
-        public java.util.Optional<javax.net.ssl.SSLSession> sslSession() {
-            return java.util.Optional.empty();
+        public Optional<SSLSession> sslSession() {
+            return Optional.empty();
         }
 
         @Override
-        public java.net.URI uri() {
-            return java.net.URI.create("https://localhost");
+        public URI uri() {
+            return URI.create("https://localhost");
         }
 
         @Override
-        public java.net.http.HttpClient.Version version() {
-            return java.net.http.HttpClient.Version.HTTP_1_1;
+        public HttpClient.Version version() {
+            return HttpClient.Version.HTTP_1_1;
         }
     }
 }

@@ -18,7 +18,6 @@ package de.cuioss.benchmarking.common.util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Logger;
@@ -30,51 +29,45 @@ class BenchmarkLoggingSetupTest {
     @TempDir
     Path tempDir;
 
-    @Test
-    void testConfigureLogging() throws IOException {
+    @Test void configureLogging() {
         String outputDir = tempDir.toString();
-        
+
         // Configure logging
         BenchmarkLoggingSetup.configureLogging(outputDir);
-        
+
         // Verify directory was created
         assertTrue(Files.exists(tempDir));
-        
+
         // Write a test log message
         Logger logger = Logger.getLogger(BenchmarkLoggingSetupTest.class.getName());
         logger.info("Test log message");
-        
-        // Verify log file was created
-        Path logFile = tempDir.resolve("benchmark-output.log");
+
         // Note: Log file creation might be async, so we just verify the setup completed
         assertNotNull(logger);
     }
 
-    @Test
-    void testConfigureLoggingWithInvalidPath() {
+    @Test void configureLoggingWithInvalidPath() {
         // Should handle invalid paths gracefully
         String invalidPath = "/nonexistent/path/that/cannot/be/created/../../../root";
-        
+
         // Should not throw exception - logging setup should handle this gracefully
         assertDoesNotThrow(() -> BenchmarkLoggingSetup.configureLogging(invalidPath));
     }
 
-    @Test
-    void testConfigureLoggingCreatesDirectory() throws IOException {
+    @Test void configureLoggingCreatesDirectory() {
         Path nonExistentDir = tempDir.resolve("new/nested/directory");
         String outputDir = nonExistentDir.toString();
-        
+
         // Configure logging with non-existent directory
         BenchmarkLoggingSetup.configureLogging(outputDir);
-        
+
         // Verify directory was created
         assertTrue(Files.exists(nonExistentDir));
     }
 
-    @Test
-    void testMultipleConfigureCalls() {
+    @Test void multipleConfigureCalls() {
         String outputDir = tempDir.toString();
-        
+
         // Configure logging multiple times should not cause issues
         assertDoesNotThrow(() -> {
             BenchmarkLoggingSetup.configureLogging(outputDir);

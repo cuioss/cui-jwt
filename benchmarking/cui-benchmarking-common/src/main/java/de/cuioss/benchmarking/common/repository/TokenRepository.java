@@ -15,11 +15,10 @@
  */
 package de.cuioss.benchmarking.common.repository;
 
-import de.cuioss.benchmarking.common.http.HttpClientFactory;
-import de.cuioss.tools.logging.CuiLogger;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import de.cuioss.benchmarking.common.http.HttpClientFactory;
+import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
 import java.io.IOException;

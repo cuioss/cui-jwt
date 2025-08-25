@@ -17,18 +17,14 @@ package de.cuioss.benchmarking.common.config;
 
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.results.format.ResultFormatType;
-import org.openjdk.jmh.runner.options.TimeValue;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkConfigurationTest {
 
-    @Test
-    void testDefaults() {
+    @Test void defaults() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults().build();
-        
+
         assertEquals(".*Benchmark.*", config.includePattern());
         assertEquals(ResultFormatType.JSON, config.resultFormat());
         assertEquals(1, config.forks());
@@ -41,8 +37,7 @@ class BenchmarkConfigurationTest {
         assertTrue(config.metricsUrl().isEmpty());
     }
 
-    @Test
-    void testCustomValues() {
+    @Test void customValues() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
                 .withIncludePattern(".*MyBenchmark.*")
                 .withResultFormat(ResultFormatType.CSV)
@@ -55,7 +50,7 @@ class BenchmarkConfigurationTest {
                 .withKeycloakUrl("http://keycloak:8080")
                 .withMetricsUrl("http://metrics:9090")
                 .build();
-        
+
         assertEquals(".*MyBenchmark.*", config.includePattern());
         assertEquals(ResultFormatType.CSV, config.resultFormat());
         assertEquals(2, config.forks());
@@ -68,17 +63,16 @@ class BenchmarkConfigurationTest {
         assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
     }
 
-    @Test
-    void testFromSystemProperties() {
+    @Test void fromSystemProperties() {
         // Set system properties
         System.setProperty("jmh.include", ".*SystemTest.*");
         System.setProperty("jmh.result.format", "TEXT");
         System.setProperty("jmh.forks", "3");
         System.setProperty("jmh.threads", "16");
-        
+
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            
+
             assertEquals(".*SystemTest.*", config.includePattern());
             assertEquals(ResultFormatType.TEXT, config.resultFormat());
             assertEquals(3, config.forks());
@@ -92,45 +86,42 @@ class BenchmarkConfigurationTest {
         }
     }
 
-    @Test
-    void testToBuilder() {
+    @Test void toBuilder() {
         BenchmarkConfiguration original = BenchmarkConfiguration.defaults()
                 .withIncludePattern(".*Original.*")
                 .withForks(5)
                 .build();
-        
+
         BenchmarkConfiguration modified = original.toBuilder()
                 .withIncludePattern(".*Modified.*")
                 .withThreads(12)
                 .build();
-        
+
         // Original should be unchanged
         assertEquals(".*Original.*", original.includePattern());
         assertEquals(5, original.forks());
         assertEquals(4, original.threads()); // default
-        
+
         // Modified should have new values
         assertEquals(".*Modified.*", modified.includePattern());
         assertEquals(5, modified.forks()); // inherited
         assertEquals(12, modified.threads()); // new
     }
 
-    @Test
-    void testToJmhOptions() {
+    @Test void toJmhOptions() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
                 .withIncludePattern(".*Test.*")
                 .withForks(2)
                 .withThreads(8)
                 .withIntegrationServiceUrl("http://service:8080")
                 .build();
-        
+
         var options = config.toJmhOptions();
         assertNotNull(options);
         // Options object doesn't expose getters, so we just verify it builds successfully
     }
 
-    @Test
-    void testThreadCountParsing() {
+    @Test void threadCountParsing() {
         // Test MAX threads
         System.setProperty("jmh.threads", "MAX");
         try {
@@ -139,7 +130,7 @@ class BenchmarkConfigurationTest {
         } finally {
             System.clearProperty("jmh.threads");
         }
-        
+
         // Test invalid thread count defaults to 4
         System.setProperty("jmh.threads", "invalid");
         try {
@@ -150,11 +141,10 @@ class BenchmarkConfigurationTest {
         }
     }
 
-    @Test
-    void testTimeValueParsing() {
+    @Test void timeValueParsing() {
         System.setProperty("jmh.time", "500ms");
         System.setProperty("jmh.warmupTime", "2m");
-        
+
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
             assertNotNull(config.measurementTime());
@@ -165,14 +155,13 @@ class BenchmarkConfigurationTest {
         }
     }
 
-    @Test
-    void testResultFileGeneration() {
+    @Test void resultFileGeneration() {
         // Test with custom result file
         BenchmarkConfiguration config1 = BenchmarkConfiguration.defaults()
                 .withResultFile("custom-result.json")
                 .build();
         assertEquals("custom-result.json", config1.resultFile());
-        
+
         // Test with file prefix system property
         System.setProperty("jmh.result.filePrefix", "prefix");
         try {
@@ -181,14 +170,13 @@ class BenchmarkConfigurationTest {
         } finally {
             System.clearProperty("jmh.result.filePrefix");
         }
-        
+
         // Test default result file
         BenchmarkConfiguration config3 = BenchmarkConfiguration.defaults().build();
         assertTrue(config3.resultFile().endsWith("benchmark-result.json"));
     }
 
-    @Test
-    void testInvalidResultFormat() {
+    @Test void invalidResultFormat() {
         System.setProperty("jmh.result.format", "INVALID_FORMAT");
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
@@ -199,8 +187,7 @@ class BenchmarkConfigurationTest {
         }
     }
 
-    @Test
-    void testTimeValueParsingEdgeCases() {
+    @Test void timeValueParsingEdgeCases() {
         // Test various time formats
         System.setProperty("jmh.time", "100ms");
         System.setProperty("jmh.warmupTime", "5m");
@@ -235,8 +222,7 @@ class BenchmarkConfigurationTest {
         }
     }
 
-    @Test
-    void testAllSystemProperties() {
+    @Test void allSystemProperties() {
         // Set all possible system properties
         System.setProperty("jmh.include", ".*AllTests.*");
         System.setProperty("jmh.result.format", "CSV");
@@ -251,10 +237,10 @@ class BenchmarkConfigurationTest {
         System.setProperty("integration.service.url", "http://service:8080");
         System.setProperty("keycloak.url", "http://keycloak:8180");
         System.setProperty("quarkus.metrics.url", "http://metrics:9090");
-        
+
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            
+
             assertEquals(".*AllTests.*", config.includePattern());
             assertEquals(ResultFormatType.CSV, config.resultFormat());
             assertEquals("all-tests.json", config.resultFile());
@@ -286,23 +272,22 @@ class BenchmarkConfigurationTest {
         }
     }
 
-    @Test
-    void testRecordEquality() {
+    @Test void recordEquality() {
         BenchmarkConfiguration config1 = BenchmarkConfiguration.defaults()
                 .withIncludePattern(".*Test.*")
                 .withForks(2)
                 .build();
-        
+
         BenchmarkConfiguration config2 = BenchmarkConfiguration.defaults()
                 .withIncludePattern(".*Test.*")
                 .withForks(2)
                 .build();
-        
+
         BenchmarkConfiguration config3 = BenchmarkConfiguration.defaults()
                 .withIncludePattern(".*Different.*")
                 .withForks(2)
                 .build();
-        
+
         // Records should have equals/hashCode automatically
         assertEquals(config1, config2);
         assertEquals(config1.hashCode(), config2.hashCode());

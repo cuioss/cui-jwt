@@ -18,7 +18,6 @@ package de.cuioss.benchmarking.common.runner;
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
-
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;

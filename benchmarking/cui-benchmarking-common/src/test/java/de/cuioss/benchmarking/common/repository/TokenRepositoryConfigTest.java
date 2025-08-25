@@ -21,10 +21,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TokenRepositoryConfigTest {
 
-    @Test
-    void testDefaultValues() {
+    @Test void defaultValues() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder().build();
-        
+
         assertEquals("https://localhost:1443", config.getKeycloakBaseUrl());
         assertEquals("benchmark", config.getRealm());
         assertEquals("benchmark-client", config.getClientId());
@@ -38,8 +37,7 @@ class TokenRepositoryConfigTest {
         assertEquals(180, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test
-    void testCustomValues() {
+    @Test void customValues() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://auth.example.com")
                 .realm("test-realm")
@@ -53,7 +51,7 @@ class TokenRepositoryConfigTest {
                 .verifySsl(true)
                 .tokenRefreshThresholdSeconds(300)
                 .build();
-        
+
         assertEquals("https://auth.example.com", config.getKeycloakBaseUrl());
         assertEquals("test-realm", config.getRealm());
         assertEquals("test-client", config.getClientId());
@@ -67,14 +65,13 @@ class TokenRepositoryConfigTest {
         assertEquals(300, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test
-    void testPartialBuilder() {
+    @Test void partialBuilder() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://partial.com")
                 .realm("partial-realm")
                 .tokenPoolSize(50)
                 .build();
-        
+
         // Verify partial configuration with defaults
         assertEquals("https://partial.com", config.getKeycloakBaseUrl());
         assertEquals("partial-realm", config.getRealm());
@@ -84,35 +81,33 @@ class TokenRepositoryConfigTest {
         assertEquals("benchmark-secret", config.getClientSecret());
     }
 
-    @Test
-    void testEqualsAndHashCode() {
+    @Test void equalsAndHashCode() {
         TokenRepositoryConfig config1 = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://test.com")
                 .realm("test")
                 .build();
-        
+
         TokenRepositoryConfig config2 = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://test.com")
                 .realm("test")
                 .build();
-        
+
         TokenRepositoryConfig config3 = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://different.com")
                 .realm("test")
                 .build();
-        
+
         assertEquals(config1, config2);
         assertEquals(config1.hashCode(), config2.hashCode());
         assertNotEquals(config1, config3);
     }
 
-    @Test
-    void testToString() {
+    @Test void testToString() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://test.com")
                 .realm("test-realm")
                 .build();
-        
+
         String str = config.toString();
         assertNotNull(str);
         assertTrue(str.contains("https://test.com"));

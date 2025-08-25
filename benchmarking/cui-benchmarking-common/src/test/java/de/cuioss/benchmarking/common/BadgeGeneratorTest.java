@@ -15,11 +15,10 @@
  */
 package de.cuioss.benchmarking.common;
 
-import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.BadgeGenerator;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

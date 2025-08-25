@@ -24,43 +24,38 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MetricsFetcherTest {
 
-    @Test
-    void testInterfaceImplementation() {
+    @Test void interfaceImplementation() {
         // Test that we can implement the interface
         MetricsFetcher fetcher = new MetricsFetcher() {
-            @Override
-            public Map<String, Double> fetchMetrics() {
+            @Override public Map<String, Double> fetchMetrics() {
                 Map<String, Double> metrics = new HashMap<>();
                 metrics.put("test.metric", 42.0);
                 return metrics;
             }
         };
-        
+
         Map<String, Double> result = fetcher.fetchMetrics();
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(42.0, result.get("test.metric"));
     }
 
-    @Test
-    void testEmptyMetricsImplementation() {
+    @Test void emptyMetricsImplementation() {
         MetricsFetcher emptyFetcher = () -> new HashMap<>();
-        
+
         Map<String, Double> result = emptyFetcher.fetchMetrics();
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
 
-    @Test
-    void testNullReturnImplementation() {
+    @Test void nullReturnImplementation() {
         MetricsFetcher nullFetcher = () -> null;
-        
+
         Map<String, Double> result = nullFetcher.fetchMetrics();
         assertNull(result);
     }
 
-    @Test
-    void testMultipleMetricsImplementation() {
+    @Test void multipleMetricsImplementation() {
         MetricsFetcher multipleFetcher = () -> {
             Map<String, Double> metrics = new HashMap<>();
             metrics.put("cpu.usage", 75.5);
@@ -69,7 +64,7 @@ class MetricsFetcherTest {
             metrics.put("network.latency", 12.3);
             return metrics;
         };
-        
+
         Map<String, Double> result = multipleFetcher.fetchMetrics();
         assertNotNull(result);
         assertEquals(4, result.size());

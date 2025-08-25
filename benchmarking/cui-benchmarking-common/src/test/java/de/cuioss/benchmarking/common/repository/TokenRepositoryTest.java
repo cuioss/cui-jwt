@@ -21,25 +21,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TokenRepositoryTest {
 
-    @Test
-    void testConstructorWithNullConfig() {
+    @Test void constructorWithNullConfig() {
         assertThrows(NullPointerException.class, () -> new TokenRepository(null));
     }
 
-    @Test
-    void testTokenFetchException() {
+    @Test void tokenFetchException() {
         // Test the custom exception
         TokenRepository.TokenFetchException ex = new TokenRepository.TokenFetchException("Test error");
         assertEquals("Test error", ex.getMessage());
-        
+
         Exception cause = new RuntimeException("Cause");
         TokenRepository.TokenFetchException exWithCause = new TokenRepository.TokenFetchException("Test error", cause);
         assertEquals("Test error", exWithCause.getMessage());
         assertEquals(cause, exWithCause.getCause());
     }
 
-    @Test
-    void testConfigBuilderDefaults() {
+    @Test void configBuilderDefaults() {
         // Test that we can build a config with defaults
         TokenRepositoryConfig config = TokenRepositoryConfig.builder().build();
         assertNotNull(config);
@@ -56,8 +53,7 @@ class TokenRepositoryTest {
         assertEquals(180, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test
-    void testConfigBuilderCustomValues() {
+    @Test void configBuilderCustomValues() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://auth.example.com")
                 .realm("custom-realm")
@@ -71,7 +67,7 @@ class TokenRepositoryTest {
                 .verifySsl(true)
                 .tokenRefreshThresholdSeconds(300)
                 .build();
-        
+
         assertEquals("https://auth.example.com", config.getKeycloakBaseUrl());
         assertEquals("custom-realm", config.getRealm());
         assertEquals("custom-client", config.getClientId());

@@ -15,12 +15,10 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.tools.logging.CuiLogger;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
+import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
@@ -161,7 +159,7 @@ public class SummaryGenerator {
         // Integration benchmarks include network/TLS overhead and should have lower thresholds
         double throughputThreshold = type == BenchmarkType.MICRO ? 10_000 : 5_000; // 5 ops/ms = 5000 ops/s for HTTP
         double regressionThreshold = 10.0; // 10% regression threshold
-        
+
         double avgThroughput = calculateAverageThroughput(results);
 
         // Throughput gate
@@ -228,7 +226,7 @@ public class SummaryGenerator {
         Map<String, Object> artifacts = new LinkedHashMap<>();
 
         artifacts.put("badges", Map.of(
-                "performance", "badges/performance-badge.json",
+                FIELD_PERFORMANCE, "badges/performance-badge.json",
                 "trend", "badges/trend-badge.json",
                 "last_run", "badges/last-run-badge.json"
         ));
@@ -245,7 +243,7 @@ public class SummaryGenerator {
 
         artifacts.put("api", Map.of(
                 "latest", "gh-pages-ready/api/latest.json",
-                "status", "gh-pages-ready/api/status.json"
+                FIELD_STATUS, "gh-pages-ready/api/status.json"
         ));
 
         return artifacts;

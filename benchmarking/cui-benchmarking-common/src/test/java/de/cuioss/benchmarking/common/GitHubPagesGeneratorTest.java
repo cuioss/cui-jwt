@@ -15,10 +15,9 @@
  */
 package de.cuioss.benchmarking.common;
 
-import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

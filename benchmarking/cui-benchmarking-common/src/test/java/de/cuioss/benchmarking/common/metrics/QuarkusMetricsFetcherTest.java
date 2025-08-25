@@ -15,65 +15,56 @@
  */
 package de.cuioss.benchmarking.common.metrics;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class QuarkusMetricsFetcherTest {
 
-    @TempDir
-    Path tempDir;
-
     private QuarkusMetricsFetcher fetcher;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         // Use localhost URL that won't actually connect
         fetcher = new QuarkusMetricsFetcher("https://localhost:8443");
     }
 
-    @Test
-    void testConstructor() {
+    @Test void constructor() {
         assertNotNull(fetcher);
         QuarkusMetricsFetcher fetcher2 = new QuarkusMetricsFetcher("http://localhost:8080");
         assertNotNull(fetcher2);
     }
 
-    @Test
-    void testFetchMetricsWithUnreachableServer() {
+    @Test void fetchMetricsWithUnreachableServer() {
         // Should return empty map when server is unreachable
         Map<String, Double> metrics = fetcher.fetchMetrics();
         assertNotNull(metrics);
         assertTrue(metrics.isEmpty());
     }
 
-    @Test
-    void testFetchMetricsMultipleTimes() {
+    @Test void fetchMetricsMultipleTimes() {
         // Test that multiple calls don't cause issues
         Map<String, Double> metrics1 = fetcher.fetchMetrics();
         Map<String, Double> metrics2 = fetcher.fetchMetrics();
-        
+
         assertNotNull(metrics1);
         assertNotNull(metrics2);
     }
 
 
-    @Test
-    void testFetchMetricsWithDifferentUrls() {
+    @Test void fetchMetricsWithDifferentUrls() {
         // Test with different URL formats
         QuarkusMetricsFetcher httpFetcher = new QuarkusMetricsFetcher("http://localhost:8080");
         Map<String, Double> httpMetrics = httpFetcher.fetchMetrics();
         assertNotNull(httpMetrics);
-        
+
         QuarkusMetricsFetcher httpsFetcher = new QuarkusMetricsFetcher("https://localhost:8443");
         Map<String, Double> httpsMetrics = httpsFetcher.fetchMetrics();
         assertNotNull(httpsMetrics);
-        
+
         QuarkusMetricsFetcher customPortFetcher = new QuarkusMetricsFetcher("http://localhost:9999");
         Map<String, Double> customPortMetrics = customPortFetcher.fetchMetrics();
         assertNotNull(customPortMetrics);

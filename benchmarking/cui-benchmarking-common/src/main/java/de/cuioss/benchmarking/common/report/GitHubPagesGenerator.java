@@ -15,10 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import de.cuioss.tools.logging.CuiLogger;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.cuioss.tools.logging.CuiLogger;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
@@ -31,9 +30,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.DEBUG;
-import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
-import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.*;
 
 /**
  * Generates GitHub Pages ready deployment structure from benchmark artifacts.
@@ -361,7 +358,7 @@ public class GitHubPagesGenerator {
 
     /**
      * Loads a template from the classpath resources.
-     * 
+     *
      * @param templateName the name of the template file
      * @return the template content as a string
      * @throws IOException if the template cannot be loaded

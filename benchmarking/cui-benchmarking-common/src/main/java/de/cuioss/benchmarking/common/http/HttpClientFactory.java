@@ -16,7 +16,6 @@
 package de.cuioss.benchmarking.common.http;
 
 import de.cuioss.tools.logging.CuiLogger;
-
 import lombok.experimental.UtilityClass;
 
 import javax.net.ssl.SSLContext;
@@ -122,10 +121,10 @@ import java.util.concurrent.TimeUnit;
      * Shuts down the shared executor service and clears the client cache.
      * This method should be called when the application is shutting down to ensure
      * proper resource cleanup.
-     * 
+     *
      * Note: Since we use daemon threads, this is not strictly necessary for JVM shutdown,
      * but it's good practice for proper resource management in long-running applications.
-     * 
+     *
      * The executor will only be shut down if it has been initialized (i.e., if any
      * HTTP client has been created). This avoids unnecessary initialization during shutdown.
      */
@@ -197,7 +196,7 @@ import java.util.concurrent.TimeUnit;
             // Accept all - only for testing with self-signed certificates in benchmark environments
         }
 
-        @Override @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks  
+        @Override @SuppressWarnings("java:S4830") // Certificate validation disabled for self-signed certs in benchmarks
         public void checkServerTrusted(X509Certificate[] chain, String authType) {
             // Accept all - only for testing with self-signed certificates in benchmark environments
         }
