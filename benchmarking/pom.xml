@@ -26,9 +26,9 @@
         <!-- JMH version for benchmarking -->
         <version.jmh>1.37</version.jmh>
         <!-- External dependency versions -->
-        <version.gson>2.10.1</version.gson>
-        <version.hdrhistogram>2.1.12</version.hdrhistogram>
-        <version.commons-io>2.15.1</version.commons-io>
+        <version.gson>2.13.1</version.gson>
+        <version.hdrhistogram>2.2.2</version.hdrhistogram>
+        <version.commons-io>2.20.0</version.commons-io>
         <!-- Skip benchmarks by default -->
         <skip.benchmark>true</skip.benchmark>
         <!-- Default benchmark results directory -->
@@ -49,7 +49,7 @@
                 <version>${version.jmh}</version>
                 <scope>provided</scope>
             </dependency>
-            
+
             <!-- Common benchmarking dependencies -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -81,7 +81,7 @@
                         <skip>${skip.benchmark}</skip>
                     </configuration>
                 </plugin>
-                
+
                 <!-- Common dependency plugin configuration -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
