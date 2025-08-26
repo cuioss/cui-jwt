@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Common JSON serialization utilities for benchmark results.
  * Provides consistent formatting and serialization across all benchmark modules.
- * 
+ *
  * @since 1.0
  */
 public final class JsonSerializationHelper {
@@ -52,7 +52,7 @@ public final class JsonSerializationHelper {
 
     /**
      * Writes an object to a JSON file.
-     * 
+     *
      * @param path the file path to write to
      * @param object the object to serialize
      * @throws IOException if an I/O error occurs
@@ -65,7 +65,7 @@ public final class JsonSerializationHelper {
 
     /**
      * Reads a JSON file into an object.
-     * 
+     *
      * @param <T> the type to deserialize to
      * @param path the file path to read from
      * @param type the class of the type to deserialize
@@ -80,7 +80,7 @@ public final class JsonSerializationHelper {
     /**
      * Formats a double value for display.
      * Returns integer representation if the value is a whole number.
-     * 
+     *
      * @param value the value to format
      * @return formatted string
      */
@@ -123,37 +123,4 @@ public final class JsonSerializationHelper {
         }
     }
 
-    /**
-     * Creates a JSON object for a performance metric.
-     * 
-     * @param name the metric name
-     * @param value the metric value
-     * @param unit the unit of measurement
-     * @return JSON object
-     */
-    public static JsonObject createMetricObject(String name, double value, String unit) {
-        JsonObject metric = new JsonObject();
-        metric.addProperty("name", name);
-        metric.addProperty("value", formatDouble(value));
-        metric.addProperty("unit", unit);
-        metric.addProperty("timestamp", ISO_FORMATTER.format(Instant.now()));
-        return metric;
-    }
-
-    /**
-     * Creates a JSON object for a badge.
-     * 
-     * @param label the badge label
-     * @param message the badge message
-     * @param color the badge color
-     * @return JSON object compatible with shields.io
-     */
-    public static JsonObject createBadgeObject(String label, String message, String color) {
-        JsonObject badge = new JsonObject();
-        badge.addProperty("schemaVersion", 1);
-        badge.addProperty("label", label);
-        badge.addProperty("message", message);
-        badge.addProperty("color", color);
-        return badge;
-    }
 }

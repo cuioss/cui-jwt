@@ -15,13 +15,15 @@
  */
 package de.cuioss.benchmarking.common.config;
 
+import lombok.Getter;
+
 /**
  * Enumeration of benchmark types supported by the CUI benchmarking infrastructure.
  * <p>
  * Each type has different characteristics and requirements for badge generation,
  * metrics collection, and reporting.
  */
-public enum BenchmarkType {
+@Getter public enum BenchmarkType {
     /**
      * Micro benchmarks that test individual components or methods in isolation.
      * <p>
@@ -59,35 +61,8 @@ public enum BenchmarkType {
     }
 
     /**
-     * Gets the type identifier used in file names and URLs.
-     * 
-     * @return the type identifier
-     */
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    /**
-     * Gets the label used in performance badges.
-     * 
-     * @return the badge label
-     */
-    public String getBadgeLabel() {
-        return badgeLabel;
-    }
-
-    /**
-     * Gets the human-readable display name.
-     * 
-     * @return the display name
-     */
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    /**
      * Gets the badge file name for performance badges.
-     * 
+     *
      * @return the performance badge file name
      */
     public String getPerformanceBadgeFileName() {
@@ -96,7 +71,7 @@ public enum BenchmarkType {
 
     /**
      * Gets the badge file name for trend badges.
-     * 
+     *
      * @return the trend badge file name
      */
     public String getTrendBadgeFileName() {

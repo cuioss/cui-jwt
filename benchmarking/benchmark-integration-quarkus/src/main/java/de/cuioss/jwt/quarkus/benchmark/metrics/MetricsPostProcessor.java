@@ -30,11 +30,11 @@ import java.util.Map;
 /**
  * Comprehensive metrics post-processor that generates both HTTP roundtrip metrics
  * and Quarkus resource usage metrics from benchmark results.
- *
+ * <p>
  * This class combines:
  * - HTTP metrics: HTTP roundtrip percentiles from JMH benchmark results (external view)
  * - Quarkus metrics: CPU and RAM usage from Prometheus format metrics files
- *
+ * <p>
  * Generates http-metrics.json and quarkus-metrics.json files for performance analysis.
  *
  * @since 1.0
@@ -329,9 +329,8 @@ public class MetricsPostProcessor {
      * Parse and export both HTTP metrics and Quarkus metrics
      *
      * @param timestamp Timestamp for the metrics output
-     * @throws IOException if file operations fail
      */
-    public void parseAndExportAllMetrics(Instant timestamp) throws IOException {
+    public void parseAndExportAllMetrics(Instant timestamp) {
         LOGGER.debug("Processing comprehensive metrics - HTTP roundtrip and Quarkus resource usage");
 
         // Process HTTP roundtrip metrics

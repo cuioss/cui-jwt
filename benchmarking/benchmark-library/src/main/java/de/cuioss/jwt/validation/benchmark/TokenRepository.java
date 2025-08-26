@@ -102,13 +102,6 @@ public class TokenRepository {
     }
 
     /**
-     * Creates a new TokenRepository with default configuration
-     */
-    public TokenRepository() {
-        this(Config.builder().build());
-    }
-
-    /**
      * Creates a new TokenRepository with the specified configuration
      */
     public TokenRepository(Config config) {
@@ -156,28 +149,6 @@ public class TokenRepository {
     }
 
     /**
-     * Creates a pre-configured TokenValidator with all monitoring enabled
-     *
-     * @return A new TokenValidator instance configured for benchmarking
-     */
-    public TokenValidator createTokenValidator() {
-        return createTokenValidator(TokenValidatorMonitorConfig.builder()
-                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
-                .windowSize(10000) // Large window for benchmark stability
-                .build());
-    }
-
-    /**
-     * Creates a pre-configured TokenValidator with the specified monitor configuration
-     *
-     * @param monitorConfig The monitor configuration to use
-     * @return A new TokenValidator instance
-     */
-    public TokenValidator createTokenValidator(TokenValidatorMonitorConfig monitorConfig) {
-        return createTokenValidator(monitorConfig, Config.builder().build());
-    }
-
-    /**
      * Creates a pre-configured TokenValidator with the specified monitor configuration and config
      *
      * @param monitorConfig The monitor configuration to use
@@ -203,31 +174,12 @@ public class TokenRepository {
     }
 
     /**
-     * Gets a random token from the pool
-     *
-     * @return A randomly selected token
-     */
-    public String getRandomToken() {
-        return tokenPool[random.nextInt(tokenPool.length)];
-    }
-
-    /**
      * Gets the primary validation token (first in the pool)
      *
      * @return The primary token for validation
      */
     public String getPrimaryToken() {
         return tokenPool[0];
-    }
-
-    /**
-     * Gets metadata for a specific token
-     *
-     * @param token The token to get metadata for
-     * @return The token metadata, or null if not found
-     */
-    public TokenMetadata getTokenMetadata(String token) {
-        return tokenMetadata.get(token);
     }
 
     /**
@@ -239,15 +191,6 @@ public class TokenRepository {
     public String getTokenIssuer(String token) {
         TokenMetadata metadata = tokenMetadata.get(token);
         return metadata != null ? metadata.getIssuerIdentifier() : null;
-    }
-
-    /**
-     * Gets the total number of tokens in the pool
-     *
-     * @return The token pool size
-     */
-    public int getTokenPoolSize() {
-        return tokenPool.length;
     }
 
     /**

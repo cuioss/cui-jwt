@@ -58,13 +58,6 @@ public final class BenchmarkingLogMessages {
                 .template("Starting CUI benchmark runner...")
                 .build();
 
-        /** Message showing output directory. */
-        public static final LogRecord OUTPUT_DIRECTORY = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(2)
-                .template("Output directory: %s")
-                .build();
-
         /** Message when benchmarks complete successfully. */
         public static final LogRecord BENCHMARKS_COMPLETED = LogRecordModel.builder()
                 .prefix(PREFIX)
@@ -256,24 +249,6 @@ public final class BenchmarkingLogMessages {
                 .prefix(PREFIX)
                 .identifier(102)
                 .template("Failed to copy data file: %s")
-                .build();
-    }
-
-    /**
-     * ERROR level messages for critical failures.
-     */
-    public static final class ERROR {
-
-        /** Private constructor to prevent instantiation. */
-        private ERROR() {
-            // utility class
-        }
-
-        /** Error when benchmark execution fails. */
-        public static final LogRecord BENCHMARK_EXECUTION_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(200)
-                .template("Benchmark execution failed")
                 .build();
     }
 

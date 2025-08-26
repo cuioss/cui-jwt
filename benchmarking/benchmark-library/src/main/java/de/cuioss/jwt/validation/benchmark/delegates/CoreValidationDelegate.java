@@ -37,22 +37,6 @@ public class CoreValidationDelegate extends BenchmarkDelegate {
     }
 
     /**
-     * Performs a single token validation using the primary token.
-     * Used for average time and throughput benchmarks.
-     *
-     * @return the validated access token content
-     * @throws IllegalStateException if validation fails unexpectedly
-     */
-    public AccessTokenContent validatePrimaryToken() {
-        try {
-            String token = tokenRepository.getPrimaryToken();
-            return validateToken(token);
-        } catch (TokenValidationException e) {
-            throw new IllegalStateException("Unexpected validation failure during primary token validation", e);
-        }
-    }
-
-    /**
      * Performs token validation using the full token spectrum with rotation.
      * Rotates through all tokens in the pool for maximum cache testing.
      *

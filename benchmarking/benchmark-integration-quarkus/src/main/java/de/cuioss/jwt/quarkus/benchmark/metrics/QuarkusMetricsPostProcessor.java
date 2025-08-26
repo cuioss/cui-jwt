@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 /**
  * Post-processor for Quarkus metrics that extracts CPU and RAM usage data
  * from Prometheus format metrics files and generates quarkus-metrics.json.
- *
+ * <p>
  * This processor analyzes metrics-download directory containing timestamped
  * Quarkus metrics files and extracts system resource usage information.
  *
@@ -256,7 +256,7 @@ public class QuarkusMetricsPostProcessor {
         if (percentage < 10) {
             return Math.round(percentage * 10.0) / 10.0;
         } else {
-            return (long) Math.round(percentage);
+            return Math.round(percentage);
         }
     }
 
@@ -270,7 +270,7 @@ public class QuarkusMetricsPostProcessor {
         if (value < 10) {
             return Math.round(value * 10.0) / 10.0;
         } else {
-            return (long) Math.round(value);
+            return Math.round(value);
         }
     }
 

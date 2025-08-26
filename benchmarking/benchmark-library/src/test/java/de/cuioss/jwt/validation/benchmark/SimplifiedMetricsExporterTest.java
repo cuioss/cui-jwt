@@ -87,7 +87,7 @@ class SimplifiedMetricsExporterTest {
         assertEquals("jwt-validation-metrics.json", jsonFiles[0].getFileName().toString());
 
         String jsonContent = Files.readString(jsonFiles[0]);
-        TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {
+        TypeToken<Map<String, Object>> typeToken = new TypeToken<>() {
         };
         Map<String, Object> allMetrics = gson.fromJson(jsonContent, typeToken.getType());
 

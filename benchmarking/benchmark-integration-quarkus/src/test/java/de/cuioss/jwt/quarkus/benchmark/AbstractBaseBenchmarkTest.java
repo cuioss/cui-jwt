@@ -142,18 +142,7 @@ class AbstractBaseBenchmarkTest {
     }
 
     // Simple HttpResponse implementation for testing
-    private static class TestHttpResponse implements HttpResponse<String> {
-        private final int statusCode;
-        private final String body;
-
-        TestHttpResponse(int statusCode, String body) {
-            this.statusCode = statusCode;
-            this.body = body;
-        }
-
-        @Override public int statusCode() {
-            return statusCode;
-        }
+        private record TestHttpResponse(int statusCode, String body) implements HttpResponse<String> {
 
         @Override public HttpRequest request() {
             return null;
@@ -165,10 +154,6 @@ class AbstractBaseBenchmarkTest {
 
         @Override public HttpHeaders headers() {
             return HttpHeaders.of(Map.of(), (s1, s2) -> true);
-        }
-
-        @Override public String body() {
-            return body;
         }
 
         @Override public Optional<SSLSession> sslSession() {

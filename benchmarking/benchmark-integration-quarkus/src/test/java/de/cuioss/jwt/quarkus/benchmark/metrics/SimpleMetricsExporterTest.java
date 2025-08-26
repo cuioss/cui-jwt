@@ -219,14 +219,14 @@ class SimpleMetricsExporterTest {
 
         // Verify we have the MISSING_CLAIM error from the test data (169356.0)
         Object totalErrorsObj = securityMetrics.get("total_errors");
-        assertTrue(totalErrorsObj instanceof Number, "total_errors should be a number");
+        assertInstanceOf(Number.class, totalErrorsObj, "total_errors should be a number");
         Number totalErrors = (Number) totalErrorsObj;
         assertTrue(totalErrors.longValue() > 0, "Should have some security events recorded");
     }
 
     @Test @DisplayName("Should handle empty metrics data gracefully") void shouldHandleEmptyMetricsData() throws Exception {
         // Arrange
-        MetricsFetcher emptyFetcher = () -> new HashMap<>();
+        MetricsFetcher emptyFetcher = HashMap::new;
         SimpleMetricsExporter emptyExporter = new SimpleMetricsExporter(tempDir.toString(), emptyFetcher);
 
         // Act

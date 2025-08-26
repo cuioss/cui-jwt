@@ -173,7 +173,7 @@ class MetricsPostProcessorJwtValidationTest {
         if (value < 10) {
             return Math.round(value * 10.0) / 10.0;
         } else {
-            return (long) Math.round(value);
+            return Math.round(value);
         }
     }
 

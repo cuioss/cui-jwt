@@ -46,8 +46,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@UtilityClass
-public class HttpClientFactory {
+@UtilityClass public class HttpClientFactory {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpClientFactory.class);
 
@@ -122,10 +121,10 @@ public class HttpClientFactory {
      * Shuts down the shared executor service and clears the client cache.
      * This method should be called when the application is shutting down to ensure
      * proper resource cleanup.
-     *
+     * <p>
      * Note: Since we use daemon threads, this is not strictly necessary for JVM shutdown,
      * but it's good practice for proper resource management in long-running applications.
-     *
+     * <p>
      * The executor will only be shut down if it has been initialized (i.e., if any
      * HTTP client has been created). This avoids unnecessary initialization during shutdown.
      */

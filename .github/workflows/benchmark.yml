@@ -69,7 +69,7 @@ jobs:
           # Run integration benchmarks with native image using profile that includes container startup
           # The benchmarks now automatically generate artifacts in target/benchmark-results
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing -DskipTests
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
           
           # Verify artifacts were generated
           echo "📊 Integration benchmark artifacts generated:"

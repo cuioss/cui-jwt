@@ -34,10 +34,6 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "measureAverageTime", "measureThroughput", "measureConcurrentValidation"
-    };
-
     private CoreValidationDelegate validationDelegate;
 
 

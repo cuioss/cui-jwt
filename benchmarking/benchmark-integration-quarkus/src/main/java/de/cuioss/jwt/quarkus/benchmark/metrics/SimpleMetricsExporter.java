@@ -344,7 +344,7 @@ public class SimpleMetricsExporter {
             return Double.parseDouble(df.format(value));
         } else {
             // Return as integer for values >= 10
-            return (long) Math.round(value);
+            return Math.round(value);
         }
     }
 

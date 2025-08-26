@@ -26,12 +26,10 @@ class MetricsFetcherTest {
 
     @Test void interfaceImplementation() {
         // Test that we can implement the interface
-        MetricsFetcher fetcher = new MetricsFetcher() {
-            @Override public Map<String, Double> fetchMetrics() {
-                Map<String, Double> metrics = new HashMap<>();
-                metrics.put("test.metric", 42.0);
-                return metrics;
-            }
+        MetricsFetcher fetcher = () -> {
+            Map<String, Double> metrics = new HashMap<>();
+            metrics.put("test.metric", 42.0);
+            return metrics;
         };
 
         Map<String, Double> result = fetcher.fetchMetrics();
@@ -41,7 +39,7 @@ class MetricsFetcherTest {
     }
 
     @Test void emptyMetricsImplementation() {
-        MetricsFetcher emptyFetcher = () -> new HashMap<>();
+        MetricsFetcher emptyFetcher = HashMap::new;
 
         Map<String, Double> result = emptyFetcher.fetchMetrics();
         assertNotNull(result);

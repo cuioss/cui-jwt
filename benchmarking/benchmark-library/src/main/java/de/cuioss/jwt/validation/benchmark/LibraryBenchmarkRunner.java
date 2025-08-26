@@ -53,7 +53,7 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
         return "micro-benchmark-result.json";
     }
 
-    @Override protected void beforeBenchmarks() throws IOException {
+    @Override protected void beforeBenchmarks() {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
         LOGGER.info("JWT validation micro benchmarks starting - Key cache initialized");

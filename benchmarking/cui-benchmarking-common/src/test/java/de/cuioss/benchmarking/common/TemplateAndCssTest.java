@@ -53,16 +53,13 @@ class TemplateAndCssTest {
         loadTemplate.setAccessible(true);
 
         // Test loading non-existent template throws IOException
-        assertThrows(InvocationTargetException.class, () -> {
-            loadTemplate.invoke(generator, "non-existent-template.html");
-        }, "Loading non-existent template should throw exception");
+        assertThrows(InvocationTargetException.class, () -> loadTemplate.invoke(generator, "non-existent-template.html"), "Loading non-existent template should throw exception");
 
         // Verify the underlying cause is IOException
         try {
             loadTemplate.invoke(generator, "non-existent-template.html");
         } catch (InvocationTargetException e) {
-            assertTrue(e.getCause() instanceof IOException,
-                    "Underlying exception should be IOException");
+            assertInstanceOf(IOException.class, e.getCause(), "Underlying exception should be IOException");
             assertTrue(e.getCause().getMessage().contains("non-existent-template"),
                     "Exception message should mention missing template");
         }

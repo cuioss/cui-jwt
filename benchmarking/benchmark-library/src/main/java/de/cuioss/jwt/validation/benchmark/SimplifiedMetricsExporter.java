@@ -90,7 +90,7 @@ public class SimplifiedMetricsExporter {
             try {
                 String existingContent = Files.readString(outputFile);
                 if (existingContent != null && !existingContent.trim().isEmpty()) {
-                    TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {
+                    TypeToken<Map<String, Object>> typeToken = new TypeToken<>() {
                     };
                     Map<String, Object> parsedMetrics = GSON.fromJson(existingContent, typeToken.getType());
                     if (parsedMetrics != null) {

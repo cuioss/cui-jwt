@@ -34,10 +34,6 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "validateMixedTokens0", "validateMixedTokens50"
-    };
-
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
 

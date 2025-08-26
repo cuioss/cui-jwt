@@ -90,7 +90,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         return "integration-benchmark-result.json";
     }
 
-    @Override protected void beforeBenchmarks() throws IOException {
+    @Override protected void beforeBenchmarks() {
         // Configure logging to write to benchmark-results directory
         // This captures all console output (System.out/err and JMH) to both console and file
         BenchmarkLoggingSetup.configureLogging(getBenchmarkResultsDir());
@@ -143,7 +143,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
      * Uses QuarkusMetricsFetcher to download metrics and SimpleMetricsExporter to export them.
      * Also processes JMH benchmark results to create http-metrics.json.
-     * 
+     *
      * @param config the benchmark configuration
      * @throws IOException if metrics processing fails
      */

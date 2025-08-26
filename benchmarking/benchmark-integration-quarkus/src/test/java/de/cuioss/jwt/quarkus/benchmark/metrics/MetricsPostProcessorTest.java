@@ -90,9 +90,9 @@ class MetricsPostProcessorTest {
             assertTrue(percentiles.containsKey("p95_us"));
             assertTrue(percentiles.containsKey("p99_us"));
 
-            assertTrue(percentiles.get("p50_us") instanceof Number);
-            assertTrue(percentiles.get("p95_us") instanceof Number);
-            assertTrue(percentiles.get("p99_us") instanceof Number);
+            assertInstanceOf(Number.class, percentiles.get("p50_us"));
+            assertInstanceOf(Number.class, percentiles.get("p95_us"));
+            assertInstanceOf(Number.class, percentiles.get("p99_us"));
         }
     }
 
@@ -111,7 +111,7 @@ class MetricsPostProcessorTest {
 
         @SuppressWarnings("unchecked") Map<String, Object> parsed = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
-        assertTrue(parsed.size() >= 1);
+        assertFalse(parsed.isEmpty());
     }
 
     @Test @DisplayName("Should include sample counts in metrics") void shouldIncludeSampleCounts() throws IOException {
@@ -132,7 +132,7 @@ class MetricsPostProcessorTest {
                 assertTrue(endpointData.containsKey("sample_count"));
 
                 Object sampleCount = endpointData.get("sample_count");
-                assertTrue(sampleCount instanceof Number);
+                assertInstanceOf(Number.class, sampleCount);
                 assertTrue(((Number) sampleCount).intValue() > 0);
             }
         }
