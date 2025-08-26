@@ -114,29 +114,6 @@ jobs:
             fi
           fi
           
-          # Create main index.html with links to both benchmark types
-          cat > gh-pages/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>CUI JWT Benchmarks</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        h1 { color: #333; }
-        .links { margin-top: 30px; }
-        .links a { display: block; margin: 10px 0; font-size: 18px; }
-    </style>
-</head>
-<body>
-    <h1>CUI JWT Performance Benchmarks</h1>
-    <div class="links">
-        <a href="micro/">Micro Benchmarks</a>
-        <a href="integration/">Integration Benchmarks</a>
-    </div>
-</body>
-</html>
-EOF
-          
           # Add metadata
           echo "{ \"timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"commit\": \"${{ github.sha }}\" }" > gh-pages/metadata.json
           
