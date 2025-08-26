@@ -12,3 +12,53 @@
             </div>
         </section>
     </main>
+    <script>
+        // Initialize trend chart when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('trendsChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Run 1', 'Run 2', 'Run 3', 'Run 4', 'Current'],
+                        datasets: [{
+                            label: 'Throughput (ops/s)',
+                            data: [55000, 58000, 61000, 59500, 61700],
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Benchmark Performance Over Time'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Operations per Second'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Benchmark Run'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>

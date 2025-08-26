@@ -84,7 +84,7 @@ public class ReportGenerator {
     public void generateTrendsPage(Collection<RunResult> results, String outputDir) throws IOException {
         LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
 
-        String html = generateHtmlHeader("Performance Trends", false) +
+        String html = generateHtmlHeader("Performance Trends", true) +
                 generateNavigationMenu() +
                 generateTrendsSection(results) +
                 generateHtmlFooter();

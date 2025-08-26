@@ -147,28 +147,21 @@ public class BadgeGenerator {
             return new PerformanceScore(0, 0, 0);
         }
 
-        // Calculate average throughput and latency across all benchmarks
-        double totalThroughput = 0;
-        double totalLatency = 0;
-        int count = 0;
+        // Calculate average throughput only for ops/s benchmarks (same as ReportGenerator)
+        double avgThroughput = results.stream()
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .average()
+                .orElse(0.0);
 
-        for (RunResult result : results) {
-            if (hasValidPrimaryResult(result)) {
-                double score = result.getPrimaryResult().getScore();
-                String unit = result.getPrimaryResult().getScoreUnit();
-
-                totalThroughput += convertToOpsPerSecond(score, unit);
-                totalLatency += extractLatency(score, unit);
-                count++;
-            }
-        }
-
-        if (count == 0) {
-            return new PerformanceScore(0, 0, 0);
-        }
-
-        double avgThroughput = totalThroughput / count;
-        double avgLatency = totalLatency / count;
+        // Calculate average latency for time-based benchmarks
+        double avgLatency = results.stream()
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("/op"))
+                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .average()
+                .orElse(0.0);
 
         // Calculate composite score (higher is better)
         long compositeScore = Math.round(avgThroughput);
