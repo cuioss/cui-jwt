@@ -46,7 +46,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@UtilityClass public class HttpClientFactory {
+@UtilityClass
+public class HttpClientFactory {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpClientFactory.class);
 

@@ -20,7 +20,9 @@ import org.openjdk.jmh.annotations.*;
 /**
  * Simple benchmark class for testing the artifact generation pipeline.
  */
-@BenchmarkMode(Mode.Throughput) @State(Scope.Benchmark) public class TestBenchmark {
+@BenchmarkMode(Mode.Throughput)
+@State(Scope.Benchmark)
+public class TestBenchmark {
 
     @Benchmark public int measureSimpleOperation() {
         // Simple operation for testing

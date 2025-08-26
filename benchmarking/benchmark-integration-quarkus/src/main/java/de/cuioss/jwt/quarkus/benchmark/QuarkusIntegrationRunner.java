@@ -20,14 +20,12 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.benchmarking.common.repository.TokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
-import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
+import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
@@ -48,21 +46,18 @@ import java.util.Collection;
  *   <li><strong>JwtEchoBenchmark</strong>: Echo endpoint for network baseline</li>
  * </ul>
  */
-public class BenchmarkRunner {
+public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     static {
         // Set the logging manager as early as possible to prevent JBoss LogManager errors
         System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
     }
 
-    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkRunner.class);
+    private static final CuiLogger LOGGER = new CuiLogger(QuarkusIntegrationRunner.class);
 
     private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
     private static final String DEFAULT_KEYCLOAK_URL = "http://localhost:8080";
     private static final String DEFAULT_KEYCLOAK_SECURE_URL = "https://localhost:1443";
-    private static final String BENCHMARK_RESULT_FILENAME = "/integration-benchmark-result.json";
-    private static final String BENCHMARK_RESULTS_DIR_PROPERTY = "benchmark.results.dir";
-    private static final String DEFAULT_BENCHMARK_RESULTS_DIR = "target/benchmark-results";
 
     // Benchmark configuration constants
     private static final int BENCHMARK_FORKS = 1;
@@ -82,52 +77,31 @@ public class BenchmarkRunner {
     private static final int REQUEST_TIMEOUT_MS = 10000;
     private static final int TOKEN_REFRESH_THRESHOLD_SECONDS = 300;
 
-    /**
-     * Main method to run all integration benchmarks.
-     *
-     * @param args command line arguments (not used)
-     * @throws Exception if an error occurs during benchmark execution
-     */
-    public static void main(String[] args) throws Exception {
+    @Override protected BenchmarkType getBenchmarkType() {
+        return BenchmarkType.INTEGRATION;
+    }
 
+    @Override protected String getIncludePattern() {
+        return System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*");
+    }
+
+    @Override protected String getResultFileName() {
+        return "integration-benchmark-result.json";
+    }
+
+    @Override protected void beforeBenchmarks() throws Exception {
         // Configure logging to write to benchmark-results directory
         // This captures all console output (System.out/err and JMH) to both console and file
-        String benchmarkResultsDir = getBenchmarkResultsDir();
-        BenchmarkLoggingSetup.configureLogging(benchmarkResultsDir);
-
-        // Create configuration from system properties
-        var config = BenchmarkConfiguration.fromSystemProperties()
-                .withResultsDirectory(benchmarkResultsDir)
-                .withIntegrationServiceUrl(DEFAULT_SERVICE_URL)
-                .withKeycloakUrl(DEFAULT_KEYCLOAK_URL)
-                .build();
-
-        LOGGER.info("Starting Quarkus JWT integration benchmarks - Service: {}, Keycloak: {}, Output: {}",
-                config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL),
-                config.keycloakUrl().orElse(DEFAULT_KEYCLOAK_URL),
-                getBenchmarkResultsDir());
+        BenchmarkLoggingSetup.configureLogging(getBenchmarkResultsDir());
 
         // Pre-initialize the shared TokenRepository instance
         initializeSharedTokenRepository();
 
-        // Configure JMH options using modern configuration API
-        config = config.toBuilder()
-                .withIncludePattern(System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*"))
-                .withForks(BENCHMARK_FORKS)
-                .withWarmupIterations(WARMUP_ITERATIONS)
-                .withMeasurementIterations(MEASUREMENT_ITERATIONS)
-                .withMeasurementTime(TimeValue.seconds(MEASUREMENT_TIME_SECONDS))
-                .withWarmupTime(TimeValue.seconds(WARMUP_TIME_SECONDS))
-                .withThreads(THREAD_COUNT)
-                .withResultFile(getBenchmarkResultsDir() + BENCHMARK_RESULT_FILENAME)
-                .withMetricsUrl(config.integrationServiceUrl().orElse(DEFAULT_SERVICE_URL))
-                .build();
+        LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
+                getServiceUrl(), getKeycloakUrl());
+    }
 
-        Options options = config.toJmhOptions();
-
-        // Run the benchmarks
-        Collection<RunResult> results = new Runner(options).run();
-
+    @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) throws Exception {
         // Check if any benchmarks actually ran
         if (results.isEmpty()) {
             throw new IllegalStateException("Benchmark execution failed: No results produced");
@@ -147,15 +121,21 @@ public class BenchmarkRunner {
                     " out of " + results.size() + " benchmarks produced no valid results");
         }
 
-        // Generate artifacts (badges, reports, metrics, GitHub Pages structure)
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.INTEGRATION);
-        processor.processResults(results, getBenchmarkResultsDir());
-
         // Process and download final metrics after successful benchmark execution
         processMetrics(config);
+    }
 
-        LOGGER.info("Benchmarks completed successfully: {} benchmarks executed, artifacts generated in {}",
-                results.size(), getBenchmarkResultsDir());
+    @Override protected BenchmarkConfiguration.Builder configureBenchmark(BenchmarkConfiguration.Builder builder) {
+        return builder
+                .withIntegrationServiceUrl(getServiceUrl())
+                .withKeycloakUrl(getKeycloakUrl())
+                .withMetricsUrl(getServiceUrl())
+                .withForks(BENCHMARK_FORKS)
+                .withWarmupIterations(WARMUP_ITERATIONS)
+                .withMeasurementIterations(MEASUREMENT_ITERATIONS)
+                .withMeasurementTime(TimeValue.seconds(MEASUREMENT_TIME_SECONDS))
+                .withWarmupTime(TimeValue.seconds(WARMUP_TIME_SECONDS))
+                .withThreads(THREAD_COUNT);
     }
 
     /**
@@ -166,8 +146,8 @@ public class BenchmarkRunner {
      * @param config the benchmark configuration
      * @throws IOException if metrics processing fails
      */
-    private static void processMetrics(BenchmarkConfiguration config) throws IOException {
-        String quarkusMetricsUrl = config.metricsUrl().orElse(DEFAULT_SERVICE_URL);
+    private void processMetrics(BenchmarkConfiguration config) throws IOException {
+        String quarkusMetricsUrl = config.metricsUrl().orElse(getServiceUrl());
         String outputDirectory = getBenchmarkResultsDir();
 
         LOGGER.debug("Processing metrics from {} to {}", quarkusMetricsUrl, outputDirectory);
@@ -186,21 +166,11 @@ public class BenchmarkRunner {
     }
 
     /**
-     * Gets the benchmark results directory from system property or defaults to target/benchmark-results.
-     *
-     * @return the benchmark results directory path
-     */
-    private static String getBenchmarkResultsDir() {
-        return System.getProperty(BENCHMARK_RESULTS_DIR_PROPERTY, DEFAULT_BENCHMARK_RESULTS_DIR);
-    }
-
-    /**
      * Initializes the shared TokenRepository instance that will be used by all benchmarks.
      * This avoids multiple initializations during benchmark setup phases.
      */
-    private static void initializeSharedTokenRepository() {
-        var benchConfig = BenchmarkConfiguration.fromSystemProperties().build();
-        String keycloakUrl = benchConfig.keycloakUrl().orElse(DEFAULT_KEYCLOAK_SECURE_URL);
+    private void initializeSharedTokenRepository() {
+        String keycloakUrl = getKeycloakSecureUrl();
 
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl(keycloakUrl)
@@ -217,5 +187,33 @@ public class BenchmarkRunner {
 
         TokenRepository.initializeSharedInstance(config);
         LOGGER.debug("TokenRepository initialized with Keycloak at {}", keycloakUrl);
+    }
+
+    private String getServiceUrl() {
+        return System.getProperty("integration.service.url", DEFAULT_SERVICE_URL);
+    }
+
+    private String getKeycloakUrl() {
+        return System.getProperty("keycloak.url", DEFAULT_KEYCLOAK_URL);
+    }
+
+    private String getKeycloakSecureUrl() {
+        // Use secure URL if provided, otherwise use regular URL
+        String url = System.getProperty("keycloak.url", DEFAULT_KEYCLOAK_SECURE_URL);
+        // If it's the default insecure URL, use the secure version
+        if (DEFAULT_KEYCLOAK_URL.equals(url)) {
+            return DEFAULT_KEYCLOAK_SECURE_URL;
+        }
+        return url;
+    }
+
+    /**
+     * Main method to run all integration benchmarks.
+     *
+     * @param args command line arguments (not used)
+     * @throws Exception if an error occurs during benchmark execution
+     */
+    public static void main(String[] args) throws Exception {
+        new QuarkusIntegrationRunner().run();
     }
 }

@@ -19,7 +19,7 @@
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
 
         <!-- Default benchmark runner -->
-        <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.BenchmarkRunner</benchmark.runner>
+        <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.QuarkusIntegrationRunner</benchmark.runner>
 
         <!-- JMH Configuration Properties - Optimized for integration testing -->
         <jmh.result.format>JSON</jmh.result.format>

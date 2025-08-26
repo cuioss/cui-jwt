@@ -20,7 +20,7 @@
         <version.mockwebserver3>5.0.0-alpha.12</version.mockwebserver3>
 
         <!-- Default benchmark runner -->
-        <benchmark.runner>de.cuioss.jwt.validation.benchmark.BenchmarkRunner</benchmark.runner>
+        <benchmark.runner>de.cuioss.jwt.validation.benchmark.LibraryBenchmarkRunner</benchmark.runner>
         
         <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.result.format>JSON</jmh.result.format>
