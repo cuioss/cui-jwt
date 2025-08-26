@@ -147,11 +147,19 @@ public class BadgeGenerator {
             return new PerformanceScore(0, 0, 0);
         }
 
-        // Calculate average throughput only for ops/s benchmarks (same as ReportGenerator)
+        // Calculate average throughput, converting to ops/s if needed
         double avgThroughput = results.stream()
                 .filter(r -> r.getPrimaryResult() != null)
                 .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .mapToDouble(r -> {
+                    String unit = r.getPrimaryResult().getScoreUnit();
+                    double score = r.getPrimaryResult().getScore();
+                    // Convert ops/ms to ops/s
+                    if (unit.contains("ops/ms")) {
+                        return score * 1000;
+                    }
+                    return score;
+                })
                 .average()
                 .orElse(0.0);
 

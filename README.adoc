@@ -26,13 +26,13 @@ image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/bench
 
 *Micro Benchmarks*
 
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/performance-badge.json[JWT Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/]
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/performance-badge.json[JWT Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/micro/]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/micro/trends.html]
 
 *Integration Benchmarks*
 
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-performance-badge.json[Integration Performance,link=https://cuioss.github.io/cui-jwt/benchmarks/]
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-trend-badge.json[Integration Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-performance-badge.json[Integration Performance,link=https://cuioss.github.io/cui-jwt/benchmarks/integration/]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-trend-badge.json[Integration Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/integration/trends.html]
 
 xref:benchmarking/doc/performance-scoring.adoc[Understanding Performance Metrics]
 
