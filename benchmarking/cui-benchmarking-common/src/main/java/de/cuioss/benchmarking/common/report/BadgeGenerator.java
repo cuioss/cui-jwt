@@ -163,11 +163,23 @@ public class BadgeGenerator {
                 .average()
                 .orElse(0.0);
 
-        // Calculate average latency for time-based benchmarks
+        // Calculate average latency for time-based benchmarks (convert to ms)
         double avgLatency = results.stream()
                 .filter(r -> r.getPrimaryResult() != null)
                 .filter(r -> r.getPrimaryResult().getScoreUnit().contains("/op"))
-                .mapToDouble(r -> r.getPrimaryResult().getScore())
+                .mapToDouble(r -> {
+                    String unit = r.getPrimaryResult().getScoreUnit();
+                    double score = r.getPrimaryResult().getScore();
+                    // Convert to milliseconds
+                    if (unit.contains("ns/op")) {
+                        return score / 1_000_000.0; // ns to ms
+                    } else if (unit.contains("us/op")) {
+                        return score / 1_000.0; // us to ms
+                    } else if (unit.contains("s/op")) {
+                        return score * 1_000.0; // s to ms
+                    }
+                    return score; // assume ms/op
+                })
                 .average()
                 .orElse(0.0);
 
@@ -206,11 +218,22 @@ public class BadgeGenerator {
             return "No Data";
         }
 
-        return switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
+        String throughputPart = switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
             case 6, 7, 8, 9 -> "%.1fM ops/s".formatted(score.compositeScore() / 1_000_000.0);
             case 3, 4, 5 -> "%.1fK ops/s".formatted(score.compositeScore() / 1_000.0);
             default -> "%d ops/s".formatted(score.compositeScore());
         };
+        
+        // Add latency if available
+        if (score.latency() > 0) {
+            if (score.latency() < 1.0) {
+                return "%s, %.2fms".formatted(throughputPart, score.latency());
+            } else {
+                return "%s, %.1fms".formatted(throughputPart, score.latency());
+            }
+        }
+        
+        return throughputPart;
     }
 
     private String getColorForScore(PerformanceScore score) {
