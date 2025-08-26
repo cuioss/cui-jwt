@@ -103,11 +103,20 @@ de.cuioss.benchmarking.common/
 
 === Benchmark Execution (`runner/`)
 
-* **BenchmarkRunner** - Unified benchmark execution orchestration
+* **AbstractBenchmarkRunner** - Abstract base class for benchmark execution
+  - Template method pattern for customization
   - Configurable JMH options via system properties
   - Automatic artifact generation
-  - Metrics collection integration
-  - Quality gate evaluation
+  - Hooks for initialization and post-processing
+  
+* **LibraryBenchmarkRunner** - Micro benchmark runner (in benchmark-library module)
+  - Executes JWT library validation benchmarks
+  - Initializes key cache before execution
+  
+* **QuarkusIntegrationRunner** - Integration benchmark runner (in benchmark-integration-quarkus module)
+  - Executes benchmarks against live Quarkus application
+  - Initializes token repository
+  - Processes metrics after execution
 
 === Utilities (`util/`)
 
@@ -133,20 +142,25 @@ de.cuioss.benchmarking.common/
 [source,java]
 ----
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.runner.BenchmarkRunner;
+import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 
-// Build configuration from system properties
-BenchmarkConfiguration config = BenchmarkConfiguration
-    .fromSystemProperties()
-    .build();
-
-// Use configuration in runner
-Options options = new OptionsBuilder()
-    .forks(config.forks())
-    .warmupIterations(config.warmupIterations())
-    .measurementIterations(config.measurementIterations())
-    .threads(config.threadCount())
-    .build();
+// Create a concrete benchmark runner
+public class MyBenchmarkRunner extends AbstractBenchmarkRunner {
+    @Override
+    protected BenchmarkType getBenchmarkType() {
+        return BenchmarkType.MICRO;
+    }
+    
+    @Override
+    protected String getIncludePattern() {
+        return ".*MyBenchmark.*";
+    }
+    
+    // Run benchmarks
+    public static void main(String[] args) throws IOException, RunnerException {
+        new MyBenchmarkRunner().run();
+    }
+}
 ----
 
 === Setup Token Repository

@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * <p>For benchmarks that require JWT authentication, use {@link AbstractIntegrationBenchmark} instead.</p>
  *
  * <p>Benchmark execution parameters (iterations, threads, warmup, etc.) are configured dynamically
- * via {@link BenchmarkRunner} and {@link BenchmarkConfiguration} using system properties.</p>
+ * via {@link QuarkusIntegrationRunner} and {@link BenchmarkConfiguration} using system properties.</p>
  *
  * @since 1.0
  */

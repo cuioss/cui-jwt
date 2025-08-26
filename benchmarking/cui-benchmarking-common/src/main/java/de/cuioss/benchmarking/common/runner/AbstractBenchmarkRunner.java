@@ -37,7 +37,7 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
  * during JMH execution, eliminating the need for post-processing shell scripts.
  * <p>
  * Concrete implementations should override {@link #getBenchmarkType()}, {@link #getIncludePattern()},
- * and {@link #beforeBenchmarks()} / {@link #afterBenchmarks(Collection)} for specific initialization
+ * and {@link #beforeBenchmarks()} / {@link #afterBenchmarks(Collection, BenchmarkConfiguration)} for specific initialization
  * and cleanup logic.
  * <p>
  * Features:
