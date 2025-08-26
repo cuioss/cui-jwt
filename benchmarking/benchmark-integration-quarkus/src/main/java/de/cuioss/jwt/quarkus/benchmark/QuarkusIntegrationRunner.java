@@ -26,6 +26,7 @@ import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
@@ -89,7 +90,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         return "integration-benchmark-result.json";
     }
 
-    @Override protected void beforeBenchmarks() throws Exception {
+    @Override protected void beforeBenchmarks() throws IOException {
         // Configure logging to write to benchmark-results directory
         // This captures all console output (System.out/err and JMH) to both console and file
         BenchmarkLoggingSetup.configureLogging(getBenchmarkResultsDir());
@@ -101,7 +102,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
                 getServiceUrl(), getKeycloakUrl());
     }
 
-    @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) throws Exception {
+    @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
         // Check if any benchmarks actually ran
         if (results.isEmpty()) {
             throw new IllegalStateException("Benchmark execution failed: No results produced");
@@ -211,9 +212,10 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * Main method to run all integration benchmarks.
      *
      * @param args command line arguments (not used)
-     * @throws Exception if an error occurs during benchmark execution
+     * @throws IOException if I/O operations fail
+     * @throws RunnerException if benchmark execution fails
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException, RunnerException {
         new QuarkusIntegrationRunner().run();
     }
 }

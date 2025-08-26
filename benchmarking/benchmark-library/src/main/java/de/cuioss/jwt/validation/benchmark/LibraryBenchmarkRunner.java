@@ -19,7 +19,10 @@ import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.TimeValue;
+
+import java.io.IOException;
 
 /**
  * Main class for running JWT validation library micro benchmarks.
@@ -50,7 +53,7 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
         return "micro-benchmark-result.json";
     }
 
-    @Override protected void beforeBenchmarks() throws Exception {
+    @Override protected void beforeBenchmarks() throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
         LOGGER.info("JWT validation micro benchmarks starting - Key cache initialized");
@@ -70,9 +73,10 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
      * Main method to run all benchmarks.
      *
      * @param args command line arguments (not used)
-     * @throws Exception if an error occurs during benchmark execution
+     * @throws IOException if I/O operations fail
+     * @throws RunnerException if benchmark execution fails
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException, RunnerException {
         new LibraryBenchmarkRunner().run();
     }
 }

@@ -20,8 +20,10 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -77,9 +79,9 @@ public abstract class AbstractBenchmarkRunner {
      * Hook for initialization before running benchmarks.
      * Override to add specific initialization logic.
      * 
-     * @throws Exception if initialization fails
+     * @throws IOException if I/O operations fail during initialization
      */
-    protected void beforeBenchmarks() throws Exception {
+    protected void beforeBenchmarks() throws IOException {
         // Default implementation does nothing
     }
 
@@ -89,9 +91,9 @@ public abstract class AbstractBenchmarkRunner {
      * 
      * @param results the benchmark results
      * @param config the benchmark configuration
-     * @throws Exception if post-processing fails
+     * @throws IOException if I/O operations fail during post-processing
      */
-    protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) throws Exception {
+    protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
         // Default implementation does nothing
     }
 
@@ -119,9 +121,10 @@ public abstract class AbstractBenchmarkRunner {
     /**
      * Main execution method that orchestrates the benchmark run.
      *
-     * @throws Exception if an error occurs during benchmark execution
+     * @throws IOException if I/O operations fail
+     * @throws RunnerException if benchmark execution fails
      */
-    public void run() throws Exception {
+    public void run() throws IOException, RunnerException {
         String outputDir = getBenchmarkResultsDir();
 
         LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + getBenchmarkType() + ", Output: " + outputDir);
