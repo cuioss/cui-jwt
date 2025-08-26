@@ -35,26 +35,17 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr",
-            "validateInvalidSignatureTokenWithJfr", "validateMalformedTokenWithJfr"
-    };
-
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
 
     private ErrorLoadDelegate errorLoadDelegate;
-
-    @Override protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
 
     @Override protected String getJfrPhase() {
         return "error-measurement";
     }
 
     @Setup(Level.Trial) public void setup() {
-        // Use base class setup with our benchmark names
-        setupJfrBase(BENCHMARK_NAMES);
+        // Use base class setup
+        setupJfrBase();
 
         // Initialize delegates (using 0% error rate for error scenario testing)
         errorLoadDelegate = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);

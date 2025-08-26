@@ -35,21 +35,13 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class CoreJfrBenchmark extends AbstractJfrBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr"
-    };
-
     private static final String OPERATION_TYPE_VALIDATION = "validation";
 
     private CoreValidationDelegate coreValidationDelegate;
 
-    @Override protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
-
     @Setup(Level.Trial) public void setup() {
-        // Use base class setup with our benchmark names
-        setupJfrBase(BENCHMARK_NAMES);
+        // Use base class setup
+        setupJfrBase();
 
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);

@@ -35,26 +35,18 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class MixedJfrBenchmark extends AbstractJfrBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "validateMixedTokens0WithJfr", "validateMixedTokens50WithJfr"
-    };
-
     private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
 
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
-
-    @Override protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
 
     @Override protected String getJfrPhase() {
         return "mixed-measurement";
     }
 
     @Setup(Level.Trial) public void setup() {
-        // Use base class setup with our benchmark names
-        setupJfrBase(BENCHMARK_NAMES);
+        // Use base class setup
+        setupJfrBase();
 
         // Initialize delegates for different error rates
         errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);

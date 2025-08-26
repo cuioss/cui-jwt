@@ -41,13 +41,9 @@ public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
 
-    @Override protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
-
     @Setup(Level.Trial) public void setup() {
-        // Use base class setup with our benchmark names
-        setupBase(BENCHMARK_NAMES);
+        // Use base class setup
+        setupBase();
 
         // Initialize error load delegates
         errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);

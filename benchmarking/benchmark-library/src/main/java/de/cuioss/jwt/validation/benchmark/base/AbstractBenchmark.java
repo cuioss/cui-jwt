@@ -40,20 +40,10 @@ public abstract class AbstractBenchmark {
     protected TokenValidator tokenValidator;
 
     /**
-     * Get the array of benchmark method names for this benchmark class.
-     * Subclasses must implement this to provide their benchmark method names.
-     *
-     * @return Array of benchmark method names
-     */
-    protected abstract String[] getBenchmarkMethodNames();
-
-    /**
      * Setup method for benchmark initialization.
      * Subclasses should call this from their @Setup method.
-     *
-     * @param benchmarkNames Names to register (kept for compatibility)
      */
-    protected void setupBase(String... benchmarkNames) {
+    protected void setupBase() {
         // Initialize token repository with cache size configured for 10% of tokens
         TokenRepository.Config config = TokenRepository.Config.builder()
                 .cacheSize(60) // 10% of default 600 tokens

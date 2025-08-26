@@ -40,13 +40,10 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
 
     private CoreValidationDelegate validationDelegate;
 
-    @Override protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
 
     @Setup(Level.Trial) public void setup() {
         // Use base class setup with our benchmark names
-        setupBase(BENCHMARK_NAMES);
+        setupBase();
 
         // Initialize validation delegate
         validationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
