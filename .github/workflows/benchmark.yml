@@ -115,8 +115,7 @@ jobs:
           fi
           
           # Create main index.html that links to both benchmark types
-          cat > gh-pages/index.html <<'EOF'
-<!DOCTYPE html>
+          echo '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -174,11 +173,10 @@ jobs:
     </div>
     
     <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e1e4e8; color: #586069;">
-        <p>Last updated: <script>document.write(new Date().toISOString())</script></p>
+        <p>Last updated: '"$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")"'</p>
     </footer>
 </body>
-</html>
-EOF
+</html>' > gh-pages/index.html
           
           # Add metadata
           echo "{ \"timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"commit\": \"${{ github.sha }}\" }" > gh-pages/metadata.json
