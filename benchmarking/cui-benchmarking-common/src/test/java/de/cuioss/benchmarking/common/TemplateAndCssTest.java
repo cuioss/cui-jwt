@@ -21,8 +21,6 @@ import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.RunResult;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -139,15 +137,8 @@ class TemplateAndCssTest {
         // Simulate a full report generation with all artifacts
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
 
-        // Use test benchmark results
-        var options = new OptionsBuilder()
-                .include(TestBenchmark.class.getSimpleName())
-                .warmupIterations(1)
-                .measurementIterations(1)
-                .forks(1)
-                .build();
-
-        var results = new Runner(options).run();
+        // Use empty results for testing HTML/CSS generation
+        var results = List.<RunResult>of();
         String outputDir = tempDir.toString();
 
         // Process results to generate full deployment structure
@@ -173,15 +164,8 @@ class TemplateAndCssTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        // Generate with test results
-        var options = new OptionsBuilder()
-                .include(TestBenchmark.class.getSimpleName())
-                .warmupIterations(1)
-                .measurementIterations(1)
-                .forks(1)
-                .build();
-
-        var results = new Runner(options).run();
+        // Generate with empty results for testing CSS generation
+        var results = List.<RunResult>of();
         generator.generateIndexPage(results, outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");

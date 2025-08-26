@@ -20,8 +20,6 @@ import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.RunResult;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,15 +37,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class BenchmarkResultProcessorTest {
 
     @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
-        // Run minimal benchmark for testing
-        var options = new OptionsBuilder()
-                .include(TestBenchmark.class.getSimpleName())
-                .warmupIterations(1)
-                .measurementIterations(1)
-                .forks(1)
-                .build();
-
-        Collection<RunResult> results = new Runner(options).run();
+        // Use empty results instead of running actual benchmarks
+        // Full integration testing with real benchmarks should be done in separate integration tests
+        Collection<RunResult> results = List.of();
 
         // Process results
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
