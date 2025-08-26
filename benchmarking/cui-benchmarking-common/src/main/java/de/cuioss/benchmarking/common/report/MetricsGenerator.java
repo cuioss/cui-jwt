@@ -83,13 +83,12 @@ public class MetricsGenerator {
     }
 
     private Map<String, Object> processBenchmarkResults(Collection<RunResult> results) {
-        return results.stream()
-                .collect(LinkedHashMap::new,
-                        (map, result) -> {
-                            String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
-                            map.put(benchmarkName, processSingleBenchmark(result));
-                        },
-                        LinkedHashMap::putAll);
+        Map<String, Object> benchmarks = new LinkedHashMap<>();
+        for (RunResult result : results) {
+            String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
+            benchmarks.put(benchmarkName, processSingleBenchmark(result));
+        }
+        return benchmarks;
     }
 
     private Map<String, Object> processSingleBenchmark(RunResult result) {
