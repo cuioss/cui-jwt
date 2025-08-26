@@ -114,71 +114,28 @@ jobs:
             fi
           fi
           
-          # Create main index.html that links to both benchmark types
-          cat > gh-pages/index.html << 'INDEXEOF'
+          # Create main index.html with links to both benchmark types
+          cat > gh-pages/index.html << 'EOF'
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CUI JWT Benchmarks</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; margin: 40px auto; max-width: 1200px; padding: 0 20px; }
-        h1 { color: #333; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }
-        .benchmark-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 30px; }
-        .card { background: white; border: 1px solid #e1e4e8; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .card h2 { margin-top: 0; color: #0366d6; }
-        .metrics { display: grid; gap: 10px; margin: 20px 0; }
-        .metric { display: flex; justify-content: space-between; padding: 8px; background: #f6f8fa; border-radius: 4px; }
-        .btn { display: inline-block; padding: 10px 20px; background: #0366d6; color: white; text-decoration: none; border-radius: 4px; margin-top: 15px; }
-        .btn:hover { background: #0256c7; }
-        .badge { vertical-align: middle; margin-left: 10px; }
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .links { margin-top: 30px; }
+        .links a { display: block; margin: 10px 0; font-size: 18px; }
     </style>
 </head>
 <body>
     <h1>CUI JWT Performance Benchmarks</h1>
-    <p>Comprehensive benchmarking suite for JWT validation library</p>
-    
-    <div class="benchmark-cards">
-        <div class="card">
-            <h2>Micro Benchmarks</h2>
-            <p>Low-level performance tests for core JWT validation operations</p>
-            <div class="metrics">
-                <div class="metric">
-                    <span>Performance:</span>
-                    <img class="badge" src="badges/performance-badge.json" alt="Performance" />
-                </div>
-                <div class="metric">
-                    <span>Trend:</span>
-                    <img class="badge" src="badges/trend-badge.json" alt="Trend" />
-                </div>
-            </div>
-            <a href="micro/" class="btn">View Micro Benchmarks →</a>
-        </div>
-        
-        <div class="card">
-            <h2>Integration Benchmarks</h2>
-            <p>End-to-end performance tests with Quarkus native container</p>
-            <div class="metrics">
-                <div class="metric">
-                    <span>Performance:</span>
-                    <img class="badge" src="badges/integration-performance-badge.json" alt="Integration Performance" />
-                </div>
-                <div class="metric">
-                    <span>Trend:</span>
-                    <img class="badge" src="badges/integration-trend-badge.json" alt="Integration Trend" />
-                </div>
-            </div>
-            <a href="integration/" class="btn">View Integration Benchmarks →</a>
-        </div>
+    <div class="links">
+        <a href="micro/">Micro Benchmarks</a>
+        <a href="integration/">Integration Benchmarks</a>
     </div>
-    
-    <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e1e4e8; color: #586069;">
-        <p>Last updated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")</p>
-    </footer>
 </body>
 </html>
-INDEXEOF
+EOF
           
           # Add metadata
           echo "{ \"timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"commit\": \"${{ github.sha }}\" }" > gh-pages/metadata.json
