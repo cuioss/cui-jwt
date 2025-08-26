@@ -9,7 +9,7 @@
 **Build & Quality**
 
 image:https://github.com/cuioss/cui-jwt/actions/workflows/maven.yml/badge.svg?branch=main[Java CI with Maven,link=https://github.com/cuioss/cui-jwt/actions/workflows/maven.yml]
-image:https://github.com/cuioss/cui-jwt/actions/workflows/integration-tests.yml/badge.svg[Integration Tests,link=https://github.com/cuioss/cui-jwt/actions/workflows/integration-tests.yml]
+image:https://github.com/cuioss/cui-jwt/actions/workflows/integration-tests.yml/badge.svg?branch=main[Integration Tests,link=https://github.com/cuioss/cui-jwt/actions/workflows/integration-tests.yml]
 
 image:https://img.shields.io/github/last-commit/cuioss/cui-jwt/main[Last Build,link=https://github.com/cuioss/cui-jwt/commits/main]
 image:http://img.shields.io/:license-apache-blue.svg[License,link=http://www.apache.org/licenses/LICENSE-2.0.html]
@@ -26,13 +26,13 @@ image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/bench
 
 *Micro Benchmarks*
 
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/performance-badge.json[JWT Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/index-visualizer.html]
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/performance-trends.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/performance-badge.json[JWT Performance Score,link=https://cuioss.github.io/cui-jwt/benchmarks/]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/trend-badge.json[Performance Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/]
 
 *Integration Benchmarks*
 
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-performance-badge.json[Integration Performance,link=https://cuioss.github.io/cui-jwt/benchmarks/integration-index.html]
-image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-trend-badge.json[Integration Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/integration-performance-trends.html]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-performance-badge.json[Integration Performance,link=https://cuioss.github.io/cui-jwt/benchmarks/]
+image:https://img.shields.io/endpoint?url=https://cuioss.github.io/cui-jwt/benchmarks/badges/integration-trend-badge.json[Integration Trend,link=https://cuioss.github.io/cui-jwt/benchmarks/]
 
 xref:benchmarking/doc/performance-scoring.adoc[Understanding Performance Metrics]
 

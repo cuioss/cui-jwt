@@ -79,6 +79,9 @@ jobs:
         run: |
           # Create combined gh-pages directory from both benchmark runs
           mkdir -p gh-pages
+          mkdir -p gh-pages/data
+          mkdir -p gh-pages/badges
+          mkdir -p gh-pages/api
           
           # Copy micro benchmark artifacts (already in GitHub Pages structure)
           if [ -d "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready" ]; then
@@ -89,11 +92,17 @@ jobs:
           # Merge integration benchmark artifacts (preserve existing structure)
           if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready" ]; then
             echo "📦 Merging integration benchmark artifacts..."
-            # Copy integration-specific files with prefix to avoid conflicts
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/*integration* gh-pages/data/ 2>/dev/null || true
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/*integration* gh-pages/badges/ 2>/dev/null || true
+            # Ensure directories exist before copying
+            if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data" ]; then
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/*integration* gh-pages/data/ 2>/dev/null || true
+            fi
+            if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges" ]; then
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/*integration* gh-pages/badges/ 2>/dev/null || true
+            fi
             # Merge API files
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/api/* gh-pages/api/ 2>/dev/null || true
+            if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/api" ]; then
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/api/* gh-pages/api/ 2>/dev/null || true
+            fi
           fi
           
           # Add metadata
