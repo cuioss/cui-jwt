@@ -86,11 +86,6 @@ public class JfrInstrumentation {
     }
 
     private void reportStatistics() {
-        boolean statisticsReportingEnabled = true;
-        if (!statisticsReportingEnabled) {
-            return;
-        }
-
         operationStats.forEach((key, stats) -> {
             Histogram snapshot = stats.recorder.getIntervalHistogram();
             if (snapshot.getTotalCount() > 0) {
