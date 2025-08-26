@@ -361,7 +361,7 @@ public class MetricsPostProcessor {
      * Convenience method to parse and export using default file locations
      * Processes both HTTP roundtrip metrics and Quarkus resource metrics
      */
-    public static void parseAndExport(String resultsDirectory) throws IOException {
+    public static void parseAndExport(String resultsDirectory) {
         // Handle case where we're called from target directory
         String benchmarkFile;
         String outputDir;
@@ -376,8 +376,12 @@ public class MetricsPostProcessor {
             outputDir = resultsDirectory;
         }
 
-        MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
-        parser.parseAndExportAllMetrics(Instant.now());
+        try {
+            MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
+            parser.parseAndExportAllMetrics(Instant.now());
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse and export metrics", e);
+        }
     }
 
     /**
@@ -389,24 +393,6 @@ public class MetricsPostProcessor {
         parser.parseAndExportHttpMetrics(Instant.now());
     }
 
-    /**
-     * Main method for command-line execution from Maven
-     */
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            LOGGER.error("Usage: MetricsPostProcessor <results-directory>");
-            System.exit(1);
-        }
-
-        String resultsDirectory = args[0];
-        LOGGER.debug("Generating comprehensive metrics (HTTP + Quarkus) from benchmark results in: {}", resultsDirectory);
-
-        try {
-            parseAndExport(resultsDirectory);
-            LOGGER.debug("Comprehensive metrics generation completed successfully");
-        } catch (IOException e) {
-            LOGGER.error("Failed to generate comprehensive metrics", e);
-            System.exit(1);
-        }
-    }
+    // Main method removed - metrics processing is now fully integrated into QuarkusIntegrationRunner
+    // This ensures all processing happens within the Java benchmark structure
 }

@@ -228,23 +228,8 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Metrics processing moved to BenchmarkRunner.java directly -->
-                            <!-- Generate HTTP metrics from benchmark results -->
-                            <execution>
-                                <id>generate-http-metrics</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>bash</executable>
-                                    <arguments>
-                                        <argument>-c</argument>
-                                        <argument>cd target &amp;&amp; java -cp "classes:dependency/*" de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor benchmark-results || echo "Comprehensive metrics generation failed - continuing"</argument>
-                                    </arguments>
-                                    <workingDirectory>${project.basedir}</workingDirectory>
-                                </configuration>
-                            </execution>
+                            <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
+                            <!-- No separate CLI execution needed anymore -->
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-integration-containers</id>
@@ -422,21 +407,8 @@
                                 </configuration>
                             </execution>
                             <!-- Generate HTTP metrics from benchmark results (JFR profile) -->
-                            <execution>
-                                <id>generate-http-metrics-jfr</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>bash</executable>
-                                    <arguments>
-                                        <argument>-c</argument>
-                                        <argument>cd target &amp;&amp; java -cp "classes:dependency/*" de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor benchmark-results || echo "Comprehensive metrics generation failed - continuing"</argument>
-                                    </arguments>
-                                    <workingDirectory>${project.basedir}</workingDirectory>
-                                </configuration>
-                            </execution>
+                            <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
+                            <!-- No separate CLI execution needed anymore -->
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-jfr-containers</id>

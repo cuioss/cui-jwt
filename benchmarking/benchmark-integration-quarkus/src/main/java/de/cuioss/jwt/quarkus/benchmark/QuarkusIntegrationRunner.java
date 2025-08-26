@@ -160,10 +160,10 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
         exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
 
-        // Process JMH benchmark results to create http-metrics.json
+        // Process JMH benchmark results to create both http-metrics.json and quarkus-metrics.json
         String benchmarkResultsFile = config.resultFile();
         MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
-        metricsPostProcessor.parseAndExportHttpMetrics(Instant.now());
+        metricsPostProcessor.parseAndExportAllMetrics(Instant.now());
     }
 
     /**
