@@ -393,6 +393,4 @@ public class MetricsPostProcessor {
         parser.parseAndExportHttpMetrics(Instant.now());
     }
 
-    // Main method removed - metrics processing is now fully integrated into QuarkusIntegrationRunner
-    // This ensures all processing happens within the Java benchmark structure
 }

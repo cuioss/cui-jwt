@@ -35,7 +35,6 @@ public class JfrEventTest {
     public static void main(String[] args) throws Exception {
         Path outputPath = Path.of("target/benchmark-results/test-jfr.jfr");
 
-        // Start JFR recording
         try (Recording recording = new Recording()) {
             recording.enable("de.cuioss.jwt.Operation");
             recording.enable("de.cuioss.jwt.OperationStatistics");

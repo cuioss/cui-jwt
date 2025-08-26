@@ -55,12 +55,10 @@ public class JfrBenchmarkRunner {
      */
     public static void main(String[] args) throws Exception {
 
-        // Initialize key cache before benchmarks start
         log.info("Initializing benchmark key cache...");
         BenchmarkKeyCache.initialize();
         log.info("Key cache initialized. Starting JFR benchmarks...\n");
 
-        // Configure JMH options using BenchmarkConfiguration
         String resultsDir = getBenchmarkResultsDir();
 
         BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties()
@@ -75,10 +73,6 @@ public class JfrBenchmarkRunner {
                 .withResultsDirectory(resultsDir)
                 .build();
 
-        // Build options with JFR-specific JVM arguments
-        // Note: We cannot reuse config.toJmhOptions() directly because JMH's OptionsBuilder
-        // doesn't support inheritance/parent options. We must configure all parameters
-        // explicitly but with JFR-specific JVM arguments.
         Options options = new OptionsBuilder()
                 .include(config.includePattern())
                 .resultFormat(config.resultFormat())
@@ -96,7 +90,6 @@ public class JfrBenchmarkRunner {
                         "-Dbenchmark.results.dir=" + resultsDir)
                 .build();
 
-        // Run the benchmarks
         log.info("Running JFR-instrumented benchmarks...");
         log.info("JFR recording will be saved to: " + getBenchmarkResultsDir() + "/jfr-benchmark.jfr");
 
@@ -115,7 +108,6 @@ public class JfrBenchmarkRunner {
         String filePrefix = System.getProperty("jmh.result.filePrefix");
         if (filePrefix != null && !filePrefix.isEmpty()) {
             String resultFile = filePrefix + "-jfr.json";
-            // Ensure parent directory exists
             File file = new File(resultFile);
             File parentDir = file.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
