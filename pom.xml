@@ -42,7 +42,7 @@
     </issueManagement>
 
     <properties>
-        <version.quarkus>3.23.3</version.quarkus>
+        <version.quarkus>3.25.4</version.quarkus>
         <frontend.node.version>v20.19.2</frontend.node.version>
         <frontend.npm.version>10.5.0</frontend.npm.version>
     </properties>
