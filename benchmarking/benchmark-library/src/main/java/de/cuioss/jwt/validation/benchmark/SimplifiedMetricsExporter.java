@@ -15,13 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -49,16 +43,16 @@ public class SimplifiedMetricsExporter {
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
-            .registerTypeAdapter(Double.class, new JsonSerializer<Double>() {
-                @Override
-                public JsonElement serialize(Double src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
-                    if (src == src.longValue()) {
-                        return new JsonPrimitive(src.longValue());
-                    }
-                    return new JsonPrimitive(src);
+            .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
+                if (src == src.longValue()) {
+                    return new JsonPrimitive(src.longValue());
                 }
+                return new JsonPrimitive(src);
             })
             .create();
+    public static final String MEASURE = "measure";
+    public static final String VALIDATE = "validate";
+    public static final String BENCHMARK = "benchmark";
 
     private SimplifiedMetricsExporter() {
         // Utility class
@@ -96,7 +90,7 @@ public class SimplifiedMetricsExporter {
             try {
                 String existingContent = Files.readString(outputFile);
                 if (existingContent != null && !existingContent.trim().isEmpty()) {
-                    TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {
+                    TypeToken<Map<String, Object>> typeToken = new TypeToken<>() {
                     };
                     Map<String, Object> parsedMetrics = GSON.fromJson(existingContent, typeToken.getType());
                     if (parsedMetrics != null) {
@@ -184,7 +178,7 @@ public class SimplifiedMetricsExporter {
             }
 
             // Look for benchmark method patterns
-            if (methodName.startsWith("measure") || methodName.startsWith("validate") || methodName.startsWith("benchmark")) {
+            if (methodName.startsWith(MEASURE) || methodName.startsWith(VALIDATE) || methodName.startsWith(BENCHMARK)) {
                 return methodName;
             }
         }
@@ -192,14 +186,14 @@ public class SimplifiedMetricsExporter {
         // Fallback 2: Parse thread name with more generic patterns
         String threadName = Thread.currentThread().getName();
         // JMH typically includes benchmark information in thread name
-        if (threadName.contains("measure")) {
-            return extractBenchmarkFromThread(threadName, "measure");
+        if (threadName.contains(MEASURE)) {
+            return extractBenchmarkFromThread(threadName, MEASURE);
         }
-        if (threadName.contains("validate")) {
-            return extractBenchmarkFromThread(threadName, "validate");
+        if (threadName.contains(VALIDATE)) {
+            return extractBenchmarkFromThread(threadName, VALIDATE);
         }
-        if (threadName.contains("benchmark")) {
-            return extractBenchmarkFromThread(threadName, "benchmark");
+        if (threadName.contains(BENCHMARK)) {
+            return extractBenchmarkFromThread(threadName, BENCHMARK);
         }
 
         return null;

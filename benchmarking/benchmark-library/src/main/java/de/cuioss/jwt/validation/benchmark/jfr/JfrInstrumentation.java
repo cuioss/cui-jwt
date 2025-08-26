@@ -43,33 +43,9 @@ public class JfrInstrumentation {
         return t;
     });
 
-    private volatile boolean statisticsReportingEnabled = true;
-
     public JfrInstrumentation() {
         // Schedule periodic statistics reporting
         scheduler.scheduleAtFixedRate(this::reportStatistics, 1, 1, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Pre-initializes statistics for all benchmark/operation combinations to avoid
-     * ConcurrentHashMap.computeIfAbsent contention during benchmark execution.
-     * 
-     * @param benchmarkNames array of benchmark method names
-     */
-    public void preInitializeStats(String[] benchmarkNames) {
-        String[] operationTypes = {
-                "validation", "error-validation", "mixed-validation",
-                "complete-validation", "token-parsing", "header-validation",
-                "signature-validation", "claims-validation", "token-format-check",
-                "issuer-extraction", "issuer-config-resolution", "token-building"
-        };
-
-        for (String benchmark : benchmarkNames) {
-            for (String operation : operationTypes) {
-                String key = benchmark + ":" + operation;
-                operationStats.put(key, new OperationStats());
-            }
-        }
     }
 
     /**
@@ -95,13 +71,6 @@ public class JfrInstrumentation {
     }
 
     /**
-     * Enables or disables periodic statistics reporting.
-     */
-    public void setStatisticsReportingEnabled(boolean enabled) {
-        this.statisticsReportingEnabled = enabled;
-    }
-
-    /**
      * Shuts down the instrumentation and releases resources.
      */
     public void shutdown() {
@@ -117,10 +86,6 @@ public class JfrInstrumentation {
     }
 
     private void reportStatistics() {
-        if (!statisticsReportingEnabled) {
-            return;
-        }
-
         operationStats.forEach((key, stats) -> {
             Histogram snapshot = stats.recorder.getIntervalHistogram();
             if (snapshot.getTotalCount() > 0) {
@@ -195,13 +160,7 @@ public class JfrInstrumentation {
             return this;
         }
 
-        public OperationRecorder withCached(boolean cached) {
-            event.cached = cached;
-            return this;
-        }
-
-        @Override
-        public void close() {
+        @Override public void close() {
             concurrentOperations.decrementAndGet();
             event.end();
 

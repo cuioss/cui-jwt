@@ -43,14 +43,12 @@ class QuarkusMetricsPostProcessorTest {
     private Gson gson;
     private String metricsDownloadDir;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeEach void setUp() throws IOException {
         gson = new GsonBuilder().create();
         metricsDownloadDir = createTestMetricsDirectory();
     }
 
-    @Test
-    void shouldParseQuarkusMetricsFiles() throws IOException {
+    @Test void shouldParseQuarkusMetricsFiles() throws IOException {
         // Given - processor with test metrics directory
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
 
@@ -96,8 +94,7 @@ class QuarkusMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    void shouldHandlePercentageFormatting() throws IOException {
+    @Test void shouldHandlePercentageFormatting() throws IOException {
         // Given - processor with test metrics
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
 
@@ -112,15 +109,14 @@ class QuarkusMetricsPostProcessorTest {
 
             // CPU usage values should be formatted as percentages
             Object systemCpuAvg = cpuMetrics.get("system_cpu_usage_avg");
-            assertTrue(systemCpuAvg instanceof Number, "CPU usage should be a number");
+            assertInstanceOf(Number.class, systemCpuAvg, "CPU usage should be a number");
 
             double cpuValue = ((Number) systemCpuAvg).doubleValue();
             assertTrue(cpuValue >= 0 && cpuValue <= 100, "CPU usage should be in percentage range (0-100)");
         }
     }
 
-    @Test
-    void shouldHandleMemoryCalculations() throws IOException {
+    @Test void shouldHandleMemoryCalculations() throws IOException {
         // Given - processor with test metrics
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
 
@@ -136,17 +132,16 @@ class QuarkusMetricsPostProcessorTest {
 
             // Heap metrics should be present and positive
             Object usedBytes = heapMetrics.get("used_bytes");
-            assertTrue(usedBytes instanceof Number, "Used bytes should be a number");
+            assertInstanceOf(Number.class, usedBytes, "Used bytes should be a number");
             assertTrue(((Number) usedBytes).longValue() > 0, "Used bytes should be positive");
 
             Object committedBytes = heapMetrics.get("committed_bytes");
-            assertTrue(committedBytes instanceof Number, "Committed bytes should be a number");
+            assertInstanceOf(Number.class, committedBytes, "Committed bytes should be a number");
             assertTrue(((Number) committedBytes).longValue() > 0, "Committed bytes should be positive");
         }
     }
 
-    @Test
-    void shouldUseConvenienceMethod() throws IOException {
+    @Test void shouldUseConvenienceMethod() throws IOException {
         // Given - test metrics in base directory structure
         String baseDir = tempDir.toString();
         File metricsDir = new File(baseDir, "metrics-download");
@@ -183,7 +178,7 @@ class QuarkusMetricsPostProcessorTest {
             # TYPE system_cpu_usage gauge
             # HELP system_cpu_usage The "recent cpu usage" of the system the application is running in
             system_cpu_usage 0.13922521857923498
-            # TYPE process_cpu_usage gauge  
+            # TYPE process_cpu_usage gauge
             # HELP process_cpu_usage The "recent cpu usage" for the Java Virtual Machine process
             process_cpu_usage 0.1377049180327869
             # TYPE system_cpu_count gauge

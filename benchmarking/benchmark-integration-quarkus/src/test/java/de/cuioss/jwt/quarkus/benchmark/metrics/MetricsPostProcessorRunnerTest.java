@@ -30,8 +30,7 @@ class MetricsPostProcessorRunnerTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(MetricsPostProcessorRunnerTest.class);
 
-    @Test
-    void runParserOnActualResults() {
+    @Test void runParserOnActualResults() {
         String resultsDirectory = "target/benchmark-results";
         File resultsDir = new File(resultsDirectory);
 

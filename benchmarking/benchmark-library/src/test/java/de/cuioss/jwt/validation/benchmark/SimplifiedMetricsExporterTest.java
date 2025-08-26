@@ -41,8 +41,7 @@ class SimplifiedMetricsExporterTest {
 
     private final Gson gson = new GsonBuilder().create();
 
-    @Test
-    void shouldExportMetricsToJsonFile() throws IOException {
+    @Test void shouldExportMetricsToJsonFile() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
                 .measurementType(MeasurementType.TOKEN_PARSING)
@@ -88,7 +87,7 @@ class SimplifiedMetricsExporterTest {
         assertEquals("jwt-validation-metrics.json", jsonFiles[0].getFileName().toString());
 
         String jsonContent = Files.readString(jsonFiles[0]);
-        TypeToken<Map<String, Object>> typeToken = new TypeToken<Map<String, Object>>() {
+        TypeToken<Map<String, Object>> typeToken = new TypeToken<>() {
         };
         Map<String, Object> allMetrics = gson.fromJson(jsonContent, typeToken.getType());
 
@@ -115,14 +114,11 @@ class SimplifiedMetricsExporterTest {
         assertNotNull(parseMetrics.get("p99_us"));
     }
 
-    @Test
-    void shouldHandleNullMonitor() throws IOException {
-        // Should not throw exception
-        SimplifiedMetricsExporter.exportMetrics(null);
+    @Test void shouldHandleNullMonitor() {
+        assertDoesNotThrow(() -> SimplifiedMetricsExporter.exportMetrics(null));
     }
 
-    @Test
-    void shouldFormatNumbersCorrectly() throws IOException, InterruptedException {
+    @Test void shouldFormatNumbersCorrectly() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
                 .measurementType(MeasurementType.TOKEN_PARSING)
@@ -155,8 +151,7 @@ class SimplifiedMetricsExporterTest {
         assertFalse(jsonContent.contains("13.0"), "Values >= 10 should not have .0 suffix");
     }
 
-    @Test
-    void shouldUseSystemPropertyForBenchmarkContext() throws Exception {
+    @Test void shouldUseSystemPropertyForBenchmarkContext() throws Exception {
         // Given - set system property
         String originalProperty = System.getProperty("benchmark.context");
         System.setProperty("benchmark.context", "custom-benchmark-test");
@@ -179,8 +174,7 @@ class SimplifiedMetricsExporterTest {
         }
     }
 
-    @Test
-    void shouldFallbackToBenchmarkClassDetection() throws Exception {
+    @Test void shouldFallbackToBenchmarkClassDetection() throws Exception {
         // Given - clear system property and create stack with benchmark class
         String originalProperty = System.getProperty("benchmark.context");
         System.clearProperty("benchmark.context");
@@ -199,8 +193,7 @@ class SimplifiedMetricsExporterTest {
         }
     }
 
-    @Test
-    void shouldReturnNullWhenNoBenchmarkContextFound() throws Exception {
+    @Test void shouldReturnNullWhenNoBenchmarkContextFound() throws Exception {
         // Given - clear system property
         String originalProperty = System.getProperty("benchmark.context");
         System.clearProperty("benchmark.context");
@@ -221,8 +214,7 @@ class SimplifiedMetricsExporterTest {
         }
     }
 
-    @Test
-    void shouldHandleEmptySystemProperty() throws Exception {
+    @Test void shouldHandleEmptySystemProperty() throws Exception {
         // Given - set empty system property
         String originalProperty = System.getProperty("benchmark.context");
         System.setProperty("benchmark.context", "  ");

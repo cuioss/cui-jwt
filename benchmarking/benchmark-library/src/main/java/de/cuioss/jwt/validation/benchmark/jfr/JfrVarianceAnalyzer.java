@@ -49,7 +49,7 @@ public class JfrVarianceAnalyzer {
 
     /**
      * Analyzes a JFR recording file and generates a variance report.
-     * 
+     *
      * @param jfrFile path to the JFR recording file
      * @return variance analysis report
      * @throws IOException if the file cannot be read
@@ -147,40 +147,6 @@ public class JfrVarianceAnalyzer {
                     });
         }
 
-        /**
-         * Exports the report as a JSON-compatible map.
-         */
-        public Map<String, Object> toJson() {
-            Map<String, Object> json = new LinkedHashMap<>();
-
-            operationMetrics.forEach((key, metrics) -> {
-                Map<String, Object> metricsMap = new LinkedHashMap<>();
-                metricsMap.put("total_operations", metrics.totalOperations);
-                metricsMap.put("successful_operations", metrics.successfulOperations);
-                metricsMap.put("failed_operations", metrics.failedOperations);
-                metricsMap.put("p50_latency_us", metrics.p50Latency / 1000.0);
-                metricsMap.put("p95_latency_us", metrics.p95Latency / 1000.0);
-                metricsMap.put("p99_latency_us", metrics.p99Latency / 1000.0);
-                metricsMap.put("max_latency_us", metrics.maxLatency / 1000.0);
-                metricsMap.put("variance_ns2", metrics.variance);
-                metricsMap.put("standard_deviation_us", metrics.standardDeviation / 1000.0);
-                metricsMap.put("coefficient_of_variation_pct", metrics.coefficientOfVariation);
-                metricsMap.put("max_concurrent_operations", metrics.maxConcurrentOperations);
-
-                if (!metrics.statisticsSnapshots.isEmpty()) {
-                    Map<String, Object> periodicStats = new LinkedHashMap<>();
-                    periodicStats.put("snapshot_count", metrics.statisticsSnapshots.size());
-                    periodicStats.put("average_cv_pct", metrics.averageCV);
-                    periodicStats.put("min_cv_pct", metrics.minCV);
-                    periodicStats.put("max_cv_pct", metrics.maxCV);
-                    metricsMap.put("periodic_statistics", periodicStats);
-                }
-
-                json.put(key, metricsMap);
-            });
-
-            return json;
-        }
     }
 
     /**

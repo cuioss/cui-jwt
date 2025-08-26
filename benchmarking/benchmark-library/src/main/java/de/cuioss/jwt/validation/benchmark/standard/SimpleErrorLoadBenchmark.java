@@ -34,22 +34,12 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "validateMixedTokens0", "validateMixedTokens50"
-    };
-
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
 
-    @Override
-    protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
-
-    @Setup(Level.Trial)
-    public void setup() {
-        // Use base class setup with our benchmark names
-        setupBase(BENCHMARK_NAMES);
+    @Setup(Level.Trial) public void setup() {
+        // Use base class setup
+        setupBase();
 
         // Initialize error load delegates
         errorLoadDelegate0 = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
@@ -61,20 +51,14 @@ public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
     /**
      * Benchmarks mixed error load scenarios with 0% error rate (baseline performance).
      */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public Object validateMixedTokens0(Blackhole blackhole) {
+    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public Object validateMixedTokens0(Blackhole blackhole) {
         return errorLoadDelegate0.validateMixed(blackhole);
     }
 
     /**
      * Benchmarks mixed error load scenarios with 50% error rate (balanced mix).
      */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public Object validateMixedTokens50(Blackhole blackhole) {
+    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public Object validateMixedTokens50(Blackhole blackhole) {
         return errorLoadDelegate50.validateMixed(blackhole);
     }
 

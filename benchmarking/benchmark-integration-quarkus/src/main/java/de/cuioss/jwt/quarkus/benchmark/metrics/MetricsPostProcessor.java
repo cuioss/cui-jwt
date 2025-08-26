@@ -15,13 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
+import com.google.gson.*;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
 
@@ -36,11 +30,11 @@ import java.util.Map;
 /**
  * Comprehensive metrics post-processor that generates both HTTP roundtrip metrics
  * and Quarkus resource usage metrics from benchmark results.
- *
+ * <p>
  * This class combines:
  * - HTTP metrics: HTTP roundtrip percentiles from JMH benchmark results (external view)
  * - Quarkus metrics: CPU and RAM usage from Prometheus format metrics files
- *
+ * <p>
  * Generates http-metrics.json and quarkus-metrics.json files for performance analysis.
  *
  * @since 1.0
@@ -70,7 +64,7 @@ public class MetricsPostProcessor {
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IllegalStateException("Failed to create output directory: " + dir.getAbsolutePath());
         }
-        LOGGER.info("MetricsPostProcessor initialized with benchmark file: {} and output directory: {}",
+        LOGGER.debug("MetricsPostProcessor initialized with benchmark file: {} and output directory: {}",
                 benchmarkResultsFile, dir.getAbsolutePath());
     }
 
@@ -82,7 +76,7 @@ public class MetricsPostProcessor {
      * @throws IOException if file operations fail
      */
     public void parseAndExportHttpMetrics(Instant timestamp) throws IOException {
-        LOGGER.info("Parsing JMH benchmark results from: {}", benchmarkResultsFile);
+        LOGGER.debug("Parsing JMH benchmark results from: {}", benchmarkResultsFile);
 
         File inputFile = new File(benchmarkResultsFile);
         if (!inputFile.exists()) {
@@ -97,7 +91,7 @@ public class MetricsPostProcessor {
         // Generate output file
         generateHttpMetricsFile(endpointMetrics, timestamp);
 
-        LOGGER.info("Successfully exported HTTP metrics for {} endpoints", endpointMetrics.size());
+        LOGGER.debug("Successfully exported HTTP metrics for {} endpoints", endpointMetrics.size());
     }
 
     /**
@@ -281,7 +275,7 @@ public class MetricsPostProcessor {
         try (FileWriter writer = new FileWriter(outputFile)) {
             GSON.toJson(output, writer);
             writer.flush();
-            LOGGER.info("Generated http-metrics.json at: {}", outputFile.getAbsolutePath());
+            LOGGER.debug("Generated http-metrics.json at: {}", outputFile.getAbsolutePath());
         }
     }
 
@@ -335,15 +329,14 @@ public class MetricsPostProcessor {
      * Parse and export both HTTP metrics and Quarkus metrics
      *
      * @param timestamp Timestamp for the metrics output
-     * @throws IOException if file operations fail
      */
-    public void parseAndExportAllMetrics(Instant timestamp) throws IOException {
-        LOGGER.info("Processing comprehensive metrics - HTTP roundtrip and Quarkus resource usage");
+    public void parseAndExportAllMetrics(Instant timestamp) {
+        LOGGER.debug("Processing comprehensive metrics - HTTP roundtrip and Quarkus resource usage");
 
         // Process HTTP roundtrip metrics
         try {
             parseAndExportHttpMetrics(timestamp);
-            LOGGER.info("Successfully processed HTTP roundtrip metrics");
+            LOGGER.debug("Successfully processed HTTP roundtrip metrics");
         } catch (IOException e) {
             LOGGER.warn("Failed to process HTTP metrics: {}", e.getMessage());
         }
@@ -356,19 +349,19 @@ public class MetricsPostProcessor {
             String metricsDownloadDir = new File(targetDir, "metrics-download").getAbsolutePath();
             QuarkusMetricsPostProcessor quarkusProcessor = new QuarkusMetricsPostProcessor(metricsDownloadDir, outputDirectory);
             quarkusProcessor.parseAndExportQuarkusMetrics(timestamp);
-            LOGGER.info("Successfully processed Quarkus resource usage metrics");
+            LOGGER.debug("Successfully processed Quarkus resource usage metrics");
         } catch (IOException e) {
             LOGGER.warn("Failed to process Quarkus metrics: {}", e.getMessage());
         }
 
-        LOGGER.info("Comprehensive metrics processing completed");
+        LOGGER.debug("Comprehensive metrics processing completed");
     }
 
     /**
      * Convenience method to parse and export using default file locations
      * Processes both HTTP roundtrip metrics and Quarkus resource metrics
      */
-    public static void parseAndExport(String resultsDirectory) throws IOException {
+    public static void parseAndExport(String resultsDirectory) {
         // Handle case where we're called from target directory
         String benchmarkFile;
         String outputDir;
@@ -383,8 +376,12 @@ public class MetricsPostProcessor {
             outputDir = resultsDirectory;
         }
 
-        MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
-        parser.parseAndExportAllMetrics(Instant.now());
+        try {
+            MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
+            parser.parseAndExportAllMetrics(Instant.now());
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse and export metrics", e);
+        }
     }
 
     /**
@@ -396,24 +393,4 @@ public class MetricsPostProcessor {
         parser.parseAndExportHttpMetrics(Instant.now());
     }
 
-    /**
-     * Main method for command-line execution from Maven
-     */
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            LOGGER.error("Usage: MetricsPostProcessor <results-directory>");
-            System.exit(1);
-        }
-
-        String resultsDirectory = args[0];
-        LOGGER.info("Generating comprehensive metrics (HTTP + Quarkus) from benchmark results in: {}", resultsDirectory);
-
-        try {
-            parseAndExport(resultsDirectory);
-            LOGGER.info("Comprehensive metrics generation completed successfully");
-        } catch (IOException e) {
-            LOGGER.error("Failed to generate comprehensive metrics", e);
-            System.exit(1);
-        }
-    }
 }

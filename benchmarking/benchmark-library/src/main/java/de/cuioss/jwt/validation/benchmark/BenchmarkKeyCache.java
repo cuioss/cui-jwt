@@ -92,24 +92,6 @@ public final class BenchmarkKeyCache {
         return generated;
     }
 
-    /**
-     * Checks if keys for the specified issuer count are already cached.
-     * 
-     * @param count The number of issuers
-     * @return true if keys are pre-generated, false otherwise
-     */
-    public static boolean isCached(int count) {
-        return ISSUER_CACHE.containsKey(count);
-    }
-
-    /**
-     * Gets the maximum number of issuers that have been pre-generated.
-     * 
-     * @return The maximum cached issuer count
-     */
-    public static int getMaxCachedIssuers() {
-        return MAX_CACHED_ISSUERS;
-    }
 
     /**
      * Forces initialization of the key cache.

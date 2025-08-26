@@ -23,7 +23,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 /**
  * Base class for benchmark delegates that encapsulate the core benchmark logic.
  * This allows the same logic to be used by both regular and JFR-instrumented benchmarks.
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */
@@ -39,7 +39,7 @@ public abstract class BenchmarkDelegate {
 
     /**
      * Validates a token and returns the result.
-     * 
+     *
      * @param token the token to validate
      * @return the validated access token content
      * @throws TokenValidationException if validation fails
@@ -48,30 +48,4 @@ public abstract class BenchmarkDelegate {
         return tokenValidator.createAccessToken(token);
     }
 
-    /**
-     * Gets metadata about a token for instrumentation purposes.
-     * 
-     * @param token the token to get metadata for
-     * @return token metadata containing size and issuer information
-     */
-    public TokenMetadata getTokenMetadata(String token) {
-        TokenRepository.TokenMetadata repoMetadata = tokenRepository.getTokenMetadata(token);
-        return new TokenMetadata(
-                token.length(),
-                repoMetadata != null ? repoMetadata.getIssuerIdentifier() : "unknown"
-        );
-    }
-
-    /**
-     * Simple metadata class for token information.
-     */
-    public static class TokenMetadata {
-        public final int tokenSize;
-        public final String issuer;
-
-        public TokenMetadata(int tokenSize, String issuer) {
-            this.tokenSize = tokenSize;
-            this.issuer = issuer;
-        }
-    }
 }

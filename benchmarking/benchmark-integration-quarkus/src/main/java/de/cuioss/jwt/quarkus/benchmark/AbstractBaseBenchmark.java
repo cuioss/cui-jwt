@@ -15,8 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.jwt.quarkus.benchmark.http.HttpClientFactory;
-import de.cuioss.jwt.quarkus.benchmark.metrics.QuarkusMetricsFetcher;
+import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.http.HttpClientFactory;
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.*;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  * <p>For benchmarks that require JWT authentication, use {@link AbstractIntegrationBenchmark} instead.</p>
  *
  * <p>Benchmark execution parameters (iterations, threads, warmup, etc.) are configured dynamically
- * via {@link BenchmarkRunner} and {@link BenchmarkOptionsHelper} using system properties.</p>
+ * via {@link QuarkusIntegrationRunner} and {@link BenchmarkConfiguration} using system properties.</p>
  *
  * @since 1.0
  */
@@ -62,17 +63,15 @@ public abstract class AbstractBaseBenchmark {
      * Setup method called once before all benchmark iterations.
      * Initializes HttpClient and metrics exporter.
      */
-    @Setup(Level.Trial)
-    public void setupBenchmark() {
-        LOGGER.info("Setting up base benchmark");
-
+    @Setup(Level.Trial) public void setupBenchmark() {
         // Get configuration from system properties with correct docker-compose ports
-        serviceUrl = BenchmarkOptionsHelper.getIntegrationServiceUrl("https://localhost:10443");
-        quarkusMetricsUrl = BenchmarkOptionsHelper.getQuarkusMetricsUrl("https://localhost:10443");
-        benchmarkResultsDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+        var config = BenchmarkConfiguration.fromSystemProperties().build();
+        serviceUrl = config.integrationServiceUrl().orElse("https://localhost:10443");
+        quarkusMetricsUrl = config.metricsUrl().orElse("https://localhost:10443");
+        benchmarkResultsDir = config.resultsDirectory();
 
-        LOGGER.info("Service URL: {}", serviceUrl);
-        LOGGER.info("Quarkus Metrics URL: {}", quarkusMetricsUrl);
+        LOGGER.debug("Service URL: {}", serviceUrl);
+        LOGGER.debug("Quarkus Metrics URL: {}", quarkusMetricsUrl);
 
         // Get cached HttpClient from factory (insecure for self-signed certs)
         httpClient = HttpClientFactory.getInsecureClient();
@@ -82,7 +81,7 @@ public abstract class AbstractBaseBenchmark {
         metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
                 new QuarkusMetricsFetcher(quarkusMetricsUrl));
 
-        LOGGER.info("Base benchmark setup completed");
+        LOGGER.debug("Base benchmark setup completed");
     }
 
 

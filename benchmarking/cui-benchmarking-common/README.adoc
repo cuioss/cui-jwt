@@ -1,0 +1,278 @@
+= CUI Benchmarking Common Infrastructure
+:source-highlighter: highlight.js
+
+Common utilities and infrastructure for JMH benchmark modules.
+
+== Overview
+
+This module provides centralized components used by all benchmark modules to ensure consistency and reduce code duplication. It has been organized into logical sub-packages for better maintainability and clarity.
+
+== Package Structure
+
+[source]
+----
+de.cuioss.benchmarking.common/
+├── config/                  # Configuration management
+├── http/                    # HTTP client utilities
+├── metrics/                 # Metrics collection interfaces
+├── report/                  # Report and artifact generation
+├── repository/              # Token and data repositories
+├── runner/                  # Benchmark execution orchestration
+└── util/                    # General utilities and helpers
+----
+
+== Components
+
+=== Configuration Management (`config/`)
+
+* **BenchmarkConfiguration** - Centralized benchmark configuration using builder pattern
+  - JMH parameters (forks, iterations, warmup, threads, etc.)
+  - Integration-specific properties (service URLs, metrics endpoints)
+  - Time value parsing for various units (ms, s, m)
+  - System property integration with defaults
+
+* **BenchmarkType** - Enumeration for benchmark categorization
+  - MICRO - Library-level benchmarks
+  - INTEGRATION - End-to-end benchmarks
+  - Affects thresholds and quality gates
+
+=== HTTP Utilities (`http/`)
+
+* **HttpClientFactory** - Factory for creating cached HTTP clients
+  - Secure and insecure (trust-all) client variants
+  - HTTP/2 support with HTTP/1.1 fallback
+  - Connection pooling and timeout management
+  - Optimized for benchmark workloads
+
+=== Metrics Collection (`metrics/`)
+
+* **MetricsFetcher** - Interface for fetching metrics from various sources
+  - Standardized metrics collection API
+  - Key-value pair return format
+
+* **QuarkusMetricsFetcher** - Quarkus-specific metrics implementation
+  - Fetches metrics from `/q/metrics` endpoint
+  - Prometheus format parsing
+  - Raw metrics data persistence for debugging
+
+=== Report Generation (`report/`)
+
+* **BenchmarkResultProcessor** - Main orchestrator for artifact generation
+  - Processes JMH results into multiple output formats
+  - Coordinates all generators for complete artifact set
+  - Creates GitHub Pages deployment structure
+
+* **BadgeGenerator** - Creates shields.io compatible badges
+  - Performance score badges with color coding
+  - Trend indicators with historical comparison
+  - Last run timestamp badges
+
+* **MetricsGenerator** - Produces detailed metrics JSON
+  - Individual benchmark metrics extraction
+  - Throughput, latency, and percentile calculations
+  - Normalized units for comparison
+
+* **ReportGenerator** - Creates HTML reports
+  - Interactive visualizations
+  - Performance summaries
+  - Trend analysis charts
+
+* **SummaryGenerator** - Produces overall benchmark summary
+  - Quality gate evaluation
+  - Performance grading (A+ to D)
+  - Recommendations based on results
+
+* **GitHubPagesGenerator** - Creates deployment-ready structure
+  - Complete website structure with navigation
+  - API endpoints for programmatic access
+  - SEO optimization (robots.txt, sitemap.xml)
+
+=== Repository Components (`repository/`)
+
+* **TokenRepository** - JWT token management for benchmarks
+  - Token pool management with rotation
+  - Keycloak integration for token fetching
+  - Shared instance pattern for benchmark reuse
+  - Configurable pool size and refresh thresholds
+
+* **TokenRepositoryConfig** - Configuration for TokenRepository
+  - Keycloak connection parameters
+  - Authentication credentials
+  - Timeout and SSL verification settings
+  - Token refresh thresholds
+
+=== Benchmark Execution (`runner/`)
+
+* **AbstractBenchmarkRunner** - Abstract base class for benchmark execution
+  - Template method pattern for customization
+  - Configurable JMH options via system properties
+  - Automatic artifact generation
+  - Hooks for initialization and post-processing
+  
+* **LibraryBenchmarkRunner** - Micro benchmark runner (in benchmark-library module)
+  - Executes JWT library validation benchmarks
+  - Initializes key cache before execution
+  
+* **QuarkusIntegrationRunner** - Integration benchmark runner (in benchmark-integration-quarkus module)
+  - Executes benchmarks against live Quarkus application
+  - Initializes token repository
+  - Processes metrics after execution
+
+=== Utilities (`util/`)
+
+* **BenchmarkLoggingSetup** - Unified logging configuration
+  - Dual output to console and timestamped log files
+  - Captures System.out/err and JMH output
+  - Configurable log levels and package filtering
+  - Automatic cleanup and reset capabilities
+
+* **BenchmarkingLogMessages** - Centralized log message definitions
+  - Consistent logging format across modules
+  - CUI logging framework integration
+
+* **JsonSerializationHelper** - Consistent JSON formatting
+  - Smart number formatting (integers without decimals)
+  - ISO instant formatting
+  - Badge and metric object creation helpers
+
+== Usage Examples
+
+=== Configure Benchmark Execution
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
+
+// Create a concrete benchmark runner
+public class MyBenchmarkRunner extends AbstractBenchmarkRunner {
+    @Override
+    protected BenchmarkType getBenchmarkType() {
+        return BenchmarkType.MICRO;
+    }
+    
+    @Override
+    protected String getIncludePattern() {
+        return ".*MyBenchmark.*";
+    }
+    
+    // Run benchmarks
+    public static void main(String[] args) throws IOException, RunnerException {
+        new MyBenchmarkRunner().run();
+    }
+}
+----
+
+=== Setup Token Repository
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.repository.TokenRepository;
+import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
+
+TokenRepositoryConfig config = TokenRepositoryConfig.builder()
+    .keycloakBaseUrl("https://localhost:1443")
+    .realm("benchmark")
+    .clientId("benchmark-client")
+    .clientSecret("benchmark-secret")
+    .tokenPoolSize(100)
+    .verifySsl(false)
+    .build();
+
+TokenRepository.initializeSharedInstance(config);
+TokenRepository repository = TokenRepository.getSharedInstance();
+String token = repository.getNextToken();
+----
+
+=== Collect Metrics
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
+
+QuarkusMetricsFetcher fetcher = new QuarkusMetricsFetcher("https://localhost:10443");
+Map<String, Double> metrics = fetcher.fetchMetrics();
+----
+
+=== Process Results
+
+[source,java]
+----
+import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
+
+Collection<RunResult> results = new Runner(options).run();
+
+// Generate all artifacts
+BenchmarkResultProcessor processor = new BenchmarkResultProcessor();
+processor.processResults(results, "target/benchmark-results");
+----
+
+== System Properties
+
+The following system properties control benchmark execution:
+
+=== JMH Configuration
+* `jmh.include` - Benchmark class include pattern (default: `.*Benchmark.*`)
+* `jmh.result.format` - Result format: JSON, CSV, etc. (default: JSON)
+* `jmh.result.filePrefix` - Result file prefix
+* `jmh.forks` - Number of forks (default: 1)
+* `jmh.warmupIterations` - Warmup iterations (default: 3)
+* `jmh.iterations` - Measurement iterations (default: 5)
+* `jmh.time` - Measurement time per iteration (default: 2s)
+* `jmh.warmupTime` - Warmup time per iteration (default: 1s)
+* `jmh.threads` - Thread count, supports "MAX" (default: 4)
+
+=== Integration Configuration
+* `benchmark.results.dir` - Output directory for results
+* `integration.service.url` - Target service URL
+* `keycloak.url` - Keycloak server URL
+* `quarkus.metrics.url` - Metrics endpoint URL
+
+== Generated Artifacts
+
+The processor generates a complete artifact set:
+
+[source]
+----
+target/benchmark-results/
+├── badges/                      # Performance badges
+│   ├── performance-score.svg
+│   ├── last-run.svg
+│   └── trend.svg
+├── data/                        # Metrics JSON files
+│   ├── micro-metrics.json
+│   └── integration-metrics.json
+├── reports/                     # HTML reports
+│   ├── micro-report.html
+│   └── integration-report.html
+├── gh-pages-ready/             # GitHub Pages structure
+│   ├── index.html
+│   ├── api/
+│   ├── badges/
+│   └── reports/
+├── benchmark-summary.json       # Overall summary
+├── jwt-validation-metrics.json  # JWT-specific metrics
+└── *-benchmark-result.json     # Raw JMH results
+----
+
+== Quality Gates
+
+Each benchmark run is evaluated against configurable thresholds:
+
+* **Throughput** - Minimum operations per second
+* **Latency** - Maximum response times (p50, p95, p99)
+* **Regression** - Performance change from baseline
+* **Overall Score** - Weighted composite metric
+
+Thresholds vary by benchmark type (micro vs integration).
+
+== Dependencies
+
+This module depends on:
+
+* JMH Core - Benchmark framework
+* Gson - JSON serialization
+* Apache Commons IO - File operations
+* CUI Tools - Logging utilities
+* Lombok - Annotation processing (provided scope)
+* HdrHistogram - High Dynamic Range histograms

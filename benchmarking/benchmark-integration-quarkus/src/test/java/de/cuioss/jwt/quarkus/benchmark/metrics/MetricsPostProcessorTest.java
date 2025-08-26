@@ -41,15 +41,12 @@ class MetricsPostProcessorTest {
     private Gson gson;
     private String testBenchmarkFile;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeEach void setUp() throws IOException {
         gson = new GsonBuilder().create();
         testBenchmarkFile = createTestBenchmarkFile();
     }
 
-    @Test
-    @DisplayName("Should parse all endpoint types")
-    void shouldParseAllEndpointTypes() throws IOException {
+    @Test @DisplayName("Should parse all endpoint types") void shouldParseAllEndpointTypes() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
@@ -70,9 +67,7 @@ class MetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should extract correct percentile data")
-    void shouldExtractCorrectPercentileData() throws IOException {
+    @Test @DisplayName("Should extract correct percentile data") void shouldExtractCorrectPercentileData() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
 
@@ -95,15 +90,13 @@ class MetricsPostProcessorTest {
             assertTrue(percentiles.containsKey("p95_us"));
             assertTrue(percentiles.containsKey("p99_us"));
 
-            assertTrue(percentiles.get("p50_us") instanceof Number);
-            assertTrue(percentiles.get("p95_us") instanceof Number);
-            assertTrue(percentiles.get("p99_us") instanceof Number);
+            assertInstanceOf(Number.class, percentiles.get("p50_us"));
+            assertInstanceOf(Number.class, percentiles.get("p95_us"));
+            assertInstanceOf(Number.class, percentiles.get("p99_us"));
         }
     }
 
-    @Test
-    @DisplayName("Should format numbers correctly according to rules")
-    void shouldFormatNumbersCorrectly() throws IOException {
+    @Test @DisplayName("Should format numbers correctly according to rules") void shouldFormatNumbersCorrectly() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
 
@@ -118,12 +111,10 @@ class MetricsPostProcessorTest {
 
         @SuppressWarnings("unchecked") Map<String, Object> parsed = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
-        assertTrue(parsed.size() >= 1);
+        assertFalse(parsed.isEmpty());
     }
 
-    @Test
-    @DisplayName("Should include sample counts in metrics")
-    void shouldIncludeSampleCounts() throws IOException {
+    @Test @DisplayName("Should include sample counts in metrics") void shouldIncludeSampleCounts() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
 
@@ -141,15 +132,13 @@ class MetricsPostProcessorTest {
                 assertTrue(endpointData.containsKey("sample_count"));
 
                 Object sampleCount = endpointData.get("sample_count");
-                assertTrue(sampleCount instanceof Number);
+                assertInstanceOf(Number.class, sampleCount);
                 assertTrue(((Number) sampleCount).intValue() > 0);
             }
         }
     }
 
-    @Test
-    @DisplayName("Should correctly sum samples from multiple iterations")
-    void shouldSumSamplesFromMultipleIterations() throws IOException {
+    @Test @DisplayName("Should correctly sum samples from multiple iterations") void shouldSumSamplesFromMultipleIterations() throws IOException {
         // Arrange
         String multiIterationFile = createMultiIterationBenchmarkFile();
         MetricsPostProcessor parser = new MetricsPostProcessor(multiIterationFile, tempDir.toString());
@@ -170,9 +159,7 @@ class MetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should include timestamp and source information")
-    void shouldIncludeTimestampAndSource() throws IOException {
+    @Test @DisplayName("Should include timestamp and source information") void shouldIncludeTimestampAndSource() throws IOException {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
@@ -198,9 +185,7 @@ class MetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should only process sample mode benchmarks")
-    void shouldOnlyProcessSampleModeBenchmarks() throws IOException {
+    @Test @DisplayName("Should only process sample mode benchmarks") void shouldOnlyProcessSampleModeBenchmarks() throws IOException {
         // Arrange
         String mixedModeFile = createMixedModeBenchmarkFile();
         MetricsPostProcessor parser = new MetricsPostProcessor(mixedModeFile, tempDir.toString());
@@ -225,9 +210,7 @@ class MetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should handle file not found exception")
-    void shouldHandleFileNotFound() {
+    @Test @DisplayName("Should handle file not found exception") void shouldHandleFileNotFound() {
         // Arrange
         MetricsPostProcessor parser = new MetricsPostProcessor("/non/existent/file.json", tempDir.toString());
 
@@ -237,9 +220,7 @@ class MetricsPostProcessorTest {
         assertTrue(exception.getMessage().contains("not found"));
     }
 
-    @Test
-    @DisplayName("Should use static convenience method")
-    void shouldUseConvenienceMethod() throws IOException {
+    @Test @DisplayName("Should use static convenience method") void shouldUseConvenienceMethod() throws IOException {
         // Arrange
         File resultsDir = tempDir.toFile();
         File benchmarkFile = new File(resultsDir, "integration-benchmark-result.json");

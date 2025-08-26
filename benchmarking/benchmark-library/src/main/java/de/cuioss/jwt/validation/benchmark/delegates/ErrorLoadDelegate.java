@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Delegate for error load benchmarks that test validation behavior under various error conditions.
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */
@@ -54,7 +54,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Validates a valid token using full spectrum rotation.
-     * 
+     *
      * @return the validated access token content
      * @throws RuntimeException if validation fails unexpectedly
      */
@@ -69,7 +69,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Validates an expired token.
-     * 
+     *
      * @return the exception or null if validation unexpectedly succeeds
      */
     public Object validateExpired() {
@@ -82,7 +82,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Validates a malformed token.
-     * 
+     *
      * @return the exception or null if validation unexpectedly succeeds
      */
     public Object validateMalformed() {
@@ -95,7 +95,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Validates a token with invalid signature.
-     * 
+     *
      * @return the exception or null if validation unexpectedly succeeds
      */
     public Object validateInvalidSignature() {
@@ -108,7 +108,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Validates mixed tokens based on error percentage.
-     * 
+     *
      * @param blackhole JMH blackhole to consume results
      * @return the validation result (token content or exception)
      */
@@ -130,7 +130,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Selects a token based on the error percentage, using full spectrum for valid tokens.
-     * 
+     *
      * @return the selected token
      */
     public String selectToken() {
@@ -141,15 +141,11 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
             // Select an error token based on distribution
             // ThreadLocalRandom is appropriate here for distributing error types in benchmarks
             int errorType = ThreadLocalRandom.current().nextInt(3);
-            switch (errorType) {
-                case 0:
-                    return expiredToken;
-                case 1:
-                    return malformedToken;
-                case 2:
-                default:
-                    return invalidSignatureToken;
-            }
+            return switch (errorType) {
+                case 0 -> expiredToken;
+                case 1 -> malformedToken;
+                default -> invalidSignatureToken;
+            };
         }
 
         // Return a token from the full spectrum for valid tokens
@@ -158,7 +154,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
 
     /**
      * Gets the error type for a given token.
-     * 
+     *
      * @param token the token to check
      * @return the error type or "valid" if no error
      */

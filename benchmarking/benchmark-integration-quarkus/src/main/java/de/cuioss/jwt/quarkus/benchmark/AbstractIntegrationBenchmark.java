@@ -15,10 +15,14 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.jwt.quarkus.benchmark.config.TokenRepositoryConfig;
-import de.cuioss.jwt.quarkus.benchmark.repository.TokenRepository;
+import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.repository.TokenRepository;
+import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
 
 import java.net.http.HttpRequest;
 
@@ -43,16 +47,15 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
      * Setup method called once before all benchmark iterations.
      * Extends parent setup and initializes or reuses the shared token repository.
      */
-    @Override
-    @Setup(Level.Trial)
-    public void setupBenchmark() {
+    @Override @Setup(Level.Trial) public void setupBenchmark() {
         // Call parent setup first
         super.setupBenchmark();
 
         LOGGER.info("Setting up integration benchmark with token repository");
 
         // Get Keycloak configuration
-        keycloakUrl = BenchmarkOptionsHelper.getKeycloakUrl("https://localhost:1443");
+        var config = BenchmarkConfiguration.fromSystemProperties().build();
+        keycloakUrl = config.keycloakUrl().orElse("https://localhost:1443");
 
         // Initialize token repository using shared instance if available
         initializeTokenRepository();

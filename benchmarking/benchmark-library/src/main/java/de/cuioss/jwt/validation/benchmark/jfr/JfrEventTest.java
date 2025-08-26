@@ -22,11 +22,7 @@ import jdk.jfr.consumer.RecordingFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Simple test to verify JFR events are working properly.
@@ -39,7 +35,6 @@ public class JfrEventTest {
     public static void main(String[] args) throws Exception {
         Path outputPath = Path.of("target/benchmark-results/test-jfr.jfr");
 
-        // Start JFR recording
         try (Recording recording = new Recording()) {
             recording.enable("de.cuioss.jwt.Operation");
             recording.enable("de.cuioss.jwt.OperationStatistics");

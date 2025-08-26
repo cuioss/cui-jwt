@@ -1,0 +1,26 @@
+{
+  "health": {
+    "name": "Health Check",
+    "timestamp": "2025-08-23T16:47:37.734792Z",
+    "sample_count": 1353824,
+    "throughput_ops_per_sec": 13647,
+    "percentiles": {
+      "p50_us": 1614,
+      "p95_us": 2421,
+      "p99_us": 3813
+    },
+    "source": "JMH benchmark - de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckThroughput sample mode"
+  },
+  "jwt_validation": {
+    "name": "JWT Validation",
+    "timestamp": "2025-08-23T16:47:37.734792Z",
+    "sample_count": 880675,
+    "throughput_ops_per_sec": 8811,
+    "percentiles": {
+      "p50_us": 2445,
+      "p95_us": 4174,
+      "p99_us": 6873
+    },
+    "source": "JMH benchmark - de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtValidationBenchmark.validateJwtThroughput sample mode"
+  }
+}
