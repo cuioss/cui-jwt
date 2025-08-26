@@ -53,17 +53,13 @@ jobs:
 
       - name: Run Micro Benchmarks
         run: |
-          # Create directory for benchmark results
-          mkdir -p benchmark-results
-
           # Run micro benchmarks using configuration from pom.xml
+          # The benchmarks now automatically generate artifacts in target/benchmark-results
           ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-library -Pbenchmark
-
-          # Move micro benchmark results to expected location for upload
-          if [ -d "benchmarking/benchmark-library/target/benchmark-results" ]; then
-            echo "Moving micro benchmark results to upload location..."
-            mv benchmarking/benchmark-library/target/benchmark-results/* benchmark-results/ 2>/dev/null || true
-          fi
+          
+          # Verify artifacts were generated
+          echo "📊 Micro benchmark artifacts generated:"
+          ls -la benchmarking/benchmark-library/target/benchmark-results/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.7.1
@@ -71,78 +67,47 @@ jobs:
       - name: Run Integration Benchmarks
         run: |
           # Run integration benchmarks with native image using profile that includes container startup
+          # The benchmarks now automatically generate artifacts in target/benchmark-results
           echo "🚀 Running integration benchmarks with native Quarkus..."
           ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing -DskipTests
           
-          # Check what was actually created
-          echo "📁 Checking benchmark-integration-quarkus/target directory structure:"
-          ls -la benchmarking/benchmark-integration-quarkus/target/ || echo "Target directory not found"
-          
-          echo "📁 Checking benchmark-integration-quarkus/target/benchmark-results directory:"
-          ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/ || echo "Benchmark results directory not found"
-          
-          echo "🔍 Finding all JSON files in benchmark-integration-quarkus:"
-          find benchmarking/benchmark-integration-quarkus -name "*.json" -type f | head -20
+          # Verify artifacts were generated
+          echo "📊 Integration benchmark artifacts generated:"
+          ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/
 
-          # Move integration benchmark results to expected location for upload
-          if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results" ]; then
-            echo "Moving integration benchmark results to upload location..."
-            # Copy ALL json files from benchmark-results directory
-            for file in benchmarking/benchmark-integration-quarkus/target/benchmark-results/*.json; do
-              if [ -f "$file" ]; then
-                echo "Copying: $(basename "$file")"
-                cp "$file" benchmark-results/
-              fi
-            done
-          else
-            echo "❌ Directory benchmarking/benchmark-integration-quarkus/target/benchmark-results does not exist!"
+      - name: Combine Benchmark Artifacts
+        run: |
+          # Create combined gh-pages directory from both benchmark runs
+          mkdir -p gh-pages
+          
+          # Copy micro benchmark artifacts (already in GitHub Pages structure)
+          if [ -d "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready" ]; then
+            echo "📦 Copying micro benchmark artifacts..."
+            cp -r benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/* gh-pages/
           fi
-
-          # Add timestamp to results
-          echo "{ \"timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"commit\": \"${{ github.sha }}\" }" > benchmark-results/metadata.json
-
-          # Verify that benchmark results were generated
-          echo "📊 Final contents of benchmark-results directory:"
-          ls -la benchmark-results/
-          echo "🔍 Searching for any benchmark-result files in entire workspace:"
-          find . -name "*benchmark-result*.json" -type f || echo "No benchmark result files found anywhere"
-
+          
+          # Merge integration benchmark artifacts (preserve existing structure)
+          if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready" ]; then
+            echo "📦 Merging integration benchmark artifacts..."
+            # Copy integration-specific files with prefix to avoid conflicts
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/*integration* gh-pages/data/ 2>/dev/null || true
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/*integration* gh-pages/badges/ 2>/dev/null || true
+            # Merge API files
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/api/* gh-pages/api/ 2>/dev/null || true
+          fi
+          
+          # Add metadata
+          echo "{ \"timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"commit\": \"${{ github.sha }}\" }" > gh-pages/metadata.json
+          
+          echo "📊 Combined artifacts structure:"
+          ls -la gh-pages/
+          
       - name: Upload benchmark results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark-results
-          path: benchmark-results/
+          path: gh-pages/
           retention-days: 90  # Keep results for 90 days
-
-      - name: Process All Benchmarks
-        run: |
-          # Get current date for badge timestamp in Berlin time
-          TIMESTAMP=$(TZ='Europe/Berlin' date +"%Y-%m-%d")
-          TIMESTAMP_WITH_TIME=$(TZ='Europe/Berlin' date +"%Y-%m-%d %H:%M %Z")
-
-          # Create gh-pages directory
-          mkdir -p gh-pages
-
-          # Process all benchmarks using orchestration script
-          bash benchmarking/scripts/process-all-benchmarks.sh \
-            benchmark-results \
-            benchmarking/doc/templates \
-            gh-pages \
-            "${{ github.sha }}" \
-            "$TIMESTAMP" \
-            "$TIMESTAMP_WITH_TIME"
-
-          echo "📊 Benchmark processing completed"
-          
-          # Display processing results for debugging
-          if [ -f "gh-pages/processing-results.json" ]; then
-            echo "📋 Processing Summary:"
-            jq -r '
-              "🔬 Micro Benchmarks: " + .processing.micro.status + " - " + .processing.micro.message,
-              "🔗 Integration Benchmarks: " + .processing.integration.status + " - " + .processing.integration.message,
-              "❌ Errors: " + (.errors | length | tostring)
-            ' gh-pages/processing-results.json
-          fi
 
       - name: Deploy to cuioss.github.io
         uses: JamesIves/github-pages-deploy-action@6c2d9db40f9296374acc17b90404b6e8864128c8 # v4.7.3

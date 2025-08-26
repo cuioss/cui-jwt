@@ -39,14 +39,11 @@ class ComprehensiveMetricsPostProcessorTest {
 
     private Gson gson;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         gson = new GsonBuilder().create();
     }
 
-    @Test
-    @DisplayName("Should process both HTTP and Quarkus metrics")
-    void shouldProcessBothHttpAndQuarkusMetrics() throws IOException {
+    @Test @DisplayName("Should process both HTTP and Quarkus metrics") void shouldProcessBothHttpAndQuarkusMetrics() throws IOException {
         // Arrange
         String benchmarkResultsDir = createCompleteTestStructure();
         String benchmarkFile = benchmarkResultsDir + "/integration-benchmark-result.json";
@@ -91,9 +88,7 @@ class ComprehensiveMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should handle partial failures gracefully")
-    void shouldHandlePartialFailures() throws IOException {
+    @Test @DisplayName("Should handle partial failures gracefully") void shouldHandlePartialFailures() throws IOException {
         // Arrange
         String baseDirectory = createHttpOnlyTestStructure();
         String benchmarkFile = baseDirectory + "/integration-benchmark-result.json";
@@ -115,9 +110,7 @@ class ComprehensiveMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should use comprehensive convenience method for both metrics")
-    void shouldUseComprehensiveConvenienceMethod() throws IOException {
+    @Test @DisplayName("Should use comprehensive convenience method for both metrics") void shouldUseComprehensiveConvenienceMethod() throws IOException {
         // Arrange
         String benchmarkResultsDir = createCompleteTestStructure();
 
@@ -155,9 +148,7 @@ class ComprehensiveMetricsPostProcessorTest {
         }
     }
 
-    @Test
-    @DisplayName("Should support HTTP-only export method")
-    void shouldSupportHttpOnlyExport() throws IOException {
+    @Test @DisplayName("Should support HTTP-only export method") void shouldSupportHttpOnlyExport() throws IOException {
         // Arrange
         String baseDirectory = createHttpOnlyTestStructure();
 

@@ -1,0 +1,21 @@
+{
+  "JwtValidation": {
+    "timestamp": "2025-08-23T16:47:37.045529Z",
+    "bearer_token_producer_metrics": {
+      "validation": {
+        "sample_count": 1785181,
+        "p50_us": 235,
+        "p95_us": 469,
+        "p99_us": 8538
+      }
+    },
+    "security_event_counter_metrics": {
+      "total_errors": 0.0,
+      "total_success": 1785181,
+      "errors_by_category": {},
+      "success_by_type": {
+        "ACCESS_TOKEN_CREATED": 1785181
+      }
+    }
+  }
+}

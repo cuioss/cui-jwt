@@ -45,14 +45,12 @@ class MetricsPostProcessorRealDataTest {
     private Gson gson;
     private String realBenchmarkFile;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         gson = new GsonBuilder().create();
         realBenchmarkFile = "src/test/resources/integration-benchmark-result.json";
     }
 
-    @Test
-    void shouldParseRealBenchmarkData() throws IOException {
+    @Test void shouldParseRealBenchmarkData() throws IOException {
         // Given - parser with real benchmark data
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
 
@@ -93,8 +91,7 @@ class MetricsPostProcessorRealDataTest {
                 jwtMetrics.getSampleCount(), jwtMetrics.getP50(), jwtMetrics.getP95(), jwtMetrics.getP99());
     }
 
-    @Test
-    void shouldExportRealDataToJson() throws IOException {
+    @Test void shouldExportRealDataToJson() throws IOException {
         // Given - parser with real benchmark data
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
@@ -123,8 +120,7 @@ class MetricsPostProcessorRealDataTest {
         }
     }
 
-    @Test
-    void shouldApplyCorrectNumberFormattingToRealData() throws IOException {
+    @Test void shouldApplyCorrectNumberFormattingToRealData() throws IOException {
         // Given - parser with real benchmark data
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
 
@@ -161,8 +157,7 @@ class MetricsPostProcessorRealDataTest {
         }
     }
 
-    @Test
-    void shouldHandleSpecificRealDataValues() throws IOException {
+    @Test void shouldHandleSpecificRealDataValues() throws IOException {
         // Given - parser with real benchmark data
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
 
@@ -184,8 +179,7 @@ class MetricsPostProcessorRealDataTest {
         }
     }
 
-    @Test
-    void shouldOnlyProcessSampleModeFromRealData() throws IOException {
+    @Test void shouldOnlyProcessSampleModeFromRealData() throws IOException {
         // Given - parser with real benchmark data (contains multiple modes)
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
 
@@ -208,8 +202,7 @@ class MetricsPostProcessorRealDataTest {
         }
     }
 
-    @Test
-    void shouldCountSamplesCorrectlyFromRealData() throws IOException {
+    @Test void shouldCountSamplesCorrectlyFromRealData() throws IOException {
         // Given - parser with real benchmark data
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
 
@@ -233,8 +226,7 @@ class MetricsPostProcessorRealDataTest {
         }
     }
 
-    @Test
-    void shouldUseCorrectEndpointDisplayNames() throws IOException {
+    @Test void shouldUseCorrectEndpointDisplayNames() throws IOException {
         // Given - parser with real benchmark data
         MetricsPostProcessor parser = new MetricsPostProcessor(realBenchmarkFile, tempDir.toString());
 

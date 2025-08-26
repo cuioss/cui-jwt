@@ -35,29 +35,17 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "validateValidTokenWithJfr", "validateExpiredTokenWithJfr",
-            "validateInvalidSignatureTokenWithJfr", "validateMalformedTokenWithJfr"
-    };
-
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
 
     private ErrorLoadDelegate errorLoadDelegate;
 
-    @Override
-    protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
-
-    @Override
-    protected String getJfrPhase() {
+    @Override protected String getJfrPhase() {
         return "error-measurement";
     }
 
-    @Setup(Level.Trial)
-    public void setup() {
-        // Use base class setup with our benchmark names
-        setupJfrBase(BENCHMARK_NAMES);
+    @Setup(Level.Trial) public void setup() {
+        // Use base class setup
+        setupJfrBase();
 
         // Initialize delegates (using 0% error rate for error scenario testing)
         errorLoadDelegate = new ErrorLoadDelegate(tokenValidator, tokenRepository, 0);
@@ -68,10 +56,7 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures validation performance for valid tokens with JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent validateValidTokenWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent validateValidTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", "validation")) {
             String token = tokenRepository.getPrimaryToken();
             recorder.withTokenSize(token.length())
@@ -86,10 +71,7 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures validation performance for expired tokens with JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public Object validateExpiredTokenWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateExpiredTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(200) // Approximate size
                     .withIssuer("benchmark-issuer")
@@ -104,10 +86,7 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures validation performance for malformed tokens with JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public Object validateMalformedTokenWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMalformedTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(25) // Length of malformed token
                     .withIssuer("unknown")
@@ -122,10 +101,7 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures validation performance for tokens with invalid signatures with JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public Object validateInvalidSignatureTokenWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateInvalidSignatureTokenWithJfr() {
         try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withTokenSize(200) // Approximate size
                     .withIssuer("benchmark-issuer")

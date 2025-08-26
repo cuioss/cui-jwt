@@ -35,23 +35,13 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("java:S112")
 public class CoreJfrBenchmark extends AbstractJfrBenchmark {
 
-    private static final String[] BENCHMARK_NAMES = {
-            "measureAverageTimeWithJfr", "measureThroughputWithJfr", "measureConcurrentValidationWithJfr"
-    };
-
     private static final String OPERATION_TYPE_VALIDATION = "validation";
 
     private CoreValidationDelegate coreValidationDelegate;
 
-    @Override
-    protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
-
-    @Setup(Level.Trial)
-    public void setup() {
-        // Use base class setup with our benchmark names
-        setupJfrBase(BENCHMARK_NAMES);
+    @Setup(Level.Trial) public void setup() {
+        // Use base class setup
+        setupJfrBase();
 
         // Initialize delegates
         coreValidationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
@@ -62,10 +52,7 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures average validation time for single-threaded token validation with JFR instrumentation using full token spectrum.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent measureAverageTimeWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureAverageTimeWithJfr() {
         return performValidationWithJfr("measureAverageTimeWithJfr", "full_spectrum",
                 () -> coreValidationDelegate.validateWithFullSpectrum());
     }
@@ -73,10 +60,7 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures token validation throughput under concurrent load with JFR instrumentation using full token spectrum.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public AccessTokenContent measureThroughputWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public AccessTokenContent measureThroughputWithJfr() {
         return performValidationWithJfr("measureThroughputWithJfr", "full_spectrum",
                 () -> coreValidationDelegate.validateWithFullSpectrum());
     }
@@ -84,10 +68,7 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Measures concurrent validation performance with token rotation and JFR instrumentation.
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent measureConcurrentValidationWithJfr() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureConcurrentValidationWithJfr() {
         return performValidationWithJfr("measureConcurrentValidationWithJfr", "rotation",
                 () -> coreValidationDelegate.validateWithRotation());
     }

@@ -44,25 +44,19 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Setup method for JFR benchmark initialization.
      * Subclasses should call this from their @Setup method.
-     * 
-     * @param benchmarkNames Names to register with BenchmarkMetricsAggregator
      */
-    protected void setupJfrBase(String... benchmarkNames) {
+    protected void setupJfrBase() {
         // Call parent setup
-        setupBase(benchmarkNames);
+        setupBase();
 
         // Initialize JFR instrumentation
         jfrInstrumentation = new JfrInstrumentation();
-
-        // Pre-initialize stats to avoid contention
-        jfrInstrumentation.preInitializeStats(benchmarkNames);
     }
 
     /**
      * Records JFR phase information at the start of each iteration.
      */
-    @Setup(Level.Iteration)
-    public void setupIteration() {
+    @Setup(Level.Iteration) public void setupIteration() {
         // Record benchmark phase event at iteration start
         String benchmarkName = this.getClass().getSimpleName();
         int threads = Thread.activeCount();
@@ -73,8 +67,7 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Shuts down JFR instrumentation at the end of the trial.
      */
-    @TearDown(Level.Trial)
-    public void tearDown() {
+    @TearDown(Level.Trial) public void tearDown() {
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {
             jfrInstrumentation.shutdown();

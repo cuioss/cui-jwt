@@ -38,9 +38,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      * Benchmark for successful JWT validation with valid tokens.
      * Measures throughput and latency of the /jwt/validate endpoint.
      */
-    @Benchmark
-    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
-    public void validateJwtThroughput() throws IOException, InterruptedException {
+    @Benchmark @BenchmarkMode({Mode.Throughput, Mode.SampleTime}) public void validateJwtThroughput() throws IOException, InterruptedException {
         HttpRequest request = createAuthenticatedRequest(PATH)
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();

@@ -55,8 +55,7 @@ public class PerformanceIndicatorBenchmark {
     private TokenValidator tokenValidator;
     private CoreValidationDelegate validationDelegate;
 
-    @Setup(Level.Trial)
-    public void setup() {
+    @Setup(Level.Trial) public void setup() {
         TokenRepository tokenRepository;
         // Initialize token repository with cache size configured for 10% of tokens
         TokenRepository.Config config = TokenRepository.Config.builder()
@@ -77,8 +76,7 @@ public class PerformanceIndicatorBenchmark {
     }
 
 
-    @TearDown(Level.Trial)
-    public void exportMetrics() {
+    @TearDown(Level.Trial) public void exportMetrics() {
         // Export metrics using SimplifiedMetricsExporter
         if (tokenValidator != null) {
             try {
@@ -98,10 +96,7 @@ public class PerformanceIndicatorBenchmark {
      *
      * @return validated access token content
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent measureAverageTime() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureAverageTime() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -114,10 +109,7 @@ public class PerformanceIndicatorBenchmark {
      *
      * @return validated access token content
      */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public AccessTokenContent measureThroughput() {
+    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public AccessTokenContent measureThroughput() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -130,10 +122,7 @@ public class PerformanceIndicatorBenchmark {
      *
      * @return validated access token content
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent measureConcurrentValidation() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureConcurrentValidation() {
         return validationDelegate.validateWithRotation();
     }
 

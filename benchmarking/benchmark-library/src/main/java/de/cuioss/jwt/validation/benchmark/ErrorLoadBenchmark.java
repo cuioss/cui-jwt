@@ -75,8 +75,7 @@ public class ErrorLoadBenchmark {
     // Reduced token count for faster setup
     private static final int TOKEN_COUNT = 20;
 
-    @Setup(Level.Trial)
-    public void setup() {
+    @Setup(Level.Trial) public void setup() {
         // Create base token holder and validator
         TestTokenHolder baseTokenHolder = TestTokenGenerators.accessTokens().next();
         IssuerConfig issuerConfig = baseTokenHolder.getIssuerConfig();
@@ -152,8 +151,7 @@ public class ErrorLoadBenchmark {
     /**
      * Benchmarks validation of valid tokens (baseline performance).
      */
-    @Benchmark
-    public AccessTokenContent validateValidToken() {
+    @Benchmark public AccessTokenContent validateValidToken() {
         try {
             return tokenValidator.createAccessToken(validAccessToken);
         } catch (TokenValidationException e) {
@@ -164,8 +162,7 @@ public class ErrorLoadBenchmark {
     /**
      * Benchmarks validation of expired tokens.
      */
-    @Benchmark
-    public Object validateExpiredToken() {
+    @Benchmark public Object validateExpiredToken() {
         try {
             return tokenValidator.createAccessToken(expiredToken);
         } catch (TokenValidationException e) {
@@ -176,8 +173,7 @@ public class ErrorLoadBenchmark {
     /**
      * Benchmarks validation of malformed tokens.
      */
-    @Benchmark
-    public Object validateMalformedToken() {
+    @Benchmark public Object validateMalformedToken() {
         try {
             return tokenValidator.createAccessToken(malformedToken);
         } catch (TokenValidationException e) {
@@ -188,8 +184,7 @@ public class ErrorLoadBenchmark {
     /**
      * Benchmarks validation of tokens with invalid signatures.
      */
-    @Benchmark
-    public Object validateInvalidSignatureToken() {
+    @Benchmark public Object validateInvalidSignatureToken() {
         try {
             return tokenValidator.createAccessToken(invalidSignatureToken);
         } catch (TokenValidationException e) {
@@ -200,8 +195,7 @@ public class ErrorLoadBenchmark {
     /**
      * Benchmarks mixed error load scenarios with 0% error rate (baseline performance).
      */
-    @Benchmark
-    public Object validateMixedTokens0(Blackhole blackhole) {
+    @Benchmark public Object validateMixedTokens0(Blackhole blackhole) {
         String token = selectValidToken();
         try {
             AccessTokenContent result = tokenValidator.createAccessToken(token);
@@ -216,8 +210,7 @@ public class ErrorLoadBenchmark {
     /**
      * Benchmarks mixed error load scenarios with 50% error rate (balanced mix).
      */
-    @Benchmark
-    public Object validateMixedTokens50(Blackhole blackhole) {
+    @Benchmark public Object validateMixedTokens50(Blackhole blackhole) {
         String token = selectMixedToken();
         try {
             AccessTokenContent result = tokenValidator.createAccessToken(token);

@@ -40,15 +40,10 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
 
     private CoreValidationDelegate validationDelegate;
 
-    @Override
-    protected String[] getBenchmarkMethodNames() {
-        return BENCHMARK_NAMES;
-    }
 
-    @Setup(Level.Trial)
-    public void setup() {
+    @Setup(Level.Trial) public void setup() {
         // Use base class setup with our benchmark names
-        setupBase(BENCHMARK_NAMES);
+        setupBase();
 
         // Initialize validation delegate
         validationDelegate = new CoreValidationDelegate(tokenValidator, tokenRepository);
@@ -61,10 +56,7 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
      *
      * @return validated access token content
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent measureAverageTime() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureAverageTime() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -76,10 +68,7 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
      *
      * @return validated access token content
      */
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public AccessTokenContent measureThroughput() {
+    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public AccessTokenContent measureThroughput() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -91,10 +80,7 @@ public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
      *
      * @return validated access token content
      */
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public AccessTokenContent measureConcurrentValidation() {
+    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureConcurrentValidation() {
         return validationDelegate.validateWithRotation();
     }
 }

@@ -17,10 +17,9 @@
 
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
-        <sonar.skip>true</sonar.skip>
 
         <!-- Default benchmark runner -->
-        <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.BenchmarkRunner</benchmark.runner>
+        <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.QuarkusIntegrationRunner</benchmark.runner>
 
         <!-- JMH Configuration Properties - Optimized for integration testing -->
         <jmh.result.format>JSON</jmh.result.format>
@@ -54,6 +53,11 @@
             <groupId>de.cuioss</groupId>
             <artifactId>cui-java-tools</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.cuioss.jwt</groupId>
+            <artifactId>cui-benchmarking-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- JSON processing -->
@@ -136,21 +140,6 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>create-benchmark-dir</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>mkdir</executable>
-                            <arguments>
-                                <argument>-p</argument>
-                                <argument>${benchmark.results.dir}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>run-benchmarks</id>
                         <phase>integration-test</phase>
                         <goals>
@@ -190,21 +179,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/dependency</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                </executions>
+                <!-- Configuration inherited from parent pluginManagement -->
             </plugin>
         </plugins>
     </build>

@@ -5,23 +5,31 @@ Documentation for the JWT validation library performance benchmarking capabiliti
 
 == Overview
 
-This documentation covers:
+The benchmarking infrastructure provides comprehensive performance testing for JWT validation:
 
-* **Benchmark Analysis** - Performance metrics and optimization insights
-* **Documentation Structure** - Organized guides for different use cases
-* **Visualization Tools** - Interactive HTML templates for result analysis
-* **Processing Pipeline** - CI/CD scripts for automated benchmark processing
+* **Automated Artifact Generation** - Benchmarks automatically generate badges, reports, and metrics
+* **Dual Benchmark Types** - Micro benchmarks for library performance, integration benchmarks for real-world scenarios
+* **GitHub Pages Integration** - Ready-to-deploy artifacts for visualization
+* **Performance Tracking** - Historical trends and quality gates
+* **Common Infrastructure** - Shared utilities in cui-benchmarking-common for consistency
 
-For building and running benchmarks, see the link:benchmark-library/README.adoc[benchmark library README].
+For building and running benchmarks, see the link:../benchmark-library/README.adoc[benchmark library README] and link:../benchmark-integration-quarkus/README.adoc[integration benchmark README].
 
 == Quick Access
 
 === Local Testing
 
-For local development and testing of visualization templates:
+For local development and testing of benchmark results:
 
 [source,bash]
 ----
+# Run micro benchmarks
+./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
+
+# Run integration benchmarks  
+./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+
+# View generated artifacts locally
 cd benchmarking/scripts
 ./serve-local.sh
 # Open http://localhost:8080 in your browser
@@ -35,7 +43,6 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 * link:performance-requirements.adoc[Performance Requirements] - Specific performance targets and verification criteria
 * link:workflow.adoc[Benchmark Workflow] - Complete workflow guide for running and processing benchmarks
-* link:scripts-architecture.adoc[Scripts Architecture] - Detailed script documentation and architecture
 * link:local-testing.adoc[Local Testing Guide] - How to test visualizations locally
 * link:performance-scoring.adoc[Performance Scoring] - Weighted metrics methodology
 * link:JFR-Instrumentation.adoc[JFR Instrumentation] - Variance analysis guide
@@ -44,56 +51,91 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 * link:../benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Latest performance metrics and optimization insights
 
-=== Benchmarks
+== Benchmarks
 
 The library includes two types of benchmarks:
 
-==== Micro Benchmarks
-- `TokenValidatorBenchmark` - Core JWT validation performance
-- `JwksClientBenchmark` - JWKS key retrieval performance
-- Performance scoring based on throughput, latency, and error resilience
+=== Micro Benchmarks (benchmark-library)
 
-==== Integration Benchmarks
-- End-to-end JWT validation with Quarkus native image
-- Health check performance baselines
-- JWT validation overhead calculations
+Located in `benchmarking/benchmark-library`:
 
-=== Visualization Tools
+* `SimpleCoreValidationBenchmark` - Core JWT validation performance
+* `SimpleErrorLoadBenchmark` - Error handling and resilience testing
+* Automatic generation of performance badges and reports
+* Quality gates for throughput and latency
 
-==== HTML Templates
+=== Integration Benchmarks (benchmark-integration-quarkus)
 
-* `templates/index-visualizer.html` - Interactive JMH result visualization
-* `templates/performance-trends.html` - Historical performance tracking
-* `templates/integration-index.html` - Integration benchmark results
-* `templates/step-metrics-visualizer.html` - Step-by-step metrics analysis
+Located in `benchmarking/benchmark-integration-quarkus`:
 
-==== Badge Generation
+* End-to-end JWT validation with Quarkus native image
+* `JwtValidationBenchmark` - Real-world JWT validation performance
+* `JwtHealthBenchmark` - Health check endpoint baseline
+* Network overhead and containerization impact measurement
 
-Automated badge generation for:
-- Performance scores and trends
-- Throughput and latency metrics
-- Integration test results
-- Last benchmark run timestamps
+=== Common Infrastructure (cui-benchmarking-common)
 
-=== Processing Pipeline
+Located in `benchmarking/cui-benchmarking-common`:
 
-The benchmark processing workflow is handled by modular scripts:
+* **BenchmarkOptionsHelper** - Centralized JMH configuration via system properties
+* **BenchmarkLoggingSetup** - Unified logging with dual console/file output
+* **BenchmarkResultProcessor** - Orchestrates artifact generation
+* **JsonSerializationHelper** - Consistent JSON formatting utilities
+* **Badge/Report/Metrics Generators** - Automated artifact creation
+* **GitHubPagesGenerator** - Deployment-ready structure generation
 
-* **Orchestration** - Main processing pipeline coordination
-* **Badge Creation** - Performance and informational badges
-* **Trend Analysis** - Historical performance tracking
-* **GitHub Pages** - Automated result publication
+== Artifact Generation
 
-See link:scripts-architecture.adoc[Scripts Architecture] for complete workflow documentation.
+Both benchmark modules now automatically generate comprehensive artifacts:
 
+=== Generated Structure
+
+[source]
+----
+target/benchmark-results/
+├── badges/                      # Shields.io compatible badges
+│   ├── performance-badge.json   # Overall performance score
+│   ├── trend-badge.json         # Trend indicator
+│   └── last-run-badge.json      # Timestamp badge
+├── data/                        # Metrics data
+│   ├── metrics.json            # Combined metrics
+│   └── *-metrics.json          # Individual benchmark metrics
+├── reports/                     # HTML reports (future)
+├── gh-pages-ready/             # GitHub Pages deployment structure
+│   ├── index.html              # Main landing page
+│   ├── trends.html             # Historical trends
+│   ├── api/                    # JSON API endpoints
+│   └── badges/                 # Badge files
+├── benchmark-summary.json       # Overall summary with quality gates
+└── *-benchmark-result.json     # Raw JMH results
+----
+
+=== Quality Gates
+
+Each benchmark run evaluates:
+
+* **Throughput thresholds** - Minimum operations per second
+* **Latency targets** - Maximum response times
+* **Regression detection** - Performance degradation from baseline
+* **Overall scoring** - Weighted composite performance score
+
+=== CI/CD Integration
+
+The GitHub Actions workflow automatically:
+
+1. Runs both micro and integration benchmarks
+2. Collects generated artifacts from each module
+3. Combines results into a unified GitHub Pages structure
+4. Deploys to `cuioss.github.io/cui-jwt/benchmarks`
 
 == Results and Visualization
 
-Benchmark results are automatically processed and published to GitHub Pages with:
+Benchmark results are automatically processed and published with:
 
 * Interactive performance visualizations
-* Historical trend analysis
+* Historical trend analysis  
 * Performance scoring and badges
 * Detailed metrics breakdown
+* API endpoints for programmatic access
 
-The visualization templates work with standard JMH JSON output and provide rich, interactive analysis capabilities for performance data.
+The generated artifacts are designed for direct deployment to GitHub Pages and provide rich, interactive analysis capabilities for performance data.

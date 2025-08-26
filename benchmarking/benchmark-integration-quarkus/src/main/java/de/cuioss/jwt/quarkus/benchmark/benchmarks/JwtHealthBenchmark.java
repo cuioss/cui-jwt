@@ -39,9 +39,7 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      * Benchmark for Quarkus health endpoint throughput.
      * Provides baseline throughput measurement without JWT processing.
      */
-    @Benchmark
-    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
-    public void healthCheckThroughput() throws IOException, InterruptedException {
+    @Benchmark @BenchmarkMode({Mode.Throughput, Mode.SampleTime}) public void healthCheckThroughput() throws IOException, InterruptedException {
         HttpRequest request = createBaseRequest("/q/health")
                 .GET()
                 .build();

@@ -42,8 +42,7 @@ class QuarkusMetricsPostProcessorSimpleTest {
 
     private Gson gson;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeEach void setUp() throws IOException {
         gson = new GsonBuilder().create();
 
         // Create test metrics directory structure
@@ -58,8 +57,7 @@ class QuarkusMetricsPostProcessorSimpleTest {
         }
     }
 
-    @Test
-    void shouldParseMetricsAndCreateOutputFile() throws IOException {
+    @Test void shouldParseMetricsAndCreateOutputFile() throws IOException {
         // Given - processor with the subdirectory containing the metrics file
         String testSubDir = tempDir.resolve("metrics-download").resolve("1-test").toString();
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(testSubDir, tempDir.toString());
@@ -88,8 +86,7 @@ class QuarkusMetricsPostProcessorSimpleTest {
         }
     }
 
-    @Test
-    void shouldUseConvenienceMethod() throws IOException {
+    @Test void shouldUseConvenienceMethod() throws IOException {
         // Given - test directory structure with metrics
         String baseDir = tempDir.toString();
 
