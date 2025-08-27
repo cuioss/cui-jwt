@@ -19,7 +19,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
+import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -147,39 +150,52 @@ public class BadgeGenerator {
             return new PerformanceScore(0, 0, 0);
         }
 
-        // Calculate average throughput, converting to ops/s if needed
-        double avgThroughput = results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-                .mapToDouble(r -> {
-                    String unit = r.getPrimaryResult().getScoreUnit();
-                    double score = r.getPrimaryResult().getScore();
-                    // Convert ops/ms to ops/s
-                    if (unit.contains("ops/ms")) {
-                        return score * 1000;
-                    }
-                    return score;
-                })
+        // Group results by benchmark name to pair throughput and latency
+        Map<String, Double> throughputByBenchmark = new LinkedHashMap<>();
+        Map<String, Double> latencyByBenchmark = new LinkedHashMap<>();
+        
+        for (RunResult result : results) {
+            if (result.getPrimaryResult() == null) continue;
+            
+            String benchmarkName = result.getParams().getBenchmark();
+            String mode = result.getParams().getMode().shortLabel();
+            String unit = result.getPrimaryResult().getScoreUnit();
+            double score = result.getPrimaryResult().getScore();
+            
+            // Process throughput results (mode == "thrpt" or unit contains "ops")
+            if ("thrpt".equals(mode) || unit.contains("ops")) {
+                double opsPerSec = score;
+                // Convert ops/ms to ops/s
+                if (unit.contains("ops/ms")) {
+                    opsPerSec = score * 1000;
+                } else if (unit.contains("ops/us")) {
+                    opsPerSec = score * 1_000_000;
+                }
+                throughputByBenchmark.put(benchmarkName, opsPerSec);
+            }
+            // Process latency results (mode == "avgt" or "sample" or unit contains "/op")
+            else if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
+                double latencyMs = score;
+                // Convert to milliseconds
+                if (unit.contains("ns/op")) {
+                    latencyMs = score / 1_000_000.0; // ns to ms
+                } else if (unit.contains("us/op")) {
+                    latencyMs = score / 1_000.0; // us to ms
+                } else if (unit.contains("s/op")) {
+                    latencyMs = score * 1_000.0; // s to ms
+                }
+                latencyByBenchmark.put(benchmarkName, latencyMs);
+            }
+        }
+        
+        // Calculate averages
+        double avgThroughput = throughputByBenchmark.values().stream()
+                .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
-
-        // Calculate average latency for time-based benchmarks (convert to ms)
-        double avgLatency = results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("/op"))
-                .mapToDouble(r -> {
-                    String unit = r.getPrimaryResult().getScoreUnit();
-                    double score = r.getPrimaryResult().getScore();
-                    // Convert to milliseconds
-                    if (unit.contains("ns/op")) {
-                        return score / 1_000_000.0; // ns to ms
-                    } else if (unit.contains("us/op")) {
-                        return score / 1_000.0; // us to ms
-                    } else if (unit.contains("s/op")) {
-                        return score * 1_000.0; // s to ms
-                    }
-                    return score; // assume ms/op
-                })
+                
+        double avgLatency = latencyByBenchmark.values().stream()
+                .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
 
