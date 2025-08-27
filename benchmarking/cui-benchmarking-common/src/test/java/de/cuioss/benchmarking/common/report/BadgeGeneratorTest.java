@@ -60,11 +60,11 @@ class BadgeGeneratorTest {
         String message = badge.get("message").getAsString();
         assertNotNull(message, "Badge message must exist");
         assertFalse(message.isEmpty(), "Badge message must not be empty");
-        
+
         // Parse the message to verify it contains valid performance metrics
         // Expected format: "Grade (XXK ops/s, Y.YY ms)"
         // Verify it matches expected pattern for performance data
-        assertTrue(message.matches(".*\\d+.*ops/s.*\\d+.*ms.*"), 
+        assertTrue(message.matches(".*\\d+.*ops/s.*\\d+.*ms.*"),
                 "Message should contain performance metrics in format: throughput ops/s, latency ms");
     }
 
@@ -95,9 +95,9 @@ class BadgeGeneratorTest {
         String message = badge.get("message").getAsString();
         assertNotNull(message, "Badge message must exist");
         assertFalse(message.isEmpty(), "Badge message must not be empty");
-        
+
         // Verify it matches expected pattern for performance data
-        assertTrue(message.matches(".*\\d+.*ops/s.*"), 
+        assertTrue(message.matches(".*\\d+.*ops/s.*"),
                 "Message should contain performance metrics with throughput in ops/s");
     }
 

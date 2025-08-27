@@ -16,15 +16,16 @@
 package de.cuioss.benchmarking.common.runner;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.*;
+import de.cuioss.benchmarking.common.report.BadgeGenerator;
+import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
+import de.cuioss.benchmarking.common.report.MetricsGenerator;
+import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.Instant;
 import java.util.Collection;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
