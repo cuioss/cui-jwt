@@ -92,7 +92,7 @@ class LocalReportGeneratorTest {
         Path microOutputDir = outputPath.resolve("micro");
         Files.createDirectories(microOutputDir);
 
-        // Copy JSON file to expected location
+        // Copy JSON file to expected location (root for processor)
         Path sourceJson = Path.of(MICRO_JSON);
         Path targetJson = microOutputDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, targetJson);
@@ -103,8 +103,9 @@ class LocalReportGeneratorTest {
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, microOutputDir.toString());
 
-        // Also generate individual components for testing
-        generateIndividualReports(targetJson, BenchmarkType.MICRO, microOutputDir);
+        // Also generate individual components for testing (JSON is now in data dir)
+        Path movedJson = microOutputDir.resolve("data/micro-benchmark-result.json");
+        generateIndividualReports(movedJson, BenchmarkType.MICRO, microOutputDir);
     }
 
     private void generateIntegrationBenchmarkReports(Path outputPath) throws IOException {
@@ -122,8 +123,9 @@ class LocalReportGeneratorTest {
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, integrationOutputDir.toString());
 
-        // Also generate individual components for testing
-        generateIndividualReports(targetJson, BenchmarkType.INTEGRATION, integrationOutputDir);
+        // Also generate individual components for testing (JSON is now in data dir)
+        Path movedJson = integrationOutputDir.resolve("data/integration-benchmark-result.json");
+        generateIndividualReports(movedJson, BenchmarkType.INTEGRATION, integrationOutputDir);
     }
 
     private void generateIndividualReports(Path jsonFile, BenchmarkType type, Path outputDir) throws IOException {
@@ -153,9 +155,9 @@ class LocalReportGeneratorTest {
         Files.createDirectories(dataDir);
         metricsGen.generateMetricsJson(jsonFile, dataDir.toString());
 
-        // Generate summary
+        // Generate summary in data directory
         summaryGen.writeSummary(jsonFile, type, Instant.now(),
-                outputDir.resolve("summary.json").toString());
+                outputDir.resolve("data/summary.json").toString());
 
         LOGGER.debug("Generated individual report components for {}", type.getDisplayName());
     }

@@ -23,6 +23,7 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -52,7 +53,7 @@ public class BenchmarkResultProcessor {
     private static final String BADGES_DIR = "/badges";
     private static final String DATA_DIR = "/data";
     private static final String GH_PAGES_DIR = "/gh-pages-ready";
-    private static final String SUMMARY_FILE = "/benchmark-summary.json";
+    private static final String SUMMARY_FILE = "/data/benchmark-summary.json";
 
     private final BenchmarkType benchmarkType;
 
@@ -105,6 +106,9 @@ public class BenchmarkResultProcessor {
 
         // Write summary file for CI using JSON file
         writeSummaryFile(jsonFile, benchmarkType, outputDir);
+        
+        // Move the original JSON file to data directory if it's not already there
+        moveOriginalJsonToDataDir(jsonFile, outputDir);
 
         LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
     }
@@ -180,6 +184,21 @@ public class BenchmarkResultProcessor {
 
         LOGGER.info(INFO.WRITING_SUMMARY::format);
         summaryGen.writeSummary(jsonFile, type, Instant.now(), outputDir + SUMMARY_FILE);
+    }
+
+    /**
+     * Moves the original JSON file to the data directory if not already there.
+     */
+    private void moveOriginalJsonToDataDir(Path jsonFile, String outputDir) throws IOException {
+        Path dataDir = Path.of(outputDir + DATA_DIR);
+        Path targetJson = dataDir.resolve(jsonFile.getFileName());
+        
+        // If the JSON file is not already in the data directory, copy it there and delete original
+        if (!jsonFile.getParent().equals(dataDir) && Files.exists(jsonFile)) {
+            Files.copy(jsonFile, targetJson, StandardCopyOption.REPLACE_EXISTING);
+            Files.delete(jsonFile);
+            LOGGER.debug("Moved original JSON file to data directory: {}", targetJson);
+        }
     }
 
 }

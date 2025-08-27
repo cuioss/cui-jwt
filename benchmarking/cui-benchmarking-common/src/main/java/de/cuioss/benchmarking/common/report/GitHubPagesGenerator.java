@@ -55,7 +55,7 @@ public class GitHubPagesGenerator {
     // File and directory name constants
     private static final String INDEX_HTML = "index.html";
     private static final String REPORTS_DIR = "reports";
-    private static final String BENCHMARK_SUMMARY_JSON = "benchmark-summary.json";
+    private static final String BENCHMARK_SUMMARY_JSON = "data/benchmark-summary.json";
     private static final String DATA_METRICS_JSON = "data/metrics.json";
     private static final String BADGES_DIR = "badges";
     private static final String BENCHMARKS_KEY = "benchmarks";

@@ -65,8 +65,10 @@ class BenchmarkResultProcessorTest {
                 "Trends HTML report should be generated");
         assertTrue(Files.isDirectory(Path.of(outputDir, "gh-pages-ready")),
                 "GitHub Pages directory should be created");
-        assertTrue(Files.exists(Path.of(outputDir, "benchmark-summary.json")),
-                "Benchmark summary should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "data/benchmark-summary.json")),
+                "Benchmark summary should be generated in data directory");
+        assertTrue(Files.exists(Path.of(outputDir, "data/micro-benchmark-result.json")),
+                "Original JSON should be moved to data directory");
 
         // Verify badge content structure
         String badgeContent = Files.readString(Path.of(outputDir, "badges/performance-badge.json"));
