@@ -147,6 +147,7 @@ public class BenchmarkResultProcessor {
         LOGGER.info(INFO.GENERATING_REPORTS::format);
         reportGen.generateIndexPage(results, outputDir);
         reportGen.generateTrendsPage(results, outputDir);
+        reportGen.generateDetailedPage(results, benchmarkType.getLabel(), outputDir);
     }
 
     /**

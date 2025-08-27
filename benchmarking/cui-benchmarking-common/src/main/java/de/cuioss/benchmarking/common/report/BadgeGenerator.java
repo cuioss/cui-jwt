@@ -234,22 +234,32 @@ public class BadgeGenerator {
             return "No Data";
         }
 
-        String throughputPart = switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
-            case 6, 7, 8, 9 -> "%.1fM ops/s".formatted(score.compositeScore() / 1_000_000.0);
-            case 3, 4, 5 -> "%.1fK ops/s".formatted(score.compositeScore() / 1_000.0);
-            default -> "%d ops/s".formatted(score.compositeScore());
+        // Format composite score
+        String scoreFormatted = switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
+            case 6, 7, 8, 9 -> "%.1fM".formatted(score.compositeScore() / 1_000_000.0);
+            case 3, 4, 5 -> "%.0fK".formatted(score.compositeScore() / 1_000.0);
+            default -> "%d".formatted(score.compositeScore());
+        };
+        
+        // Format throughput  
+        String throughputPart = switch ((int) Math.log10(Math.max(1, score.throughput()))) {
+            case 6, 7, 8, 9 -> "%.1fM ops/s".formatted(score.throughput() / 1_000_000.0);
+            case 3, 4, 5 -> "%.1fK ops/s".formatted(score.throughput() / 1_000.0);
+            default -> "%.0f ops/s".formatted(score.throughput());
         };
         
         // Add latency if available
+        String latencyPart = "";
         if (score.latency() > 0) {
             if (score.latency() < 1.0) {
-                return "%s, %.2fms".formatted(throughputPart, score.latency());
+                latencyPart = ", %.2fms".formatted(score.latency());
             } else {
-                return "%s, %.1fms".formatted(throughputPart, score.latency());
+                latencyPart = ", %.1fms".formatted(score.latency());
             }
         }
         
-        return throughputPart;
+        // Format: "32K (45K ops/s, 0.15ms)" as per specification
+        return "%s (%s%s)".formatted(scoreFormatted, throughputPart, latencyPart);
     }
 
     private String getColorForScore(PerformanceScore score) {

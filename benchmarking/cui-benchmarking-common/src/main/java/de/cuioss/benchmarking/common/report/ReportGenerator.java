@@ -95,6 +95,29 @@ public class ReportGenerator {
         Files.writeString(trendsFile, html);
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
+    
+    /**
+     * Generates the detailed visualizer page with JMH Visualizer integration.
+     *
+     * @param results the benchmark results
+     * @param benchmarkType the type of benchmarks (micro or integration)
+     * @param outputDir the output directory for HTML files
+     * @throws IOException if writing HTML files fails
+     */
+    public void generateDetailedPage(Collection<RunResult> results, String benchmarkType, String outputDir) throws IOException {
+        LOGGER.info("Generating detailed visualizer page...");
+
+        String html = generateHtmlHeader("Detailed Analysis", false) +
+                generateNavigationMenu() +
+                generateDetailedSection(results, benchmarkType) +
+                generateHtmlFooter();
+
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+        Path detailedFile = outputPath.resolve("detailed.html");
+        Files.writeString(detailedFile, html);
+        LOGGER.info("Detailed page generated at: " + detailedFile);
+    }
 
     private String generateHtmlHeader(String title, boolean includeCharts) throws IOException {
         String template = loadTemplate("report-header.html");
@@ -117,9 +140,11 @@ public class ReportGenerator {
     private String generateOverviewSection(Collection<RunResult> results) throws IOException {
         String template = loadTemplate("overview-section.html");
         double avgThroughput = calculateAverageThroughput(results);
+        double avgLatency = calculateAverageLatency(results);
         return template
                 .replace("${totalBenchmarks}", String.valueOf(results.size()))
                 .replace("${avgThroughput}", formatThroughput(avgThroughput))
+                .replace("${avgLatency}", formatLatency(avgLatency))
                 .replace("${performanceGrade}", calculatePerformanceGrade(avgThroughput));
     }
 
@@ -174,6 +199,46 @@ public class ReportGenerator {
         return template
                 .replace("${benchmarkCount}", String.valueOf(results.size()))
                 .replace("${performanceGrade}", calculatePerformanceGrade(calculateAverageThroughput(results)));
+    }
+    
+    private String generateDetailedSection(Collection<RunResult> results, String benchmarkType) throws IOException {
+        String template = loadTemplate("detailed-section.html");
+        return template
+                .replace("${benchmarkType}", benchmarkType)
+                .replace("${totalBenchmarks}", String.valueOf(results.size()));
+    }
+    
+    private double calculateAverageLatency(Collection<RunResult> results) {
+        return results.stream()
+                .filter(r -> r.getPrimaryResult() != null)
+                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("/op"))
+                .mapToDouble(r -> {
+                    String unit = r.getPrimaryResult().getScoreUnit();
+                    double score = r.getPrimaryResult().getScore();
+                    // Convert to milliseconds
+                    if (unit.contains("ns/op")) {
+                        return score / 1_000_000.0; // ns to ms
+                    } else if (unit.contains("us/op")) {
+                        return score / 1_000.0; // us to ms  
+                    } else if (unit.contains("s/op")) {
+                        return score * 1_000.0; // s to ms
+                    }
+                    return score; // assume ms/op
+                })
+                .average()
+                .orElse(0.0);
+    }
+    
+    private String formatLatency(double latencyMs) {
+        if (latencyMs == 0) {
+            return "N/A";
+        } else if (latencyMs < 1.0) {
+            return "%.2f ms".formatted(latencyMs);
+        } else if (latencyMs < 1000) {
+            return "%.1f ms".formatted(latencyMs);
+        } else {
+            return "%.1f s".formatted(latencyMs / 1000);
+        }
     }
 
     private String getEmbeddedCSS() {
