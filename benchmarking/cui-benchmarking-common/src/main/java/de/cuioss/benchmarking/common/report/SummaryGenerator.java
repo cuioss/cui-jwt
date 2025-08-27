@@ -130,7 +130,7 @@ public class SummaryGenerator {
      * Determines the overall execution status of the benchmark run.
      */
     private String determineExecutionStatus(JsonArray benchmarks) {
-        if (benchmarks.size() == 0) {
+        if (benchmarks.isEmpty()) {
             return "FAILED";
         }
 
@@ -343,6 +343,45 @@ public class SummaryGenerator {
             case 3 -> FAIR_SCORE;
             default -> Math.min(MINIMUM_SCORE, avgThroughput / THROUGHPUT_NORMALIZATION_FACTOR * SCORE_MULTIPLIER);
         };
+    }
+    
+    // Performance scoring constants
+    private static final double THROUGHPUT_BASELINE = 100.0;  // ops/s per point (10,000 ops/s = 100 points)
+    private static final double LATENCY_BASELINE = 100.0;     // score points for 1ms latency
+    private static final double THROUGHPUT_WEIGHT = 0.5;      // 50% weight for throughput
+    private static final double LATENCY_WEIGHT = 0.5;         // 50% weight for latency
+    
+    /**
+     * Calculates performance score based on throughput and latency metrics.
+     * Formula: Score = (Throughput_Score × 0.5) + (Latency_Score × 0.5)
+     * 
+     * @param avgThroughput average throughput in ops/s
+     * @param avgLatency average latency in milliseconds
+     * @return performance score (uncapped, 100 = baseline good performance)
+     */
+    public double calculatePerformanceScore(double avgThroughput, double avgLatency) {
+        // Throughput score: 10,000 ops/s = 100 points (uncapped)
+        double throughputScore = avgThroughput / THROUGHPUT_BASELINE;
+        
+        // Latency score: 1 ms = 100 points (inverse relationship, uncapped)
+        double latencyScore = LATENCY_BASELINE / avgLatency;
+        
+        // Combined score with equal weighting
+        return (throughputScore * THROUGHPUT_WEIGHT) + (latencyScore * LATENCY_WEIGHT);
+    }
+    
+    /**
+     * Determines performance grade based on score.
+     * 
+     * @param score performance score (0-100)
+     * @return grade letter (A, B, C, D, or F)
+     */
+    public String getPerformanceGrade(double score) {
+        if (score >= 90) return "A";
+        if (score >= 75) return "B";
+        if (score >= 60) return "C";
+        if (score >= 40) return "D";
+        return "F";
     }
 
     private String calculatePerformanceGrade(JsonArray benchmarks) {

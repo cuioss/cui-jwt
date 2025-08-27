@@ -127,13 +127,18 @@ public class ReportDataGenerator {
         int totalBenchmarks = benchmarks.size();
         double avgThroughput = calculateAverageThroughput(benchmarks);
         double avgLatency = calculateAverageLatency(benchmarks);
-        String grade = MetricConversionUtil.calculatePerformanceGrade(avgThroughput);
+        
+        // Calculate performance score using the new formula
+        SummaryGenerator summaryGen = new SummaryGenerator();
+        double performanceScore = summaryGen.calculatePerformanceScore(avgThroughput, avgLatency);
+        String grade = summaryGen.getPerformanceGrade(performanceScore);
 
         overview.addProperty("totalBenchmarks", totalBenchmarks);
         overview.addProperty("avgThroughput", avgThroughput);
         overview.addProperty("avgThroughputFormatted", formatThroughput(avgThroughput));
         overview.addProperty("avgLatency", avgLatency);
         overview.addProperty("avgLatencyFormatted", formatLatency(avgLatency));
+        overview.addProperty("performanceScore", performanceScore);
         overview.addProperty("performanceGrade", grade);
         overview.addProperty("performanceGradeClass", getGradeClass(grade));
 

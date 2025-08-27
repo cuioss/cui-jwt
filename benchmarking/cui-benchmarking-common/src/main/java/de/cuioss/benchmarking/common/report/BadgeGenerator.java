@@ -199,21 +199,22 @@ public class BadgeGenerator {
                 .average()
                 .orElse(0.0);
 
-        // Calculate weighted score (higher is better for throughput, lower is better for latency)
-        double throughputScore = Math.min(avgThroughput / 100, 1000); // Normalize
-        double latencyScore = avgLatency > 0 ? 1000 / avgLatency : 1000; // Invert and normalize
-        double weightedScore = throughputScore * 0.6 + latencyScore * 0.4;
+        // Calculate performance score using the new formula from SummaryGenerator
+        SummaryGenerator summaryGen = new SummaryGenerator();
+        double performanceScore = summaryGen.calculatePerformanceScore(avgThroughput, avgLatency);
 
-        return new PerformanceScore(weightedScore, avgThroughput, avgLatency);
+        return new PerformanceScore(performanceScore, avgThroughput, avgLatency);
     }
 
     // All metric conversions now use the centralized MetricConversionUtil
 
     private String formatPerformanceMessage(PerformanceScore score) {
-        // Format: "Score (throughput, latency)"
-        // Example: "50K (61.7K ops/s, 0.16ms)"
+        // Format: "Score Grade (throughput, latency)"
+        // Example: "91 A (5.8K ops/s, 1.17ms)"
         
-        String scoreFormatted = formatNumber(score.score());
+        SummaryGenerator summaryGen = new SummaryGenerator();
+        String grade = summaryGen.getPerformanceGrade(score.score());
+        String scoreFormatted = String.format("%.1f %s", score.score(), grade);
         String throughputFormatted = formatNumber(score.throughput()) + " ops/s";
         String latencyFormatted = formatLatency(score.latency());
 
@@ -243,12 +244,13 @@ public class BadgeGenerator {
     }
 
     private String getColorForScore(PerformanceScore score) {
+        // Color based on the 0-100 performance score
         double value = score.score();
-        if (value >= 800) return COLOR_BRIGHT_GREEN;
-        if (value >= 500) return COLOR_GREEN;
-        if (value >= 200) return COLOR_YELLOW;
-        if (value >= 100) return COLOR_ORANGE;
-        return COLOR_RED;
+        if (value >= 90) return COLOR_BRIGHT_GREEN;  // Grade A
+        if (value >= 75) return COLOR_GREEN;         // Grade B
+        if (value >= 60) return COLOR_YELLOW;        // Grade C
+        if (value >= 40) return COLOR_ORANGE;        // Grade D
+        return COLOR_RED;                             // Grade F
     }
 
     private TrendAnalysis analyzeTrend(JsonArray currentResults, PerformanceHistory history) {
