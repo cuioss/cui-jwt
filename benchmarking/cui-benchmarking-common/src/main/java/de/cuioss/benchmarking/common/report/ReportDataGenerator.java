@@ -246,6 +246,13 @@ public class ReportDataGenerator {
             JsonObject benchmark = element.getAsJsonObject();
             String name = benchmark.get("benchmark").getAsString();
             String label = name.substring(name.lastIndexOf('.') + 1);
+            String mode = benchmark.get("mode").getAsString();
+
+            // Only include latency benchmarks (avgt, sample, ss) in percentiles chart
+            // Skip throughput benchmarks (thrpt) as their percentiles are in ops/s not latency
+            if ("thrpt".equals(mode)) {
+                continue; // Skip throughput benchmarks for percentiles chart
+            }
 
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
 
@@ -253,16 +260,18 @@ public class ReportDataGenerator {
             if (primaryMetric.has("scorePercentiles")) {
                 labels.add(label);
                 JsonObject percentiles = primaryMetric.getAsJsonObject("scorePercentiles");
+                String unit = primaryMetric.get("scoreUnit").getAsString();
 
                 List<Double> values = new ArrayList<>();
                 // Extract common percentiles: 0.0, 50.0, 90.0, 95.0, 99.0, 99.9, 100.0
-                values.add(percentiles.has("0.0") ? percentiles.get("0.0").getAsDouble() : 0.0);
-                values.add(percentiles.has("50.0") ? percentiles.get("50.0").getAsDouble() : 0.0);
-                values.add(percentiles.has("90.0") ? percentiles.get("90.0").getAsDouble() : 0.0);
-                values.add(percentiles.has("95.0") ? percentiles.get("95.0").getAsDouble() : 0.0);
-                values.add(percentiles.has("99.0") ? percentiles.get("99.0").getAsDouble() : 0.0);
-                values.add(percentiles.has("99.9") ? percentiles.get("99.9").getAsDouble() : 0.0);
-                values.add(percentiles.has("100.0") ? percentiles.get("100.0").getAsDouble() : 0.0);
+                // Convert to milliseconds for consistent display
+                values.add(convertPercentileToMs(percentiles, "0.0", unit));
+                values.add(convertPercentileToMs(percentiles, "50.0", unit));
+                values.add(convertPercentileToMs(percentiles, "90.0", unit));
+                values.add(convertPercentileToMs(percentiles, "95.0", unit));
+                values.add(convertPercentileToMs(percentiles, "99.0", unit));
+                values.add(convertPercentileToMs(percentiles, "99.9", unit));
+                values.add(convertPercentileToMs(percentiles, "100.0", unit));
 
                 percentilesByBenchmark.put(label, values);
             }
@@ -274,6 +283,14 @@ public class ReportDataGenerator {
         percentilesData.add("data", GSON.toJsonTree(percentilesByBenchmark));
 
         return percentilesData;
+    }
+
+    private double convertPercentileToMs(JsonObject percentiles, String percentileKey, String unit) {
+        if (!percentiles.has(percentileKey)) {
+            return 0.0;
+        }
+        double value = percentiles.get(percentileKey).getAsDouble();
+        return MetricConversionUtil.convertToMillisecondsPerOp(value, unit);
     }
 
     private JsonObject generateTrendData(JsonArray currentBenchmarks) {
