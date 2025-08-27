@@ -44,17 +44,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class TemplateAndCssTest {
 
     @Test void templateLoadingFailsLoudly() throws Exception {
-        // Use reflection to test private loadTemplate method
+        // Use reflection to test private copyTemplate method
         ReportGenerator generator = new ReportGenerator();
-        Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
-        loadTemplate.setAccessible(true);
+        Method copyTemplate = ReportGenerator.class.getDeclaredMethod("copyTemplate", String.class, String.class);
+        copyTemplate.setAccessible(true);
 
         // Test loading non-existent template throws IOException
-        assertThrows(InvocationTargetException.class, () -> loadTemplate.invoke(generator, "non-existent-template.html"), "Loading non-existent template should throw exception");
+        assertThrows(InvocationTargetException.class, () -> copyTemplate.invoke(generator, "non-existent-template.html", "."), "Loading non-existent template should throw exception");
 
         // Verify the underlying cause is IOException
         try {
-            loadTemplate.invoke(generator, "non-existent-template.html");
+            copyTemplate.invoke(generator, "non-existent-template.html", ".");
         } catch (InvocationTargetException e) {
             assertInstanceOf(IOException.class, e.getCause(), "Underlying exception should be IOException");
             assertTrue(e.getCause().getMessage().contains("non-existent-template"),
@@ -62,35 +62,23 @@ class TemplateAndCssTest {
         }
     }
 
-    @Test void validTemplatesLoad() throws Exception {
-        // Use reflection to test private loadTemplate method
+    @Test void validTemplatesLoad(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
-        Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
-        loadTemplate.setAccessible(true);
-
-        // Test loading existing templates
+        String outputDir = tempDir.toString();
+        
+        // Test that template files can be copied
         assertDoesNotThrow(() -> {
-            String headerTemplate = (String) loadTemplate.invoke(generator, "report-header.html");
-            assertNotNull(headerTemplate, "Header template should load");
-            assertTrue(headerTemplate.contains("<"), "Template should contain HTML");
-        }, "Loading existing header template should not throw");
-
-        assertDoesNotThrow(() -> {
-            String overviewTemplate = (String) loadTemplate.invoke(generator, "overview-section.html");
-            assertNotNull(overviewTemplate, "Overview template should load");
-            assertTrue(overviewTemplate.contains("<"), "Template should contain HTML");
-        }, "Loading existing overview template should not throw");
-
-        assertDoesNotThrow(() -> {
-            String trendsTemplate = (String) loadTemplate.invoke(generator, "trends-section.html");
-            assertNotNull(trendsTemplate, "Trends template should load");
-            assertTrue(trendsTemplate.contains("<"), "Template should contain HTML");
-        }, "Loading existing trends template should not throw");
-
-        assertDoesNotThrow(() -> {
-            String footerTemplate = (String) loadTemplate.invoke(generator, "report-footer.html");
-            assertNotNull(footerTemplate, "Footer template should load");
-        }, "Loading existing footer template should not throw");
+            generator.copySupportFiles(outputDir);
+        }, "Copying support files should not throw");
+        
+        // Verify that essential files were copied
+        assertTrue(Files.exists(tempDir.resolve("report-styles.css")), "CSS file should be copied");
+        assertTrue(Files.exists(tempDir.resolve("data-loader.js")), "JavaScript file should be copied");
+        
+        // Verify that HTML templates exist in resources
+        assertNotNull(getClass().getResourceAsStream("/templates/index.html"), "Index template should exist");
+        assertNotNull(getClass().getResourceAsStream("/templates/trends.html"), "Trends template should exist");
+        assertNotNull(getClass().getResourceAsStream("/templates/detailed.html"), "Detailed template should exist");
     }
 
     @Test void cssFileIsIncludedInResources() {
@@ -102,7 +90,7 @@ class TemplateAndCssTest {
             // Read and verify CSS content
             String cssContent = new String(cssStream.readAllBytes());
             assertTrue(cssContent.contains("body"), "CSS should contain body styles");
-            assertTrue(cssContent.contains(".navbar"), "CSS should contain navbar styles");
+            assertTrue(cssContent.contains(".nav-menu"), "CSS should contain nav-menu styles");
             assertTrue(cssContent.contains(".grade-"), "CSS should contain grade classes");
             assertTrue(cssContent.contains(".performance-badge"), "CSS should contain performance badge styles");
         } catch (IOException e) {
@@ -110,7 +98,7 @@ class TemplateAndCssTest {
         }
     }
 
-    @Test void cssIsEmbeddedInGeneratedHtml(@TempDir Path tempDir) throws Exception {
+    @Test void cssIsExternalInGeneratedHtml(@TempDir Path tempDir) throws Exception {
         // Use real test data
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
@@ -119,21 +107,26 @@ class TemplateAndCssTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+        generator.copySupportFiles(outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
 
-        // Verify CSS is embedded
-        assertTrue(content.contains("<style>"), "Should have style tag");
-        assertTrue(content.contains("</style>"), "Should close style tag");
-
-        // Verify critical CSS classes are present
-        assertTrue(content.contains(".navbar"), "Should include navbar styles");
-        assertTrue(content.contains(".stats-grid"), "Should include stats-grid styles");
-        assertTrue(content.contains(".results-table"), "Should include results-table styles");
-        assertTrue(content.contains(".grade-a-plus"), "Should include grade-a-plus styles");
-        assertTrue(content.contains(".performance-badge"), "Should include performance-badge styles");
+        // Verify CSS is linked externally
+        assertTrue(content.contains("report-styles.css"), "Should link to external CSS file");
+        
+        // Verify CSS file exists
+        Path cssFile = Path.of(outputDir, "report-styles.css");
+        assertTrue(Files.exists(cssFile), "CSS file should exist");
+        
+        // Verify critical CSS classes are in the CSS file
+        String cssContent = Files.readString(cssFile);
+        assertTrue(cssContent.contains(".nav-menu"), "Should include nav-menu styles");
+        assertTrue(cssContent.contains(".stats-grid"), "Should include stats-grid styles");
+        assertTrue(cssContent.contains(".table"), "Should include table styles");
+        assertTrue(cssContent.contains(".grade-a-plus"), "Should include grade-a-plus styles");
+        assertTrue(cssContent.contains(".performance-badge"), "Should include performance-badge styles");
     }
 
     @Test void deploymentStructureIncludesCss(@TempDir Path tempDir) throws Exception {
@@ -157,14 +150,14 @@ class TemplateAndCssTest {
         assertTrue(Files.exists(Path.of(outputDir, "trends.html")),
                 "Trends page should exist in deployment");
 
-        // Verify HTML files contain embedded CSS
+        // Verify HTML files reference external CSS
         String indexContent = Files.readString(Path.of(outputDir, "index.html"));
-        assertTrue(indexContent.contains("<style>"), "Index should have embedded CSS");
-        assertTrue(indexContent.contains(".navbar"), "Index CSS should be complete");
+        assertTrue(indexContent.contains("report-styles.css"), "Index should reference CSS file");
+        assertTrue(indexContent.contains("data-loader.js"), "Index should reference JS file");
 
         String trendsContent = Files.readString(Path.of(outputDir, "trends.html"));
-        assertTrue(trendsContent.contains("<style>"), "Trends should have embedded CSS");
-        assertTrue(trendsContent.contains(".navbar"), "Trends CSS should be complete");
+        assertTrue(trendsContent.contains("report-styles.css"), "Trends should reference CSS file");
+        assertTrue(trendsContent.contains("data-loader.js"), "Trends should reference JS file");
     }
 
     @Test void cssClassesForPerformanceGrades(@TempDir Path tempDir) throws Exception {
@@ -176,10 +169,11 @@ class TemplateAndCssTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+        generator.copySupportFiles(outputDir);
 
-        Path indexFile = Path.of(outputDir, "index.html");
-        String content = Files.readString(indexFile);
+        Path cssFile = Path.of(outputDir, "report-styles.css");
+        String content = Files.readString(cssFile);
 
         // Verify performance grade CSS classes are defined
         assertTrue(content.contains(".grade-a-plus"), "Should define A+ grade style");
@@ -204,35 +198,41 @@ class TemplateAndCssTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+        generator.copySupportFiles(outputDir);
 
+        Path cssFile = Path.of(outputDir, "report-styles.css");
+        String cssContent = Files.readString(cssFile);
+        
         Path indexFile = Path.of(outputDir, "index.html");
-        String content = Files.readString(indexFile);
+        String htmlContent = Files.readString(indexFile);
 
         // Verify responsive CSS is included
-        assertTrue(content.contains("@media"), "Should have media queries");
-        assertTrue(content.contains("max-width: 768px"), "Should have mobile breakpoint");
-        assertTrue(content.contains("grid-template-columns"), "Should have responsive grid");
+        assertTrue(cssContent.contains("@media"), "Should have media queries");
+        assertTrue(cssContent.contains("max-width: 768px"), "Should have mobile breakpoint");
+        assertTrue(cssContent.contains("grid-template-columns"), "Should have responsive grid");
 
         // Verify viewport meta tag
-        assertTrue(content.contains("viewport"), "Should have viewport meta tag");
-        assertTrue(content.contains("width=device-width"), "Should set device width");
+        assertTrue(htmlContent.contains("viewport"), "Should have viewport meta tag");
+        assertTrue(htmlContent.contains("width=device-width"), "Should set device width");
     }
 
-    @Test void missingCssFileHandling() throws Exception {
-        // Test that missing CSS is handled gracefully with fallback
+    @Test void missingCssFileHandling(@TempDir Path tempDir) throws Exception {
+        // Test that CSS file exists and can be copied
         ReportGenerator generator = new ReportGenerator();
+        String outputDir = tempDir.toString();
 
-        // Use reflection to access private method
-        Method loadTemplate = ReportGenerator.class.getDeclaredMethod("loadTemplate", String.class);
-        loadTemplate.setAccessible(true);
-
-        // Test that we can load the CSS file
+        // Test that we can copy the CSS file
         assertDoesNotThrow(() -> {
-            String cssContent = (String) loadTemplate.invoke(generator, "report-styles.css");
-            assertNotNull(cssContent, "CSS should load");
-            assertTrue(cssContent.contains("body"), "CSS should contain body styles");
-            assertTrue(cssContent.contains(".navbar"), "CSS should contain navbar styles");
-        }, "Loading CSS file should not throw");
+            generator.copySupportFiles(outputDir);
+        }, "Copying CSS file should not throw");
+        
+        // Verify CSS file was copied and has content
+        Path cssFile = tempDir.resolve("report-styles.css");
+        assertTrue(Files.exists(cssFile), "CSS file should be copied");
+        String cssContent = Files.readString(cssFile);
+        assertNotNull(cssContent, "CSS should have content");
+        assertTrue(cssContent.contains("body"), "CSS should contain body styles");
+        assertTrue(cssContent.contains(".nav-menu"), "CSS should contain nav-menu styles");
     }
 }

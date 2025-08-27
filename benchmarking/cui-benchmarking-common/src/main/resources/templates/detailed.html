@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Benchmark Analysis</title>
+    <link rel="stylesheet" href="report-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data-loader.js"></script>
+</head>
+<body data-page-type="detailed">
+    <header class="header">
+        <h1>CUI JWT Benchmarking Dashboard</h1>
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link">Overview</a>
+            <a href="trends.html" class="nav-link">Trends</a>
+            <a href="detailed.html" class="nav-link active">Detailed</a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="detailed-header">
+            <h2>Detailed Benchmark Analysis</h2>
+            <p>Comprehensive performance metrics and statistical analysis</p>
+        </section>
+
+        <section class="chart-section">
+            <h2>Performance Radar</h2>
+            <div class="chart-container">
+                <canvas id="detailed-chart"></canvas>
+            </div>
+        </section>
+
+        <section class="statistics">
+            <h2>Statistical Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Tests</h3>
+                    <p class="stat-value" id="total-benchmarks">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Throughput</h3>
+                    <p class="stat-value" id="avg-throughput">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Latency</h3>
+                    <p class="stat-value" id="avg-latency">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Performance</h3>
+                    <p class="stat-value" id="performance-grade">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="detailed-results">
+            <h2>Detailed Results</h2>
+            <div class="table-container">
+                <table class="table detailed-table">
+                    <thead>
+                        <tr>
+                            <th>Benchmark</th>
+                            <th>Mode</th>
+                            <th>Score</th>
+                            <th>Confidence Interval</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmark-table-body">
+                        <tr>
+                            <td colspan="4" class="loading-message">Loading detailed data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="external-analysis">
+            <h2>External Analysis Tools</h2>
+            <p>For additional visualization options, you can upload the benchmark JSON file to:</p>
+            <ul>
+                <li><a href="https://jmh.morethan.io/" target="_blank">JMH Visualizer</a> - Interactive benchmark visualization</li>
+                <li>View the raw <a href="benchmark-data.json" target="_blank">benchmark-data.json</a> file</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Generated on <span id="report-timestamp">-</span></p>
+        <p>© 2025 CUI OpenSource Software</p>
+    </footer>
+</body>
+</html>

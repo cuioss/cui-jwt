@@ -157,9 +157,10 @@ public class BenchmarkResultProcessor {
         ReportGenerator reportGen = new ReportGenerator();
 
         LOGGER.info(INFO.GENERATING_REPORTS::format);
-        reportGen.generateIndexPage(jsonFile, outputDir);
-        reportGen.generateTrendsPage(jsonFile, outputDir);
-        reportGen.generateDetailedPage(jsonFile, benchmarkType.getDisplayName(), outputDir);
+        reportGen.generateIndexPage(jsonFile, benchmarkType, outputDir);
+        reportGen.generateTrendsPage(outputDir);
+        reportGen.generateDetailedPage(outputDir);
+        reportGen.copySupportFiles(outputDir);
     }
 
     /**

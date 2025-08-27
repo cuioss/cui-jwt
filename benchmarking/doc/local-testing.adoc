@@ -16,31 +16,40 @@ To view benchmark results locally after running benchmarks:
 ./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
 ----
 
-=== Step 2: Serve Results Locally
+=== Step 2: Generate Reports
 
-The benchmarks automatically generate HTML pages and artifacts. To view them:
+Generate comprehensive HTML reports from benchmark results:
+
+[source,bash]
+----
+cd benchmarking/cui-benchmarking-common
+mvn test -Dtest=LocalReportGeneratorTest
+----
+
+This creates reports in `target/benchmark-reports-preview/`.
+
+=== Step 3: Serve Results Locally
+
+To view the generated reports:
 
 [source,bash]
 ----
 cd benchmarking/scripts
-./serve-local.sh
+./serve-reports.sh
 # Or specify a port:
-./serve-local.sh 3000
+./serve-reports.sh 8081
+
+# To stop the server:
+./serve-reports.sh stop
 ----
 
-Alternative using Node.js:
+=== Step 4: View Results
 
-[source,bash]
-----
-cd benchmarking/scripts
-node serve-local.js
-# Or specify a port:
-node serve-local.js 3000
-----
-
-=== Step 3: View Results
-
-Open your browser to http://localhost:8080 to view the generated artifacts.
+Open your browser to http://localhost:8080 to view the comprehensive reports including:
+- Performance overview dashboards
+- Interactive charts and trends
+- Detailed benchmark tables
+- Performance badges and metrics
 
 == Generated Artifacts Location
 

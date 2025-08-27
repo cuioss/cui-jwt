@@ -29,9 +29,13 @@ For local development and testing of benchmark results:
 # Run integration benchmarks  
 ./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
 
-# View generated artifacts locally
-cd benchmarking/scripts
-./serve-local.sh
+# Generate and view benchmark reports locally
+cd benchmarking/cui-benchmarking-common
+mvn test -Dtest=LocalReportGeneratorTest
+
+# View generated reports
+cd ../scripts
+./serve-reports.sh
 # Open http://localhost:8080 in your browser
 ----
 

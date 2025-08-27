@@ -15,6 +15,7 @@
  */
 package de.cuioss.benchmarking.common;
 
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,8 +41,13 @@ class ReportGeneratorTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+        generator.copySupportFiles(outputDir);
 
+        // Verify benchmark-data.json was created
+        Path dataFile = Path.of(outputDir, "benchmark-data.json");
+        assertTrue(Files.exists(dataFile), "Data JSON file should be created");
+        
         // Verify index.html was created
         Path indexFile = Path.of(outputDir, "index.html");
         assertTrue(Files.exists(indexFile), "Index page should be created");
@@ -51,7 +57,7 @@ class ReportGeneratorTest {
         assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
         assertTrue(content.contains("<html"), "Should have HTML tag");
         assertTrue(content.contains("CUI Benchmarking Results"), "Should have title");
-        assertTrue(content.contains("<style>"), "Should have embedded CSS");
+        assertTrue(content.contains("data-loader.js"), "Should reference data loader script");
     }
 
     @Test void generateIndexPageWithEmptyResults(@TempDir Path tempDir) throws Exception {
@@ -62,9 +68,13 @@ class ReportGeneratorTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
+        generator.copySupportFiles(outputDir);
 
-        // Should still create index page
+        // Should still create data and index files
+        Path dataFile = Path.of(outputDir, "benchmark-data.json");
+        assertTrue(Files.exists(dataFile), "Data JSON file should be created with empty results");
+        
         Path indexFile = Path.of(outputDir, "index.html");
         assertTrue(Files.exists(indexFile), "Index page should be created with empty results");
 
@@ -75,7 +85,7 @@ class ReportGeneratorTest {
     }
 
     @Test void generateTrendsPage(@TempDir Path tempDir) throws Exception {
-        // Use real integration test data
+        // First generate the data file
         Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
         Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -83,7 +93,10 @@ class ReportGeneratorTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateTrendsPage(jsonFile, outputDir);
+        // Generate data and trends page
+        generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
+        generator.generateTrendsPage(outputDir);
+        generator.copySupportFiles(outputDir);
 
         // Verify trends.html was created
         Path trendsFile = Path.of(outputDir, "trends.html");
@@ -93,7 +106,7 @@ class ReportGeneratorTest {
         String content = Files.readString(trendsFile);
         assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
         assertTrue(content.contains("Performance Trends"), "Should have trends title");
-        assertTrue(content.contains("<style>"), "Should have embedded CSS");
+        assertTrue(content.contains("data-loader.js"), "Should reference data loader script");
     }
 
     @Test void generatePagesWithNestedDirectory(@TempDir Path tempDir) throws Exception {
@@ -107,8 +120,9 @@ class ReportGeneratorTest {
 
         // Should create nested directories
         assertDoesNotThrow(() -> {
-            generator.generateIndexPage(jsonFile, nestedDir);
-            generator.generateTrendsPage(jsonFile, nestedDir);
+            generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, nestedDir);
+            generator.generateTrendsPage(nestedDir);
+            generator.copySupportFiles(nestedDir);
         }, "Should create nested directories as needed");
 
         assertTrue(Files.exists(Path.of(nestedDir, "index.html")),
@@ -126,14 +140,18 @@ class ReportGeneratorTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+        generator.copySupportFiles(outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
 
         // Verify responsive design elements
         assertTrue(content.contains("viewport"), "Should have viewport meta tag for responsive design");
-        assertTrue(content.contains("max-width"), "Should have max-width for responsive layout");
+        
+        Path cssFile = Path.of(outputDir, "report-styles.css");
+        String css = Files.readString(cssFile);
+        assertTrue(css.contains("max-width"), "Should have max-width for responsive layout");
     }
 
     @Test void generateHtmlWithValidCss(@TempDir Path tempDir) throws Exception {
@@ -145,17 +163,21 @@ class ReportGeneratorTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
+        generator.copySupportFiles(outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
 
-        // Verify CSS is embedded and structured
-        assertTrue(content.contains("<style>"), "Should have opening style tag");
-        assertTrue(content.contains("</style>"), "Should have closing style tag");
-        assertTrue(content.contains("font-family"), "Should define font family");
-        assertTrue(content.contains("margin"), "Should have margin styles");
-        assertTrue(content.contains("padding"), "Should have padding styles");
+        // Verify CSS is referenced
+        assertTrue(content.contains("report-styles.css"), "Should reference CSS file");
+        
+        Path cssFile = Path.of(outputDir, "report-styles.css");
+        assertTrue(Files.exists(cssFile), "CSS file should be copied");
+        String css = Files.readString(cssFile);
+        assertTrue(css.contains("font-family"), "Should define font family");
+        assertTrue(css.contains("margin"), "Should have margin styles");
+        assertTrue(css.contains("padding"), "Should have padding styles");
     }
 
     @Test void correctLatencyDisplayInGeneratedReport(@TempDir Path tempDir) throws Exception {
@@ -168,22 +190,22 @@ class ReportGeneratorTest {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
 
-        // Read generated HTML
-        Path indexFile = Path.of(outputDir, "index.html");
-        String html = Files.readString(indexFile);
+        // Read generated data JSON
+        Path dataFile = Path.of(outputDir, "benchmark-data.json");
+        String jsonData = Files.readString(dataFile);
 
         // The exact expected average latency for micro-benchmark-result.json test data is:
         // (0.00967 + 0.00812 + 0.00525 + 0.8029 + 0.9273) / 5 = 0.3507 ms
         // Formatted with %.1f this becomes "0.4 ms" or "0,4 ms" depending on locale
         // But the actual test shows it's formatted as "0.35 ms" with %.2f for values < 1
-        // So we need to check for the locale-independent number in the HTML
-        assertTrue(html.contains("0.35 ms") || html.contains("0,35 ms"),
-                "HTML must contain the average latency '0.35 ms' (locale-dependent decimal separator)");
+        // So we need to check for the locale-independent number in the JSON
+        assertTrue(jsonData.contains("0.35 ms") || jsonData.contains("0,35 ms"),
+                "JSON data must contain the average latency '0.35 ms' (locale-dependent decimal separator)");
         
         // Most importantly, ensure it's NOT showing incorrect values like 865.1 seconds
-        assertFalse(html.contains("865") || html.contains("346"),
+        assertFalse(jsonData.contains("865") || jsonData.contains("346"),
                 "Latency must not show incorrect values like 865.1s or 346s from the conversion bug");
     }
 }

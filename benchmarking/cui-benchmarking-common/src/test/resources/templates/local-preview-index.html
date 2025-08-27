@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUI Benchmark Reports - Local Preview</title>
+    <style>
+        ${css}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CUI Benchmark Reports - Local Preview</h1>
+        
+        <div class="report-grid">
+            <div class="report-card">
+                <h2>📊 Micro Benchmarks</h2>
+                <p>Library-level performance tests focusing on individual JWT operations.</p>
+                <div class="report-links">
+                    <a href="micro/index.html">Overview Report</a>
+                    <a href="micro/trends.html">Performance Trends</a>
+                    <a href="micro/detailed.html">Detailed Analysis</a>
+                    <a href="micro/badges/performance-badge.json">View Badge JSON</a>
+                    <a href="micro/data/metrics.json">View Metrics JSON</a>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <h2>🌐 Integration Benchmarks</h2>
+                <p>End-to-end tests including HTTP/TLS overhead and full token lifecycle.</p>
+                <div class="report-links">
+                    <a href="integration/index.html">Overview Report</a>
+                    <a href="integration/trends.html">Performance Trends</a>
+                    <a href="integration/detailed.html">Detailed Analysis</a>
+                    <a href="integration/badges/integration-performance-badge.json">View Badge JSON</a>
+                    <a href="integration/data/metrics.json">View Metrics JSON</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info">
+            <h3>ℹ️ Information</h3>
+            <p>This is a local preview of benchmark reports generated from test data.</p>
+            <p><strong>To regenerate reports:</strong> Run LocalReportGeneratorTest</p>
+            <p><strong>Test data location:</strong></p>
+            <ul>
+                <li>Micro: src/test/resources/library-benchmark-results/</li>
+                <li>Integration: src/test/resources/integration-benchmark-results/</li>
+            </ul>
+        </div>
+        
+        <div class="timestamp">
+            Generated: ${timestamp}
+        </div>
+    </div>
+</body>
+</html>

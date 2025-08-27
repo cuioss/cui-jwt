@@ -136,9 +136,10 @@ class LocalReportGeneratorTest {
         String outputDirStr = outputDir.toString();
 
         // Generate HTML reports
-        reportGen.generateIndexPage(jsonFile, outputDirStr);
-        reportGen.generateTrendsPage(jsonFile, outputDirStr);
-        reportGen.generateDetailedPage(jsonFile, type.getDisplayName(), outputDirStr);
+        reportGen.generateIndexPage(jsonFile, type, outputDirStr);
+        reportGen.generateTrendsPage(outputDirStr);
+        reportGen.generateDetailedPage(outputDirStr);
+        reportGen.copySupportFiles(outputDirStr);
 
         // Generate badges
         Path badgesDir = outputDir.resolve("badges");
