@@ -111,7 +111,7 @@ class BenchmarkDataLoader {
     }
 
     /**
-     * Renders the percentiles chart
+     * Renders the percentiles chart as a grouped bar chart
      * @param {string} canvasId - The ID of the canvas element 
      */
     async renderPercentilesChart(canvasId) {
@@ -143,16 +143,15 @@ class BenchmarkDataLoader {
             datasets.push({
                 label: benchmark,
                 data: values,
-                borderColor: colors[colorIndex % colors.length],
-                backgroundColor: colors[colorIndex % colors.length].replace('0.8', '0.2'),
-                borderWidth: 2,
-                tension: 0.4
+                backgroundColor: colors[colorIndex % colors.length],
+                borderColor: colors[colorIndex % colors.length].replace('0.8', '1'),
+                borderWidth: 1
             });
             colorIndex++;
         }
         
         new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: percentileLabels,
                 datasets: datasets
@@ -188,7 +187,18 @@ class BenchmarkDataLoader {
                             display: true,
                             text: 'Latency (ms/op)'
                         },
-                        type: 'logarithmic'
+                        type: 'logarithmic',
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000) {
+                                    return (value/1000) + 's';
+                                } else if (value >= 1) {
+                                    return value + 'ms';
+                                } else {
+                                    return (value * 1000) + 'μs';
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -421,6 +431,55 @@ class BenchmarkDataLoader {
     }
 
     /**
+     * Loads the JMH Visualizer in an iframe
+     */
+    loadJMHVisualizer() {
+        const iframe = document.getElementById('jmh-visualizer-frame');
+        const errorDiv = document.getElementById('visualizer-error');
+        
+        if (!iframe) return;
+        
+        // Get the base URL of the current page
+        const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
+        const jsonUrl = baseUrl + '/data/benchmark-result.json';
+        
+        // Check if the JSON file exists
+        fetch(jsonUrl, { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    // Load JMH Visualizer with the JSON file URL
+                    iframe.src = 'https://jmh.morethan.io/?source=' + encodeURIComponent(jsonUrl);
+                    iframe.style.display = 'block';
+                    if (errorDiv) errorDiv.style.display = 'none';
+                    
+                    // Add timeout fallback
+                    let iframeLoaded = false;
+                    
+                    iframe.addEventListener('load', function() {
+                        iframeLoaded = true;
+                    });
+                    
+                    // If iframe doesn't load in 10 seconds, show error
+                    setTimeout(() => {
+                        if (!iframeLoaded && errorDiv) {
+                            iframe.style.display = 'none';
+                            errorDiv.style.display = 'block';
+                        }
+                    }, 10000);
+                } else {
+                    // JSON file not found, show error
+                    iframe.style.display = 'none';
+                    if (errorDiv) errorDiv.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                // Error checking file, show error
+                iframe.style.display = 'none';
+                if (errorDiv) errorDiv.style.display = 'block';
+            });
+    }
+
+    /**
      * Updates all page elements based on the current page type.
      * @param {string} pageType - Type of page ('index', 'trends', 'detailed')
      */
@@ -431,6 +490,7 @@ class BenchmarkDataLoader {
                     await this.renderOverview();
                     await this.renderBenchmarkTable();
                     await this.renderChart('overview-chart', 'overview');
+                    await this.renderPercentilesChart('percentiles-chart');
                     break;
                 case 'trends':
                     await this.renderOverview();
@@ -440,7 +500,7 @@ class BenchmarkDataLoader {
                 case 'detailed':
                     await this.renderOverview();
                     await this.renderBenchmarkTable();
-                    await this.renderPercentilesChart('percentiles-chart');
+                    this.loadJMHVisualizer();
                     break;
             }
         } catch (error) {

@@ -229,6 +229,24 @@ body {
     margin: 0.5rem 0;
 }
 
+.visualizer-container {
+    margin-top: 1rem;
+    min-height: 600px;
+}
+
+.jmh-visualizer iframe {
+    background: white;
+}
+
+#visualizer-error h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+#visualizer-error ol {
+    margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
     .nav-container {
         flex-direction: column;

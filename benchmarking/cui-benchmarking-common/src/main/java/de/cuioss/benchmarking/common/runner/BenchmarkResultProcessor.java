@@ -106,7 +106,7 @@ public class BenchmarkResultProcessor {
 
         // Write summary file for CI using JSON file
         writeSummaryFile(jsonFile, benchmarkType, outputDir);
-        
+
         // Move the original JSON file to data directory if it's not already there
         moveOriginalJsonToDataDir(jsonFile, outputDir);
 
@@ -192,7 +192,7 @@ public class BenchmarkResultProcessor {
     private void moveOriginalJsonToDataDir(Path jsonFile, String outputDir) throws IOException {
         Path dataDir = Path.of(outputDir + DATA_DIR);
         Path targetJson = dataDir.resolve(jsonFile.getFileName());
-        
+
         // If the JSON file is not already in the data directory, copy it there and delete original
         if (!jsonFile.getParent().equals(dataDir) && Files.exists(jsonFile)) {
             Files.copy(jsonFile, targetJson, StandardCopyOption.REPLACE_EXISTING);
