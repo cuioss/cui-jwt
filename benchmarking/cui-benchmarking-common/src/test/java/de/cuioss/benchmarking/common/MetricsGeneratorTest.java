@@ -21,11 +21,8 @@ import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.report.MetricsGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.openjdk.jmh.results.RunResult;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,14 +34,15 @@ class MetricsGeneratorTest {
     private final Gson gson = new Gson();
 
     @Test void generateMetricsJsonWithResults(@TempDir Path tempDir) throws Exception {
-        // Test with empty results instead of trying to run JMH benchmarks
-        // Full integration testing with actual JMH results should be done in integration tests
-        List<RunResult> results = List.of();
+        // Use real micro benchmark test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
 
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateMetricsJson(results, outputDir);
+        generator.generateMetricsJson(jsonFile, outputDir);
 
         // Verify metrics.json was created
         Path metricsFile = Path.of(outputDir, "metrics.json");
@@ -65,70 +63,61 @@ class MetricsGeneratorTest {
     }
 
     @Test void generateMetricsJsonWithEmptyResults(@TempDir Path tempDir) throws Exception {
+        // Create an empty JSON file
+        Path jsonFile = tempDir.resolve("empty-benchmark-result.json");
+        Files.writeString(jsonFile, "[]");
+        
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
-
-        generator.generateMetricsJson(emptyResults, outputDir);
-
-        // Should still create metrics file
-        Path metricsFile = Path.of(outputDir, "metrics.json");
-        assertTrue(Files.exists(metricsFile), "Metrics file should be created even with empty results");
-
-        // Verify basic structure
-        String content = Files.readString(metricsFile);
-        JsonObject metrics = gson.fromJson(content, JsonObject.class);
-
-        assertNotNull(metrics.get("timestamp"), "Timestamp should be present");
-        assertTrue(metrics.get("benchmarks").getAsJsonObject().entrySet().isEmpty(),
-                "Benchmarks object should be empty");
+        // Should throw since there's no data
+        assertThrows(IllegalArgumentException.class, 
+            () -> generator.generateMetricsJson(jsonFile, outputDir),
+            "Should fail fast with empty benchmark data");
     }
 
     @Test void verifyMetricsStructure(@TempDir Path tempDir) throws Exception {
-        // Load test benchmark results from resources instead of running JMH
-        String testResultsJson = Files.readString(
-                Path.of(getClass().getResource("/library-benchmark-results/micro-benchmark-result.json").toURI())
-        );
-
-        // Parse the JSON to create mock benchmark data
-        var benchmarkResults = gson.fromJson(testResultsJson, JsonArray.class);
-
-        // Create mock RunResults based on the JSON structure
-        // For the purpose of testing MetricsGenerator, we'll create a simplified test
-        // that verifies the generator can process benchmark-like data structures
+        // Use real micro benchmark test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
         
-        // Since JMH RunResult is not easily mockable, let's test the generator
-        // with a direct approach using the actual JSON test data
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
-        // Test with an empty result set first to ensure proper handling
-        List<RunResult> emptyResults = List.of();
-        generator.generateMetricsJson(emptyResults, outputDir);
+        generator.generateMetricsJson(jsonFile, outputDir);
 
-        // Verify metrics file was created even with empty results
+        // Verify metrics file was created
         Path metricsFile = Path.of(outputDir, "metrics.json");
         String content = Files.readString(metricsFile);
         JsonObject metrics = gson.fromJson(content, JsonObject.class);
 
-        // Check structure with empty results
+        // Check structure
         assertTrue(metrics.get("benchmarks").isJsonObject(),
                 "Benchmarks should be an object");
-        assertTrue(metrics.get("benchmarks").getAsJsonObject().entrySet().isEmpty(),
-                "Benchmarks object should be empty with no results");
+        assertFalse(metrics.get("benchmarks").getAsJsonObject().entrySet().isEmpty(),
+                "Benchmarks object should contain data");
         assertNotNull(metrics.get("timestamp"), "Timestamp should be present");
         assertNotNull(metrics.get("summary"), "Summary should be present");
+        
+        // Check summary has expected fields
+        JsonObject summary = metrics.get("summary").getAsJsonObject();
+        assertTrue(summary.has("total_benchmarks"));
+        assertTrue(summary.has("average_throughput"));
+        assertTrue(summary.has("performance_grade"));
     }
 
-    @Test void ensureDirectoryCreation(@TempDir Path tempDir) {
+    @Test void ensureDirectoryCreation(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         MetricsGenerator generator = new MetricsGenerator();
         String nestedDir = tempDir.resolve("nested/deep/path").toString();
 
-        List<RunResult> emptyResults = List.of();
-
         // Should create nested directories
-        assertDoesNotThrow(() -> generator.generateMetricsJson(emptyResults, nestedDir),
+        assertDoesNotThrow(() -> generator.generateMetricsJson(jsonFile, nestedDir),
                 "Should create nested directories as needed");
 
         assertTrue(Files.exists(Path.of(nestedDir, "metrics.json")),

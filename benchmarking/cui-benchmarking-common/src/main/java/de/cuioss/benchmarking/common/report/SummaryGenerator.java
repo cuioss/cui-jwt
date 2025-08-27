@@ -15,11 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,10 +25,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -84,30 +80,43 @@ public class SummaryGenerator {
      * @param outputFile the output file path
      * @throws IOException if writing the summary file fails
      */
-    public void writeSummary(Collection<RunResult> results, BenchmarkType type,
+    public void writeSummary(Path jsonFile, BenchmarkType type,
             Instant timestamp, String outputFile) throws IOException {
+        // Parse JSON file
+        JsonArray benchmarks;
+        if (Files.exists(jsonFile)) {
+            String jsonContent = Files.readString(jsonFile);
+            benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
+            if (benchmarks == null) {
+                benchmarks = new JsonArray();
+            }
+        } else {
+            // If no JSON file exists, create empty array for failed benchmarks
+            benchmarks = new JsonArray();
+        }
+        
         LOGGER.info(INFO.WRITING_BENCHMARK_SUMMARY.format(
-                results.size(), type.getDisplayName()));
+                benchmarks.size(), type.getDisplayName()));
 
         Map<String, Object> summary = new LinkedHashMap<>();
 
         // Basic information
         summary.put("timestamp", ISO_FORMATTER.format(timestamp.atOffset(ZoneOffset.UTC)));
         summary.put("benchmark_type", type.getIdentifier());
-        summary.put("execution_status", determineExecutionStatus(results));
+        summary.put("execution_status", determineExecutionStatus(benchmarks));
 
         // Performance metrics
-        var summaryMetrics = generateSummaryMetrics(results);
+        var summaryMetrics = generateSummaryMetrics(benchmarks);
         summary.put("metrics", summaryMetrics);
         summary.put(FIELD_TOTAL_BENCHMARKS, summaryMetrics.get(FIELD_TOTAL_BENCHMARKS));
-        summary.put("performance_grade", calculatePerformanceGrade(results));
+        summary.put("performance_grade", calculatePerformanceGrade(benchmarks));
         summary.put(FIELD_AVERAGE_THROUGHPUT, summaryMetrics.get(FIELD_AVERAGE_THROUGHPUT));
 
         // Quality gates
-        summary.put("quality_gates", evaluateQualityGates(results, type));
+        summary.put("quality_gates", evaluateQualityGates(benchmarks, type));
 
         // Recommendations
-        summary.put("recommendations", generateRecommendations(results, type));
+        summary.put("recommendations", generateRecommendations(benchmarks, type));
 
         // Artifact information
         summary.put("artifacts", listGeneratedArtifacts());
@@ -120,16 +129,25 @@ public class SummaryGenerator {
     /**
      * Determines the overall execution status of the benchmark run.
      */
-    private String determineExecutionStatus(Collection<RunResult> results) {
-        if (results.isEmpty()) {
+    private String determineExecutionStatus(JsonArray benchmarks) {
+        if (benchmarks.size() == 0) {
             return "FAILED";
         }
 
         // Check if all benchmarks have valid results
-        boolean allHaveResults = results.stream()
-                .allMatch(r -> r.getPrimaryResult() != null &&
-                        r.getPrimaryResult().getStatistics() != null &&
-                        r.getPrimaryResult().getStatistics().getN() > 0);
+        boolean allHaveResults = true;
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            if (!benchmark.has("primaryMetric")) {
+                allHaveResults = false;
+                break;
+            }
+            JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+            if (!metric.has("score") || metric.get("score").getAsDouble() <= 0) {
+                allHaveResults = false;
+                break;
+            }
+        }
 
         return allHaveResults ? "SUCCESS" : "PARTIAL";
     }
@@ -137,14 +155,14 @@ public class SummaryGenerator {
     /**
      * Generates summary metrics across all benchmarks.
      */
-    private Map<String, Object> generateSummaryMetrics(Collection<RunResult> results) {
+    private Map<String, Object> generateSummaryMetrics(JsonArray benchmarks) {
         Map<String, Object> metrics = new LinkedHashMap<>();
 
-        metrics.put(FIELD_TOTAL_BENCHMARKS, results.size());
-        metrics.put("successful_benchmarks", countSuccessfulBenchmarks(results));
-        metrics.put(FIELD_AVERAGE_THROUGHPUT, calculateAverageThroughput(results));
-        metrics.put("total_execution_time", calculateTotalExecutionTime(results));
-        metrics.put("performance_score", calculateOverallPerformanceScore(results));
+        metrics.put(FIELD_TOTAL_BENCHMARKS, benchmarks.size());
+        metrics.put("successful_benchmarks", countSuccessfulBenchmarks(benchmarks));
+        metrics.put(FIELD_AVERAGE_THROUGHPUT, calculateAverageThroughput(benchmarks));
+        metrics.put("total_execution_time", calculateTotalExecutionTime(benchmarks));
+        metrics.put("performance_score", calculateOverallPerformanceScore(benchmarks));
 
         return metrics;
     }
@@ -152,7 +170,7 @@ public class SummaryGenerator {
     /**
      * Evaluates quality gates based on performance thresholds.
      */
-    private Map<String, Object> evaluateQualityGates(Collection<RunResult> results, BenchmarkType type) {
+    private Map<String, Object> evaluateQualityGates(JsonArray benchmarks, BenchmarkType type) {
         Map<String, Object> gates = new LinkedHashMap<>();
 
         // Define thresholds based on benchmark type
@@ -160,7 +178,7 @@ public class SummaryGenerator {
         double throughputThreshold = type == BenchmarkType.MICRO ? 10_000 : 5_000; // 5 ops/ms = 5000 ops/s for HTTP
         double regressionThreshold = 10.0; // 10% regression threshold
 
-        double avgThroughput = calculateAverageThroughput(results);
+        double avgThroughput = calculateAverageThroughput(benchmarks);
 
         // Throughput gate
         Map<String, Object> throughputGate = new LinkedHashMap<>();
@@ -187,10 +205,10 @@ public class SummaryGenerator {
     /**
      * Generates recommendations based on benchmark results.
      */
-    private Map<String, Object> generateRecommendations(Collection<RunResult> results, BenchmarkType type) {
+    private Map<String, Object> generateRecommendations(JsonArray benchmarks, BenchmarkType type) {
         Map<String, Object> recommendations = new LinkedHashMap<>();
 
-        double avgThroughput = calculateAverageThroughput(results);
+        double avgThroughput = calculateAverageThroughput(benchmarks);
 
         // Performance recommendations
         if (avgThroughput < 1_000) {
@@ -202,7 +220,7 @@ public class SummaryGenerator {
         }
 
         // Deployment recommendations
-        boolean deploymentReady = "SUCCESS".equals(determineExecutionStatus(results)) &&
+        boolean deploymentReady = "SUCCESS".equals(determineExecutionStatus(benchmarks)) &&
                 avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 5_000);
 
         recommendations.put("deployment", deploymentReady ?
@@ -210,7 +228,7 @@ public class SummaryGenerator {
                 "Review performance before deployment");
 
         // Monitoring recommendations
-        if (results.size() < 5) {
+        if (benchmarks.size() < 5) {
             recommendations.put("monitoring", "Consider increasing benchmark coverage");
         } else {
             recommendations.put("monitoring", "Benchmark coverage adequate");
@@ -252,65 +270,72 @@ public class SummaryGenerator {
     /**
      * Counts benchmarks that completed successfully.
      */
-    private long countSuccessfulBenchmarks(Collection<RunResult> results) {
-        return results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getStatistics() != null)
-                .filter(r -> r.getPrimaryResult().getStatistics().getN() > 0)
-                .count();
+    private long countSuccessfulBenchmarks(JsonArray benchmarks) {
+        long count = 0;
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            if (benchmark.has("primaryMetric")) {
+                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+                if (metric.has("score") && metric.get("score").getAsDouble() > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     /**
      * Calculates average throughput across all benchmarks, normalized to ops/s.
      */
-    private double calculateAverageThroughput(Collection<RunResult> results) {
-        return results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .mapToDouble(r -> {
-                    double score = r.getPrimaryResult().getScore();
-                    String unit = r.getPrimaryResult().getScoreUnit();
+    private double calculateAverageThroughput(JsonArray benchmarks) {
+        double sum = 0;
+        int count = 0;
+        
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            if (benchmark.has("primaryMetric")) {
+                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+                double score = metric.get("score").getAsDouble();
+                String unit = metric.get("scoreUnit").getAsString();
 
-                    // Convert to ops/s based on unit
-                    if (unit.contains("ops/s") || unit.contains("ops/sec")) {
-                        return score;
-                    } else if (unit.contains("ops/ms")) {
-                        return score * 1000.0; // Convert ops/ms to ops/s
-                    } else if (unit.contains("ops/us")) {
-                        return score * 1_000_000.0; // Convert ops/us to ops/s
-                    } else if (unit.contains("s/op")) {
-                        return 1.0 / score; // Convert s/op to ops/s
-                    } else if (unit.contains("ms/op")) {
-                        return 1000.0 / score; // Convert ms/op to ops/s
-                    } else if (unit.contains("us/op")) {
-                        return 1_000_000.0 / score; // Convert us/op to ops/s
-                    } else {
-                        return score; // Default to raw score
-                    }
-                })
-                .filter(score -> score > 0)
-                .average()
-                .orElse(0.0);
+                // Convert to ops/s based on unit
+                double opsPerSec;
+                if (unit.contains("ops/s") || unit.contains("ops/sec")) {
+                    opsPerSec = score;
+                } else if (unit.contains("ops/ms")) {
+                    opsPerSec = score * 1000.0; // Convert ops/ms to ops/s
+                } else if (unit.contains("ops/us")) {
+                    opsPerSec = score * 1_000_000.0; // Convert ops/us to ops/s
+                } else if (unit.contains("s/op")) {
+                    opsPerSec = 1.0 / score; // Convert s/op to ops/s
+                } else if (unit.contains("ms/op")) {
+                    opsPerSec = 1000.0 / score; // Convert ms/op to ops/s
+                } else if (unit.contains("us/op")) {
+                    opsPerSec = 1_000_000.0 / score; // Convert us/op to ops/s
+                } else {
+                    opsPerSec = score; // Default to raw score
+                }
+                
+                if (opsPerSec > 0) {
+                    sum += opsPerSec;
+                    count++;
+                }
+            }
+        }
+        
+        return count > 0 ? sum / count : 0.0;
     }
 
-    private double calculateTotalExecutionTime(Collection<RunResult> results) {
-        return results.stream()
-                .mapToDouble(result -> {
-                    if (result.getParams() != null && result.getParams().getMeasurement() != null) {
-                        var measurement = result.getParams().getMeasurement();
-                        int iterations = measurement.getCount();
-                        var timeValue = measurement.getTime().convertTo(TimeUnit.SECONDS);
-                        return iterations * timeValue;
-                    }
-                    return 30.0;
-                })
-                .sum();
+    private double calculateTotalExecutionTime(JsonArray benchmarks) {
+        // Estimate based on number of benchmarks (typical benchmark runs ~30s each)
+        return benchmarks.size() * 30.0;
     }
 
     /**
      * Calculates an overall performance score.
      */
-    private double calculateOverallPerformanceScore(Collection<RunResult> results) {
-        double avgThroughput = calculateAverageThroughput(results);
+    private double calculateOverallPerformanceScore(JsonArray benchmarks) {
+        double avgThroughput = calculateAverageThroughput(benchmarks);
         return switch ((int) Math.log10(Math.max(1, avgThroughput))) {
             case 6, 7, 8, 9 -> PERFECT_SCORE;
             case 5 -> EXCELLENT_SCORE;
@@ -320,8 +345,8 @@ public class SummaryGenerator {
         };
     }
 
-    private String calculatePerformanceGrade(Collection<RunResult> results) {
-        double score = calculateOverallPerformanceScore(results);
+    private String calculatePerformanceGrade(JsonArray benchmarks) {
+        double score = calculateOverallPerformanceScore(benchmarks);
         return switch ((int) (score / GRADE_DIVISOR)) {
             case 10, 9 -> "A+";
             case 8 -> "A";

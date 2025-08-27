@@ -18,12 +18,9 @@ package de.cuioss.benchmarking.common;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.openjdk.jmh.results.RunResult;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,14 +31,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReportGeneratorTest {
 
     @Test void generateIndexPageWithResults(@TempDir Path tempDir) throws Exception {
-        // Use empty results instead of running actual benchmarks
-        // Testing HTML generation doesn't require actual benchmark data
-        Collection<RunResult> results = List.of();
+        // Use real micro benchmark test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(results, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         // Verify index.html was created
         Path indexFile = Path.of(outputDir, "index.html");
@@ -51,17 +49,19 @@ class ReportGeneratorTest {
         String content = Files.readString(indexFile);
         assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
         assertTrue(content.contains("<html"), "Should have HTML tag");
-        assertTrue(content.contains("Benchmark Results"), "Should have title");
+        assertTrue(content.contains("CUI Benchmarking Results"), "Should have title");
         assertTrue(content.contains("<style>"), "Should have embedded CSS");
     }
 
     @Test void generateIndexPageWithEmptyResults(@TempDir Path tempDir) throws Exception {
+        // Create an empty JSON file
+        Path jsonFile = tempDir.resolve("empty-benchmark-result.json");
+        Files.writeString(jsonFile, "[]");
+        
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
-
-        generator.generateIndexPage(emptyResults, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         // Should still create index page
         Path indexFile = Path.of(outputDir, "index.html");
@@ -74,14 +74,15 @@ class ReportGeneratorTest {
     }
 
     @Test void generateTrendsPage(@TempDir Path tempDir) throws Exception {
-        // Use empty results instead of running actual benchmarks
-        // Testing HTML generation doesn't require actual benchmark data
-        Collection<RunResult> results = List.of();
+        // Use real integration test data
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateTrendsPage(results, outputDir);
+        generator.generateTrendsPage(jsonFile, outputDir);
 
         // Verify trends.html was created
         Path trendsFile = Path.of(outputDir, "trends.html");
@@ -94,16 +95,19 @@ class ReportGeneratorTest {
         assertTrue(content.contains("<style>"), "Should have embedded CSS");
     }
 
-    @Test void generatePagesWithNestedDirectory(@TempDir Path tempDir) {
+    @Test void generatePagesWithNestedDirectory(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         ReportGenerator generator = new ReportGenerator();
         String nestedDir = tempDir.resolve("reports/html/output").toString();
 
-        List<RunResult> emptyResults = List.of();
-
         // Should create nested directories
         assertDoesNotThrow(() -> {
-            generator.generateIndexPage(emptyResults, nestedDir);
-            generator.generateTrendsPage(emptyResults, nestedDir);
+            generator.generateIndexPage(jsonFile, nestedDir);
+            generator.generateTrendsPage(jsonFile, nestedDir);
         }, "Should create nested directories as needed");
 
         assertTrue(Files.exists(Path.of(nestedDir, "index.html")),
@@ -113,12 +117,15 @@ class ReportGeneratorTest {
     }
 
     @Test void generateResponsiveHtml(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
-
-        generator.generateIndexPage(emptyResults, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
@@ -129,12 +136,15 @@ class ReportGeneratorTest {
     }
 
     @Test void generateHtmlWithValidCss(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
-
-        generator.generateIndexPage(emptyResults, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);

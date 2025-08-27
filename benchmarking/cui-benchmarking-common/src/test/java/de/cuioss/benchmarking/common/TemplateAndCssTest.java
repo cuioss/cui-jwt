@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -112,11 +113,15 @@ class TemplateAndCssTest {
     }
 
     @Test void cssIsEmbeddedInGeneratedHtml(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
-        generator.generateIndexPage(emptyResults, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
@@ -142,12 +147,11 @@ class TemplateAndCssTest {
         Path targetJson = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, targetJson);
         
-        // Use empty results for testing HTML/CSS generation
-        var results = List.<RunResult>of();
+        // BenchmarkResultProcessor expects empty collection but checks for JSON file
         String outputDir = tempDir.toString();
 
         // Process results to generate full deployment structure
-        processor.processResults(results, outputDir);
+        processor.processResults(List.of(), outputDir);
 
         // Verify HTML files exist
         assertTrue(Files.exists(Path.of(outputDir, "index.html")),
@@ -166,12 +170,15 @@ class TemplateAndCssTest {
     }
 
     @Test void cssClassesForPerformanceGrades(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        // Generate with empty results for testing CSS generation
-        var results = List.<RunResult>of();
-        generator.generateIndexPage(results, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);
@@ -191,11 +198,15 @@ class TemplateAndCssTest {
     }
 
     @Test void responsiveCssStyles(@TempDir Path tempDir) throws Exception {
+        // Use real test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+        
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
-        generator.generateIndexPage(emptyResults, outputDir);
+        generator.generateIndexPage(jsonFile, outputDir);
 
         Path indexFile = Path.of(outputDir, "index.html");
         String content = Files.readString(indexFile);

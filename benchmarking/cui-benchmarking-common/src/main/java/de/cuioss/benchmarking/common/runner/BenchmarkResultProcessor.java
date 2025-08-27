@@ -95,17 +95,17 @@ public class BenchmarkResultProcessor {
         // Generate all badges using JSON file
         generateBadges(jsonFile, benchmarkType, outputDir);
 
-        // Generate performance metrics (still uses RunResult for now)
-        generateMetrics(results, outputDir);
+        // Generate performance metrics using JSON file
+        generateMetrics(jsonFile, outputDir);
 
-        // Generate HTML reports (still uses RunResult for now)
-        generateReports(results, outputDir);
+        // Generate HTML reports using JSON file
+        generateReports(jsonFile, outputDir);
 
         // Generate GitHub Pages structure
         generateGitHubPagesStructure(outputDir);
 
-        // Write summary file for CI (still uses RunResult for now)
-        writeSummaryFile(results, benchmarkType, outputDir);
+        // Write summary file for CI using JSON file
+        writeSummaryFile(jsonFile, benchmarkType, outputDir);
 
         LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
     }
@@ -143,23 +143,23 @@ public class BenchmarkResultProcessor {
     /**
      * Generates performance metrics in JSON format.
      */
-    private void generateMetrics(Collection<RunResult> results, String outputDir) throws IOException {
+    private void generateMetrics(Path jsonFile, String outputDir) throws IOException {
         MetricsGenerator metricsGen = new MetricsGenerator();
 
         LOGGER.info(INFO.GENERATING_METRICS::format);
-        metricsGen.generateMetricsJson(results, outputDir + DATA_DIR);
+        metricsGen.generateMetricsJson(jsonFile, outputDir + DATA_DIR);
     }
 
     /**
      * Generates HTML reports with embedded CSS.
      */
-    private void generateReports(Collection<RunResult> results, String outputDir) throws IOException {
+    private void generateReports(Path jsonFile, String outputDir) throws IOException {
         ReportGenerator reportGen = new ReportGenerator();
 
         LOGGER.info(INFO.GENERATING_REPORTS::format);
-        reportGen.generateIndexPage(results, outputDir);
-        reportGen.generateTrendsPage(results, outputDir);
-        reportGen.generateDetailedPage(results, benchmarkType.getDisplayName(), outputDir);
+        reportGen.generateIndexPage(jsonFile, outputDir);
+        reportGen.generateTrendsPage(jsonFile, outputDir);
+        reportGen.generateDetailedPage(jsonFile, benchmarkType.getDisplayName(), outputDir);
     }
 
     /**
@@ -175,12 +175,12 @@ public class BenchmarkResultProcessor {
     /**
      * Writes a summary file for CI consumption.
      */
-    private void writeSummaryFile(Collection<RunResult> results, BenchmarkType type, String outputDir)
+    private void writeSummaryFile(Path jsonFile, BenchmarkType type, String outputDir)
             throws IOException {
         SummaryGenerator summaryGen = new SummaryGenerator();
 
         LOGGER.info(INFO.WRITING_SUMMARY::format);
-        summaryGen.writeSummary(results, type, Instant.now(), outputDir + SUMMARY_FILE);
+        summaryGen.writeSummary(jsonFile, type, Instant.now(), outputDir + SUMMARY_FILE);
     }
     
 }

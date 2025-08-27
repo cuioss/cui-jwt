@@ -20,14 +20,10 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.openjdk.jmh.results.RunResult;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,11 +42,13 @@ class SummaryGeneratorTest {
     }
 
     @Test void writeSummaryWithEmptyResults() throws IOException {
-        Collection<RunResult> results = new ArrayList<>();
+        // Create an empty JSON file
+        Path jsonFile = tempDir.resolve("benchmark-result.json");
+        Files.writeString(jsonFile, "[]");
 
         // Generate summary with empty results
         Path summaryFile = tempDir.resolve("summary.json");
-        generator.writeSummary(results, BenchmarkType.MICRO, Instant.now(), summaryFile.toString());
+        generator.writeSummary(jsonFile, BenchmarkType.MICRO, Instant.now(), summaryFile.toString());
 
         // Verify summary file was created
         assertTrue(Files.exists(summaryFile));
@@ -66,10 +64,13 @@ class SummaryGeneratorTest {
     }
 
     @Test void writeSummaryWithIntegrationBenchmark() throws IOException {
-        Collection<RunResult> results = new ArrayList<>();
+        // Use real integration test data
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
 
         Path summaryFile = tempDir.resolve("summary.json");
-        generator.writeSummary(results, BenchmarkType.INTEGRATION, Instant.now(), summaryFile.toString());
+        generator.writeSummary(jsonFile, BenchmarkType.INTEGRATION, Instant.now(), summaryFile.toString());
 
         String content = Files.readString(summaryFile);
         Map<String, Object> summary = gson.fromJson(content, Map.class);
@@ -78,21 +79,25 @@ class SummaryGeneratorTest {
     }
 
     @Test void writeSummaryThrowsIOException() {
-        Collection<RunResult> results = new ArrayList<>();
-
+        // Create a JSON file
+        Path jsonFile = tempDir.resolve("benchmark-result.json");
+        
         // Use invalid path to trigger IOException
         String invalidPath = "/invalid/path/that/does/not/exist/summary.json";
 
         // Should throw IOException
         assertThrows(IOException.class, () ->
-                generator.writeSummary(results, BenchmarkType.INTEGRATION, Instant.now(), invalidPath));
+                generator.writeSummary(jsonFile, BenchmarkType.INTEGRATION, Instant.now(), invalidPath));
     }
 
     @Test void writeSummaryCreatesRequiredFields() throws IOException {
-        Collection<RunResult> results = new ArrayList<>();
+        // Use real micro benchmark test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
 
         Path summaryFile = tempDir.resolve("summary.json");
-        generator.writeSummary(results, BenchmarkType.MICRO, Instant.now(), summaryFile.toString());
+        generator.writeSummary(jsonFile, BenchmarkType.MICRO, Instant.now(), summaryFile.toString());
 
         String content = Files.readString(summaryFile);
         Map<String, Object> summary = gson.fromJson(content, Map.class);
