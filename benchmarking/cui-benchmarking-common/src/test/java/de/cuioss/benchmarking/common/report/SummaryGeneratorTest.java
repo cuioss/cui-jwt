@@ -20,6 +20,7 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,7 +82,7 @@ class SummaryGeneratorTest {
     @Test void writeSummaryThrowsIOException() {
         // Create a JSON file
         Path jsonFile = tempDir.resolve("benchmark-result.json");
-        
+
         // Use invalid path to trigger IOException
         String invalidPath = "/invalid/path/that/does/not/exist/summary.json";
 

@@ -16,11 +16,11 @@
 package de.cuioss.benchmarking.common;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.report.MetricsGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -66,14 +66,14 @@ class MetricsGeneratorTest {
         // Create an empty JSON file
         Path jsonFile = tempDir.resolve("empty-benchmark-result.json");
         Files.writeString(jsonFile, "[]");
-        
+
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
         // Should throw since there's no data
-        assertThrows(IllegalArgumentException.class, 
-            () -> generator.generateMetricsJson(jsonFile, outputDir),
-            "Should fail fast with empty benchmark data");
+        assertThrows(IllegalArgumentException.class,
+                () -> generator.generateMetricsJson(jsonFile, outputDir),
+                "Should fail fast with empty benchmark data");
     }
 
     @Test void verifyMetricsStructure(@TempDir Path tempDir) throws Exception {
@@ -81,7 +81,7 @@ class MetricsGeneratorTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
@@ -99,7 +99,7 @@ class MetricsGeneratorTest {
                 "Benchmarks object should contain data");
         assertNotNull(metrics.get("timestamp"), "Timestamp should be present");
         assertNotNull(metrics.get("summary"), "Summary should be present");
-        
+
         // Check summary has expected fields
         JsonObject summary = metrics.get("summary").getAsJsonObject();
         assertTrue(summary.has("total_benchmarks"));
@@ -112,7 +112,7 @@ class MetricsGeneratorTest {
         Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
         Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         MetricsGenerator generator = new MetricsGenerator();
         String nestedDir = tempDir.resolve("nested/deep/path").toString();
 

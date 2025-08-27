@@ -25,7 +25,10 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -75,11 +78,11 @@ public class BadgeGenerator {
      */
     public void generatePerformanceBadge(Path jsonFile, BenchmarkType type, String outputDir)
             throws IOException {
-        
+
         // Parse JSON file
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-        
+
         PerformanceScore score = calculatePerformanceScore(benchmarks);
 
         Map<String, Object> badge = new LinkedHashMap<>();
@@ -107,7 +110,7 @@ public class BadgeGenerator {
             throws IOException {
         // Load previous results for trend analysis
         PerformanceHistory history = loadPerformanceHistory(outputDir + "/../history");
-        
+
         // Parse current results
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
@@ -154,77 +157,57 @@ public class BadgeGenerator {
         // Group benchmarks by name to pair throughput and latency
         Map<String, Double> throughputByBenchmark = new LinkedHashMap<>();
         Map<String, Double> latencyByBenchmark = new LinkedHashMap<>();
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            
+
             String benchmarkName = benchmark.get("benchmark").getAsString();
             String mode = benchmark.get("mode").getAsString();
-            
+
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
             double score = primaryMetric.get("score").getAsDouble();
             String unit = primaryMetric.get("scoreUnit").getAsString();
-            
+
             // Process throughput results (mode == "thrpt" or unit contains "ops")
             if ("thrpt".equals(mode) || unit.contains("ops")) {
-                double opsPerSec = convertToOpsPerSecond(score, unit);
+                double opsPerSec = MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 throughputByBenchmark.put(benchmarkName, opsPerSec);
-            }
-            // Process latency results (mode == "avgt", "sample", or unit contains "/op")
-            else if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
-                double msPerOp = convertToMilliseconds(score, unit);
+                // Also calculate latency from throughput
+                if (opsPerSec > 0) {
+                    double msPerOp = 1000.0 / opsPerSec; // Convert ops/s to ms/op
+                    latencyByBenchmark.put(benchmarkName, msPerOp);
+                }
+            } else if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
+                double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
                 latencyByBenchmark.put(benchmarkName, msPerOp);
+                // Also calculate throughput from latency if not already present
+                if (!throughputByBenchmark.containsKey(benchmarkName) && msPerOp > 0) {
+                    double opsPerSec = 1000.0 / msPerOp; // Convert ms/op to ops/s
+                    throughputByBenchmark.put(benchmarkName, opsPerSec);
+                }
             }
         }
-        
+
         // Calculate averages
         double avgThroughput = throughputByBenchmark.values().stream()
                 .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
-        
+
         double avgLatency = latencyByBenchmark.values().stream()
                 .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
-        
+
         // Calculate weighted score (higher is better for throughput, lower is better for latency)
         double throughputScore = Math.min(avgThroughput / 100, 1000); // Normalize
         double latencyScore = avgLatency > 0 ? 1000 / avgLatency : 1000; // Invert and normalize
         double weightedScore = throughputScore * 0.6 + latencyScore * 0.4;
-        
+
         return new PerformanceScore(weightedScore, avgThroughput, avgLatency);
     }
 
-    private double convertToOpsPerSecond(double value, String unit) {
-        if (unit.contains("ops/s")) {
-            return value;
-        } else if (unit.contains("ops/ms")) {
-            return value * 1000;
-        } else if (unit.contains("ops/us")) {
-            return value * 1_000_000;
-        } else if (unit.contains("ops/ns")) {
-            return value * 1_000_000_000;
-        } else {
-            // Unknown unit, use as-is
-            return value;
-        }
-    }
-
-    private double convertToMilliseconds(double value, String unit) {
-        if (unit.contains("ms/op")) {
-            return value;
-        } else if (unit.contains("s/op")) {
-            return value * 1000;
-        } else if (unit.contains("us/op")) {
-            return value / 1000;
-        } else if (unit.contains("ns/op")) {
-            return value / 1_000_000;
-        } else {
-            // Unknown unit, use as-is
-            return value;
-        }
-    }
+    // All metric conversions now use the centralized MetricConversionUtil
 
     private String formatPerformanceMessage(PerformanceScore score) {
         // Format: "Score (throughput, latency)"
@@ -232,30 +215,30 @@ public class BadgeGenerator {
         
         String scoreFormatted = formatNumber(score.score());
         String throughputFormatted = formatNumber(score.throughput()) + " ops/s";
-        String latencyFormatted = formatLatency(score.latency()) + "ms";
-        
-        return String.format("%s (%s, %s)", scoreFormatted, throughputFormatted, latencyFormatted);
+        String latencyFormatted = formatLatency(score.latency());
+
+        return "%s (%s, %s)".formatted(scoreFormatted, throughputFormatted, latencyFormatted);
     }
 
     private String formatNumber(double value) {
         if (value >= 1_000_000) {
-            return String.format("%.1fM", value / 1_000_000);
+            return "%.1fM".formatted(value / 1_000_000);
         } else if (value >= 1000) {
-            return String.format("%.1fK", value / 1000);
+            return "%.1fK".formatted(value / 1000);
         } else if (value >= 100) {
-            return String.format("%.0f", value);
+            return "%.0f".formatted(value);
         } else {
-            return String.format("%.1f", value);
+            return "%.1f".formatted(value);
         }
     }
 
     private String formatLatency(double ms) {
         if (ms >= 1000) {
-            return String.format("%.1fs", ms / 1000);
+            return "%.1fs".formatted(ms / 1000);
         } else if (ms >= 1) {
-            return String.format("%.1f", ms);
+            return "%.1fms".formatted(ms);
         } else {
-            return String.format("%.2f", ms);
+            return "%.2fms".formatted(ms);
         }
     }
 
@@ -275,8 +258,8 @@ public class BadgeGenerator {
 
     private String formatTrendMessage(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> String.format("↑ +%.1f%%", trend.percentChange());
-            case DEGRADING -> String.format("↓ %.1f%%", trend.percentChange());
+            case IMPROVING -> "↑ +%.1f%%".formatted(trend.percentChange());
+            case DEGRADING -> "↓ %.1f%%".formatted(trend.percentChange());
             case STABLE -> "→ stable";
         };
     }
@@ -300,10 +283,17 @@ public class BadgeGenerator {
     }
 
     // Value classes for structured data
-    private record PerformanceScore(double score, double throughput, double latency) {}
-    private record TrendAnalysis(TrendDirection direction, double percentChange) {}
-    private record PerformanceHistory(List<HistoricalResult> results) {}
-    private record HistoricalResult(Instant timestamp, double score) {}
+    private record PerformanceScore(double score, double throughput, double latency) {
+    }
+
+    private record TrendAnalysis(TrendDirection direction, double percentChange) {
+    }
+
+    private record PerformanceHistory(List<HistoricalResult> results) {
+    }
+
+    private record HistoricalResult(Instant timestamp, double score) {
+    }
 
     private enum TrendDirection {
         IMPROVING, STABLE, DEGRADING

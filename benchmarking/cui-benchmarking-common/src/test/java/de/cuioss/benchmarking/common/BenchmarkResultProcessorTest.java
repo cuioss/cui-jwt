@@ -41,7 +41,7 @@ class BenchmarkResultProcessorTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path targetJson = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, targetJson);
-        
+
         // Use empty results - the processor will read from JSON file
         Collection<RunResult> results = List.of();
 
@@ -85,7 +85,7 @@ class BenchmarkResultProcessorTest {
         String outputDir = tempDir.toString();
 
         // Should FAIL FAST when JSON file doesn't exist
-        assertThrows(IllegalStateException.class, 
+        assertThrows(IllegalStateException.class,
                 () -> processor.processResults(emptyResults, outputDir),
                 "Processing should fail when JSON file doesn't exist");
 
@@ -103,7 +103,7 @@ class BenchmarkResultProcessorTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path targetJson = nestedDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, targetJson);
-        
+
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
         String outputDir = nestedDir.toString();
 

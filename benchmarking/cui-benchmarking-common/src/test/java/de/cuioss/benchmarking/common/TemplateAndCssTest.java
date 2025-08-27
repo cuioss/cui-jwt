@@ -20,7 +20,6 @@ import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -117,7 +115,7 @@ class TemplateAndCssTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -146,7 +144,7 @@ class TemplateAndCssTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path targetJson = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, targetJson);
-        
+
         // BenchmarkResultProcessor expects empty collection but checks for JSON file
         String outputDir = tempDir.toString();
 
@@ -174,7 +172,7 @@ class TemplateAndCssTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -202,7 +200,7 @@ class TemplateAndCssTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 

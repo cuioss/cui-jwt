@@ -94,7 +94,7 @@ public class SummaryGenerator {
             // If no JSON file exists, create empty array for failed benchmarks
             benchmarks = new JsonArray();
         }
-        
+
         LOGGER.info(INFO.WRITING_BENCHMARK_SUMMARY.format(
                 benchmarks.size(), type.getDisplayName()));
 
@@ -290,7 +290,7 @@ public class SummaryGenerator {
     private double calculateAverageThroughput(JsonArray benchmarks) {
         double sum = 0;
         int count = 0;
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             if (benchmark.has("primaryMetric")) {
@@ -315,14 +315,14 @@ public class SummaryGenerator {
                 } else {
                     opsPerSec = score; // Default to raw score
                 }
-                
+
                 if (opsPerSec > 0) {
                     sum += opsPerSec;
                     count++;
                 }
             }
         }
-        
+
         return count > 0 ? sum / count : 0.0;
     }
 

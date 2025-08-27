@@ -26,7 +26,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -62,7 +63,7 @@ public class ReportGenerator {
         // Parse JSON file
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-        
+
         LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(benchmarks.size()));
 
         String html = generateHtmlHeader("CUI Benchmarking Results", true) +
@@ -89,7 +90,7 @@ public class ReportGenerator {
         // Parse JSON file
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-        
+
         LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
 
         String html = generateHtmlHeader("Performance Trends", true) +
@@ -103,7 +104,7 @@ public class ReportGenerator {
         Files.writeString(trendsFile, html);
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
-    
+
     /**
      * Generates the detailed visualizer page with JMH Visualizer integration.
      *
@@ -116,7 +117,7 @@ public class ReportGenerator {
         // Parse JSON file  
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-        
+
         LOGGER.info(INFO.GENERATING_REPORTS::format);
 
         String html = generateHtmlHeader("Detailed Benchmark Analysis", true) +
@@ -135,14 +136,14 @@ public class ReportGenerator {
         String template = loadTemplate("report-header.html");
         template = template.replace("${title}", title);
         template = template.replace("${css}", loadTemplate("report-styles.css"));
-        
+
         if (includeChartJs) {
-            template = template.replace("${chartScript}", 
-                "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>");
+            template = template.replace("${chartScript}",
+                    "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>");
         } else {
             template = template.replace("${chartScript}", "");
         }
-        
+
         return template;
     }
 
@@ -152,82 +153,82 @@ public class ReportGenerator {
 
     private String generateOverviewSection(JsonArray benchmarks) throws IOException {
         String template = loadTemplate("overview-section.html");
-        
+
         // Calculate metrics from JSON
         int totalBenchmarks = benchmarks.size();
         double avgThroughput = calculateAverageThroughput(benchmarks);
         double avgLatency = calculateAverageLatency(benchmarks);
         String grade = calculatePerformanceGrade(avgThroughput, avgLatency);
-        
+
         template = template.replace("${totalBenchmarks}", String.valueOf(totalBenchmarks));
         template = template.replace("${performanceGrade}", grade);
         template = template.replace("${avgThroughput}", formatThroughput(avgThroughput));
         template = template.replace("${avgLatency}", formatLatency(avgLatency));
-        template = template.replace("${timestamp}", 
-            DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
-        
+        template = template.replace("${timestamp}",
+                DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
+
         return template;
     }
 
     private String generateBenchmarkTable(JsonArray benchmarks) throws IOException {
         String template = loadTemplate("benchmark-table.html");
         StringBuilder rows = new StringBuilder();
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             rows.append(generateBenchmarkRow(benchmark));
         }
-        
+
         return template.replace("${tableRows}", rows.toString());
     }
 
     private String generateBenchmarkRow(JsonObject benchmark) {
         String name = benchmark.get("benchmark").getAsString();
         String mode = benchmark.get("mode").getAsString();
-        
+
         JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
         double score = primaryMetric.get("score").getAsDouble();
         String unit = primaryMetric.get("scoreUnit").getAsString();
-        
+
         // Extract just the method name from full benchmark name
         String displayName = name.substring(name.lastIndexOf('.') + 1);
-        
+
         return String.format(
-            "<tr>" +
-            "<td>%s</td>" +
-            "<td>%s</td>" +
-            "<td>%.2f</td>" +
-            "<td>%s</td>" +
-            "</tr>\n",
-            displayName, mode, score, unit
+                "<tr>" +
+                        "<td>%s</td>" +
+                        "<td>%s</td>" +
+                        "<td>%.2f</td>" +
+                        "<td>%s</td>" +
+                        "</tr>\n",
+                displayName, mode, score, unit
         );
     }
 
     private String generateTrendsSection(JsonArray benchmarks) throws IOException {
         String template = loadTemplate("trends-section.html");
-        
+
         // For now, show current data as a starting point
         // In production, this would load historical data
         String chartData = generateChartData(benchmarks);
-        
+
         // Calculate performance metrics
         double avgThroughput = calculateAverageThroughput(benchmarks);
         String grade = calculatePerformanceGrade(avgThroughput, 0);
-        
+
         template = template.replace("${benchmarkCount}", String.valueOf(benchmarks.size()));
         template = template.replace("${performanceGrade}", grade);
         template = template.replace("${chartData}", chartData);
         template = template.replace("${trendsTable}", generateTrendsTable(benchmarks));
-        
+
         return template;
     }
 
     private String generateDetailedSection(JsonArray benchmarks, String benchmarkType) throws IOException {
         String template = loadTemplate("detailed-section.html");
-        
+
         template = template.replace("${benchmarkType}", benchmarkType);
         template = template.replace("${totalBenchmarks}", String.valueOf(benchmarks.size()));
-        
+
         return template;
     }
 
@@ -235,22 +236,22 @@ public class ReportGenerator {
         List<String> labels = new ArrayList<>();
         List<Double> throughputData = new ArrayList<>();
         List<Double> latencyData = new ArrayList<>();
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             String name = benchmark.get("benchmark").getAsString();
             String mode = benchmark.get("mode").getAsString();
-            
+
             // Extract method name
             String label = name.substring(name.lastIndexOf('.') + 1);
-            
+
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
             double score = primaryMetric.get("score").getAsDouble();
             String unit = primaryMetric.get("scoreUnit").getAsString();
-            
+
             if ("thrpt".equals(mode) || unit.contains("ops")) {
                 labels.add(label);
-                double opsPerSec = convertToOpsPerSecond(score, unit);
+                double opsPerSec = MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 throughputData.add(opsPerSec);
                 latencyData.add(0.0); // No latency for throughput benchmarks
             } else if (unit.contains("/op")) {
@@ -258,7 +259,7 @@ public class ReportGenerator {
                     labels.add(label);
                     throughputData.add(0.0); // No throughput for latency benchmarks
                 }
-                double ms = convertToMilliseconds(score, unit);
+                double ms = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
                 int index = labels.indexOf(label);
                 if (index >= 0 && index < latencyData.size()) {
                     latencyData.set(index, ms);
@@ -267,16 +268,17 @@ public class ReportGenerator {
                 }
             }
         }
-        
-        return String.format(
-            "{\n" +
-            "  labels: %s,\n" +
-            "  throughput: %s,\n" +
-            "  latency: %s\n" +
-            "}",
-            GSON.toJson(labels),
-            GSON.toJson(throughputData),
-            GSON.toJson(latencyData)
+
+        return """
+                {
+                  labels: %s,
+                  throughput: %s,
+                  latency: %s
+                }\
+                """.formatted(
+                GSON.toJson(labels),
+                GSON.toJson(throughputData),
+                GSON.toJson(latencyData)
         );
     }
 
@@ -285,24 +287,24 @@ public class ReportGenerator {
         table.append("<table class=\"table\">\n");
         table.append("<thead><tr><th>Benchmark</th><th>Current</th><th>Previous</th><th>Change</th></tr></thead>\n");
         table.append("<tbody>\n");
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             String name = benchmark.get("benchmark").getAsString();
             String displayName = name.substring(name.lastIndexOf('.') + 1);
-            
+
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
             double score = primaryMetric.get("score").getAsDouble();
             String unit = primaryMetric.get("scoreUnit").getAsString();
-            
+
             table.append("<tr>");
             table.append("<td>").append(displayName).append("</td>");
-            table.append("<td>").append(String.format("%.2f %s", score, unit)).append("</td>");
+            table.append("<td>").append("%.2f %s".formatted(score, unit)).append("</td>");
             table.append("<td>N/A</td>"); // No historical data yet
             table.append("<td>-</td>");
             table.append("</tr>\n");
         }
-        
+
         table.append("</tbody></table>");
         return table.toString();
     }
@@ -310,17 +312,14 @@ public class ReportGenerator {
     private double calculateAverageThroughput(JsonArray benchmarks) {
         return benchmarks.asList().stream()
                 .map(JsonElement::getAsJsonObject)
-                .filter(b -> {
-                    String mode = b.get("mode").getAsString();
-                    String unit = b.getAsJsonObject("primaryMetric").get("scoreUnit").getAsString();
-                    return "thrpt".equals(mode) || unit.contains("ops");
-                })
                 .mapToDouble(b -> {
                     JsonObject metric = b.getAsJsonObject("primaryMetric");
                     double score = metric.get("score").getAsDouble();
                     String unit = metric.get("scoreUnit").getAsString();
-                    return convertToOpsPerSecond(score, unit);
+                    // Use centralized conversion
+                    return MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 })
+                .filter(ops -> ops > 0) // Filter out invalid values
                 .average()
                 .orElse(0.0);
     }
@@ -328,56 +327,25 @@ public class ReportGenerator {
     private double calculateAverageLatency(JsonArray benchmarks) {
         return benchmarks.asList().stream()
                 .map(JsonElement::getAsJsonObject)
-                .filter(b -> {
-                    String unit = b.getAsJsonObject("primaryMetric").get("scoreUnit").getAsString();
-                    return unit.contains("/op");
-                })
                 .mapToDouble(b -> {
                     JsonObject metric = b.getAsJsonObject("primaryMetric");
                     double score = metric.get("score").getAsDouble();
                     String unit = metric.get("scoreUnit").getAsString();
-                    return convertToMilliseconds(score, unit);
+                    // Use centralized conversion
+                    double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
+                    LOGGER.debug("Latency calc: score={}, unit={}, ms/op={}", score, unit, msPerOp);
+                    return msPerOp;
                 })
+                .filter(ms -> ms > 0) // Filter out invalid values
                 .average()
                 .orElse(0.0);
     }
 
-    private double convertToOpsPerSecond(double value, String unit) {
-        if (unit.contains("ops/s")) {
-            return value;
-        } else if (unit.contains("ops/ms")) {
-            return value * 1000;
-        } else if (unit.contains("ops/us")) {
-            return value * 1_000_000;
-        } else if (unit.contains("ops/ns")) {
-            return value * 1_000_000_000;
-        }
-        return value;
-    }
-
-    private double convertToMilliseconds(double value, String unit) {
-        if (unit.contains("ms/op")) {
-            return value;
-        } else if (unit.contains("s/op")) {
-            return value * 1000;
-        } else if (unit.contains("us/op")) {
-            return value / 1000;
-        } else if (unit.contains("ns/op")) {
-            return value / 1_000_000;
-        }
-        return value;
-    }
+    // All metric conversions now use the centralized MetricConversionUtil
 
     private String calculatePerformanceGrade(double throughput, double latency) {
-        // Simple grading based on throughput (ops/s) and latency (ms)
-        double score = (throughput / 1000) * (latency > 0 ? 100 / latency : 100);
-        
-        if (score >= 1000) return "A+";
-        if (score >= 500) return "A";
-        if (score >= 200) return "B";
-        if (score >= 100) return "C";
-        if (score >= 50) return "D";
-        return "F";
+        // Use centralized grade calculation based on throughput
+        return MetricConversionUtil.calculatePerformanceGrade(throughput);
     }
 
     private String getGradeClass(String grade) {
@@ -387,28 +355,28 @@ public class ReportGenerator {
     private String formatThroughput(double throughput) {
         if (throughput == 0) return "N/A";
         if (throughput >= 1_000_000) {
-            return String.format("%.1fM ops/s", throughput / 1_000_000);
+            return "%.1fM ops/s".formatted(throughput / 1_000_000);
         } else if (throughput >= 1000) {
-            return String.format("%.1fK ops/s", throughput / 1000);
+            return "%.1fK ops/s".formatted(throughput / 1000);
         }
-        return String.format("%.1f ops/s", throughput);
+        return "%.1f ops/s".formatted(throughput);
     }
 
     private String formatLatency(double latency) {
         if (latency == 0) return "N/A";
         if (latency >= 1000) {
-            return String.format("%.1f s", latency / 1000);
+            return "%.1f s".formatted(latency / 1000);
         } else if (latency >= 1) {
-            return String.format("%.1f ms", latency);
+            return "%.1f ms".formatted(latency);
         } else {
-            return String.format("%.2f ms", latency);
+            return "%.2f ms".formatted(latency);
         }
     }
 
     private String generateHtmlFooter() throws IOException {
         String template = loadTemplate("report-footer.html");
-        template = template.replace("${timestamp}", 
-            DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
+        template = template.replace("${timestamp}",
+                DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
         return template;
     }
 

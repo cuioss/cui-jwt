@@ -18,14 +18,15 @@ package de.cuioss.benchmarking.common.report;
 import static de.cuioss.benchmarking.common.report.ReportConstants.*;
 
 /**
- * Utility for converting benchmark metrics between different units.
+ * Central utility for converting benchmark metrics between different units.
+ * This is the SINGLE source of truth for all metric conversions.
  */
-final class MetricConversionUtil {
-    
+public final class MetricConversionUtil {
+
     private MetricConversionUtil() {
         // Utility class
     }
-    
+
     /**
      * Converts a benchmark score to operations per second.
      * 
@@ -33,62 +34,70 @@ final class MetricConversionUtil {
      * @param unit the unit string from JMH
      * @return throughput in operations per second
      */
-    static double convertToOpsPerSecond(double score, String unit) {
-        if (unit.contains(UNIT_OPS_PER_SEC) || unit.contains(UNIT_OPS_PER_SEC_ALT)) {
-            return score;
-        } else if (unit.contains(UNIT_OPS_PER_MS)) {
-            return score * MILLIS_TO_SECONDS;
+    public static double convertToOpsPerSecond(double score, String unit) {
+        // Handle throughput units directly
+        // IMPORTANT: Check more specific units first to avoid partial matches!
+        if (unit.contains(UNIT_OPS_PER_NS)) {
+            return score * NANOS_TO_SECONDS;
         } else if (unit.contains(UNIT_OPS_PER_US)) {
             return score * MICROS_TO_SECONDS;
-        } else if (unit.contains(UNIT_OPS_PER_NS)) {
-            return score * NANOS_TO_SECONDS;
-        } else if (unit.contains(UNIT_SEC_PER_OP)) {
-            return 1.0 / score;
-        } else if (unit.contains(UNIT_MS_PER_OP)) {
-            return MILLIS_TO_SECONDS / score;
-        } else if (unit.contains(UNIT_US_PER_OP)) {
-            return MICROS_TO_SECONDS / score;
+        } else if (unit.contains(UNIT_OPS_PER_MS)) {
+            return score * MILLIS_TO_SECONDS;
+        } else if (unit.contains(UNIT_OPS_PER_SEC) || unit.contains(UNIT_OPS_PER_SEC_ALT)) {
+            return score;
         } else if (unit.contains(UNIT_NS_PER_OP)) {
             return NANOS_TO_SECONDS / score;
+        } else if (unit.contains(UNIT_US_PER_OP)) {
+            return MICROS_TO_SECONDS / score;
+        } else if (unit.contains(UNIT_MS_PER_OP)) {
+            return MILLIS_TO_SECONDS / score;
+        } else if (unit.contains(UNIT_SEC_PER_OP)) {
+            return 1.0 / score;
         }
         return score;
     }
-    
+
     /**
      * Converts a benchmark score to milliseconds per operation.
+     * This is the CENTRALIZED method for all latency conversions.
      * 
      * @param score the raw score value
      * @param unit the unit string from JMH
      * @return latency in milliseconds per operation
      */
-    static double convertToMilliseconds(double score, String unit) {
-        if (unit.contains(UNIT_MS_PER_OP)) {
-            return score;
-        } else if (unit.contains(UNIT_SEC_PER_OP)) {
-            return score * MILLIS_TO_SECONDS;
+    public static double convertToMillisecondsPerOp(double score, String unit) {
+        // Handle latency units (time per operation)
+        // IMPORTANT: Check more specific units first to avoid partial matches!
+        // "us/op" contains "s/op", so must check "us/op" before "s/op"
+        // "ns/op" contains "s/op", so must check "ns/op" before "s/op"
+        if (unit.contains(UNIT_NS_PER_OP)) {
+            return score / NANOS_TO_MILLIS; // Convert nanoseconds to milliseconds
         } else if (unit.contains(UNIT_US_PER_OP)) {
-            return score / MICROS_TO_MILLIS;
-        } else if (unit.contains(UNIT_NS_PER_OP)) {
-            return score / NANOS_TO_MILLIS;
-        } else if (unit.contains(UNIT_OPS_PER_SEC) || unit.contains(UNIT_OPS_PER_SEC_ALT)) {
-            return MILLIS_TO_SECONDS / score;
-        } else if (unit.contains(UNIT_OPS_PER_MS)) {
-            return 1.0 / score;
-        } else if (unit.contains(UNIT_OPS_PER_US)) {
-            return MICROS_TO_MILLIS / score;
+            return score / MICROS_TO_MILLIS; // Convert microseconds to milliseconds
+        } else if (unit.contains(UNIT_MS_PER_OP)) {
+            return score; // Already in ms/op
+        } else if (unit.contains(UNIT_SEC_PER_OP)) {
+            return score * MILLIS_TO_SECONDS; // Convert seconds to milliseconds
         } else if (unit.contains(UNIT_OPS_PER_NS)) {
-            return NANOS_TO_MILLIS / score;
+            return 1.0 / (score * NANOS_TO_MILLIS); // ops/ns -> ns/op -> ms/op
+        } else if (unit.contains(UNIT_OPS_PER_US)) {
+            return 1.0 / (score * MICROS_TO_MILLIS); // ops/us -> us/op -> ms/op
+        } else if (unit.contains(UNIT_OPS_PER_MS)) {
+            return 1.0 / score; // ops/ms -> ms/op
+        } else if (unit.contains(UNIT_OPS_PER_SEC) || unit.contains(UNIT_OPS_PER_SEC_ALT)) {
+            return MILLIS_TO_SECONDS / score; // ops/s -> s/op -> ms/op
         }
-        return score;
+        // Unknown unit, return 0 to filter out in calculations
+        return 0;
     }
-    
+
     /**
      * Calculates a performance grade based on throughput.
      * 
      * @param throughput operations per second
      * @return performance grade string
      */
-    static String calculatePerformanceGrade(double throughput) {
+    public static String calculatePerformanceGrade(double throughput) {
         return switch ((int) Math.log10(Math.max(1, throughput))) {
             case 6, 7, 8, 9 -> GRADE_A_PLUS;
             case 5 -> GRADE_A;

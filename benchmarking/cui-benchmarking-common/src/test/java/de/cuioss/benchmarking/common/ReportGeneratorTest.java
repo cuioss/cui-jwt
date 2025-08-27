@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -57,7 +58,7 @@ class ReportGeneratorTest {
         // Create an empty JSON file
         Path jsonFile = tempDir.resolve("empty-benchmark-result.json");
         Files.writeString(jsonFile, "[]");
-        
+
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -100,7 +101,7 @@ class ReportGeneratorTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         ReportGenerator generator = new ReportGenerator();
         String nestedDir = tempDir.resolve("reports/html/output").toString();
 
@@ -121,7 +122,7 @@ class ReportGeneratorTest {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -140,7 +141,7 @@ class ReportGeneratorTest {
         Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
         Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
-        
+
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
@@ -155,5 +156,34 @@ class ReportGeneratorTest {
         assertTrue(content.contains("font-family"), "Should define font family");
         assertTrue(content.contains("margin"), "Should have margin styles");
         assertTrue(content.contains("padding"), "Should have padding styles");
+    }
+
+    @Test void correctLatencyDisplayInGeneratedReport(@TempDir Path tempDir) throws Exception {
+        // Regression test for bug where us/op was incorrectly converted (multiplied by 1000 instead of divided)
+        // The test data micro-benchmark-result.json has specific known values that should produce exact output
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, jsonFile);
+
+        ReportGenerator generator = new ReportGenerator();
+        String outputDir = tempDir.toString();
+
+        generator.generateIndexPage(jsonFile, outputDir);
+
+        // Read generated HTML
+        Path indexFile = Path.of(outputDir, "index.html");
+        String html = Files.readString(indexFile);
+
+        // The exact expected average latency for micro-benchmark-result.json test data is:
+        // (0.00967 + 0.00812 + 0.00525 + 0.8029 + 0.9273) / 5 = 0.3507 ms
+        // Formatted with %.1f this becomes "0.4 ms" or "0,4 ms" depending on locale
+        // But the actual test shows it's formatted as "0.35 ms" with %.2f for values < 1
+        // So we need to check for the locale-independent number in the HTML
+        assertTrue(html.contains("0.35 ms") || html.contains("0,35 ms"),
+                "HTML must contain the average latency '0.35 ms' (locale-dependent decimal separator)");
+        
+        // Most importantly, ensure it's NOT showing incorrect values like 865.1 seconds
+        assertFalse(html.contains("865") || html.contains("346"),
+                "Latency must not show incorrect values like 865.1s or 346s from the conversion bug");
     }
 }

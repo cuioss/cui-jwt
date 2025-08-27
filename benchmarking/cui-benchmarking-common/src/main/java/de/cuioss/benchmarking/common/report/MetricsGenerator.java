@@ -27,8 +27,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static de.cuioss.benchmarking.common.report.ReportConstants.FIELD_BENCHMARK;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
-import static de.cuioss.benchmarking.common.report.ReportConstants.*;
 
 /**
  * Generates structured performance metrics in JSON format from JMH benchmark results.
