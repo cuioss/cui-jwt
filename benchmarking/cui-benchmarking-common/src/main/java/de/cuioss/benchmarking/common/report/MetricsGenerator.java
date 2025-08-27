@@ -236,20 +236,9 @@ public class MetricsGenerator {
     }
 
     private void generateIndividualMetrics(JsonArray benchmarks, String outputDir) throws IOException {
-        Path outputPath = Path.of(outputDir);
-        Files.createDirectories(outputPath);
-
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            String fullName = benchmark.get(FIELD_BENCHMARK).getAsString();
-            String benchmarkName = extractBenchmarkName(fullName);
-            Map<String, Object> benchmarkMetrics = processSingleBenchmark(benchmark);
-
-            Path individualFile = outputPath.resolve(benchmarkName + "-metrics.json");
-            Files.writeString(individualFile, GSON.toJson(benchmarkMetrics));
-        }
-
-        LOGGER.info(INFO.INDIVIDUAL_METRICS_GENERATED.format(benchmarks.size()));
+        // Individual metric files are no longer created as they're not used by the templates
+        // This method is kept for backward compatibility but does nothing
+        LOGGER.debug("Skipping individual metric files generation - not used by templates");
     }
 
     private String extractBenchmarkName(String fullBenchmarkName) {

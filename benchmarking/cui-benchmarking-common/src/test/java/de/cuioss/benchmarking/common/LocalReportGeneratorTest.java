@@ -103,9 +103,8 @@ class LocalReportGeneratorTest {
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, microOutputDir.toString());
 
-        // Also generate individual components for testing (JSON is now in data dir)
-        Path movedJson = microOutputDir.resolve("data/micro-benchmark-result.json");
-        generateIndividualReports(movedJson, BenchmarkType.MICRO, microOutputDir);
+        // Also generate individual components for testing (JSON stays in root)
+        generateIndividualReports(targetJson, BenchmarkType.MICRO, microOutputDir);
     }
 
     private void generateIntegrationBenchmarkReports(Path outputPath) throws IOException {
@@ -123,9 +122,8 @@ class LocalReportGeneratorTest {
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, integrationOutputDir.toString());
 
-        // Also generate individual components for testing (JSON is now in data dir)
-        Path movedJson = integrationOutputDir.resolve("data/integration-benchmark-result.json");
-        generateIndividualReports(movedJson, BenchmarkType.INTEGRATION, integrationOutputDir);
+        // Also generate individual components for testing (JSON stays in root)
+        generateIndividualReports(targetJson, BenchmarkType.INTEGRATION, integrationOutputDir);
     }
 
     private void generateIndividualReports(Path jsonFile, BenchmarkType type, Path outputDir) throws IOException {
