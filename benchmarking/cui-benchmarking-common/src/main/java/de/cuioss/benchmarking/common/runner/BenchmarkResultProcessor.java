@@ -51,7 +51,6 @@ public class BenchmarkResultProcessor {
     // Directory name constants
     private static final String BADGES_DIR = "/badges";
     private static final String DATA_DIR = "/data";
-    private static final String REPORTS_DIR = "/reports";
     private static final String GH_PAGES_DIR = "/gh-pages-ready";
     private static final String SUMMARY_FILE = "/benchmark-summary.json";
 
@@ -118,7 +117,6 @@ public class BenchmarkResultProcessor {
         String[] directories = {
                 outputDir + BADGES_DIR,
                 outputDir + DATA_DIR,
-                outputDir + REPORTS_DIR,
                 outputDir + GH_PAGES_DIR
         };
 

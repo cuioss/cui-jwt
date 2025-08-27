@@ -89,6 +89,9 @@ public class ReportDataGenerator {
 
         // Add chart data
         dataObject.add("chartData", generateChartData(benchmarks));
+        
+        // Add percentiles chart data
+        dataObject.add("percentilesData", generatePercentilesData(benchmarks));
 
         // Add trend data (placeholder for now - would load historical data in production)
         dataObject.add("trends", generateTrendData(benchmarks));
@@ -231,6 +234,46 @@ public class ReportDataGenerator {
         chartData.add("latency", GSON.toJsonTree(latencyData));
         
         return chartData;
+    }
+
+    private JsonObject generatePercentilesData(JsonArray benchmarks) {
+        JsonObject percentilesData = new JsonObject();
+        
+        List<String> labels = new ArrayList<>();
+        Map<String, List<Double>> percentilesByBenchmark = new LinkedHashMap<>();
+        
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            String name = benchmark.get("benchmark").getAsString();
+            String label = name.substring(name.lastIndexOf('.') + 1);
+            
+            JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
+            
+            // Check if percentiles data exists
+            if (primaryMetric.has("scorePercentiles")) {
+                labels.add(label);
+                JsonObject percentiles = primaryMetric.getAsJsonObject("scorePercentiles");
+                
+                List<Double> values = new ArrayList<>();
+                // Extract common percentiles: 0.0, 50.0, 90.0, 95.0, 99.0, 99.9, 100.0
+                values.add(percentiles.has("0.0") ? percentiles.get("0.0").getAsDouble() : 0.0);
+                values.add(percentiles.has("50.0") ? percentiles.get("50.0").getAsDouble() : 0.0);
+                values.add(percentiles.has("90.0") ? percentiles.get("90.0").getAsDouble() : 0.0);
+                values.add(percentiles.has("95.0") ? percentiles.get("95.0").getAsDouble() : 0.0);
+                values.add(percentiles.has("99.0") ? percentiles.get("99.0").getAsDouble() : 0.0);
+                values.add(percentiles.has("99.9") ? percentiles.get("99.9").getAsDouble() : 0.0);
+                values.add(percentiles.has("100.0") ? percentiles.get("100.0").getAsDouble() : 0.0);
+                
+                percentilesByBenchmark.put(label, values);
+            }
+        }
+        
+        percentilesData.add("benchmarks", GSON.toJsonTree(labels));
+        percentilesData.add("percentileLabels", GSON.toJsonTree(
+            List.of("Min", "P50", "P90", "P95", "P99", "P99.9", "Max")));
+        percentilesData.add("data", GSON.toJsonTree(percentilesByBenchmark));
+        
+        return percentilesData;
     }
 
     private JsonObject generateTrendData(JsonArray currentBenchmarks) {

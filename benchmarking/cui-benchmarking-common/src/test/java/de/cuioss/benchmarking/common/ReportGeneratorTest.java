@@ -56,7 +56,7 @@ class ReportGeneratorTest {
         String content = Files.readString(indexFile);
         assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
         assertTrue(content.contains("<html"), "Should have HTML tag");
-        assertTrue(content.contains("CUI Benchmarking Results"), "Should have title");
+        assertTrue(content.contains("CUI JWT Benchmarking Results"), "Should have title");
         assertTrue(content.contains("data-loader.js"), "Should reference data loader script");
     }
 

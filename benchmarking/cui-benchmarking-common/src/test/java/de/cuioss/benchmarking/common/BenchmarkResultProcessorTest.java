@@ -115,8 +115,6 @@ class BenchmarkResultProcessorTest {
                 "Nested badges directory should be created");
         assertTrue(Files.exists(Path.of(outputDir, "data")),
                 "Nested data directory should be created");
-        assertTrue(Files.exists(Path.of(outputDir, "reports")),
-                "Nested reports directory should be created");
         assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready")),
                 "Nested GitHub Pages directory should be created");
     }

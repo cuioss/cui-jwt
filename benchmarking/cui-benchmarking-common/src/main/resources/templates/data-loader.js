@@ -72,6 +72,12 @@ class BenchmarkDataLoader {
         if (timestampElement && data.metadata?.displayTimestamp) {
             timestampElement.textContent = data.metadata.displayTimestamp;
         }
+
+        // Update benchmark type in title if present
+        const titleElement = document.getElementById('benchmark-type-title');
+        if (titleElement && data.metadata?.benchmarkType) {
+            titleElement.textContent = data.metadata.benchmarkType;
+        }
     }
 
     /**
@@ -101,6 +107,91 @@ class BenchmarkDataLoader {
                 </td>
             `;
             tableBody.appendChild(row);
+        });
+    }
+
+    /**
+     * Renders the percentiles chart
+     * @param {string} canvasId - The ID of the canvas element 
+     */
+    async renderPercentilesChart(canvasId) {
+        const data = await this.loadData();
+        const percentilesData = data.percentilesData || {};
+        const canvas = document.getElementById(canvasId);
+        
+        if (!canvas || !window.Chart) return;
+
+        const ctx = canvas.getContext('2d');
+        
+        // Create datasets for each percentile level
+        const percentileLabels = percentilesData.percentileLabels || [];
+        const benchmarks = percentilesData.benchmarks || [];
+        const dataByBenchmark = percentilesData.data || {};
+        
+        const datasets = [];
+        const colors = [
+            'rgba(54, 162, 235, 0.8)',   // Blue
+            'rgba(255, 99, 132, 0.8)',   // Red
+            'rgba(75, 192, 192, 0.8)',   // Green
+            'rgba(255, 206, 86, 0.8)',   // Yellow
+            'rgba(153, 102, 255, 0.8)',  // Purple
+            'rgba(255, 159, 64, 0.8)'    // Orange
+        ];
+        
+        let colorIndex = 0;
+        for (const [benchmark, values] of Object.entries(dataByBenchmark)) {
+            datasets.push({
+                label: benchmark,
+                data: values,
+                borderColor: colors[colorIndex % colors.length],
+                backgroundColor: colors[colorIndex % colors.length].replace('0.8', '0.2'),
+                borderWidth: 2,
+                tension: 0.4
+            });
+            colorIndex++;
+        }
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: percentileLabels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Latency Distribution Across Percentiles'
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Percentile'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Latency (ms/op)'
+                        },
+                        type: 'logarithmic'
+                    }
+                }
+            }
         });
     }
 
@@ -349,7 +440,7 @@ class BenchmarkDataLoader {
                 case 'detailed':
                     await this.renderOverview();
                     await this.renderBenchmarkTable();
-                    // No chart for detailed page - using external JMH Visualizer instead
+                    await this.renderPercentilesChart('percentiles-chart');
                     break;
             }
         } catch (error) {
