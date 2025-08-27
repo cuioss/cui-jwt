@@ -20,7 +20,6 @@ import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -56,11 +55,11 @@ public class ReportGenerator {
     public void generateIndexPage(Path jsonFile, BenchmarkType benchmarkType, String outputDir) throws IOException {
         // First generate the data file
         dataGenerator.generateDataFile(jsonFile, benchmarkType, outputDir);
-        
+
         // Then copy the index template
         LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));
         copyTemplate("index.html", outputDir);
-        
+
         Path indexFile = Path.of(outputDir).resolve("index.html");
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
     }
@@ -73,10 +72,10 @@ public class ReportGenerator {
      */
     public void generateTrendsPage(String outputDir) throws IOException {
         LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
-        
+
         // Copy the trends template
         copyTemplate("trends.html", outputDir);
-        
+
         Path trendsFile = Path.of(outputDir).resolve("trends.html");
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
@@ -89,10 +88,10 @@ public class ReportGenerator {
      */
     public void generateDetailedPage(String outputDir) throws IOException {
         LOGGER.info(INFO.GENERATING_REPORTS::format);
-        
+
         // Copy the detailed template
         copyTemplate("detailed.html", outputDir);
-        
+
         Path detailedFile = Path.of(outputDir).resolve("detailed.html");
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(detailedFile));
     }
@@ -106,13 +105,13 @@ public class ReportGenerator {
     public void copySupportFiles(String outputDir) throws IOException {
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
-        
+
         // Copy CSS file
         copyTemplate("report-styles.css", outputDir);
-        
+
         // Copy the data loader JavaScript
         copyTemplate("data-loader.js", outputDir);
-        
+
         // Copy robots.txt and sitemap if needed
         copyTemplate("robots.txt", outputDir);
         copyTemplate("sitemap.xml", outputDir);
@@ -128,7 +127,7 @@ public class ReportGenerator {
     private void copyTemplate(String templateName, String outputDir) throws IOException {
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
-        
+
         String resourcePath = "/templates/" + templateName;
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
             if (is == null) {

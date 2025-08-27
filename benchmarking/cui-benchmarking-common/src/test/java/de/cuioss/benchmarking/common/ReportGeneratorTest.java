@@ -23,9 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link ReportGenerator}.
@@ -47,7 +45,7 @@ class ReportGeneratorTest {
         // Verify benchmark-data.json was created in data subdirectory
         Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
         assertTrue(Files.exists(dataFile), "Data JSON file should be created");
-        
+
         // Verify index.html was created
         Path indexFile = Path.of(outputDir, "index.html");
         assertTrue(Files.exists(indexFile), "Index page should be created");
@@ -74,7 +72,7 @@ class ReportGeneratorTest {
         // Should still create data and index files
         Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
         assertTrue(Files.exists(dataFile), "Data JSON file should be created with empty results");
-        
+
         Path indexFile = Path.of(outputDir, "index.html");
         assertTrue(Files.exists(indexFile), "Index page should be created with empty results");
 
@@ -148,7 +146,7 @@ class ReportGeneratorTest {
 
         // Verify responsive design elements
         assertTrue(content.contains("viewport"), "Should have viewport meta tag for responsive design");
-        
+
         Path cssFile = Path.of(outputDir, "report-styles.css");
         String css = Files.readString(cssFile);
         assertTrue(css.contains("max-width"), "Should have max-width for responsive layout");
@@ -171,7 +169,7 @@ class ReportGeneratorTest {
 
         // Verify CSS is referenced
         assertTrue(content.contains("report-styles.css"), "Should reference CSS file");
-        
+
         Path cssFile = Path.of(outputDir, "report-styles.css");
         assertTrue(Files.exists(cssFile), "CSS file should be copied");
         String css = Files.readString(cssFile);
@@ -203,7 +201,7 @@ class ReportGeneratorTest {
         // So we need to check for the locale-independent number in the JSON
         assertTrue(jsonData.contains("0.35 ms") || jsonData.contains("0,35 ms"),
                 "JSON data must contain the average latency '0.35 ms' (locale-dependent decimal separator)");
-        
+
         // Most importantly, ensure it's NOT showing incorrect values like 865.1 seconds
         assertFalse(jsonData.contains("865") || jsonData.contains("346"),
                 "Latency must not show incorrect values like 865.1s or 346s from the conversion bug");

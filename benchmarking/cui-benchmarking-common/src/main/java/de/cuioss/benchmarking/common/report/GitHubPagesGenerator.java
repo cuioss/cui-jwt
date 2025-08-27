@@ -117,7 +117,7 @@ public class GitHubPagesGenerator {
         copyIfExists(sourceDir.resolve(INDEX_HTML), deployDir.resolve(INDEX_HTML));
         copyIfExists(sourceDir.resolve("trends.html"), deployDir.resolve("trends.html"));
         copyIfExists(sourceDir.resolve("detailed.html"), deployDir.resolve("detailed.html"));
-        
+
         // Copy support files (CSS, JS)
         copyIfExists(sourceDir.resolve("report-styles.css"), deployDir.resolve("report-styles.css"));
         copyIfExists(sourceDir.resolve("data-loader.js"), deployDir.resolve("data-loader.js"));

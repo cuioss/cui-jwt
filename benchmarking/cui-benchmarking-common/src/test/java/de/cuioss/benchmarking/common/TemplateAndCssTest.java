@@ -65,16 +65,16 @@ class TemplateAndCssTest {
     @Test void validTemplatesLoad(@TempDir Path tempDir) throws Exception {
         ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
-        
+
         // Test that template files can be copied
         assertDoesNotThrow(() -> {
             generator.copySupportFiles(outputDir);
         }, "Copying support files should not throw");
-        
+
         // Verify that essential files were copied
         assertTrue(Files.exists(tempDir.resolve("report-styles.css")), "CSS file should be copied");
         assertTrue(Files.exists(tempDir.resolve("data-loader.js")), "JavaScript file should be copied");
-        
+
         // Verify that HTML templates exist in resources
         assertNotNull(getClass().getResourceAsStream("/templates/index.html"), "Index template should exist");
         assertNotNull(getClass().getResourceAsStream("/templates/trends.html"), "Trends template should exist");
@@ -115,11 +115,11 @@ class TemplateAndCssTest {
 
         // Verify CSS is linked externally
         assertTrue(content.contains("report-styles.css"), "Should link to external CSS file");
-        
+
         // Verify CSS file exists
         Path cssFile = Path.of(outputDir, "report-styles.css");
         assertTrue(Files.exists(cssFile), "CSS file should exist");
-        
+
         // Verify critical CSS classes are in the CSS file
         String cssContent = Files.readString(cssFile);
         assertTrue(cssContent.contains(".nav-menu"), "Should include nav-menu styles");
@@ -203,7 +203,7 @@ class TemplateAndCssTest {
 
         Path cssFile = Path.of(outputDir, "report-styles.css");
         String cssContent = Files.readString(cssFile);
-        
+
         Path indexFile = Path.of(outputDir, "index.html");
         String htmlContent = Files.readString(indexFile);
 
@@ -226,7 +226,7 @@ class TemplateAndCssTest {
         assertDoesNotThrow(() -> {
             generator.copySupportFiles(outputDir);
         }, "Copying CSS file should not throw");
-        
+
         // Verify CSS file was copied and has content
         Path cssFile = tempDir.resolve("report-styles.css");
         assertTrue(Files.exists(cssFile), "CSS file should be copied");

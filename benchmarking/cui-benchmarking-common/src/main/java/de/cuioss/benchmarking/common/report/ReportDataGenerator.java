@@ -27,9 +27,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -89,7 +89,7 @@ public class ReportDataGenerator {
 
         // Add chart data
         dataObject.add("chartData", generateChartData(benchmarks));
-        
+
         // Add percentiles chart data
         dataObject.add("percentilesData", generatePercentilesData(benchmarks));
 
@@ -102,18 +102,18 @@ public class ReportDataGenerator {
         Files.createDirectories(dataDir);
         Path dataFile = dataDir.resolve("benchmark-data.json");
         Files.writeString(dataFile, GSON.toJson(dataObject));
-        
+
         // Also copy the original benchmark result JSON to data directory
         Path originalJsonDest = dataDir.resolve("benchmark-result.json");
         Files.copy(jsonFile, originalJsonDest, StandardCopyOption.REPLACE_EXISTING);
-        
+
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(dataFile));
     }
 
     private JsonObject generateMetadata(BenchmarkType benchmarkType) {
         JsonObject metadata = new JsonObject();
         metadata.addProperty("timestamp", Instant.now().toString());
-        metadata.addProperty("displayTimestamp", 
+        metadata.addProperty("displayTimestamp",
                 DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
         metadata.addProperty("benchmarkType", benchmarkType.getDisplayName());
         metadata.addProperty("benchmarkTypeId", benchmarkType.name());
@@ -123,12 +123,12 @@ public class ReportDataGenerator {
 
     private JsonObject generateOverviewData(JsonArray benchmarks) {
         JsonObject overview = new JsonObject();
-        
+
         int totalBenchmarks = benchmarks.size();
         double avgThroughput = calculateAverageThroughput(benchmarks);
         double avgLatency = calculateAverageLatency(benchmarks);
         String grade = MetricConversionUtil.calculatePerformanceGrade(avgThroughput);
-        
+
         overview.addProperty("totalBenchmarks", totalBenchmarks);
         overview.addProperty("avgThroughput", avgThroughput);
         overview.addProperty("avgThroughputFormatted", formatThroughput(avgThroughput));
@@ -136,32 +136,32 @@ public class ReportDataGenerator {
         overview.addProperty("avgLatencyFormatted", formatLatency(avgLatency));
         overview.addProperty("performanceGrade", grade);
         overview.addProperty("performanceGradeClass", getGradeClass(grade));
-        
+
         return overview;
     }
 
     private JsonArray generateBenchmarkData(JsonArray benchmarks) {
         JsonArray formattedBenchmarks = new JsonArray();
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             JsonObject formatted = new JsonObject();
-            
+
             String fullName = benchmark.get("benchmark").getAsString();
             String displayName = fullName.substring(fullName.lastIndexOf('.') + 1);
             String mode = benchmark.get("mode").getAsString();
-            
+
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
             double score = primaryMetric.get("score").getAsDouble();
             String unit = primaryMetric.get("scoreUnit").getAsString();
-            
+
             formatted.addProperty("name", displayName);
             formatted.addProperty("fullName", fullName);
             formatted.addProperty("mode", mode);
             formatted.addProperty("score", score);
             formatted.addProperty("scoreFormatted", formatScore(score, unit));
             formatted.addProperty("unit", unit);
-            
+
             // Add normalized values for comparison
             if ("thrpt".equals(mode) || unit.contains("ops")) {
                 double opsPerSec = MetricConversionUtil.convertToOpsPerSecond(score, unit);
@@ -172,43 +172,43 @@ public class ReportDataGenerator {
                 formatted.addProperty("latency", ms);
                 formatted.addProperty("latencyFormatted", formatLatency(ms));
             }
-            
+
             // Add confidence interval if available
             if (primaryMetric.has("scoreConfidence")) {
                 JsonArray confidence = primaryMetric.getAsJsonArray("scoreConfidence");
                 formatted.add("confidence", confidence);
             }
-            
+
             // Add percentiles if available
             if (primaryMetric.has("scorePercentiles")) {
                 formatted.add("percentiles", primaryMetric.get("scorePercentiles"));
             }
-            
+
             formattedBenchmarks.add(formatted);
         }
-        
+
         return formattedBenchmarks;
     }
 
     private JsonObject generateChartData(JsonArray benchmarks) {
         JsonObject chartData = new JsonObject();
-        
+
         List<String> labels = new ArrayList<>();
         List<Double> throughputData = new ArrayList<>();
         List<Double> latencyData = new ArrayList<>();
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             String name = benchmark.get("benchmark").getAsString();
             String mode = benchmark.get("mode").getAsString();
-            
+
             // Extract method name
             String label = name.substring(name.lastIndexOf('.') + 1);
-            
+
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
             double score = primaryMetric.get("score").getAsDouble();
             String unit = primaryMetric.get("scoreUnit").getAsString();
-            
+
             if ("thrpt".equals(mode) || unit.contains("ops")) {
                 labels.add(label);
                 double opsPerSec = MetricConversionUtil.convertToOpsPerSecond(score, unit);
@@ -228,32 +228,32 @@ public class ReportDataGenerator {
                 }
             }
         }
-        
+
         chartData.add("labels", GSON.toJsonTree(labels));
         chartData.add("throughput", GSON.toJsonTree(throughputData));
         chartData.add("latency", GSON.toJsonTree(latencyData));
-        
+
         return chartData;
     }
 
     private JsonObject generatePercentilesData(JsonArray benchmarks) {
         JsonObject percentilesData = new JsonObject();
-        
+
         List<String> labels = new ArrayList<>();
         Map<String, List<Double>> percentilesByBenchmark = new LinkedHashMap<>();
-        
+
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             String name = benchmark.get("benchmark").getAsString();
             String label = name.substring(name.lastIndexOf('.') + 1);
-            
+
             JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
-            
+
             // Check if percentiles data exists
             if (primaryMetric.has("scorePercentiles")) {
                 labels.add(label);
                 JsonObject percentiles = primaryMetric.getAsJsonObject("scorePercentiles");
-                
+
                 List<Double> values = new ArrayList<>();
                 // Extract common percentiles: 0.0, 50.0, 90.0, 95.0, 99.0, 99.9, 100.0
                 values.add(percentiles.has("0.0") ? percentiles.get("0.0").getAsDouble() : 0.0);
@@ -263,39 +263,39 @@ public class ReportDataGenerator {
                 values.add(percentiles.has("99.0") ? percentiles.get("99.0").getAsDouble() : 0.0);
                 values.add(percentiles.has("99.9") ? percentiles.get("99.9").getAsDouble() : 0.0);
                 values.add(percentiles.has("100.0") ? percentiles.get("100.0").getAsDouble() : 0.0);
-                
+
                 percentilesByBenchmark.put(label, values);
             }
         }
-        
+
         percentilesData.add("benchmarks", GSON.toJsonTree(labels));
         percentilesData.add("percentileLabels", GSON.toJsonTree(
-            List.of("Min", "P50", "P90", "P95", "P99", "P99.9", "Max")));
+                List.of("Min", "P50", "P90", "P95", "P99", "P99.9", "Max")));
         percentilesData.add("data", GSON.toJsonTree(percentilesByBenchmark));
-        
+
         return percentilesData;
     }
 
     private JsonObject generateTrendData(JsonArray currentBenchmarks) {
         JsonObject trendData = new JsonObject();
-        
+
         // This would normally load historical data from previous runs
         // For now, we'll create placeholder data structure
         JsonArray historicalRuns = new JsonArray();
-        
+
         // Current run
         JsonObject currentRun = new JsonObject();
         currentRun.addProperty("timestamp", Instant.now().toString());
         currentRun.addProperty("totalBenchmarks", currentBenchmarks.size());
         currentRun.addProperty("avgThroughput", calculateAverageThroughput(currentBenchmarks));
         currentRun.addProperty("avgLatency", calculateAverageLatency(currentBenchmarks));
-        
+
         historicalRuns.add(currentRun);
-        
+
         trendData.add("runs", historicalRuns);
         trendData.addProperty("trendDirection", "stable"); // Would be calculated from historical data
         trendData.addProperty("changePercent", 0.0);
-        
+
         return trendData;
     }
 

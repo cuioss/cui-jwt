@@ -74,7 +74,7 @@ public class SummaryGenerator {
     /**
      * Writes a comprehensive summary file for CI consumption.
      *
-     * @param results the benchmark results
+     * @param jsonFile the path to the benchmark JSON results file
      * @param type the benchmark type
      * @param timestamp the execution timestamp
      * @param outputFile the output file path
