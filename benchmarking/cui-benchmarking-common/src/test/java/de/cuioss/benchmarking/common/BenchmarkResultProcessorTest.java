@@ -37,8 +37,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class BenchmarkResultProcessorTest {
 
     @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
-        // Use empty results instead of running actual benchmarks
-        // Full integration testing with real benchmarks should be done in separate integration tests
+        // Copy test JSON file to expected location
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path targetJson = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, targetJson);
+        
+        // Use empty results - the processor will read from JSON file
         Collection<RunResult> results = List.of();
 
         // Process results
@@ -80,9 +84,10 @@ class BenchmarkResultProcessorTest {
 
         String outputDir = tempDir.toString();
 
-        // Should handle empty results gracefully
-        assertDoesNotThrow(() -> processor.processResults(emptyResults, outputDir),
-                "Processing empty results should not throw exception");
+        // Should FAIL FAST when JSON file doesn't exist
+        assertThrows(IllegalStateException.class, 
+                () -> processor.processResults(emptyResults, outputDir),
+                "Processing should fail when JSON file doesn't exist");
 
         // Basic directory structure should still be created
         assertTrue(Files.exists(Path.of(outputDir, "badges")),
@@ -92,10 +97,17 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test void directoryCreation(@TempDir Path tempDir) throws Exception {
+        // Copy test JSON file to expected location
+        Path nestedDir = tempDir.resolve("nested/benchmark/results");
+        Files.createDirectories(nestedDir);
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path targetJson = nestedDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, targetJson);
+        
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
-        String outputDir = tempDir.resolve("nested/benchmark/results").toString();
+        String outputDir = nestedDir.toString();
 
-        // Use empty results to test directory creation
+        // Use empty results - processor will read from JSON
         processor.processResults(List.of(), outputDir);
 
         // Verify nested directories are created

@@ -85,6 +85,13 @@ public class BenchmarkResultProcessor {
             "micro-benchmark-result.json" : "integration-benchmark-result.json";
         Path jsonFile = Path.of(outputDir, jsonFileName);
         
+        // FAIL FAST: JSON file must exist (created by runner in production)
+        // For testing, tests must provide proper JSON files
+        if (!Files.exists(jsonFile)) {
+            throw new IllegalStateException("Benchmark JSON file not found: " + jsonFile + 
+                ". The benchmark runner should have created this file.");
+        }
+        
         // Generate all badges using JSON file
         generateBadges(jsonFile, benchmarkType, outputDir);
 
@@ -175,4 +182,5 @@ public class BenchmarkResultProcessor {
         LOGGER.info(INFO.WRITING_SUMMARY::format);
         summaryGen.writeSummary(results, type, Instant.now(), outputDir + SUMMARY_FILE);
     }
+    
 }

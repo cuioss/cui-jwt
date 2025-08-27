@@ -137,6 +137,11 @@ class TemplateAndCssTest {
         // Simulate a full report generation with all artifacts
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
 
+        // Copy test JSON file for processing
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path targetJson = tempDir.resolve("micro-benchmark-result.json");
+        Files.copy(sourceJson, targetJson);
+        
         // Use empty results for testing HTML/CSS generation
         var results = List.<RunResult>of();
         String outputDir = tempDir.toString();

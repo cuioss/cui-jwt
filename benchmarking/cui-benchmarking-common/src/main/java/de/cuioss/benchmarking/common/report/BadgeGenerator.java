@@ -147,8 +147,8 @@ public class BadgeGenerator {
     }
 
     private PerformanceScore calculatePerformanceScore(JsonArray benchmarks) {
-        if (benchmarks.isEmpty()) {
-            return new PerformanceScore(0, 0, 0);
+        if (benchmarks == null || benchmarks.isEmpty()) {
+            throw new IllegalArgumentException("No benchmark results found in JSON. Cannot generate badge.");
         }
 
         // Group benchmarks by name to pair throughput and latency
