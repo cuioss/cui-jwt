@@ -44,8 +44,8 @@ class ReportGeneratorTest {
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
         generator.copySupportFiles(outputDir);
 
-        // Verify benchmark-data.json was created
-        Path dataFile = Path.of(outputDir, "benchmark-data.json");
+        // Verify benchmark-data.json was created in data subdirectory
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
         assertTrue(Files.exists(dataFile), "Data JSON file should be created");
         
         // Verify index.html was created
@@ -72,7 +72,7 @@ class ReportGeneratorTest {
         generator.copySupportFiles(outputDir);
 
         // Should still create data and index files
-        Path dataFile = Path.of(outputDir, "benchmark-data.json");
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
         assertTrue(Files.exists(dataFile), "Data JSON file should be created with empty results");
         
         Path indexFile = Path.of(outputDir, "index.html");
@@ -192,8 +192,8 @@ class ReportGeneratorTest {
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
 
-        // Read generated data JSON
-        Path dataFile = Path.of(outputDir, "benchmark-data.json");
+        // Read generated data JSON from data subdirectory
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
         String jsonData = Files.readString(dataFile);
 
         // The exact expected average latency for micro-benchmark-result.json test data is:

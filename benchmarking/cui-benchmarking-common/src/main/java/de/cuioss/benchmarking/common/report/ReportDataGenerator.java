@@ -22,6 +22,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -51,7 +52,7 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 public class ReportDataGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportDataGenerator.class);
-    private static final String DATA_FILE_NAME = "benchmark-data.json";
+    private static final String DATA_FILE_NAME = "data/benchmark-data.json";
     private static final DateTimeFormatter DISPLAY_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'");
     private static final Gson GSON = new GsonBuilder()
@@ -92,11 +93,16 @@ public class ReportDataGenerator {
         // Add trend data (placeholder for now - would load historical data in production)
         dataObject.add("trends", generateTrendData(benchmarks));
 
-        // Write the consolidated data file
+        // Write the consolidated data file to data subdirectory
         Path outputPath = Path.of(outputDir);
-        Files.createDirectories(outputPath);
-        Path dataFile = outputPath.resolve(DATA_FILE_NAME);
+        Path dataDir = outputPath.resolve("data");
+        Files.createDirectories(dataDir);
+        Path dataFile = dataDir.resolve("benchmark-data.json");
         Files.writeString(dataFile, GSON.toJson(dataObject));
+        
+        // Also copy the original benchmark result JSON to data directory
+        Path originalJsonDest = dataDir.resolve("benchmark-result.json");
+        Files.copy(jsonFile, originalJsonDest, StandardCopyOption.REPLACE_EXISTING);
         
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(dataFile));
     }

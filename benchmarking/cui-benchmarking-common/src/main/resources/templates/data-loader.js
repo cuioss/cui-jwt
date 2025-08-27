@@ -18,7 +18,7 @@ class BenchmarkDataLoader {
         }
 
         if (!this.loadPromise) {
-            this.loadPromise = fetch('benchmark-data.json')
+            this.loadPromise = fetch('data/benchmark-data.json')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Failed to load benchmark data: ${response.statusText}`);
@@ -349,7 +349,7 @@ class BenchmarkDataLoader {
                 case 'detailed':
                     await this.renderOverview();
                     await this.renderBenchmarkTable();
-                    await this.renderChart('detailed-chart', 'detailed');
+                    // No chart for detailed page - using external JMH Visualizer instead
                     break;
             }
         } catch (error) {
