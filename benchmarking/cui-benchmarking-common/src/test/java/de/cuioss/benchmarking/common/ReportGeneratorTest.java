@@ -15,6 +15,10 @@
  */
 package de.cuioss.benchmarking.common;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit tests for {@link ReportGenerator}.
  */
 class ReportGeneratorTest {
+
+    private static final Gson gson = new Gson();
 
     @Test void generateIndexPageWithResults(@TempDir Path tempDir) throws Exception {
         // Use real micro benchmark test data
@@ -180,7 +186,6 @@ class ReportGeneratorTest {
 
     @Test void correctLatencyDisplayInGeneratedReport(@TempDir Path tempDir) throws Exception {
         // Regression test for bug where us/op was incorrectly converted (multiplied by 1000 instead of divided)
-        // The test data micro-benchmark-result.json has specific known values that should produce exact output
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -190,20 +195,34 @@ class ReportGeneratorTest {
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
 
-        // Read generated data JSON from data subdirectory
+        // Parse the generated JSON data
         Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
-        String jsonData = Files.readString(dataFile);
-
-        // The exact expected average latency for micro-benchmark-result.json test data is:
-        // (0.00967 + 0.00812 + 0.00525 + 0.8029 + 0.9273) / 5 = 0.3507 ms
-        // Formatted with %.1f this becomes "0.4 ms" or "0,4 ms" depending on locale
-        // But the actual test shows it's formatted as "0.35 ms" with %.2f for values < 1
-        // So we need to check for the locale-independent number in the JSON
-        assertTrue(jsonData.contains("0.35 ms") || jsonData.contains("0,35 ms"),
-                "JSON data must contain the average latency '0.35 ms' (locale-dependent decimal separator)");
-
-        // Most importantly, ensure it's NOT showing incorrect values like 865.1 seconds
-        assertFalse(jsonData.contains("865") || jsonData.contains("346"),
-                "Latency must not show incorrect values like 865.1s or 346s from the conversion bug");
+        String jsonContent = Files.readString(dataFile);
+        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
+        
+        // Verify the overview section has correct average latency
+        JsonObject overview = dataJson.getAsJsonObject("overview");
+        assertNotNull(overview, "Overview section must exist");
+        
+        // The average latency should be around 0.35 ms (calculated from test data)
+        // Test data has: 0.00967, 0.00812, 0.00525, 0.8029, 0.9273 ms
+        // Average: (0.00967 + 0.00812 + 0.00525 + 0.8029 + 0.9273) / 5 = 0.35064 ms
+        double avgLatency = overview.get("avgLatency").getAsDouble();
+        assertEquals(0.35, avgLatency, 0.01, 
+                "Average latency should be correctly calculated as ~0.35 ms");
+        
+        // Verify individual benchmark latencies are correctly converted from us/op to ms
+        JsonArray benchmarks = dataJson.getAsJsonArray("benchmarks");
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            String mode = benchmark.get("mode").getAsString();
+            
+            // For latency benchmarks (avgt mode), verify latency is in reasonable range
+            if ("avgt".equals(mode)) {
+                double latency = benchmark.get("latency").getAsDouble();
+                assertTrue(latency > 0 && latency < 10, 
+                        "Latency should be positive and less than 10ms (not in seconds): " + latency);
+            }
+        }
     }
 }
