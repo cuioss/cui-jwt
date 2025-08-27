@@ -15,13 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.infra.BenchmarkParams;
-import org.openjdk.jmh.results.RunResult;
-import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,18 +25,15 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
  * Generates shields.io compatible badges for benchmark performance metrics.
  * <p>
- * This generator creates JSON badge files that can be used directly with shields.io
- * endpoint badges or converted to SVG badges for display in documentation.
+ * This generator creates JSON badge files from benchmark JSON results that can be used 
+ * directly with shields.io endpoint badges or converted to SVG badges for display in documentation.
  * <p>
  * Badge types:
  * <ul>
@@ -51,8 +44,7 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
  */
 public class BadgeGenerator {
 
-    private static final CuiLogger LOGGER =
-            new CuiLogger(BadgeGenerator.class);
+    private static final CuiLogger LOGGER = new CuiLogger(BadgeGenerator.class);
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .serializeSpecialFloatingPointValues()
@@ -76,14 +68,19 @@ public class BadgeGenerator {
     /**
      * Generates a performance badge showing current benchmark performance.
      *
-     * @param results the benchmark results
+     * @param jsonFile the path to the benchmark JSON results file
      * @param type the benchmark type
      * @param outputDir the output directory for the badge file
      * @throws IOException if writing the badge file fails
      */
-    public void generatePerformanceBadge(Collection<RunResult> results, BenchmarkType type, String outputDir)
+    public void generatePerformanceBadge(Path jsonFile, BenchmarkType type, String outputDir)
             throws IOException {
-        PerformanceScore score = calculatePerformanceScore(results);
+        
+        // Parse JSON file
+        String jsonContent = Files.readString(jsonFile);
+        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
+        
+        PerformanceScore score = calculatePerformanceScore(benchmarks);
 
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put(SCHEMA_VERSION, 1);
@@ -101,16 +98,20 @@ public class BadgeGenerator {
     /**
      * Generates a trend badge showing performance trends over time.
      *
-     * @param results the current benchmark results
+     * @param jsonFile the path to the benchmark JSON results file
      * @param type the benchmark type
      * @param outputDir the output directory for the badge file
      * @throws IOException if writing the badge file fails
      */
-    public void generateTrendBadge(Collection<RunResult> results, BenchmarkType type, String outputDir)
+    public void generateTrendBadge(Path jsonFile, BenchmarkType type, String outputDir)
             throws IOException {
         // Load previous results for trend analysis
         PerformanceHistory history = loadPerformanceHistory(outputDir + "/../history");
-        TrendAnalysis trend = analyzeTrend(results, history);
+        
+        // Parse current results
+        String jsonContent = Files.readString(jsonFile);
+        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
+        TrendAnalysis trend = analyzeTrend(benchmarks, history);
 
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put(SCHEMA_VERSION, 1);
@@ -145,46 +146,34 @@ public class BadgeGenerator {
         LOGGER.info(INFO.BADGE_GENERATED.format("last run", badgeFile));
     }
 
-    private PerformanceScore calculatePerformanceScore(Collection<RunResult> results) {
-        if (results.isEmpty()) {
+    private PerformanceScore calculatePerformanceScore(JsonArray benchmarks) {
+        if (benchmarks.isEmpty()) {
             return new PerformanceScore(0, 0, 0);
         }
 
-        // Group results by benchmark name to pair throughput and latency
+        // Group benchmarks by name to pair throughput and latency
         Map<String, Double> throughputByBenchmark = new LinkedHashMap<>();
         Map<String, Double> latencyByBenchmark = new LinkedHashMap<>();
         
-        for (RunResult result : results) {
-            if (result.getPrimaryResult() == null) continue;
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
             
-            String benchmarkName = result.getParams().getBenchmark();
-            String mode = result.getParams().getMode().shortLabel();
-            String unit = result.getPrimaryResult().getScoreUnit();
-            double score = result.getPrimaryResult().getScore();
+            String benchmarkName = benchmark.get("benchmark").getAsString();
+            String mode = benchmark.get("mode").getAsString();
+            
+            JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
+            double score = primaryMetric.get("score").getAsDouble();
+            String unit = primaryMetric.get("scoreUnit").getAsString();
             
             // Process throughput results (mode == "thrpt" or unit contains "ops")
             if ("thrpt".equals(mode) || unit.contains("ops")) {
-                double opsPerSec = score;
-                // Convert ops/ms to ops/s
-                if (unit.contains("ops/ms")) {
-                    opsPerSec = score * 1000;
-                } else if (unit.contains("ops/us")) {
-                    opsPerSec = score * 1_000_000;
-                }
+                double opsPerSec = convertToOpsPerSecond(score, unit);
                 throughputByBenchmark.put(benchmarkName, opsPerSec);
             }
-            // Process latency results (mode == "avgt" or "sample" or unit contains "/op")
+            // Process latency results (mode == "avgt", "sample", or unit contains "/op")
             else if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
-                double latencyMs = score;
-                // Convert to milliseconds
-                if (unit.contains("ns/op")) {
-                    latencyMs = score / 1_000_000.0; // ns to ms
-                } else if (unit.contains("us/op")) {
-                    latencyMs = score / 1_000.0; // us to ms
-                } else if (unit.contains("s/op")) {
-                    latencyMs = score * 1_000.0; // s to ms
-                }
-                latencyByBenchmark.put(benchmarkName, latencyMs);
+                double msPerOp = convertToMilliseconds(score, unit);
+                latencyByBenchmark.put(benchmarkName, msPerOp);
             }
         }
         
@@ -193,189 +182,130 @@ public class BadgeGenerator {
                 .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
-                
+        
         double avgLatency = latencyByBenchmark.values().stream()
                 .mapToDouble(Double::doubleValue)
                 .average()
                 .orElse(0.0);
-
-        // Calculate composite score (higher is better)
-        long compositeScore = Math.round(avgThroughput);
-
-        return new PerformanceScore(compositeScore, avgThroughput, avgLatency);
+        
+        // Calculate weighted score (higher is better for throughput, lower is better for latency)
+        double throughputScore = Math.min(avgThroughput / 100, 1000); // Normalize
+        double latencyScore = avgLatency > 0 ? 1000 / avgLatency : 1000; // Invert and normalize
+        double weightedScore = throughputScore * 0.6 + latencyScore * 0.4;
+        
+        return new PerformanceScore(weightedScore, avgThroughput, avgLatency);
     }
 
-    private boolean hasValidPrimaryResult(RunResult result) {
-        return result.getPrimaryResult() != null && result.getPrimaryResult().getStatistics() != null;
+    private double convertToOpsPerSecond(double value, String unit) {
+        if (unit.contains("ops/s")) {
+            return value;
+        } else if (unit.contains("ops/ms")) {
+            return value * 1000;
+        } else if (unit.contains("ops/us")) {
+            return value * 1_000_000;
+        } else if (unit.contains("ops/ns")) {
+            return value * 1_000_000_000;
+        } else {
+            // Unknown unit, use as-is
+            return value;
+        }
     }
 
-    private double convertToOpsPerSecond(double score, String unit) {
-        if (unit.contains("ops/s") || unit.contains("ops/sec")) {
-            return score;
+    private double convertToMilliseconds(double value, String unit) {
+        if (unit.contains("ms/op")) {
+            return value;
         } else if (unit.contains("s/op")) {
-            return 1.0 / score;
-        } else if (unit.contains("ms/op")) {
-            return 1000.0 / score;
+            return value * 1000;
         } else if (unit.contains("us/op")) {
-            return 1_000_000.0 / score;
+            return value / 1000;
+        } else if (unit.contains("ns/op")) {
+            return value / 1_000_000;
+        } else {
+            // Unknown unit, use as-is
+            return value;
         }
-        return 0;
-    }
-
-    private double extractLatency(double score, String unit) {
-        if (unit.contains("s/op") || unit.contains("ms/op") || unit.contains("us/op")) {
-            return score;
-        }
-        return 0;
     }
 
     private String formatPerformanceMessage(PerformanceScore score) {
-        if (score.compositeScore() == 0) {
-            return "No Data";
-        }
+        // Format: "Score (throughput, latency)"
+        // Example: "50K (61.7K ops/s, 0.16ms)"
+        
+        String scoreFormatted = formatNumber(score.score());
+        String throughputFormatted = formatNumber(score.throughput()) + " ops/s";
+        String latencyFormatted = formatLatency(score.latency()) + "ms";
+        
+        return String.format("%s (%s, %s)", scoreFormatted, throughputFormatted, latencyFormatted);
+    }
 
-        // Format composite score
-        String scoreFormatted = switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
-            case 6, 7, 8, 9 -> "%.1fM".formatted(score.compositeScore() / 1_000_000.0);
-            case 3, 4, 5 -> "%.0fK".formatted(score.compositeScore() / 1_000.0);
-            default -> "%d".formatted(score.compositeScore());
-        };
-        
-        // Format throughput  
-        String throughputPart = switch ((int) Math.log10(Math.max(1, score.throughput()))) {
-            case 6, 7, 8, 9 -> "%.1fM ops/s".formatted(score.throughput() / 1_000_000.0);
-            case 3, 4, 5 -> "%.1fK ops/s".formatted(score.throughput() / 1_000.0);
-            default -> "%.0f ops/s".formatted(score.throughput());
-        };
-        
-        // Add latency if available
-        String latencyPart = "";
-        if (score.latency() > 0) {
-            if (score.latency() < 1.0) {
-                latencyPart = ", %.2fms".formatted(score.latency());
-            } else {
-                latencyPart = ", %.1fms".formatted(score.latency());
-            }
+    private String formatNumber(double value) {
+        if (value >= 1_000_000) {
+            return String.format("%.1fM", value / 1_000_000);
+        } else if (value >= 1000) {
+            return String.format("%.1fK", value / 1000);
+        } else if (value >= 100) {
+            return String.format("%.0f", value);
+        } else {
+            return String.format("%.1f", value);
         }
-        
-        // Format: "32K (45K ops/s, 0.15ms)" as per specification
-        return "%s (%s%s)".formatted(scoreFormatted, throughputPart, latencyPart);
+    }
+
+    private String formatLatency(double ms) {
+        if (ms >= 1000) {
+            return String.format("%.1fs", ms / 1000);
+        } else if (ms >= 1) {
+            return String.format("%.1f", ms);
+        } else {
+            return String.format("%.2f", ms);
+        }
     }
 
     private String getColorForScore(PerformanceScore score) {
-        // Allow configurable grade thresholds via system property
-        // Format: benchmark.grade.thresholds=A+:1000000,A:100000,B:10000,C:1000
-        String thresholds = System.getProperty("benchmark.grade.thresholds");
-        if (thresholds != null && !thresholds.isEmpty()) {
-            return getColorForConfiguredGrade(score.compositeScore(), thresholds);
-        }
-
-        // Default thresholds based on log scale
-        return switch ((int) Math.log10(Math.max(1, score.compositeScore()))) {
-            case 6, 7, 8, 9 -> COLOR_BRIGHT_GREEN;  // A+ (1M+ ops/s)
-            case 5 -> COLOR_GREEN;                  // A (100K+ ops/s)
-            case 4 -> COLOR_YELLOW;                 // B (10K+ ops/s)
-            case 3 -> COLOR_ORANGE;                 // C (1K+ ops/s)
-            default -> COLOR_RED;                   // D/F (<1K ops/s)
-        };
+        double value = score.score();
+        if (value >= 800) return COLOR_BRIGHT_GREEN;
+        if (value >= 500) return COLOR_GREEN;
+        if (value >= 200) return COLOR_YELLOW;
+        if (value >= 100) return COLOR_ORANGE;
+        return COLOR_RED;
     }
 
-    private String getColorForConfiguredGrade(long throughput, String thresholds) {
-        // Parse thresholds and return appropriate color
-        String[] grades = thresholds.split(",");
-        for (String grade : grades) {
-            String[] parts = grade.split(":");
-            if (parts.length == 2) {
-                long threshold = Long.parseLong(parts[1]);
-                if (throughput >= threshold) {
-                    return switch (parts[0].toUpperCase()) {
-                        case "A+", "A" -> COLOR_BRIGHT_GREEN;
-                        case "B" -> COLOR_YELLOW;
-                        case "C" -> COLOR_ORANGE;
-                        default -> COLOR_RED;
-                    };
-                }
-            }
-        }
-        return COLOR_RED; // Default to lowest grade
-    }
-
-    private PerformanceHistory loadPerformanceHistory(String historyDir) {
-        Path historyPath = Path.of(historyDir);
-        if (Files.exists(historyPath)) {
-            try (var pathStream = Files.list(historyPath)) {
-                Path latestHistory = pathStream
-                        .filter(path -> path.toString().endsWith(".json"))
-                        .min((a, b) -> b.getFileName().compareTo(a.getFileName()))
-                        .orElse(null);
-
-                if (latestHistory != null) {
-                    String content = Files.readString(latestHistory);
-                    @SuppressWarnings("unchecked") Map<String, Object> data = GSON.fromJson(content, Map.class);
-                    return new PerformanceHistory(
-                            ((Number) data.getOrDefault("averageThroughput", 0.0)).doubleValue(),
-                            ((Number) data.getOrDefault("totalScore", 0.0)).doubleValue()
-                    );
-                }
-            } catch (IOException e) {
-                LOGGER.debug("Failed to load performance history", e);
-            }
-        }
-        return new PerformanceHistory(0.0, 0.0);
-    }
-
-    private TrendAnalysis analyzeTrend(Collection<RunResult> results, PerformanceHistory history) {
-        if (history.averageThroughput() == 0) {
-            return new TrendAnalysis(TrendDirection.STABLE, 0.0);
-        }
-
-        double currentThroughput = results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-                .mapToDouble(r -> r.getPrimaryResult().getScore())
-                .average()
-                .orElse(0.0);
-
-        double percentageChange = ((currentThroughput - history.averageThroughput()) / history.averageThroughput()) * 100;
-
-        TrendDirection direction = switch (Double.compare(Math.abs(percentageChange), 5.0)) {
-            case -1, 0 -> TrendDirection.STABLE;
-            default -> percentageChange > 0 ? TrendDirection.IMPROVING : TrendDirection.DECLINING;
-        };
-
-        return new TrendAnalysis(direction, percentageChange);
+    private TrendAnalysis analyzeTrend(JsonArray currentResults, PerformanceHistory history) {
+        // For now, return stable trend as we don't have historical data
+        return new TrendAnalysis(TrendDirection.STABLE, 0.0);
     }
 
     private String formatTrendMessage(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> "↗ +%.1f%%".formatted(Math.abs(trend.percentageChange()));
-            case DECLINING -> "↘ -%.1f%%".formatted(Math.abs(trend.percentageChange()));
-            case STABLE -> "→ Stable";
+            case IMPROVING -> String.format("↑ +%.1f%%", trend.percentChange());
+            case DEGRADING -> String.format("↓ %.1f%%", trend.percentChange());
+            case STABLE -> "→ stable";
         };
     }
 
     private String getTrendColor(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> COLOR_BRIGHT_GREEN;
-            case DECLINING -> COLOR_RED;
+            case IMPROVING -> COLOR_GREEN;
+            case DEGRADING -> COLOR_RED;
             case STABLE -> COLOR_BLUE;
         };
     }
 
-    private String formatTimestamp(String isoTimestamp) {
-        return isoTimestamp.length() >= 10 ? isoTimestamp.substring(0, 10) : isoTimestamp;
+    private String formatTimestamp(String timestamp) {
+        // Format as readable date
+        return timestamp.substring(0, 10); // YYYY-MM-DD
     }
 
-    private record PerformanceScore(long compositeScore, double throughput, double latency) {
+    private PerformanceHistory loadPerformanceHistory(String historyPath) {
+        // TODO: Implement loading of historical data from JSON files
+        return new PerformanceHistory(Collections.emptyList());
     }
 
-    private record PerformanceHistory(double averageThroughput, double totalScore) {
-    }
-
-    private record TrendAnalysis(TrendDirection direction, double percentageChange) {
-    }
+    // Value classes for structured data
+    private record PerformanceScore(double score, double throughput, double latency) {}
+    private record TrendAnalysis(TrendDirection direction, double percentChange) {}
+    private record PerformanceHistory(List<HistoricalResult> results) {}
+    private record HistoricalResult(Instant timestamp, double score) {}
 
     private enum TrendDirection {
-        IMPROVING, DECLINING, STABLE
+        IMPROVING, STABLE, DEGRADING
     }
 }

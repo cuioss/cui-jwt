@@ -69,7 +69,7 @@ public class BenchmarkResultProcessor {
     /**
      * Processes benchmark results to generate all artifacts.
      *
-     * @param results the JMH benchmark results
+     * @param results the JMH benchmark results (still needed for some generators)
      * @param outputDir the output directory for generated artifacts
      * @throws IOException if file operations fail
      */
@@ -80,19 +80,24 @@ public class BenchmarkResultProcessor {
         // Create output directories
         createOutputDirectories(outputDir);
 
-        // Generate all badges
-        generateBadges(results, benchmarkType, outputDir);
+        // Determine JSON result file path based on benchmark type
+        String jsonFileName = benchmarkType == BenchmarkType.MICRO ? 
+            "micro-benchmark-result.json" : "integration-benchmark-result.json";
+        Path jsonFile = Path.of(outputDir, jsonFileName);
+        
+        // Generate all badges using JSON file
+        generateBadges(jsonFile, benchmarkType, outputDir);
 
-        // Generate performance metrics
+        // Generate performance metrics (still uses RunResult for now)
         generateMetrics(results, outputDir);
 
-        // Generate HTML reports
+        // Generate HTML reports (still uses RunResult for now)
         generateReports(results, outputDir);
 
         // Generate GitHub Pages structure
         generateGitHubPagesStructure(outputDir);
 
-        // Write summary file for CI
+        // Write summary file for CI (still uses RunResult for now)
         writeSummaryFile(results, benchmarkType, outputDir);
 
         LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
@@ -118,13 +123,13 @@ public class BenchmarkResultProcessor {
     /**
      * Generates all types of badges.
      */
-    private void generateBadges(Collection<RunResult> results, BenchmarkType type, String outputDir)
+    private void generateBadges(Path jsonFile, BenchmarkType type, String outputDir)
             throws IOException {
         BadgeGenerator badgeGen = new BadgeGenerator();
 
-        LOGGER.info(INFO.GENERATING_BADGES.format(results.size()));
-        badgeGen.generatePerformanceBadge(results, type, outputDir + BADGES_DIR);
-        badgeGen.generateTrendBadge(results, type, outputDir + BADGES_DIR);
+        LOGGER.info(INFO.GENERATING_BADGES.format(type.getDisplayName()));
+        badgeGen.generatePerformanceBadge(jsonFile, type, outputDir + BADGES_DIR);
+        badgeGen.generateTrendBadge(jsonFile, type, outputDir + BADGES_DIR);
         badgeGen.generateLastRunBadge(outputDir + BADGES_DIR);
     }
 
