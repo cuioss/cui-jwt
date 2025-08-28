@@ -137,11 +137,11 @@ public final class MetricConversionUtil {
      */
     public static String formatThroughput(double value) {
         if (value >= 1_000_000) {
-            return formatForDisplay(value / 1_000_000) + "M ops/s";
+            return formatForDisplay(value / 1_000_000) + UNITS.M_OPS_S;
         } else if (value >= 1000) {
-            return formatForDisplay(value / 1000) + "K ops/s";
+            return formatForDisplay(value / 1000) + UNITS.K_OPS_S;
         } else {
-            return formatForDisplay(value) + " ops/s";
+            return formatForDisplay(value) + UNITS.SPACE_OPS_S;
         }
     }
 
@@ -153,9 +153,9 @@ public final class MetricConversionUtil {
      */
     public static String formatLatency(double ms) {
         if (ms >= 1000) {
-            return formatForDisplay(ms / 1000) + "s";
+            return formatForDisplay(ms / 1000) + UNITS.SUFFIX_S;
         } else {
-            return formatForDisplay(ms) + "ms";
+            return formatForDisplay(ms) + UNITS.SUFFIX_MS;
         }
     }
 }

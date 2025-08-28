@@ -19,6 +19,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import static de.cuioss.benchmarking.common.report.ReportConstants.*;
+
 /**
  * Computes benchmark metrics from JSON results.
  * This is the single source of truth for metric calculations.
@@ -30,10 +32,10 @@ public class MetricsComputer {
 
     public MetricsComputer(String throughputBenchmarkName, String latencyBenchmarkName) {
         if (throughputBenchmarkName == null || throughputBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException("Throughput benchmark name must be specified");
+            throw new IllegalArgumentException(ERRORS.THROUGHPUT_NAME_REQUIRED);
         }
         if (latencyBenchmarkName == null || latencyBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException("Latency benchmark name must be specified");
+            throw new IllegalArgumentException(ERRORS.LATENCY_NAME_REQUIRED);
         }
         this.throughputBenchmarkName = throughputBenchmarkName;
         this.latencyBenchmarkName = latencyBenchmarkName;
@@ -41,7 +43,7 @@ public class MetricsComputer {
 
     public BenchmarkMetrics computeMetrics(JsonArray benchmarks) {
         if (benchmarks == null || benchmarks.isEmpty()) {
-            throw new IllegalArgumentException("No benchmark results provided");
+            throw new IllegalArgumentException(ERRORS.NO_RESULTS_PROVIDED);
         }
 
         double throughput = extractThroughput(benchmarks);
@@ -64,43 +66,43 @@ public class MetricsComputer {
     private double extractThroughput(JsonArray benchmarks) {
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            String benchmarkName = benchmark.get("benchmark").getAsString();
+            String benchmarkName = benchmark.get(JSON_FIELDS.BENCHMARK).getAsString();
 
             if (benchmarkName.contains(throughputBenchmarkName)) {
-                String mode = benchmark.get("mode").getAsString();
-                JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
-                double score = primaryMetric.get("score").getAsDouble();
-                String unit = primaryMetric.get("scoreUnit").getAsString();
+                String mode = benchmark.get(JSON_FIELDS.MODE).getAsString();
+                JsonObject primaryMetric = benchmark.getAsJsonObject(JSON_FIELDS.PRIMARY_METRIC);
+                double score = primaryMetric.get(JSON_FIELDS.SCORE).getAsDouble();
+                String unit = primaryMetric.get(JSON_FIELDS.SCORE_UNIT).getAsString();
 
-                if ("thrpt".equals(mode) || unit.contains("ops")) {
+                if (MODES.THROUGHPUT.equals(mode) || unit.contains(UNITS.OPS)) {
                     return MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 }
             }
         }
 
         throw new IllegalStateException(
-                "Required throughput benchmark '" + throughputBenchmarkName + "' not found in results");
+                ERRORS.THROUGHPUT_NOT_FOUND_FORMAT.formatted(throughputBenchmarkName));
     }
 
     private double extractLatency(JsonArray benchmarks) {
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            String benchmarkName = benchmark.get("benchmark").getAsString();
+            String benchmarkName = benchmark.get(JSON_FIELDS.BENCHMARK).getAsString();
 
             if (benchmarkName.contains(latencyBenchmarkName)) {
-                String mode = benchmark.get("mode").getAsString();
-                JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
-                double score = primaryMetric.get("score").getAsDouble();
-                String unit = primaryMetric.get("scoreUnit").getAsString();
+                String mode = benchmark.get(JSON_FIELDS.MODE).getAsString();
+                JsonObject primaryMetric = benchmark.getAsJsonObject(JSON_FIELDS.PRIMARY_METRIC);
+                double score = primaryMetric.get(JSON_FIELDS.SCORE).getAsDouble();
+                String unit = primaryMetric.get(JSON_FIELDS.SCORE_UNIT).getAsString();
 
-                if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
+                if (MODES.AVERAGE_TIME.equals(mode) || MODES.SAMPLE.equals(mode) || unit.contains(UNITS.SUFFIX_OP)) {
                     return MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
                 }
             }
         }
 
         throw new IllegalStateException(
-                "Required latency benchmark '" + latencyBenchmarkName + "' not found in results");
+                ERRORS.LATENCY_NOT_FOUND_FORMAT.formatted(latencyBenchmarkName));
     }
 
     private double calculatePerformanceScore(double throughput, double latency) {
@@ -110,12 +112,12 @@ public class MetricsComputer {
     }
 
     private String getPerformanceGrade(double score) {
-        if (score >= 95) return "A+";
-        if (score >= 90) return "A";
-        if (score >= 75) return "B";
-        if (score >= 60) return "C";
-        if (score >= 40) return "D";
-        return "F";
+        if (score >= 95) return GRADES.A_PLUS;
+        if (score >= 90) return GRADES.A;
+        if (score >= 75) return GRADES.B;
+        if (score >= 60) return GRADES.C;
+        if (score >= 40) return GRADES.D;
+        return GRADES.F;
     }
 
 }

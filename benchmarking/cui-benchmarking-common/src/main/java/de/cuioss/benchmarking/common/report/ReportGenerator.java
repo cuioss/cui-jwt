@@ -24,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+import static de.cuioss.benchmarking.common.report.ReportConstants.TEMPLATES;
+import static de.cuioss.benchmarking.common.report.ReportConstants.FILES;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
@@ -41,7 +43,7 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 public class ReportGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
-    private static final String DATA_FILE_NAME = "benchmark-data.json";
+    private static final String DATA_FILE_NAME = FILES.BENCHMARK_DATA_JSON;
     private final ReportDataGenerator dataGenerator;
     private final BenchmarkMetrics metrics;
 
@@ -69,9 +71,9 @@ public class ReportGenerator {
 
         // Then copy the index template
         LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));
-        copyTemplate("index.html", outputDir);
+        copyTemplate(FILES.INDEX_HTML, outputDir);
 
-        Path indexFile = Path.of(outputDir).resolve("index.html");
+        Path indexFile = Path.of(outputDir).resolve(FILES.INDEX_HTML);
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
     }
 
@@ -85,9 +87,9 @@ public class ReportGenerator {
         LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
 
         // Copy the trends template
-        copyTemplate("trends.html", outputDir);
+        copyTemplate(FILES.TRENDS_HTML, outputDir);
 
-        Path trendsFile = Path.of(outputDir).resolve("trends.html");
+        Path trendsFile = Path.of(outputDir).resolve(FILES.TRENDS_HTML);
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
 
@@ -101,9 +103,9 @@ public class ReportGenerator {
         LOGGER.info(INFO.GENERATING_REPORTS::format);
 
         // Copy the detailed template
-        copyTemplate("detailed.html", outputDir);
+        copyTemplate(FILES.DETAILED_HTML, outputDir);
 
-        Path detailedFile = Path.of(outputDir).resolve("detailed.html");
+        Path detailedFile = Path.of(outputDir).resolve(FILES.DETAILED_HTML);
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(detailedFile));
     }
 
@@ -118,14 +120,14 @@ public class ReportGenerator {
         Files.createDirectories(outputPath);
 
         // Copy CSS file
-        copyTemplate("report-styles.css", outputDir);
+        copyTemplate(FILES.REPORT_STYLES_CSS, outputDir);
 
         // Copy the data loader JavaScript
-        copyTemplate("data-loader.js", outputDir);
+        copyTemplate(FILES.DATA_LOADER_JS, outputDir);
 
         // Copy robots.txt and sitemap if needed
-        copyTemplate("robots.txt", outputDir);
-        copyTemplate("sitemap.xml", outputDir);
+        copyTemplate(FILES.ROBOTS_TXT, outputDir);
+        copyTemplate(FILES.SITEMAP_XML, outputDir);
     }
 
     /**
@@ -139,10 +141,10 @@ public class ReportGenerator {
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
 
-        String resourcePath = "/templates/" + templateName;
+        String resourcePath = TEMPLATES.PATH_PREFIX + templateName;
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
             if (is == null) {
-                throw new IOException("Template not found: " + resourcePath);
+                throw new IOException(TEMPLATES.NOT_FOUND_FORMAT.formatted(resourcePath));
             }
             Path targetFile = outputPath.resolve(templateName);
             Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING);

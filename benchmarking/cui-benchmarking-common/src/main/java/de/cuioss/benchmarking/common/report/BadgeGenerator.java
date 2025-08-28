@@ -29,6 +29,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static de.cuioss.benchmarking.common.report.ReportConstants.BADGE;
+import static de.cuioss.benchmarking.common.report.ReportConstants.FILES;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
@@ -53,20 +55,6 @@ public class BadgeGenerator {
             .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
-    // Badge JSON field constants
-    private static final String SCHEMA_VERSION = "schemaVersion";
-    private static final String LABEL = "label";
-    private static final String MESSAGE = "message";
-    private static final String COLOR = "color";
-
-    // Color constants
-    private static final String COLOR_BRIGHT_GREEN = "brightgreen";
-    private static final String COLOR_GREEN = "green";
-    private static final String COLOR_YELLOW = "yellow";
-    private static final String COLOR_ORANGE = "orange";
-    private static final String COLOR_RED = "red";
-    private static final String COLOR_BLUE = "blue";
-
     /**
      * Generates a performance badge showing current benchmark performance.
      *
@@ -79,10 +67,10 @@ public class BadgeGenerator {
             throws IOException {
 
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put(SCHEMA_VERSION, 1);
-        badge.put(LABEL, type.getBadgeLabel());
-        badge.put(MESSAGE, formatPerformanceMessage(metrics));
-        badge.put(COLOR, getColorForScore(metrics.performanceScore()));
+        badge.put(BADGE.SCHEMA_VERSION, 1);
+        badge.put(BADGE.LABEL, type.getBadgeLabel());
+        badge.put(BADGE.MESSAGE, formatPerformanceMessage(metrics));
+        badge.put(BADGE.COLOR, getColorForScore(metrics.performanceScore()));
 
         String filename = type.getPerformanceBadgeFileName();
         Path badgeFile = Path.of(outputDir, filename);
@@ -110,10 +98,10 @@ public class BadgeGenerator {
         TrendAnalysis trend = analyzeTrend(benchmarks, history);
 
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put(SCHEMA_VERSION, 1);
-        badge.put(LABEL, "Performance Trend");
-        badge.put(MESSAGE, formatTrendMessage(trend));
-        badge.put(COLOR, getTrendColor(trend));
+        badge.put(BADGE.SCHEMA_VERSION, 1);
+        badge.put(BADGE.LABEL, BADGE.LABELS.PERFORMANCE_TREND);
+        badge.put(BADGE.MESSAGE, formatTrendMessage(trend));
+        badge.put(BADGE.COLOR, getTrendColor(trend));
 
         String filename = type.getTrendBadgeFileName();
         Path badgeFile = Path.of(outputDir, filename);
@@ -132,12 +120,12 @@ public class BadgeGenerator {
         String timestamp = ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC));
 
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put(SCHEMA_VERSION, 1);
-        badge.put(LABEL, "Last Run");
-        badge.put(MESSAGE, formatTimestamp(timestamp));
-        badge.put(COLOR, COLOR_BLUE);
+        badge.put(BADGE.SCHEMA_VERSION, 1);
+        badge.put(BADGE.LABEL, BADGE.LABELS.LAST_RUN);
+        badge.put(BADGE.MESSAGE, formatTimestamp(timestamp));
+        badge.put(BADGE.COLOR, BADGE.COLORS.BLUE);
 
-        Path badgeFile = Path.of(outputDir, "last-run-badge.json");
+        Path badgeFile = Path.of(outputDir, FILES.LAST_RUN_BADGE_JSON);
         Files.writeString(badgeFile, GSON.toJson(badge));
         LOGGER.info(INFO.BADGE_GENERATED.format("last run", badgeFile));
     }
@@ -160,11 +148,11 @@ public class BadgeGenerator {
 
     private String getColorForScore(double score) {
         // Color based on the 0-100 performance score
-        if (score >= 90) return COLOR_BRIGHT_GREEN;  // Grade A
-        if (score >= 75) return COLOR_GREEN;         // Grade B
-        if (score >= 60) return COLOR_YELLOW;        // Grade C
-        if (score >= 40) return COLOR_ORANGE;        // Grade D
-        return COLOR_RED;                             // Grade F
+        if (score >= 90) return BADGE.COLORS.BRIGHT_GREEN;  // Grade A
+        if (score >= 75) return BADGE.COLORS.GREEN;         // Grade B
+        if (score >= 60) return BADGE.COLORS.YELLOW;        // Grade C
+        if (score >= 40) return BADGE.COLORS.ORANGE;        // Grade D
+        return BADGE.COLORS.RED;                             // Grade F
     }
 
     private TrendAnalysis analyzeTrend(JsonArray currentResults, PerformanceHistory history) {
@@ -174,17 +162,17 @@ public class BadgeGenerator {
 
     private String formatTrendMessage(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> String.format(Locale.US, "↑ +%.1f%%", trend.percentChange());
-            case DEGRADING -> String.format(Locale.US, "↓ %.1f%%", trend.percentChange());
-            case STABLE -> "→ stable";
+            case IMPROVING -> String.format(Locale.US, BADGE.TRENDS.IMPROVING_FORMAT, trend.percentChange());
+            case DEGRADING -> String.format(Locale.US, BADGE.TRENDS.DEGRADING_FORMAT, trend.percentChange());
+            case STABLE -> BADGE.TRENDS.STABLE;
         };
     }
 
     private String getTrendColor(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> COLOR_GREEN;
-            case DEGRADING -> COLOR_RED;
-            case STABLE -> COLOR_BLUE;
+            case IMPROVING -> BADGE.COLORS.GREEN;
+            case DEGRADING -> BADGE.COLORS.RED;
+            case STABLE -> BADGE.COLORS.BLUE;
         };
     }
 

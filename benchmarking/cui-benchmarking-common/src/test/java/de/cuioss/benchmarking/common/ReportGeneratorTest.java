@@ -214,7 +214,7 @@ class ReportGeneratorTest {
             // For latency benchmarks (avgt mode), verify score is present and formatted
             if ("avgt".equals(mode)) {
                 String scoreStr = benchmark.get("score").getAsString();
-                String unit = benchmark.get("unit").getAsString();
+                String unit = benchmark.get("scoreUnit").getAsString();
                 assertNotNull(scoreStr, "Score should not be null");
                 assertFalse(scoreStr.isEmpty(), "Score should not be empty");
                 assertNotNull(unit, "Unit should not be null");

@@ -15,6 +15,8 @@
  */
 package de.cuioss.benchmarking.common.report;
 
+import static de.cuioss.benchmarking.common.report.ReportConstants.ERRORS;
+
 /**
  * Immutable record containing all computed benchmark metrics.
  * This is the central data structure shared across all report generators.
@@ -29,19 +31,19 @@ String performanceGrade
 ) {
     public BenchmarkMetrics {
         if (throughputBenchmarkName == null || throughputBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException("Throughput benchmark name must be specified");
+            throw new IllegalArgumentException(ERRORS.THROUGHPUT_NAME_REQUIRED);
         }
         if (latencyBenchmarkName == null || latencyBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException("Latency benchmark name must be specified");
+            throw new IllegalArgumentException(ERRORS.LATENCY_NAME_REQUIRED);
         }
         if (throughput <= 0) {
-            throw new IllegalArgumentException("Throughput must be positive, got: " + throughput);
+            throw new IllegalArgumentException(ERRORS.THROUGHPUT_POSITIVE + throughput);
         }
         if (latency <= 0) {
-            throw new IllegalArgumentException("Latency must be positive, got: " + latency);
+            throw new IllegalArgumentException(ERRORS.LATENCY_POSITIVE + latency);
         }
         if (performanceScore < 0) {
-            throw new IllegalArgumentException("Performance score must be non-negative, got: " + performanceScore);
+            throw new IllegalArgumentException(ERRORS.SCORE_NON_NEGATIVE + performanceScore);
         }
     }
 }
