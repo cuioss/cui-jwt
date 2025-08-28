@@ -330,20 +330,6 @@ import lombok.experimental.UtilityClass;
      * Version information.
      */
     @UtilityClass public static final class VERSIONS {
-        public static final String REPORT_VERSION = "2.0.0";
-    }
-
-    /**
-     * Statistical field names (for backward compatibility).
-     */
-    @UtilityClass public static final class STATS {
-        public static final String MEAN = "mean";
-        public static final String STDDEV = "stddev";
-        public static final String MIN = "min";
-        public static final String MAX = "max";
-        public static final String N = "n";
-        public static final String P50 = "p50";
-        public static final String P95 = "p95";
-        public static final String P99 = "p99";
+        public static final String REPORT_VERSION = "1.0";
     }
 }
