@@ -93,8 +93,6 @@ class GitHubPagesGeneratorTest {
                 "Latest API endpoint should be created");
         assertTrue(Files.exists(deployDir.resolve("api/benchmarks.json")),
                 "Benchmarks API endpoint should be created");
-        assertTrue(Files.exists(deployDir.resolve("api/metrics.json")),
-                "Metrics API endpoint should be created");
         assertTrue(Files.exists(deployDir.resolve("api/status.json")),
                 "Status API endpoint should be created");
 

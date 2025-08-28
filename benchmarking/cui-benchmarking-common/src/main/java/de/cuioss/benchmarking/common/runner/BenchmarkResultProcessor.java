@@ -26,6 +26,7 @@ import org.openjdk.jmh.results.RunResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
@@ -98,6 +99,10 @@ public class BenchmarkResultProcessor {
                 "micro-benchmark-result.json" : "integration-benchmark-result.json";
         Path jsonFile = Path.of(outputDir, jsonFileName);
 
+        // Target location in data directory with unified name
+        Path dataDir = Path.of(outputDir, DATA_DIR);
+        Path targetJsonFile = dataDir.resolve("original-jmh-result.json");
+
         // FAIL FAST: JSON file must exist (created by runner in production)
         // For testing, tests must provide proper JSON files
         if (!Files.exists(jsonFile)) {
@@ -112,11 +117,12 @@ public class BenchmarkResultProcessor {
         MetricsComputer computer = new MetricsComputer(throughputBenchmarkName, latencyBenchmarkName);
         BenchmarkMetrics metrics = computer.computeMetrics(benchmarks);
 
+        // Copy JMH result to data directory with unified name
+        Files.copy(jsonFile, targetJsonFile, StandardCopyOption.REPLACE_EXISTING);
+        LOGGER.info(INFO.JMH_RESULT_COPIED.format(targetJsonFile));
+
         // Generate all badges using pre-computed metrics
         generateBadges(jsonFile, benchmarkType, outputDir, metrics);
-
-        // Generate performance metrics using pre-computed metrics
-        generateMetrics(jsonFile, outputDir, metrics);
 
         // Generate HTML reports using pre-computed metrics
         generateReports(jsonFile, outputDir, metrics);
@@ -156,15 +162,6 @@ public class BenchmarkResultProcessor {
         badgeGen.generateLastRunBadge(outputDir + BADGES_DIR);
     }
 
-    /**
-     * Generates performance metrics in JSON format.
-     */
-    private void generateMetrics(Path jsonFile, String outputDir, BenchmarkMetrics metrics) throws IOException {
-        MetricsGenerator metricsGen = new MetricsGenerator();
-
-        LOGGER.info(INFO.GENERATING_METRICS::format);
-        metricsGen.generateMetricsJson(jsonFile, outputDir + DATA_DIR, metrics);
-    }
 
     /**
      * Generates HTML reports with embedded CSS.

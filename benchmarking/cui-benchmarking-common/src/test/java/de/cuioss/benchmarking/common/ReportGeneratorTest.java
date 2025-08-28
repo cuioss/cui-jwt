@@ -59,7 +59,7 @@ class ReportGeneratorTest {
         assertNotNull(dataJson.get("metadata"), "Should have metadata section");
         assertNotNull(dataJson.get("overview"), "Should have overview section");
         assertNotNull(dataJson.get("benchmarks"), "Should have benchmarks array");
-        assertNotNull(dataJson.get("charts"), "Should have charts section");
+        assertNotNull(dataJson.get("chartData"), "Should have chartData section");
         assertNotNull(dataJson.get("trends"), "Should have trends section");
 
         // Verify benchmarks were processed
@@ -165,8 +165,8 @@ class ReportGeneratorTest {
         String jsonContent = Files.readString(dataFile);
         JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
 
-        JsonObject charts = dataJson.getAsJsonObject("charts");
-        JsonObject percentilesData = charts.getAsJsonObject("percentiles");
+        JsonObject chartData = dataJson.getAsJsonObject("chartData");
+        JsonObject percentilesData = chartData.getAsJsonObject("percentilesData");
         JsonArray benchmarkNames = percentilesData.getAsJsonArray("labels");
 
         // Should only include avgt benchmarks (latency), not thrpt (throughput)
@@ -198,12 +198,12 @@ class ReportGeneratorTest {
         JsonObject overview = dataJson.getAsJsonObject("overview");
         assertNotNull(overview, "Overview section must exist");
 
-        // The average latency should be around 0.35 ms (calculated from test data)
-        // Test data has: 0.00967, 0.00812, 0.00525, 0.8029, 0.9273 ms
-        // Average: (0.00967 + 0.00812 + 0.00525 + 0.8029 + 0.9273) / 5 = 0.35064 ms
-        double latency = overview.get("latency").getAsDouble();
-        assertTrue(latency > 0, "Latency should be positive");
-        // The latency is now the specific benchmark latency, not an average
+        // The latency is now a formatted string (e.g., "0.80ms")
+        String latencyStr = overview.get("latency").getAsString();
+        assertNotNull(latencyStr, "Latency string should not be null");
+        assertFalse(latencyStr.isEmpty(), "Latency string should not be empty");
+        assertTrue(latencyStr.contains("ms") || latencyStr.contains("s"), 
+                "Latency should have unit: " + latencyStr);
 
         // Verify individual benchmark scores are reasonable
         JsonArray benchmarksArray = dataJson.getAsJsonArray("benchmarks");
@@ -211,11 +211,12 @@ class ReportGeneratorTest {
             JsonObject benchmark = element.getAsJsonObject();
             String mode = benchmark.get("mode").getAsString();
 
-            // For latency benchmarks (avgt mode), verify score is in reasonable range
+            // For latency benchmarks (avgt mode), verify score is present and formatted
             if ("avgt".equals(mode)) {
-                double score = benchmark.get("score").getAsDouble();
+                String scoreStr = benchmark.get("score").getAsString();
                 String unit = benchmark.get("unit").getAsString();
-                assertTrue(score > 0, "Score should be positive: " + score);
+                assertNotNull(scoreStr, "Score should not be null");
+                assertFalse(scoreStr.isEmpty(), "Score should not be empty");
                 assertNotNull(unit, "Unit should not be null");
             }
         }

@@ -16,7 +16,9 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.*;
+import de.cuioss.benchmarking.common.report.BadgeGenerator;
+import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
+import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.Test;
@@ -142,8 +144,6 @@ class LocalReportGeneratorTest {
         }
         ReportGenerator reportGen = new ReportGenerator(metrics);
         BadgeGenerator badgeGen = new BadgeGenerator();
-        MetricsGenerator metricsGen = new MetricsGenerator();
-        SummaryGenerator summaryGen = new SummaryGenerator();
 
         String outputDirStr = outputDir.toString();
 
@@ -160,14 +160,9 @@ class LocalReportGeneratorTest {
         badgeGen.generateTrendBadge(jsonFile, type, badgesDir.toString());
         badgeGen.generateLastRunBadge(badgesDir.toString());
 
-        // Generate metrics
+        // Ensure data directory exists for other files
         Path dataDir = outputDir.resolve("data");
         Files.createDirectories(dataDir);
-        metricsGen.generateMetricsJson(jsonFile, dataDir.toString(), metrics);
-
-        // Generate summary in data directory
-        summaryGen.writeSummary(metrics, type,
-                outputDir.resolve("data/summary.json"));
 
         LOGGER.debug("Generated individual report components for {}", type.getDisplayName());
     }

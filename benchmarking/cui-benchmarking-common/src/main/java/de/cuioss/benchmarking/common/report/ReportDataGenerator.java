@@ -160,7 +160,7 @@ public class ReportDataGenerator {
 
             result.put("score", formatScore(score, unit));
             result.put("unit", unit);
-            
+
             // Add throughput or latency fields based on mode
             if ("thrpt".equals(mode) || unit.contains("ops")) {
                 double throughputOps = MetricConversionUtil.convertToOpsPerSecond(score, unit);
@@ -246,7 +246,7 @@ public class ReportDataGenerator {
             String unit = primaryMetric.get("scoreUnit").getAsString();
 
             labels.add(name);
-            
+
             if ("thrpt".equals(mode) || unit.contains("ops")) {
                 throughput.add(MetricConversionUtil.convertToOpsPerSecond(score, unit));
                 latency.add(null);  // No latency for throughput benchmark
@@ -264,7 +264,7 @@ public class ReportDataGenerator {
         chartData.put("labels", labels);
         chartData.put("throughput", throughput);
         chartData.put("latency", latency);
-        
+
         // Add percentiles data separately
         chartData.put("percentilesData", createPercentilesChartData(benchmarks));
 
@@ -288,7 +288,7 @@ public class ReportDataGenerator {
             if ("avgt".equals(mode) || "sample".equals(mode)) {
                 String name = extractSimpleName(benchmark.get("benchmark").getAsString());
                 benchmarkNames.add(name);
-                
+
                 List<Double> benchmarkData = new ArrayList<>();
                 JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
                 JsonObject percentiles = primaryMetric.getAsJsonObject("scorePercentiles");
@@ -310,7 +310,7 @@ public class ReportDataGenerator {
                         benchmarkData.add(null);
                     }
                 }
-                
+
                 dataByBenchmark.put(name, benchmarkData);
             }
         }
@@ -319,7 +319,7 @@ public class ReportDataGenerator {
         percentilesChart.put("percentileLabels", percentileLabels);
         percentilesChart.put("benchmarks", benchmarkNames);
         percentilesChart.put("data", dataByBenchmark);
-        
+
         // Also keep the old structure for backward compatibility
         percentilesChart.put("labels", benchmarkNames);
         Map<String, List<Double>> datasets = new LinkedHashMap<>();

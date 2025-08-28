@@ -62,8 +62,8 @@ class BenchmarkResultProcessorTest {
                 "Trend badge should be generated");
         assertTrue(Files.exists(Path.of(outputDir, "badges/last-run-badge.json")),
                 "Last run badge should be generated");
-        assertTrue(Files.exists(Path.of(outputDir, "data/metrics.json")),
-                "Metrics file should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "data/original-jmh-result.json")),
+                "Original JMH result file should be copied to data directory");
         assertTrue(Files.exists(Path.of(outputDir, "index.html")),
                 "Index HTML report should be generated");
         assertTrue(Files.exists(Path.of(outputDir, "trends.html")),

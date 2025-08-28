@@ -33,8 +33,7 @@
                     <p>The interactive visualizer could not be loaded. You can:</p>
                     <ul>
                         <li>Visit <a href="https://jmh.morethan.io/" target="_blank">JMH Visualizer</a> directly</li>
-                        <li>Download <a href="data/benchmark-result.json" download>benchmark results</a> and upload manually</li>
-                        <li>View <a href="data/metrics.json" target="_blank">raw metrics data</a></li>
+                        <li>Download <a href="data/original-jmh-result.json" download>benchmark results</a> and upload manually</li>
                     </ul>
                 </div>
             </div>
@@ -60,7 +59,7 @@
             const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
             
             // Try to load the benchmark results
-            const jsonUrl = baseUrl + '/data/benchmark-result.json';
+            const jsonUrl = baseUrl + '/data/original-jmh-result.json';
             
             // Set iframe source to JMH Visualizer with our data
             iframe.src = 'https://jmh.morethan.io/?source=' + encodeURIComponent(jsonUrl);

@@ -508,7 +508,7 @@ class BenchmarkDataLoader {
         
         // Get the base URL of the current page
         const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
-        const jsonUrl = baseUrl + '/data/benchmark-result.json';
+        const jsonUrl = baseUrl + '/data/original-jmh-result.json';
         
         // Check if the JSON file exists
         fetch(jsonUrl, { method: 'HEAD' })

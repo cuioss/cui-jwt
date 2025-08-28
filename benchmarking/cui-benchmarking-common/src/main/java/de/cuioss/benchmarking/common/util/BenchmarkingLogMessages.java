@@ -218,6 +218,13 @@ public final class BenchmarkingLogMessages {
                 .identifier(25)
                 .template("Generated summary file: %s")
                 .build();
+
+        /** Message when JMH result file is copied to data directory. */
+        public static final LogRecord JMH_RESULT_COPIED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(26)
+                .template("Copied JMH result to data directory: %s")
+                .build();
     }
 
     /**

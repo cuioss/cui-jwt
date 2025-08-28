@@ -56,7 +56,6 @@ public class GitHubPagesGenerator {
     private static final String INDEX_HTML = "index.html";
     private static final String REPORTS_DIR = "reports";
     private static final String BENCHMARK_SUMMARY_JSON = "data/benchmark-summary.json";
-    private static final String DATA_METRICS_JSON = "data/metrics.json";
     private static final String BADGES_DIR = "badges";
     private static final String BENCHMARKS_KEY = "benchmarks";
 
@@ -151,7 +150,6 @@ public class GitHubPagesGenerator {
         // Create API structure
         createLatestEndpoint(sourceDir, apiDir);
         createBenchmarksEndpoint(sourceDir, apiDir);
-        createMetricsEndpoint(sourceDir, apiDir);
         createStatusEndpoint(sourceDir, apiDir);
     }
 
@@ -178,7 +176,6 @@ public class GitHubPagesGenerator {
         latestData.put("summary", summary);
 
         Map<String, String> links = new LinkedHashMap<>();
-        links.put("full_metrics", "/api/metrics.json");
         links.put(BENCHMARKS_KEY, "/api/benchmarks.json");
         links.put(BADGES_DIR, "/badges/");
         latestData.put("links", links);
@@ -189,11 +186,20 @@ public class GitHubPagesGenerator {
     }
 
     private void createBenchmarksEndpoint(Path sourceDir, Path apiDir) throws IOException {
-        Path sourceMetrics = sourceDir.resolve(DATA_METRICS_JSON);
         Path benchmarksFile = apiDir.resolve("benchmarks.json");
+        Path benchmarkDataFile = sourceDir.resolve("data/benchmark-data.json");
 
-        if (Files.exists(sourceMetrics)) {
-            Files.copy(sourceMetrics, benchmarksFile, StandardCopyOption.REPLACE_EXISTING);
+        if (Files.exists(benchmarkDataFile)) {
+            // Extract benchmark data from benchmark-data.json
+            String content = Files.readString(benchmarkDataFile);
+            var gson = new Gson();
+            @SuppressWarnings("unchecked") Map<String, Object> data = gson.fromJson(content, Map.class);
+            Map<String, Object> benchmarksData = new LinkedHashMap<>();
+            benchmarksData.put(BENCHMARKS_KEY, data.getOrDefault("benchmarks", new LinkedHashMap<>()));
+            benchmarksData.put("generated", Instant.now().toString());
+
+            var gsonWriter = new GsonBuilder().setPrettyPrinting().create();
+            Files.writeString(benchmarksFile, gsonWriter.toJson(benchmarksData));
         } else {
             Map<String, Object> benchmarksData = new LinkedHashMap<>();
             benchmarksData.put(BENCHMARKS_KEY, new LinkedHashMap<>());
@@ -206,29 +212,6 @@ public class GitHubPagesGenerator {
         LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(benchmarksFile));
     }
 
-    private void createMetricsEndpoint(Path sourceDir, Path apiDir) throws IOException {
-        Path sourceMetrics = sourceDir.resolve(DATA_METRICS_JSON);
-        Path metricsFile = apiDir.resolve("metrics.json");
-
-        if (Files.exists(sourceMetrics)) {
-            Files.copy(sourceMetrics, metricsFile, StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            Map<String, Object> emptyMetrics = new LinkedHashMap<>();
-            emptyMetrics.put(TIMESTAMP_KEY, Instant.now().toString());
-            emptyMetrics.put(BENCHMARKS_KEY, new LinkedHashMap<>());
-            emptyMetrics.put("summary", Map.of(
-                    TOTAL_BENCHMARKS_KEY, 0,
-                    "total_score", 0.0,
-                    AVERAGE_THROUGHPUT_KEY, 0.0,
-                    PERFORMANCE_GRADE_KEY, "N/A"
-            ));
-
-            var gson = new GsonBuilder().setPrettyPrinting().create();
-            Files.writeString(metricsFile, gson.toJson(emptyMetrics));
-        }
-
-        LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(metricsFile));
-    }
 
     private void createStatusEndpoint(Path sourceDir, Path apiDir) throws IOException {
         Path statusFile = apiDir.resolve("status.json");
@@ -248,8 +231,7 @@ public class GitHubPagesGenerator {
         }
 
         Map<String, String> services = new LinkedHashMap<>();
-        services.put(BENCHMARKS_KEY, Files.exists(sourceDir.resolve(DATA_METRICS_JSON)) ? OPERATIONAL_STATUS : NO_DATA_STATUS);
-        services.put("metrics", Files.exists(sourceDir.resolve(DATA_METRICS_JSON)) ? OPERATIONAL_STATUS : NO_DATA_STATUS);
+        services.put(BENCHMARKS_KEY, Files.exists(sourceDir.resolve("data/benchmark-data.json")) ? OPERATIONAL_STATUS : NO_DATA_STATUS);
         services.put(REPORTS_DIR, Files.exists(sourceDir.resolve(INDEX_HTML)) ? OPERATIONAL_STATUS : NO_DATA_STATUS);
         statusData.put("services", services);
 
