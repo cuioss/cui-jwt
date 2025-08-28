@@ -19,12 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.BadgeGenerator;
-import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
-import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
-import de.cuioss.benchmarking.common.report.MetricsComputer;
-import de.cuioss.benchmarking.common.report.MetricsGenerator;
-import de.cuioss.benchmarking.common.report.ReportGenerator;
+import de.cuioss.benchmarking.common.report.*;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 
@@ -54,7 +49,7 @@ public class BenchmarkResultProcessor {
 
     private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkResultProcessor.class);
-    
+
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .serializeSpecialFloatingPointValues()
@@ -76,9 +71,9 @@ public class BenchmarkResultProcessor {
      * @param throughputBenchmarkName the benchmark name to extract throughput from
      * @param latencyBenchmarkName the benchmark name to extract latency from
      */
-    public BenchmarkResultProcessor(BenchmarkType benchmarkType, 
-                                   String throughputBenchmarkName,
-                                   String latencyBenchmarkName) {
+    public BenchmarkResultProcessor(BenchmarkType benchmarkType,
+            String throughputBenchmarkName,
+            String latencyBenchmarkName) {
         this.benchmarkType = benchmarkType;
         this.throughputBenchmarkName = throughputBenchmarkName;
         this.latencyBenchmarkName = latencyBenchmarkName;
@@ -113,7 +108,7 @@ public class BenchmarkResultProcessor {
         // Compute metrics once using the pipeline
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-        
+
         MetricsComputer computer = new MetricsComputer(throughputBenchmarkName, latencyBenchmarkName);
         BenchmarkMetrics metrics = computer.computeMetrics(benchmarks);
 

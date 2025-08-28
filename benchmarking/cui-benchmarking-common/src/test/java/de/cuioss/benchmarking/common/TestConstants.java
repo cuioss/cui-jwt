@@ -19,14 +19,14 @@ package de.cuioss.benchmarking.common;
  * Test constants for benchmarking tests.
  */
 public final class TestConstants {
-    
+
     private TestConstants() {
         // utility class
     }
-    
+
     /** Default throughput benchmark name for tests. */
     public static final String DEFAULT_THROUGHPUT_BENCHMARK = "measureThroughput";
-    
+
     /** Default latency benchmark name for tests. */
     public static final String DEFAULT_LATENCY_BENCHMARK = "measureLatency";
 }

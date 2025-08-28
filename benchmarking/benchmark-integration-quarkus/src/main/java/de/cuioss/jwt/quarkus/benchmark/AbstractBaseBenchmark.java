@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
@@ -65,7 +66,12 @@ public abstract class AbstractBaseBenchmark {
      */
     @Setup(Level.Trial) public void setupBenchmark() {
         // Get configuration from system properties with correct docker-compose ports
-        var config = BenchmarkConfiguration.fromSystemProperties().build();
+        // Note: This is a minimal config just to get URLs - actual benchmark config is in QuarkusIntegrationRunner
+        var config = BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.INTEGRATION)
+                .withThroughputBenchmarkName("validateJwtThroughput")
+                .withLatencyBenchmarkName("validateJwtThroughput")
+                .build();
         serviceUrl = config.integrationServiceUrl().orElse("https://localhost:10443");
         quarkusMetricsUrl = config.metricsUrl().orElse("https://localhost:10443");
         benchmarkResultsDir = config.resultsDirectory();

@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
@@ -61,7 +62,10 @@ public class JfrBenchmarkRunner {
 
         String resultsDir = getBenchmarkResultsDir();
 
-        BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties()
+        BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("measureThroughput")  // JFR benchmarks also measure throughput
+                .withLatencyBenchmarkName("measureAverageTime")    // JFR benchmarks also measure latency
                 .withIncludePattern("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.jfr\\.benchmarks\\..*")
                 .withForks(1)
                 .withWarmupIterations(5)
@@ -75,7 +79,7 @@ public class JfrBenchmarkRunner {
 
         Options options = new OptionsBuilder()
                 .include(config.includePattern())
-                .resultFormat(config.resultFormat())
+                .resultFormat(config.reportConfig().resultFormat())
                 .result(getJfrResultFile())  // Use JFR-specific result file
                 .forks(config.forks())
                 .warmupIterations(config.warmupIterations())

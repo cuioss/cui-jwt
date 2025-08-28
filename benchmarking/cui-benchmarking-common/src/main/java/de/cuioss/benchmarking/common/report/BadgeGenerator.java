@@ -15,7 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -25,11 +27,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -149,13 +147,13 @@ public class BadgeGenerator {
         // Format: "Score Grade (throughput, latency)"
         // Example: "91 A (5.8K ops/s, 1.17ms)"
         String scoreFormatted = "%s %s".formatted(
-            metrics.performanceScoreFormatted(), 
-            metrics.performanceGrade()
+                metrics.performanceScoreFormatted(),
+                metrics.performanceGrade()
         );
         return "%s (%s, %s)".formatted(
-            scoreFormatted, 
-            metrics.throughputFormatted(), 
-            metrics.latencyFormatted()
+                scoreFormatted,
+                metrics.throughputFormatted(),
+                metrics.latencyFormatted()
         );
     }
 

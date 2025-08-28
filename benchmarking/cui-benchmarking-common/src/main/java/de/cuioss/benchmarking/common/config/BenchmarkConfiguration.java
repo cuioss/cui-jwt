@@ -15,22 +15,27 @@
  */
 package de.cuioss.benchmarking.common.config;
 
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.Optional;
 
 /**
  * Modern configuration API for JMH benchmarks.
  * Provides a fluent builder pattern and immutable configuration objects.
+ * Combines JMH runtime configuration with report generation configuration.
  * 
  * <p>Example usage:
  * <pre>{@code
- * var config = BenchmarkConfiguration.fromSystemProperties()
+ * var config = BenchmarkConfiguration.builder()
+ *     .withReportConfig(ReportConfiguration.builder()
+ *         .withBenchmarkType(BenchmarkType.MICRO)
+ *         .withThroughputBenchmarkName("myThroughputTest")
+ *         .withLatencyBenchmarkName("myLatencyTest")
+ *         .build())
  *     .withForks(2)
  *     .withThreads(10)
  *     .build();
@@ -41,42 +46,35 @@ import java.util.Optional;
  * @since 1.0
  */
 public record BenchmarkConfiguration(
+ReportConfiguration reportConfig,
 String includePattern,
-ResultFormatType resultFormat,
-String resultFile,
 int forks,
 int warmupIterations,
 int measurementIterations,
 TimeValue measurementTime,
 TimeValue warmupTime,
 int threads,
-String resultsDirectory,
 Optional<String> integrationServiceUrl,
 Optional<String> keycloakUrl,
-Optional<String> metricsUrl,
-String throughputBenchmarkName,
-String latencyBenchmarkName
+Optional<String> metricsUrl
 ) {
+
+    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkConfiguration.class);
 
     /**
      * System property keys for benchmark configuration.
      */
     public static final class Properties {
         public static final String INCLUDE = "jmh.include";
-        public static final String RESULT_FORMAT = "jmh.result.format";
-        public static final String RESULT_FILE_PREFIX = "jmh.result.filePrefix";
         public static final String FORKS = "jmh.forks";
         public static final String WARMUP_ITERATIONS = "jmh.warmupIterations";
         public static final String MEASUREMENT_ITERATIONS = "jmh.iterations";
         public static final String MEASUREMENT_TIME = "jmh.time";
         public static final String WARMUP_TIME = "jmh.warmupTime";
         public static final String THREADS = "jmh.threads";
-        public static final String RESULTS_DIR = "benchmark.results.dir";
         public static final String INTEGRATION_SERVICE_URL = "integration.service.url";
         public static final String KEYCLOAK_URL = "keycloak.url";
         public static final String METRICS_URL = "quarkus.metrics.url";
-        public static final String THROUGHPUT_BENCHMARK_NAME = "benchmark.throughput.name";
-        public static final String LATENCY_BENCHMARK_NAME = "benchmark.latency.name";
 
         private Properties() {
         }
@@ -87,42 +85,35 @@ String latencyBenchmarkName
      */
     public static final class Defaults {
         public static final String INCLUDE_PATTERN = ".*Benchmark.*";
-        public static final ResultFormatType RESULT_FORMAT = ResultFormatType.JSON;
         public static final int FORKS = 1;
         public static final int WARMUP_ITERATIONS = 3;
         public static final int MEASUREMENT_ITERATIONS = 5;
         public static final String MEASUREMENT_TIME = "2s";
         public static final String WARMUP_TIME = "1s";
         public static final int THREADS = 4;
-        public static final String RESULTS_DIR = "target/benchmark-results";
-        public static final String THROUGHPUT_BENCHMARK_NAME = "measureThroughput";
-        public static final String LATENCY_BENCHMARK_NAME = "measureLatency";
 
         private Defaults() {
         }
     }
 
     /**
-     * Creates a configuration from system properties with defaults.
+     * Creates a configuration builder with system properties for JMH settings.
+     * Note: Report configuration must be set explicitly via the builder.
      * 
      * @return a new builder initialized from system properties
      */
-    public static Builder fromSystemProperties() {
+    public static Builder builder() {
         return new Builder()
                 .withIncludePattern(System.getProperty(Properties.INCLUDE, Defaults.INCLUDE_PATTERN))
-                .withResultFormat(parseResultFormat(System.getProperty(Properties.RESULT_FORMAT, "JSON")))
                 .withForks(getIntProperty(Properties.FORKS, Defaults.FORKS))
                 .withWarmupIterations(getIntProperty(Properties.WARMUP_ITERATIONS, Defaults.WARMUP_ITERATIONS))
                 .withMeasurementIterations(getIntProperty(Properties.MEASUREMENT_ITERATIONS, Defaults.MEASUREMENT_ITERATIONS))
                 .withMeasurementTime(parseTimeValue(System.getProperty(Properties.MEASUREMENT_TIME, Defaults.MEASUREMENT_TIME)))
                 .withWarmupTime(parseTimeValue(System.getProperty(Properties.WARMUP_TIME, Defaults.WARMUP_TIME)))
                 .withThreads(parseThreadCount(System.getProperty(Properties.THREADS, String.valueOf(Defaults.THREADS))))
-                .withResultsDirectory(System.getProperty(Properties.RESULTS_DIR, Defaults.RESULTS_DIR))
                 .withIntegrationServiceUrl(System.getProperty(Properties.INTEGRATION_SERVICE_URL))
                 .withKeycloakUrl(System.getProperty(Properties.KEYCLOAK_URL))
-                .withMetricsUrl(System.getProperty(Properties.METRICS_URL))
-                .withThroughputBenchmarkName(System.getProperty(Properties.THROUGHPUT_BENCHMARK_NAME, Defaults.THROUGHPUT_BENCHMARK_NAME))
-                .withLatencyBenchmarkName(System.getProperty(Properties.LATENCY_BENCHMARK_NAME, Defaults.LATENCY_BENCHMARK_NAME));
+                .withMetricsUrl(System.getProperty(Properties.METRICS_URL));
     }
 
     /**
@@ -141,21 +132,17 @@ String latencyBenchmarkName
      */
     public Builder toBuilder() {
         return new Builder()
+                .withReportConfig(reportConfig)
                 .withIncludePattern(includePattern)
-                .withResultFormat(resultFormat)
-                .withResultFile(resultFile)
                 .withForks(forks)
                 .withWarmupIterations(warmupIterations)
                 .withMeasurementIterations(measurementIterations)
                 .withMeasurementTime(measurementTime)
                 .withWarmupTime(warmupTime)
                 .withThreads(threads)
-                .withResultsDirectory(resultsDirectory)
                 .withIntegrationServiceUrl(integrationServiceUrl.orElse(null))
                 .withKeycloakUrl(keycloakUrl.orElse(null))
-                .withMetricsUrl(metricsUrl.orElse(null))
-                .withThroughputBenchmarkName(throughputBenchmarkName)
-                .withLatencyBenchmarkName(latencyBenchmarkName);
+                .withMetricsUrl(metricsUrl.orElse(null));
     }
 
     /**
@@ -166,8 +153,8 @@ String latencyBenchmarkName
     public Options toJmhOptions() {
         var builder = new OptionsBuilder()
                 .include(includePattern)
-                .resultFormat(resultFormat)
-                .result(getOrCreateResultFile())
+                .resultFormat(reportConfig.resultFormat())
+                .result(reportConfig.getOrCreateResultFile())
                 .forks(forks)
                 .warmupIterations(warmupIterations)
                 .measurementIterations(measurementIterations)
@@ -177,7 +164,7 @@ String latencyBenchmarkName
 
         // Add JVM arguments
         builder.jvmArgs(
-                "-Dbenchmark.results.dir=" + resultsDirectory,
+                "-Dbenchmark.results.dir=" + reportConfig.resultsDirectory(),
                 "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties"
         );
 
@@ -193,54 +180,54 @@ String latencyBenchmarkName
     }
 
     /**
-     * Gets the result file path, creating parent directories if needed.
+     * Convenience methods for accessing nested report configuration.
      */
-    private String getOrCreateResultFile() {
-        if (resultFile != null && !resultFile.isEmpty()) {
-            File file = new File(resultFile);
-            File parentDir = file.getParentFile();
-            if (parentDir != null && !parentDir.exists()) {
-                parentDir.mkdirs();
-            }
-            return resultFile;
-        }
-        return Path.of(resultsDirectory, "benchmark-result.json").toString();
+    public BenchmarkType benchmarkType() {
+        return reportConfig.benchmarkType();
     }
 
-    private static ResultFormatType parseResultFormat(String format) {
-        try {
-            return ResultFormatType.valueOf(format.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return Defaults.RESULT_FORMAT;
-        }
+    public String throughputBenchmarkName() {
+        return reportConfig.throughputBenchmarkName();
     }
+
+    public String latencyBenchmarkName() {
+        return reportConfig.latencyBenchmarkName();
+    }
+
+    public String resultsDirectory() {
+        return reportConfig.resultsDirectory();
+    }
+
+    public String resultFile() {
+        return reportConfig.resultFile();
+    }
+
 
     private static TimeValue parseTimeValue(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) {
-            return TimeValue.seconds(2);
+            return TimeValue.seconds(1);
         }
 
-        try {
-            if (timeStr.endsWith("ms")) {
-                long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 2));
-                return TimeValue.milliseconds(value);
-            } else if (timeStr.endsWith("s")) {
-                long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
-                return TimeValue.seconds(value);
-            } else if (timeStr.endsWith("m")) {
-                long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
-                return TimeValue.minutes(value);
-            } else {
-                return TimeValue.seconds(Long.parseLong(timeStr));
+        char unit = timeStr.charAt(timeStr.length() - 1);
+        long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
+
+        return switch (unit) {
+            case 's' -> TimeValue.seconds(value);
+            case 'm' -> TimeValue.minutes(value);
+            case 'h' -> TimeValue.hours(value);
+            default -> {
+                LOGGER.warn("Unknown time unit in '{}', defaulting to seconds", timeStr);
+                yield TimeValue.seconds(Long.parseLong(timeStr.substring(0, timeStr.length() - 1)));
             }
-        } catch (NumberFormatException e) {
-            return TimeValue.seconds(2);
-        }
+        };
     }
 
     private static int parseThreadCount(String threads) {
         if ("MAX".equalsIgnoreCase(threads)) {
             return Runtime.getRuntime().availableProcessors();
+        }
+        if ("HALF".equalsIgnoreCase(threads)) {
+            return Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
         }
         try {
             return Integer.parseInt(threads);
@@ -257,34 +244,99 @@ String latencyBenchmarkName
      * Builder for BenchmarkConfiguration.
      */
     public static class Builder {
+        private ReportConfiguration reportConfig;
+        private ReportConfiguration.Builder reportConfigBuilder;
         private String includePattern = Defaults.INCLUDE_PATTERN;
-        private ResultFormatType resultFormat = Defaults.RESULT_FORMAT;
-        private String resultFile;
         private int forks = Defaults.FORKS;
         private int warmupIterations = Defaults.WARMUP_ITERATIONS;
         private int measurementIterations = Defaults.MEASUREMENT_ITERATIONS;
         private TimeValue measurementTime = parseTimeValue(Defaults.MEASUREMENT_TIME);
         private TimeValue warmupTime = parseTimeValue(Defaults.WARMUP_TIME);
         private int threads = Defaults.THREADS;
-        private String resultsDirectory = Defaults.RESULTS_DIR;
         private String integrationServiceUrl;
         private String keycloakUrl;
         private String metricsUrl;
-        private String throughputBenchmarkName = Defaults.THROUGHPUT_BENCHMARK_NAME;
-        private String latencyBenchmarkName = Defaults.LATENCY_BENCHMARK_NAME;
+
+        /**
+         * Sets the complete report configuration.
+         */
+        public Builder withReportConfig(ReportConfiguration config) {
+            this.reportConfig = config;
+            this.reportConfigBuilder = null; // Clear builder if direct config is set
+            return this;
+        }
+
+        /**
+         * Convenience method to set benchmark type for report config.
+         * Creates a report config builder if needed.
+         */
+        public Builder withBenchmarkType(BenchmarkType type) {
+            ensureReportConfigBuilder();
+            this.reportConfigBuilder.withBenchmarkType(type);
+            return this;
+        }
+
+        /**
+         * Convenience method to set throughput benchmark name.
+         * Creates a report config builder if needed.
+         */
+        public Builder withThroughputBenchmarkName(String name) {
+            ensureReportConfigBuilder();
+            this.reportConfigBuilder.withThroughputBenchmarkName(name);
+            return this;
+        }
+
+        /**
+         * Convenience method to set latency benchmark name.
+         * Creates a report config builder if needed.
+         */
+        public Builder withLatencyBenchmarkName(String name) {
+            ensureReportConfigBuilder();
+            this.reportConfigBuilder.withLatencyBenchmarkName(name);
+            return this;
+        }
+
+        /**
+         * Convenience method to set results directory.
+         * Creates a report config builder if needed.
+         */
+        public Builder withResultsDirectory(String dir) {
+            ensureReportConfigBuilder();
+            this.reportConfigBuilder.withResultsDirectory(dir);
+            return this;
+        }
+
+        /**
+         * Convenience method to set result file.
+         * Creates a report config builder if needed.
+         */
+        public Builder withResultFile(String file) {
+            ensureReportConfigBuilder();
+            this.reportConfigBuilder.withResultFile(file);
+            return this;
+        }
+
+        /**
+         * Convenience method to set result format.
+         * Creates a report config builder if needed.
+         */
+        public Builder withResultFormat(ResultFormatType format) {
+            ensureReportConfigBuilder();
+            this.reportConfigBuilder.withResultFormat(format);
+            return this;
+        }
+
+        private void ensureReportConfigBuilder() {
+            if (reportConfigBuilder == null && reportConfig == null) {
+                reportConfigBuilder = ReportConfiguration.builder();
+            } else if (reportConfigBuilder == null && reportConfig != null) {
+                reportConfigBuilder = reportConfig.toBuilder();
+                reportConfig = null; // Will be rebuilt from builder
+            }
+        }
 
         public Builder withIncludePattern(String pattern) {
             this.includePattern = pattern;
-            return this;
-        }
-
-        public Builder withResultFormat(ResultFormatType format) {
-            this.resultFormat = format;
-            return this;
-        }
-
-        public Builder withResultFile(String file) {
-            this.resultFile = file;
             return this;
         }
 
@@ -318,11 +370,6 @@ String latencyBenchmarkName
             return this;
         }
 
-        public Builder withResultsDirectory(String directory) {
-            this.resultsDirectory = directory;
-            return this;
-        }
-
         public Builder withIntegrationServiceUrl(String url) {
             this.integrationServiceUrl = url;
             return this;
@@ -338,43 +385,34 @@ String latencyBenchmarkName
             return this;
         }
 
-        public Builder withThroughputBenchmarkName(String name) {
-            this.throughputBenchmarkName = name;
-            return this;
-        }
-
-        public Builder withLatencyBenchmarkName(String name) {
-            this.latencyBenchmarkName = name;
-            return this;
-        }
-
+        /**
+         * Builds the configuration.
+         * 
+         * @return the built configuration
+         * @throws IllegalArgumentException if required fields are not set
+         */
         public BenchmarkConfiguration build() {
-            String finalResultFile = resultFile;
-            if (finalResultFile == null || finalResultFile.isEmpty()) {
-                String filePrefix = System.getProperty(Properties.RESULT_FILE_PREFIX);
-                if (filePrefix != null && !filePrefix.isEmpty()) {
-                    finalResultFile = filePrefix + ".json";
-                } else {
-                    finalResultFile = Path.of(resultsDirectory, "benchmark-result.json").toString();
+            // Build report config if using builder
+            ReportConfiguration finalReportConfig = reportConfig;
+            if (finalReportConfig == null) {
+                if (reportConfigBuilder == null) {
+                    throw new IllegalArgumentException("Report configuration must be set");
                 }
+                finalReportConfig = reportConfigBuilder.build();
             }
 
             return new BenchmarkConfiguration(
+                    finalReportConfig,
                     includePattern,
-                    resultFormat,
-                    finalResultFile,
                     forks,
                     warmupIterations,
                     measurementIterations,
                     measurementTime,
                     warmupTime,
                     threads,
-                    resultsDirectory,
                     Optional.ofNullable(integrationServiceUrl),
                     Optional.ofNullable(keycloakUrl),
-                    Optional.ofNullable(metricsUrl),
-                    throughputBenchmarkName,
-                    latencyBenchmarkName
+                    Optional.ofNullable(metricsUrl)
             );
         }
     }

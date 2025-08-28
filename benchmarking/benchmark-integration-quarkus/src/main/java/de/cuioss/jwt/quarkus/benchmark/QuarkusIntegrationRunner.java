@@ -78,22 +78,34 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     private static final int REQUEST_TIMEOUT_MS = 10000;
     private static final int TOKEN_REFRESH_THRESHOLD_SECONDS = 300;
 
-    @Override protected BenchmarkType getBenchmarkType() {
-        return BenchmarkType.INTEGRATION;
-    }
+    @Override protected BenchmarkConfiguration createConfiguration() {
+        String outputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+        String includePattern = System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*");
 
-    @Override protected String getIncludePattern() {
-        return System.getProperty("jmh.include", "de\\.cuioss\\.jwt\\.quarkus\\.benchmark\\.benchmarks\\..*");
-    }
-
-    @Override protected String getResultFileName() {
-        return "integration-benchmark-result.json";
+        return BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.INTEGRATION)
+                .withIncludePattern(includePattern)
+                .withResultsDirectory(outputDir)
+                .withResultFile(outputDir + "/integration-benchmark-result.json")
+                .withThroughputBenchmarkName("validateJwtThroughput")  // Explicit benchmark name
+                .withLatencyBenchmarkName("validateJwtThroughput")     // Same benchmark has both modes
+                .withIntegrationServiceUrl(getServiceUrl())
+                .withKeycloakUrl(getKeycloakUrl())
+                .withMetricsUrl(getServiceUrl())
+                .withForks(BENCHMARK_FORKS)
+                .withWarmupIterations(WARMUP_ITERATIONS)
+                .withMeasurementIterations(MEASUREMENT_ITERATIONS)
+                .withMeasurementTime(TimeValue.seconds(MEASUREMENT_TIME_SECONDS))
+                .withWarmupTime(TimeValue.seconds(WARMUP_TIME_SECONDS))
+                .withThreads(THREAD_COUNT)
+                .build();
     }
 
     @Override protected void beforeBenchmarks() {
         // Configure logging to write to benchmark-results directory
         // This captures all console output (System.out/err and JMH) to both console and file
-        BenchmarkLoggingSetup.configureLogging(getBenchmarkResultsDir());
+        String outputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+        BenchmarkLoggingSetup.configureLogging(outputDir);
 
         // Pre-initialize the shared TokenRepository instance
         initializeSharedTokenRepository();
@@ -126,18 +138,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         processMetrics(config);
     }
 
-    @Override protected BenchmarkConfiguration.Builder configureBenchmark(BenchmarkConfiguration.Builder builder) {
-        return builder
-                .withIntegrationServiceUrl(getServiceUrl())
-                .withKeycloakUrl(getKeycloakUrl())
-                .withMetricsUrl(getServiceUrl())
-                .withForks(BENCHMARK_FORKS)
-                .withWarmupIterations(WARMUP_ITERATIONS)
-                .withMeasurementIterations(MEASUREMENT_ITERATIONS)
-                .withMeasurementTime(TimeValue.seconds(MEASUREMENT_TIME_SECONDS))
-                .withWarmupTime(TimeValue.seconds(WARMUP_TIME_SECONDS))
-                .withThreads(THREAD_COUNT);
-    }
 
     /**
      * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
@@ -147,9 +147,9 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * @param config the benchmark configuration
      * @throws IOException if metrics processing fails
      */
-    private void processMetrics(BenchmarkConfiguration config) throws IOException {
+    private void processMetrics(BenchmarkConfiguration config) {
         String quarkusMetricsUrl = config.metricsUrl().orElse(getServiceUrl());
-        String outputDirectory = getBenchmarkResultsDir();
+        String outputDirectory = config.resultsDirectory();
 
         LOGGER.debug("Processing metrics from {} to {}", quarkusMetricsUrl, outputDirectory);
 

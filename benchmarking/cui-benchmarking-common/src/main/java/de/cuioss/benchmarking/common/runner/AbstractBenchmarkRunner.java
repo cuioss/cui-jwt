@@ -16,7 +16,6 @@
 package de.cuioss.benchmarking.common.runner;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
@@ -55,25 +54,17 @@ public abstract class AbstractBenchmarkRunner {
             new CuiLogger(AbstractBenchmarkRunner.class);
 
     /**
-     * Gets the benchmark type for this runner.
+     * Creates the benchmark configuration for this runner.
+     * This method must provide a complete configuration including:
+     * - Benchmark type
+     * - Include pattern
+     * - Result file name and directory
+     * - Throughput and latency benchmark names
+     * - Any other specific configuration
      * 
-     * @return the benchmark type (MICRO, INTEGRATION, etc.)
+     * @return the complete benchmark configuration
      */
-    protected abstract BenchmarkType getBenchmarkType();
-
-    /**
-     * Gets the include pattern for benchmark classes.
-     * 
-     * @return the regex pattern for including benchmark classes
-     */
-    protected abstract String getIncludePattern();
-
-    /**
-     * Gets the result file name for this benchmark type.
-     * 
-     * @return the result file name
-     */
-    protected abstract String getResultFileName();
+    protected abstract BenchmarkConfiguration createConfiguration();
 
     /**
      * Hook for initialization before running benchmarks.
@@ -98,36 +89,18 @@ public abstract class AbstractBenchmarkRunner {
     }
 
     /**
-     * Configures the benchmark options.
-     * Override to customize benchmark configuration.
-     * 
-     * @param builder the configuration builder
-     * @return the modified configuration builder
-     */
-    protected BenchmarkConfiguration.Builder configureBenchmark(BenchmarkConfiguration.Builder builder) {
-        // Default implementation returns the builder as-is
-        return builder;
-    }
-
-    /**
-     * Gets the benchmark results directory from system property or defaults.
-     * 
-     * @return the benchmark results directory path
-     */
-    protected String getBenchmarkResultsDir() {
-        return System.getProperty("benchmark.results.dir", "target/benchmark-results");
-    }
-
-    /**
      * Main execution method that orchestrates the benchmark run.
      *
      * @throws IOException if I/O operations fail
      * @throws RunnerException if benchmark execution fails
      */
     public void run() throws IOException, RunnerException {
-        String outputDir = getBenchmarkResultsDir();
+        // Get the complete configuration from the concrete implementation
+        BenchmarkConfiguration config = createConfiguration();
 
-        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + getBenchmarkType() + ", Output: " + outputDir);
+        String outputDir = config.resultsDirectory();
+
+        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + config.benchmarkType() + ", Output: " + outputDir);
 
         // Ensure output directory exists
         Path outputPath = Path.of(outputDir);
@@ -135,16 +108,6 @@ public abstract class AbstractBenchmarkRunner {
 
         // Run initialization hook
         beforeBenchmarks();
-
-        // Configure benchmark using template method pattern
-        BenchmarkConfiguration.Builder configBuilder = BenchmarkConfiguration.fromSystemProperties()
-                .withIncludePattern(getIncludePattern())
-                .withResultsDirectory(outputDir)
-                .withResultFile(outputDir + "/" + getResultFileName());
-
-        // Allow subclasses to customize configuration
-        configBuilder = configureBenchmark(configBuilder);
-        BenchmarkConfiguration config = configBuilder.build();
 
         Options options = config.toJmhOptions();
 
@@ -157,9 +120,9 @@ public abstract class AbstractBenchmarkRunner {
 
         // Process results to generate all artifacts
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-            getBenchmarkType(),
-            config.throughputBenchmarkName(),
-            config.latencyBenchmarkName()
+                config.reportConfig().benchmarkType(),
+                config.reportConfig().throughputBenchmarkName(),
+                config.reportConfig().latencyBenchmarkName()
         );
         processor.processResults(results, outputDir);
 

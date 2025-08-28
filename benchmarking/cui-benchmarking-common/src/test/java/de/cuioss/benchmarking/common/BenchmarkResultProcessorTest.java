@@ -18,8 +18,6 @@ package de.cuioss.benchmarking.common;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import org.junit.jupiter.api.Test;
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
 import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.RunResult;
 
@@ -28,6 +26,8 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -47,11 +47,11 @@ class BenchmarkResultProcessorTest {
         // Use empty results - the processor will read from JSON file
         Collection<RunResult> results = List.of();
 
-        // Process results
+        // Process results - use actual benchmark names from the test data
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
                 BenchmarkType.MICRO,
-                DEFAULT_THROUGHPUT_BENCHMARK,
-                DEFAULT_LATENCY_BENCHMARK);
+                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
+                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
 
@@ -112,8 +112,8 @@ class BenchmarkResultProcessorTest {
 
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
                 BenchmarkType.MICRO,
-                DEFAULT_THROUGHPUT_BENCHMARK,
-                DEFAULT_LATENCY_BENCHMARK);
+                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
+                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = nestedDir.toString();
 
         // Use empty results - processor will read from JSON

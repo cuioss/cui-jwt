@@ -20,15 +20,15 @@ package de.cuioss.benchmarking.common.report;
  * This is the central data structure shared across all report generators.
  */
 public record BenchmarkMetrics(
-        String throughputBenchmarkName,
-        String latencyBenchmarkName,
-        double throughput,
-        double latency,
-        double performanceScore,
-        String performanceGrade,
-        String throughputFormatted,
-        String latencyFormatted,
-        String performanceScoreFormatted
+String throughputBenchmarkName,
+String latencyBenchmarkName,
+double throughput,
+double latency,
+double performanceScore,
+String performanceGrade,
+String throughputFormatted,
+String latencyFormatted,
+String performanceScoreFormatted
 ) {
     public BenchmarkMetrics {
         if (throughputBenchmarkName == null || throughputBenchmarkName.isBlank()) {

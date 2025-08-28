@@ -24,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -40,7 +41,7 @@ class BadgeGeneratorTest {
 
         // Generate badge
         BadgeGenerator generator = new BadgeGenerator();
-        generator.generatePerformanceBadge(jsonFile, BenchmarkType.INTEGRATION, tempDir.toString());
+        generator.generatePerformanceBadge(createTestMetrics(jsonFile), BenchmarkType.INTEGRATION, tempDir.toString());
 
         // Verify badge file was created
         Path badgeFile = tempDir.resolve("integration-performance-badge.json");
@@ -75,7 +76,7 @@ class BadgeGeneratorTest {
 
         // Generate badge
         BadgeGenerator generator = new BadgeGenerator();
-        generator.generatePerformanceBadge(jsonFile, BenchmarkType.MICRO, tempDir.toString());
+        generator.generatePerformanceBadge(createTestMetrics(jsonFile), BenchmarkType.MICRO, tempDir.toString());
 
         // Verify badge file was created
         Path badgeFile = tempDir.resolve("performance-badge.json");

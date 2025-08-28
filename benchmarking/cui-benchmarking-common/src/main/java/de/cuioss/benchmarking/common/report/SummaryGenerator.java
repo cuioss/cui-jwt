@@ -15,7 +15,8 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -69,38 +70,38 @@ public class SummaryGenerator {
      * @param outputFile the output file path
      * @throws IOException if writing fails
      */
-    public void writeSummary(BenchmarkMetrics metrics, BenchmarkType type, Path outputFile) 
+    public void writeSummary(BenchmarkMetrics metrics, BenchmarkType type, Path outputFile)
             throws IOException {
 
         Map<String, Object> summary = new LinkedHashMap<>();
-        
+
         // Basic metadata
         summary.put("benchmark_type", type);
         summary.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
         summary.put("throughputBenchmarkName", metrics.throughputBenchmarkName());
         summary.put("latencyBenchmarkName", metrics.latencyBenchmarkName());
-        
+
         // Performance metrics
         summary.put(FIELD_THROUGHPUT, metrics.throughput());
         summary.put(FIELD_LATENCY, metrics.latency());
         summary.put("performance_score", metrics.performanceScore());
         summary.put("performance_grade", metrics.performanceGrade());
-        
+
         // Formatted values
         summary.put("throughputFormatted", metrics.throughputFormatted());
         summary.put("latencyFormatted", metrics.latencyFormatted());
         summary.put("performanceScoreFormatted", metrics.performanceScoreFormatted());
-        
+
         // Status determination based on score
         String status = determineStatus(metrics.performanceScore());
         summary.put(FIELD_STATUS, status);
-        
+
         // CI/CD readiness indicators
         summary.put("deployment_ready", isDeploymentReady(metrics.performanceScore()));
         summary.put("regression_detected", hasRegression(metrics.performanceScore()));
-        
+
         Files.writeString(outputFile, GSON.toJson(summary));
-        
+
         LOGGER.info(INFO.SUMMARY_FILE_GENERATED.format(outputFile));
     }
 

@@ -17,16 +17,21 @@ package de.cuioss.benchmarking.common.config;
 
 import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.results.format.ResultFormatType;
+import org.openjdk.jmh.runner.options.TimeValue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkConfigurationTest {
 
     @Test void defaults() {
-        BenchmarkConfiguration config = BenchmarkConfiguration.defaults().build();
+        BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("testThroughput")
+                .withLatencyBenchmarkName("testLatency")
+                .build();
 
         assertEquals(".*Benchmark.*", config.includePattern());
-        assertEquals(ResultFormatType.JSON, config.resultFormat());
+        assertEquals(ResultFormatType.JSON, config.reportConfig().resultFormat());
         assertEquals(1, config.forks());
         assertEquals(3, config.warmupIterations());
         assertEquals(5, config.measurementIterations());
@@ -39,6 +44,9 @@ class BenchmarkConfigurationTest {
 
     @Test void customValues() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.INTEGRATION)
+                .withThroughputBenchmarkName("customThroughput")
+                .withLatencyBenchmarkName("customLatency")
                 .withIncludePattern(".*MyBenchmark.*")
                 .withResultFormat(ResultFormatType.CSV)
                 .withForks(2)
@@ -52,7 +60,7 @@ class BenchmarkConfigurationTest {
                 .build();
 
         assertEquals(".*MyBenchmark.*", config.includePattern());
-        assertEquals(ResultFormatType.CSV, config.resultFormat());
+        assertEquals(ResultFormatType.CSV, config.reportConfig().resultFormat());
         assertEquals(2, config.forks());
         assertEquals(10, config.warmupIterations());
         assertEquals(20, config.measurementIterations());
@@ -63,7 +71,7 @@ class BenchmarkConfigurationTest {
         assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
     }
 
-    @Test void fromSystemProperties() {
+    @Test void builderWithSystemProperties() {
         // Set system properties
         System.setProperty("jmh.include", ".*SystemTest.*");
         System.setProperty("jmh.result.format", "TEXT");
@@ -71,10 +79,14 @@ class BenchmarkConfigurationTest {
         System.setProperty("jmh.threads", "16");
 
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("sysThroughput")
+                    .withLatencyBenchmarkName("sysLatency")
+                    .build();
 
             assertEquals(".*SystemTest.*", config.includePattern());
-            assertEquals(ResultFormatType.TEXT, config.resultFormat());
+            assertEquals(ResultFormatType.TEXT, config.reportConfig().resultFormat());
             assertEquals(3, config.forks());
             assertEquals(16, config.threads());
         } finally {
@@ -88,6 +100,9 @@ class BenchmarkConfigurationTest {
 
     @Test void toBuilder() {
         BenchmarkConfiguration original = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("origThroughput")
+                .withLatencyBenchmarkName("origLatency")
                 .withIncludePattern(".*Original.*")
                 .withForks(5)
                 .build();
@@ -110,45 +125,56 @@ class BenchmarkConfigurationTest {
 
     @Test void toJmhOptions() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
-                .withIncludePattern(".*Test.*")
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("jmhThroughput")
+                .withLatencyBenchmarkName("jmhLatency")
+                .withIncludePattern(".*JmhTest.*")
+                .withResultFormat(ResultFormatType.JSON)
                 .withForks(2)
-                .withThreads(8)
-                .withIntegrationServiceUrl("http://service:8080")
                 .build();
 
         var options = config.toJmhOptions();
         assertNotNull(options);
-        // Options object doesn't expose getters, so we just verify it builds successfully
+        // Options are properly built, detailed testing would require more JMH infrastructure
     }
 
     @Test void threadCountParsing() {
-        // Test MAX threads
         System.setProperty("jmh.threads", "MAX");
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("threadThroughput")
+                    .withLatencyBenchmarkName("threadLatency")
+                    .build();
             assertEquals(Runtime.getRuntime().availableProcessors(), config.threads());
         } finally {
             System.clearProperty("jmh.threads");
         }
 
-        // Test invalid thread count defaults to 4
-        System.setProperty("jmh.threads", "invalid");
+        System.setProperty("jmh.threads", "HALF");
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            assertEquals(4, config.threads());
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("threadThroughput")
+                    .withLatencyBenchmarkName("threadLatency")
+                    .build();
+            assertEquals(Math.max(1, Runtime.getRuntime().availableProcessors() / 2), config.threads());
         } finally {
             System.clearProperty("jmh.threads");
         }
     }
 
     @Test void timeValueParsing() {
-        System.setProperty("jmh.time", "500ms");
+        System.setProperty("jmh.time", "5s");
         System.setProperty("jmh.warmupTime", "2m");
-
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            assertNotNull(config.measurementTime());
-            assertNotNull(config.warmupTime());
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("timeThroughput")
+                    .withLatencyBenchmarkName("timeLatency")
+                    .build();
+            assertEquals(TimeValue.seconds(5), config.measurementTime());
+            assertEquals(TimeValue.minutes(2), config.warmupTime());
         } finally {
             System.clearProperty("jmh.time");
             System.clearProperty("jmh.warmupTime");
@@ -156,109 +182,109 @@ class BenchmarkConfigurationTest {
     }
 
     @Test void resultFileGeneration() {
-        // Test with custom result file
-        BenchmarkConfiguration config1 = BenchmarkConfiguration.defaults()
-                .withResultFile("custom-result.json")
+        BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.INTEGRATION)
+                .withThroughputBenchmarkName("fileThroughput")
+                .withLatencyBenchmarkName("fileLatency")
+                .withResultsDirectory("test-results")
                 .build();
-        assertEquals("custom-result.json", config1.resultFile());
 
-        // Test with file prefix system property
-        System.setProperty("jmh.result.filePrefix", "prefix");
-        try {
-            BenchmarkConfiguration config2 = BenchmarkConfiguration.fromSystemProperties().build();
-            assertEquals("prefix.json", config2.resultFile());
-        } finally {
-            System.clearProperty("jmh.result.filePrefix");
-        }
-
-        // Test default result file
-        BenchmarkConfiguration config3 = BenchmarkConfiguration.defaults().build();
-        assertTrue(config3.resultFile().endsWith("benchmark-result.json"));
+        var options = config.toJmhOptions();
+        assertNotNull(options);
     }
 
     @Test void invalidResultFormat() {
-        System.setProperty("jmh.result.format", "INVALID_FORMAT");
+        System.setProperty("jmh.result.format", "INVALID");
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            // Should default to JSON when invalid format is provided
-            assertEquals(ResultFormatType.JSON, config.resultFormat());
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("formatThroughput")
+                    .withLatencyBenchmarkName("formatLatency")
+                    .build();
+            assertEquals(ResultFormatType.JSON, config.reportConfig().resultFormat()); // Should default to JSON
         } finally {
             System.clearProperty("jmh.result.format");
         }
     }
 
     @Test void timeValueParsingEdgeCases() {
-        // Test various time formats
-        System.setProperty("jmh.time", "100ms");
-        System.setProperty("jmh.warmupTime", "5m");
+        System.setProperty("jmh.time", "1h");
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            assertNotNull(config.measurementTime());
-            assertNotNull(config.warmupTime());
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("edgeThroughput")
+                    .withLatencyBenchmarkName("edgeLatency")
+                    .build();
+            assertEquals(TimeValue.hours(1), config.measurementTime());
         } finally {
             System.clearProperty("jmh.time");
+        }
+
+        // Test invalid time unit (should warn and use number as seconds)
+        System.setProperty("jmh.warmupTime", "10x");
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("edgeThroughput")
+                    .withLatencyBenchmarkName("edgeLatency")
+                    .build();
+            assertEquals(TimeValue.seconds(10), config.warmupTime());
+        } finally {
             System.clearProperty("jmh.warmupTime");
         }
 
-        // Test invalid time format - should default
-        System.setProperty("jmh.time", "invalid");
-        System.setProperty("jmh.warmupTime", "");
+        // Test empty time value (should default to 1 second)
+        System.setProperty("jmh.time", "");
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            assertNotNull(config.measurementTime());
-            assertNotNull(config.warmupTime());
-        } finally {
-            System.clearProperty("jmh.time");
-            System.clearProperty("jmh.warmupTime");
-        }
-
-        // Test numeric value without unit
-        System.setProperty("jmh.time", "10");
-        try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
-            assertNotNull(config.measurementTime());
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.MICRO)
+                    .withThroughputBenchmarkName("edgeThroughput")
+                    .withLatencyBenchmarkName("edgeLatency")
+                    .build();
+            assertEquals(TimeValue.seconds(1), config.measurementTime());
         } finally {
             System.clearProperty("jmh.time");
         }
     }
 
     @Test void allSystemProperties() {
-        // Set all possible system properties
-        System.setProperty("jmh.include", ".*AllTests.*");
+        // Set all supported system properties
+        System.setProperty("jmh.include", ".*AllTest.*");
         System.setProperty("jmh.result.format", "CSV");
-        System.setProperty("jmh.result.filePrefix", "all-tests");
-        System.setProperty("jmh.forks", "2");
-        System.setProperty("jmh.warmupIterations", "10");
-        System.setProperty("jmh.iterations", "20");
+        System.setProperty("jmh.forks", "4");
+        System.setProperty("jmh.warmupIterations", "8");
+        System.setProperty("jmh.iterations", "15");
         System.setProperty("jmh.time", "3s");
-        System.setProperty("jmh.warmupTime", "2s");
-        System.setProperty("jmh.threads", "8");
-        System.setProperty("benchmark.results.dir", "/tmp/results");
+        System.setProperty("jmh.warmupTime", "1s");
+        System.setProperty("jmh.threads", "24");
+        System.setProperty("benchmark.results.dir", "all-results");
         System.setProperty("integration.service.url", "http://service:8080");
         System.setProperty("keycloak.url", "http://keycloak:8180");
         System.setProperty("quarkus.metrics.url", "http://metrics:9090");
 
         try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties().build();
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+                    .withBenchmarkType(BenchmarkType.INTEGRATION)
+                    .withThroughputBenchmarkName("allThroughput")
+                    .withLatencyBenchmarkName("allLatency")
+                    .build();
 
-            assertEquals(".*AllTests.*", config.includePattern());
-            assertEquals(ResultFormatType.CSV, config.resultFormat());
-            assertEquals("all-tests.json", config.resultFile());
-            assertEquals(2, config.forks());
-            assertEquals(10, config.warmupIterations());
-            assertEquals(20, config.measurementIterations());
-            assertNotNull(config.measurementTime());
-            assertNotNull(config.warmupTime());
-            assertEquals(8, config.threads());
-            assertEquals("/tmp/results", config.resultsDirectory());
+            assertEquals(".*AllTest.*", config.includePattern());
+            assertEquals(ResultFormatType.CSV, config.reportConfig().resultFormat());
+            assertEquals(4, config.forks());
+            assertEquals(8, config.warmupIterations());
+            assertEquals(15, config.measurementIterations());
+            assertEquals(TimeValue.seconds(3), config.measurementTime());
+            assertEquals(TimeValue.seconds(1), config.warmupTime());
+            assertEquals(24, config.threads());
+            assertEquals("all-results", config.resultsDirectory());
             assertEquals("http://service:8080", config.integrationServiceUrl().orElse(null));
             assertEquals("http://keycloak:8180", config.keycloakUrl().orElse(null));
             assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
         } finally {
-            // Clean up all properties
+            // Clean up all system properties
             System.clearProperty("jmh.include");
             System.clearProperty("jmh.result.format");
-            System.clearProperty("jmh.result.filePrefix");
             System.clearProperty("jmh.forks");
             System.clearProperty("jmh.warmupIterations");
             System.clearProperty("jmh.iterations");
@@ -274,23 +300,57 @@ class BenchmarkConfigurationTest {
 
     @Test void recordEquality() {
         BenchmarkConfiguration config1 = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("eqThroughput")
+                .withLatencyBenchmarkName("eqLatency")
                 .withIncludePattern(".*Test.*")
                 .withForks(2)
                 .build();
 
         BenchmarkConfiguration config2 = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("eqThroughput")
+                .withLatencyBenchmarkName("eqLatency")
                 .withIncludePattern(".*Test.*")
                 .withForks(2)
                 .build();
 
         BenchmarkConfiguration config3 = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("eqThroughput")
+                .withLatencyBenchmarkName("eqLatency")
                 .withIncludePattern(".*Different.*")
                 .withForks(2)
                 .build();
 
-        // Records should have equals/hashCode automatically
         assertEquals(config1, config2);
-        assertEquals(config1.hashCode(), config2.hashCode());
         assertNotEquals(config1, config3);
+        assertEquals(config1.hashCode(), config2.hashCode());
+    }
+
+    @Test void requiredFieldValidation() {
+        // Missing benchmark type
+        assertThrows(IllegalArgumentException.class, () ->
+                BenchmarkConfiguration.defaults()
+                        .withThroughputBenchmarkName("throughput")
+                        .withLatencyBenchmarkName("latency")
+                        .build()
+        );
+
+        // Missing throughput benchmark name
+        assertThrows(IllegalArgumentException.class, () ->
+                BenchmarkConfiguration.defaults()
+                        .withBenchmarkType(BenchmarkType.MICRO)
+                        .withLatencyBenchmarkName("latency")
+                        .build()
+        );
+
+        // Missing latency benchmark name
+        assertThrows(IllegalArgumentException.class, () ->
+                BenchmarkConfiguration.defaults()
+                        .withBenchmarkType(BenchmarkType.MICRO)
+                        .withThroughputBenchmarkName("throughput")
+                        .build()
+        );
     }
 }

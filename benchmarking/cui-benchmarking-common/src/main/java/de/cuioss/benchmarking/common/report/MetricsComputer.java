@@ -70,19 +70,19 @@ public class MetricsComputer {
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             String benchmarkName = benchmark.get("benchmark").getAsString();
-            
+
             if (benchmarkName.contains(throughputBenchmarkName)) {
                 String mode = benchmark.get("mode").getAsString();
                 JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
                 double score = primaryMetric.get("score").getAsDouble();
                 String unit = primaryMetric.get("scoreUnit").getAsString();
-                
+
                 if ("thrpt".equals(mode) || unit.contains("ops")) {
                     return MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 }
             }
         }
-        
+
         throw new IllegalStateException(
                 "Required throughput benchmark '" + throughputBenchmarkName + "' not found in results");
     }
@@ -91,19 +91,19 @@ public class MetricsComputer {
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
             String benchmarkName = benchmark.get("benchmark").getAsString();
-            
+
             if (benchmarkName.contains(latencyBenchmarkName)) {
                 String mode = benchmark.get("mode").getAsString();
                 JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
                 double score = primaryMetric.get("score").getAsDouble();
                 String unit = primaryMetric.get("scoreUnit").getAsString();
-                
+
                 if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
                     return MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
                 }
             }
         }
-        
+
         throw new IllegalStateException(
                 "Required latency benchmark '" + latencyBenchmarkName + "' not found in results");
     }

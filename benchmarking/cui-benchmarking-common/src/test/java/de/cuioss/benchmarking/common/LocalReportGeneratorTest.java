@@ -16,12 +16,7 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
-import de.cuioss.benchmarking.common.report.BadgeGenerator;
-import de.cuioss.benchmarking.common.report.MetricsGenerator;
-import de.cuioss.benchmarking.common.report.ReportGenerator;
-import de.cuioss.benchmarking.common.report.SummaryGenerator;
+import de.cuioss.benchmarking.common.report.*;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.Test;
@@ -38,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 
+import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -103,8 +99,8 @@ class LocalReportGeneratorTest {
         // Generate all reports using the processor
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
                 BenchmarkType.MICRO,
-                DEFAULT_THROUGHPUT_BENCHMARK,
-                DEFAULT_LATENCY_BENCHMARK);
+                "measureThroughput",  // Actual benchmark in test data
+                "measureAverageTime");  // Actual benchmark in test data
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, microOutputDir.toString());
 
@@ -123,7 +119,10 @@ class LocalReportGeneratorTest {
         LOGGER.debug("Copied integration benchmark JSON data");
 
         // Generate all reports using the processor
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.INTEGRATION);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.INTEGRATION,
+                "validateJwtThroughput",  // Actual benchmark in test data
+                "validateJwtThroughput");  // Integration test has sample mode too
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, integrationOutputDir.toString());
 
@@ -133,7 +132,8 @@ class LocalReportGeneratorTest {
 
     private void generateIndividualReports(Path jsonFile, BenchmarkType type, Path outputDir) throws IOException {
         // Generate reports using individual generators for testing
-        ReportGenerator reportGen = new ReportGenerator();
+        BenchmarkMetrics metrics = createTestMetrics(jsonFile);
+        ReportGenerator reportGen = new ReportGenerator(metrics);
         BadgeGenerator badgeGen = new BadgeGenerator();
         MetricsGenerator metricsGen = new MetricsGenerator();
         SummaryGenerator summaryGen = new SummaryGenerator();
@@ -149,17 +149,17 @@ class LocalReportGeneratorTest {
         // Generate badges
         Path badgesDir = outputDir.resolve("badges");
         Files.createDirectories(badgesDir);
-        badgeGen.generatePerformanceBadge(jsonFile, type, badgesDir.toString());
+        badgeGen.generatePerformanceBadge(metrics, type, badgesDir.toString());
         badgeGen.generateTrendBadge(jsonFile, type, badgesDir.toString());
         badgeGen.generateLastRunBadge(badgesDir.toString());
 
         // Generate metrics
         Path dataDir = outputDir.resolve("data");
         Files.createDirectories(dataDir);
-        metricsGen.generateMetricsJson(jsonFile, dataDir.toString());
+        metricsGen.generateMetricsJson(jsonFile, dataDir.toString(), metrics);
 
         // Generate summary in data directory
-        summaryGen.writeSummary(metrics, type, 
+        summaryGen.writeSummary(metrics, type,
                 outputDir.resolve("data/summary.json"));
 
         LOGGER.debug("Generated individual report components for {}", type.getDisplayName());

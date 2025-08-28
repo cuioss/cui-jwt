@@ -24,6 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -42,7 +43,7 @@ class MetricsGeneratorTest {
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateMetricsJson(jsonFile, outputDir);
+        generator.generateMetricsJson(jsonFile, outputDir, createTestMetrics(jsonFile));
 
         // Verify metrics.json was created
         Path metricsFile = Path.of(outputDir, "metrics.json");
@@ -72,7 +73,7 @@ class MetricsGeneratorTest {
 
         // Should throw since there's no data
         assertThrows(IllegalArgumentException.class,
-                () -> generator.generateMetricsJson(jsonFile, outputDir),
+                () -> generator.generateMetricsJson(jsonFile, outputDir, createTestMetrics(jsonFile)),
                 "Should fail fast with empty benchmark data");
     }
 
@@ -85,7 +86,7 @@ class MetricsGeneratorTest {
         MetricsGenerator generator = new MetricsGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateMetricsJson(jsonFile, outputDir);
+        generator.generateMetricsJson(jsonFile, outputDir, createTestMetrics(jsonFile));
 
         // Verify metrics file was created
         Path metricsFile = Path.of(outputDir, "metrics.json");
@@ -103,7 +104,7 @@ class MetricsGeneratorTest {
         // Check summary has expected fields
         JsonObject summary = metrics.get("summary").getAsJsonObject();
         assertTrue(summary.has("total_benchmarks"));
-        assertTrue(summary.has("average_throughput"));
+        assertTrue(summary.has("throughput"));
         assertTrue(summary.has("performance_grade"));
     }
 
@@ -117,7 +118,7 @@ class MetricsGeneratorTest {
         String nestedDir = tempDir.resolve("nested/deep/path").toString();
 
         // Should create nested directories
-        assertDoesNotThrow(() -> generator.generateMetricsJson(jsonFile, nestedDir),
+        assertDoesNotThrow(() -> generator.generateMetricsJson(jsonFile, nestedDir, createTestMetrics(jsonFile)),
                 "Should create nested directories as needed");
 
         assertTrue(Files.exists(Path.of(nestedDir, "metrics.json")),

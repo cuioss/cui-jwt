@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -76,7 +77,7 @@ class TemplateAndCssTest {
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
@@ -98,7 +99,7 @@ class TemplateAndCssTest {
         Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);

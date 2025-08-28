@@ -15,9 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.*;
-
 import java.util.Locale;
+
+import static de.cuioss.benchmarking.common.report.ReportConstants.*;
 
 /**
  * Central utility for converting benchmark metrics between different units.
@@ -108,7 +108,7 @@ public final class MetricConversionUtil {
             default -> GRADE_D;
         };
     }
-    
+
     /**
      * Central method for formatting numeric values for display.
      * Rules:

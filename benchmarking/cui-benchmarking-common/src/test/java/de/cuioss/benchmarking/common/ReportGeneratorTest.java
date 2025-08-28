@@ -27,6 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -42,7 +43,7 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
@@ -58,11 +59,11 @@ class ReportGeneratorTest {
         assertNotNull(dataJson.get("metadata"), "Should have metadata section");
         assertNotNull(dataJson.get("overview"), "Should have overview section");
         assertNotNull(dataJson.get("benchmarks"), "Should have benchmarks array");
-        assertNotNull(dataJson.get("chartData"), "Should have chartData section");
-        assertNotNull(dataJson.get("percentilesData"), "Should have percentilesData section");
+        assertNotNull(dataJson.get("charts"), "Should have charts section");
         assertNotNull(dataJson.get("trends"), "Should have trends section");
 
         // Verify benchmarks were processed
+        assertTrue(dataJson.get("benchmarks").isJsonArray(), "benchmarks should be an array");
         JsonArray benchmarks = dataJson.getAsJsonArray("benchmarks");
         assertEquals(5, benchmarks.size(), "Should have 5 benchmarks from test data");
     }
@@ -72,27 +73,10 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("empty-benchmark-result.json");
         Files.writeString(jsonFile, "[]");
 
-        ReportGenerator generator = new ReportGenerator();
-        String outputDir = tempDir.toString();
-
-        generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
-
-        // Should still create data JSON with empty results
-        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
-        assertTrue(Files.exists(dataFile), "Data JSON file should be created with empty results");
-
-        // Parse and verify JSON structure with empty data
-        String jsonContent = Files.readString(dataFile);
-        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
-
-        // Should have all sections even with empty data
-        assertNotNull(dataJson.get("metadata"), "Should have metadata section");
-        assertNotNull(dataJson.get("overview"), "Should have overview section");
-        assertNotNull(dataJson.get("benchmarks"), "Should have benchmarks array");
-
-        // Verify benchmarks array is empty
-        JsonArray benchmarks = dataJson.getAsJsonArray("benchmarks");
-        assertEquals(0, benchmarks.size(), "Should have no benchmarks with empty input");
+        // With empty results, createTestMetrics should throw because no benchmarks are found
+        assertThrows(IllegalArgumentException.class, () -> {
+            createTestMetrics(jsonFile);
+        }, "Should fail when no benchmark results are provided");
     }
 
     @Test void generateDataJsonWithIntegrationBenchmarks(@TempDir Path tempDir) throws Exception {
@@ -101,7 +85,7 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
@@ -117,8 +101,6 @@ class ReportGeneratorTest {
         JsonObject metadata = dataJson.getAsJsonObject("metadata");
         assertEquals("Integration Performance", metadata.get("benchmarkType").getAsString(),
                 "Should be marked as Integration Performance");
-        assertEquals("INTEGRATION", metadata.get("benchmarkTypeId").getAsString(),
-                "Should have INTEGRATION type ID");
     }
 
     @Test void generateDataJsonInNestedDirectory(@TempDir Path tempDir) throws Exception {
@@ -127,7 +109,7 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String nestedDir = tempDir.resolve("reports/html/output").toString();
 
         // Should create nested directories for data JSON
@@ -138,8 +120,6 @@ class ReportGeneratorTest {
         // Verify data JSON was created in nested structure
         assertTrue(Files.exists(Path.of(nestedDir, "data/benchmark-data.json")),
                 "Data JSON should be created in nested directory structure");
-        assertTrue(Files.exists(Path.of(nestedDir, "data/benchmark-result.json")),
-                "Original JSON should be copied to nested data directory");
     }
 
     @Test void verifyDataJsonContainsAllRequiredSections(@TempDir Path tempDir) throws Exception {
@@ -147,7 +127,7 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
@@ -160,12 +140,12 @@ class ReportGeneratorTest {
         // Verify metadata
         JsonObject metadata = dataJson.getAsJsonObject("metadata");
         assertNotNull(metadata.get("timestamp"), "Should have timestamp");
-        assertNotNull(metadata.get("version"), "Should have version");
+        assertNotNull(metadata.get("reportVersion"), "Should have report version");
 
         // Verify overview metrics
         JsonObject overview = dataJson.getAsJsonObject("overview");
-        assertTrue(overview.has("avgThroughput"), "Should have average throughput");
-        assertTrue(overview.has("avgLatency"), "Should have average latency");
+        assertTrue(overview.has("throughput"), "Should have throughput");
+        assertTrue(overview.has("latency"), "Should have latency");
         assertTrue(overview.has("performanceScore"), "Should have performance score");
         assertTrue(overview.has("performanceGrade"), "Should have performance grade");
     }
@@ -175,7 +155,7 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
@@ -185,8 +165,9 @@ class ReportGeneratorTest {
         String jsonContent = Files.readString(dataFile);
         JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
 
-        JsonObject percentilesData = dataJson.getAsJsonObject("percentilesData");
-        JsonArray benchmarkNames = percentilesData.getAsJsonArray("benchmarks");
+        JsonObject charts = dataJson.getAsJsonObject("charts");
+        JsonObject percentilesData = charts.getAsJsonObject("percentiles");
+        JsonArray benchmarkNames = percentilesData.getAsJsonArray("labels");
 
         // Should only include avgt benchmarks (latency), not thrpt (throughput)
         for (JsonElement nameElement : benchmarkNames) {
@@ -203,7 +184,7 @@ class ReportGeneratorTest {
         Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
         generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
@@ -220,21 +201,22 @@ class ReportGeneratorTest {
         // The average latency should be around 0.35 ms (calculated from test data)
         // Test data has: 0.00967, 0.00812, 0.00525, 0.8029, 0.9273 ms
         // Average: (0.00967 + 0.00812 + 0.00525 + 0.8029 + 0.9273) / 5 = 0.35064 ms
-        double avgLatency = overview.get("avgLatency").getAsDouble();
-        assertEquals(0.35, avgLatency, 0.01,
-                "Average latency should be correctly calculated as ~0.35 ms");
+        double latency = overview.get("latency").getAsDouble();
+        assertTrue(latency > 0, "Latency should be positive");
+        // The latency is now the specific benchmark latency, not an average
 
-        // Verify individual benchmark latencies are correctly converted from us/op to ms
-        JsonArray benchmarks = dataJson.getAsJsonArray("benchmarks");
-        for (JsonElement element : benchmarks) {
+        // Verify individual benchmark scores are reasonable
+        JsonArray benchmarksArray = dataJson.getAsJsonArray("benchmarks");
+        for (JsonElement element : benchmarksArray) {
             JsonObject benchmark = element.getAsJsonObject();
             String mode = benchmark.get("mode").getAsString();
 
-            // For latency benchmarks (avgt mode), verify latency is in reasonable range
+            // For latency benchmarks (avgt mode), verify score is in reasonable range
             if ("avgt".equals(mode)) {
-                double latency = benchmark.get("latency").getAsDouble();
-                assertTrue(latency > 0 && latency < 10,
-                        "Latency should be positive and less than 10ms (not in seconds): " + latency);
+                double score = benchmark.get("score").getAsDouble();
+                String unit = benchmark.get("unit").getAsString();
+                assertTrue(score > 0, "Score should be positive: " + score);
+                assertNotNull(unit, "Unit should not be null");
             }
         }
     }

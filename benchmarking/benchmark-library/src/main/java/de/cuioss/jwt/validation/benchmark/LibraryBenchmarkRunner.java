@@ -41,32 +41,29 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(LibraryBenchmarkRunner.class);
 
-    @Override protected BenchmarkType getBenchmarkType() {
-        return BenchmarkType.MICRO;
-    }
+    @Override protected BenchmarkConfiguration createConfiguration() {
+        String outputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
 
-    @Override protected String getIncludePattern() {
-        return "de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*";
-    }
-
-    @Override protected String getResultFileName() {
-        return "micro-benchmark-result.json";
+        return BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withIncludePattern("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*")
+                .withResultsDirectory(outputDir)
+                .withResultFile(outputDir + "/micro-benchmark-result.json")
+                .withThroughputBenchmarkName("measureThroughput")  // SimpleCoreValidationBenchmark.measureThroughput
+                .withLatencyBenchmarkName("measureAverageTime")    // SimpleCoreValidationBenchmark.measureAverageTime
+                .withForks(1)
+                .withWarmupIterations(5)
+                .withMeasurementIterations(5)
+                .withMeasurementTime(TimeValue.seconds(2))
+                .withWarmupTime(TimeValue.seconds(2))
+                .withThreads(8)
+                .build();
     }
 
     @Override protected void beforeBenchmarks() {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
         LOGGER.info("JWT validation micro benchmarks starting - Key cache initialized");
-    }
-
-    @Override protected BenchmarkConfiguration.Builder configureBenchmark(BenchmarkConfiguration.Builder builder) {
-        return builder
-                .withForks(1)
-                .withWarmupIterations(5)
-                .withMeasurementIterations(5)
-                .withMeasurementTime(TimeValue.seconds(2))
-                .withWarmupTime(TimeValue.seconds(2))
-                .withThreads(8);
     }
 
     /**
