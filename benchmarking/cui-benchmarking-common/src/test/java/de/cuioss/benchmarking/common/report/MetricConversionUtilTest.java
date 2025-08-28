@@ -136,4 +136,39 @@ class MetricConversionUtilTest {
         assertEquals(0, MetricConversionUtil.convertToMillisecondsPerOp(100, "unknown"),
                 "Unknown unit should return 0");
     }
+    
+    @Test void formatForDisplayWithDifferentValues() {
+        // Values < 2: 2 fraction digits
+        assertEquals("0.50", MetricConversionUtil.formatForDisplay(0.5));
+        assertEquals("1.25", MetricConversionUtil.formatForDisplay(1.25));
+        assertEquals("1.99", MetricConversionUtil.formatForDisplay(1.99));
+        
+        // Values < 10: 1 fraction digit
+        assertEquals("2.0", MetricConversionUtil.formatForDisplay(2.0));
+        assertEquals("5.5", MetricConversionUtil.formatForDisplay(5.5));
+        assertEquals("9.9", MetricConversionUtil.formatForDisplay(9.9));
+        
+        // Values >= 10: No fraction digits
+        assertEquals("10", MetricConversionUtil.formatForDisplay(10.0));
+        assertEquals("84", MetricConversionUtil.formatForDisplay(83.9));
+        assertEquals("103", MetricConversionUtil.formatForDisplay(103.4));
+        assertEquals("1000", MetricConversionUtil.formatForDisplay(1000.0));
+        assertEquals("123457", MetricConversionUtil.formatForDisplay(123456.789));
+    }
+    
+    @Test void formatForDisplayEdgeCases() {
+        // Test exact boundaries
+        assertEquals("2.0", MetricConversionUtil.formatForDisplay(2.0));
+        assertEquals("10", MetricConversionUtil.formatForDisplay(10.0));
+        
+        // Test very small values
+        assertEquals("0.01", MetricConversionUtil.formatForDisplay(0.01));
+        assertEquals("0.12", MetricConversionUtil.formatForDisplay(0.123));
+        
+        // Test rounding
+        assertEquals("9.5", MetricConversionUtil.formatForDisplay(9.49));
+        assertEquals("9.5", MetricConversionUtil.formatForDisplay(9.51));
+        assertEquals("100", MetricConversionUtil.formatForDisplay(99.5));
+        assertEquals("100", MetricConversionUtil.formatForDisplay(100.4));
+    }
 }

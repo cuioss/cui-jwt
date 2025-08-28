@@ -282,45 +282,52 @@ public class SummaryGenerator {
     }
 
     /**
-     * Calculates average throughput across all benchmarks, normalized to ops/s.
+     * Calculates average throughput using the leading throughput measurement.
      */
     private double calculateAverageThroughput(JsonArray benchmarks) {
-        double sum = 0;
-        int count = 0;
-
+        // Find the leading throughput measurement (measureThroughput)
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            if (benchmark.has("primaryMetric")) {
-                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
-                double score = metric.get("score").getAsDouble();
-                String unit = metric.get("scoreUnit").getAsString();
-
-                // Convert to ops/s based on unit
-                double opsPerSec;
-                if (unit.contains("ops/s") || unit.contains("ops/sec")) {
-                    opsPerSec = score;
-                } else if (unit.contains("ops/ms")) {
-                    opsPerSec = score * 1000.0; // Convert ops/ms to ops/s
-                } else if (unit.contains("ops/us")) {
-                    opsPerSec = score * 1_000_000.0; // Convert ops/us to ops/s
-                } else if (unit.contains("s/op")) {
-                    opsPerSec = 1.0 / score; // Convert s/op to ops/s
-                } else if (unit.contains("ms/op")) {
-                    opsPerSec = 1000.0 / score; // Convert ms/op to ops/s
-                } else if (unit.contains("us/op")) {
-                    opsPerSec = 1_000_000.0 / score; // Convert us/op to ops/s
-                } else {
-                    opsPerSec = score; // Default to raw score
-                }
-
-                if (opsPerSec > 0) {
-                    sum += opsPerSec;
-                    count++;
+            if (benchmark.has("benchmark")) {
+                String name = benchmark.get("benchmark").getAsString();
+                if (name.contains("measureThroughput")) {
+                    JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+                    double score = metric.get("score").getAsDouble();
+                    String unit = metric.get("scoreUnit").getAsString();
+                    return convertToOpsPerSecond(score, unit);
                 }
             }
         }
 
-        return count > 0 ? sum / count : 0.0;
+        // Fallback to first throughput benchmark if no measureThroughput found
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            if (benchmark.has("mode") && "thrpt".equals(benchmark.get("mode").getAsString())) {
+                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+                double score = metric.get("score").getAsDouble();
+                String unit = metric.get("scoreUnit").getAsString();
+                return convertToOpsPerSecond(score, unit);
+            }
+        }
+
+        return 0.0;
+    }
+    
+    private double convertToOpsPerSecond(double score, String unit) {
+        if (unit.contains("ops/s") || unit.contains("ops/sec")) {
+            return score;
+        } else if (unit.contains("ops/ms")) {
+            return score * 1000.0; // Convert ops/ms to ops/s
+        } else if (unit.contains("ops/us")) {
+            return score * 1_000_000.0; // Convert ops/us to ops/s
+        } else if (unit.contains("s/op")) {
+            return 1.0 / score; // Convert s/op to ops/s
+        } else if (unit.contains("ms/op")) {
+            return 1000.0 / score; // Convert ms/op to ops/s
+        } else if (unit.contains("us/op")) {
+            return 1_000_000.0 / score; // Convert us/op to ops/s
+        }
+        return score; // Default to raw score
     }
 
     /**

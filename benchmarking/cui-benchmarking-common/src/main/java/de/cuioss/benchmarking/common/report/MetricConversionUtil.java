@@ -17,6 +17,8 @@ package de.cuioss.benchmarking.common.report;
 
 import static de.cuioss.benchmarking.common.report.ReportConstants.*;
 
+import java.util.Locale;
+
 /**
  * Central utility for converting benchmark metrics between different units.
  * This is the SINGLE source of truth for all metric conversions.
@@ -105,5 +107,25 @@ public final class MetricConversionUtil {
             case 3 -> GRADE_C;
             default -> GRADE_D;
         };
+    }
+    
+    /**
+     * Central method for formatting numeric values for display.
+     * Rules:
+     * - Values < 2: 2 fraction digits
+     * - Values < 10: 1 fraction digit
+     * - Values >= 10: No fraction digits
+     * 
+     * @param value the numeric value to format
+     * @return formatted string representation
+     */
+    public static String formatForDisplay(double value) {
+        if (value < 2) {
+            return String.format(Locale.US, "%.2f", value);
+        } else if (value < 10) {
+            return String.format(Locale.US, "%.1f", value);
+        } else {
+            return String.format(Locale.US, "%d", Math.round(value));
+        }
     }
 }

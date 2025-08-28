@@ -214,7 +214,7 @@ public class BadgeGenerator {
         
         SummaryGenerator summaryGen = new SummaryGenerator();
         String grade = summaryGen.getPerformanceGrade(score.score());
-        String scoreFormatted = "%.1f %s".formatted(score.score(), grade);
+        String scoreFormatted = "%s %s".formatted(MetricConversionUtil.formatForDisplay(score.score()), grade);
         String throughputFormatted = formatNumber(score.throughput()) + " ops/s";
         String latencyFormatted = formatLatency(score.latency());
 
@@ -223,23 +223,22 @@ public class BadgeGenerator {
 
     private String formatNumber(double value) {
         if (value >= 1_000_000) {
-            return "%.1fM".formatted(value / 1_000_000);
+            double scaledValue = value / 1_000_000;
+            return "%sM".formatted(MetricConversionUtil.formatForDisplay(scaledValue));
         } else if (value >= 1000) {
-            return "%.1fK".formatted(value / 1000);
-        } else if (value >= 100) {
-            return "%.0f".formatted(value);
+            double scaledValue = value / 1000;
+            return "%sK".formatted(MetricConversionUtil.formatForDisplay(scaledValue));
         } else {
-            return "%.1f".formatted(value);
+            return MetricConversionUtil.formatForDisplay(value);
         }
     }
 
     private String formatLatency(double ms) {
         if (ms >= 1000) {
-            return "%.1fs".formatted(ms / 1000);
-        } else if (ms >= 1) {
-            return "%.1fms".formatted(ms);
+            double seconds = ms / 1000;
+            return "%ss".formatted(MetricConversionUtil.formatForDisplay(seconds));
         } else {
-            return "%.2fms".formatted(ms);
+            return "%sms".formatted(MetricConversionUtil.formatForDisplay(ms));
         }
     }
 

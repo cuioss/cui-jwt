@@ -320,16 +320,32 @@ public class ReportDataGenerator {
     }
 
     private double calculateAverageThroughput(JsonArray benchmarks) {
+        // Find the leading throughput measurement (measureThroughput)
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            String name = benchmark.get("benchmark").getAsString();
+            if (name.contains("measureThroughput")) {
+                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+                double score = metric.get("score").getAsDouble();
+                String unit = metric.get("scoreUnit").getAsString();
+                return MetricConversionUtil.convertToOpsPerSecond(score, unit);
+            }
+        }
+        
+        // Fallback to first throughput benchmark if no measureThroughput found
         return benchmarks.asList().stream()
                 .map(JsonElement::getAsJsonObject)
+                .filter(b -> {
+                    String mode = b.get("mode").getAsString();
+                    return "thrpt".equals(mode);
+                })
                 .mapToDouble(b -> {
                     JsonObject metric = b.getAsJsonObject("primaryMetric");
                     double score = metric.get("score").getAsDouble();
                     String unit = metric.get("scoreUnit").getAsString();
                     return MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 })
-                .filter(ops -> ops > 0)
-                .average()
+                .findFirst()
                 .orElse(0.0);
     }
 
@@ -365,21 +381,24 @@ public class ReportDataGenerator {
     private String formatThroughput(double throughput) {
         if (throughput == 0) return "N/A";
         if (throughput >= 1_000_000) {
-            return "%.1fM ops/s".formatted(throughput / 1_000_000);
+            double value = throughput / 1_000_000;
+            return "%sM ops/s".formatted(MetricConversionUtil.formatForDisplay(value));
         } else if (throughput >= 1000) {
-            return "%.1fK ops/s".formatted(throughput / 1000);
+            double value = throughput / 1000;
+            return "%sK ops/s".formatted(MetricConversionUtil.formatForDisplay(value));
         }
-        return "%.1f ops/s".formatted(throughput);
+        return "%s ops/s".formatted(MetricConversionUtil.formatForDisplay(throughput));
     }
 
     private String formatLatency(double latency) {
         if (latency == 0) return "N/A";
         if (latency >= 1000) {
-            return "%.1f s".formatted(latency / 1000);
+            double value = latency / 1000;
+            return "%s s".formatted(MetricConversionUtil.formatForDisplay(value));
         } else if (latency >= 1) {
-            return "%.1f ms".formatted(latency);
+            return "%s ms".formatted(MetricConversionUtil.formatForDisplay(latency));
         } else {
-            return "%.2f ms".formatted(latency);
+            return "%s ms".formatted(MetricConversionUtil.formatForDisplay(latency));
         }
     }
 }
