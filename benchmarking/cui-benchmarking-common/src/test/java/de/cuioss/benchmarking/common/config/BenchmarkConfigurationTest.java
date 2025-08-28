@@ -131,11 +131,23 @@ class BenchmarkConfigurationTest {
                 .withIncludePattern(".*JmhTest.*")
                 .withResultFormat(ResultFormatType.JSON)
                 .withForks(2)
+                .withThreads(8)
+                .withWarmupIterations(10)
+                .withMeasurementIterations(20)
+                .withResultsDirectory("custom/benchmark-results")
                 .build();
 
         var options = config.toJmhOptions();
-        assertNotNull(options);
-        // Options are properly built, detailed testing would require more JMH infrastructure
+        assertNotNull(options, "Options should not be null");
+        
+        // Verify the configuration values are properly set (testing what we can access)
+        assertEquals(".*JmhTest.*", config.includePattern(), "Include pattern should match");
+        assertEquals(2, config.forks(), "Forks should be 2");
+        assertEquals(8, config.threads(), "Threads should be 8");
+        assertEquals(10, config.warmupIterations(), "Warmup iterations should be 10");
+        assertEquals(20, config.measurementIterations(), "Measurement iterations should be 20");
+        assertEquals("custom/benchmark-results", config.resultsDirectory(), "Results directory should match");
+        assertEquals(ResultFormatType.JSON, config.reportConfig().resultFormat(), "Result format should be JSON");
     }
 
     @Test void threadCountParsing() {
@@ -187,10 +199,34 @@ class BenchmarkConfigurationTest {
                 .withThroughputBenchmarkName("fileThroughput")
                 .withLatencyBenchmarkName("fileLatency")
                 .withResultsDirectory("test-results")
+                .withResultFile("test-results/custom-result.json")
                 .build();
 
+        // Verify configuration values are accessible
+        assertEquals("test-results", config.resultsDirectory());
+        assertEquals("test-results/custom-result.json", config.resultFile());
+        assertEquals(BenchmarkType.INTEGRATION, config.benchmarkType());
+        assertEquals("fileThroughput", config.throughputBenchmarkName());
+        assertEquals("fileLatency", config.latencyBenchmarkName());
+        
+        // Verify JMH options are created successfully
         var options = config.toJmhOptions();
-        assertNotNull(options);
+        assertNotNull(options, "Options should not be null");
+        
+        // Test that result file can be generated when not explicitly set
+        BenchmarkConfiguration configWithoutFile = BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.INTEGRATION)
+                .withThroughputBenchmarkName("throughput")
+                .withLatencyBenchmarkName("latency")
+                .withResultsDirectory("generated-results")
+                .build();
+        
+        assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
+        assertEquals("generated-results", configWithoutFile.resultsDirectory());
+        
+        // The actual result file will be generated when toJmhOptions() is called
+        var generatedOptions = configWithoutFile.toJmhOptions();
+        assertNotNull(generatedOptions, "Options with generated file should not be null");
     }
 
     @Test void invalidResultFormat() {
