@@ -15,9 +15,14 @@
  */
 package de.cuioss.benchmarking.common.runner;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.report.BadgeGenerator;
+import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
 import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
+import de.cuioss.benchmarking.common.report.MetricsComputer;
 import de.cuioss.benchmarking.common.report.MetricsGenerator;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
@@ -49,6 +54,11 @@ public class BenchmarkResultProcessor {
 
     private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkResultProcessor.class);
+    
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .create();
 
     // Directory name constants
     private static final String BADGES_DIR = "/badges";
@@ -56,14 +66,22 @@ public class BenchmarkResultProcessor {
     private static final String GH_PAGES_DIR = "/gh-pages-ready";
 
     private final BenchmarkType benchmarkType;
+    private final String throughputBenchmarkName;
+    private final String latencyBenchmarkName;
 
     /**
      * Creates a processor for the specified benchmark type.
      *
      * @param benchmarkType the type of benchmarks being processed
+     * @param throughputBenchmarkName the benchmark name to extract throughput from
+     * @param latencyBenchmarkName the benchmark name to extract latency from
      */
-    public BenchmarkResultProcessor(BenchmarkType benchmarkType) {
+    public BenchmarkResultProcessor(BenchmarkType benchmarkType, 
+                                   String throughputBenchmarkName,
+                                   String latencyBenchmarkName) {
         this.benchmarkType = benchmarkType;
+        this.throughputBenchmarkName = throughputBenchmarkName;
+        this.latencyBenchmarkName = latencyBenchmarkName;
     }
 
     /**
@@ -92,14 +110,21 @@ public class BenchmarkResultProcessor {
                     ". The benchmark runner should have created this file.");
         }
 
-        // Generate all badges using JSON file
-        generateBadges(jsonFile, benchmarkType, outputDir);
+        // Compute metrics once using the pipeline
+        String jsonContent = Files.readString(jsonFile);
+        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
+        
+        MetricsComputer computer = new MetricsComputer(throughputBenchmarkName, latencyBenchmarkName);
+        BenchmarkMetrics metrics = computer.computeMetrics(benchmarks);
 
-        // Generate performance metrics using JSON file
-        generateMetrics(jsonFile, outputDir);
+        // Generate all badges using pre-computed metrics
+        generateBadges(jsonFile, benchmarkType, outputDir, metrics);
 
-        // Generate HTML reports using JSON file
-        generateReports(jsonFile, outputDir);
+        // Generate performance metrics using pre-computed metrics
+        generateMetrics(jsonFile, outputDir, metrics);
+
+        // Generate HTML reports using pre-computed metrics
+        generateReports(jsonFile, outputDir, metrics);
 
         // Generate GitHub Pages structure
         generateGitHubPagesStructure(outputDir);
@@ -126,12 +151,12 @@ public class BenchmarkResultProcessor {
     /**
      * Generates all types of badges.
      */
-    private void generateBadges(Path jsonFile, BenchmarkType type, String outputDir)
+    private void generateBadges(Path jsonFile, BenchmarkType type, String outputDir, BenchmarkMetrics metrics)
             throws IOException {
         BadgeGenerator badgeGen = new BadgeGenerator();
 
         LOGGER.info(INFO.GENERATING_BADGES.format(type.getDisplayName()));
-        badgeGen.generatePerformanceBadge(jsonFile, type, outputDir + BADGES_DIR);
+        badgeGen.generatePerformanceBadge(metrics, type, outputDir + BADGES_DIR);
         badgeGen.generateTrendBadge(jsonFile, type, outputDir + BADGES_DIR);
         badgeGen.generateLastRunBadge(outputDir + BADGES_DIR);
     }
@@ -139,18 +164,18 @@ public class BenchmarkResultProcessor {
     /**
      * Generates performance metrics in JSON format.
      */
-    private void generateMetrics(Path jsonFile, String outputDir) throws IOException {
+    private void generateMetrics(Path jsonFile, String outputDir, BenchmarkMetrics metrics) throws IOException {
         MetricsGenerator metricsGen = new MetricsGenerator();
 
         LOGGER.info(INFO.GENERATING_METRICS::format);
-        metricsGen.generateMetricsJson(jsonFile, outputDir + DATA_DIR);
+        metricsGen.generateMetricsJson(jsonFile, outputDir + DATA_DIR, metrics);
     }
 
     /**
      * Generates HTML reports with embedded CSS.
      */
-    private void generateReports(Path jsonFile, String outputDir) throws IOException {
-        ReportGenerator reportGen = new ReportGenerator();
+    private void generateReports(Path jsonFile, String outputDir, BenchmarkMetrics metrics) throws IOException {
+        ReportGenerator reportGen = new ReportGenerator(metrics);
 
         LOGGER.info(INFO.GENERATING_REPORTS::format);
         reportGen.generateIndexPage(jsonFile, benchmarkType, outputDir);

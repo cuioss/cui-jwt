@@ -88,6 +88,14 @@ body {
     letter-spacing: 0.5px;
 }
 
+.benchmark-name {
+    font-size: 0.8rem;
+    color: #495057;
+    text-transform: none;
+    font-weight: normal;
+    letter-spacing: normal;
+}
+
 .stat-value {
     font-size: 1.6rem;
     font-weight: bold;

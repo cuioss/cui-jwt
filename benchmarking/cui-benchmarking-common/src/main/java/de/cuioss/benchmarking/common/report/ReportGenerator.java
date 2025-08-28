@@ -42,7 +42,18 @@ public class ReportGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
     private static final String DATA_FILE_NAME = "benchmark-data.json";
-    private final ReportDataGenerator dataGenerator = new ReportDataGenerator();
+    private final ReportDataGenerator dataGenerator;
+    private final BenchmarkMetrics metrics;
+
+    /**
+     * Creates a ReportGenerator with pre-computed metrics.
+     * 
+     * @param metrics the pre-computed benchmark metrics
+     */
+    public ReportGenerator(BenchmarkMetrics metrics) {
+        this.metrics = metrics;
+        this.dataGenerator = new ReportDataGenerator();
+    }
 
     /**
      * Generates the main index page and benchmark data.
@@ -54,7 +65,7 @@ public class ReportGenerator {
      */
     public void generateIndexPage(Path jsonFile, BenchmarkType benchmarkType, String outputDir) throws IOException {
         // First generate the data file
-        dataGenerator.generateDataFile(jsonFile, benchmarkType, outputDir);
+        dataGenerator.generateDataFile(jsonFile, metrics, benchmarkType, outputDir);
 
         // Then copy the index template
         LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));

@@ -56,8 +56,10 @@ class BenchmarkDataLoader {
         const elements = {
             'performance-score': overview.performanceScore !== undefined ? overview.performanceScore : 'N/A',
             'performance-grade': overview.performanceGrade || 'N/A',
-            'avg-throughput': overview.avgThroughputFormatted || 'N/A',
-            'avg-latency': overview.avgLatencyFormatted || 'N/A'
+            'throughput': overview.throughputFormatted || overview.avgThroughputFormatted || 'N/A',
+            'latency': overview.latencyFormatted || overview.avgLatencyFormatted || 'N/A',
+            'throughput-name': overview.throughputBenchmarkName ? `(${overview.throughputBenchmarkName})` : '',
+            'latency-name': overview.latencyBenchmarkName ? `(${overview.latencyBenchmarkName})` : ''
         };
 
         for (const [id, value] of Object.entries(elements)) {

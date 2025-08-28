@@ -18,6 +18,8 @@ package de.cuioss.benchmarking.common;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
 import org.junit.jupiter.api.Test;
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
 import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.RunResult;
 
@@ -46,7 +48,10 @@ class BenchmarkResultProcessorTest {
         Collection<RunResult> results = List.of();
 
         // Process results
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                DEFAULT_THROUGHPUT_BENCHMARK,
+                DEFAULT_LATENCY_BENCHMARK);
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
 
@@ -77,7 +82,10 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test void emptyResultsHandling(@TempDir Path tempDir) {
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                DEFAULT_THROUGHPUT_BENCHMARK,
+                DEFAULT_LATENCY_BENCHMARK);
         List<RunResult> emptyResults = List.of();
 
         String outputDir = tempDir.toString();
@@ -102,7 +110,10 @@ class BenchmarkResultProcessorTest {
         Path targetJson = nestedDir.resolve("micro-benchmark-result.json");
         Files.copy(sourceJson, targetJson);
 
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                DEFAULT_THROUGHPUT_BENCHMARK,
+                DEFAULT_LATENCY_BENCHMARK);
         String outputDir = nestedDir.toString();
 
         // Use empty results - processor will read from JSON

@@ -16,6 +16,8 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
 import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import de.cuioss.benchmarking.common.report.MetricsGenerator;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
@@ -99,7 +101,10 @@ class LocalReportGeneratorTest {
         LOGGER.debug("Copied micro benchmark JSON data");
 
         // Generate all reports using the processor
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                DEFAULT_THROUGHPUT_BENCHMARK,
+                DEFAULT_LATENCY_BENCHMARK);
         List<RunResult> emptyResults = List.of(); // Processor will read from JSON file
         processor.processResults(emptyResults, microOutputDir.toString());
 
@@ -154,8 +159,8 @@ class LocalReportGeneratorTest {
         metricsGen.generateMetricsJson(jsonFile, dataDir.toString());
 
         // Generate summary in data directory
-        summaryGen.writeSummary(jsonFile, type, Instant.now(),
-                outputDir.resolve("data/summary.json").toString());
+        summaryGen.writeSummary(metrics, type, 
+                outputDir.resolve("data/summary.json"));
 
         LOGGER.debug("Generated individual report components for {}", type.getDisplayName());
     }

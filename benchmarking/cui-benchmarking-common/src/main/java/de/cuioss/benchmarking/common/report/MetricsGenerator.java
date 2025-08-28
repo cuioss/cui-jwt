@@ -59,9 +59,10 @@ public class MetricsGenerator {
      *
      * @param jsonFile the path to the benchmark JSON results file
      * @param outputDir the output directory for metrics files
+     * @param metrics the pre-computed benchmark metrics
      * @throws IOException if reading JSON or writing metrics files fails
      */
-    public void generateMetricsJson(Path jsonFile, String outputDir) throws IOException {
+    public void generateMetricsJson(Path jsonFile, String outputDir, BenchmarkMetrics metrics) throws IOException {
         // Parse JSON file
         String jsonContent = Files.readString(jsonFile);
         JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
@@ -72,15 +73,15 @@ public class MetricsGenerator {
 
         LOGGER.info(INFO.GENERATING_METRICS_JSON.format(benchmarks.size()));
 
-        Map<String, Object> metrics = new LinkedHashMap<>();
-        metrics.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
-        metrics.put("benchmarks", processBenchmarkResults(benchmarks));
-        metrics.put("summary", generateSummaryMetrics(benchmarks));
+        Map<String, Object> metricsData = new LinkedHashMap<>();
+        metricsData.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
+        metricsData.put("benchmarks", processBenchmarkResults(benchmarks));
+        metricsData.put("summary", generateSummaryMetrics(benchmarks, metrics));
 
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
         Path metricsFile = outputPath.resolve("metrics.json");
-        Files.writeString(metricsFile, GSON.toJson(metrics));
+        Files.writeString(metricsFile, GSON.toJson(metricsData));
         LOGGER.info(INFO.METRICS_FILE_GENERATED.format(metricsFile));
 
         // Also generate individual benchmark files for detailed analysis
@@ -224,13 +225,15 @@ public class MetricsGenerator {
         return normalized;
     }
 
-    private Map<String, Object> generateSummaryMetrics(JsonArray benchmarks) {
+    private Map<String, Object> generateSummaryMetrics(JsonArray benchmarks, BenchmarkMetrics metrics) {
         Map<String, Object> summary = new LinkedHashMap<>();
 
         summary.put("total_benchmarks", benchmarks.size());
         summary.put("total_score", calculateTotalScore(benchmarks));
-        summary.put("average_throughput", calculateAverageThroughput(benchmarks));
-        summary.put("performance_grade", calculatePerformanceGrade(benchmarks));
+        summary.put("throughput", metrics.throughput());
+        summary.put("latency", metrics.latency());
+        summary.put("performance_score", metrics.performanceScore());
+        summary.put("performance_grade", metrics.performanceGrade());
 
         return summary;
     }

@@ -53,7 +53,9 @@ int threads,
 String resultsDirectory,
 Optional<String> integrationServiceUrl,
 Optional<String> keycloakUrl,
-Optional<String> metricsUrl
+Optional<String> metricsUrl,
+String throughputBenchmarkName,
+String latencyBenchmarkName
 ) {
 
     /**
@@ -73,6 +75,8 @@ Optional<String> metricsUrl
         public static final String INTEGRATION_SERVICE_URL = "integration.service.url";
         public static final String KEYCLOAK_URL = "keycloak.url";
         public static final String METRICS_URL = "quarkus.metrics.url";
+        public static final String THROUGHPUT_BENCHMARK_NAME = "benchmark.throughput.name";
+        public static final String LATENCY_BENCHMARK_NAME = "benchmark.latency.name";
 
         private Properties() {
         }
@@ -91,6 +95,8 @@ Optional<String> metricsUrl
         public static final String WARMUP_TIME = "1s";
         public static final int THREADS = 4;
         public static final String RESULTS_DIR = "target/benchmark-results";
+        public static final String THROUGHPUT_BENCHMARK_NAME = "measureThroughput";
+        public static final String LATENCY_BENCHMARK_NAME = "measureLatency";
 
         private Defaults() {
         }
@@ -114,7 +120,9 @@ Optional<String> metricsUrl
                 .withResultsDirectory(System.getProperty(Properties.RESULTS_DIR, Defaults.RESULTS_DIR))
                 .withIntegrationServiceUrl(System.getProperty(Properties.INTEGRATION_SERVICE_URL))
                 .withKeycloakUrl(System.getProperty(Properties.KEYCLOAK_URL))
-                .withMetricsUrl(System.getProperty(Properties.METRICS_URL));
+                .withMetricsUrl(System.getProperty(Properties.METRICS_URL))
+                .withThroughputBenchmarkName(System.getProperty(Properties.THROUGHPUT_BENCHMARK_NAME, Defaults.THROUGHPUT_BENCHMARK_NAME))
+                .withLatencyBenchmarkName(System.getProperty(Properties.LATENCY_BENCHMARK_NAME, Defaults.LATENCY_BENCHMARK_NAME));
     }
 
     /**
@@ -145,7 +153,9 @@ Optional<String> metricsUrl
                 .withResultsDirectory(resultsDirectory)
                 .withIntegrationServiceUrl(integrationServiceUrl.orElse(null))
                 .withKeycloakUrl(keycloakUrl.orElse(null))
-                .withMetricsUrl(metricsUrl.orElse(null));
+                .withMetricsUrl(metricsUrl.orElse(null))
+                .withThroughputBenchmarkName(throughputBenchmarkName)
+                .withLatencyBenchmarkName(latencyBenchmarkName);
     }
 
     /**
@@ -260,6 +270,8 @@ Optional<String> metricsUrl
         private String integrationServiceUrl;
         private String keycloakUrl;
         private String metricsUrl;
+        private String throughputBenchmarkName = Defaults.THROUGHPUT_BENCHMARK_NAME;
+        private String latencyBenchmarkName = Defaults.LATENCY_BENCHMARK_NAME;
 
         public Builder withIncludePattern(String pattern) {
             this.includePattern = pattern;
@@ -326,6 +338,16 @@ Optional<String> metricsUrl
             return this;
         }
 
+        public Builder withThroughputBenchmarkName(String name) {
+            this.throughputBenchmarkName = name;
+            return this;
+        }
+
+        public Builder withLatencyBenchmarkName(String name) {
+            this.latencyBenchmarkName = name;
+            return this;
+        }
+
         public BenchmarkConfiguration build() {
             String finalResultFile = resultFile;
             if (finalResultFile == null || finalResultFile.isEmpty()) {
@@ -350,7 +372,9 @@ Optional<String> metricsUrl
                     resultsDirectory,
                     Optional.ofNullable(integrationServiceUrl),
                     Optional.ofNullable(keycloakUrl),
-                    Optional.ofNullable(metricsUrl)
+                    Optional.ofNullable(metricsUrl),
+                    throughputBenchmarkName,
+                    latencyBenchmarkName
             );
         }
     }

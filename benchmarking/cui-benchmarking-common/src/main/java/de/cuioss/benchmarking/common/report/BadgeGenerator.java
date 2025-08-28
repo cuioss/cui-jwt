@@ -72,25 +72,19 @@ public class BadgeGenerator {
     /**
      * Generates a performance badge showing current benchmark performance.
      *
-     * @param jsonFile the path to the benchmark JSON results file
+     * @param metrics the pre-computed benchmark metrics
      * @param type the benchmark type
      * @param outputDir the output directory for the badge file
      * @throws IOException if writing the badge file fails
      */
-    public void generatePerformanceBadge(Path jsonFile, BenchmarkType type, String outputDir)
+    public void generatePerformanceBadge(BenchmarkMetrics metrics, BenchmarkType type, String outputDir)
             throws IOException {
-
-        // Parse JSON file
-        String jsonContent = Files.readString(jsonFile);
-        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-
-        PerformanceScore score = calculatePerformanceScore(benchmarks);
 
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put(SCHEMA_VERSION, 1);
         badge.put(LABEL, type.getBadgeLabel());
-        badge.put(MESSAGE, formatPerformanceMessage(score));
-        badge.put(COLOR, getColorForScore(score));
+        badge.put(MESSAGE, formatPerformanceMessage(metrics));
+        badge.put(COLOR, getColorForScore(metrics.performanceScore()));
 
         String filename = type.getPerformanceBadgeFileName();
         Path badgeFile = Path.of(outputDir, filename);
@@ -150,106 +144,28 @@ public class BadgeGenerator {
         LOGGER.info(INFO.BADGE_GENERATED.format("last run", badgeFile));
     }
 
-    private PerformanceScore calculatePerformanceScore(JsonArray benchmarks) {
-        if (benchmarks == null || benchmarks.isEmpty()) {
-            throw new IllegalArgumentException("No benchmark results found in JSON. Cannot generate badge.");
-        }
 
-        // Group benchmarks by name to pair throughput and latency
-        Map<String, Double> throughputByBenchmark = new LinkedHashMap<>();
-        Map<String, Double> latencyByBenchmark = new LinkedHashMap<>();
-
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-
-            String benchmarkName = benchmark.get("benchmark").getAsString();
-            String mode = benchmark.get("mode").getAsString();
-
-            JsonObject primaryMetric = benchmark.getAsJsonObject("primaryMetric");
-            double score = primaryMetric.get("score").getAsDouble();
-            String unit = primaryMetric.get("scoreUnit").getAsString();
-
-            // Process throughput results (mode == "thrpt" or unit contains "ops")
-            if ("thrpt".equals(mode) || unit.contains("ops")) {
-                double opsPerSec = MetricConversionUtil.convertToOpsPerSecond(score, unit);
-                throughputByBenchmark.put(benchmarkName, opsPerSec);
-                // Also calculate latency from throughput
-                if (opsPerSec > 0) {
-                    double msPerOp = 1000.0 / opsPerSec; // Convert ops/s to ms/op
-                    latencyByBenchmark.put(benchmarkName, msPerOp);
-                }
-            } else if ("avgt".equals(mode) || "sample".equals(mode) || unit.contains("/op")) {
-                double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
-                latencyByBenchmark.put(benchmarkName, msPerOp);
-                // Also calculate throughput from latency if not already present
-                if (!throughputByBenchmark.containsKey(benchmarkName) && msPerOp > 0) {
-                    double opsPerSec = 1000.0 / msPerOp; // Convert ms/op to ops/s
-                    throughputByBenchmark.put(benchmarkName, opsPerSec);
-                }
-            }
-        }
-
-        // Calculate averages
-        double avgThroughput = throughputByBenchmark.values().stream()
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(0.0);
-
-        double avgLatency = latencyByBenchmark.values().stream()
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(0.0);
-
-        // Calculate performance score using the new formula from SummaryGenerator
-        SummaryGenerator summaryGen = new SummaryGenerator();
-        double performanceScore = summaryGen.calculatePerformanceScore(avgThroughput, avgLatency);
-
-        return new PerformanceScore(performanceScore, avgThroughput, avgLatency);
-    }
-
-    // All metric conversions now use the centralized MetricConversionUtil
-
-    private String formatPerformanceMessage(PerformanceScore score) {
+    private String formatPerformanceMessage(BenchmarkMetrics metrics) {
         // Format: "Score Grade (throughput, latency)"
         // Example: "91 A (5.8K ops/s, 1.17ms)"
-        
-        SummaryGenerator summaryGen = new SummaryGenerator();
-        String grade = summaryGen.getPerformanceGrade(score.score());
-        String scoreFormatted = "%s %s".formatted(MetricConversionUtil.formatForDisplay(score.score()), grade);
-        String throughputFormatted = formatNumber(score.throughput()) + " ops/s";
-        String latencyFormatted = formatLatency(score.latency());
-
-        return "%s (%s, %s)".formatted(scoreFormatted, throughputFormatted, latencyFormatted);
+        String scoreFormatted = "%s %s".formatted(
+            metrics.performanceScoreFormatted(), 
+            metrics.performanceGrade()
+        );
+        return "%s (%s, %s)".formatted(
+            scoreFormatted, 
+            metrics.throughputFormatted(), 
+            metrics.latencyFormatted()
+        );
     }
 
-    private String formatNumber(double value) {
-        if (value >= 1_000_000) {
-            double scaledValue = value / 1_000_000;
-            return "%sM".formatted(MetricConversionUtil.formatForDisplay(scaledValue));
-        } else if (value >= 1000) {
-            double scaledValue = value / 1000;
-            return "%sK".formatted(MetricConversionUtil.formatForDisplay(scaledValue));
-        } else {
-            return MetricConversionUtil.formatForDisplay(value);
-        }
-    }
 
-    private String formatLatency(double ms) {
-        if (ms >= 1000) {
-            double seconds = ms / 1000;
-            return "%ss".formatted(MetricConversionUtil.formatForDisplay(seconds));
-        } else {
-            return "%sms".formatted(MetricConversionUtil.formatForDisplay(ms));
-        }
-    }
-
-    private String getColorForScore(PerformanceScore score) {
+    private String getColorForScore(double score) {
         // Color based on the 0-100 performance score
-        double value = score.score();
-        if (value >= 90) return COLOR_BRIGHT_GREEN;  // Grade A
-        if (value >= 75) return COLOR_GREEN;         // Grade B
-        if (value >= 60) return COLOR_YELLOW;        // Grade C
-        if (value >= 40) return COLOR_ORANGE;        // Grade D
+        if (score >= 90) return COLOR_BRIGHT_GREEN;  // Grade A
+        if (score >= 75) return COLOR_GREEN;         // Grade B
+        if (score >= 60) return COLOR_YELLOW;        // Grade C
+        if (score >= 40) return COLOR_ORANGE;        // Grade D
         return COLOR_RED;                             // Grade F
     }
 
@@ -285,9 +201,6 @@ public class BadgeGenerator {
     }
 
     // Value classes for structured data
-    private record PerformanceScore(double score, double throughput, double latency) {
-    }
-
     private record TrendAnalysis(TrendDirection direction, double percentChange) {
     }
 

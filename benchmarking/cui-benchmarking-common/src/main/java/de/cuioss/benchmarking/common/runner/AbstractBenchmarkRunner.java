@@ -156,7 +156,11 @@ public abstract class AbstractBenchmarkRunner {
         }
 
         // Process results to generate all artifacts
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(getBenchmarkType());
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+            getBenchmarkType(),
+            config.throughputBenchmarkName(),
+            config.latencyBenchmarkName()
+        );
         processor.processResults(results, outputDir);
 
         // Run post-processing hook

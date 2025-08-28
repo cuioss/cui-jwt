@@ -56,362 +56,76 @@ public class SummaryGenerator {
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     // Constants for JSON field names
-    private static final String FIELD_AVERAGE_THROUGHPUT = "average_throughput";
+    private static final String FIELD_THROUGHPUT = "throughput";
+    private static final String FIELD_LATENCY = "latency";
     private static final String FIELD_STATUS = "status";
     private static final String FIELD_PERFORMANCE = "performance";
 
-    // Performance score constants
-    private static final double PERFECT_SCORE = 100.0;
-    private static final double EXCELLENT_SCORE = 90.0;
-    private static final double GOOD_SCORE = 80.0;
-    private static final double FAIR_SCORE = 70.0;
-    private static final double MINIMUM_SCORE = 60.0;
-    private static final double THROUGHPUT_NORMALIZATION_FACTOR = 1_000.0;
-    private static final double SCORE_MULTIPLIER = 70.0;
-    private static final int GRADE_DIVISOR = 10;
-
     /**
-     * Writes a comprehensive summary file for CI consumption.
+     * Writes a summary file using pre-computed metrics.
      *
-     * @param jsonFile the path to the benchmark JSON results file
+     * @param metrics the pre-computed benchmark metrics
      * @param type the benchmark type
-     * @param timestamp the execution timestamp
      * @param outputFile the output file path
-     * @throws IOException if writing the summary file fails
+     * @throws IOException if writing fails
      */
-    public void writeSummary(Path jsonFile, BenchmarkType type,
-            Instant timestamp, String outputFile) throws IOException {
-        // Parse JSON file
-        JsonArray benchmarks;
-        if (Files.exists(jsonFile)) {
-            String jsonContent = Files.readString(jsonFile);
-            benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-            if (benchmarks == null) {
-                benchmarks = new JsonArray();
-            }
-        } else {
-            // If no JSON file exists, create empty array for failed benchmarks
-            benchmarks = new JsonArray();
-        }
-
-        LOGGER.info(INFO.WRITING_BENCHMARK_SUMMARY.format(
-                benchmarks.size(), type.getDisplayName()));
+    public void writeSummary(BenchmarkMetrics metrics, BenchmarkType type, Path outputFile) 
+            throws IOException {
 
         Map<String, Object> summary = new LinkedHashMap<>();
-
-        // Basic information
-        summary.put("timestamp", ISO_FORMATTER.format(timestamp.atOffset(ZoneOffset.UTC)));
-        summary.put("benchmark_type", type.getIdentifier());
-        summary.put("execution_status", determineExecutionStatus(benchmarks));
-
+        
+        // Basic metadata
+        summary.put("benchmark_type", type);
+        summary.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
+        summary.put("throughputBenchmarkName", metrics.throughputBenchmarkName());
+        summary.put("latencyBenchmarkName", metrics.latencyBenchmarkName());
+        
         // Performance metrics
-        var summaryMetrics = generateSummaryMetrics(benchmarks);
-        summary.put("metrics", summaryMetrics);
-        summary.put("performance_grade", calculatePerformanceGrade(benchmarks));
-        summary.put(FIELD_AVERAGE_THROUGHPUT, summaryMetrics.get(FIELD_AVERAGE_THROUGHPUT));
-
-        // Quality gates
-        summary.put("quality_gates", evaluateQualityGates(benchmarks, type));
-
-        // Recommendations
-        summary.put("recommendations", generateRecommendations(benchmarks, type));
-
-        // Artifact information
-        summary.put("artifacts", listGeneratedArtifacts());
-
-        Path summaryPath = Path.of(outputFile);
-        Files.writeString(summaryPath, GSON.toJson(summary));
-        LOGGER.info(INFO.SUMMARY_FILE_GENERATED.format(summaryPath));
+        summary.put(FIELD_THROUGHPUT, metrics.throughput());
+        summary.put(FIELD_LATENCY, metrics.latency());
+        summary.put("performance_score", metrics.performanceScore());
+        summary.put("performance_grade", metrics.performanceGrade());
+        
+        // Formatted values
+        summary.put("throughputFormatted", metrics.throughputFormatted());
+        summary.put("latencyFormatted", metrics.latencyFormatted());
+        summary.put("performanceScoreFormatted", metrics.performanceScoreFormatted());
+        
+        // Status determination based on score
+        String status = determineStatus(metrics.performanceScore());
+        summary.put(FIELD_STATUS, status);
+        
+        // CI/CD readiness indicators
+        summary.put("deployment_ready", isDeploymentReady(metrics.performanceScore()));
+        summary.put("regression_detected", hasRegression(metrics.performanceScore()));
+        
+        Files.writeString(outputFile, GSON.toJson(summary));
+        
+        LOGGER.info(INFO.SUMMARY_FILE_GENERATED.format(outputFile));
     }
 
     /**
-     * Determines the overall execution status of the benchmark run.
+     * Determines the status based on performance score.
      */
-    private String determineExecutionStatus(JsonArray benchmarks) {
-        if (benchmarks.isEmpty()) {
-            return "FAILED";
-        }
-
-        // Check if all benchmarks have valid results
-        boolean allHaveResults = true;
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            if (!benchmark.has("primaryMetric")) {
-                allHaveResults = false;
-                break;
-            }
-            JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
-            if (!metric.has("score") || metric.get("score").getAsDouble() <= 0) {
-                allHaveResults = false;
-                break;
-            }
-        }
-
-        return allHaveResults ? "SUCCESS" : "PARTIAL";
+    private String determineStatus(double score) {
+        if (score >= 90) return "EXCELLENT";
+        if (score >= 75) return "GOOD";
+        if (score >= 60) return "FAIR";
+        return "POOR";
     }
 
     /**
-     * Generates summary metrics across all benchmarks.
+     * Determines if deployment is ready based on performance.
      */
-    private Map<String, Object> generateSummaryMetrics(JsonArray benchmarks) {
-        Map<String, Object> metrics = new LinkedHashMap<>();
-
-        metrics.put("successful_benchmarks", countSuccessfulBenchmarks(benchmarks));
-        metrics.put(FIELD_AVERAGE_THROUGHPUT, calculateAverageThroughput(benchmarks));
-        metrics.put("total_execution_time", calculateTotalExecutionTime(benchmarks));
-        metrics.put("performance_score", Math.round(calculateOverallPerformanceScore(benchmarks)));
-
-        return metrics;
+    private boolean isDeploymentReady(double score) {
+        return score >= 60; // Minimum acceptable score for deployment
     }
 
     /**
-     * Evaluates quality gates based on performance thresholds.
+     * Checks for performance regression.
      */
-    private Map<String, Object> evaluateQualityGates(JsonArray benchmarks, BenchmarkType type) {
-        Map<String, Object> gates = new LinkedHashMap<>();
-
-        // Define thresholds based on benchmark type
-        // Integration benchmarks include network/TLS overhead and should have lower thresholds
-        double throughputThreshold = type == BenchmarkType.MICRO ? 10_000 : 5_000; // 5 ops/ms = 5000 ops/s for HTTP
-        double regressionThreshold = 10.0; // 10% regression threshold
-
-        double avgThroughput = calculateAverageThroughput(benchmarks);
-
-        // Throughput gate
-        Map<String, Object> throughputGate = new LinkedHashMap<>();
-        throughputGate.put("threshold", throughputThreshold);
-        throughputGate.put("actual", avgThroughput);
-        throughputGate.put(FIELD_STATUS, avgThroughput >= throughputThreshold ? "PASS" : "FAIL");
-        gates.put("throughput", throughputGate);
-
-        Map<String, Object> regressionGate = new LinkedHashMap<>();
-        regressionGate.put("threshold_percent", regressionThreshold);
-        regressionGate.put("actual_percent", 0.0);
-        regressionGate.put(FIELD_STATUS, "PASS");
-        regressionGate.put("note", "Historical comparison not available");
-        gates.put("regression", regressionGate);
-
-        // Overall gate status
-        boolean allPassed = gates.values().stream()
-                .allMatch(gate -> "PASS".equals(((Map<?, ?>)gate).get(FIELD_STATUS)));
-        gates.put("overall_status", allPassed ? "PASS" : "FAIL");
-
-        return gates;
-    }
-
-    /**
-     * Generates recommendations based on benchmark results.
-     */
-    private Map<String, Object> generateRecommendations(JsonArray benchmarks, BenchmarkType type) {
-        Map<String, Object> recommendations = new LinkedHashMap<>();
-
-        double avgThroughput = calculateAverageThroughput(benchmarks);
-
-        // Performance recommendations
-        if (avgThroughput < 1_000) {
-            recommendations.put(FIELD_PERFORMANCE, "Consider performance optimization - throughput below baseline");
-        } else if (avgThroughput > 100_000) {
-            recommendations.put(FIELD_PERFORMANCE, "Excellent performance - consider this as new baseline");
-        } else {
-            recommendations.put(FIELD_PERFORMANCE, "Performance within acceptable range");
-        }
-
-        // Deployment recommendations
-        boolean deploymentReady = "SUCCESS".equals(determineExecutionStatus(benchmarks)) &&
-                avgThroughput >= (type == BenchmarkType.MICRO ? 10_000 : 5_000);
-
-        recommendations.put("deployment", deploymentReady ?
-                "Ready for deployment - all quality gates passed" :
-                "Review performance before deployment");
-
-        // Monitoring recommendations
-        if (benchmarks.size() < 5) {
-            recommendations.put("monitoring", "Consider increasing benchmark coverage");
-        } else {
-            recommendations.put("monitoring", "Benchmark coverage adequate");
-        }
-
-        return recommendations;
-    }
-
-    /**
-     * Lists all generated artifacts for reference.
-     */
-    private Map<String, Object> listGeneratedArtifacts() {
-        Map<String, Object> artifacts = new LinkedHashMap<>();
-
-        artifacts.put("badges", Map.of(
-                FIELD_PERFORMANCE, "badges/performance-badge.json",
-                "trend", "badges/trend-badge.json",
-                "last_run", "badges/last-run-badge.json"
-        ));
-
-        artifacts.put("reports", Map.of(
-                "overview", "index.html",
-                "trends", "trends.html"
-        ));
-
-        artifacts.put("data", Map.of(
-                "metrics", "data/metrics.json",
-                "raw_results", "raw-result.json"
-        ));
-
-        artifacts.put("api", Map.of(
-                "latest", "gh-pages-ready/api/latest.json",
-                FIELD_STATUS, "gh-pages-ready/api/status.json"
-        ));
-
-        return artifacts;
-    }
-
-    /**
-     * Counts benchmarks that completed successfully.
-     */
-    private long countSuccessfulBenchmarks(JsonArray benchmarks) {
-        long count = 0;
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            if (benchmark.has("primaryMetric")) {
-                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
-                if (metric.has("score") && metric.get("score").getAsDouble() > 0) {
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-
-    /**
-     * Calculates average throughput using the leading throughput measurement.
-     */
-    private double calculateAverageThroughput(JsonArray benchmarks) {
-        // Find the leading throughput measurement (measureThroughput)
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            if (benchmark.has("benchmark")) {
-                String name = benchmark.get("benchmark").getAsString();
-                if (name.contains("measureThroughput")) {
-                    JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
-                    double score = metric.get("score").getAsDouble();
-                    String unit = metric.get("scoreUnit").getAsString();
-                    return convertToOpsPerSecond(score, unit);
-                }
-            }
-        }
-
-        // Fallback to first throughput benchmark if no measureThroughput found
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            if (benchmark.has("mode") && "thrpt".equals(benchmark.get("mode").getAsString())) {
-                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
-                double score = metric.get("score").getAsDouble();
-                String unit = metric.get("scoreUnit").getAsString();
-                return convertToOpsPerSecond(score, unit);
-            }
-        }
-
-        return 0.0;
-    }
-    
-    private double convertToOpsPerSecond(double score, String unit) {
-        if (unit.contains("ops/s") || unit.contains("ops/sec")) {
-            return score;
-        } else if (unit.contains("ops/ms")) {
-            return score * 1000.0; // Convert ops/ms to ops/s
-        } else if (unit.contains("ops/us")) {
-            return score * 1_000_000.0; // Convert ops/us to ops/s
-        } else if (unit.contains("s/op")) {
-            return 1.0 / score; // Convert s/op to ops/s
-        } else if (unit.contains("ms/op")) {
-            return 1000.0 / score; // Convert ms/op to ops/s
-        } else if (unit.contains("us/op")) {
-            return 1_000_000.0 / score; // Convert us/op to ops/s
-        }
-        return score; // Default to raw score
-    }
-
-    /**
-     * Calculates average latency across all benchmarks, converted to milliseconds.
-     */
-    private double calculateAverageLatency(JsonArray benchmarks) {
-        double sum = 0;
-        int count = 0;
-
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            if (benchmark.has("primaryMetric")) {
-                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
-                double score = metric.get("score").getAsDouble();
-                String unit = metric.get("scoreUnit").getAsString();
-
-                // Convert to milliseconds using MetricConversionUtil
-                double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
-
-                if (msPerOp > 0) {
-                    sum += msPerOp;
-                    count++;
-                }
-            }
-        }
-
-        return count > 0 ? sum / count : 0.0;
-    }
-
-    private double calculateTotalExecutionTime(JsonArray benchmarks) {
-        // Estimate based on number of benchmarks (typical benchmark runs ~30s each)
-        return benchmarks.size() * 30.0;
-    }
-
-    /**
-     * Calculates an overall performance score using the new scoring formula.
-     */
-    private double calculateOverallPerformanceScore(JsonArray benchmarks) {
-        double avgThroughput = calculateAverageThroughput(benchmarks);
-        double avgLatency = calculateAverageLatency(benchmarks);
-        return calculatePerformanceScore(avgThroughput, avgLatency);
-    }
-
-    // Performance scoring constants
-    private static final double THROUGHPUT_BASELINE = 100.0;  // ops/s per point (10,000 ops/s = 100 points)
-    private static final double LATENCY_BASELINE = 100.0;     // score points for 1ms latency
-    private static final double THROUGHPUT_WEIGHT = 0.5;      // 50% weight for throughput
-    private static final double LATENCY_WEIGHT = 0.5;         // 50% weight for latency
-    
-    /**
-     * Calculates performance score based on throughput and latency metrics.
-     * Formula: Score = (Throughput_Score × 0.5) + (Latency_Score × 0.5)
-     * 
-     * @param avgThroughput average throughput in ops/s
-     * @param avgLatency average latency in milliseconds
-     * @return performance score (uncapped, 100 = baseline good performance)
-     */
-    public double calculatePerformanceScore(double avgThroughput, double avgLatency) {
-        // Throughput score: 10,000 ops/s = 100 points (uncapped)
-        double throughputScore = avgThroughput / THROUGHPUT_BASELINE;
-
-        // Latency score: 1 ms = 100 points (inverse relationship, uncapped)
-        double latencyScore = LATENCY_BASELINE / avgLatency;
-
-        // Combined score with equal weighting
-        return (throughputScore * THROUGHPUT_WEIGHT) + (latencyScore * LATENCY_WEIGHT);
-    }
-
-    /**
-     * Determines performance grade based on score.
-     * 
-     * @param score performance score (0-100)
-     * @return grade letter (A, B, C, D, or F)
-     */
-    public String getPerformanceGrade(double score) {
-        if (score >= 90) return "A";
-        if (score >= 75) return "B";
-        if (score >= 60) return "C";
-        if (score >= 40) return "D";
-        return "F";
-    }
-
-    private String calculatePerformanceGrade(JsonArray benchmarks) {
-        double score = calculateOverallPerformanceScore(benchmarks);
-        return getPerformanceGrade(score);
+    private boolean hasRegression(double score) {
+        // TODO: Compare with baseline when historical data is available
+        return false; // For now, no regression detection
     }
 }
