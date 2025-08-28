@@ -98,7 +98,7 @@ public final class MetricConversionUtil {
      * @return performance grade string
      */
     public static String calculatePerformanceGrade(double throughput) {
-        return switch ((int) Math.log10(Math.max(1, throughput))) {
+        return switch ((int)Math.log10(Math.max(1, throughput))) {
             case 6, 7, 8, 9 -> GRADE_A_PLUS;
             case 5 -> GRADE_A;
             case 4 -> GRADE_B;

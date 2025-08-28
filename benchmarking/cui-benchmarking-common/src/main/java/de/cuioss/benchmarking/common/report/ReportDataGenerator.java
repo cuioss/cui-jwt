@@ -133,12 +133,11 @@ public class ReportDataGenerator {
         double performanceScore = summaryGen.calculatePerformanceScore(avgThroughput, avgLatency);
         String grade = summaryGen.getPerformanceGrade(performanceScore);
 
-        overview.addProperty("totalBenchmarks", totalBenchmarks);
         overview.addProperty("avgThroughput", avgThroughput);
         overview.addProperty("avgThroughputFormatted", formatThroughput(avgThroughput));
         overview.addProperty("avgLatency", avgLatency);
         overview.addProperty("avgLatencyFormatted", formatLatency(avgLatency));
-        overview.addProperty("performanceScore", performanceScore);
+        overview.addProperty("performanceScore", Math.round(performanceScore));
         overview.addProperty("performanceGrade", grade);
         overview.addProperty("performanceGradeClass", getGradeClass(grade));
 
@@ -308,7 +307,6 @@ public class ReportDataGenerator {
         // Current run
         JsonObject currentRun = new JsonObject();
         currentRun.addProperty("timestamp", Instant.now().toString());
-        currentRun.addProperty("totalBenchmarks", currentBenchmarks.size());
         currentRun.addProperty("avgThroughput", calculateAverageThroughput(currentBenchmarks));
         currentRun.addProperty("avgLatency", calculateAverageLatency(currentBenchmarks));
 

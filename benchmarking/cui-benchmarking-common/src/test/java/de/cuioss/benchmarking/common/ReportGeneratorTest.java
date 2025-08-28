@@ -164,9 +164,9 @@ class ReportGeneratorTest {
 
         // Verify overview metrics
         JsonObject overview = dataJson.getAsJsonObject("overview");
-        assertTrue(overview.has("totalBenchmarks"), "Should have total benchmarks count");
         assertTrue(overview.has("avgThroughput"), "Should have average throughput");
         assertTrue(overview.has("avgLatency"), "Should have average latency");
+        assertTrue(overview.has("performanceScore"), "Should have performance score");
         assertTrue(overview.has("performanceGrade"), "Should have performance grade");
     }
 

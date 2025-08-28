@@ -56,7 +56,6 @@ public class SummaryGenerator {
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     // Constants for JSON field names
-    private static final String FIELD_TOTAL_BENCHMARKS = "total_benchmarks";
     private static final String FIELD_AVERAGE_THROUGHPUT = "average_throughput";
     private static final String FIELD_STATUS = "status";
     private static final String FIELD_PERFORMANCE = "performance";
@@ -108,7 +107,6 @@ public class SummaryGenerator {
         // Performance metrics
         var summaryMetrics = generateSummaryMetrics(benchmarks);
         summary.put("metrics", summaryMetrics);
-        summary.put(FIELD_TOTAL_BENCHMARKS, summaryMetrics.get(FIELD_TOTAL_BENCHMARKS));
         summary.put("performance_grade", calculatePerformanceGrade(benchmarks));
         summary.put(FIELD_AVERAGE_THROUGHPUT, summaryMetrics.get(FIELD_AVERAGE_THROUGHPUT));
 
@@ -158,11 +156,10 @@ public class SummaryGenerator {
     private Map<String, Object> generateSummaryMetrics(JsonArray benchmarks) {
         Map<String, Object> metrics = new LinkedHashMap<>();
 
-        metrics.put(FIELD_TOTAL_BENCHMARKS, benchmarks.size());
         metrics.put("successful_benchmarks", countSuccessfulBenchmarks(benchmarks));
         metrics.put(FIELD_AVERAGE_THROUGHPUT, calculateAverageThroughput(benchmarks));
         metrics.put("total_execution_time", calculateTotalExecutionTime(benchmarks));
-        metrics.put("performance_score", calculateOverallPerformanceScore(benchmarks));
+        metrics.put("performance_score", Math.round(calculateOverallPerformanceScore(benchmarks)));
 
         return metrics;
     }
@@ -196,7 +193,7 @@ public class SummaryGenerator {
 
         // Overall gate status
         boolean allPassed = gates.values().stream()
-                .allMatch(gate -> "PASS".equals(((Map<?, ?>) gate).get(FIELD_STATUS)));
+                .allMatch(gate -> "PASS".equals(((Map<?, ?>)gate).get(FIELD_STATUS)));
         gates.put("overall_status", allPassed ? "PASS" : "FAIL");
 
         return gates;
@@ -339,10 +336,10 @@ public class SummaryGenerator {
                 JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
                 double score = metric.get("score").getAsDouble();
                 String unit = metric.get("scoreUnit").getAsString();
-                
+
                 // Convert to milliseconds using MetricConversionUtil
                 double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
-                
+
                 if (msPerOp > 0) {
                     sum += msPerOp;
                     count++;

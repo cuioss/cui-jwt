@@ -58,7 +58,6 @@ class SummaryGeneratorTest {
         String content = Files.readString(summaryFile);
         Map<String, Object> summary = gson.fromJson(content, Map.class);
 
-        assertEquals(0.0, summary.get("total_benchmarks"));
         assertEquals("FAILED", summary.get("execution_status"));
         assertEquals("micro", summary.get("benchmark_type"));
         assertNotNull(summary.get("timestamp"));
@@ -108,7 +107,6 @@ class SummaryGeneratorTest {
         assertNotNull(summary.get("benchmark_type"));
         assertNotNull(summary.get("execution_status"));
         assertNotNull(summary.get("metrics"));
-        assertNotNull(summary.get("total_benchmarks"));
         assertNotNull(summary.get("performance_grade"));
         assertNotNull(summary.get("average_throughput"));
         assertNotNull(summary.get("quality_gates"));

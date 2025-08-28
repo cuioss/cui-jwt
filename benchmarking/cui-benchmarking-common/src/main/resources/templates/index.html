@@ -26,8 +26,12 @@
             <h2>Performance Overview</h2>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>Total Benchmarks</h3>
-                    <p class="stat-value" id="total-benchmarks">Loading...</p>
+                    <h3>Performance Score</h3>
+                    <p class="stat-value" id="performance-score">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Performance Grade</h3>
+                    <p class="stat-value grade" id="performance-grade">Loading...</p>
                 </div>
                 <div class="stat-card">
                     <h3>Average Throughput</h3>
@@ -36,10 +40,6 @@
                 <div class="stat-card">
                     <h3>Average Latency</h3>
                     <p class="stat-value" id="avg-latency">Loading...</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Performance Grade</h3>
-                    <p class="stat-value" id="performance-grade">Loading...</p>
                 </div>
             </div>
         </section>
@@ -59,26 +59,6 @@
             </div>
         </section>
 
-        <section class="benchmarks">
-            <h2>Benchmark Results</h2>
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Benchmark</th>
-                            <th>Mode</th>
-                            <th>Score</th>
-                            <th>Confidence Interval</th>
-                        </tr>
-                    </thead>
-                    <tbody id="benchmark-table-body">
-                        <tr>
-                            <td colspan="4" class="loading-message">Loading benchmark data...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </main>
 
     <footer class="footer">

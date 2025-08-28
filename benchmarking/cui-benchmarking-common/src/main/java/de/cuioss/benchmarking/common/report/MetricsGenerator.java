@@ -303,7 +303,7 @@ public class MetricsGenerator {
 
     private String calculatePerformanceGrade(JsonArray benchmarks) {
         double avgThroughput = calculateAverageThroughput(benchmarks);
-        return switch ((int) Math.log10(Math.max(1, avgThroughput))) {
+        return switch ((int)Math.log10(Math.max(1, avgThroughput))) {
             case 6, 7, 8, 9 -> "A+";
             case 5 -> "A";
             case 4 -> "B";

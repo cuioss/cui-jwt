@@ -54,16 +54,21 @@ class BenchmarkDataLoader {
         
         // Update overview elements
         const elements = {
-            'total-benchmarks': overview.totalBenchmarks || 0,
+            'performance-score': overview.performanceScore !== undefined ? overview.performanceScore : 'N/A',
+            'performance-grade': overview.performanceGrade || 'N/A',
             'avg-throughput': overview.avgThroughputFormatted || 'N/A',
-            'avg-latency': overview.avgLatencyFormatted || 'N/A',
-            'performance-grade': overview.performanceGrade || 'N/A'
+            'avg-latency': overview.avgLatencyFormatted || 'N/A'
         };
 
         for (const [id, value] of Object.entries(elements)) {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = value;
+                
+                // Add grade class styling
+                if (id === 'performance-grade' && overview.performanceGradeClass) {
+                    element.className = 'stat-value grade ' + overview.performanceGradeClass;
+                }
             }
         }
 
@@ -81,32 +86,91 @@ class BenchmarkDataLoader {
     }
 
     /**
-     * Renders the benchmark table with data from JSON.
+     * Renders the benchmark results as a horizontal bar chart.
      */
-    async renderBenchmarkTable() {
+    async renderBenchmarkResultsChart() {
         const data = await this.loadData();
         const benchmarks = data.benchmarks || [];
-        const tableBody = document.getElementById('benchmark-table-body');
+        const canvas = document.getElementById('benchmark-results-chart');
         
-        if (!tableBody) return;
+        if (!canvas || !window.Chart) return;
 
-        // Clear existing rows
-        tableBody.innerHTML = '';
-
-        // Add benchmark rows
+        const ctx = canvas.getContext('2d');
+        
+        // Separate throughput and latency benchmarks
+        const throughputBenchmarks = benchmarks.filter(b => b.throughput);
+        const latencyBenchmarks = benchmarks.filter(b => b.latency);
+        
+        // Prepare data for combined display
+        const labels = benchmarks.map(b => b.name);
+        const values = [];
+        const backgroundColors = [];
+        const borderColors = [];
+        
         benchmarks.forEach(benchmark => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${benchmark.name}</td>
-                <td>${benchmark.mode}</td>
-                <td>${benchmark.scoreFormatted}</td>
-                <td class="confidence-cell">
-                    ${benchmark.confidence ? 
-                        `[${benchmark.confidence[0].toFixed(2)}, ${benchmark.confidence[1].toFixed(2)}]` : 
-                        'N/A'}
-                </td>
-            `;
-            tableBody.appendChild(row);
+            if (benchmark.throughput) {
+                // Normalize throughput to a 0-100 scale for display
+                const normalizedValue = (benchmark.throughput / 1000); // Convert to K ops/s
+                values.push(normalizedValue);
+                backgroundColors.push('rgba(54, 162, 235, 0.8)');
+                borderColors.push('rgba(54, 162, 235, 1)');
+            } else if (benchmark.latency) {
+                // Show latency directly (already in ms)
+                values.push(benchmark.latency * 100); // Scale up for visibility
+                backgroundColors.push('rgba(255, 99, 132, 0.8)');
+                borderColors.push('rgba(255, 99, 132, 1)');
+            }
+        });
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Performance',
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bar chart
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const benchmark = benchmarks[index];
+                                if (benchmark.throughput) {
+                                    return `Throughput: ${benchmark.throughputFormatted}`;
+                                } else if (benchmark.latency) {
+                                    return `Latency: ${benchmark.latencyFormatted}`;
+                                }
+                                return benchmark.scoreFormatted;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Performance (Throughput in K ops/s, Latency scaled x100)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -488,18 +552,15 @@ class BenchmarkDataLoader {
             switch (pageType) {
                 case 'index':
                     await this.renderOverview();
-                    await this.renderBenchmarkTable();
                     await this.renderChart('overview-chart', 'overview');
                     await this.renderPercentilesChart('percentiles-chart');
                     break;
                 case 'trends':
                     await this.renderOverview();
-                    await this.renderTrendsTable();
                     await this.renderChart('trends-chart', 'trends');
                     break;
                 case 'detailed':
                     await this.renderOverview();
-                    await this.renderBenchmarkTable();
                     this.loadJMHVisualizer();
                     break;
             }

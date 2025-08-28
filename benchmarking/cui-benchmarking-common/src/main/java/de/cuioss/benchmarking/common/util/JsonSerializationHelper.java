@@ -85,8 +85,8 @@ public final class JsonSerializationHelper {
      * @return formatted string
      */
     public static String formatDouble(double value) {
-        if (value == (long) value) {
-            return String.valueOf((long) value);
+        if (value == (long)value) {
+            return String.valueOf((long)value);
         }
         return "%.2f".formatted(value);
     }
