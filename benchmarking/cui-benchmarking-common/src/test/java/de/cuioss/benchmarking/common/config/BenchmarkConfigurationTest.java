@@ -16,12 +16,18 @@
 package de.cuioss.benchmarking.common.config;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.TimeValue;
+
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkConfigurationTest {
+
+    @TempDir
+    Path tempDir;
 
     @Test void defaults() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
@@ -53,7 +59,7 @@ class BenchmarkConfigurationTest {
                 .withWarmupIterations(10)
                 .withMeasurementIterations(20)
                 .withThreads(8)
-                .withResultsDirectory("custom/results")
+                .withResultsDirectory(tempDir.resolve("custom-results").toString())
                 .withIntegrationServiceUrl("http://localhost:8080")
                 .withKeycloakUrl("http://keycloak:8080")
                 .withMetricsUrl("http://metrics:9090")
@@ -65,7 +71,7 @@ class BenchmarkConfigurationTest {
         assertEquals(10, config.warmupIterations());
         assertEquals(20, config.measurementIterations());
         assertEquals(8, config.threads());
-        assertEquals("custom/results", config.resultsDirectory());
+        assertEquals(tempDir.resolve("custom-results").toString(), config.resultsDirectory());
         assertEquals("http://localhost:8080", config.integrationServiceUrl().orElse(null));
         assertEquals("http://keycloak:8080", config.keycloakUrl().orElse(null));
         assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
@@ -134,7 +140,7 @@ class BenchmarkConfigurationTest {
                 .withThreads(8)
                 .withWarmupIterations(10)
                 .withMeasurementIterations(20)
-                .withResultsDirectory("custom/benchmark-results")
+                .withResultsDirectory(tempDir.resolve("benchmark-results").toString())
                 .build();
 
         var options = config.toJmhOptions();
@@ -146,7 +152,7 @@ class BenchmarkConfigurationTest {
         assertEquals(8, config.threads(), "Threads should be 8");
         assertEquals(10, config.warmupIterations(), "Warmup iterations should be 10");
         assertEquals(20, config.measurementIterations(), "Measurement iterations should be 20");
-        assertEquals("custom/benchmark-results", config.resultsDirectory(), "Results directory should match");
+        assertEquals(tempDir.resolve("benchmark-results").toString(), config.resultsDirectory(), "Results directory should match");
         assertEquals(ResultFormatType.JSON, config.reportConfig().resultFormat(), "Result format should be JSON");
     }
 
@@ -198,13 +204,13 @@ class BenchmarkConfigurationTest {
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("fileThroughput")
                 .withLatencyBenchmarkName("fileLatency")
-                .withResultsDirectory("test-results")
-                .withResultFile("test-results/custom-result.json")
+                .withResultsDirectory(tempDir.resolve("test-results").toString())
+                .withResultFile(tempDir.resolve("test-results").resolve("custom-result.json").toString())
                 .build();
 
         // Verify configuration values are accessible
-        assertEquals("test-results", config.resultsDirectory());
-        assertEquals("test-results/custom-result.json", config.resultFile());
+        assertEquals(tempDir.resolve("test-results").toString(), config.resultsDirectory());
+        assertEquals(tempDir.resolve("test-results").resolve("custom-result.json").toString(), config.resultFile());
         assertEquals(BenchmarkType.INTEGRATION, config.benchmarkType());
         assertEquals("fileThroughput", config.throughputBenchmarkName());
         assertEquals("fileLatency", config.latencyBenchmarkName());
@@ -218,11 +224,11 @@ class BenchmarkConfigurationTest {
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("throughput")
                 .withLatencyBenchmarkName("latency")
-                .withResultsDirectory("generated-results")
+                .withResultsDirectory(tempDir.resolve("generated-results").toString())
                 .build();
 
         assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
-        assertEquals("generated-results", configWithoutFile.resultsDirectory());
+        assertEquals(tempDir.resolve("generated-results").toString(), configWithoutFile.resultsDirectory());
 
         // The actual result file will be generated when toJmhOptions() is called
         var generatedOptions = configWithoutFile.toJmhOptions();
@@ -293,7 +299,7 @@ class BenchmarkConfigurationTest {
         System.setProperty("jmh.time", "3s");
         System.setProperty("jmh.warmupTime", "1s");
         System.setProperty("jmh.threads", "24");
-        System.setProperty("benchmark.results.dir", "all-results");
+        System.setProperty("benchmark.results.dir", tempDir.resolve("all-results").toString());
         System.setProperty("integration.service.url", "http://service:8080");
         System.setProperty("keycloak.url", "http://keycloak:8180");
         System.setProperty("quarkus.metrics.url", "http://metrics:9090");
@@ -313,7 +319,7 @@ class BenchmarkConfigurationTest {
             assertEquals(TimeValue.seconds(3), config.measurementTime());
             assertEquals(TimeValue.seconds(1), config.warmupTime());
             assertEquals(24, config.threads());
-            assertEquals("all-results", config.resultsDirectory());
+            assertEquals(tempDir.resolve("all-results").toString(), config.resultsDirectory());
             assertEquals("http://service:8080", config.integrationServiceUrl().orElse(null));
             assertEquals("http://keycloak:8180", config.keycloakUrl().orElse(null));
             assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));

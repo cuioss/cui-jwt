@@ -202,7 +202,7 @@ class ReportGeneratorTest {
         String latencyStr = overview.get("latency").getAsString();
         assertNotNull(latencyStr, "Latency string should not be null");
         assertFalse(latencyStr.isEmpty(), "Latency string should not be empty");
-        assertTrue(latencyStr.contains("ms") || latencyStr.contains("s"), 
+        assertTrue(latencyStr.contains("ms") || latencyStr.contains("s"),
                 "Latency should have unit: " + latencyStr);
 
         // Verify individual benchmark scores are reasonable
