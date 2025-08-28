@@ -17,8 +17,8 @@ package de.cuioss.benchmarking.common.report;
 
 import org.junit.jupiter.api.Test;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.UNITS;
 import static de.cuioss.benchmarking.common.report.ReportConstants.GRADES;
+import static de.cuioss.benchmarking.common.report.ReportConstants.UNITS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

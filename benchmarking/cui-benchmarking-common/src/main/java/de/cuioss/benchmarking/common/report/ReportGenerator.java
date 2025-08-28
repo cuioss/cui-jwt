@@ -24,8 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.TEMPLATES;
 import static de.cuioss.benchmarking.common.report.ReportConstants.FILES;
+import static de.cuioss.benchmarking.common.report.ReportConstants.TEMPLATES;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**

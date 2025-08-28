@@ -17,7 +17,9 @@ package de.cuioss.benchmarking.common.report;
 
 import java.util.Locale;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.*;
+import static de.cuioss.benchmarking.common.report.ReportConstants.CONVERSIONS;
+import static de.cuioss.benchmarking.common.report.ReportConstants.GRADES;
+import static de.cuioss.benchmarking.common.report.ReportConstants.UNITS;
 
 /**
  * Central utility for converting benchmark metrics between different units.
@@ -39,21 +41,21 @@ public final class MetricConversionUtil {
     public static double convertToOpsPerSecond(double score, String unit) {
         // Handle throughput units directly
         // IMPORTANT: Check more specific units first to avoid partial matches!
-        if (unit.contains(UNIT_OPS_PER_NS)) {
-            return score * NANOS_TO_SECONDS;
-        } else if (unit.contains(UNIT_OPS_PER_US)) {
-            return score * MICROS_TO_SECONDS;
-        } else if (unit.contains(UNIT_OPS_PER_MS)) {
-            return score * MILLIS_TO_SECONDS;
-        } else if (unit.contains(UNIT_OPS_PER_SEC) || unit.contains(UNIT_OPS_PER_SEC_ALT)) {
+        if (unit.contains(UNITS.OPS_PER_NS)) {
+            return score * CONVERSIONS.NANOS_TO_SECONDS;
+        } else if (unit.contains(UNITS.OPS_PER_US)) {
+            return score * CONVERSIONS.MICROS_TO_SECONDS;
+        } else if (unit.contains(UNITS.OPS_PER_MS)) {
+            return score * CONVERSIONS.MILLIS_TO_SECONDS;
+        } else if (unit.contains(UNITS.OPS_PER_SEC) || unit.contains(UNITS.OPS_PER_SEC_ALT)) {
             return score;
-        } else if (unit.contains(UNIT_NS_PER_OP)) {
-            return NANOS_TO_SECONDS / score;
-        } else if (unit.contains(UNIT_US_PER_OP)) {
-            return MICROS_TO_SECONDS / score;
-        } else if (unit.contains(UNIT_MS_PER_OP)) {
-            return MILLIS_TO_SECONDS / score;
-        } else if (unit.contains(UNIT_SEC_PER_OP)) {
+        } else if (unit.contains(UNITS.NS_PER_OP)) {
+            return CONVERSIONS.NANOS_TO_SECONDS / score;
+        } else if (unit.contains(UNITS.US_PER_OP)) {
+            return CONVERSIONS.MICROS_TO_SECONDS / score;
+        } else if (unit.contains(UNITS.MS_PER_OP)) {
+            return CONVERSIONS.MILLIS_TO_SECONDS / score;
+        } else if (unit.contains(UNITS.SEC_PER_OP)) {
             return 1.0 / score;
         }
         return score;
@@ -72,22 +74,22 @@ public final class MetricConversionUtil {
         // IMPORTANT: Check more specific units first to avoid partial matches!
         // "us/op" contains "s/op", so must check "us/op" before "s/op"
         // "ns/op" contains "s/op", so must check "ns/op" before "s/op"
-        if (unit.contains(UNIT_NS_PER_OP)) {
-            return score / NANOS_TO_MILLIS; // Convert nanoseconds to milliseconds
-        } else if (unit.contains(UNIT_US_PER_OP)) {
-            return score / MICROS_TO_MILLIS; // Convert microseconds to milliseconds
-        } else if (unit.contains(UNIT_MS_PER_OP)) {
+        if (unit.contains(UNITS.NS_PER_OP)) {
+            return score / CONVERSIONS.NANOS_TO_MILLIS; // Convert nanoseconds to milliseconds
+        } else if (unit.contains(UNITS.US_PER_OP)) {
+            return score / CONVERSIONS.MICROS_TO_MILLIS; // Convert microseconds to milliseconds
+        } else if (unit.contains(UNITS.MS_PER_OP)) {
             return score; // Already in ms/op
-        } else if (unit.contains(UNIT_SEC_PER_OP)) {
-            return score * MILLIS_TO_SECONDS; // Convert seconds to milliseconds
-        } else if (unit.contains(UNIT_OPS_PER_NS)) {
-            return 1.0 / (score * NANOS_TO_MILLIS); // ops/ns -> ns/op -> ms/op
-        } else if (unit.contains(UNIT_OPS_PER_US)) {
-            return 1.0 / (score * MICROS_TO_MILLIS); // ops/us -> us/op -> ms/op
-        } else if (unit.contains(UNIT_OPS_PER_MS)) {
+        } else if (unit.contains(UNITS.SEC_PER_OP)) {
+            return score * CONVERSIONS.MILLIS_TO_SECONDS; // Convert seconds to milliseconds
+        } else if (unit.contains(UNITS.OPS_PER_NS)) {
+            return 1.0 / (score * CONVERSIONS.NANOS_TO_MILLIS); // ops/ns -> ns/op -> ms/op
+        } else if (unit.contains(UNITS.OPS_PER_US)) {
+            return 1.0 / (score * CONVERSIONS.MICROS_TO_MILLIS); // ops/us -> us/op -> ms/op
+        } else if (unit.contains(UNITS.OPS_PER_MS)) {
             return 1.0 / score; // ops/ms -> ms/op
-        } else if (unit.contains(UNIT_OPS_PER_SEC) || unit.contains(UNIT_OPS_PER_SEC_ALT)) {
-            return MILLIS_TO_SECONDS / score; // ops/s -> s/op -> ms/op
+        } else if (unit.contains(UNITS.OPS_PER_SEC) || unit.contains(UNITS.OPS_PER_SEC_ALT)) {
+            return CONVERSIONS.MILLIS_TO_SECONDS / score; // ops/s -> s/op -> ms/op
         }
         // Unknown unit, return 0 to filter out in calculations
         return 0;
@@ -101,11 +103,11 @@ public final class MetricConversionUtil {
      */
     public static String calculatePerformanceGrade(double throughput) {
         return switch ((int)Math.log10(Math.max(1, throughput))) {
-            case 6, 7, 8, 9 -> GRADE_A_PLUS;
-            case 5 -> GRADE_A;
-            case 4 -> GRADE_B;
-            case 3 -> GRADE_C;
-            default -> GRADE_D;
+            case 6, 7, 8, 9 -> GRADES.A_PLUS;
+            case 5 -> GRADES.A;
+            case 4 -> GRADES.B;
+            case 3 -> GRADES.C;
+            default -> GRADES.D;
         };
     }
 
