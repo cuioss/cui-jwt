@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
@@ -369,13 +370,13 @@ public class ReportDataGenerator {
 
     private String formatScore(double score, String unit) {
         if (score >= 1_000_000) {
-            return "%.1fM %s".formatted(score / 1_000_000, unit);
+            return String.format(Locale.US, "%.1fM %s", score / 1_000_000, unit);
         } else if (score >= 1000) {
-            return "%.1fK %s".formatted(score / 1000, unit);
+            return String.format(Locale.US, "%.1fK %s", score / 1000, unit);
         } else if (score >= 1) {
-            return "%.1f %s".formatted(score, unit);
+            return String.format(Locale.US, "%.1f %s", score, unit);
         }
-        return "%.3f %s".formatted(score, unit);
+        return String.format(Locale.US, "%.3f %s", score, unit);
     }
 
     private String formatThroughput(double throughput) {

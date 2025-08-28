@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 /**
  * Common JSON serialization utilities for benchmark results.
@@ -88,7 +89,7 @@ public final class JsonSerializationHelper {
         if (value == (long)value) {
             return String.valueOf((long)value);
         }
-        return "%.2f".formatted(value);
+        return String.format(Locale.US, "%.2f", value);
     }
 
     /**

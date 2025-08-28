@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
@@ -259,8 +260,8 @@ public class BadgeGenerator {
 
     private String formatTrendMessage(TrendAnalysis trend) {
         return switch (trend.direction()) {
-            case IMPROVING -> "↑ +%.1f%%".formatted(trend.percentChange());
-            case DEGRADING -> "↓ %.1f%%".formatted(trend.percentChange());
+            case IMPROVING -> String.format(Locale.US, "↑ +%.1f%%", trend.percentChange());
+            case DEGRADING -> String.format(Locale.US, "↓ %.1f%%", trend.percentChange());
             case STABLE -> "→ stable";
         };
     }
