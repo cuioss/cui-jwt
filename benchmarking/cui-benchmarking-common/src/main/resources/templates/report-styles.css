@@ -78,29 +78,36 @@ body {
     padding: 1.5rem;
     border-radius: 8px;
     text-align: center;
+    min-height: 115px;
+    display: flex;
+    flex-direction: column;
 }
 
 .stat-card h3 {
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.5rem 0;
     color: #6c757d;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    min-height: 2.2rem;
 }
 
 .benchmark-name {
-    font-size: 0.8rem;
-    color: #495057;
+    display: block;
+    font-size: 0.75rem;
+    color: #868e96;
     text-transform: none;
     font-weight: normal;
     letter-spacing: normal;
+    margin-top: 0.15rem;
 }
 
 .stat-value {
     font-size: 1.6rem;
     font-weight: bold;
-    margin: 0;
+    margin: auto 0 0 0;
     color: #2c3e50;
+    align-self: center;
 }
 
 .stat-value.success {

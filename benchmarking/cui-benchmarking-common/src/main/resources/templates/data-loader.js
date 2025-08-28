@@ -56,8 +56,8 @@ class BenchmarkDataLoader {
         const elements = {
             'performance-score': overview.performanceScore !== undefined ? overview.performanceScore : 'N/A',
             'performance-grade': overview.performanceGrade || 'N/A',
-            'throughput': overview.throughputFormatted || overview.avgThroughputFormatted || 'N/A',
-            'latency': overview.latencyFormatted || overview.avgLatencyFormatted || 'N/A',
+            'throughput': overview.throughput || 'N/A',
+            'latency': overview.latency || 'N/A',
             'throughput-name': overview.throughputBenchmarkName ? `(${overview.throughputBenchmarkName})` : '',
             'latency-name': overview.latencyBenchmarkName ? `(${overview.latencyBenchmarkName})` : ''
         };
@@ -150,11 +150,11 @@ class BenchmarkDataLoader {
                                 const index = context.dataIndex;
                                 const benchmark = benchmarks[index];
                                 if (benchmark.throughput) {
-                                    return `Throughput: ${benchmark.throughputFormatted}`;
+                                    return `Throughput: ${benchmark.throughput}`;
                                 } else if (benchmark.latency) {
-                                    return `Latency: ${benchmark.latencyFormatted}`;
+                                    return `Latency: ${benchmark.latency}`;
                                 }
-                                return benchmark.scoreFormatted;
+                                return benchmark.score;
                             }
                         }
                     }
@@ -182,7 +182,8 @@ class BenchmarkDataLoader {
      */
     async renderPercentilesChart(canvasId) {
         const data = await this.loadData();
-        const percentilesData = data.percentilesData || {};
+        const chartData = data.chartData || {};
+        const percentilesData = chartData.percentilesData || {};
         const canvas = document.getElementById(canvasId);
         
         if (!canvas || !window.Chart) return;

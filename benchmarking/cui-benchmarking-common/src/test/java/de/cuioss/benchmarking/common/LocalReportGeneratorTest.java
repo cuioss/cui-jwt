@@ -132,7 +132,14 @@ class LocalReportGeneratorTest {
 
     private void generateIndividualReports(Path jsonFile, BenchmarkType type, Path outputDir) throws IOException {
         // Generate reports using individual generators for testing
-        BenchmarkMetrics metrics = createTestMetrics(jsonFile);
+        BenchmarkMetrics metrics;
+        if (type == BenchmarkType.INTEGRATION) {
+            // For integration tests, use the specific validateJwtThroughput benchmark
+            metrics = createTestMetrics(jsonFile, "validateJwtThroughput", "validateJwtThroughput");
+        } else {
+            // For micro benchmarks, auto-detect
+            metrics = createTestMetrics(jsonFile);
+        }
         ReportGenerator reportGen = new ReportGenerator(metrics);
         BadgeGenerator badgeGen = new BadgeGenerator();
         MetricsGenerator metricsGen = new MetricsGenerator();
