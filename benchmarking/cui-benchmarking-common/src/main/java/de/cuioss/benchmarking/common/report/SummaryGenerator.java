@@ -326,25 +326,47 @@ public class SummaryGenerator {
         return count > 0 ? sum / count : 0.0;
     }
 
+    /**
+     * Calculates average latency across all benchmarks, converted to milliseconds.
+     */
+    private double calculateAverageLatency(JsonArray benchmarks) {
+        double sum = 0;
+        int count = 0;
+
+        for (JsonElement element : benchmarks) {
+            JsonObject benchmark = element.getAsJsonObject();
+            if (benchmark.has("primaryMetric")) {
+                JsonObject metric = benchmark.getAsJsonObject("primaryMetric");
+                double score = metric.get("score").getAsDouble();
+                String unit = metric.get("scoreUnit").getAsString();
+                
+                // Convert to milliseconds using MetricConversionUtil
+                double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
+                
+                if (msPerOp > 0) {
+                    sum += msPerOp;
+                    count++;
+                }
+            }
+        }
+
+        return count > 0 ? sum / count : 0.0;
+    }
+
     private double calculateTotalExecutionTime(JsonArray benchmarks) {
         // Estimate based on number of benchmarks (typical benchmark runs ~30s each)
         return benchmarks.size() * 30.0;
     }
 
     /**
-     * Calculates an overall performance score.
+     * Calculates an overall performance score using the new scoring formula.
      */
     private double calculateOverallPerformanceScore(JsonArray benchmarks) {
         double avgThroughput = calculateAverageThroughput(benchmarks);
-        return switch ((int) Math.log10(Math.max(1, avgThroughput))) {
-            case 6, 7, 8, 9 -> PERFECT_SCORE;
-            case 5 -> EXCELLENT_SCORE;
-            case 4 -> GOOD_SCORE;
-            case 3 -> FAIR_SCORE;
-            default -> Math.min(MINIMUM_SCORE, avgThroughput / THROUGHPUT_NORMALIZATION_FACTOR * SCORE_MULTIPLIER);
-        };
+        double avgLatency = calculateAverageLatency(benchmarks);
+        return calculatePerformanceScore(avgThroughput, avgLatency);
     }
-    
+
     // Performance scoring constants
     private static final double THROUGHPUT_BASELINE = 100.0;  // ops/s per point (10,000 ops/s = 100 points)
     private static final double LATENCY_BASELINE = 100.0;     // score points for 1ms latency
@@ -362,14 +384,14 @@ public class SummaryGenerator {
     public double calculatePerformanceScore(double avgThroughput, double avgLatency) {
         // Throughput score: 10,000 ops/s = 100 points (uncapped)
         double throughputScore = avgThroughput / THROUGHPUT_BASELINE;
-        
+
         // Latency score: 1 ms = 100 points (inverse relationship, uncapped)
         double latencyScore = LATENCY_BASELINE / avgLatency;
-        
+
         // Combined score with equal weighting
         return (throughputScore * THROUGHPUT_WEIGHT) + (latencyScore * LATENCY_WEIGHT);
     }
-    
+
     /**
      * Determines performance grade based on score.
      * 
@@ -386,12 +408,6 @@ public class SummaryGenerator {
 
     private String calculatePerformanceGrade(JsonArray benchmarks) {
         double score = calculateOverallPerformanceScore(benchmarks);
-        return switch ((int) (score / GRADE_DIVISOR)) {
-            case 10, 9 -> "A+";
-            case 8 -> "A";
-            case 7 -> "B";
-            case 6 -> "C";
-            default -> "D";
-        };
+        return getPerformanceGrade(score);
     }
 }

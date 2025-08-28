@@ -214,7 +214,7 @@ public class BadgeGenerator {
         
         SummaryGenerator summaryGen = new SummaryGenerator();
         String grade = summaryGen.getPerformanceGrade(score.score());
-        String scoreFormatted = String.format("%.1f %s", score.score(), grade);
+        String scoreFormatted = "%.1f %s".formatted(score.score(), grade);
         String throughputFormatted = formatNumber(score.throughput()) + " ops/s";
         String latencyFormatted = formatLatency(score.latency());
 

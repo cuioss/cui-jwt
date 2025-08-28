@@ -127,7 +127,7 @@ public class ReportDataGenerator {
         int totalBenchmarks = benchmarks.size();
         double avgThroughput = calculateAverageThroughput(benchmarks);
         double avgLatency = calculateAverageLatency(benchmarks);
-        
+
         // Calculate performance score using the new formula
         SummaryGenerator summaryGen = new SummaryGenerator();
         double performanceScore = summaryGen.calculatePerformanceScore(avgThroughput, avgLatency);
