@@ -89,7 +89,6 @@ class SummaryGeneratorTest {
         assertNotNull(summary.get("latencyBenchmarkName"));
         assertNotNull(summary.get("throughputFormatted"));
         assertNotNull(summary.get("latencyFormatted"));
-        assertNotNull(summary.get("performanceScoreFormatted"));
     }
 
     @Test void performanceStatusDetermination() throws IOException {

@@ -128,4 +128,34 @@ public final class MetricConversionUtil {
             return String.format(Locale.US, "%d", Math.round(value));
         }
     }
+
+    /**
+     * Formats throughput value with appropriate units.
+     * 
+     * @param value throughput in ops/s
+     * @return formatted string with units
+     */
+    public static String formatThroughput(double value) {
+        if (value >= 1_000_000) {
+            return formatForDisplay(value / 1_000_000) + "M ops/s";
+        } else if (value >= 1000) {
+            return formatForDisplay(value / 1000) + "K ops/s";
+        } else {
+            return formatForDisplay(value) + " ops/s";
+        }
+    }
+
+    /**
+     * Formats latency value with appropriate units.
+     * 
+     * @param ms latency in milliseconds
+     * @return formatted string with units
+     */
+    public static String formatLatency(double ms) {
+        if (ms >= 1000) {
+            return formatForDisplay(ms / 1000) + "s";
+        } else {
+            return formatForDisplay(ms) + "ms";
+        }
+    }
 }

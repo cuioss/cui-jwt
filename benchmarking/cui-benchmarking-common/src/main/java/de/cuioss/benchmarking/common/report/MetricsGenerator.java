@@ -135,7 +135,6 @@ public class MetricsGenerator {
                 }
             }
 
-            metrics.put("normalized", normalizeMetrics(score, unit));
         }
 
         // Extract secondary metrics
@@ -199,31 +198,6 @@ public class MetricsGenerator {
         return stats;
     }
 
-    private Map<String, Object> normalizeMetrics(double score, String unit) {
-        record MetricConversion(double throughputOpsPerSec, double latencyMsPerOp) {
-        }
-
-        MetricConversion conversion = switch (unit) {
-            case String u when u.contains("ops/s") || u.contains("ops/sec") ->
-                new MetricConversion(score, 1000.0 / score);
-            case String u when u.contains("s/op") ->
-                new MetricConversion(1.0 / score, score * 1000.0);
-            case String u when u.contains("ms/op") ->
-                new MetricConversion(1000.0 / score, score);
-            case String u when u.contains("us/op") || u.contains("µs/op") ->
-                new MetricConversion(1_000_000.0 / score, score / 1000.0);
-            case String u when u.contains("ns/op") ->
-                new MetricConversion(1_000_000_000.0 / score, score / 1_000_000.0);
-            default -> new MetricConversion(0.0, 0.0);
-        };
-
-        Map<String, Object> normalized = new LinkedHashMap<>();
-        if (conversion.throughputOpsPerSec > 0) {
-            normalized.put("throughput_ops_per_sec", conversion.throughputOpsPerSec);
-            normalized.put("latency_ms_per_op", conversion.latencyMsPerOp);
-        }
-        return normalized;
-    }
 
     private Map<String, Object> generateSummaryMetrics(JsonArray benchmarks, BenchmarkMetrics metrics) {
         Map<String, Object> summary = new LinkedHashMap<>();

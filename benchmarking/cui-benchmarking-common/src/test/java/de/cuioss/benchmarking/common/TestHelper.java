@@ -72,7 +72,8 @@ public final class TestHelper {
      * Creates test metrics with specific values.
      */
     public static BenchmarkMetrics createTestMetrics(double throughput, double latency) {
-        double performanceScore = (throughput / 100.0) * 0.5 + (100.0 / latency) * 0.5;
+        double rawPerformanceScore = (throughput / 100.0) * 0.5 + (100.0 / latency) * 0.5;
+        double performanceScore = Math.round(rawPerformanceScore);
         String grade = getGrade(performanceScore);
 
         return new BenchmarkMetrics(
@@ -81,10 +82,7 @@ public final class TestHelper {
                 throughput,
                 latency,
                 performanceScore,
-                grade,
-                formatThroughput(throughput),
-                formatLatency(latency),
-                String.valueOf(Math.round(performanceScore))
+                grade
         );
     }
 
@@ -97,19 +95,6 @@ public final class TestHelper {
         return "F";
     }
 
-    private static String formatThroughput(double value) {
-        if (value >= 1000) {
-            return Math.round(value / 1000) + "K ops/s";
-        }
-        return Math.round(value) + " ops/s";
-    }
-
-    private static String formatLatency(double ms) {
-        if (ms >= 1000) {
-            return Math.round(ms / 1000) + "s";
-        }
-        return Math.round(ms) + "ms";
-    }
 
     /**
      * Finds a throughput benchmark from the JSON array.

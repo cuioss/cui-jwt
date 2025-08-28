@@ -139,7 +139,7 @@ class BenchmarkConfigurationTest {
 
         var options = config.toJmhOptions();
         assertNotNull(options, "Options should not be null");
-        
+
         // Verify the configuration values are properly set (testing what we can access)
         assertEquals(".*JmhTest.*", config.includePattern(), "Include pattern should match");
         assertEquals(2, config.forks(), "Forks should be 2");
@@ -208,11 +208,11 @@ class BenchmarkConfigurationTest {
         assertEquals(BenchmarkType.INTEGRATION, config.benchmarkType());
         assertEquals("fileThroughput", config.throughputBenchmarkName());
         assertEquals("fileLatency", config.latencyBenchmarkName());
-        
+
         // Verify JMH options are created successfully
         var options = config.toJmhOptions();
         assertNotNull(options, "Options should not be null");
-        
+
         // Test that result file can be generated when not explicitly set
         BenchmarkConfiguration configWithoutFile = BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
@@ -220,10 +220,10 @@ class BenchmarkConfigurationTest {
                 .withLatencyBenchmarkName("latency")
                 .withResultsDirectory("generated-results")
                 .build();
-        
+
         assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
         assertEquals("generated-results", configWithoutFile.resultsDirectory());
-        
+
         // The actual result file will be generated when toJmhOptions() is called
         var generatedOptions = configWithoutFile.toJmhOptions();
         assertNotNull(generatedOptions, "Options with generated file should not be null");

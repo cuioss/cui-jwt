@@ -46,12 +46,10 @@ public class MetricsComputer {
 
         double throughput = extractThroughput(benchmarks);
         double latency = extractLatency(benchmarks);
-        double performanceScore = calculatePerformanceScore(throughput, latency);
+        double rawPerformanceScore = calculatePerformanceScore(throughput, latency);
+        // Performance score is always stored as rounded value
+        double performanceScore = Math.round(rawPerformanceScore);
         String performanceGrade = getPerformanceGrade(performanceScore);
-
-        String throughputFormatted = formatThroughput(throughput);
-        String latencyFormatted = formatLatency(latency);
-        String performanceScoreFormatted = MetricConversionUtil.formatForDisplay(performanceScore);
 
         return new BenchmarkMetrics(
                 throughputBenchmarkName,
@@ -59,10 +57,7 @@ public class MetricsComputer {
                 throughput,
                 latency,
                 performanceScore,
-                performanceGrade,
-                throughputFormatted,
-                latencyFormatted,
-                performanceScoreFormatted
+                performanceGrade
         );
     }
 
@@ -123,24 +118,4 @@ public class MetricsComputer {
         return "F";
     }
 
-    private String formatThroughput(double value) {
-        if (value >= 1_000_000) {
-            double scaledValue = value / 1_000_000;
-            return MetricConversionUtil.formatForDisplay(scaledValue) + "M ops/s";
-        } else if (value >= 1000) {
-            double scaledValue = value / 1000;
-            return MetricConversionUtil.formatForDisplay(scaledValue) + "K ops/s";
-        } else {
-            return MetricConversionUtil.formatForDisplay(value) + " ops/s";
-        }
-    }
-
-    private String formatLatency(double ms) {
-        if (ms >= 1000) {
-            double seconds = ms / 1000;
-            return MetricConversionUtil.formatForDisplay(seconds) + "s";
-        } else {
-            return MetricConversionUtil.formatForDisplay(ms) + "ms";
-        }
-    }
 }

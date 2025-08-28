@@ -88,9 +88,8 @@ public class SummaryGenerator {
         summary.put("performance_grade", metrics.performanceGrade());
 
         // Formatted values
-        summary.put("throughputFormatted", metrics.throughputFormatted());
-        summary.put("latencyFormatted", metrics.latencyFormatted());
-        summary.put("performanceScoreFormatted", metrics.performanceScoreFormatted());
+        summary.put("throughputFormatted", MetricConversionUtil.formatThroughput(metrics.throughput()));
+        summary.put("latencyFormatted", MetricConversionUtil.formatLatency(metrics.latency()));
 
         // Status determination based on score
         String status = determineStatus(metrics.performanceScore());

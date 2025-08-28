@@ -25,10 +25,7 @@ String latencyBenchmarkName,
 double throughput,
 double latency,
 double performanceScore,
-String performanceGrade,
-String throughputFormatted,
-String latencyFormatted,
-String performanceScoreFormatted
+String performanceGrade
 ) {
     public BenchmarkMetrics {
         if (throughputBenchmarkName == null || throughputBenchmarkName.isBlank()) {

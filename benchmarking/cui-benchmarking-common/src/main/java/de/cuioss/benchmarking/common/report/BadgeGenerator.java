@@ -146,14 +146,14 @@ public class BadgeGenerator {
     private String formatPerformanceMessage(BenchmarkMetrics metrics) {
         // Format: "Score Grade (throughput, latency)"
         // Example: "91 A (5.8K ops/s, 1.17ms)"
-        String scoreFormatted = "%s %s".formatted(
-                metrics.performanceScoreFormatted(),
+        String scoreFormatted = "%d %s".formatted(
+                Math.round(metrics.performanceScore()),
                 metrics.performanceGrade()
         );
         return "%s (%s, %s)".formatted(
                 scoreFormatted,
-                metrics.throughputFormatted(),
-                metrics.latencyFormatted()
+                MetricConversionUtil.formatThroughput(metrics.throughput()),
+                MetricConversionUtil.formatLatency(metrics.latency())
         );
     }
 

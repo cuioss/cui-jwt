@@ -111,14 +111,13 @@ public class ReportDataGenerator {
         // Using pre-computed metrics directly
         overview.put("throughput", metrics.throughput());
         overview.put("latency", metrics.latency());
-        overview.put("throughputFormatted", metrics.throughputFormatted());
-        overview.put("latencyFormatted", metrics.latencyFormatted());
+        overview.put("throughputFormatted", MetricConversionUtil.formatThroughput(metrics.throughput()));
+        overview.put("latencyFormatted", MetricConversionUtil.formatLatency(metrics.latency()));
         overview.put("throughputBenchmarkName", metrics.throughputBenchmarkName());
         overview.put("latencyBenchmarkName", metrics.latencyBenchmarkName());
 
-        // Performance metrics
+        // Performance metrics (performanceScore is already rounded)
         overview.put("performanceScore", metrics.performanceScore());
-        overview.put("performanceScoreFormatted", metrics.performanceScoreFormatted());
         overview.put("performanceGrade", metrics.performanceGrade());
         overview.put("performanceGradeClass", getGradeClass(metrics.performanceGrade()));
 
