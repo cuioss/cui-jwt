@@ -145,7 +145,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * Also processes JMH benchmark results to create http-metrics.json.
      *
      * @param config the benchmark configuration
-     * @throws IOException if metrics processing fails
      */
     private void processMetrics(BenchmarkConfiguration config) {
         String quarkusMetricsUrl = config.metricsUrl().orElse(getServiceUrl());
