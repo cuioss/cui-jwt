@@ -42,7 +42,6 @@ import java.util.Collection;
  * <ul>
  *   <li><strong>JwtValidationBenchmark</strong>: JWT validation endpoint performance</li>
  *   <li><strong>JwtHealthBenchmark</strong>: Health check endpoint baseline</li>
- *   <li><strong>JwtEchoBenchmark</strong>: Echo endpoint for network baseline</li>
  * </ul>
  */
 public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
@@ -50,7 +49,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusIntegrationRunner.class);
 
     private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
-    
+
     private final String serviceUrl = System.getProperty("integration.service.url", DEFAULT_SERVICE_URL);
     // Get Keycloak URL from properties - checks both "token.keycloak.url" and "keycloak.url"
     private final String keycloakUrl = TokenRepositoryConfig.fromProperties().getKeycloakBaseUrl();
@@ -67,7 +66,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     @Override protected void beforeBenchmarks() {
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
-        
+
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
                 serviceUrl, keycloakUrl);
     }

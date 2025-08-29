@@ -58,23 +58,12 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
     }
 
     /**
-     * Initializes the token repository, using the shared instance if available
-     * or creating a new one if needed (for forked JVM processes).
+     * Initializes the token repository with property-based configuration.
      */
     private void initializeTokenRepository() {
-        if (TokenRepository.isSharedInstanceInitialized()) {
-            LOGGER.debug("Using existing shared TokenRepository instance");
-            tokenRepository = TokenRepository.getSharedInstance();
-        } else {
-            LOGGER.debug("Initializing new TokenRepository for forked benchmark process");
-            
-            // Use property-based configuration instead of hardcoded values
-            TokenRepositoryConfig config = TokenRepositoryConfig.fromProperties();
-            
-            TokenRepository.initializeSharedInstance(config);
-            tokenRepository = TokenRepository.getSharedInstance();
-        }
-
+        TokenRepositoryConfig config = TokenRepositoryConfig.fromProperties();
+        tokenRepository = new TokenRepository(config);
+        
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
     }
 

@@ -43,10 +43,6 @@ public class TokenRepository {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenRepository.class);
     private static final Gson GSON = new Gson();
-
-    // Static instance for benchmarking to avoid multiple initializations
-    private static TokenRepository sharedInstance;
-
     private static final int HTTP_OK = 200;
 
     private final TokenRepositoryConfig config;
@@ -147,43 +143,6 @@ public class TokenRepository {
     }
 
 
-    /**
-     * Initializes the shared TokenRepository instance for benchmarking.
-     * This method should be called once before any benchmarks are run.
-     *
-     * @param config the configuration for the token repository
-     */
-    public static synchronized void initializeSharedInstance(@NonNull TokenRepositoryConfig config) {
-        if (sharedInstance != null) {
-            LOGGER.debug("Shared TokenRepository instance already initialized, skipping re-initialization");
-            return;
-        }
-        LOGGER.debug("Initializing shared TokenRepository instance for benchmarking");
-        sharedInstance = new TokenRepository(config);
-    }
-
-    /**
-     * Gets the shared TokenRepository instance for benchmarking.
-     *
-     * @return the shared instance
-     * @throws IllegalStateException if the shared instance has not been initialized
-     */
-    @NonNull public static TokenRepository getSharedInstance() {
-        if (sharedInstance == null) {
-            throw new IllegalStateException("Shared TokenRepository instance not initialized. " +
-                    "Call initializeSharedInstance() before using getSharedInstance()");
-        }
-        return sharedInstance;
-    }
-
-    /**
-     * Checks if the shared instance has been initialized.
-     *
-     * @return true if the shared instance is initialized, false otherwise
-     */
-    public static boolean isSharedInstanceInitialized() {
-        return sharedInstance != null;
-    }
 
     /**
      * Internal class to hold token information.

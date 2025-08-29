@@ -179,8 +179,7 @@ TokenRepositoryConfig config = TokenRepositoryConfig.builder()
     .verifySsl(false)
     .build();
 
-TokenRepository.initializeSharedInstance(config);
-TokenRepository repository = TokenRepository.getSharedInstance();
+TokenRepository repository = new TokenRepository(config);
 String token = repository.getNextToken();
 ----
 
