@@ -36,6 +36,19 @@
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
+        
+        <!-- Token Repository Configuration Properties -->
+        <token.keycloak.url>https://localhost:1443</token.keycloak.url>
+        <token.keycloak.realm>benchmark</token.keycloak.realm>
+        <token.keycloak.clientId>benchmark-client</token.keycloak.clientId>
+        <token.keycloak.clientSecret>benchmark-secret</token.keycloak.clientSecret>
+        <token.keycloak.username>benchmark-user</token.keycloak.username>
+        <token.keycloak.password>benchmark-password</token.keycloak.password>
+        <token.pool.size>100</token.pool.size>
+        <token.connection.timeoutMs>5000</token.connection.timeoutMs>
+        <token.request.timeoutMs>10000</token.request.timeoutMs>
+        <token.verifySsl>false</token.verifySsl>
+        <token.refreshThresholdSeconds>180</token.refreshThresholdSeconds>
     </properties>
 
     <dependencies>
@@ -165,6 +178,18 @@
                                 <argument>-Dintegration.service.url=${integration.service.url}</argument>
                                 <argument>-Dkeycloak.url=${keycloak.url}</argument>
                                 <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
+                                <!-- Token Repository Properties -->
+                                <argument>-Dtoken.keycloak.url=${token.keycloak.url}</argument>
+                                <argument>-Dtoken.keycloak.realm=${token.keycloak.realm}</argument>
+                                <argument>-Dtoken.keycloak.clientId=${token.keycloak.clientId}</argument>
+                                <argument>-Dtoken.keycloak.clientSecret=${token.keycloak.clientSecret}</argument>
+                                <argument>-Dtoken.keycloak.username=${token.keycloak.username}</argument>
+                                <argument>-Dtoken.keycloak.password=${token.keycloak.password}</argument>
+                                <argument>-Dtoken.pool.size=${token.pool.size}</argument>
+                                <argument>-Dtoken.connection.timeoutMs=${token.connection.timeoutMs}</argument>
+                                <argument>-Dtoken.request.timeoutMs=${token.request.timeoutMs}</argument>
+                                <argument>-Dtoken.verifySsl=${token.verifySsl}</argument>
+                                <argument>-Dtoken.refreshThresholdSeconds=${token.refreshThresholdSeconds}</argument>
                                 <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
                                 <argument>-XX:+UnlockDiagnosticVMOptions</argument>
                                 <argument>-XX:+DebugNonSafepoints</argument>

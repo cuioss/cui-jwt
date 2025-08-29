@@ -73,8 +73,8 @@ class TemplateAndCssTest {
 
     @Test void templatesCopiedToOutput(@TempDir Path tempDir) throws Exception {
         // Test that template files are properly copied to output directory
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
@@ -95,8 +95,8 @@ class TemplateAndCssTest {
 
     @Test void dataJsonIsGeneratedNotTemplates(@TempDir Path tempDir) throws Exception {
         // Verify that the actual output is JSON data, not modified templates
-        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
+        Path jsonFile = tempDir.resolve("integration-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));

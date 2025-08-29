@@ -38,7 +38,7 @@ class BadgeGeneratorTest {
 
     @Test void integrationBadgeGeneration(@TempDir Path tempDir) throws Exception {
         // Use real integration benchmark JSON
-        Path jsonFile = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
+        Path jsonFile = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
         assertTrue(Files.exists(jsonFile));
 
         // Generate badge
@@ -73,7 +73,7 @@ class BadgeGeneratorTest {
 
     @Test void microBadgeGeneration(@TempDir Path tempDir) throws Exception {
         // Use real micro benchmark JSON
-        Path jsonFile = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
+        Path jsonFile = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         assertTrue(Files.exists(jsonFile));
 
         // Generate badge
@@ -106,7 +106,7 @@ class BadgeGeneratorTest {
     }
 
     @Test void trendBadgeGeneration(@TempDir Path tempDir) throws Exception {
-        Path jsonFile = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
+        Path jsonFile = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
         assertTrue(Files.exists(jsonFile));
 
         BadgeGenerator generator = new BadgeGenerator();

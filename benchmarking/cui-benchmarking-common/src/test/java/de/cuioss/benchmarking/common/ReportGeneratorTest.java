@@ -39,8 +39,8 @@ class ReportGeneratorTest {
 
     @Test void generateDataJsonWithResults(@TempDir Path tempDir) throws Exception {
         // Use real micro benchmark test data
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
@@ -81,8 +81,8 @@ class ReportGeneratorTest {
 
     @Test void generateDataJsonWithIntegrationBenchmarks(@TempDir Path tempDir) throws Exception {
         // Use integration benchmark test data
-        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("integration-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
+        Path jsonFile = tempDir.resolve("integration-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
@@ -105,8 +105,8 @@ class ReportGeneratorTest {
 
     @Test void generateDataJsonInNestedDirectory(@TempDir Path tempDir) throws Exception {
         // Test that generator creates directories as needed
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
@@ -123,8 +123,8 @@ class ReportGeneratorTest {
     }
 
     @Test void verifyDataJsonContainsAllRequiredSections(@TempDir Path tempDir) throws Exception {
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
@@ -151,8 +151,8 @@ class ReportGeneratorTest {
     }
 
     @Test void verifyPercentilesDataOnlyIncludesLatencyBenchmarks(@TempDir Path tempDir) throws Exception {
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
@@ -180,8 +180,8 @@ class ReportGeneratorTest {
 
     @Test void correctLatencyDisplayInGeneratedReport(@TempDir Path tempDir) throws Exception {
         // Regression test for bug where us/op was incorrectly converted (multiplied by 1000 instead of divided)
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path jsonFile = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
         ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));

@@ -58,8 +58,8 @@ class LocalReportGeneratorTest {
     }
 
     private static final String TARGET_DIR = "target/benchmark-reports-preview";
-    private static final String MICRO_JSON = "src/test/resources/library-benchmark-results/micro-benchmark-result.json";
-    private static final String INTEGRATION_JSON = "src/test/resources/integration-benchmark-results/integration-benchmark-result.json";
+    private static final String MICRO_JSON = "src/test/resources/library-benchmark-results/micro-result.json";
+    private static final String INTEGRATION_JSON = "src/test/resources/integration-benchmark-results/integration-result.json";
     private static final String INDEX_TEMPLATE = "/templates/local-preview-index.html";
 
     private void generateLocalPreviewReports() throws IOException {
@@ -94,7 +94,7 @@ class LocalReportGeneratorTest {
 
         // Copy JSON file to expected location (root for processor)
         Path sourceJson = Path.of(MICRO_JSON);
-        Path targetJson = microOutputDir.resolve("micro-benchmark-result.json");
+        Path targetJson = microOutputDir.resolve("micro-result.json");
         Files.copy(sourceJson, targetJson);
         LOGGER.debug("Copied micro benchmark JSON data");
 
@@ -116,7 +116,7 @@ class LocalReportGeneratorTest {
 
         // Copy JSON file to expected location
         Path sourceJson = Path.of(INTEGRATION_JSON);
-        Path targetJson = integrationOutputDir.resolve("integration-benchmark-result.json");
+        Path targetJson = integrationOutputDir.resolve("integration-result.json");
         Files.copy(sourceJson, targetJson);
         LOGGER.debug("Copied integration benchmark JSON data");
 

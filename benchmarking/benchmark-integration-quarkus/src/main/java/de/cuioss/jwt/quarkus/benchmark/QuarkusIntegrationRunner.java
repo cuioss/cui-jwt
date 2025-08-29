@@ -54,15 +54,12 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
     private static final String DEFAULT_KEYCLOAK_SECURE_URL = "https://localhost:1443";
 
-    // Token repository configuration constants
-    private static final String KEYCLOAK_REALM = "benchmark";
-    private static final String KEYCLOAK_CLIENT_ID = "benchmark-client";
-    private static final String KEYCLOAK_CLIENT_SECRET = "benchmark-secret";
-    private static final String KEYCLOAK_USERNAME = "benchmark-user";
-    private static final String KEYCLOAK_PASSWORD = "benchmark-password";
+    // Token repository configuration loaded from properties
+    private static final TokenRepositoryConfig TOKEN_CONFIG = TokenRepositoryConfig.fromProperties();
+
+    // HTTP client configuration
     private static final int CONNECTION_TIMEOUT_MS = 5000;
     private static final int REQUEST_TIMEOUT_MS = 10000;
-    private static final int TOKEN_REFRESH_THRESHOLD_SECONDS = 300;
 
     @Override protected BenchmarkConfiguration createConfiguration() {
         // Configuration from Maven system properties:
@@ -151,21 +148,26 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     private void initializeSharedTokenRepository() {
         String keycloakUrl = getKeycloakUrl();
 
+        // Load configuration from properties, allowing all values to be overridden
+        TokenRepositoryConfig baseConfig = TokenRepositoryConfig.fromProperties();
+
+        // Override Keycloak URL if specified via integration property
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
-                .keycloakBaseUrl(keycloakUrl)
-                .realm(KEYCLOAK_REALM)
-                .clientId(KEYCLOAK_CLIENT_ID)
-                .clientSecret(KEYCLOAK_CLIENT_SECRET)
-                .username(KEYCLOAK_USERNAME)
-                .password(KEYCLOAK_PASSWORD)
-                .connectionTimeoutMs(CONNECTION_TIMEOUT_MS)
-                .requestTimeoutMs(REQUEST_TIMEOUT_MS)
-                .verifySsl(false)
-                .tokenRefreshThresholdSeconds(TOKEN_REFRESH_THRESHOLD_SECONDS)
+                .keycloakBaseUrl(keycloakUrl)  // Use the integration-specific URL
+                .realm(baseConfig.getRealm())
+                .clientId(baseConfig.getClientId())
+                .clientSecret(baseConfig.getClientSecret())
+                .username(baseConfig.getUsername())
+                .password(baseConfig.getPassword())
+                .tokenPoolSize(baseConfig.getTokenPoolSize())
+                .connectionTimeoutMs(baseConfig.getConnectionTimeoutMs())
+                .requestTimeoutMs(baseConfig.getRequestTimeoutMs())
+                .verifySsl(baseConfig.isVerifySsl())
+                .tokenRefreshThresholdSeconds(baseConfig.getTokenRefreshThresholdSeconds())
                 .build();
 
         TokenRepository.initializeSharedInstance(config);
-        LOGGER.debug("TokenRepository initialized with Keycloak at {}", keycloakUrl);
+        LOGGER.debug("TokenRepository initialized with Keycloak at {} using property-based configuration", keycloakUrl);
     }
 
     private String getServiceUrl() {

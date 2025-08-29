@@ -27,6 +27,26 @@ import lombok.Value;
 @Value @Builder public class TokenRepositoryConfig {
 
     /**
+     * System property keys for token repository configuration.
+     */
+    public static final class Properties {
+        public static final String KEYCLOAK_URL = "token.keycloak.url";
+        public static final String REALM = "token.keycloak.realm";
+        public static final String CLIENT_ID = "token.keycloak.clientId";
+        public static final String CLIENT_SECRET = "token.keycloak.clientSecret";
+        public static final String USERNAME = "token.keycloak.username";
+        public static final String PASSWORD = "token.keycloak.password";
+        public static final String POOL_SIZE = "token.pool.size";
+        public static final String CONNECTION_TIMEOUT_MS = "token.connection.timeoutMs";
+        public static final String REQUEST_TIMEOUT_MS = "token.request.timeoutMs";
+        public static final String VERIFY_SSL = "token.verifySsl";
+        public static final String REFRESH_THRESHOLD_SECONDS = "token.refreshThresholdSeconds";
+
+        private Properties() {
+        }
+    }
+
+    /**
      * The base URL of the Keycloak server.
      * Example: https://localhost:1443
      */
@@ -106,4 +126,26 @@ import lombok.Value;
      */
     @Builder.Default
     int tokenRefreshThresholdSeconds = 180;
+
+    /**
+     * Creates a configuration from system properties with defaults.
+     * All properties can be overridden via system properties or Maven -D arguments.
+     * 
+     * @return TokenRepositoryConfig with values from properties or defaults
+     */
+    public static TokenRepositoryConfig fromProperties() {
+        return TokenRepositoryConfig.builder()
+                .keycloakBaseUrl(System.getProperty(Properties.KEYCLOAK_URL, "https://localhost:1443"))
+                .realm(System.getProperty(Properties.REALM, "benchmark"))
+                .clientId(System.getProperty(Properties.CLIENT_ID, "benchmark-client"))
+                .clientSecret(System.getProperty(Properties.CLIENT_SECRET, "benchmark-secret"))
+                .username(System.getProperty(Properties.USERNAME, "benchmark-user"))
+                .password(System.getProperty(Properties.PASSWORD, "benchmark-password"))
+                .tokenPoolSize(Integer.parseInt(System.getProperty(Properties.POOL_SIZE, "100")))
+                .connectionTimeoutMs(Integer.parseInt(System.getProperty(Properties.CONNECTION_TIMEOUT_MS, "5000")))
+                .requestTimeoutMs(Integer.parseInt(System.getProperty(Properties.REQUEST_TIMEOUT_MS, "10000")))
+                .verifySsl(Boolean.parseBoolean(System.getProperty(Properties.VERIFY_SSL, "false")))
+                .tokenRefreshThresholdSeconds(Integer.parseInt(System.getProperty(Properties.REFRESH_THRESHOLD_SECONDS, "180")))
+                .build();
+    }
 }

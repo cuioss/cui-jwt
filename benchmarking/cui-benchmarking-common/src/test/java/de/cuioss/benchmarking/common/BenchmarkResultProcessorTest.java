@@ -40,8 +40,8 @@ class BenchmarkResultProcessorTest {
 
     @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
         // Copy test JSON file to expected location
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path targetJson = tempDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path targetJson = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, targetJson);
 
         // Use empty results - the processor will read from JSON file
@@ -106,8 +106,8 @@ class BenchmarkResultProcessorTest {
         // Copy test JSON file to expected location
         Path nestedDir = tempDir.resolve("nested/benchmark/results");
         Files.createDirectories(nestedDir);
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-benchmark-result.json");
-        Path targetJson = nestedDir.resolve("micro-benchmark-result.json");
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path targetJson = nestedDir.resolve("micro-result.json");
         Files.copy(sourceJson, targetJson);
 
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
