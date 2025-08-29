@@ -207,16 +207,23 @@ Optional<String> metricsUrl
             return TimeValue.seconds(1);
         }
 
-        char unit = timeStr.charAt(timeStr.length() - 1);
-        long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
+        // Check if the last character is a digit (no unit specified)
+        char lastChar = timeStr.charAt(timeStr.length() - 1);
+        if (Character.isDigit(lastChar)) {
+            // No unit specified, assume seconds
+            return TimeValue.seconds(Long.parseLong(timeStr));
+        }
 
-        return switch (unit) {
+        // Parse value and unit
+        long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
+        
+        return switch (lastChar) {
             case 's' -> TimeValue.seconds(value);
             case 'm' -> TimeValue.minutes(value);
             case 'h' -> TimeValue.hours(value);
             default -> {
-                LOGGER.warn("Unknown time unit in '{}', defaulting to seconds", timeStr);
-                yield TimeValue.seconds(Long.parseLong(timeStr.substring(0, timeStr.length() - 1)));
+                LOGGER.warn("Unknown time unit '{}' in '{}', defaulting to seconds", lastChar, timeStr);
+                yield TimeValue.seconds(value);
             }
         };
     }
