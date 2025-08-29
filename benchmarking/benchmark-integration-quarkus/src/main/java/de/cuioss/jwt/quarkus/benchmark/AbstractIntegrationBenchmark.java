@@ -15,8 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.repository.TokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.tools.logging.CuiLogger;
@@ -41,7 +39,6 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractIntegrationBenchmark.class);
 
-    protected String keycloakUrl;
     protected TokenRepository tokenRepository;
 
     /**
@@ -53,15 +50,6 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
         super.setupBenchmark();
 
         LOGGER.info("Setting up integration benchmark with token repository");
-
-        // Get Keycloak configuration
-        // Note: This is a minimal config just to get URLs - actual benchmark config is in QuarkusIntegrationRunner
-        var config = BenchmarkConfiguration.builder()
-                .withBenchmarkType(BenchmarkType.INTEGRATION)
-                .withThroughputBenchmarkName("validateJwtThroughput")
-                .withLatencyBenchmarkName("validateJwtThroughput")
-                .build();
-        keycloakUrl = config.keycloakUrl().orElse("https://localhost:1443");
 
         // Initialize token repository using shared instance if available
         initializeTokenRepository();
@@ -79,20 +67,10 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
             tokenRepository = TokenRepository.getSharedInstance();
         } else {
             LOGGER.debug("Initializing new TokenRepository for forked benchmark process");
-
-            TokenRepositoryConfig config = TokenRepositoryConfig.builder()
-                    .keycloakBaseUrl(keycloakUrl)
-                    .realm("benchmark")
-                    .clientId("benchmark-client")
-                    .clientSecret("benchmark-secret")
-                    .username("benchmark-user")
-                    .password("benchmark-password")
-                    .connectionTimeoutMs(5000)
-                    .requestTimeoutMs(10000)
-                    .verifySsl(false)
-                    .tokenRefreshThresholdSeconds(300)
-                    .build();
-
+            
+            // Use property-based configuration instead of hardcoded values
+            TokenRepositoryConfig config = TokenRepositoryConfig.fromProperties();
+            
             TokenRepository.initializeSharedInstance(config);
             tokenRepository = TokenRepository.getSharedInstance();
         }

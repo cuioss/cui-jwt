@@ -68,8 +68,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     @Override protected void beforeBenchmarks() {
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
         
-        // Initialize shared instance for benchmark classes to use
-        // TODO: Refactor benchmarks to accept TokenRepositoryConfig as parameter instead of global state
+        // Initialize shared instance for benchmark classes
         TokenRepository.initializeSharedInstance(tokenConfig);
         
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
