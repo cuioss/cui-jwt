@@ -18,7 +18,6 @@ package de.cuioss.jwt.quarkus.benchmark;
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
-import de.cuioss.benchmarking.common.repository.TokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
@@ -52,8 +51,9 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
     
-    private final TokenRepositoryConfig tokenConfig = TokenRepositoryConfig.fromProperties();
     private final String serviceUrl = System.getProperty("integration.service.url", DEFAULT_SERVICE_URL);
+    // Get Keycloak URL from properties - checks both "token.keycloak.url" and "keycloak.url"
+    private final String keycloakUrl = TokenRepositoryConfig.fromProperties().getKeycloakBaseUrl();
 
     @Override protected BenchmarkConfiguration createConfiguration() {
         return BenchmarkConfiguration.builder()
@@ -61,18 +61,15 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
                 .withThroughputBenchmarkName("validateJwtThroughput")
                 .withLatencyBenchmarkName("validateJwtThroughput")
                 .withIntegrationServiceUrl(serviceUrl)
-                .withKeycloakUrl(tokenConfig.getKeycloakBaseUrl())
+                .withKeycloakUrl(keycloakUrl)
                 .build();
     }
 
     @Override protected void beforeBenchmarks() {
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
         
-        // Initialize shared instance for benchmark classes
-        TokenRepository.initializeSharedInstance(tokenConfig);
-        
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
-                serviceUrl, tokenConfig.getKeycloakBaseUrl());
+                serviceUrl, keycloakUrl);
     }
 
     @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) {
