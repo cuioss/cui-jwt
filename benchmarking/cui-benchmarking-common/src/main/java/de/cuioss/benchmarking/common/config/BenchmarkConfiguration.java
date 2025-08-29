@@ -206,8 +206,7 @@ int threads
         try {
             return Integer.parseInt(threads);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(String.format(
-                    "JMH thread count must be a valid integer or 'MAX' or 'HALF', but got: %s. Set system property: %s",
+            throw new IllegalArgumentException("JMH thread count must be a valid integer or 'MAX' or 'HALF', but got: %s. Set system property: %s".formatted(
                     threads, Properties.THREADS));
         }
     }
@@ -221,8 +220,7 @@ int threads
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(String.format(
-                    "%s must be a valid integer, but got: %s. Set system property: %s",
+            throw new IllegalArgumentException("%s must be a valid integer, but got: %s. Set system property: %s".formatted(
                     description, value, key));
         }
     }

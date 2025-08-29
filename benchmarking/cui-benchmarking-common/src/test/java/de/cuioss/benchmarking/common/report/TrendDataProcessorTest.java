@@ -197,11 +197,11 @@ class TrendDataProcessorTest {
         assertTrue(chartData.containsKey("performanceScores"));
         assertTrue(chartData.containsKey("statistics"));
 
-        @SuppressWarnings("unchecked") List<String> timestamps = (List<String>) chartData.get("timestamps");
+        @SuppressWarnings("unchecked") List<String> timestamps = (List<String>)chartData.get("timestamps");
         assertEquals(3, timestamps.size()); // 2 historical + 1 current
         assertEquals("Current", timestamps.get(2));
 
-        @SuppressWarnings("unchecked") List<Double> scores = (List<Double>) chartData.get("performanceScores");
+        @SuppressWarnings("unchecked") List<Double> scores = (List<Double>)chartData.get("performanceScores");
         assertEquals(3, scores.size());
         assertEquals(80.0, scores.getFirst()); // Oldest first in chart
         assertEquals(85.0, scores.get(1));

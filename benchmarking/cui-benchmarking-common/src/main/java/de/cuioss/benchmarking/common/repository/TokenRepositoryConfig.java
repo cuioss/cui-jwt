@@ -163,8 +163,7 @@ import lombok.Value;
      */
     public static String requireProperty(String value, String description, String propertyName) {
         if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException(String.format(
-                    "%s is required but not provided. Set system property: %s",
+            throw new IllegalArgumentException("%s is required but not provided. Set system property: %s".formatted(
                     description, propertyName));
         }
         return value;

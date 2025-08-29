@@ -28,7 +28,7 @@ class BenchmarkConfigurationTest {
 
     @TempDir
     Path tempDir;
-    
+
     private void setRequiredSystemProperties() {
         System.setProperty("jmh.include", ".*Benchmark.*");
         System.setProperty("jmh.forks", "1");
@@ -236,34 +236,34 @@ class BenchmarkConfigurationTest {
         setRequiredSystemProperties();
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.builder()
-                .withBenchmarkType(BenchmarkType.INTEGRATION)
-                .withThroughputBenchmarkName("fileThroughput")
-                .withLatencyBenchmarkName("fileLatency")
-                .withResultsDirectory(tempDir.resolve("test-results").toString())
-                .withResultFile(tempDir.resolve("test-results").resolve("custom-result.json").toString())
-                .build();
+                    .withBenchmarkType(BenchmarkType.INTEGRATION)
+                    .withThroughputBenchmarkName("fileThroughput")
+                    .withLatencyBenchmarkName("fileLatency")
+                    .withResultsDirectory(tempDir.resolve("test-results").toString())
+                    .withResultFile(tempDir.resolve("test-results").resolve("custom-result.json").toString())
+                    .build();
 
-        // Verify configuration values are accessible
-        assertEquals(tempDir.resolve("test-results").toString(), config.resultsDirectory());
-        assertEquals(tempDir.resolve("test-results").resolve("custom-result.json").toString(), config.resultFile());
-        assertEquals(BenchmarkType.INTEGRATION, config.benchmarkType());
-        assertEquals("fileThroughput", config.throughputBenchmarkName());
-        assertEquals("fileLatency", config.latencyBenchmarkName());
+            // Verify configuration values are accessible
+            assertEquals(tempDir.resolve("test-results").toString(), config.resultsDirectory());
+            assertEquals(tempDir.resolve("test-results").resolve("custom-result.json").toString(), config.resultFile());
+            assertEquals(BenchmarkType.INTEGRATION, config.benchmarkType());
+            assertEquals("fileThroughput", config.throughputBenchmarkName());
+            assertEquals("fileLatency", config.latencyBenchmarkName());
 
-        // Verify JMH options are created successfully
-        var options = config.toJmhOptions();
-        assertNotNull(options, "Options should not be null");
+            // Verify JMH options are created successfully
+            var options = config.toJmhOptions();
+            assertNotNull(options, "Options should not be null");
 
             // Test that result file can be generated when not explicitly set
             BenchmarkConfiguration configWithoutFile = BenchmarkConfiguration.builder()
-                .withBenchmarkType(BenchmarkType.INTEGRATION)
-                .withThroughputBenchmarkName("throughput")
-                .withLatencyBenchmarkName("latency")
-                .withResultsDirectory(tempDir.resolve("generated-results").toString())
-                .build();
+                    .withBenchmarkType(BenchmarkType.INTEGRATION)
+                    .withThroughputBenchmarkName("throughput")
+                    .withLatencyBenchmarkName("latency")
+                    .withResultsDirectory(tempDir.resolve("generated-results").toString())
+                    .build();
 
-        assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
-        assertEquals(tempDir.resolve("generated-results").toString(), configWithoutFile.resultsDirectory());
+            assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
+            assertEquals(tempDir.resolve("generated-results").toString(), configWithoutFile.resultsDirectory());
 
             // The actual result file will be generated when toJmhOptions() is called
             var generatedOptions = configWithoutFile.toJmhOptions();

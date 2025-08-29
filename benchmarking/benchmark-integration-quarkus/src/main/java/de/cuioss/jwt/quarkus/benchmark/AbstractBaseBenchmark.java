@@ -65,7 +65,7 @@ import java.util.concurrent.TimeUnit;
         var integrationConfig = IntegrationConfiguration.fromProperties();
         serviceUrl = integrationConfig.integrationServiceUrl();
         quarkusMetricsUrl = integrationConfig.metricsUrl();
-        
+
         // Benchmark results directory is hardcoded
         benchmarkResultsDir = "target/benchmark-results";
 

@@ -41,7 +41,7 @@ class AbstractBaseBenchmarkTest {
         System.setProperty("keycloak.url", "https://keycloak:8180");
         System.setProperty("quarkus.metrics.url", "https://localhost:10443");
     }
-    
+
     @AfterEach void tearDown() {
         // Clean up system properties
         System.clearProperty("integration.service.url");
