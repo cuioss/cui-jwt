@@ -48,9 +48,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Benchmark)
-@SuppressWarnings("java:S112")
-public class PerformanceIndicatorBenchmark {
+@State(Scope.Benchmark) @SuppressWarnings("java:S112") public class PerformanceIndicatorBenchmark {
 
     private TokenValidator tokenValidator;
     private CoreValidationDelegate validationDelegate;

@@ -21,12 +21,7 @@ import jdk.jfr.*;
  * JFR event to mark benchmark phases (warmup, measurement, etc).
  * Helps in separating analysis of different benchmark phases.
  */
-@Name("de.cuioss.jwt.BenchmarkPhase")
-@Label("JWT Benchmark Phase")
-@Description("Marks the beginning and end of benchmark phases")
-@Category({"JWT", "Benchmark", "Lifecycle"})
-@StackTrace(false)
-public class JwtBenchmarkPhaseEvent extends Event {
+@Name("de.cuioss.jwt.BenchmarkPhase") @Label("JWT Benchmark Phase") @Description("Marks the beginning and end of benchmark phases") @Category({"JWT", "Benchmark", "Lifecycle"}) @StackTrace(false) public class JwtBenchmarkPhaseEvent extends Event {
 
     @Label("Benchmark Name")
     @Description("Name of the benchmark")

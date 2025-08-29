@@ -136,7 +136,7 @@ import lombok.Value;
         if (keycloakUrl == null) {
             keycloakUrl = System.getProperty("keycloak.url");
         }
-        
+
         return TokenRepositoryConfig.builder()
                 .keycloakBaseUrl(requireProperty(keycloakUrl, "Keycloak URL", Properties.KEYCLOAK_URL + " or keycloak.url"))
                 .realm(requireProperty(System.getProperty(Properties.REALM), "Keycloak realm", Properties.REALM))
@@ -151,12 +151,21 @@ import lombok.Value;
                 .tokenRefreshThresholdSeconds(Integer.parseInt(System.getProperty(Properties.REFRESH_THRESHOLD_SECONDS, "180")))
                 .build();
     }
-    
-    private static String requireProperty(String value, String description, String propertyName) {
+
+    /**
+     * Validates that a system property is not null or empty.
+     * 
+     * @param value the property value to check
+     * @param description human-readable description of what the property represents
+     * @param propertyName the system property name
+     * @return the validated value
+     * @throws IllegalArgumentException if the value is null or empty
+     */
+    public static String requireProperty(String value, String description, String propertyName) {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException(String.format(
-                "%s is required but not provided. Set system property: %s", 
-                description, propertyName));
+                    "%s is required but not provided. Set system property: %s",
+                    description, propertyName));
         }
         return value;
     }

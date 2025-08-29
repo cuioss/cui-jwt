@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.List;
 
 import static de.cuioss.benchmarking.common.report.ReportConstants.*;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;

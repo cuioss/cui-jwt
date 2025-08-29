@@ -43,9 +43,7 @@ class BenchmarkConfigurationTest {
         assertEquals(5, config.measurementIterations());
         assertEquals(4, config.threads());
         assertEquals("target/benchmark-results", config.resultsDirectory());
-        assertTrue(config.integrationServiceUrl().isEmpty());
-        assertTrue(config.keycloakUrl().isEmpty());
-        assertTrue(config.metricsUrl().isEmpty());
+        // Integration URLs are now handled by IntegrationConfiguration
     }
 
     @Test void customValues() {
@@ -60,9 +58,7 @@ class BenchmarkConfigurationTest {
                 .withMeasurementIterations(20)
                 .withThreads(8)
                 .withResultsDirectory(tempDir.resolve("custom-results").toString())
-                .withIntegrationServiceUrl("http://localhost:8080")
-                .withKeycloakUrl("http://keycloak:8080")
-                .withMetricsUrl("http://metrics:9090")
+                // Integration URLs are now handled by IntegrationConfiguration
                 .build();
 
         assertEquals(".*MyBenchmark.*", config.includePattern());
@@ -72,9 +68,7 @@ class BenchmarkConfigurationTest {
         assertEquals(20, config.measurementIterations());
         assertEquals(8, config.threads());
         assertEquals(tempDir.resolve("custom-results").toString(), config.resultsDirectory());
-        assertEquals("http://localhost:8080", config.integrationServiceUrl().orElse(null));
-        assertEquals("http://keycloak:8080", config.keycloakUrl().orElse(null));
-        assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
+        // Integration URLs are now handled by IntegrationConfiguration
     }
 
     @Test void builderWithSystemProperties() {
@@ -320,9 +314,7 @@ class BenchmarkConfigurationTest {
             assertEquals(24, config.threads());
             // Results directory is now fixed, not configurable
             assertEquals("target/benchmark-results", config.resultsDirectory());
-            assertEquals("http://service:8080", config.integrationServiceUrl().orElse(null));
-            assertEquals("http://keycloak:8180", config.keycloakUrl().orElse(null));
-            assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
+            // Integration URLs are now handled by IntegrationConfiguration
         } finally {
             // Clean up all system properties
             System.clearProperty("jmh.include");

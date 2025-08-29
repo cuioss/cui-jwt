@@ -31,9 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class CoreJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class CoreJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String OPERATION_TYPE_VALIDATION = "validation";
 
@@ -98,8 +96,7 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Functional interface for validation operations.
      */
-    @FunctionalInterface
-    private interface ValidationSupplier {
+    @FunctionalInterface private interface ValidationSupplier {
         AccessTokenContent validate();
     }
 }

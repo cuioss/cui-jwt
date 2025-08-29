@@ -295,8 +295,7 @@ public class MetricsPostProcessor {
     /**
      * Class to track metrics for an HTTP endpoint - made public for testing
      */
-    @Getter
-    public static class HttpEndpointMetrics {
+    @Getter public static class HttpEndpointMetrics {
         final String displayName;
         final String sourceBenchmark;
         int sampleCount;

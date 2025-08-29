@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
@@ -42,10 +43,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@BenchmarkMode(Mode.All)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
-public abstract class AbstractBaseBenchmark {
+@BenchmarkMode(Mode.All) @OutputTimeUnit(TimeUnit.MILLISECONDS) @State(Scope.Benchmark) public abstract class AbstractBaseBenchmark {
 
     static {
         // Set the logging manager to prevent JBoss LogManager errors in forked JVMs
@@ -65,15 +63,17 @@ public abstract class AbstractBaseBenchmark {
      * Initializes HttpClient and metrics exporter.
      */
     @Setup(Level.Trial) public void setupBenchmark() {
-        // Get configuration from system properties with correct docker-compose ports
-        // Note: This is a minimal config just to get URLs - actual benchmark config is in QuarkusIntegrationRunner
+        // Get integration URLs from IntegrationConfiguration
+        var integrationConfig = IntegrationConfiguration.fromProperties();
+        serviceUrl = integrationConfig.integrationServiceUrl();
+        quarkusMetricsUrl = integrationConfig.metricsUrl();
+        
+        // Get benchmark results directory from default configuration
         var config = BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("validateJwtThroughput")
                 .withLatencyBenchmarkName("validateJwtThroughput")
                 .build();
-        serviceUrl = config.integrationServiceUrl().orElse("https://localhost:10443");
-        quarkusMetricsUrl = config.metricsUrl().orElse("https://localhost:10443");
         benchmarkResultsDir = config.resultsDirectory();
 
         LOGGER.debug("Service URL: {}", serviceUrl);

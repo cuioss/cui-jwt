@@ -34,8 +34,7 @@ import java.net.http.HttpRequest;
  *
  * @since 1.0
  */
-@State(Scope.Benchmark)
-public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark {
+@State(Scope.Benchmark) public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractIntegrationBenchmark.class);
 
@@ -63,7 +62,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
     private void initializeTokenRepository() {
         TokenRepositoryConfig config = TokenRepositoryConfig.fromProperties();
         tokenRepository = new TokenRepository(config);
-        
+
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
     }
 

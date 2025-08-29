@@ -21,7 +21,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-import java.util.Optional;
+import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
 /**
  * Modern configuration API for JMH benchmarks.
@@ -53,10 +53,7 @@ int warmupIterations,
 int measurementIterations,
 TimeValue measurementTime,
 TimeValue warmupTime,
-int threads,
-Optional<String> integrationServiceUrl,
-Optional<String> keycloakUrl,
-Optional<String> metricsUrl
+int threads
 ) {
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkConfiguration.class);
@@ -72,9 +69,6 @@ Optional<String> metricsUrl
         public static final String MEASUREMENT_TIME = "jmh.time";
         public static final String WARMUP_TIME = "jmh.warmupTime";
         public static final String THREADS = "jmh.threads";
-        public static final String INTEGRATION_SERVICE_URL = "integration.service.url";
-        public static final String KEYCLOAK_URL = "keycloak.url";
-        public static final String METRICS_URL = "quarkus.metrics.url";
 
         private Properties() {
         }
@@ -104,16 +98,14 @@ Optional<String> metricsUrl
      */
     public static Builder builder() {
         return new Builder()
-                .withIncludePattern(System.getProperty(Properties.INCLUDE, Defaults.INCLUDE_PATTERN))
-                .withForks(getIntProperty(Properties.FORKS, Defaults.FORKS))
-                .withWarmupIterations(getIntProperty(Properties.WARMUP_ITERATIONS, Defaults.WARMUP_ITERATIONS))
-                .withMeasurementIterations(getIntProperty(Properties.MEASUREMENT_ITERATIONS, Defaults.MEASUREMENT_ITERATIONS))
-                .withMeasurementTime(parseTimeValue(System.getProperty(Properties.MEASUREMENT_TIME, Defaults.MEASUREMENT_TIME)))
-                .withWarmupTime(parseTimeValue(System.getProperty(Properties.WARMUP_TIME, Defaults.WARMUP_TIME)))
-                .withThreads(parseThreadCount(System.getProperty(Properties.THREADS, String.valueOf(Defaults.THREADS))))
-                .withIntegrationServiceUrl(System.getProperty(Properties.INTEGRATION_SERVICE_URL))
-                .withKeycloakUrl(System.getProperty(Properties.KEYCLOAK_URL))
-                .withMetricsUrl(System.getProperty(Properties.METRICS_URL));
+                .withIncludePattern(requireJmhProperty(Properties.INCLUDE, "JMH include pattern"))
+                .withForks(requireIntProperty(Properties.FORKS, "JMH fork count"))
+                .withWarmupIterations(requireIntProperty(Properties.WARMUP_ITERATIONS, "JMH warmup iterations"))
+                .withMeasurementIterations(requireIntProperty(Properties.MEASUREMENT_ITERATIONS, "JMH measurement iterations"))
+                .withMeasurementTime(parseTimeValue(requireJmhProperty(Properties.MEASUREMENT_TIME, "JMH measurement time")))
+                .withWarmupTime(parseTimeValue(requireJmhProperty(Properties.WARMUP_TIME, "JMH warmup time")))
+                .withThreads(parseThreadCount(requireJmhProperty(Properties.THREADS, "JMH thread count")))
+        ;
     }
 
     /**
@@ -140,9 +132,7 @@ Optional<String> metricsUrl
                 .withMeasurementTime(measurementTime)
                 .withWarmupTime(warmupTime)
                 .withThreads(threads)
-                .withIntegrationServiceUrl(integrationServiceUrl.orElse(null))
-                .withKeycloakUrl(keycloakUrl.orElse(null))
-                .withMetricsUrl(metricsUrl.orElse(null));
+        ;
     }
 
     /**
@@ -167,13 +157,6 @@ Optional<String> metricsUrl
                 "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties"
         );
 
-        // Add integration-specific properties if present
-        integrationServiceUrl.ifPresent(url ->
-                builder.jvmArgsAppend("-Dintegration.service.url=" + url));
-        keycloakUrl.ifPresent(url ->
-                builder.jvmArgsAppend("-Dkeycloak.url=" + url));
-        metricsUrl.ifPresent(url ->
-                builder.jvmArgsAppend("-Dquarkus.metrics.url=" + url));
 
         return builder.build();
     }
@@ -216,7 +199,7 @@ Optional<String> metricsUrl
 
         // Parse value and unit
         long value = Long.parseLong(timeStr.substring(0, timeStr.length() - 1));
-        
+
         return switch (lastChar) {
             case 's' -> TimeValue.seconds(value);
             case 'm' -> TimeValue.minutes(value);
@@ -242,8 +225,19 @@ Optional<String> metricsUrl
         }
     }
 
-    private static int getIntProperty(String key, int defaultValue) {
-        return Integer.getInteger(key, defaultValue);
+    private static String requireJmhProperty(String key, String description) {
+        return requireProperty(System.getProperty(key), description, key);
+    }
+
+    private static int requireIntProperty(String key, String description) {
+        String value = requireProperty(System.getProperty(key), description, key);
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(String.format(
+                    "%s must be a valid integer, but got: %s. Set system property: %s",
+                    description, value, key));
+        }
     }
 
     /**
@@ -259,9 +253,6 @@ Optional<String> metricsUrl
         private TimeValue measurementTime = parseTimeValue(Defaults.MEASUREMENT_TIME);
         private TimeValue warmupTime = parseTimeValue(Defaults.WARMUP_TIME);
         private int threads = Defaults.THREADS;
-        private String integrationServiceUrl;
-        private String keycloakUrl;
-        private String metricsUrl;
 
         /**
          * Sets the complete report configuration.
@@ -376,20 +367,6 @@ Optional<String> metricsUrl
             return this;
         }
 
-        public Builder withIntegrationServiceUrl(String url) {
-            this.integrationServiceUrl = url;
-            return this;
-        }
-
-        public Builder withKeycloakUrl(String url) {
-            this.keycloakUrl = url;
-            return this;
-        }
-
-        public Builder withMetricsUrl(String url) {
-            this.metricsUrl = url;
-            return this;
-        }
 
         /**
          * Builds the configuration.
@@ -415,10 +392,7 @@ Optional<String> metricsUrl
                     measurementIterations,
                     measurementTime,
                     warmupTime,
-                    threads,
-                    Optional.ofNullable(integrationServiceUrl),
-                    Optional.ofNullable(keycloakUrl),
-                    Optional.ofNullable(metricsUrl)
+                    threads
             );
         }
     }

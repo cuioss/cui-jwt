@@ -21,13 +21,7 @@ import jdk.jfr.*;
  * Periodic JFR event that captures JWT operation statistics over time windows.
  * This event is emitted periodically to track variance and performance trends.
  */
-@Name("de.cuioss.jwt.OperationStatistics")
-@Label("JWT Operation Statistics")
-@Description("Periodic statistics for JWT operations including latency percentiles and variance metrics")
-@Category({"JWT", "Performance", "Statistics"})
-@Period("1 s")
-@StackTrace(false)
-public class JwtOperationStatisticsEvent extends Event {
+@Name("de.cuioss.jwt.OperationStatistics") @Label("JWT Operation Statistics") @Description("Periodic statistics for JWT operations including latency percentiles and variance metrics") @Category({"JWT", "Performance", "Statistics"}) @Period("1 s") @StackTrace(false) public class JwtOperationStatisticsEvent extends Event {
 
     @Label("Benchmark Name")
     @Description("Name of the benchmark")

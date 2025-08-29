@@ -22,8 +22,7 @@ import lombok.experimental.UtilityClass;
  * This avoids the dependency on the full cui-jwt-quarkus module
  * which can cause LogManager initialization issues in JMH benchmarks.
  */
-@UtilityClass
-public final class MetricConstants {
+@UtilityClass public final class MetricConstants {
 
     /**
      * The common prefix for all JWT metrics.
@@ -33,8 +32,7 @@ public final class MetricConstants {
     /**
      * Metrics related to bearer token operations.
      */
-    @UtilityClass
-    public static final class BEARERTOKEN {
+    @UtilityClass public static final class BEARERTOKEN {
         /**
          * Base path for bearer token metrics.
          */

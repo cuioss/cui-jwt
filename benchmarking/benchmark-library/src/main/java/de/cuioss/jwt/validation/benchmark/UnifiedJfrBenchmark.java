@@ -37,9 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Benchmark)
-@SuppressWarnings("java:S112")
-public class UnifiedJfrBenchmark {
+@State(Scope.Benchmark) @SuppressWarnings("java:S112") public class UnifiedJfrBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(UnifiedJfrBenchmark.class);
 

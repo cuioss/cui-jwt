@@ -22,12 +22,7 @@ import jdk.jfr.*;
  * This event captures timing and metadata for each JWT validation operation,
  * enabling analysis of operation variance under concurrent load.
  */
-@Name("de.cuioss.jwt.Operation")
-@Label("JWT Operation")
-@Description("Tracks individual JWT operation performance including validation, parsing, and signature verification")
-@Category({"JWT", "Performance", "Benchmark"})
-@StackTrace(false)
-public class JwtOperationEvent extends Event {
+@Name("de.cuioss.jwt.Operation") @Label("JWT Operation") @Description("Tracks individual JWT operation performance including validation, parsing, and signature verification") @Category({"JWT", "Performance", "Benchmark"}) @StackTrace(false) public class JwtOperationEvent extends Event {
 
     @Label("Operation Type")
     @Description("Type of JWT operation (validation, parsing, signature_verification)")

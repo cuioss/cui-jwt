@@ -31,9 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
 

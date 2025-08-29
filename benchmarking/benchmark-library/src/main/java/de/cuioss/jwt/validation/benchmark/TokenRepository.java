@@ -44,8 +44,7 @@ import java.util.*;
  * @author Oliver Wolff
  * @since 1.0
  */
-@Getter
-public class TokenRepository {
+@Getter public class TokenRepository {
 
     /**
      * Default number of different issuers to simulate issuer config resolution overhead
@@ -71,9 +70,7 @@ public class TokenRepository {
     /**
      * Metadata for a generated token
      */
-    @Value
-    @Builder
-    public static class TokenMetadata {
+    @Value @Builder public static class TokenMetadata {
         String issuerIdentifier;
         int tokenSize;
         String keyId;
@@ -82,9 +79,7 @@ public class TokenRepository {
     /**
      * Configuration for TokenRepository
      */
-    @Value
-    @Builder
-    public static class Config {
+    @Value @Builder public static class Config {
         @Builder.Default
         int issuerCount = DEFAULT_ISSUER_COUNT;
 

@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 
+import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
+
 /**
  * Main class for running Quarkus integration benchmarks.
  * <p>
@@ -48,9 +50,11 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusIntegrationRunner.class);
 
-    private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
-
-    private final String serviceUrl = System.getProperty("integration.service.url", DEFAULT_SERVICE_URL);
+    private final String serviceUrl = requireProperty(
+            System.getProperty("integration.service.url"),
+            "Integration service URL",
+            "integration.service.url"
+    );
     // Get Keycloak URL from properties - checks both "token.keycloak.url" and "keycloak.url"
     private final String keycloakUrl = TokenRepositoryConfig.fromProperties().getKeycloakBaseUrl();
 
@@ -59,8 +63,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("validateJwtThroughput")
                 .withLatencyBenchmarkName("validateJwtThroughput")
-                .withIntegrationServiceUrl(serviceUrl)
-                .withKeycloakUrl(keycloakUrl)
                 .build();
     }
 

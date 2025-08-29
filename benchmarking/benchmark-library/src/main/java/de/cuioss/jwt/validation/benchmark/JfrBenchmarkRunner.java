@@ -109,25 +109,22 @@ public class JfrBenchmarkRunner {
      * This method appends "-jfr" to the file prefix to distinguish from regular benchmark results.
      */
     private static String getJfrResultFile() {
-        String filePrefix = System.getProperty("jmh.result.filePrefix");
-        if (filePrefix != null && !filePrefix.isEmpty()) {
-            String resultFile = filePrefix + "-jfr.json";
-            File file = new File(resultFile);
-            File parentDir = file.getParentFile();
-            if (parentDir != null && !parentDir.exists()) {
-                parentDir.mkdirs();
-            }
-            return resultFile;
+        String filePrefix = "target/benchmark-jfr-results/micro-result";
+        String resultFile = filePrefix + "-jfr.json";
+        File file = new File(resultFile);
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
         }
-        return getBenchmarkResultsDir() + "/jfr-benchmark-result.json";
+        return resultFile;
     }
 
     /**
-     * Gets the benchmark results directory from system property or defaults to target/benchmark-jfr-results.
+     * Gets the benchmark results directory.
      * 
      * @return the benchmark results directory path
      */
     private static String getBenchmarkResultsDir() {
-        return System.getProperty("benchmark.results.dir", "target/benchmark-jfr-results");
+        return "target/benchmark-jfr-results";
     }
 }

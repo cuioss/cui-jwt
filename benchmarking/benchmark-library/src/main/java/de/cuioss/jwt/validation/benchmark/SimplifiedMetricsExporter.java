@@ -77,7 +77,7 @@ public class SimplifiedMetricsExporter {
             benchmarkName = "unknown_benchmark";
         }
 
-        String outputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
+        String outputDir = "target/benchmark-results";
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
 
@@ -155,11 +155,7 @@ public class SimplifiedMetricsExporter {
      * This approach is more robust and maintainable than parsing thread names and stack traces.
      */
     private static String getCurrentBenchmarkName() {
-        // First check for explicit system property override
-        String explicitName = System.getProperty("benchmark.context");
-        if (explicitName != null && !explicitName.trim().isEmpty()) {
-            return explicitName.trim();
-        }
+        // Use hardcoded benchmark context - no system property override
 
         // Fallback 1: Try to find benchmark class name from stack trace
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();

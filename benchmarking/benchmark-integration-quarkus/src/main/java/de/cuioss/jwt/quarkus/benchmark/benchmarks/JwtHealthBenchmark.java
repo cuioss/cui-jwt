@@ -29,11 +29,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@Fork(value = 1)
-@Threads(1)
-@Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-public class JwtHealthBenchmark extends AbstractBaseBenchmark {
+@Fork(value = 1) @Threads(1) @Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS) @Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS) public class JwtHealthBenchmark extends AbstractBaseBenchmark {
 
     /**
      * Benchmark for Quarkus health endpoint throughput.

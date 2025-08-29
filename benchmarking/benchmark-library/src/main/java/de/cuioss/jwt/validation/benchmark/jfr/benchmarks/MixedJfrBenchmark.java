@@ -31,9 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class MixedJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class MixedJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
 
