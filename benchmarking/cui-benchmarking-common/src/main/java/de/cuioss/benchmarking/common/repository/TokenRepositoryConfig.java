@@ -49,44 +49,39 @@ import lombok.Value;
     /**
      * The base URL of the Keycloak server.
      * Example: https://localhost:1443
+     * Required - must be provided via properties or builder.
      */
-    @Builder.Default
-    String keycloakBaseUrl = "https://localhost:1443";
+    String keycloakBaseUrl;
 
     /**
      * The Keycloak realm name.
-     * Default: benchmark (matches docker-compose setup)
+     * Required - must be provided via properties or builder.
      */
-    @Builder.Default
-    String realm = "benchmark";
+    String realm;
 
     /**
      * The client ID for token requests.
-     * Default: benchmark-client (matches docker-compose setup)
+     * Required - must be provided via properties or builder.
      */
-    @Builder.Default
-    String clientId = "benchmark-client";
+    String clientId;
 
     /**
      * The client secret for token requests.
-     * Default: benchmark-secret (should match realm configuration)
+     * Required - must be provided via properties or builder.
      */
-    @Builder.Default
-    String clientSecret = "benchmark-secret";
+    String clientSecret;
 
     /**
      * The username for token requests.
-     * Default: benchmark-user (matches realm configuration)
+     * Required - must be provided via properties or builder.
      */
-    @Builder.Default
-    String username = "benchmark-user";
+    String username;
 
     /**
      * The password for token requests.
-     * Default: benchmark-password (matches realm configuration)
+     * Required - must be provided via properties or builder.
      */
-    @Builder.Default
-    String password = "benchmark-password";
+    String password;
 
     /**
      * Number of tokens to fetch and cache for rotation.
@@ -128,31 +123,41 @@ import lombok.Value;
     int tokenRefreshThresholdSeconds = 180;
 
     /**
-     * Creates a configuration from system properties with defaults.
-     * All properties can be overridden via system properties or Maven -D arguments.
+     * Creates a configuration from system properties.
+     * All required properties must be provided via system properties or Maven -D arguments.
      * 
-     * @return TokenRepositoryConfig with values from properties or defaults
+     * @return TokenRepositoryConfig with values from properties
+     * @throws IllegalArgumentException if any required property is missing
      */
     public static TokenRepositoryConfig fromProperties() {
         // Check both token.keycloak.url and keycloak.url for compatibility
         // Prefer token.keycloak.url if both are set
         String keycloakUrl = System.getProperty(Properties.KEYCLOAK_URL);
         if (keycloakUrl == null) {
-            keycloakUrl = System.getProperty("keycloak.url", "https://localhost:1443");
+            keycloakUrl = System.getProperty("keycloak.url");
         }
         
         return TokenRepositoryConfig.builder()
-                .keycloakBaseUrl(keycloakUrl)
-                .realm(System.getProperty(Properties.REALM, "benchmark"))
-                .clientId(System.getProperty(Properties.CLIENT_ID, "benchmark-client"))
-                .clientSecret(System.getProperty(Properties.CLIENT_SECRET, "benchmark-secret"))
-                .username(System.getProperty(Properties.USERNAME, "benchmark-user"))
-                .password(System.getProperty(Properties.PASSWORD, "benchmark-password"))
+                .keycloakBaseUrl(requireProperty(keycloakUrl, "Keycloak URL", Properties.KEYCLOAK_URL + " or keycloak.url"))
+                .realm(requireProperty(System.getProperty(Properties.REALM), "Keycloak realm", Properties.REALM))
+                .clientId(requireProperty(System.getProperty(Properties.CLIENT_ID), "Client ID", Properties.CLIENT_ID))
+                .clientSecret(requireProperty(System.getProperty(Properties.CLIENT_SECRET), "Client secret", Properties.CLIENT_SECRET))
+                .username(requireProperty(System.getProperty(Properties.USERNAME), "Username", Properties.USERNAME))
+                .password(requireProperty(System.getProperty(Properties.PASSWORD), "Password", Properties.PASSWORD))
                 .tokenPoolSize(Integer.parseInt(System.getProperty(Properties.POOL_SIZE, "100")))
                 .connectionTimeoutMs(Integer.parseInt(System.getProperty(Properties.CONNECTION_TIMEOUT_MS, "5000")))
                 .requestTimeoutMs(Integer.parseInt(System.getProperty(Properties.REQUEST_TIMEOUT_MS, "10000")))
                 .verifySsl(Boolean.parseBoolean(System.getProperty(Properties.VERIFY_SSL, "false")))
                 .tokenRefreshThresholdSeconds(Integer.parseInt(System.getProperty(Properties.REFRESH_THRESHOLD_SECONDS, "180")))
                 .build();
+    }
+    
+    private static String requireProperty(String value, String description, String propertyName) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(String.format(
+                "%s is required but not provided. Set system property: %s", 
+                description, propertyName));
+        }
+        return value;
     }
 }

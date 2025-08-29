@@ -36,9 +36,16 @@ class TokenRepositoryTest {
         assertEquals(cause, exWithCause.getCause());
     }
 
-    @Test void configBuilderDefaults() {
-        // Test that we can build a config with defaults
-        TokenRepositoryConfig config = TokenRepositoryConfig.builder().build();
+    @Test void configBuilderWithRequiredFields() {
+        // Test that we can build a config with all required fields
+        TokenRepositoryConfig config = TokenRepositoryConfig.builder()
+                .keycloakBaseUrl("https://localhost:1443")
+                .realm("benchmark")
+                .clientId("benchmark-client")
+                .clientSecret("benchmark-secret")
+                .username("benchmark-user")
+                .password("benchmark-password")
+                .build();
         assertNotNull(config);
         assertEquals("https://localhost:1443", config.getKeycloakBaseUrl());
         assertEquals("benchmark", config.getRealm());
