@@ -134,6 +134,19 @@ class AbstractBaseBenchmarkTest {
                 System.getProperty("java.util.logging.manager"));
     }
 
+    @Test void setupBenchmarkRequiresProperties() {
+        // Clear required properties to test that they are required
+        System.clearProperty("integration.service.url");
+        System.clearProperty("quarkus.metrics.url");
+        
+        // Setup should fail without required properties
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> benchmark.setupBenchmark());
+        
+        assertTrue(exception.getMessage().contains("Integration service URL is required"));
+        assertTrue(exception.getMessage().contains("integration.service.url"));
+    }
+
     // Test implementation of AbstractBaseBenchmark
     private static class TestBenchmark extends AbstractBaseBenchmark {
         // Expose protected methods for testing
