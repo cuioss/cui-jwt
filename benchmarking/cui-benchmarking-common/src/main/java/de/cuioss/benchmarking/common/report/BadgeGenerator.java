@@ -17,8 +17,6 @@ package de.cuioss.benchmarking.common.report;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
@@ -27,176 +25,172 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.BADGE;
-import static de.cuioss.benchmarking.common.report.ReportConstants.FILES;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
- * Generates shields.io compatible badges for benchmark performance metrics.
+ * Generates shields.io compatible JSON badge files for benchmark metrics.
  * <p>
- * This generator creates JSON badge files from benchmark JSON results that can be used 
- * directly with shields.io endpoint badges or converted to SVG badges for display in documentation.
- * <p>
- * Badge types:
+ * This generator creates three types of badges:
  * <ul>
- *   <li>Performance badges with throughput and scoring</li>
- *   <li>Trend analysis badges showing performance changes</li>
- *   <li>Last run timestamp badges</li>
+ *   <li>Performance badge - Shows the current performance grade</li>
+ *   <li>Trend badge - Shows the trend direction with percentage change</li>
+ *   <li>Last run badge - Shows when the benchmarks were last executed</li>
  * </ul>
+ * <p>
+ * All badges follow the shields.io JSON endpoint schema for easy integration
+ * with GitHub README files and documentation.
  */
 public class BadgeGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(BadgeGenerator.class);
-    private static final Gson GSON = new GsonBuilder()
+    private static final DateTimeFormatter DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
+
+    private final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
-            .serializeSpecialFloatingPointValues()
             .create();
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     /**
-     * Generates a performance badge showing current benchmark performance.
-     *
-     * @param metrics the pre-computed benchmark metrics
-     * @param type the benchmark type
-     * @param outputDir the output directory for the badge file
-     * @throws IOException if writing the badge file fails
+     * Generates a performance badge JSON based on the benchmark metrics.
+     * 
+     * @param metrics the current benchmark metrics
+     * @return JSON string for the performance badge
      */
-    public void generatePerformanceBadge(BenchmarkMetrics metrics, BenchmarkType type, String outputDir)
-            throws IOException {
-
+    public String generatePerformanceBadge(BenchmarkMetrics metrics) {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put(BADGE.SCHEMA_VERSION, 1);
-        badge.put(BADGE.LABEL, type.getBadgeLabel());
-        badge.put(BADGE.MESSAGE, formatPerformanceMessage(metrics));
-        badge.put(BADGE.COLOR, getColorForScore(metrics.performanceScore()));
+        badge.put("schemaVersion", 1);
+        badge.put("label", "Performance");
+        badge.put("message", "Grade " + metrics.performanceGrade());
+        badge.put("color", getGradeColor(metrics.performanceGrade()));
 
-        String filename = type.getPerformanceBadgeFileName();
-        Path badgeFile = Path.of(outputDir, filename);
-
-        Files.writeString(badgeFile, GSON.toJson(badge));
-        LOGGER.info(INFO.BADGE_GENERATED.format("performance", badgeFile));
+        return gson.toJson(badge);
     }
 
     /**
-     * Generates a trend badge showing performance trends over time.
-     *
-     * @param jsonFile the path to the benchmark JSON results file
-     * @param type the benchmark type
-     * @param outputDir the output directory for the badge file
-     * @throws IOException if writing the badge file fails
+     * Generates a trend badge JSON based on the trend metrics.
+     * 
+     * @param trendMetrics the calculated trend metrics
+     * @return JSON string for the trend badge
      */
-    public void generateTrendBadge(Path jsonFile, BenchmarkType type, String outputDir)
-            throws IOException {
-        // Load previous results for trend analysis
-        PerformanceHistory history = loadPerformanceHistory(outputDir + "/../history");
-
-        // Parse current results
-        String jsonContent = Files.readString(jsonFile);
-        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-        TrendAnalysis trend = analyzeTrend(benchmarks, history);
-
+    public String generateTrendBadge(TrendDataProcessor.TrendMetrics trendMetrics) {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put(BADGE.SCHEMA_VERSION, 1);
-        badge.put(BADGE.LABEL, BADGE.LABELS.PERFORMANCE_TREND);
-        badge.put(BADGE.MESSAGE, formatTrendMessage(trend));
-        badge.put(BADGE.COLOR, getTrendColor(trend));
+        badge.put("schemaVersion", 1);
+        badge.put("label", "Trend");
 
-        String filename = type.getTrendBadgeFileName();
-        Path badgeFile = Path.of(outputDir, filename);
+        String arrow = getTrendArrow(trendMetrics.getDirection());
+        String percentage = String.format(Locale.US, "%.1f%%", Math.abs(trendMetrics.getChangePercentage()));
+        badge.put("message", arrow + " " + percentage);
+        badge.put("color", getTrendColor(trendMetrics.getDirection()));
 
-        Files.writeString(badgeFile, GSON.toJson(badge));
-        LOGGER.info(INFO.BADGE_GENERATED.format("trend", badgeFile));
+        return gson.toJson(badge);
     }
 
     /**
-     * Generates a last run badge showing when benchmarks were last executed.
-     *
-     * @param outputDir the output directory for the badge file
-     * @throws IOException if writing the badge file fails
+     * Generates a last run timestamp badge.
+     * 
+     * @param timestamp the benchmark run timestamp
+     * @return JSON string for the last run badge
      */
-    public void generateLastRunBadge(String outputDir) throws IOException {
-        String timestamp = ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC));
-
+    public String generateLastRunBadge(Instant timestamp) {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put(BADGE.SCHEMA_VERSION, 1);
-        badge.put(BADGE.LABEL, BADGE.LABELS.LAST_RUN);
-        badge.put(BADGE.MESSAGE, formatTimestamp(timestamp));
-        badge.put(BADGE.COLOR, BADGE.COLORS.BLUE);
+        badge.put("schemaVersion", 1);
+        badge.put("label", "Last Run");
+        badge.put("message", DATE_FORMAT.format(timestamp));
+        badge.put("color", "blue");
 
-        Path badgeFile = Path.of(outputDir, FILES.LAST_RUN_BADGE_JSON);
-        Files.writeString(badgeFile, GSON.toJson(badge));
-        LOGGER.info(INFO.BADGE_GENERATED.format("last run", badgeFile));
+        return gson.toJson(badge);
     }
 
+    /**
+     * Generates a default trend badge when no historical data is available.
+     * 
+     * @return JSON string for the default trend badge
+     */
+    public String generateDefaultTrendBadge() {
+        Map<String, Object> badge = new LinkedHashMap<>();
+        badge.put("schemaVersion", 1);
+        badge.put("label", "Trend");
+        badge.put("message", "No history");
+        badge.put("color", "lightgray");
 
-    private String formatPerformanceMessage(BenchmarkMetrics metrics) {
-        // Format: "Score Grade (throughput, latency)"
-        // Example: "91 A (5.8K ops/s, 1.17ms)"
-        String scoreFormatted = "%d %s".formatted(
-                Math.round(metrics.performanceScore()),
-                metrics.performanceGrade()
-        );
-        return "%s (%s, %s)".formatted(
-                scoreFormatted,
-                MetricConversionUtil.formatThroughput(metrics.throughput()),
-                MetricConversionUtil.formatLatency(metrics.latency())
-        );
+        return gson.toJson(badge);
     }
 
+    /**
+     * Writes all badge files to the specified directory.
+     * 
+     * @param metrics the current benchmark metrics
+     * @param trendMetrics the trend metrics (can be null)
+     * @param outputDir the output directory path
+     * @throws IOException if writing badge files fails
+     */
+    public void writeBadgeFiles(BenchmarkMetrics metrics,
+            TrendDataProcessor.TrendMetrics trendMetrics,
+            String outputDir) throws IOException {
+        Path badgesDir = Path.of(outputDir, "badges");
+        Files.createDirectories(badgesDir);
 
-    private String getColorForScore(double score) {
-        // Color based on the 0-100 performance score
-        if (score >= 90) return BADGE.COLORS.BRIGHT_GREEN;  // Grade A
-        if (score >= 75) return BADGE.COLORS.GREEN;         // Grade B
-        if (score >= 60) return BADGE.COLORS.YELLOW;        // Grade C
-        if (score >= 40) return BADGE.COLORS.ORANGE;        // Grade D
-        return BADGE.COLORS.RED;                             // Grade F
+        // Write performance badge
+        String perfBadge = generatePerformanceBadge(metrics);
+        Path perfBadgePath = badgesDir.resolve("performance-badge.json");
+        Files.writeString(perfBadgePath, perfBadge);
+        LOGGER.info(INFO.GENERATING_REPORTS.format("Performance badge written to " + perfBadgePath));
+
+        // Write trend badge
+        String trendBadge = trendMetrics != null
+                ? generateTrendBadge(trendMetrics)
+                : generateDefaultTrendBadge();
+        Path trendBadgePath = badgesDir.resolve("trend-badge.json");
+        Files.writeString(trendBadgePath, trendBadge);
+        LOGGER.info(INFO.GENERATING_REPORTS.format("Trend badge written to " + trendBadgePath));
+
+        // Write last run badge
+        String lastRunBadge = generateLastRunBadge(Instant.now());
+        Path lastRunBadgePath = badgesDir.resolve("last-run-badge.json");
+        Files.writeString(lastRunBadgePath, lastRunBadge);
+        LOGGER.info(INFO.GENERATING_REPORTS.format("Last run badge written to " + lastRunBadgePath));
     }
 
-    private TrendAnalysis analyzeTrend(JsonArray currentResults, PerformanceHistory history) {
-        // For now, return stable trend as we don't have historical data
-        return new TrendAnalysis(TrendDirection.STABLE, 0.0);
-    }
-
-    private String formatTrendMessage(TrendAnalysis trend) {
-        return switch (trend.direction()) {
-            case IMPROVING -> String.format(Locale.US, BADGE.TRENDS.IMPROVING_FORMAT, trend.percentChange());
-            case DEGRADING -> String.format(Locale.US, BADGE.TRENDS.DEGRADING_FORMAT, trend.percentChange());
-            case STABLE -> BADGE.TRENDS.STABLE;
+    /**
+     * Determines the color for a performance grade.
+     */
+    private String getGradeColor(String grade) {
+        return switch (grade) {
+            case "A+" -> "brightgreen";
+            case "A" -> "green";
+            case "B" -> "yellowgreen";
+            case "C" -> "yellow";
+            case "D" -> "orange";
+            case "F" -> "red";
+            default -> "lightgray";
         };
     }
 
-    private String getTrendColor(TrendAnalysis trend) {
-        return switch (trend.direction()) {
-            case IMPROVING -> BADGE.COLORS.GREEN;
-            case DEGRADING -> BADGE.COLORS.RED;
-            case STABLE -> BADGE.COLORS.BLUE;
+    /**
+     * Determines the color for a trend direction.
+     */
+    private String getTrendColor(String direction) {
+        return switch (direction) {
+            case "up" -> "green";
+            case "down" -> "red";
+            case "stable" -> "blue";
+            default -> "lightgray";
         };
     }
 
-    private String formatTimestamp(String timestamp) {
-        // Format as readable date
-        return timestamp.substring(0, 10); // YYYY-MM-DD
-    }
-
-    private PerformanceHistory loadPerformanceHistory(String historyPath) {
-        // TODO: Implement loading of historical data from JSON files
-        return new PerformanceHistory(Collections.emptyList());
-    }
-
-    // Value classes for structured data
-    private record TrendAnalysis(TrendDirection direction, double percentChange) {
-    }
-
-    private record PerformanceHistory(List<HistoricalResult> results) {
-    }
-
-    private record HistoricalResult(Instant timestamp, double score) {
-    }
-
-    private enum TrendDirection {
-        IMPROVING, STABLE, DEGRADING
+    /**
+     * Gets the arrow symbol for a trend direction.
+     */
+    private String getTrendArrow(String direction) {
+        return switch (direction) {
+            case "up" -> "↑";
+            case "down" -> "↓";
+            case "stable" -> "→";
+            default -> "•";
+        };
     }
 }

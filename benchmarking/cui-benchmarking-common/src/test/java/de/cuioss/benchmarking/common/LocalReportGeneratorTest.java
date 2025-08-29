@@ -153,12 +153,21 @@ class LocalReportGeneratorTest {
         reportGen.generateDetailedPage(outputDirStr);
         reportGen.copySupportFiles(outputDirStr);
 
-        // Generate badges
+        // Generate badges using new API
         Path badgesDir = outputDir.resolve("badges");
         Files.createDirectories(badgesDir);
-        badgeGen.generatePerformanceBadge(metrics, type, badgesDir.toString());
-        badgeGen.generateTrendBadge(jsonFile, type, badgesDir.toString());
-        badgeGen.generateLastRunBadge(badgesDir.toString());
+
+        // Write performance badge
+        String perfBadge = badgeGen.generatePerformanceBadge(metrics);
+        Files.writeString(badgesDir.resolve("performance-badge.json"), perfBadge);
+
+        // Write trend badge (no history for test)
+        String trendBadge = badgeGen.generateDefaultTrendBadge();
+        Files.writeString(badgesDir.resolve("trend-badge.json"), trendBadge);
+
+        // Write last run badge
+        String lastRunBadge = badgeGen.generateLastRunBadge(Instant.now());
+        Files.writeString(badgesDir.resolve("last-run-badge.json"), lastRunBadge);
 
         // Ensure data directory exists for other files
         Path dataDir = outputDir.resolve("data");

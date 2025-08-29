@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 
 import static de.cuioss.benchmarking.common.report.ReportConstants.*;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
@@ -57,6 +58,10 @@ public class ReportDataGenerator {
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
     private static final String DATA_FILE_NAME = FILES.BENCHMARK_DATA_JSON;
 
+    private final TrendDataProcessor trendProcessor = new TrendDataProcessor();
+    private final BadgeGenerator badgeGenerator = new BadgeGenerator();
+    private final HistoricalDataManager historyManager = new HistoricalDataManager();
+
     /**
      * Generates a comprehensive data file for report templates using pre-computed metrics.
      *
@@ -86,8 +91,8 @@ public class ReportDataGenerator {
         // Add chart data (JavaScript expects "chartData" not "charts")
         data.put(JSON_FIELDS.CHART_DATA, createChartData(benchmarks));
 
-        // Add trend data (placeholder for now)
-        data.put(JSON_FIELDS.TRENDS, createTrendData());
+        // Add trend data with real processing
+        data.put(JSON_FIELDS.TRENDS, createTrendData(outputDir, metrics));
 
         // Write data file to data subdirectory
         Path dataDir = Path.of(outputDir, FILES.DATA_DIR);
@@ -96,6 +101,28 @@ public class ReportDataGenerator {
         Files.writeString(dataFile, GSON.toJson(data));
 
         LOGGER.info(INFO.METRICS_FILE_GENERATED.format(dataFile));
+
+        // Archive current run to history
+        String commitSha = System.getenv("GITHUB_SHA");
+        if (commitSha == null || commitSha.isEmpty()) {
+            commitSha = "local-run";
+        }
+        historyManager.archiveCurrentRun(data, outputDir, commitSha);
+
+        // Enforce retention policy
+        Path historyDir = Path.of(outputDir, "history");
+        historyManager.enforceRetentionPolicy(historyDir);
+
+        // Generate badges
+        TrendDataProcessor.TrendMetrics trendMetrics = null;
+        if (historyManager.hasHistoricalData(outputDir)) {
+            List<TrendDataProcessor.HistoricalDataPoint> historicalData =
+                    trendProcessor.loadHistoricalData(historyDir);
+            if (!historicalData.isEmpty()) {
+                trendMetrics = trendProcessor.calculateTrends(metrics, historicalData);
+            }
+        }
+        badgeGenerator.writeBadgeFiles(metrics, trendMetrics, outputDir);
     }
 
     private Map<String, Object> createMetadata(BenchmarkType type) {
@@ -342,12 +369,55 @@ public class ReportDataGenerator {
         return percentilesChart;
     }
 
-    private Map<String, Object> createTrendData() {
-        // Placeholder for trend data - will be implemented when historical data is available
+    private Map<String, Object> createTrendData(String outputDir, BenchmarkMetrics metrics) {
+        Path historyDir = Path.of(outputDir, "history");
+
+        if (!Files.exists(historyDir)) {
+            // First run, no history available
+            return createNoHistoryResponse();
+        }
+
+        List<TrendDataProcessor.HistoricalDataPoint> historicalData =
+                trendProcessor.loadHistoricalData(historyDir);
+
+        if (historicalData.isEmpty()) {
+            return createNoHistoryResponse();
+        }
+
+        TrendDataProcessor.TrendMetrics trendMetrics =
+                trendProcessor.calculateTrends(metrics, historicalData);
+
+        Map<String, Object> trendData = new LinkedHashMap<>();
+        trendData.put(JSON_FIELDS.AVAILABLE, true);
+        trendData.put("direction", trendMetrics.getDirection());
+        trendData.put("changePercentage", trendMetrics.getChangePercentage());
+        trendData.put("movingAverage", trendMetrics.getMovingAverage());
+        trendData.put("throughputTrend", trendMetrics.getThroughputTrend());
+        trendData.put("latencyTrend", trendMetrics.getLatencyTrend());
+        trendData.put("chartData", trendProcessor.generateTrendChartData(historicalData, metrics));
+        trendData.put("summary", generateTrendSummary(trendMetrics));
+
+        return trendData;
+    }
+
+    private Map<String, Object> createNoHistoryResponse() {
         Map<String, Object> trends = new LinkedHashMap<>();
         trends.put(JSON_FIELDS.AVAILABLE, false);
         trends.put(BADGE.MESSAGE, MESSAGES.HISTORICAL_DATA_NOT_AVAILABLE);
         return trends;
+    }
+
+    private String generateTrendSummary(TrendDataProcessor.TrendMetrics trendMetrics) {
+        String direction = trendMetrics.getDirection();
+        double change = Math.abs(trendMetrics.getChangePercentage());
+
+        if ("stable".equals(direction)) {
+            return "Performance is stable (%.1f%% change)".formatted(change);
+        } else if ("up".equals(direction)) {
+            return "Performance improved by %.1f%%".formatted(change);
+        } else {
+            return "Performance decreased by %.1f%%".formatted(change);
+        }
     }
 
     /**

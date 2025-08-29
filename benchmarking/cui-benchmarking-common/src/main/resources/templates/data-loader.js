@@ -372,50 +372,114 @@ class BenchmarkDataLoader {
      * Creates configuration for the trends chart.
      */
     createTrendsChartConfig(trendData) {
-        const runs = trendData?.runs || [];
-        const labels = runs.map((_, index) => `Run ${index + 1}`);
-        const throughputData = runs.map(run => run.avgThroughput || 0);
-        const latencyData = runs.map(run => run.avgLatency || 0);
+        if (!trendData?.available) {
+            return this.createNoDataChartConfig();
+        }
+        
+        const chartData = trendData.chartData || {};
+        const timestamps = chartData.timestamps || [];
+        const throughputValues = chartData.throughput || [];
+        const latencyValues = chartData.latency || [];
+        const performanceScores = chartData.performanceScores || [];
+        
+        // Format timestamps for display
+        const labels = timestamps.map(ts => {
+            if (ts === 'Current') return ts;
+            try {
+                return new Date(ts).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return ts;
+            }
+        });
 
         return {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Average Throughput (ops/s)',
-                    data: throughputData,
+                    label: 'Throughput (ops/s)',
+                    data: throughputValues,
                     borderColor: 'rgb(75, 192, 192)',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    yAxisID: 'y-throughput',
                     tension: 0.1
                 }, {
-                    label: 'Average Latency (ms/op)',
-                    data: latencyData,
+                    label: 'Latency (ms/op)',
+                    data: latencyValues,
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    yAxisID: 'y-latency',
+                    tension: 0.1
+                }, {
+                    label: 'Performance Score',
+                    data: performanceScores,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    yAxisID: 'y-score',
                     tension: 0.1,
-                    yAxisID: 'y2'
+                    hidden: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
                 plugins: {
                     title: {
                         display: true,
                         text: 'Performance Trends Over Time'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                if (context.dataset.label === 'Performance Score') {
+                                    return `Grade: ${getGradeFromScore(context.parsed.y)}`;
+                                }
+                                return '';
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
                     }
                 },
                 scales: {
-                    y: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Benchmark Run'
+                        }
+                    },
+                    'y-throughput': {
                         type: 'linear',
                         display: true,
                         position: 'left',
                         title: {
                             display: true,
                             text: 'Throughput (ops/s)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return (value / 1000).toFixed(1) + 'K';
+                                }
+                                return value;
+                            }
                         }
                     },
-                    y2: {
+                    'y-latency': {
                         type: 'linear',
                         display: true,
                         position: 'right',
@@ -426,6 +490,63 @@ class BenchmarkDataLoader {
                         grid: {
                             drawOnChartArea: false
                         }
+                    },
+                    'y-score': {
+                        type: 'linear',
+                        display: false,
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    }
+                }
+            }
+        };
+        
+        function getGradeFromScore(score) {
+            if (score >= 95) return 'A+';
+            if (score >= 85) return 'A';
+            if (score >= 75) return 'B';
+            if (score >= 65) return 'C';
+            if (score >= 55) return 'D';
+            return 'F';
+        }
+    }
+    
+    /**
+     * Creates a chart configuration for when no data is available.
+     */
+    createNoDataChartConfig() {
+        return {
+            type: 'line',
+            data: {
+                labels: ['No historical data available'],
+                datasets: [{
+                    label: 'No Data',
+                    data: [0],
+                    borderColor: 'rgba(200, 200, 200, 0.5)',
+                    backgroundColor: 'rgba(200, 200, 200, 0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Performance Trends (No Historical Data)'
+                    },
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1
                     }
                 }
             }

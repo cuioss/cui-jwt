@@ -46,6 +46,7 @@ public class ReportGenerator {
     private static final String DATA_FILE_NAME = FILES.BENCHMARK_DATA_JSON;
     private final ReportDataGenerator dataGenerator;
     private final BenchmarkMetrics metrics;
+    private final BadgeGenerator badgeGenerator;
 
     /**
      * Creates a ReportGenerator with pre-computed metrics.
@@ -55,6 +56,7 @@ public class ReportGenerator {
     public ReportGenerator(BenchmarkMetrics metrics) {
         this.metrics = metrics;
         this.dataGenerator = new ReportDataGenerator();
+        this.badgeGenerator = new BadgeGenerator();
     }
 
     /**

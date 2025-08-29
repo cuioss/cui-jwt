@@ -257,6 +257,13 @@ public final class BenchmarkingLogMessages {
                 .identifier(102)
                 .template("Failed to copy data file: %s")
                 .build();
+
+        /** Warning for issues during index generation or processing. */
+        public static final LogRecord ISSUE_DURING_INDEX_GENERATION = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(103)
+                .template("Issue during %s")
+                .build();
     }
 
     /**

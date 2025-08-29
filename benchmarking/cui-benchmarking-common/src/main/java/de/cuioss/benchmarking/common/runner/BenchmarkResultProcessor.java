@@ -19,7 +19,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.*;
+import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
+import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
+import de.cuioss.benchmarking.common.report.MetricsComputer;
+import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 
@@ -154,12 +157,8 @@ public class BenchmarkResultProcessor {
      */
     private void generateBadges(Path jsonFile, BenchmarkType type, String outputDir, BenchmarkMetrics metrics)
             throws IOException {
-        BadgeGenerator badgeGen = new BadgeGenerator();
-
+        // Badge generation is now handled by ReportDataGenerator which includes trend processing
         LOGGER.info(INFO.GENERATING_BADGES.format(type.getDisplayName()));
-        badgeGen.generatePerformanceBadge(metrics, type, outputDir + BADGES_DIR);
-        badgeGen.generateTrendBadge(jsonFile, type, outputDir + BADGES_DIR);
-        badgeGen.generateLastRunBadge(outputDir + BADGES_DIR);
     }
 
 
