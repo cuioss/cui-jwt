@@ -20,7 +20,6 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
 
@@ -42,21 +41,16 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
     private static final CuiLogger LOGGER = new CuiLogger(LibraryBenchmarkRunner.class);
 
     @Override protected BenchmarkConfiguration createConfiguration() {
-        String outputDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
-
+        // Configuration from Maven system properties:
+        // - jmh.include: Pattern for benchmark classes to include
+        // - jmh.forks, jmh.iterations, jmh.time, etc.: JMH execution parameters
+        // Output directory is fixed: target/benchmark-results
+        // Result file is auto-generated as: target/benchmark-results/micro-result.json
+        
         return BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.MICRO)
-                .withIncludePattern("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*")
-                .withResultsDirectory(outputDir)
-                .withResultFile(outputDir + "/micro-benchmark-result.json")
                 .withThroughputBenchmarkName("measureThroughput")  // SimpleCoreValidationBenchmark.measureThroughput
                 .withLatencyBenchmarkName("measureAverageTime")    // SimpleCoreValidationBenchmark.measureAverageTime
-                .withForks(1)
-                .withWarmupIterations(5)
-                .withMeasurementIterations(5)
-                .withMeasurementTime(TimeValue.seconds(2))
-                .withWarmupTime(TimeValue.seconds(2))
-                .withThreads(8)
                 .build();
     }
 

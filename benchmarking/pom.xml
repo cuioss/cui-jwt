@@ -31,8 +31,6 @@
         <version.commons-io>2.20.0</version.commons-io>
         <!-- Skip benchmarks by default -->
         <skip.benchmark>true</skip.benchmark>
-        <!-- Default benchmark results directory -->
-        <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
 
         <!-- Sonar configuration: Skip analysis for benchmarking modules -->
         <!-- Benchmarking code is for performance testing, not production code -->

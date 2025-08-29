@@ -164,7 +164,6 @@ Optional<String> metricsUrl
 
         // Add JVM arguments
         builder.jvmArgs(
-                "-Dbenchmark.results.dir=" + reportConfig.resultsDirectory(),
                 "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties"
         );
 

@@ -62,7 +62,6 @@ ResultFormatType resultFormat
      * System property keys for report configuration.
      */
     public static final class Properties {
-        public static final String RESULTS_DIR = "benchmark.results.dir";
         public static final String RESULT_FORMAT = "jmh.result.format";
 
         private Properties() {
@@ -122,7 +121,7 @@ ResultFormatType resultFormat
         private BenchmarkType benchmarkType;
         private String throughputBenchmarkName;
         private String latencyBenchmarkName;
-        private String resultsDirectory = System.getProperty(Properties.RESULTS_DIR, Defaults.RESULTS_DIR);
+        private String resultsDirectory = Defaults.RESULTS_DIR;
         private String resultFile;
         private ResultFormatType resultFormat = parseResultFormat(System.getProperty(Properties.RESULT_FORMAT, "JSON"));
 

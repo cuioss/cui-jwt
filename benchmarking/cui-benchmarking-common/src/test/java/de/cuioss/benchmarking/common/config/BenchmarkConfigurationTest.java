@@ -299,7 +299,6 @@ class BenchmarkConfigurationTest {
         System.setProperty("jmh.time", "3s");
         System.setProperty("jmh.warmupTime", "1s");
         System.setProperty("jmh.threads", "24");
-        System.setProperty("benchmark.results.dir", tempDir.resolve("all-results").toString());
         System.setProperty("integration.service.url", "http://service:8080");
         System.setProperty("keycloak.url", "http://keycloak:8180");
         System.setProperty("quarkus.metrics.url", "http://metrics:9090");
@@ -319,7 +318,8 @@ class BenchmarkConfigurationTest {
             assertEquals(TimeValue.seconds(3), config.measurementTime());
             assertEquals(TimeValue.seconds(1), config.warmupTime());
             assertEquals(24, config.threads());
-            assertEquals(tempDir.resolve("all-results").toString(), config.resultsDirectory());
+            // Results directory is now fixed, not configurable
+            assertEquals("target/benchmark-results", config.resultsDirectory());
             assertEquals("http://service:8080", config.integrationServiceUrl().orElse(null));
             assertEquals("http://keycloak:8180", config.keycloakUrl().orElse(null));
             assertEquals("http://metrics:9090", config.metricsUrl().orElse(null));
@@ -333,7 +333,6 @@ class BenchmarkConfigurationTest {
             System.clearProperty("jmh.time");
             System.clearProperty("jmh.warmupTime");
             System.clearProperty("jmh.threads");
-            System.clearProperty("benchmark.results.dir");
             System.clearProperty("integration.service.url");
             System.clearProperty("keycloak.url");
             System.clearProperty("quarkus.metrics.url");

@@ -55,19 +55,18 @@ class AbstractBaseBenchmarkTest {
         // Set system properties
         System.setProperty("integration.service.url", "https://test:8080");
         System.setProperty("quarkus.metrics.url", "https://metrics:9090");
-        System.setProperty("benchmark.results.dir", "/test/results");
 
         try {
             benchmark.setupBenchmark();
 
             assertEquals("https://test:8080", benchmark.serviceUrl);
             assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
-            assertEquals("/test/results", benchmark.benchmarkResultsDir);
+            // Output directory is now fixed, not configurable
+            assertEquals("target/benchmark-results", benchmark.benchmarkResultsDir);
         } finally {
             // Clean up system properties
             System.clearProperty("integration.service.url");
             System.clearProperty("quarkus.metrics.url");
-            System.clearProperty("benchmark.results.dir");
         }
     }
 
