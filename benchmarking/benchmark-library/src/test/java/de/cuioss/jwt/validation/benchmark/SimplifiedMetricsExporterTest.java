@@ -72,14 +72,12 @@ class SimplifiedMetricsExporterTest {
         long headerDuration = System.nanoTime() - headerStart;
         monitor.recordMeasurement(MeasurementType.HEADER_VALIDATION, headerDuration);
 
-        // Set up test directory
-        System.setProperty("benchmark.results.dir", tempDir.toString());
-
         // When
         SimplifiedMetricsExporter.exportMetrics(monitor);
 
-        // Then
-        Path[] jsonFiles = Files.list(tempDir)
+        // Then - metrics are exported to hardcoded target/benchmark-results
+        Path resultsDir = Path.of("target/benchmark-results");
+        Path[] jsonFiles = Files.list(resultsDir)
                 .filter(p -> p.toString().endsWith(".json"))
                 .toArray(Path[]::new);
 
@@ -133,14 +131,11 @@ class SimplifiedMetricsExporterTest {
         // Large measurement >= 10 microseconds (e.g., 13)
         monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, 13000); // 13 microseconds
 
-        // Set up test directory
-        System.setProperty("benchmark.results.dir", tempDir.toString());
-
         // When
         SimplifiedMetricsExporter.exportMetrics(monitor);
 
-        // Then
-        Path jsonFile = tempDir.resolve("jwt-validation-metrics.json");
+        // Then - metrics are exported to hardcoded target/benchmark-results
+        Path jsonFile = Path.of("target/benchmark-results/jwt-validation-metrics.json");
         String jsonContent = Files.readString(jsonFile);
 
         // Verify that values < 10 have one decimal place
@@ -151,8 +146,8 @@ class SimplifiedMetricsExporterTest {
         assertFalse(jsonContent.contains("13.0"), "Values >= 10 should not have .0 suffix");
     }
 
-    @Test void shouldUseSystemPropertyForBenchmarkContext() throws Exception {
-        // Given - set system property
+    @Test void shouldNotUseSystemPropertyForBenchmarkContext() throws Exception {
+        // Given - set system property (which should be ignored now)
         String originalProperty = System.getProperty("benchmark.context");
         System.setProperty("benchmark.context", "custom-benchmark-test");
 
@@ -162,8 +157,8 @@ class SimplifiedMetricsExporterTest {
             method.setAccessible(true);
             String result = (String) method.invoke(null);
 
-            // Then
-            assertEquals("custom-benchmark-test", result);
+            // Then - should return null since we removed the system property override
+            assertNull(result, "System property should be ignored for benchmark context");
         } finally {
             // Cleanup
             if (originalProperty != null) {

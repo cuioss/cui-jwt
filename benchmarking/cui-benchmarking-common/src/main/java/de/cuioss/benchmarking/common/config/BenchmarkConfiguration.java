@@ -74,21 +74,6 @@ int threads
         }
     }
 
-    /**
-     * Default values for benchmark configuration.
-     */
-    public static final class Defaults {
-        public static final String INCLUDE_PATTERN = ".*Benchmark.*";
-        public static final int FORKS = 1;
-        public static final int WARMUP_ITERATIONS = 3;
-        public static final int MEASUREMENT_ITERATIONS = 5;
-        public static final String MEASUREMENT_TIME = "2s";
-        public static final String WARMUP_TIME = "1s";
-        public static final int THREADS = 4;
-
-        private Defaults() {
-        }
-    }
 
     /**
      * Creates a configuration builder with system properties for JMH settings.
@@ -221,7 +206,9 @@ int threads
         try {
             return Integer.parseInt(threads);
         } catch (NumberFormatException e) {
-            return Defaults.THREADS;
+            throw new IllegalArgumentException(String.format(
+                    "JMH thread count must be a valid integer or 'MAX' or 'HALF', but got: %s. Set system property: %s",
+                    threads, Properties.THREADS));
         }
     }
 
@@ -246,13 +233,13 @@ int threads
     public static class Builder {
         private ReportConfiguration reportConfig;
         private ReportConfiguration.Builder reportConfigBuilder;
-        private String includePattern = Defaults.INCLUDE_PATTERN;
-        private int forks = Defaults.FORKS;
-        private int warmupIterations = Defaults.WARMUP_ITERATIONS;
-        private int measurementIterations = Defaults.MEASUREMENT_ITERATIONS;
-        private TimeValue measurementTime = parseTimeValue(Defaults.MEASUREMENT_TIME);
-        private TimeValue warmupTime = parseTimeValue(Defaults.WARMUP_TIME);
-        private int threads = Defaults.THREADS;
+        private String includePattern;
+        private int forks;
+        private int warmupIterations;
+        private int measurementIterations;
+        private TimeValue measurementTime;
+        private TimeValue warmupTime;
+        private int threads;
 
         /**
          * Sets the complete report configuration.

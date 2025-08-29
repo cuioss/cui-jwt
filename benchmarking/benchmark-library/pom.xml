@@ -21,13 +21,13 @@
 
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.validation.benchmark.LibraryBenchmarkRunner</benchmark.runner>
-        
+
         <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.include>de\.cuioss\.jwt\.validation\.benchmark\.standard\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/micro-result</jmh.result.filePrefix>
-        <jmh.iterations>3</jmh.iterations>
-        <jmh.warmupIterations>1</jmh.warmupIterations>
+        <jmh.iterations>5</jmh.iterations>
+        <jmh.warmupIterations>3</jmh.warmupIterations>
         <jmh.forks>1</jmh.forks>
         <!-- Reduced from 200 to 100 threads to avoid contention and improve P99 latency -->
         <jmh.threads>100</jmh.threads>
@@ -168,7 +168,7 @@
             <artifactId>jakarta.json-api</artifactId>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- Implementation of jakarta.json-api -->
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
@@ -189,7 +189,7 @@
             <artifactId>gson</artifactId>
             <scope>compile</scope>
         </dependency>
-        
+
         <!-- Awaitility for better async testing -->
         <dependency>
             <groupId>org.awaitility</groupId>

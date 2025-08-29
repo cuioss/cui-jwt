@@ -28,12 +28,41 @@ class BenchmarkConfigurationTest {
 
     @TempDir
     Path tempDir;
+    
+    private void setRequiredSystemProperties() {
+        System.setProperty("jmh.include", ".*Benchmark.*");
+        System.setProperty("jmh.forks", "1");
+        System.setProperty("jmh.warmupIterations", "3");
+        System.setProperty("jmh.iterations", "5");
+        System.setProperty("jmh.time", "2s");
+        System.setProperty("jmh.warmupTime", "1s");
+        System.setProperty("jmh.threads", "4");
+    }
+
+    private void clearSystemProperties() {
+        System.clearProperty("jmh.include");
+        System.clearProperty("jmh.forks");
+        System.clearProperty("jmh.warmupIterations");
+        System.clearProperty("jmh.iterations");
+        System.clearProperty("jmh.time");
+        System.clearProperty("jmh.warmupTime");
+        System.clearProperty("jmh.threads");
+        System.clearProperty("jmh.result.format");
+    }
 
     @Test void defaults() {
+        // defaults() now returns an empty builder without any default values
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
                 .withBenchmarkType(BenchmarkType.MICRO)
                 .withThroughputBenchmarkName("testThroughput")
                 .withLatencyBenchmarkName("testLatency")
+                .withIncludePattern(".*Benchmark.*")
+                .withForks(1)
+                .withWarmupIterations(3)
+                .withMeasurementIterations(5)
+                .withMeasurementTime(TimeValue.seconds(2))
+                .withWarmupTime(TimeValue.seconds(1))
+                .withThreads(4)
                 .build();
 
         assertEquals(".*Benchmark.*", config.includePattern());
@@ -72,10 +101,14 @@ class BenchmarkConfigurationTest {
     }
 
     @Test void builderWithSystemProperties() {
-        // Set system properties
+        // Set all required system properties
         System.setProperty("jmh.include", ".*SystemTest.*");
         System.setProperty("jmh.result.format", "TEXT");
         System.setProperty("jmh.forks", "3");
+        System.setProperty("jmh.warmupIterations", "5");
+        System.setProperty("jmh.iterations", "10");
+        System.setProperty("jmh.time", "3s");
+        System.setProperty("jmh.warmupTime", "2s");
         System.setProperty("jmh.threads", "16");
 
         try {
@@ -91,10 +124,7 @@ class BenchmarkConfigurationTest {
             assertEquals(16, config.threads());
         } finally {
             // Clean up system properties
-            System.clearProperty("jmh.include");
-            System.clearProperty("jmh.result.format");
-            System.clearProperty("jmh.forks");
-            System.clearProperty("jmh.threads");
+            clearSystemProperties();
         }
     }
 
@@ -105,6 +135,11 @@ class BenchmarkConfigurationTest {
                 .withLatencyBenchmarkName("origLatency")
                 .withIncludePattern(".*Original.*")
                 .withForks(5)
+                .withWarmupIterations(3)
+                .withMeasurementIterations(5)
+                .withMeasurementTime(TimeValue.seconds(2))
+                .withWarmupTime(TimeValue.seconds(1))
+                .withThreads(4)
                 .build();
 
         BenchmarkConfiguration modified = original.toBuilder()
@@ -115,7 +150,7 @@ class BenchmarkConfigurationTest {
         // Original should be unchanged
         assertEquals(".*Original.*", original.includePattern());
         assertEquals(5, original.forks());
-        assertEquals(4, original.threads()); // default
+        assertEquals(4, original.threads());
 
         // Modified should have new values
         assertEquals(".*Modified.*", modified.includePattern());
@@ -134,6 +169,8 @@ class BenchmarkConfigurationTest {
                 .withThreads(8)
                 .withWarmupIterations(10)
                 .withMeasurementIterations(20)
+                .withMeasurementTime(TimeValue.seconds(3))
+                .withWarmupTime(TimeValue.seconds(2))
                 .withResultsDirectory(tempDir.resolve("benchmark-results").toString())
                 .build();
 
@@ -151,6 +188,7 @@ class BenchmarkConfigurationTest {
     }
 
     @Test void threadCountParsing() {
+        setRequiredSystemProperties();
         System.setProperty("jmh.threads", "MAX");
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -160,9 +198,10 @@ class BenchmarkConfigurationTest {
                     .build();
             assertEquals(Runtime.getRuntime().availableProcessors(), config.threads());
         } finally {
-            System.clearProperty("jmh.threads");
+            clearSystemProperties();
         }
 
+        setRequiredSystemProperties();
         System.setProperty("jmh.threads", "HALF");
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -172,11 +211,12 @@ class BenchmarkConfigurationTest {
                     .build();
             assertEquals(Math.max(1, Runtime.getRuntime().availableProcessors() / 2), config.threads());
         } finally {
-            System.clearProperty("jmh.threads");
+            clearSystemProperties();
         }
     }
 
     @Test void timeValueParsing() {
+        setRequiredSystemProperties();
         System.setProperty("jmh.time", "5s");
         System.setProperty("jmh.warmupTime", "2m");
         try {
@@ -188,13 +228,14 @@ class BenchmarkConfigurationTest {
             assertEquals(TimeValue.seconds(5), config.measurementTime());
             assertEquals(TimeValue.minutes(2), config.warmupTime());
         } finally {
-            System.clearProperty("jmh.time");
-            System.clearProperty("jmh.warmupTime");
+            clearSystemProperties();
         }
     }
 
     @Test void resultFileGeneration() {
-        BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+        setRequiredSystemProperties();
+        try {
+            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("fileThroughput")
                 .withLatencyBenchmarkName("fileLatency")
@@ -213,8 +254,8 @@ class BenchmarkConfigurationTest {
         var options = config.toJmhOptions();
         assertNotNull(options, "Options should not be null");
 
-        // Test that result file can be generated when not explicitly set
-        BenchmarkConfiguration configWithoutFile = BenchmarkConfiguration.builder()
+            // Test that result file can be generated when not explicitly set
+            BenchmarkConfiguration configWithoutFile = BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("throughput")
                 .withLatencyBenchmarkName("latency")
@@ -224,12 +265,16 @@ class BenchmarkConfigurationTest {
         assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
         assertEquals(tempDir.resolve("generated-results").toString(), configWithoutFile.resultsDirectory());
 
-        // The actual result file will be generated when toJmhOptions() is called
-        var generatedOptions = configWithoutFile.toJmhOptions();
-        assertNotNull(generatedOptions, "Options with generated file should not be null");
+            // The actual result file will be generated when toJmhOptions() is called
+            var generatedOptions = configWithoutFile.toJmhOptions();
+            assertNotNull(generatedOptions, "Options with generated file should not be null");
+        } finally {
+            clearSystemProperties();
+        }
     }
 
     @Test void invalidResultFormat() {
+        setRequiredSystemProperties();
         System.setProperty("jmh.result.format", "INVALID");
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -244,6 +289,7 @@ class BenchmarkConfigurationTest {
     }
 
     @Test void timeValueParsingEdgeCases() {
+        setRequiredSystemProperties();
         System.setProperty("jmh.time", "1h");
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -253,10 +299,11 @@ class BenchmarkConfigurationTest {
                     .build();
             assertEquals(TimeValue.hours(1), config.measurementTime());
         } finally {
-            System.clearProperty("jmh.time");
+            clearSystemProperties();
         }
 
         // Test invalid time unit (should warn and use number as seconds)
+        setRequiredSystemProperties();
         System.setProperty("jmh.warmupTime", "10x");
         try {
             BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -266,21 +313,11 @@ class BenchmarkConfigurationTest {
                     .build();
             assertEquals(TimeValue.seconds(10), config.warmupTime());
         } finally {
-            System.clearProperty("jmh.warmupTime");
+            clearSystemProperties();
         }
 
-        // Test empty time value (should default to 1 second)
-        System.setProperty("jmh.time", "");
-        try {
-            BenchmarkConfiguration config = BenchmarkConfiguration.builder()
-                    .withBenchmarkType(BenchmarkType.MICRO)
-                    .withThroughputBenchmarkName("edgeThroughput")
-                    .withLatencyBenchmarkName("edgeLatency")
-                    .build();
-            assertEquals(TimeValue.seconds(1), config.measurementTime());
-        } finally {
-            System.clearProperty("jmh.time");
-        }
+        // Note: Testing empty time value would fail with requireProperty,
+        // so that case is removed. Empty values are not allowed anymore
     }
 
     @Test void allSystemProperties() {

@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,17 @@ class AbstractBaseBenchmarkTest {
 
     @BeforeEach void setUp() {
         benchmark = new TestBenchmark();
+        // Set default required properties for tests
+        System.setProperty("integration.service.url", "https://localhost:10443");
+        System.setProperty("keycloak.url", "https://keycloak:8180");
+        System.setProperty("quarkus.metrics.url", "https://localhost:10443");
+    }
+    
+    @AfterEach void tearDown() {
+        // Clean up system properties
+        System.clearProperty("integration.service.url");
+        System.clearProperty("keycloak.url");
+        System.clearProperty("quarkus.metrics.url");
     }
 
     @Test void setupBenchmark() {
@@ -52,22 +64,16 @@ class AbstractBaseBenchmarkTest {
     }
 
     @Test void setupBenchmarkWithSystemProperties() {
-        // Set system properties
+        // Override with different properties
         System.setProperty("integration.service.url", "https://test:8080");
         System.setProperty("quarkus.metrics.url", "https://metrics:9090");
 
-        try {
-            benchmark.setupBenchmark();
+        benchmark.setupBenchmark();
 
-            assertEquals("https://test:8080", benchmark.serviceUrl);
-            assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
-            // Output directory is now fixed, not configurable
-            assertEquals("target/benchmark-results", benchmark.benchmarkResultsDir);
-        } finally {
-            // Clean up system properties
-            System.clearProperty("integration.service.url");
-            System.clearProperty("quarkus.metrics.url");
-        }
+        assertEquals("https://test:8080", benchmark.serviceUrl);
+        assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
+        // Output directory is now fixed, not configurable
+        assertEquals("target/benchmark-results", benchmark.benchmarkResultsDir);
     }
 
     @Test void createBaseRequest() {

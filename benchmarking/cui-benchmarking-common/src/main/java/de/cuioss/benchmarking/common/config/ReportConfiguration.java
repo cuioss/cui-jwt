@@ -52,7 +52,6 @@ ResultFormatType resultFormat
      */
     public static final class Defaults {
         public static final String RESULTS_DIR = "target/benchmark-results";
-        public static final ResultFormatType RESULT_FORMAT = ResultFormatType.JSON;
 
         private Defaults() {
         }

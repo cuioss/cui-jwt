@@ -15,8 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
@@ -68,13 +66,8 @@ import java.util.concurrent.TimeUnit;
         serviceUrl = integrationConfig.integrationServiceUrl();
         quarkusMetricsUrl = integrationConfig.metricsUrl();
         
-        // Get benchmark results directory from default configuration
-        var config = BenchmarkConfiguration.builder()
-                .withBenchmarkType(BenchmarkType.INTEGRATION)
-                .withThroughputBenchmarkName("validateJwtThroughput")
-                .withLatencyBenchmarkName("validateJwtThroughput")
-                .build();
-        benchmarkResultsDir = config.resultsDirectory();
+        // Benchmark results directory is hardcoded
+        benchmarkResultsDir = "target/benchmark-results";
 
         LOGGER.debug("Service URL: {}", serviceUrl);
         LOGGER.debug("Quarkus Metrics URL: {}", quarkusMetricsUrl);
