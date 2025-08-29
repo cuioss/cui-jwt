@@ -24,7 +24,7 @@
         <!-- JMH Configuration Properties - Optimized for integration testing -->
         <jmh.include>de\.cuioss\.jwt\.quarkus\.benchmark\.benchmarks\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>target/benchmark-results/integration-benchmark-result</jmh.result.filePrefix>
+        <jmh.result.filePrefix>target/benchmark-results/integration-result</jmh.result.filePrefix>
         <jmh.iterations>5</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>2</jmh.forks>

@@ -99,7 +99,7 @@ public class BenchmarkResultProcessor {
 
         // Determine JSON result file path based on benchmark type
         String jsonFileName = benchmarkType == BenchmarkType.MICRO ?
-                "micro-benchmark-result.json" : "integration-benchmark-result.json";
+                "micro-result.json" : "integration-result.json";
         Path jsonFile = Path.of(outputDir, jsonFileName);
 
         // Target location in data directory with unified name

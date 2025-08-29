@@ -25,7 +25,7 @@
         <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
         <jmh.include>de\.cuioss\.jwt\.validation\.benchmark\.standard\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>target/benchmark-results/micro-benchmark-result</jmh.result.filePrefix>
+        <jmh.result.filePrefix>target/benchmark-results/micro-result</jmh.result.filePrefix>
         <jmh.iterations>3</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>1</jmh.forks>
