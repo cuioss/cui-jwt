@@ -134,8 +134,15 @@ import lombok.Value;
      * @return TokenRepositoryConfig with values from properties or defaults
      */
     public static TokenRepositoryConfig fromProperties() {
+        // Check both token.keycloak.url and keycloak.url for compatibility
+        // Prefer token.keycloak.url if both are set
+        String keycloakUrl = System.getProperty(Properties.KEYCLOAK_URL);
+        if (keycloakUrl == null) {
+            keycloakUrl = System.getProperty("keycloak.url", "https://localhost:1443");
+        }
+        
         return TokenRepositoryConfig.builder()
-                .keycloakBaseUrl(System.getProperty(Properties.KEYCLOAK_URL, "https://localhost:1443"))
+                .keycloakBaseUrl(keycloakUrl)
                 .realm(System.getProperty(Properties.REALM, "benchmark"))
                 .clientId(System.getProperty(Properties.CLIENT_ID, "benchmark-client"))
                 .clientSecret(System.getProperty(Properties.CLIENT_SECRET, "benchmark-secret"))

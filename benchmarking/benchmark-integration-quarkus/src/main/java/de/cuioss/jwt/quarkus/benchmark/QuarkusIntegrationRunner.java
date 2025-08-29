@@ -48,46 +48,32 @@ import java.util.Collection;
  */
 public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
-
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusIntegrationRunner.class);
 
     private static final String DEFAULT_SERVICE_URL = "https://localhost:8443";
-    private static final String DEFAULT_KEYCLOAK_SECURE_URL = "https://localhost:1443";
-
-    // Token repository configuration loaded from properties
-    private static final TokenRepositoryConfig TOKEN_CONFIG = TokenRepositoryConfig.fromProperties();
-
-    // HTTP client configuration
-    private static final int CONNECTION_TIMEOUT_MS = 5000;
-    private static final int REQUEST_TIMEOUT_MS = 10000;
+    
+    private final TokenRepositoryConfig tokenConfig = TokenRepositoryConfig.fromProperties();
+    private final String serviceUrl = System.getProperty("integration.service.url", DEFAULT_SERVICE_URL);
 
     @Override protected BenchmarkConfiguration createConfiguration() {
-        // Configuration from Maven system properties:
-        // - jmh.include: Pattern for benchmark classes to include
-        // - jmh.forks, jmh.iterations, jmh.time, etc.: JMH execution parameters
-        // - integration.service.url, keycloak.url: Service URLs
-        // Output directory is fixed: target/benchmark-results
-        // Result file is auto-generated as: target/benchmark-results/integration-result.json
-        
         return BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
-                .withThroughputBenchmarkName("validateJwtThroughput")  // Explicit benchmark name
-                .withLatencyBenchmarkName("validateJwtThroughput")     // Same benchmark has both modes
-                .withIntegrationServiceUrl(getServiceUrl())
-                .withKeycloakUrl(getKeycloakUrl())
-                // Metrics URL is always the same as service URL
+                .withThroughputBenchmarkName("validateJwtThroughput")
+                .withLatencyBenchmarkName("validateJwtThroughput")
+                .withIntegrationServiceUrl(serviceUrl)
+                .withKeycloakUrl(tokenConfig.getKeycloakBaseUrl())
                 .build();
     }
 
     @Override protected void beforeBenchmarks() {
-        // Configure centralized logging to write to fixed benchmark-results directory
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
-
-        // Pre-initialize the shared TokenRepository instance
-        initializeSharedTokenRepository();
-
+        
+        // Initialize shared instance for benchmark classes to use
+        // TODO: Refactor benchmarks to accept TokenRepositoryConfig as parameter instead of global state
+        TokenRepository.initializeSharedInstance(tokenConfig);
+        
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
-                getServiceUrl(), getKeycloakUrl());
+                serviceUrl, tokenConfig.getKeycloakBaseUrl());
     }
 
     @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) {
@@ -123,13 +109,12 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * @param config the benchmark configuration
      */
     private void processMetrics(BenchmarkConfiguration config) {
-        String quarkusMetricsUrl = getServiceUrl();  // Metrics always at same URL as service
-        String outputDirectory = config.resultsDirectory();  // Fixed: target/benchmark-results
+        String outputDirectory = config.resultsDirectory();
 
-        LOGGER.debug("Processing metrics from {} to {}", quarkusMetricsUrl, outputDirectory);
+        LOGGER.debug("Processing metrics from {} to {}", serviceUrl, outputDirectory);
 
         // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
-        QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(quarkusMetricsUrl);
+        QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(serviceUrl);
 
         // Use SimpleMetricsExporter to export JWT validation metrics
         SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
@@ -141,43 +126,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         metricsPostProcessor.parseAndExportAllMetrics(Instant.now());
     }
 
-    /**
-     * Initializes the shared TokenRepository instance that will be used by all benchmarks.
-     * This avoids multiple initializations during benchmark setup phases.
-     */
-    private void initializeSharedTokenRepository() {
-        String keycloakUrl = getKeycloakUrl();
-
-        // Load configuration from properties, allowing all values to be overridden
-        TokenRepositoryConfig baseConfig = TokenRepositoryConfig.fromProperties();
-
-        // Override Keycloak URL if specified via integration property
-        TokenRepositoryConfig config = TokenRepositoryConfig.builder()
-                .keycloakBaseUrl(keycloakUrl)  // Use the integration-specific URL
-                .realm(baseConfig.getRealm())
-                .clientId(baseConfig.getClientId())
-                .clientSecret(baseConfig.getClientSecret())
-                .username(baseConfig.getUsername())
-                .password(baseConfig.getPassword())
-                .tokenPoolSize(baseConfig.getTokenPoolSize())
-                .connectionTimeoutMs(baseConfig.getConnectionTimeoutMs())
-                .requestTimeoutMs(baseConfig.getRequestTimeoutMs())
-                .verifySsl(baseConfig.isVerifySsl())
-                .tokenRefreshThresholdSeconds(baseConfig.getTokenRefreshThresholdSeconds())
-                .build();
-
-        TokenRepository.initializeSharedInstance(config);
-        LOGGER.debug("TokenRepository initialized with Keycloak at {} using property-based configuration", keycloakUrl);
-    }
-
-    private String getServiceUrl() {
-        return System.getProperty("integration.service.url", DEFAULT_SERVICE_URL);
-    }
-
-    private String getKeycloakUrl() {
-        // Always use secure URL for Keycloak
-        return System.getProperty("keycloak.url", DEFAULT_KEYCLOAK_SECURE_URL);
-    }
 
     /**
      * Main method to run all integration benchmarks.
