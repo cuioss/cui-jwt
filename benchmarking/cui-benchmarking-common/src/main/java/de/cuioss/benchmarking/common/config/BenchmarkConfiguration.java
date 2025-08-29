@@ -17,6 +17,7 @@ package de.cuioss.benchmarking.common.config;
 
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
+import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
@@ -141,9 +142,23 @@ int threads
         builder.jvmArgs(
                 "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties"
         );
-
+        
+        // Pass through integration-related system properties to forked JVMs
+        passSystemPropertyIfSet(builder, "integration.service.url");
+        passSystemPropertyIfSet(builder, "keycloak.url");
+        passSystemPropertyIfSet(builder, "quarkus.metrics.url");
 
         return builder.build();
+    }
+    
+    /**
+     * Helper method to pass system properties to forked JVMs if they are set.
+     */
+    private static void passSystemPropertyIfSet(ChainedOptionsBuilder builder, String propertyName) {
+        String value = System.getProperty(propertyName);
+        if (value != null && !value.trim().isEmpty()) {
+            builder.jvmArgsAppend("-D" + propertyName + "=" + value);
+        }
     }
 
     /**
