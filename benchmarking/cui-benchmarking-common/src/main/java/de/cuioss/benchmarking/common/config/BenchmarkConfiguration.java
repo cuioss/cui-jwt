@@ -147,6 +147,19 @@ int threads
         passSystemPropertyIfSet(builder, "integration.service.url");
         passSystemPropertyIfSet(builder, "keycloak.url");
         passSystemPropertyIfSet(builder, "quarkus.metrics.url");
+        
+        // Pass through token repository properties to forked JVMs
+        passSystemPropertyIfSet(builder, "token.keycloak.url");
+        passSystemPropertyIfSet(builder, "token.keycloak.realm");
+        passSystemPropertyIfSet(builder, "token.keycloak.clientId");
+        passSystemPropertyIfSet(builder, "token.keycloak.clientSecret");
+        passSystemPropertyIfSet(builder, "token.keycloak.username");
+        passSystemPropertyIfSet(builder, "token.keycloak.password");
+        passSystemPropertyIfSet(builder, "token.pool.size");
+        passSystemPropertyIfSet(builder, "token.connection.timeoutMs");
+        passSystemPropertyIfSet(builder, "token.request.timeoutMs");
+        passSystemPropertyIfSet(builder, "token.verifySsl");
+        passSystemPropertyIfSet(builder, "token.refreshThresholdSeconds");
 
         return builder.build();
     }
