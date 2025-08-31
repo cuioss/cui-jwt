@@ -19,6 +19,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Integration.Jmh;
 import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
 /**
@@ -57,22 +58,6 @@ IntegrationConfiguration integrationConfig
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkConfiguration.class);
 
-    /**
-     * System property keys for benchmark configuration.
-     */
-    public static final class Properties {
-        public static final String INCLUDE = "jmh.include";
-        public static final String FORKS = "jmh.forks";
-        public static final String WARMUP_ITERATIONS = "jmh.warmupIterations";
-        public static final String MEASUREMENT_ITERATIONS = "jmh.iterations";
-        public static final String MEASUREMENT_TIME = "jmh.time";
-        public static final String WARMUP_TIME = "jmh.warmupTime";
-        public static final String THREADS = "jmh.threads";
-
-        private Properties() {
-        }
-    }
-
 
     /**
      * Creates a configuration builder with system properties for JMH settings.
@@ -82,13 +67,13 @@ IntegrationConfiguration integrationConfig
      */
     public static Builder builder() {
         return new Builder()
-                .withIncludePattern(requireJmhProperty(Properties.INCLUDE, "JMH include pattern"))
-                .withForks(requireIntProperty(Properties.FORKS, "JMH fork count"))
-                .withWarmupIterations(requireIntProperty(Properties.WARMUP_ITERATIONS, "JMH warmup iterations"))
-                .withMeasurementIterations(requireIntProperty(Properties.MEASUREMENT_ITERATIONS, "JMH measurement iterations"))
-                .withMeasurementTime(parseTimeValue(requireJmhProperty(Properties.MEASUREMENT_TIME, "JMH measurement time")))
-                .withWarmupTime(parseTimeValue(requireJmhProperty(Properties.WARMUP_TIME, "JMH warmup time")))
-                .withThreads(parseThreadCount(requireJmhProperty(Properties.THREADS, "JMH thread count")))
+                .withIncludePattern(requireJmhProperty(Jmh.INCLUDE, "JMH include pattern"))
+                .withForks(requireIntProperty(Jmh.FORKS, "JMH fork count"))
+                .withWarmupIterations(requireIntProperty(Jmh.WARMUP_ITERATIONS, "JMH warmup iterations"))
+                .withMeasurementIterations(requireIntProperty(Jmh.MEASUREMENT_ITERATIONS, "JMH measurement iterations"))
+                .withMeasurementTime(parseTimeValue(requireJmhProperty(Jmh.MEASUREMENT_TIME, "JMH measurement time")))
+                .withWarmupTime(parseTimeValue(requireJmhProperty(Jmh.WARMUP_TIME, "JMH warmup time")))
+                .withThreads(parseThreadCount(requireJmhProperty(Jmh.THREADS, "JMH thread count")))
         ;
     }
 
@@ -195,7 +180,7 @@ IntegrationConfiguration integrationConfig
             return Integer.parseInt(threads);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("JMH thread count must be a valid integer or 'MAX' or 'HALF', but got: %s. Set system property: %s".formatted(
-                    threads, Properties.THREADS));
+                    threads, Jmh.THREADS));
         }
     }
 

@@ -15,7 +15,7 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.ERRORS;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Errors.*;
 
 /**
  * Immutable record containing all computed benchmark metrics.
@@ -31,19 +31,19 @@ String performanceGrade
 ) {
     public BenchmarkMetrics {
         if (throughputBenchmarkName == null || throughputBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException(ERRORS.THROUGHPUT_NAME_REQUIRED);
+            throw new IllegalArgumentException(THROUGHPUT_NAME_REQUIRED);
         }
         if (latencyBenchmarkName == null || latencyBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException(ERRORS.LATENCY_NAME_REQUIRED);
+            throw new IllegalArgumentException(LATENCY_NAME_REQUIRED);
         }
         if (throughput <= 0) {
-            throw new IllegalArgumentException(ERRORS.THROUGHPUT_POSITIVE + throughput);
+            throw new IllegalArgumentException(THROUGHPUT_POSITIVE + throughput);
         }
         if (latency <= 0) {
-            throw new IllegalArgumentException(ERRORS.LATENCY_POSITIVE + latency);
+            throw new IllegalArgumentException(LATENCY_POSITIVE + latency);
         }
         if (performanceScore < 0) {
-            throw new IllegalArgumentException(ERRORS.SCORE_NON_NEGATIVE + performanceScore);
+            throw new IllegalArgumentException(SCORE_NON_NEGATIVE + performanceScore);
         }
     }
 }

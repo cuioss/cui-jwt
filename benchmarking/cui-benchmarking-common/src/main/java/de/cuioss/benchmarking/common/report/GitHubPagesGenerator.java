@@ -17,6 +17,7 @@ package de.cuioss.benchmarking.common.report;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
 import de.cuioss.tools.logging.CuiLogger;
 import org.apache.commons.io.FileUtils;
 
@@ -30,7 +31,18 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Data.BENCHMARK_DATA_JSON;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Data.BENCHMARK_SUMMARY_JSON;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Directories.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Extensions.HTML;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Extensions.JSON;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Html.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Support.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Api.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Defaults.N_A;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.JsonFields.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.NOT_FOUND_FORMAT;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.PATH_PREFIX;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.*;
 
 /**
@@ -100,21 +112,21 @@ public class GitHubPagesGenerator {
         LOGGER.debug(DEBUG.COPYING_HTML_FILES::format);
 
         // Copy main reports
-        copyIfExists(sourceDir.resolve(FILES.INDEX_HTML), deployDir.resolve(FILES.INDEX_HTML));
-        copyIfExists(sourceDir.resolve(FILES.TRENDS_HTML), deployDir.resolve(FILES.TRENDS_HTML));
-        copyIfExists(sourceDir.resolve(FILES.DETAILED_HTML), deployDir.resolve(FILES.DETAILED_HTML));
+        copyIfExists(sourceDir.resolve(INDEX), deployDir.resolve(INDEX));
+        copyIfExists(sourceDir.resolve(BenchmarkConstants.Files.Html.TRENDS), deployDir.resolve(BenchmarkConstants.Files.Html.TRENDS));
+        copyIfExists(sourceDir.resolve(DETAILED), deployDir.resolve(DETAILED));
 
         // Copy support files (CSS, JS)
-        copyIfExists(sourceDir.resolve(FILES.REPORT_STYLES_CSS), deployDir.resolve(FILES.REPORT_STYLES_CSS));
-        copyIfExists(sourceDir.resolve(FILES.DATA_LOADER_JS), deployDir.resolve(FILES.DATA_LOADER_JS));
+        copyIfExists(sourceDir.resolve(REPORT_STYLES_CSS), deployDir.resolve(REPORT_STYLES_CSS));
+        copyIfExists(sourceDir.resolve(DATA_LOADER_JS), deployDir.resolve(DATA_LOADER_JS));
 
         // Copy any additional HTML files
-        if (Files.exists(sourceDir.resolve(FILES.REPORTS_DIR))) {
-            try (var stream = Files.walk(sourceDir.resolve(FILES.REPORTS_DIR))) {
-                stream.filter(path -> path.toString().endsWith(FILES.EXT_HTML))
+        if (Files.exists(sourceDir.resolve(REPORTS_DIR))) {
+            try (var stream = Files.walk(sourceDir.resolve(REPORTS_DIR))) {
+                stream.filter(path -> path.toString().endsWith(HTML))
                         .forEach(htmlFile -> {
                             try {
-                                Path targetFile = deployDir.resolve(sourceDir.resolve(FILES.REPORTS_DIR).relativize(htmlFile));
+                                Path targetFile = deployDir.resolve(sourceDir.resolve(REPORTS_DIR).relativize(htmlFile));
                                 Files.createDirectories(targetFile.getParent());
                                 Files.copy(htmlFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
                             } catch (IOException e) {
@@ -131,7 +143,7 @@ public class GitHubPagesGenerator {
     private void createApiEndpoints(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug(DEBUG.CREATING_API_ENDPOINTS::format);
 
-        Path apiDir = deployDir.resolve(FILES.API_DIR);
+        Path apiDir = deployDir.resolve(API_DIR);
         Files.createDirectories(apiDir);
 
         // Create API structure
@@ -141,31 +153,31 @@ public class GitHubPagesGenerator {
     }
 
     private void createLatestEndpoint(Path sourceDir, Path apiDir) throws IOException {
-        Path latestFile = apiDir.resolve(API.LATEST_JSON);
-        Path summaryFile = sourceDir.resolve(FILES.BENCHMARK_SUMMARY_JSON);
+        Path latestFile = apiDir.resolve(LATEST_JSON);
+        Path summaryFile = sourceDir.resolve(BENCHMARK_SUMMARY_JSON);
 
         Map<String, Object> latestData = new LinkedHashMap<>();
-        latestData.put(JSON_FIELDS.TIMESTAMP, Instant.now().toString());
-        latestData.put(JSON_FIELDS.STATUS, API.STATUS_SUCCESS);
+        latestData.put(TIMESTAMP, Instant.now().toString());
+        latestData.put(STATUS, STATUS_SUCCESS);
 
         Map<String, Object> summary = new LinkedHashMap<>();
         if (Files.exists(summaryFile)) {
             String summaryContent = Files.readString(summaryFile);
             var gson = new Gson();
             @SuppressWarnings("unchecked") Map<String, Object> summaryData = gson.fromJson(summaryContent, Map.class);
-            summary.put(JSON_FIELDS.TOTAL_BENCHMARKS, summaryData.getOrDefault(JSON_FIELDS.TOTAL_BENCHMARKS, 0));
-            summary.put(JSON_FIELDS.PERFORMANCE_GRADE_KEY, summaryData.getOrDefault(JSON_FIELDS.PERFORMANCE_GRADE_KEY, DEFAULTS.N_A));
-            summary.put(JSON_FIELDS.AVERAGE_THROUGHPUT, summaryData.getOrDefault(JSON_FIELDS.AVERAGE_THROUGHPUT, 0.0));
+            summary.put(TOTAL_BENCHMARKS, summaryData.getOrDefault(TOTAL_BENCHMARKS, 0));
+            summary.put(PERFORMANCE_GRADE_KEY, summaryData.getOrDefault(PERFORMANCE_GRADE_KEY, N_A));
+            summary.put(AVERAGE_THROUGHPUT, summaryData.getOrDefault(AVERAGE_THROUGHPUT, 0.0));
         } else {
-            summary.put(JSON_FIELDS.TOTAL_BENCHMARKS, 0);
-            summary.put(JSON_FIELDS.PERFORMANCE_GRADE_KEY, DEFAULTS.N_A);
+            summary.put(TOTAL_BENCHMARKS, 0);
+            summary.put(PERFORMANCE_GRADE_KEY, N_A);
         }
-        latestData.put(JSON_FIELDS.SUMMARY, summary);
+        latestData.put(SUMMARY, summary);
 
         Map<String, String> links = new LinkedHashMap<>();
-        links.put(JSON_FIELDS.BENCHMARKS, API.API_BENCHMARKS_PATH);
-        links.put(FILES.BADGES_DIR, API.BADGES_PATH);
-        latestData.put(JSON_FIELDS.LINKS, links);
+        links.put(BENCHMARKS, API_BENCHMARKS_PATH);
+        links.put(BADGES_DIR, BADGES_PATH);
+        latestData.put(LINKS, links);
 
         var gson = new GsonBuilder().setPrettyPrinting().create();
         Files.writeString(latestFile, gson.toJson(latestData));
@@ -173,8 +185,8 @@ public class GitHubPagesGenerator {
     }
 
     private void createBenchmarksEndpoint(Path sourceDir, Path apiDir) throws IOException {
-        Path benchmarksFile = apiDir.resolve(API.BENCHMARKS_JSON);
-        Path benchmarkDataFile = sourceDir.resolve(FILES.DATA_DIR + "/" + FILES.BENCHMARK_DATA_JSON);
+        Path benchmarksFile = apiDir.resolve(BENCHMARKS_JSON);
+        Path benchmarkDataFile = sourceDir.resolve(DATA_DIR + "/" + BENCHMARK_DATA_JSON);
 
         if (Files.exists(benchmarkDataFile)) {
             // Extract benchmark data from benchmark-data.json
@@ -182,15 +194,15 @@ public class GitHubPagesGenerator {
             var gson = new Gson();
             @SuppressWarnings("unchecked") Map<String, Object> data = gson.fromJson(content, Map.class);
             Map<String, Object> benchmarksData = new LinkedHashMap<>();
-            benchmarksData.put(JSON_FIELDS.BENCHMARKS, data.getOrDefault(JSON_FIELDS.BENCHMARKS, new LinkedHashMap<>()));
-            benchmarksData.put(JSON_FIELDS.GENERATED, Instant.now().toString());
+            benchmarksData.put(BENCHMARKS, data.getOrDefault(BENCHMARKS, new LinkedHashMap<>()));
+            benchmarksData.put(GENERATED, Instant.now().toString());
 
             var gsonWriter = new GsonBuilder().setPrettyPrinting().create();
             Files.writeString(benchmarksFile, gsonWriter.toJson(benchmarksData));
         } else {
             Map<String, Object> benchmarksData = new LinkedHashMap<>();
-            benchmarksData.put(JSON_FIELDS.BENCHMARKS, new LinkedHashMap<>());
-            benchmarksData.put(JSON_FIELDS.GENERATED, Instant.now().toString());
+            benchmarksData.put(BENCHMARKS, new LinkedHashMap<>());
+            benchmarksData.put(GENERATED, Instant.now().toString());
 
             var gson = new GsonBuilder().setPrettyPrinting().create();
             Files.writeString(benchmarksFile, gson.toJson(benchmarksData));
@@ -201,26 +213,26 @@ public class GitHubPagesGenerator {
 
 
     private void createStatusEndpoint(Path sourceDir, Path apiDir) throws IOException {
-        Path statusFile = apiDir.resolve(API.STATUS_JSON);
-        Path summaryFile = sourceDir.resolve(FILES.BENCHMARK_SUMMARY_JSON);
+        Path statusFile = apiDir.resolve(STATUS_JSON);
+        Path summaryFile = sourceDir.resolve(BENCHMARK_SUMMARY_JSON);
 
         Map<String, Object> statusData = new LinkedHashMap<>();
-        statusData.put(JSON_FIELDS.STATUS, API.STATUS_HEALTHY);
-        statusData.put(JSON_FIELDS.TIMESTAMP, Instant.now().toString());
+        statusData.put(STATUS, STATUS_HEALTHY);
+        statusData.put(TIMESTAMP, Instant.now().toString());
 
         if (Files.exists(summaryFile)) {
             String summaryContent = Files.readString(summaryFile);
             var gson = new Gson();
             @SuppressWarnings("unchecked") Map<String, Object> summaryData = gson.fromJson(summaryContent, Map.class);
-            statusData.put(JSON_FIELDS.LAST_RUN, summaryData.getOrDefault(JSON_FIELDS.TIMESTAMP, Instant.now().toString()));
+            statusData.put(LAST_RUN, summaryData.getOrDefault(TIMESTAMP, Instant.now().toString()));
         } else {
-            statusData.put(JSON_FIELDS.LAST_RUN, Instant.now().toString());
+            statusData.put(LAST_RUN, Instant.now().toString());
         }
 
         Map<String, String> services = new LinkedHashMap<>();
-        services.put(JSON_FIELDS.BENCHMARKS, Files.exists(sourceDir.resolve(FILES.DATA_DIR + "/" + FILES.BENCHMARK_DATA_JSON)) ? API.STATUS_OPERATIONAL : API.STATUS_NO_DATA);
-        services.put(FILES.REPORTS_DIR, Files.exists(sourceDir.resolve(FILES.INDEX_HTML)) ? API.STATUS_OPERATIONAL : API.STATUS_NO_DATA);
-        statusData.put(JSON_FIELDS.SERVICES, services);
+        services.put(BENCHMARKS, Files.exists(sourceDir.resolve(DATA_DIR + "/" + BENCHMARK_DATA_JSON)) ? STATUS_OPERATIONAL : STATUS_NO_DATA);
+        services.put(REPORTS_DIR, Files.exists(sourceDir.resolve(INDEX)) ? STATUS_OPERATIONAL : STATUS_NO_DATA);
+        statusData.put(SERVICES, services);
 
         var gson = new GsonBuilder().setPrettyPrinting().create();
         Files.writeString(statusFile, gson.toJson(statusData));
@@ -233,14 +245,14 @@ public class GitHubPagesGenerator {
     private void copyBadgeFiles(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug(DEBUG.COPYING_BADGE_FILES::format);
 
-        Path sourceBadges = sourceDir.resolve(FILES.BADGES_DIR);
-        Path deployBadges = deployDir.resolve(FILES.BADGES_DIR);
+        Path sourceBadges = sourceDir.resolve(BADGES_DIR);
+        Path deployBadges = deployDir.resolve(BADGES_DIR);
 
         if (Files.exists(sourceBadges)) {
             Files.createDirectories(deployBadges);
 
             try (var stream = Files.walk(sourceBadges)) {
-                stream.filter(path -> path.toString().endsWith(FILES.EXT_JSON))
+                stream.filter(path -> path.toString().endsWith(JSON))
                         .forEach(badgeFile -> {
                             try {
                                 Path targetFile = deployBadges.resolve(sourceBadges.relativize(badgeFile));
@@ -259,8 +271,8 @@ public class GitHubPagesGenerator {
     private void copyDataFiles(Path sourceDir, Path deployDir) throws IOException {
         LOGGER.debug(DEBUG.COPYING_DATA_FILES::format);
 
-        Path sourceData = sourceDir.resolve(FILES.DATA_DIR);
-        Path deployData = deployDir.resolve(FILES.DATA_DIR);
+        Path sourceData = sourceDir.resolve(DATA_DIR);
+        Path deployData = deployDir.resolve(DATA_DIR);
 
         if (Files.exists(sourceData)) {
             Files.createDirectories(deployData);
@@ -300,24 +312,24 @@ public class GitHubPagesGenerator {
      * Generates a 404 error page.
      */
     private void generate404Page(Path deployDir) throws IOException {
-        String html404 = loadTemplate(FILES.ERROR_404_HTML);
-        Files.writeString(deployDir.resolve(FILES.ERROR_404_HTML), html404);
+        String html404 = loadTemplate(ERROR_404);
+        Files.writeString(deployDir.resolve(ERROR_404), html404);
     }
 
     /**
      * Generates robots.txt for search engines.
      */
     private void generateRobotsTxt(Path deployDir) throws IOException {
-        String robotsTxt = loadTemplate(FILES.ROBOTS_TXT);
-        Files.writeString(deployDir.resolve(FILES.ROBOTS_TXT), robotsTxt);
+        String robotsTxt = loadTemplate(ROBOTS_TXT);
+        Files.writeString(deployDir.resolve(ROBOTS_TXT), robotsTxt);
     }
 
     /**
      * Generates a basic sitemap.xml.
      */
     private void generateSitemap(Path deployDir) throws IOException {
-        String sitemap = loadTemplate(FILES.SITEMAP_XML);
-        Files.writeString(deployDir.resolve(FILES.SITEMAP_XML), sitemap);
+        String sitemap = loadTemplate(SITEMAP_XML);
+        Files.writeString(deployDir.resolve(SITEMAP_XML), sitemap);
     }
 
     /**
@@ -338,10 +350,10 @@ public class GitHubPagesGenerator {
      * @throws IOException if the template cannot be loaded
      */
     private String loadTemplate(String templateName) throws IOException {
-        String resourcePath = TEMPLATES.PATH_PREFIX + templateName;
+        String resourcePath = PATH_PREFIX + templateName;
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
             if (is == null) {
-                throw new IOException(TEMPLATES.NOT_FOUND_FORMAT.formatted(resourcePath));
+                throw new IOException(NOT_FOUND_FORMAT.formatted(resourcePath));
             }
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }

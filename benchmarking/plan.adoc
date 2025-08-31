@@ -102,7 +102,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [x] Commit with message: `refactor: C3. Clarify Token Repository Implementations`
 
 === C4. Consolidate Constants
-* [ ] *Priority:* High
+* [x] *Priority:* High - *COMPLETED*
 
 *Description:* Create a unified `BenchmarkConstants` class in cui-benchmarking-common with nested classes for organization (e.g., `BenchmarkConstants.Metrics`, `BenchmarkConstants.Report`, `BenchmarkConstants.Integration`).
 
@@ -110,24 +110,24 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Create `BenchmarkConstants` class in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/constants/`
-* [ ] Create nested class `BenchmarkConstants.Metrics` with metric-related constants
-* [ ] Create nested class `BenchmarkConstants.Report` with report-related constants
-* [ ] Create nested class `BenchmarkConstants.Integration` with integration-related constants
-* [ ] Create nested class `BenchmarkConstants.Files` with file/directory constants
-* [ ] Migrate constants from `MetricConstants` (benchmark-integration-quarkus)
-* [ ] Migrate constants from `ReportConstants` (cui-benchmarking-common)
-* [ ] Update all references to use new constant locations
-* [ ] Remove deprecated constant classes
+* [x] Create `BenchmarkConstants` class in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/constants/`
+* [x] Create nested class `BenchmarkConstants.Metrics` with metric-related constants
+* [x] Create nested class `BenchmarkConstants.Report` with report-related constants
+* [x] Create nested class `BenchmarkConstants.Integration` with integration-related constants
+* [x] Create nested class `BenchmarkConstants.Files` with file/directory constants
+* [x] Migrate constants from `MetricConstants` (benchmark-integration-quarkus)
+* [x] Migrate constants from `ReportConstants` (cui-benchmarking-common)
+* [x] Update all references to use new constant locations
+* [x] Remove deprecated constant classes
 
 *Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Verify no compilation errors from constant references
-* [ ] Check IDE for any unresolved constant references
-* [ ] Run grep to ensure no old constant class references remain
-* [ ] Commit with message: `refactor: C4. Consolidate Constants`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+* [x] Verify no compilation errors from constant references
+* [x] Check IDE for any unresolved constant references
+* [x] Run grep to ensure no old constant class references remain
+* [x] Commit with message: `refactor: C4. Consolidate Constants`
 
 === C5. Strengthen Runner Infrastructure
 * [ ] *Priority:* Medium

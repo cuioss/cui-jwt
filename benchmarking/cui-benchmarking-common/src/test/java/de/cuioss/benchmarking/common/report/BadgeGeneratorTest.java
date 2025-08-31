@@ -25,8 +25,10 @@ import java.nio.file.Path;
 import java.time.Instant;
 
 import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
-import static de.cuioss.benchmarking.common.report.ReportConstants.BADGE;
-import static de.cuioss.benchmarking.common.report.ReportConstants.FILES;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Data.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.Colors.BLUE;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.Labels.LAST_RUN;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -44,7 +46,7 @@ class BadgeGeneratorTest {
         // Generate badge
         BadgeGenerator generator = new BadgeGenerator();
         String badgeJson = generator.generatePerformanceBadge(createTestMetrics(jsonFile));
-        Path badgeFile = tempDir.resolve(FILES.INTEGRATION_PERFORMANCE_BADGE_JSON);
+        Path badgeFile = tempDir.resolve(INTEGRATION_PERFORMANCE_BADGE_JSON);
         Files.writeString(badgeFile, badgeJson);
 
         // Verify badge file was created
@@ -55,13 +57,13 @@ class BadgeGeneratorTest {
         JsonObject badge = gson.fromJson(badgeContent, JsonObject.class);
 
         // Verify structure
-        assertEquals(1, badge.get(BADGE.SCHEMA_VERSION).getAsInt());
-        assertEquals("Performance", badge.get(BADGE.LABEL).getAsString());
-        assertNotNull(badge.get(BADGE.MESSAGE).getAsString());
-        assertNotNull(badge.get(BADGE.COLOR).getAsString());
+        assertEquals(1, badge.get(SCHEMA_VERSION).getAsInt());
+        assertEquals("Performance", badge.get(LABEL).getAsString());
+        assertNotNull(badge.get(MESSAGE).getAsString());
+        assertNotNull(badge.get(COLOR).getAsString());
 
         // Verify message format: "Grade X"
-        String message = badge.get(BADGE.MESSAGE).getAsString();
+        String message = badge.get(MESSAGE).getAsString();
         assertNotNull(message, "Badge message must exist");
         assertFalse(message.isEmpty(), "Badge message must not be empty");
 
@@ -79,7 +81,7 @@ class BadgeGeneratorTest {
         // Generate badge
         BadgeGenerator generator = new BadgeGenerator();
         String badgeJson = generator.generatePerformanceBadge(createTestMetrics(jsonFile));
-        Path badgeFile = tempDir.resolve(FILES.PERFORMANCE_BADGE_JSON);
+        Path badgeFile = tempDir.resolve(PERFORMANCE_BADGE_JSON);
         Files.writeString(badgeFile, badgeJson);
 
         // Verify badge file was created
@@ -90,13 +92,13 @@ class BadgeGeneratorTest {
         JsonObject badge = gson.fromJson(badgeContent, JsonObject.class);
 
         // Verify structure
-        assertEquals(1, badge.get(BADGE.SCHEMA_VERSION).getAsInt());
-        assertEquals("Performance", badge.get(BADGE.LABEL).getAsString());
-        assertNotNull(badge.get(BADGE.MESSAGE).getAsString());
-        assertNotNull(badge.get(BADGE.COLOR).getAsString());
+        assertEquals(1, badge.get(SCHEMA_VERSION).getAsInt());
+        assertEquals("Performance", badge.get(LABEL).getAsString());
+        assertNotNull(badge.get(MESSAGE).getAsString());
+        assertNotNull(badge.get(COLOR).getAsString());
 
         // Verify message contains expected format
-        String message = badge.get(BADGE.MESSAGE).getAsString();
+        String message = badge.get(MESSAGE).getAsString();
         assertNotNull(message, "Badge message must exist");
         assertFalse(message.isEmpty(), "Badge message must not be empty");
 
@@ -112,32 +114,32 @@ class BadgeGeneratorTest {
         BadgeGenerator generator = new BadgeGenerator();
         // Generate default trend badge (no history)
         String badgeJson = generator.generateDefaultTrendBadge();
-        Path badgeFile = tempDir.resolve(FILES.INTEGRATION_TREND_BADGE_JSON);
+        Path badgeFile = tempDir.resolve(INTEGRATION_TREND_BADGE_JSON);
         Files.writeString(badgeFile, badgeJson);
         assertTrue(Files.exists(badgeFile));
 
         String badgeContent = Files.readString(badgeFile);
         JsonObject badge = gson.fromJson(badgeContent, JsonObject.class);
 
-        assertEquals(1, badge.get(BADGE.SCHEMA_VERSION).getAsInt());
-        assertEquals("Trend", badge.get(BADGE.LABEL).getAsString());
-        assertEquals("No history", badge.get(BADGE.MESSAGE).getAsString());
-        assertEquals("lightgray", badge.get(BADGE.COLOR).getAsString());
+        assertEquals(1, badge.get(SCHEMA_VERSION).getAsInt());
+        assertEquals("Trend", badge.get(LABEL).getAsString());
+        assertEquals("No history", badge.get(MESSAGE).getAsString());
+        assertEquals("lightgray", badge.get(COLOR).getAsString());
     }
 
     @Test void lastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
         BadgeGenerator generator = new BadgeGenerator();
         String badgeJson = generator.generateLastRunBadge(Instant.now());
-        Path badgeFile = tempDir.resolve(FILES.LAST_RUN_BADGE_JSON);
+        Path badgeFile = tempDir.resolve(LAST_RUN_BADGE_JSON);
         Files.writeString(badgeFile, badgeJson);
         assertTrue(Files.exists(badgeFile));
 
         String badgeContent = Files.readString(badgeFile);
         JsonObject badge = gson.fromJson(badgeContent, JsonObject.class);
 
-        assertEquals(1, badge.get(BADGE.SCHEMA_VERSION).getAsInt());
-        assertEquals(BADGE.LABELS.LAST_RUN, badge.get(BADGE.LABEL).getAsString());
-        assertNotNull(badge.get(BADGE.MESSAGE).getAsString());
-        assertEquals(BADGE.COLORS.BLUE, badge.get(BADGE.COLOR).getAsString());
+        assertEquals(1, badge.get(SCHEMA_VERSION).getAsInt());
+        assertEquals(LAST_RUN, badge.get(LABEL).getAsString());
+        assertNotNull(badge.get(MESSAGE).getAsString());
+        assertEquals(BLUE, badge.get(COLOR).getAsString());
     }
 }

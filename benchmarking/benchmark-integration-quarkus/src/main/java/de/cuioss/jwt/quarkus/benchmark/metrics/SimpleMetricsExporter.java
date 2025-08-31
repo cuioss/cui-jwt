@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
+import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
 import de.cuioss.benchmarking.common.metrics.AbstractMetricsExporter;
 import de.cuioss.benchmarking.common.metrics.MetricsFetcher;
-import de.cuioss.jwt.quarkus.benchmark.constants.MetricConstants;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -219,7 +219,7 @@ public class SimpleMetricsExporter extends AbstractMetricsExporter {
         // - _max: maximum observed value in seconds
         // We need to estimate percentiles from these values
 
-        String validationMetricPrefix = MetricConstants.BEARERTOKEN.VALIDATION.replace(".", "_") + "_seconds";
+        String validationMetricPrefix = BenchmarkConstants.Metrics.BearerToken.VALIDATION.replace(".", "_") + "_seconds";
 
         // Collect the available metrics
         Double count = null;

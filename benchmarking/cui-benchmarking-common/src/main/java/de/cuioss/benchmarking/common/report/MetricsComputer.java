@@ -18,8 +18,14 @@ package de.cuioss.benchmarking.common.report;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Modes.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Units.OPS;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Units.SUFFIX_OP;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Errors.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Grades.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.JsonFields.*;
 
 /**
  * Computes benchmark metrics from JSON results.
@@ -32,10 +38,10 @@ public class MetricsComputer {
 
     public MetricsComputer(String throughputBenchmarkName, String latencyBenchmarkName) {
         if (throughputBenchmarkName == null || throughputBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException(ERRORS.THROUGHPUT_NAME_REQUIRED);
+            throw new IllegalArgumentException(THROUGHPUT_NAME_REQUIRED);
         }
         if (latencyBenchmarkName == null || latencyBenchmarkName.isBlank()) {
-            throw new IllegalArgumentException(ERRORS.LATENCY_NAME_REQUIRED);
+            throw new IllegalArgumentException(LATENCY_NAME_REQUIRED);
         }
         this.throughputBenchmarkName = throughputBenchmarkName;
         this.latencyBenchmarkName = latencyBenchmarkName;
@@ -43,7 +49,7 @@ public class MetricsComputer {
 
     public BenchmarkMetrics computeMetrics(JsonArray benchmarks) {
         if (benchmarks == null || benchmarks.isEmpty()) {
-            throw new IllegalArgumentException(ERRORS.NO_RESULTS_PROVIDED);
+            throw new IllegalArgumentException(NO_RESULTS_PROVIDED);
         }
 
         double throughput = extractThroughput(benchmarks);
@@ -66,43 +72,43 @@ public class MetricsComputer {
     private double extractThroughput(JsonArray benchmarks) {
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            String benchmarkName = benchmark.get(JSON_FIELDS.BENCHMARK).getAsString();
+            String benchmarkName = benchmark.get(BENCHMARK).getAsString();
 
             if (benchmarkName.contains(throughputBenchmarkName)) {
-                String mode = benchmark.get(JSON_FIELDS.MODE).getAsString();
-                JsonObject primaryMetric = benchmark.getAsJsonObject(JSON_FIELDS.PRIMARY_METRIC);
-                double score = primaryMetric.get(JSON_FIELDS.SCORE).getAsDouble();
-                String unit = primaryMetric.get(JSON_FIELDS.SCORE_UNIT).getAsString();
+                String mode = benchmark.get(MODE).getAsString();
+                JsonObject primaryMetric = benchmark.getAsJsonObject(PRIMARY_METRIC);
+                double score = primaryMetric.get(SCORE).getAsDouble();
+                String unit = primaryMetric.get(SCORE_UNIT).getAsString();
 
-                if (MODES.THROUGHPUT.equals(mode) || unit.contains(UNITS.OPS)) {
+                if (BenchmarkConstants.Metrics.Modes.THROUGHPUT.equals(mode) || unit.contains(OPS)) {
                     return MetricConversionUtil.convertToOpsPerSecond(score, unit);
                 }
             }
         }
 
         throw new IllegalStateException(
-                ERRORS.THROUGHPUT_NOT_FOUND_FORMAT.formatted(throughputBenchmarkName));
+                THROUGHPUT_NOT_FOUND_FORMAT.formatted(throughputBenchmarkName));
     }
 
     private double extractLatency(JsonArray benchmarks) {
         for (JsonElement element : benchmarks) {
             JsonObject benchmark = element.getAsJsonObject();
-            String benchmarkName = benchmark.get(JSON_FIELDS.BENCHMARK).getAsString();
+            String benchmarkName = benchmark.get(BENCHMARK).getAsString();
 
             if (benchmarkName.contains(latencyBenchmarkName)) {
-                String mode = benchmark.get(JSON_FIELDS.MODE).getAsString();
-                JsonObject primaryMetric = benchmark.getAsJsonObject(JSON_FIELDS.PRIMARY_METRIC);
-                double score = primaryMetric.get(JSON_FIELDS.SCORE).getAsDouble();
-                String unit = primaryMetric.get(JSON_FIELDS.SCORE_UNIT).getAsString();
+                String mode = benchmark.get(MODE).getAsString();
+                JsonObject primaryMetric = benchmark.getAsJsonObject(PRIMARY_METRIC);
+                double score = primaryMetric.get(SCORE).getAsDouble();
+                String unit = primaryMetric.get(SCORE_UNIT).getAsString();
 
-                if (MODES.AVERAGE_TIME.equals(mode) || MODES.SAMPLE.equals(mode) || unit.contains(UNITS.SUFFIX_OP)) {
+                if (AVERAGE_TIME.equals(mode) || SAMPLE.equals(mode) || unit.contains(SUFFIX_OP)) {
                     return MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
                 }
             }
         }
 
         throw new IllegalStateException(
-                ERRORS.LATENCY_NOT_FOUND_FORMAT.formatted(latencyBenchmarkName));
+                LATENCY_NOT_FOUND_FORMAT.formatted(latencyBenchmarkName));
     }
 
     private double calculatePerformanceScore(double throughput, double latency) {
@@ -112,12 +118,12 @@ public class MetricsComputer {
     }
 
     private String getPerformanceGrade(double score) {
-        if (score >= 95) return GRADES.A_PLUS;
-        if (score >= 90) return GRADES.A;
-        if (score >= 75) return GRADES.B;
-        if (score >= 60) return GRADES.C;
-        if (score >= 40) return GRADES.D;
-        return GRADES.F;
+        if (score >= 95) return A_PLUS;
+        if (score >= 90) return A;
+        if (score >= 75) return B;
+        if (score >= 60) return C;
+        if (score >= 40) return D;
+        return F;
     }
 
 }

@@ -17,8 +17,8 @@ package de.cuioss.benchmarking.common.report;
 
 import org.junit.jupiter.api.Test;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.GRADES;
-import static de.cuioss.benchmarking.common.report.ReportConstants.UNITS;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Units.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Grades.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,7 +29,7 @@ class MetricConversionUtilTest {
     @Test void convertToMillisecondsPerOpFromMicroseconds() {
         // Test case from actual data: 802.9 us/op should convert to 0.8029 ms/op
         double score = 802.9010071674597;
-        String unit = UNITS.US_PER_OP;
+        String unit = US_PER_OP;
 
         double result = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
 
@@ -40,7 +40,7 @@ class MetricConversionUtilTest {
     @Test void convertToMillisecondsPerOpFromOpsPerSecond() {
         // Test case from actual data: 103380.87 ops/s should convert to ~0.00967 ms/op
         double score = 103380.86760034731;
-        String unit = UNITS.OPS_PER_SEC;
+        String unit = OPS_PER_SEC;
 
         double result = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
 
@@ -52,39 +52,39 @@ class MetricConversionUtilTest {
         // Test all supported units
         
         // Latency units
-        assertEquals(100.0, MetricConversionUtil.convertToMillisecondsPerOp(100.0, UNITS.MS_PER_OP),
+        assertEquals(100.0, MetricConversionUtil.convertToMillisecondsPerOp(100.0, MS_PER_OP),
                 "ms/op should return unchanged");
-        assertEquals(1000.0, MetricConversionUtil.convertToMillisecondsPerOp(1.0, UNITS.SEC_PER_OP),
+        assertEquals(1000.0, MetricConversionUtil.convertToMillisecondsPerOp(1.0, SEC_PER_OP),
                 "1 s/op = 1000 ms/op");
-        assertEquals(0.001, MetricConversionUtil.convertToMillisecondsPerOp(1.0, UNITS.US_PER_OP), DELTA,
+        assertEquals(0.001, MetricConversionUtil.convertToMillisecondsPerOp(1.0, US_PER_OP), DELTA,
                 "1 us/op = 0.001 ms/op");
-        assertEquals(0.000001, MetricConversionUtil.convertToMillisecondsPerOp(1.0, UNITS.NS_PER_OP), DELTA,
+        assertEquals(0.000001, MetricConversionUtil.convertToMillisecondsPerOp(1.0, NS_PER_OP), DELTA,
                 "1 ns/op = 0.000001 ms/op");
 
         // Throughput units (need inversion)
-        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(1000.0, UNITS.OPS_PER_SEC), DELTA,
+        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(1000.0, OPS_PER_SEC), DELTA,
                 "1000 ops/s = 1 ms/op");
-        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(1.0, UNITS.OPS_PER_MS), DELTA,
+        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(1.0, OPS_PER_MS), DELTA,
                 "1 ops/ms = 1 ms/op");
-        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(0.001, UNITS.OPS_PER_US), DELTA,
+        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(0.001, OPS_PER_US), DELTA,
                 "0.001 ops/us = 1 ms/op");
-        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(0.000001, UNITS.OPS_PER_NS), DELTA,
+        assertEquals(1.0, MetricConversionUtil.convertToMillisecondsPerOp(0.000001, OPS_PER_NS), DELTA,
                 "0.000001 ops/ns = 1 ms/op");
     }
 
     @Test void convertToOpsPerSecondAllUnits() {
         // Throughput units
-        assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1000.0, UNITS.OPS_PER_SEC),
+        assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1000.0, OPS_PER_SEC),
                 "ops/s should return unchanged");
-        assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1.0, UNITS.OPS_PER_MS),
+        assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1.0, OPS_PER_MS),
                 "1 ops/ms = 1000 ops/s");
-        assertEquals(1000000.0, MetricConversionUtil.convertToOpsPerSecond(1.0, UNITS.OPS_PER_US),
+        assertEquals(1000000.0, MetricConversionUtil.convertToOpsPerSecond(1.0, OPS_PER_US),
                 "1 ops/us = 1000000 ops/s");
 
         // Latency units (need inversion)
-        assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1.0, UNITS.MS_PER_OP), DELTA,
+        assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1.0, MS_PER_OP), DELTA,
                 "1 ms/op = 1000 ops/s");
-        assertEquals(1.0, MetricConversionUtil.convertToOpsPerSecond(1.0, UNITS.SEC_PER_OP), DELTA,
+        assertEquals(1.0, MetricConversionUtil.convertToOpsPerSecond(1.0, SEC_PER_OP), DELTA,
                 "1 s/op = 1 ops/s");
     }
 
@@ -98,7 +98,7 @@ class MetricConversionUtilTest {
                 927.2665043930523    // us/op
         };
         String[] units = {
-                UNITS.OPS_PER_SEC, UNITS.OPS_PER_SEC, UNITS.OPS_PER_SEC, UNITS.US_PER_OP, UNITS.US_PER_OP
+                OPS_PER_SEC, OPS_PER_SEC, OPS_PER_SEC, US_PER_OP, US_PER_OP
         };
 
         double totalLatencyMs = 0;
@@ -121,15 +121,15 @@ class MetricConversionUtilTest {
     }
 
     @Test void performanceGrade() {
-        assertEquals(GRADES.A_PLUS, MetricConversionUtil.calculatePerformanceGrade(1_000_000),
+        assertEquals(A_PLUS, MetricConversionUtil.calculatePerformanceGrade(1_000_000),
                 "1M ops/s = A+");
-        assertEquals(GRADES.A, MetricConversionUtil.calculatePerformanceGrade(100_000),
+        assertEquals(A, MetricConversionUtil.calculatePerformanceGrade(100_000),
                 "100K ops/s = A");
-        assertEquals(GRADES.B, MetricConversionUtil.calculatePerformanceGrade(10_000),
+        assertEquals(B, MetricConversionUtil.calculatePerformanceGrade(10_000),
                 "10K ops/s = B");
-        assertEquals(GRADES.C, MetricConversionUtil.calculatePerformanceGrade(1_000),
+        assertEquals(C, MetricConversionUtil.calculatePerformanceGrade(1_000),
                 "1K ops/s = C");
-        assertEquals(GRADES.D, MetricConversionUtil.calculatePerformanceGrade(100),
+        assertEquals(D, MetricConversionUtil.calculatePerformanceGrade(100),
                 "100 ops/s = D");
     }
 

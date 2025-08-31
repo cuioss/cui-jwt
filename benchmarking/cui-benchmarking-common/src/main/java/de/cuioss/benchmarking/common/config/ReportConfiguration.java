@@ -20,6 +20,9 @@ import org.openjdk.jmh.results.format.ResultFormatType;
 
 import java.io.File;
 
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Directories;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Integration.Jmh;
+
 /**
  * Configuration for benchmark report generation.
  * Contains all report-specific settings that control how benchmark results
@@ -47,25 +50,6 @@ ResultFormatType resultFormat
 ) {
     private static final CuiLogger LOGGER = new CuiLogger(ReportConfiguration.class);
 
-    /**
-     * Default values for report configuration.
-     */
-    public static final class Defaults {
-        public static final String RESULTS_DIR = "target/benchmark-results";
-
-        private Defaults() {
-        }
-    }
-
-    /**
-     * System property keys for report configuration.
-     */
-    public static final class Properties {
-        public static final String RESULT_FORMAT = "jmh.result.format";
-
-        private Properties() {
-        }
-    }
 
     /**
      * Creates a builder with default values.
@@ -120,9 +104,9 @@ ResultFormatType resultFormat
         private BenchmarkType benchmarkType;
         private String throughputBenchmarkName;
         private String latencyBenchmarkName;
-        private String resultsDirectory = Defaults.RESULTS_DIR;
+        private String resultsDirectory = Directories.RESULTS_DIR;
         private String resultFile;
-        private ResultFormatType resultFormat = parseResultFormat(System.getProperty(Properties.RESULT_FORMAT, "JSON"));
+        private ResultFormatType resultFormat = parseResultFormat(System.getProperty(Jmh.RESULT_FORMAT, "JSON"));
 
         public Builder withBenchmarkType(BenchmarkType type) {
             this.benchmarkType = type;

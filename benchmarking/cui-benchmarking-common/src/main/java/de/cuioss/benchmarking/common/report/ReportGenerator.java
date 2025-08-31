@@ -24,8 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import static de.cuioss.benchmarking.common.report.ReportConstants.FILES;
-import static de.cuioss.benchmarking.common.report.ReportConstants.TEMPLATES;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Data.BENCHMARK_DATA_JSON;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Html.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Support.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.NOT_FOUND_FORMAT;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.PATH_PREFIX;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
@@ -43,7 +46,7 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 public class ReportGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
-    private static final String DATA_FILE_NAME = FILES.BENCHMARK_DATA_JSON;
+    private static final String DATA_FILE_NAME = BENCHMARK_DATA_JSON;
     private final ReportDataGenerator dataGenerator;
     private final BenchmarkMetrics metrics;
     private final BadgeGenerator badgeGenerator;
@@ -73,9 +76,9 @@ public class ReportGenerator {
 
         // Then copy the index template
         LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));
-        copyTemplate(FILES.INDEX_HTML, outputDir);
+        copyTemplate(INDEX, outputDir);
 
-        Path indexFile = Path.of(outputDir).resolve(FILES.INDEX_HTML);
+        Path indexFile = Path.of(outputDir).resolve(INDEX);
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
     }
 
@@ -89,9 +92,9 @@ public class ReportGenerator {
         LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
 
         // Copy the trends template
-        copyTemplate(FILES.TRENDS_HTML, outputDir);
+        copyTemplate(TRENDS, outputDir);
 
-        Path trendsFile = Path.of(outputDir).resolve(FILES.TRENDS_HTML);
+        Path trendsFile = Path.of(outputDir).resolve(TRENDS);
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
 
@@ -105,9 +108,9 @@ public class ReportGenerator {
         LOGGER.info(INFO.GENERATING_REPORTS::format);
 
         // Copy the detailed template
-        copyTemplate(FILES.DETAILED_HTML, outputDir);
+        copyTemplate(DETAILED, outputDir);
 
-        Path detailedFile = Path.of(outputDir).resolve(FILES.DETAILED_HTML);
+        Path detailedFile = Path.of(outputDir).resolve(DETAILED);
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(detailedFile));
     }
 
@@ -122,14 +125,14 @@ public class ReportGenerator {
         Files.createDirectories(outputPath);
 
         // Copy CSS file
-        copyTemplate(FILES.REPORT_STYLES_CSS, outputDir);
+        copyTemplate(REPORT_STYLES_CSS, outputDir);
 
         // Copy the data loader JavaScript
-        copyTemplate(FILES.DATA_LOADER_JS, outputDir);
+        copyTemplate(DATA_LOADER_JS, outputDir);
 
         // Copy robots.txt and sitemap if needed
-        copyTemplate(FILES.ROBOTS_TXT, outputDir);
-        copyTemplate(FILES.SITEMAP_XML, outputDir);
+        copyTemplate(ROBOTS_TXT, outputDir);
+        copyTemplate(SITEMAP_XML, outputDir);
     }
 
     /**
@@ -143,10 +146,10 @@ public class ReportGenerator {
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
 
-        String resourcePath = TEMPLATES.PATH_PREFIX + templateName;
+        String resourcePath = PATH_PREFIX + templateName;
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
             if (is == null) {
-                throw new IOException(TEMPLATES.NOT_FOUND_FORMAT.formatted(resourcePath));
+                throw new IOException(NOT_FOUND_FORMAT.formatted(resourcePath));
             }
             Path targetFile = outputPath.resolve(templateName);
             Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING);

@@ -15,6 +15,7 @@
  */
 package de.cuioss.benchmarking.common.config;
 
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Integration.Properties;
 import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
 /**
@@ -35,17 +36,6 @@ String keycloakUrl,
 String metricsUrl
 ) {
 
-    /**
-     * System property keys for integration configuration.
-     */
-    public static final class Properties {
-        public static final String INTEGRATION_SERVICE_URL = "integration.service.url";
-        public static final String KEYCLOAK_URL = "keycloak.url";
-        public static final String METRICS_URL = "quarkus.metrics.url";
-
-        private Properties() {
-        }
-    }
 
     /**
      * Creates integration configuration from system properties.
