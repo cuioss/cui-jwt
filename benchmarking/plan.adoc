@@ -46,7 +46,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [x] Commit with message: `refactor: C1. Consolidate Abstract Base Classes`
 
 === C2. Unify Metrics Exporter Implementations
-* [x] *Priority:* High - *COMPLETED* (Commit: pending)
+* [x] *Priority:* High - *COMPLETED* (Commit: 8b1e0ad6)
 
 *Description:* Create a common `MetricsExporter` interface in cui-benchmarking-common with specific implementations for library benchmarks (`SimplifiedMetricsExporter`) and integration benchmarks (`SimpleMetricsExporter`).
 
