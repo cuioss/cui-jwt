@@ -19,7 +19,6 @@ import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
-import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
 import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
@@ -31,8 +30,6 @@ import org.openjdk.jmh.runner.RunnerException;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
-
-import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
 /**
  * Main class for running Quarkus integration benchmarks.
@@ -51,28 +48,9 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusIntegrationRunner.class);
 
-    private final String serviceUrl = requireProperty(
-            System.getProperty("integration.service.url"),
-            "Integration service URL",
-            "integration.service.url"
-    );
-    private final String quarkusMetricsUrl = requireProperty(
-            System.getProperty("quarkus.metrics.url"),
-            "Quarkus metrics URL",
-            "quarkus.metrics.url"
-    );
-    // Get token configuration
-    private final TokenRepositoryConfig tokenConfig = TokenRepositoryConfig.fromProperties();
-    // Get Keycloak URL from properties - checks both "token.keycloak.url" and "keycloak.url"
-    private final String keycloakUrl = tokenConfig.getKeycloakBaseUrl();
-
     @Override protected BenchmarkConfiguration createConfiguration() {
-        // Create integration configuration with required URLs
-        IntegrationConfiguration integrationConfig = new IntegrationConfiguration(
-                serviceUrl,
-                keycloakUrl,
-                quarkusMetricsUrl
-        );
+        // Load integration configuration from system properties
+        IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
 
         return BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
@@ -84,9 +62,11 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     @Override protected void beforeBenchmarks() {
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
-
+        
+        // Get configuration to log the URLs
+        IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
-                serviceUrl, keycloakUrl);
+                integrationConfig.integrationServiceUrl(), integrationConfig.keycloakUrl());
     }
 
     @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) {
@@ -124,10 +104,13 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     private void processMetrics(BenchmarkConfiguration config) {
         String outputDirectory = config.resultsDirectory();
 
-        LOGGER.debug("Processing metrics from {} to {}", serviceUrl, outputDirectory);
-
+        // Get integration configuration to access URLs
+        IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
+        
+        LOGGER.debug("Processing metrics from {} to {}", integrationConfig.integrationServiceUrl(), outputDirectory);
+        
         // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
-        QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(serviceUrl);
+        QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(integrationConfig.integrationServiceUrl());
 
         // Use SimpleMetricsExporter to export JWT validation metrics
         SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);

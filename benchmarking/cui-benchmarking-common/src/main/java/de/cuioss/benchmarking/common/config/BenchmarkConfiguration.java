@@ -19,7 +19,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-import java.util.Optional;
 
 import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
@@ -54,7 +53,7 @@ int measurementIterations,
 TimeValue measurementTime,
 TimeValue warmupTime,
 int threads,
-Optional<IntegrationConfiguration> integrationConfig
+IntegrationConfiguration integrationConfig
 ) {
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkConfiguration.class);
@@ -119,11 +118,23 @@ Optional<IntegrationConfiguration> integrationConfig
                 .withWarmupTime(warmupTime)
                 .withThreads(threads);
 
-        integrationConfig.ifPresent(builder::withIntegrationConfig);
+        if (integrationConfig != null) {
+            builder.withIntegrationConfig(integrationConfig);
+        }
         return builder;
     }
 
 
+    /**
+     * Checks if this configuration includes integration configuration.
+     * Integration configuration is required for integration benchmarks.
+     * 
+     * @return true if integration configuration is present, false otherwise
+     */
+    public boolean hasIntegrationConfig() {
+        return integrationConfig != null;
+    }
+    
     /**
      * Convenience methods for accessing nested report configuration.
      */
@@ -290,7 +301,8 @@ Optional<IntegrationConfiguration> integrationConfig
         private void ensureReportConfigBuilder() {
             if (reportConfigBuilder == null && reportConfig == null) {
                 reportConfigBuilder = ReportConfiguration.builder();
-            } else if (reportConfigBuilder == null && reportConfig != null) {
+            } else if (reportConfigBuilder == null) {
+                // reportConfig must be non-null here
                 reportConfigBuilder = reportConfig.toBuilder();
                 reportConfig = null; // Will be rebuilt from builder
             }
@@ -365,7 +377,7 @@ Optional<IntegrationConfiguration> integrationConfig
                     measurementTime,
                     warmupTime,
                     threads,
-                    Optional.ofNullable(integrationConfig)
+                    integrationConfig
             );
         }
     }
