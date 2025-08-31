@@ -17,7 +17,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 == Code Structure and Design
 
 === C1. Consolidate Abstract Base Classes
-* [ ] *Priority:* High
+* [x] *Priority:* High - *COMPLETED* (Commit: 64ad45cd)
 
 *Description:* Extract common functionality from `AbstractBaseBenchmark` (benchmark-library) and `AbstractBaseBenchmark` (benchmark-integration-quarkus) into a unified base class in cui-benchmarking-common module.
 
@@ -25,28 +25,28 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Analyze both `AbstractBaseBenchmark` classes for common functionality
-* [ ] Create new `AbstractBenchmarkBase` in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/base/`
-* [ ] Extract common fields: `serviceUrl`, `benchmarkResultsDir`, `httpClient`
-* [ ] Extract common methods: `setupBase()`, `tearDown()`, `createBaseRequest()`
-* [ ] Update `benchmark-library/AbstractBenchmark` to extend new base class
-* [ ] Update `benchmark-integration-quarkus/AbstractBaseBenchmark` to extend new base class
-* [ ] Update all concrete benchmark classes to use new hierarchy
-* [ ] Add unit tests for new base class in cui-benchmarking-common
+* [x] Analyze both `AbstractBaseBenchmark` classes for common functionality
+* [x] Create new `AbstractBenchmarkBase` in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/base/`
+* [x] Extract common fields: `serviceUrl`, `benchmarkResultsDir`, `httpClient`
+* [x] Extract common methods: `setupBase()`, `tearDown()`, `createBaseRequest()`
+* [x] Update `benchmark-library/AbstractBenchmark` to extend new base class
+* [x] Update `benchmark-integration-quarkus/AbstractBaseBenchmark` to extend new base class
+* [x] Update all concrete benchmark classes to use new hierarchy
+* [x] Add unit tests for new base class in cui-benchmarking-common
 
 *Verification Steps:*
 
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute library benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark`
-* [ ] Execute integration benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing`
-* [ ] Verify benchmark results in `target/benchmark-results/`
-* [ ] Ensure no regression in benchmark performance metrics
-* [ ] Commit with message: `refactor: C1. Consolidate Abstract Base Classes`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+* [x] Execute library benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark`
+* [x] Execute integration benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing`
+* [x] Verify benchmark results in `target/benchmark-results/`
+* [x] Ensure no regression in benchmark performance metrics
+* [x] Commit with message: `refactor: C1. Consolidate Abstract Base Classes`
 
 === C2. Unify Metrics Exporter Implementations
-* [ ] *Priority:* High
+* [x] *Priority:* High - *COMPLETED* (Commit: pending)
 
 *Description:* Create a common `MetricsExporter` interface in cui-benchmarking-common with specific implementations for library benchmarks (`SimplifiedMetricsExporter`) and integration benchmarks (`SimpleMetricsExporter`).
 
@@ -54,24 +54,24 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Create `MetricsExporter` interface in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/metrics/`
-* [ ] Define interface methods: `exportMetrics()`, `exportToFile()`, `getExportFormat()`
-* [ ] Create `AbstractMetricsExporter` with common implementation
-* [ ] Refactor `SimplifiedMetricsExporter` to implement new interface
-* [ ] Refactor `SimpleMetricsExporter` to implement new interface
-* [ ] Extract common JSON serialization logic to abstract class
-* [ ] Update all benchmark classes to use interface type
-* [ ] Create factory class `MetricsExporterFactory` for instantiation
+* [x] Create `MetricsExporter` interface in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/metrics/`
+* [x] Define interface methods: `exportMetrics()`, `exportToFile()`, `getExportFormat()`
+* [x] Create `AbstractMetricsExporter` with common implementation
+* [x] Refactor `SimplifiedMetricsExporter` to implement new interface
+* [x] Refactor `SimpleMetricsExporter` to implement new interface
+* [x] Extract common JSON serialization logic to abstract class
+* [x] Update all benchmark classes to use interface type
+* [x] Create factory class `MetricsExporterFactory` for instantiation
 
 *Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute benchmarks (DO NOT cancel or shortcut) and verify metrics export files are created correctly
-* [ ] Validate JSON structure of exported metrics matches expected format
-* [ ] Compare metrics values between old and new implementation
-* [ ] Run all metrics exporter tests
-* [ ] Commit with message: `refactor: C2. Unify Metrics Exporter Implementations`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+* [x] Execute benchmarks (DO NOT cancel or shortcut) and verify metrics export files are created correctly
+* [x] Validate JSON structure of exported metrics matches expected format
+* [x] Compare metrics values between old and new implementation
+* [x] Run all metrics exporter tests
+* [x] Commit with message: `refactor: C2. Unify Metrics Exporter Implementations`
 
 === C3. Clarify Token Repository Implementations
 * [ ] *Priority:* Medium

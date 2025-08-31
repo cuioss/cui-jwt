@@ -15,16 +15,12 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
-import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
+import de.cuioss.benchmarking.common.metrics.AbstractMetricsExporter;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
-import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -34,120 +30,108 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Simplified metrics exporter that directly exports StripedRingBufferStatistics
- * without complex aggregation.
+ * Metrics exporter for library benchmarks that exports StripedRingBufferStatistics
+ * from TokenValidatorMonitor.
+ * 
+ * @since 1.0
  */
-public class SimplifiedMetricsExporter {
+public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
 
-    private static final CuiLogger log = new CuiLogger(SimplifiedMetricsExporter.class);
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
-                if (src == src.longValue()) {
-                    return new JsonPrimitive(src.longValue());
-                }
-                return new JsonPrimitive(src);
-            })
-            .create();
     public static final String MEASURE = "measure";
     public static final String VALIDATE = "validate";
     public static final String BENCHMARK = "benchmark";
-
-    private SimplifiedMetricsExporter() {
-        // Utility class
+    
+    private static final String DEFAULT_OUTPUT_DIR = "target/benchmark-results";
+    private static final String METRICS_FILE = "jwt-validation-metrics.json";
+    
+    private static SimplifiedMetricsExporter instance;
+    
+    /**
+     * Private constructor for singleton pattern.
+     * 
+     * @param outputDirectory The output directory for metrics files
+     */
+    private SimplifiedMetricsExporter(String outputDirectory) {
+        super(outputDirectory);
+    }
+    
+    /**
+     * Get the singleton instance of SimplifiedMetricsExporter.
+     * 
+     * @return The singleton instance
+     */
+    public static synchronized SimplifiedMetricsExporter getInstance() {
+        if (instance == null) {
+            instance = new SimplifiedMetricsExporter(DEFAULT_OUTPUT_DIR);
+        }
+        return instance;
     }
 
 
-    /**
-     * Export metrics from a TokenValidatorMonitor directly to JSON file.
-     *
-     * @param monitor The monitor containing the metrics
-     * @throws IOException if writing fails
-     */
-    public static synchronized void exportMetrics(TokenValidatorMonitor monitor) throws IOException {
-        if (monitor == null) {
-            log.debug("No monitor provided, skipping metrics export");
+    
+    @Override
+    public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
+        if (!(metricsData instanceof TokenValidatorMonitor)) {
+            LOGGER.warn("Invalid metrics data type: expected TokenValidatorMonitor, got {}", 
+                metricsData != null ? metricsData.getClass().getName() : "null");
             return;
         }
-
-        // Get current benchmark name from thread or stack trace
-        String benchmarkName = getCurrentBenchmarkName();
-        if (benchmarkName == null) {
-            benchmarkName = "unknown_benchmark";
-        }
-
-        String outputDir = "target/benchmark-results";
-        Path outputPath = Path.of(outputDir);
-        Files.createDirectories(outputPath);
-
-        // Single file for all metrics
-        Path outputFile = outputPath.resolve("jwt-validation-metrics.json");
-
-        // Read existing data if file exists
-        Map<String, Object> allMetrics = new LinkedHashMap<>();
-        if (Files.exists(outputFile)) {
-            try {
-                String existingContent = Files.readString(outputFile);
-                if (existingContent != null && !existingContent.trim().isEmpty()) {
-                    TypeToken<Map<String, Object>> typeToken = new TypeToken<>() {
-                    };
-                    Map<String, Object> parsedMetrics = GSON.fromJson(existingContent, typeToken.getType());
-                    if (parsedMetrics != null) {
-                        allMetrics = parsedMetrics;
-                    }
-                }
-            } catch (IOException | JsonSyntaxException e) {
-                log.warn("Failed to read existing metrics file, starting fresh: {}", e.getMessage());
-                // Delete corrupted file to start fresh
-                try {
-                    Files.deleteIfExists(outputFile);
-                } catch (IOException deleteException) {
-                    log.warn("Failed to delete corrupted metrics file", deleteException);
-                }
-            }
-        }
-
+        
+        TokenValidatorMonitor monitor = (TokenValidatorMonitor) metricsData;
+        
         // Create metrics for current benchmark
         Map<String, Object> benchmarkMetrics = new LinkedHashMap<>();
-        benchmarkMetrics.put("timestamp", ISO_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC)));
-
+        benchmarkMetrics.put("timestamp", ISO_FORMATTER.format(timestamp.atOffset(ZoneOffset.UTC)));
+        
         Map<String, Map<String, Object>> steps = new LinkedHashMap<>();
-
+        
         // Export metrics for each measurement type
         for (MeasurementType type : monitor.getEnabledTypes()) {
             Optional<StripedRingBufferStatistics> statsOpt = monitor.getValidationMetrics(type);
-
+            
             if (statsOpt.isPresent()) {
                 StripedRingBufferStatistics stats = statsOpt.get();
                 if (stats.sampleCount() > 0) {
                     Map<String, Object> stepMetrics = new LinkedHashMap<>();
                     stepMetrics.put("sample_count", stats.sampleCount());
-
+                    
                     // Convert Duration to microseconds and round appropriately
                     stepMetrics.put("p50_us", durationToRoundedMicros(stats.p50()));
                     stepMetrics.put("p95_us", durationToRoundedMicros(stats.p95()));
                     stepMetrics.put("p99_us", durationToRoundedMicros(stats.p99()));
-
+                    
                     steps.put(type.name().toLowerCase(), stepMetrics);
                 }
             }
         }
-
+        
         benchmarkMetrics.put("steps", steps);
-
-        // Add or update benchmark data using benchmark name as top-level element
-        allMetrics.put(benchmarkName, benchmarkMetrics);
-
-        // Write all metrics to single JSON file
-        try {
-            String jsonContent = GSON.toJson(allMetrics);
-            Files.writeString(outputFile, jsonContent);
-            log.info("Exported metrics for {} to {}", benchmarkName, outputFile);
-        } catch (IOException e) {
-            log.error("Failed to export metrics to {}", outputFile, e);
-            throw e;
+        
+        // Update aggregated metrics file
+        String filepath = outputDirectory + "/" + METRICS_FILE;
+        updateAggregatedMetrics(filepath, benchmarkMethodName, benchmarkMetrics);
+    }
+    
+    /**
+     * Legacy static method for backward compatibility.
+     * 
+     * @param monitor The monitor containing the metrics
+     * @throws IOException if writing fails
+     */
+    public static synchronized void exportMetrics(TokenValidatorMonitor monitor) throws IOException {
+        if (monitor == null) {
+            LOGGER.debug("No monitor provided, skipping metrics export");
+            return;
         }
+        
+        // Get current benchmark name from thread or stack trace
+        String benchmarkName = getCurrentBenchmarkName();
+        if (benchmarkName == null) {
+            benchmarkName = "unknown_benchmark";
+        }
+        
+        getInstance().exportMetrics(benchmarkName, Instant.now(), monitor);
     }
 
     /**
@@ -221,15 +205,10 @@ public class SimplifiedMetricsExporter {
      * Convert Duration to microseconds with appropriate rounding.
      *
      * @param duration The duration to convert
-     * @return Number (Long for values >= 10, Double for values < 10)
+     * @return Object (Long for values >= 10, Double for values < 10)
      */
-    private static Number durationToRoundedMicros(Duration duration) {
+    private Object durationToRoundedMicros(Duration duration) {
         double micros = duration.toNanos() / 1000.0;
-        if (micros >= 10.0) {
-            return Math.round(micros);
-        } else {
-            return Math.round(micros * 10) / 10.0;
-        }
+        return formatNumber(micros);
     }
-
 }
