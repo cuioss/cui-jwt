@@ -17,10 +17,9 @@ package de.cuioss.benchmarking.common.config;
 
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
-import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
+
+import java.util.Optional;
 
 import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
@@ -54,7 +53,8 @@ int warmupIterations,
 int measurementIterations,
 TimeValue measurementTime,
 TimeValue warmupTime,
-int threads
+int threads,
+Optional<IntegrationConfiguration> integrationConfig
 ) {
 
     private static final CuiLogger LOGGER = new CuiLogger(BenchmarkConfiguration.class);
@@ -109,7 +109,7 @@ int threads
      * @return a new builder initialized with this configuration's values
      */
     public Builder toBuilder() {
-        return new Builder()
+        var builder = new Builder()
                 .withReportConfig(reportConfig)
                 .withIncludePattern(includePattern)
                 .withForks(forks)
@@ -117,62 +117,12 @@ int threads
                 .withMeasurementIterations(measurementIterations)
                 .withMeasurementTime(measurementTime)
                 .withWarmupTime(warmupTime)
-                .withThreads(threads)
-        ;
+                .withThreads(threads);
+
+        integrationConfig.ifPresent(builder::withIntegrationConfig);
+        return builder;
     }
 
-    /**
-     * Converts this configuration to JMH Options.
-     * 
-     * @return JMH Options configured from this configuration
-     */
-    public Options toJmhOptions() {
-        var builder = new OptionsBuilder()
-                .include(includePattern)
-                .resultFormat(reportConfig.resultFormat())
-                .result(reportConfig.getOrCreateResultFile())
-                .forks(forks)
-                .warmupIterations(warmupIterations)
-                .measurementIterations(measurementIterations)
-                .measurementTime(measurementTime)
-                .warmupTime(warmupTime)
-                .threads(threads);
-
-        // Add JVM arguments
-        builder.jvmArgs(
-                "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties"
-        );
-        
-        // Pass through integration-related system properties to forked JVMs
-        passSystemPropertyIfSet(builder, "integration.service.url");
-        passSystemPropertyIfSet(builder, "keycloak.url");
-        passSystemPropertyIfSet(builder, "quarkus.metrics.url");
-        
-        // Pass through token repository properties to forked JVMs
-        passSystemPropertyIfSet(builder, "token.keycloak.url");
-        passSystemPropertyIfSet(builder, "token.keycloak.realm");
-        passSystemPropertyIfSet(builder, "token.keycloak.clientId");
-        passSystemPropertyIfSet(builder, "token.keycloak.clientSecret");
-        passSystemPropertyIfSet(builder, "token.keycloak.username");
-        passSystemPropertyIfSet(builder, "token.keycloak.password");
-        passSystemPropertyIfSet(builder, "token.pool.size");
-        passSystemPropertyIfSet(builder, "token.connection.timeoutMs");
-        passSystemPropertyIfSet(builder, "token.request.timeoutMs");
-        passSystemPropertyIfSet(builder, "token.verifySsl");
-        passSystemPropertyIfSet(builder, "token.refreshThresholdSeconds");
-
-        return builder.build();
-    }
-    
-    /**
-     * Helper method to pass system properties to forked JVMs if they are set.
-     */
-    private static void passSystemPropertyIfSet(ChainedOptionsBuilder builder, String propertyName) {
-        String value = System.getProperty(propertyName);
-        if (value != null && !value.trim().isEmpty()) {
-            builder.jvmArgsAppend("-D" + propertyName + "=" + value);
-        }
-    }
 
     /**
      * Convenience methods for accessing nested report configuration.
@@ -266,6 +216,7 @@ int threads
         private TimeValue measurementTime;
         private TimeValue warmupTime;
         private int threads;
+        private IntegrationConfiguration integrationConfig;
 
         /**
          * Sets the complete report configuration.
@@ -380,6 +331,14 @@ int threads
             return this;
         }
 
+        /**
+         * Sets the integration configuration for integration benchmarks.
+         * This configuration contains URLs needed for integration testing.
+         */
+        public Builder withIntegrationConfig(IntegrationConfiguration config) {
+            this.integrationConfig = config;
+            return this;
+        }
 
         /**
          * Builds the configuration.
@@ -405,7 +364,8 @@ int threads
                     measurementIterations,
                     measurementTime,
                     warmupTime,
-                    threads
+                    threads,
+                    Optional.ofNullable(integrationConfig)
             );
         }
     }

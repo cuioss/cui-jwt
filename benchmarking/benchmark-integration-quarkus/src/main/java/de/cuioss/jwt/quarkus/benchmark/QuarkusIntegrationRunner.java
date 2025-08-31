@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
@@ -55,14 +56,29 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
             "Integration service URL",
             "integration.service.url"
     );
+    private final String quarkusMetricsUrl = requireProperty(
+            System.getProperty("quarkus.metrics.url"),
+            "Quarkus metrics URL",
+            "quarkus.metrics.url"
+    );
+    // Get token configuration
+    private final TokenRepositoryConfig tokenConfig = TokenRepositoryConfig.fromProperties();
     // Get Keycloak URL from properties - checks both "token.keycloak.url" and "keycloak.url"
-    private final String keycloakUrl = TokenRepositoryConfig.fromProperties().getKeycloakBaseUrl();
+    private final String keycloakUrl = tokenConfig.getKeycloakBaseUrl();
 
     @Override protected BenchmarkConfiguration createConfiguration() {
+        // Create integration configuration with required URLs
+        IntegrationConfiguration integrationConfig = new IntegrationConfiguration(
+                serviceUrl,
+                keycloakUrl,
+                quarkusMetricsUrl
+        );
+
         return BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("validateJwtThroughput")
                 .withLatencyBenchmarkName("validateJwtThroughput")
+                .withIntegrationConfig(integrationConfig)
                 .build();
     }
 
@@ -118,7 +134,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
 
         // Process JMH benchmark results to create both http-metrics.json and quarkus-metrics.json
-        String benchmarkResultsFile = config.resultFile();
+        String benchmarkResultsFile = config.reportConfig().getOrCreateResultFile();
         MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
         metricsPostProcessor.parseAndExportAllMetrics(Instant.now());
     }

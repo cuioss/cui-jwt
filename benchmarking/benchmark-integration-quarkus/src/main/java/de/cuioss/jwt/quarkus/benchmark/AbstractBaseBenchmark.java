@@ -21,8 +21,6 @@ import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.*;
 
-import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -30,6 +28,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+
+import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
 /**
  * Abstract base class for all Quarkus benchmarks (with or without authentication).
@@ -63,9 +63,9 @@ import java.util.concurrent.TimeUnit;
      */
     @Setup(Level.Trial) public void setupBenchmark() {
         // Get required integration URLs from system properties (must be set in pom.xml)
-        serviceUrl = requireProperty(System.getProperty("integration.service.url"), 
+        serviceUrl = requireProperty(System.getProperty("integration.service.url"),
                 "Integration service URL", "integration.service.url");
-        quarkusMetricsUrl = requireProperty(System.getProperty("quarkus.metrics.url"), 
+        quarkusMetricsUrl = requireProperty(System.getProperty("quarkus.metrics.url"),
                 "Quarkus metrics URL", "quarkus.metrics.url");
 
         // Benchmark results directory is hardcoded

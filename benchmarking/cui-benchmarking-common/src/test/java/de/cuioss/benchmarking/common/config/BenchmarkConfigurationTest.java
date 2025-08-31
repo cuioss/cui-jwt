@@ -174,10 +174,7 @@ class BenchmarkConfigurationTest {
                 .withResultsDirectory(tempDir.resolve("benchmark-results").toString())
                 .build();
 
-        var options = config.toJmhOptions();
-        assertNotNull(options, "Options should not be null");
-
-        // Verify the configuration values are properly set (testing what we can access)
+        // Verify the configuration values are properly set
         assertEquals(".*JmhTest.*", config.includePattern(), "Include pattern should match");
         assertEquals(2, config.forks(), "Forks should be 2");
         assertEquals(8, config.threads(), "Threads should be 8");
@@ -250,9 +247,8 @@ class BenchmarkConfigurationTest {
             assertEquals("fileThroughput", config.throughputBenchmarkName());
             assertEquals("fileLatency", config.latencyBenchmarkName());
 
-            // Verify JMH options are created successfully
-            var options = config.toJmhOptions();
-            assertNotNull(options, "Options should not be null");
+            // Verify configuration is created successfully
+            assertNotNull(config, "Configuration should not be null");
 
             // Test that result file can be generated when not explicitly set
             BenchmarkConfiguration configWithoutFile = BenchmarkConfiguration.builder()
@@ -265,9 +261,8 @@ class BenchmarkConfigurationTest {
             assertNull(configWithoutFile.resultFile(), "Result file should be null when not set");
             assertEquals(tempDir.resolve("generated-results").toString(), configWithoutFile.resultsDirectory());
 
-            // The actual result file will be generated when toJmhOptions() is called
-            var generatedOptions = configWithoutFile.toJmhOptions();
-            assertNotNull(generatedOptions, "Options with generated file should not be null");
+            // The actual result file will be generated when needed by the runner
+            assertNotNull(configWithoutFile.reportConfig(), "Report config should exist");
         } finally {
             clearSystemProperties();
         }

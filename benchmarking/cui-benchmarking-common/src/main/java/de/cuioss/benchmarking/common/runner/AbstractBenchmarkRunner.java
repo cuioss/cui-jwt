@@ -21,6 +21,7 @@ import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -109,7 +110,27 @@ public abstract class AbstractBenchmarkRunner {
         // Run initialization hook
         beforeBenchmarks();
 
-        Options options = config.toJmhOptions();
+        // Build JMH Options from configuration
+        var builder = new OptionsBuilder()
+                .include(config.includePattern())
+                .resultFormat(config.reportConfig().resultFormat())
+                .result(config.reportConfig().getOrCreateResultFile())
+                .forks(config.forks())
+                .warmupIterations(config.warmupIterations())
+                .measurementIterations(config.measurementIterations())
+                .measurementTime(config.measurementTime())
+                .warmupTime(config.warmupTime())
+                .threads(config.threads());
+
+        // Pass all system properties from parent JVM to forked JVMs
+        // This ensures all Maven-provided properties are available in benchmark processes
+        var systemProperties = System.getProperties().entrySet().stream()
+                .map(e -> "-D" + e.getKey() + "=" + e.getValue())
+                .toArray(String[]::new);
+
+        builder.jvmArgsPrepend(systemProperties);
+
+        Options options = builder.build();
 
         // Run the benchmarks
         Collection<RunResult> results = new Runner(options).run();
