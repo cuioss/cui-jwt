@@ -54,10 +54,15 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
                 .build();
     }
 
-    @Override protected void beforeBenchmarks() {
+    @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
         LOGGER.info("JWT validation micro benchmarks starting - Key cache initialized");
+    }
+
+    @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
+        // No cleanup required for library benchmarks
+        LOGGER.debug("Library benchmark cleanup completed");
     }
 
     /**
@@ -68,6 +73,6 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
      * @throws RunnerException if benchmark execution fails
      */
     public static void main(String[] args) throws IOException, RunnerException {
-        new LibraryBenchmarkRunner().run();
+        new LibraryBenchmarkRunner().runBenchmark();
     }
 }

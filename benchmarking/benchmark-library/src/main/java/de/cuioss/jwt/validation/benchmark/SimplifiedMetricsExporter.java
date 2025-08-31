@@ -41,12 +41,12 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
     public static final String MEASURE = "measure";
     public static final String VALIDATE = "validate";
     public static final String BENCHMARK = "benchmark";
-    
+
     private static final String DEFAULT_OUTPUT_DIR = "target/benchmark-results";
     private static final String METRICS_FILE = "jwt-validation-metrics.json";
-    
+
     private static SimplifiedMetricsExporter instance;
-    
+
     /**
      * Private constructor for singleton pattern.
      * 
@@ -55,7 +55,7 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
     private SimplifiedMetricsExporter(String outputDirectory) {
         super(outputDirectory);
     }
-    
+
     /**
      * Get the singleton instance of SimplifiedMetricsExporter.
      * 
@@ -69,50 +69,48 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
     }
 
 
-    
-    @Override
-    public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
+    @Override public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
         if (!(metricsData instanceof TokenValidatorMonitor)) {
-            LOGGER.warn("Invalid metrics data type: expected TokenValidatorMonitor, got {}", 
-                metricsData != null ? metricsData.getClass().getName() : "null");
+            LOGGER.warn("Invalid metrics data type: expected TokenValidatorMonitor, got {}",
+                    metricsData != null ? metricsData.getClass().getName() : "null");
             return;
         }
-        
+
         TokenValidatorMonitor monitor = (TokenValidatorMonitor) metricsData;
-        
+
         // Create metrics for current benchmark
         Map<String, Object> benchmarkMetrics = new LinkedHashMap<>();
         benchmarkMetrics.put("timestamp", ISO_FORMATTER.format(timestamp.atOffset(ZoneOffset.UTC)));
-        
+
         Map<String, Map<String, Object>> steps = new LinkedHashMap<>();
-        
+
         // Export metrics for each measurement type
         for (MeasurementType type : monitor.getEnabledTypes()) {
             Optional<StripedRingBufferStatistics> statsOpt = monitor.getValidationMetrics(type);
-            
+
             if (statsOpt.isPresent()) {
                 StripedRingBufferStatistics stats = statsOpt.get();
                 if (stats.sampleCount() > 0) {
                     Map<String, Object> stepMetrics = new LinkedHashMap<>();
                     stepMetrics.put("sample_count", stats.sampleCount());
-                    
+
                     // Convert Duration to microseconds and round appropriately
                     stepMetrics.put("p50_us", durationToRoundedMicros(stats.p50()));
                     stepMetrics.put("p95_us", durationToRoundedMicros(stats.p95()));
                     stepMetrics.put("p99_us", durationToRoundedMicros(stats.p99()));
-                    
+
                     steps.put(type.name().toLowerCase(), stepMetrics);
                 }
             }
         }
-        
+
         benchmarkMetrics.put("steps", steps);
-        
+
         // Update aggregated metrics file
         String filepath = outputDirectory + "/" + METRICS_FILE;
         updateAggregatedMetrics(filepath, benchmarkMethodName, benchmarkMetrics);
     }
-    
+
     /**
      * Legacy static method for backward compatibility.
      * 
@@ -124,13 +122,13 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
             LOGGER.debug("No monitor provided, skipping metrics export");
             return;
         }
-        
+
         // Get current benchmark name from thread or stack trace
         String benchmarkName = getCurrentBenchmarkName();
         if (benchmarkName == null) {
             benchmarkName = "unknown_benchmark";
         }
-        
+
         getInstance().exportMetrics(benchmarkName, Instant.now(), monitor);
     }
 

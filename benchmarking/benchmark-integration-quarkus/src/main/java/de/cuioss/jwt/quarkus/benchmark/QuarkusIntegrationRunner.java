@@ -60,17 +60,25 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
                 .build();
     }
 
-    @Override protected void beforeBenchmarks() {
+    @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
 
         // Get configuration to log the URLs
-        IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
+        IntegrationConfiguration integrationConfig = config.integrationConfig();
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
                 integrationConfig.integrationServiceUrl(), integrationConfig.keycloakUrl());
     }
 
-    @Override protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) {
-        // Check if any benchmarks actually ran
+    @Override protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
+        // Call parent implementation for standard processing
+        super.processResults(results, config);
+
+        // Additional Quarkus-specific metrics processing
+        processQuarkusMetrics(config);
+    }
+
+    @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
+        // Validate results
         if (results.isEmpty()) {
             throw new IllegalStateException("Benchmark execution failed: No results produced");
         }
@@ -88,11 +96,12 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
             throw new IllegalStateException("Benchmark execution failed: " + benchmarksWithoutResults +
                     " out of " + results.size() + " benchmarks produced no valid results");
         }
-
-        // Process and download final metrics after successful benchmark execution
-        processMetrics(config);
     }
 
+    @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
+        // Clean up any integration test resources if needed
+        LOGGER.debug("Integration benchmark cleanup completed");
+    }
 
     /**
      * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
@@ -101,11 +110,11 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      *
      * @param config the benchmark configuration
      */
-    private void processMetrics(BenchmarkConfiguration config) {
+    private void processQuarkusMetrics(BenchmarkConfiguration config) {
         String outputDirectory = config.resultsDirectory();
 
         // Get integration configuration to access URLs
-        IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
+        IntegrationConfiguration integrationConfig = config.integrationConfig();
 
         LOGGER.debug("Processing metrics from {} to {}", integrationConfig.integrationServiceUrl(), outputDirectory);
 
@@ -122,7 +131,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         metricsPostProcessor.parseAndExportAllMetrics(Instant.now());
     }
 
-
     /**
      * Main method to run all integration benchmarks.
      *
@@ -131,6 +139,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * @throws RunnerException if benchmark execution fails
      */
     public static void main(String[] args) throws IOException, RunnerException {
-        new QuarkusIntegrationRunner().run();
+        new QuarkusIntegrationRunner().runBenchmark();
     }
 }

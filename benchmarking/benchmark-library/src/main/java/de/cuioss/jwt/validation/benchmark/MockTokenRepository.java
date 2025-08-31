@@ -265,8 +265,7 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Returns tokens from the pre-generated pool using round-robin rotation.
      * </p>
      */
-    @Override
-    @NonNull public String getNextToken() {
+    @Override @NonNull public String getNextToken() {
         if (tokenPool.length == 0) {
             throw new IllegalStateException("Token pool is empty");
         }
@@ -280,8 +279,7 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Returns the size of the pre-generated token pool.
      * </p>
      */
-    @Override
-    public int getTokenPoolSize() {
+    @Override public int getTokenPoolSize() {
         return tokenPool.length;
     }
 
@@ -292,8 +290,7 @@ import java.util.concurrent.atomic.AtomicInteger;
      * This is useful for long-running benchmarks where tokens may expire.
      * </p>
      */
-    @Override
-    public void refreshTokens() {
+    @Override public void refreshTokens() {
         List<String> newTokens = new ArrayList<>();
         tokenMetadata.clear();
 
@@ -316,7 +313,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         // Replace token pool and shuffle
         System.arraycopy(newTokens.toArray(new String[0]), 0, tokenPool, 0, tokenPool.length);
         shuffleArray(tokenPool);
-        
+
         // Reset index
         tokenIndex.set(0);
     }

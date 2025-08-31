@@ -17,8 +17,8 @@ package de.cuioss.jwt.validation.benchmark.base;
 
 import de.cuioss.benchmarking.common.base.AbstractBenchmarkBase;
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
+import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.TearDown;

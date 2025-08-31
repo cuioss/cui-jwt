@@ -8,6 +8,7 @@
 [IMPORTANT]
 ====
 This document follows the refactoring process standards defined in the CUI process documentation.
+Pre-1.0 rule: Do deprecation nor transitonary comments
 ====
 
 == Purpose
@@ -16,121 +17,8 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 == Code Structure and Design
 
-=== C1. Consolidate Abstract Base Classes
-* [x] *Priority:* High - *COMPLETED* (Commit: 64ad45cd)
-
-*Description:* Extract common functionality from `AbstractBaseBenchmark` (benchmark-library) and `AbstractBaseBenchmark` (benchmark-integration-quarkus) into a unified base class in cui-benchmarking-common module.
-
-*Rationale:* Eliminates code duplication and provides a single source of truth for benchmark base functionality, reducing maintenance overhead.
-
-*Implementation Checklist:*
-
-* [x] Analyze both `AbstractBaseBenchmark` classes for common functionality
-* [x] Create new `AbstractBenchmarkBase` in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/base/`
-* [x] Extract common fields: `serviceUrl`, `benchmarkResultsDir`, `httpClient`
-* [x] Extract common methods: `setupBase()`, `tearDown()`, `createBaseRequest()`
-* [x] Update `benchmark-library/AbstractBenchmark` to extend new base class
-* [x] Update `benchmark-integration-quarkus/AbstractBaseBenchmark` to extend new base class
-* [x] Update all concrete benchmark classes to use new hierarchy
-* [x] Add unit tests for new base class in cui-benchmarking-common
-
-*Verification Steps:*
-
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Execute library benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark`
-* [x] Execute integration benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing`
-* [x] Verify benchmark results in `target/benchmark-results/`
-* [x] Ensure no regression in benchmark performance metrics
-* [x] Commit with message: `refactor: C1. Consolidate Abstract Base Classes`
-
-=== C2. Unify Metrics Exporter Implementations
-* [x] *Priority:* High - *COMPLETED* (Commit: 8b1e0ad6)
-
-*Description:* Create a common `MetricsExporter` interface in cui-benchmarking-common with specific implementations for library benchmarks (`SimplifiedMetricsExporter`) and integration benchmarks (`SimpleMetricsExporter`).
-
-*Rationale:* Standardizes metrics export functionality while allowing for implementation-specific variations through a clean interface design.
-
-*Implementation Checklist:*
-
-* [x] Create `MetricsExporter` interface in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/metrics/`
-* [x] Define interface methods: `exportMetrics()`, `exportToFile()`, `getExportFormat()`
-* [x] Create `AbstractMetricsExporter` with common implementation
-* [x] Refactor `SimplifiedMetricsExporter` to implement new interface
-* [x] Refactor `SimpleMetricsExporter` to implement new interface
-* [x] Extract common JSON serialization logic to abstract class
-* [x] Update all benchmark classes to use interface type
-* [x] Create factory class `MetricsExporterFactory` for instantiation
-
-*Verification Steps:*
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Execute benchmarks (DO NOT cancel or shortcut) and verify metrics export files are created correctly
-* [x] Validate JSON structure of exported metrics matches expected format
-* [x] Compare metrics values between old and new implementation
-* [x] Run all metrics exporter tests
-* [x] Commit with message: `refactor: C2. Unify Metrics Exporter Implementations`
-
-=== C3. Clarify Token Repository Implementations
-* [x] *Priority:* Medium - *COMPLETED*
-
-*Description:* Rename and reorganize the two TokenRepository classes to clearly distinguish their purposes: `MockTokenRepository` for in-memory token generation and `KeycloakTokenRepository` for real token fetching. Consider creating a common `TokenProvider` interface.
-
-*Rationale:* Current naming creates confusion about the purpose of each repository. Clear naming and potential interface extraction improves code clarity.
-
-*Implementation Checklist:*
-
-
-* [x] Create `TokenProvider` interface in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/token/`
-* [x] Define interface methods: `getNextToken()`, `getTokenPoolSize()`, `refreshTokens()`
-* [x] Rename `benchmark-library/TokenRepository` to `MockTokenRepository`
-* [x] Rename `cui-benchmarking-common/TokenRepository` to `KeycloakTokenRepository`
-* [x] Both classes implement `TokenProvider` interface
-* [x] Update all references in benchmark classes
-* [x] Update configuration classes to use appropriate implementation
-* [x] Add Javadoc clearly explaining the purpose of each implementation
-
-*Verification Steps:*
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Verify library benchmarks use MockTokenRepository
-* [x] Verify integration benchmarks can use KeycloakTokenRepository
-* [x] Run all token repository tests
-* [x] Commit with message: `refactor: C3. Clarify Token Repository Implementations`
-
-=== C4. Consolidate Constants
-* [x] *Priority:* High - *COMPLETED*
-
-*Description:* Create a unified `BenchmarkConstants` class in cui-benchmarking-common with nested classes for organization (e.g., `BenchmarkConstants.Metrics`, `BenchmarkConstants.Report`, `BenchmarkConstants.Integration`).
-
-*Rationale:* Constants are currently scattered across modules. Centralization improves discoverability and reduces duplication.
-
-*Implementation Checklist:*
-
-* [x] Create `BenchmarkConstants` class in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/constants/`
-* [x] Create nested class `BenchmarkConstants.Metrics` with metric-related constants
-* [x] Create nested class `BenchmarkConstants.Report` with report-related constants
-* [x] Create nested class `BenchmarkConstants.Integration` with integration-related constants
-* [x] Create nested class `BenchmarkConstants.Files` with file/directory constants
-* [x] Migrate constants from `MetricConstants` (benchmark-integration-quarkus)
-* [x] Migrate constants from `ReportConstants` (cui-benchmarking-common)
-* [x] Update all references to use new constant locations
-* [x] Remove deprecated constant classes
-
-*Verification Steps:*
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Verify no compilation errors from constant references
-* [x] Check IDE for any unresolved constant references
-* [x] Run grep to ensure no old constant class references remain
-* [x] Commit with message: `refactor: C4. Consolidate Constants`
-
 === C5. Strengthen Runner Infrastructure
-* [ ] *Priority:* Medium
+* [x] *Priority:* Medium
 
 *Description:* Enhance `AbstractBenchmarkRunner` with template method pattern to better support the various runner implementations (LibraryBenchmarkRunner, JfrBenchmarkRunner, QuarkusIntegrationRunner).
 
@@ -138,24 +26,25 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Define template method `runBenchmark()` in `AbstractBenchmarkRunner`
-* [ ] Add abstract methods: `prepareBenchmark()`, `executeBenchmark()`, `processResults()`, `cleanup()`
-* [ ] Add hook methods: `beforeBenchmark()`, `afterBenchmark()` with default empty implementations
-* [ ] Extract common JMH options building to base class
-* [ ] Extract common result processing to base class
-* [ ] Update `LibraryBenchmarkRunner` to use template pattern
-* [ ] Update `JfrBenchmarkRunner` to use template pattern
-* [ ] Update `QuarkusIntegrationRunner` to use template pattern
-* [ ] Add configuration validation in base class
+* [x] Define template method `runBenchmark()` in `AbstractBenchmarkRunner`
+* [x] Add abstract methods: `prepareBenchmark()`, `executeBenchmark()`, `processResults()`, `cleanup()`
+* [x] Add hook methods: `beforeBenchmark()`, `afterBenchmark()` with default empty implementations
+* [x] Extract common JMH options building to base class
+* [x] Extract common result processing to base class
+* [x] Update `LibraryBenchmarkRunner` to use template pattern
+* [x] Update `JfrBenchmarkRunner` to use template pattern
+* [x] Update `QuarkusIntegrationRunner` to use template pattern
+* [x] Add configuration validation in base class
 
 *Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
 * [ ] Execute each runner type and verify correct execution flow (DO NOT cancel or shortcut any runs)
 * [ ] Verify benchmark results are generated correctly
 * [ ] Check that runner-specific features still work (JFR events, integration metrics)
-* [ ] Commit with message: `refactor: C5. Strengthen Runner Infrastructure`
+* [x] Commit with message: `refactor: C5. Strengthen Runner Infrastructure`
 
 === C6. Create Metrics Processing Pipeline
 * [ ] *Priority:* Medium
@@ -176,6 +65,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Create builder pattern for pipeline construction
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
 * [ ] Execute benchmarks with metrics processing (DO NOT cancel or shortcut)
@@ -203,6 +93,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Update documentation for JFR usage
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Execute JFR benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr`
@@ -229,6 +120,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add renderer factory for format selection
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Generate reports in all formats (HTML, JSON, Markdown)
 * [ ] Verify report content is consistent across formats
@@ -256,6 +148,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add clear Javadoc explaining when to use each component
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Execute benchmarks with trend analysis (DO NOT cancel or shortcut)
 * [ ] Verify statistical calculations are correct
@@ -284,6 +177,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Document recommended settings for different scenarios
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
 * [ ] Execute integration benchmarks with different client configurations (DO NOT cancel or shortcut)
@@ -311,6 +205,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add configuration for template engine selection
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Generate reports using different template engines
 * [ ] Measure template processing performance
@@ -340,6 +235,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add configuration schema documentation
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Test with invalid configurations and verify proper error handling
 * [ ] Test with missing required configurations
@@ -370,6 +266,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Remove duplicate test data files
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw test -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw test -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
@@ -397,6 +294,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add test documentation explaining parameterization
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
 * [ ] Verify all test scenarios are still covered
 * [ ] Check test execution time (should be similar or faster)
@@ -423,6 +321,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add custom rule examples in documentation
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Test with various validation rules
 * [ ] Verify custom rules can be added
@@ -451,6 +350,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Document logging configuration approach
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
@@ -478,6 +378,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Update all JSON processing tests
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
@@ -533,128 +434,15 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Include example benchmark implementation
 
 *Verification Steps:*
+
 * [ ] Follow guide to create a sample benchmark
 * [ ] Verify all steps are accurate and complete
 * [ ] Test example code compiles and runs
 * [ ] Check metrics and reports generate correctly
 * [ ] Get feedback from team members
 * [ ] Commit with message: `docs: DOC2. Create Benchmark Development Guide`
-
-== Future Enhancements
-
-=== F1. Configuration File Support
-* [ ] *Priority:* Low
-
-*Description:* Add YAML/JSON configuration file support with profiles (dev, ci, prod) to supplement system property configuration.
-
-*Rationale:* System property configuration is cumbersome for complex setups. File-based configuration with profiles improves usability.
-
-*Implementation Checklist:*
-
-* [ ] Add YAML parser dependency (SnakeYAML or similar)
-* [ ] Create `BenchmarkConfig` YAML schema
-* [ ] Implement `ConfigurationLoader` for file reading
-* [ ] Add profile support (dev, ci, prod)
-* [ ] Create default configuration files
-* [ ] Add configuration override mechanism
-* [ ] Update runners to load file configuration
-* [ ] Document configuration file format
-
-*Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Test configuration loading from files
-* [ ] Verify profile selection works
-* [ ] Check property override mechanism
-* [ ] Test with invalid configuration files
-* [ ] Commit with message: `feature: F1. Configuration File Support`
-
-=== F2. Enhanced Badge Generation
-* [ ] *Priority:* Low
-
-*Description:* Extract and enhance BadgeGenerator with configurable thresholds, styles, and support for multiple badge formats.
-
-*Rationale:* Current implementation is basic. Enhanced badges provide better visual feedback for benchmark results.
-
-*Implementation Checklist:*
-
-* [ ] Extract `BadgeGenerator` to separate package
-* [ ] Add configurable threshold support
-* [ ] Implement multiple badge styles (flat, flat-square, for-the-badge)
-* [ ] Add SVG generation support
-* [ ] Add shields.io compatible JSON output
-* [ ] Create badge configuration class
-* [ ] Add color scheme customization
-* [ ] Document badge usage and embedding
-
-*Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Generate badges in all formats
-* [ ] Verify SVG badges render correctly
-* [ ] Test threshold configuration
-* [ ] Check color schemes work properly
-* [ ] Commit with message: `feature: F2. Enhanced Badge Generation`
-
-=== F3. Historical Data Versioning
-* [ ] *Priority:* Low
-
-*Description:* Add data versioning and migration support to `HistoricalDataManager` for handling benchmark result schema changes.
-
-*Rationale:* Schema evolution is not currently handled. Versioning ensures historical data remains accessible after schema changes.
-
-*Implementation Checklist:*
-
-* [ ] Add version field to benchmark result schema
-* [ ] Create `DataMigration` interface
-* [ ] Implement migration registry
-* [ ] Add automatic migration on data load
-* [ ] Create migration for current schema
-* [ ] Add backwards compatibility support
-* [ ] Document migration process
-* [ ] Add migration testing utilities
-
-*Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Test data migration with sample data
-* [ ] Verify backwards compatibility
-* [ ] Check migration performance
-* [ ] Test with multiple version jumps
-* [ ] Commit with message: `feature: F3. Historical Data Versioning`
-
-=== F4. Configuration Registry Pattern
-* [ ] *Priority:* Low
-
-*Description:* Implement configuration factory/registry pattern for managing different benchmark profiles and scenarios.
-
-*Rationale:* Current configuration is monolithic. Registry pattern allows for dynamic configuration selection based on context.
-
-*Implementation Checklist:*
-
-* [ ] Create `ConfigurationRegistry` class
-* [ ] Implement `ConfigurationFactory` interface
-* [ ] Add configuration registration mechanism
-* [ ] Implement profile-based selection
-* [ ] Add configuration inheritance support
-* [ ] Create predefined configuration sets
-* [ ] Add runtime configuration switching
-* [ ] Document registry usage patterns
-
-*Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Test configuration registration
-* [ ] Verify profile selection works
-* [ ] Check configuration inheritance
-* [ ] Test runtime switching
-* [ ] Commit with message: `feature: F4. Configuration Registry Pattern`
-
+s
 == Implementation Approach
-
-=== Prioritization Strategy
-
-Tasks should be implemented in priority order:
-
-1. *High Priority Tasks* (C1, C2, C4, T1, D1, DOC1): These provide immediate value with minimal disruption
-2. *Medium Priority Tasks* (C3, C5, C6, P1, S1, T2, D2, DOC2): Good value with moderate effort
-3. *Low Priority Tasks* (C7, C8, C9, P2, T3, F1-F4): Nice-to-have improvements
 
 === Implementation Guidelines
 
