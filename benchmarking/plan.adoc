@@ -35,11 +35,12 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Add unit tests for new base class in cui-benchmarking-common
 
 *Verification Steps:*
+
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute library benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-library -Prun-benchmarks -Djmh.include=".*SimpleCoreValidation.*" -Djmh.forks=1 -Djmh.warmupIterations=3 -Djmh.iterations=5 -Djmh.threads=1 -Djmh.warmupTime=1s -Djmh.time=2s`
-* [ ] Execute integration benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Prun-benchmarks -Djmh.include=".*JwtValidation.*" -Djmh.forks=1 -Djmh.warmupIterations=3 -Djmh.iterations=5 -Djmh.threads=1 -Djmh.warmupTime=1s -Djmh.time=2s`
+* [ ] Execute library benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark`
+* [ ] Execute integration benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing`
 * [ ] Verify benchmark results in `target/benchmark-results/`
 * [ ] Ensure no regression in benchmark performance metrics
 * [ ] Commit with message: `refactor: C1. Consolidate Abstract Base Classes`
@@ -204,7 +205,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 *Verification Steps:*
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Execute JFR benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-library -Prun-jfr-benchmarks`
+* [ ] Execute JFR benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr`
 * [ ] Verify JFR events are recorded correctly
 * [ ] Check JFR analysis reports are generated
 * [ ] Commit with message: `refactor: C7. Extract JFR Utilities to Common Module`
