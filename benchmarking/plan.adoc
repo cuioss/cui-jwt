@@ -39,8 +39,8 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute library benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark`
-* [ ] Execute integration benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing`
+* [ ] Execute library benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark`
+* [ ] Execute integration benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing`
 * [ ] Verify benchmark results in `target/benchmark-results/`
 * [ ] Ensure no regression in benchmark performance metrics
 * [ ] Commit with message: `refactor: C1. Consolidate Abstract Base Classes`
@@ -67,7 +67,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute benchmarks and verify metrics export files are created correctly
+* [ ] Execute benchmarks (DO NOT cancel or shortcut) and verify metrics export files are created correctly
 * [ ] Validate JSON structure of exported metrics matches expected format
 * [ ] Compare metrics values between old and new implementation
 * [ ] Run all metrics exporter tests
@@ -152,7 +152,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute each runner type and verify correct execution flow
+* [ ] Execute each runner type and verify correct execution flow (DO NOT cancel or shortcut any runs)
 * [ ] Verify benchmark results are generated correctly
 * [ ] Check that runner-specific features still work (JFR events, integration metrics)
 * [ ] Commit with message: `refactor: C5. Strengthen Runner Infrastructure`
@@ -178,7 +178,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 *Verification Steps:*
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute benchmarks with metrics processing
+* [ ] Execute benchmarks with metrics processing (DO NOT cancel or shortcut)
 * [ ] Verify all metrics are processed correctly through pipeline
 * [ ] Check that processed metrics match expected format
 * [ ] Run all metrics processor tests
@@ -205,7 +205,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 *Verification Steps:*
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Execute JFR benchmarks: `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr`
+* [ ] Execute JFR benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr`
 * [ ] Verify JFR events are recorded correctly
 * [ ] Check JFR analysis reports are generated
 * [ ] Commit with message: `refactor: C7. Extract JFR Utilities to Common Module`
@@ -257,7 +257,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Verification Steps:*
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Execute benchmarks with trend analysis
+* [ ] Execute benchmarks with trend analysis (DO NOT cancel or shortcut)
 * [ ] Verify statistical calculations are correct
 * [ ] Check trend detection works properly
 * [ ] Compare results with previous implementation
@@ -286,7 +286,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 *Verification Steps:*
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute integration benchmarks with different client configurations
+* [ ] Execute integration benchmarks with different client configurations (DO NOT cancel or shortcut)
 * [ ] Monitor connection pool usage during benchmarks
 * [ ] Verify performance improvement with pooling enabled
 * [ ] Check no connection leaks occur
