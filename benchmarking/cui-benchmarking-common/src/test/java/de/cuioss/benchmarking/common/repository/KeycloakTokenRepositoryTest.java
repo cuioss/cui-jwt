@@ -19,19 +19,19 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TokenRepositoryTest {
+class KeycloakTokenRepositoryTest {
 
     @Test void constructorWithNullConfig() {
-        assertThrows(NullPointerException.class, () -> new TokenRepository(null));
+        assertThrows(NullPointerException.class, () -> new KeycloakTokenRepository(null));
     }
 
     @Test void tokenFetchException() {
         // Test the custom exception
-        TokenRepository.TokenFetchException ex = new TokenRepository.TokenFetchException("Test error");
+        KeycloakTokenRepository.TokenFetchException ex = new KeycloakTokenRepository.TokenFetchException("Test error");
         assertEquals("Test error", ex.getMessage());
 
         Exception cause = new RuntimeException("Cause");
-        TokenRepository.TokenFetchException exWithCause = new TokenRepository.TokenFetchException("Test error", cause);
+        KeycloakTokenRepository.TokenFetchException exWithCause = new KeycloakTokenRepository.TokenFetchException("Test error", cause);
         assertEquals("Test error", exWithCause.getMessage());
         assertEquals(cause, exWithCause.getCause());
     }

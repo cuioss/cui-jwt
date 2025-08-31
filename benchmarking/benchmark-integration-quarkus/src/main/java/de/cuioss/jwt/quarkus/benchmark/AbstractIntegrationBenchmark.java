@@ -15,8 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.benchmarking.common.repository.TokenRepository;
+import de.cuioss.benchmarking.common.repository.KeycloakTokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
+import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
@@ -38,7 +39,7 @@ import java.net.http.HttpRequest;
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractIntegrationBenchmark.class);
 
-    protected TokenRepository tokenRepository;
+    protected TokenProvider tokenRepository;
 
     /**
      * Setup method called once before all benchmark iterations.
@@ -61,7 +62,7 @@ import java.net.http.HttpRequest;
      */
     private void initializeTokenRepository() {
         TokenRepositoryConfig config = TokenRepositoryConfig.fromProperties();
-        tokenRepository = new TokenRepository(config);
+        tokenRepository = new KeycloakTokenRepository(config);
 
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
     }

@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common.repository;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
+import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
@@ -34,14 +35,28 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Repository for fetching and managing JWT tokens from Keycloak for benchmark testing.
- * Implements token caching and rotation to simulate real-world usage patterns.
+ * Keycloak-based token repository for fetching real JWT tokens from a Keycloak server.
+ * <p>
+ * This implementation fetches actual tokens from a Keycloak authentication server,
+ * making it suitable for integration benchmarks that need to test against real
+ * authentication infrastructure.
+ * </p>
+ * <p>
+ * Features:
+ * <ul>
+ *   <li>Fetches tokens from Keycloak using password grant</li>
+ *   <li>Maintains a pool of tokens for rotation</li>
+ *   <li>Supports SSL verification configuration</li>
+ *   <li>Provides round-robin token distribution</li>
+ * </ul>
+ * </p>
  *
+ * @author Oliver Wolff
  * @since 1.0
  */
-public class TokenRepository {
+public class KeycloakTokenRepository implements TokenProvider {
 
-    private static final CuiLogger LOGGER = new CuiLogger(TokenRepository.class);
+    private static final CuiLogger LOGGER = new CuiLogger(KeycloakTokenRepository.class);
     private static final Gson GSON = new Gson();
     private static final int HTTP_OK = 200;
 
@@ -51,11 +66,11 @@ public class TokenRepository {
     private final HttpClient httpClient;
 
     /**
-     * Creates a new TokenRepository with the given configuration.
+     * Creates a new KeycloakTokenRepository with the given configuration.
      *
      * @param config the configuration for connecting to Keycloak
      */
-    public TokenRepository(@NonNull TokenRepositoryConfig config) {
+    public KeycloakTokenRepository(@NonNull TokenRepositoryConfig config) {
         this.config = config;
         this.tokenPool = new ArrayList<>(config.getTokenPoolSize());
         this.tokenIndex = new AtomicInteger(0);
@@ -72,12 +87,14 @@ public class TokenRepository {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Gets the next token from the pool using round-robin rotation.
      * This ensures even distribution and simulates cache miss scenarios.
-     *
-     * @return a JWT access token
+     * If the pool is empty, fetches a single token directly from Keycloak.
+     * </p>
      */
-    @NonNull public String getNextToken() {
+    @Override @NonNull public String getNextToken() {
         if (tokenPool.isEmpty()) {
             LOGGER.warn("Token pool is empty, fetching single token");
             return fetchSingleToken();
@@ -88,11 +105,12 @@ public class TokenRepository {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns the current size of the token pool.
-     *
-     * @return the number of tokens in the pool
+     * </p>
      */
-    public int getTokenPoolSize() {
+    @Override public int getTokenPoolSize() {
         return tokenPool.size();
     }
 
@@ -192,5 +210,30 @@ public class TokenRepository {
         public TokenFetchException(String message, Throwable cause) {
             super(message, cause);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Refreshes the token pool by fetching new tokens from Keycloak.
+     * This replaces all existing tokens in the pool with fresh ones.
+     * </p>
+     *
+     * @throws TokenFetchException if unable to fetch new tokens from Keycloak
+     */
+    @Override public void refreshTokens() {
+        LOGGER.debug("Refreshing token pool with {} tokens", config.getTokenPoolSize());
+
+        tokenPool.clear();
+
+        for (int i = 0; i < config.getTokenPoolSize(); i++) {
+            String token = fetchSingleToken();
+            tokenPool.add(new TokenInfo(token));
+        }
+
+        // Reset the index to start from the beginning
+        tokenIndex.set(0);
+
+        LOGGER.debug("Token pool refreshed with {} tokens", tokenPool.size());
     }
 }

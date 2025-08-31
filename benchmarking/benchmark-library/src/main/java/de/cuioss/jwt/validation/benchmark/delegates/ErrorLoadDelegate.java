@@ -16,7 +16,7 @@
 package de.cuioss.jwt.validation.benchmark.delegates;
 
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.TokenRepository;
+import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import io.jsonwebtoken.Jwts;
@@ -42,7 +42,7 @@ public class ErrorLoadDelegate extends BenchmarkDelegate {
     private final int errorPercentage;
     private final AtomicInteger tokenIndex = new AtomicInteger(0);
 
-    public ErrorLoadDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository, int errorPercentage) {
+    public ErrorLoadDelegate(TokenValidator tokenValidator, MockTokenRepository tokenRepository, int errorPercentage) {
         super(tokenValidator, tokenRepository);
         this.errorPercentage = errorPercentage;
 

@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
+import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
@@ -23,28 +24,36 @@ import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import io.jsonwebtoken.Jwts;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Centralized repository for managing test tokens and pre-configured TokenValidator instances
- * for benchmarking purposes.
+ * Mock token repository for generating JWT tokens in-memory for library benchmark testing.
  * <p>
- * This class encapsulates the common token generation and validator setup logic used by
- * multiple benchmark classes, providing:
+ * This implementation generates tokens locally without requiring external services,
+ * making it ideal for isolated library benchmarks and performance testing.
+ * It provides:
  * <ul>
  *   <li>Pre-generated token pools for multiple issuers</li>
  *   <li>Token metadata tracking (issuer, size, etc.)</li>
  *   <li>Pre-configured TokenValidator instances with monitoring</li>
  *   <li>Consistent token shuffling for randomized access patterns</li>
  * </ul>
+ * </p>
+ * <p>
+ * The mock implementation uses pre-generated RSA keys to avoid key generation
+ * overhead during benchmarks and provides deterministic token generation for
+ * reproducible results.
+ * </p>
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-@Getter public class TokenRepository {
+@Getter public class MockTokenRepository implements TokenProvider {
 
     /**
      * Default number of different issuers to simulate issuer config resolution overhead
@@ -66,6 +75,8 @@ import java.util.*;
     private final List<IssuerConfig> issuerConfigs;
     private final InMemoryKeyMaterialHandler.IssuerKeyMaterial[] issuers;
     private final Random random;
+    private final AtomicInteger tokenIndex;
+    private final Config config;
 
     /**
      * Metadata for a generated token
@@ -77,7 +88,7 @@ import java.util.*;
     }
 
     /**
-     * Configuration for TokenRepository
+     * Configuration for MockTokenRepository
      */
     @Value @Builder public static class Config {
         @Builder.Default
@@ -97,11 +108,13 @@ import java.util.*;
     }
 
     /**
-     * Creates a new TokenRepository with the specified configuration
+     * Creates a new MockTokenRepository with the specified configuration
      */
-    public TokenRepository(Config config) {
+    public MockTokenRepository(Config config) {
+        this.config = config;
         this.random = new Random(config.randomSeed);
         this.tokenMetadata = new HashMap<>();
+        this.tokenIndex = new AtomicInteger(0);
 
         // Use pre-generated keys from cache to avoid RSA generation during benchmarks
         this.issuers = BenchmarkKeyCache.getPreGeneratedIssuers(config.issuerCount);
@@ -147,7 +160,7 @@ import java.util.*;
      * Creates a pre-configured TokenValidator with the specified monitor configuration and config
      *
      * @param monitorConfig The monitor configuration to use
-     * @param config The TokenRepository config to use for cache size
+     * @param config The MockTokenRepository config to use for cache size
      * @return A new TokenValidator instance
      */
     public TokenValidator createTokenValidator(TokenValidatorMonitorConfig monitorConfig, Config config) {
@@ -242,5 +255,69 @@ import java.util.*;
             array[index] = array[i];
             array[i] = temp;
         }
+    }
+
+    // TokenProvider interface implementation
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns tokens from the pre-generated pool using round-robin rotation.
+     * </p>
+     */
+    @Override
+    @NonNull public String getNextToken() {
+        if (tokenPool.length == 0) {
+            throw new IllegalStateException("Token pool is empty");
+        }
+        int index = tokenIndex.getAndIncrement() % tokenPool.length;
+        return tokenPool[index];
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the size of the pre-generated token pool.
+     * </p>
+     */
+    @Override
+    public int getTokenPoolSize() {
+        return tokenPool.length;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Regenerates the entire token pool with new tokens.
+     * This is useful for long-running benchmarks where tokens may expire.
+     * </p>
+     */
+    @Override
+    public void refreshTokens() {
+        List<String> newTokens = new ArrayList<>();
+        tokenMetadata.clear();
+
+        // Regenerate tokens for each issuer
+        for (InMemoryKeyMaterialHandler.IssuerKeyMaterial issuer : issuers) {
+            int tokensPerIssuer = config.tokenPoolSize / config.issuerCount;
+            for (int j = 0; j < tokensPerIssuer; j++) {
+                String token = generateTokenForIssuer(issuer, config.expectedAudience);
+                newTokens.add(token);
+
+                // Store metadata
+                tokenMetadata.put(token, TokenMetadata.builder()
+                        .issuerIdentifier(issuer.getIssuerIdentifier())
+                        .tokenSize(token.length())
+                        .keyId(issuer.getKeyId())
+                        .build());
+            }
+        }
+
+        // Replace token pool and shuffle
+        System.arraycopy(newTokens.toArray(new String[0]), 0, tokenPool, 0, tokenPool.length);
+        shuffleArray(tokenPool);
+        
+        // Reset index
+        tokenIndex.set(0);
     }
 }

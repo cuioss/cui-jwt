@@ -16,7 +16,7 @@
 package de.cuioss.jwt.validation.benchmark.delegates;
 
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.TokenRepository;
+import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 
@@ -32,7 +32,7 @@ public class CoreValidationDelegate extends BenchmarkDelegate {
 
     private final AtomicInteger tokenIndex = new AtomicInteger(0);
 
-    public CoreValidationDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository) {
+    public CoreValidationDelegate(TokenValidator tokenValidator, MockTokenRepository tokenRepository) {
         super(tokenValidator, tokenRepository);
     }
 

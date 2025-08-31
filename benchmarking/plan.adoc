@@ -74,7 +74,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [x] Commit with message: `refactor: C2. Unify Metrics Exporter Implementations`
 
 === C3. Clarify Token Repository Implementations
-* [ ] *Priority:* Medium
+* [x] *Priority:* Medium - *COMPLETED*
 
 *Description:* Rename and reorganize the two TokenRepository classes to clearly distinguish their purposes: `MockTokenRepository` for in-memory token generation and `KeycloakTokenRepository` for real token fetching. Consider creating a common `TokenProvider` interface.
 
@@ -83,23 +83,23 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 *Implementation Checklist:*
 
 
-* [ ] Create `TokenProvider` interface in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/token/`
-* [ ] Define interface methods: `getNextToken()`, `getTokenPoolSize()`, `refreshTokens()`
-* [ ] Rename `benchmark-library/TokenRepository` to `MockTokenRepository`
-* [ ] Rename `cui-benchmarking-common/TokenRepository` to `KeycloakTokenRepository`
-* [ ] Both classes implement `TokenProvider` interface
-* [ ] Update all references in benchmark classes
-* [ ] Update configuration classes to use appropriate implementation
-* [ ] Add Javadoc clearly explaining the purpose of each implementation
+* [x] Create `TokenProvider` interface in `cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/token/`
+* [x] Define interface methods: `getNextToken()`, `getTokenPoolSize()`, `refreshTokens()`
+* [x] Rename `benchmark-library/TokenRepository` to `MockTokenRepository`
+* [x] Rename `cui-benchmarking-common/TokenRepository` to `KeycloakTokenRepository`
+* [x] Both classes implement `TokenProvider` interface
+* [x] Update all references in benchmark classes
+* [x] Update configuration classes to use appropriate implementation
+* [x] Add Javadoc clearly explaining the purpose of each implementation
 
 *Verification Steps:*
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Verify library benchmarks use MockTokenRepository
-* [ ] Verify integration benchmarks can use KeycloakTokenRepository
-* [ ] Run all token repository tests
-* [ ] Commit with message: `refactor: C3. Clarify Token Repository Implementations`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+* [x] Verify library benchmarks use MockTokenRepository
+* [x] Verify integration benchmarks can use KeycloakTokenRepository
+* [x] Run all token repository tests
+* [x] Commit with message: `refactor: C3. Clarify Token Repository Implementations`
 
 === C4. Consolidate Constants
 * [ ] *Priority:* High

@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
     // Configuration constants
     private static final int APPROXIMATE_TOKEN_SIZE = 200;
 
-    private TokenRepository tokenRepository;
+    private MockTokenRepository tokenRepository;
     private TokenValidator tokenValidator;
     private CoreValidationDelegate coreValidationDelegate;
     private ErrorLoadDelegate errorLoadDelegate0;
@@ -75,10 +75,10 @@ import java.util.concurrent.TimeUnit;
         jfrInstrumentation = new JfrInstrumentation();
 
         // Initialize token repository with cache size configured for 10% of tokens
-        TokenRepository.Config config = TokenRepository.Config.builder()
+        MockTokenRepository.Config config = MockTokenRepository.Config.builder()
                 .cacheSize(60) // 10% of default 600 tokens
                 .build();
-        tokenRepository = new TokenRepository(config);
+        tokenRepository = new MockTokenRepository(config);
 
         // Create token validator with cache configuration
         tokenValidator = tokenRepository.createTokenValidator(
