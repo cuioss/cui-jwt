@@ -62,7 +62,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     @Override protected void beforeBenchmarks() {
         BenchmarkLoggingSetup.configureLogging("target/benchmark-results");
-        
+
         // Get configuration to log the URLs
         IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
         LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
@@ -106,9 +106,9 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
         // Get integration configuration to access URLs
         IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
-        
+
         LOGGER.debug("Processing metrics from {} to {}", integrationConfig.integrationServiceUrl(), outputDirectory);
-        
+
         // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
         QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(integrationConfig.integrationServiceUrl());
 

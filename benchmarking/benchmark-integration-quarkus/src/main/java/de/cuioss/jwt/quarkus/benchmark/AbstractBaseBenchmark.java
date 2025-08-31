@@ -15,19 +15,13 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import de.cuioss.benchmarking.common.base.AbstractBenchmarkBase;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
-import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
-import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.*;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,90 +35,58 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@BenchmarkMode(Mode.All) @OutputTimeUnit(TimeUnit.MILLISECONDS) @State(Scope.Benchmark) public abstract class AbstractBaseBenchmark {
+@BenchmarkMode(Mode.All) @OutputTimeUnit(TimeUnit.MILLISECONDS) @State(Scope.Benchmark) public abstract class AbstractBaseBenchmark extends AbstractBenchmarkBase {
 
-    static {
-        // Set the logging manager to prevent JBoss LogManager errors in forked JVMs
-        System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
-    }
-
-    private static final CuiLogger LOGGER = new CuiLogger(AbstractBaseBenchmark.class);
-
-    protected String serviceUrl;
     protected String quarkusMetricsUrl;
     protected SimpleMetricsExporter metricsExporter;
-    protected String benchmarkResultsDir;
-    private HttpClient httpClient;
 
     /**
      * Setup method called once before all benchmark iterations.
-     * Initializes HttpClient and metrics exporter.
+     * Calls the base setup and initializes Quarkus-specific components.
      */
     @Setup(Level.Trial) public void setupBenchmark() {
+        // Call base setup
+        setupBase();
+    }
+
+    /**
+     * Performs additional setup specific to Quarkus integration benchmarks.
+     * Initializes metrics exporter and configuration.
+     */
+    @Override protected void performAdditionalSetup() {
         // Load integration configuration from system properties
         IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
-        
+
         // Extract URLs from configuration
         serviceUrl = integrationConfig.integrationServiceUrl();
         quarkusMetricsUrl = integrationConfig.metricsUrl();
 
-        // Benchmark results directory is hardcoded
-        benchmarkResultsDir = "target/benchmark-results";
-
-        LOGGER.debug("Service URL: {}", serviceUrl);
-        LOGGER.debug("Quarkus Metrics URL: {}", quarkusMetricsUrl);
-
-        // Get cached HttpClient from factory (insecure for self-signed certs)
-        httpClient = HttpClientFactory.getInsecureClient();
-        LOGGER.debug("Using cached HttpClient from factory");
+        logger.debug("Service URL: {}", serviceUrl);
+        logger.debug("Quarkus Metrics URL: {}", quarkusMetricsUrl);
 
         // Initialize metrics exporter
         metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
                 new QuarkusMetricsFetcher(quarkusMetricsUrl));
-
-        LOGGER.debug("Base benchmark setup completed");
     }
 
 
     /**
-     * Creates a basic HTTP request builder with common headers.
+     * Creates a basic HTTP request builder with common headers for Quarkus endpoints.
      *
-     * @param path the URI to send the request to
+     * @param path the path to append to the service URL
      * @return configured request builder
      */
-    protected HttpRequest.Builder createBaseRequest(String path) {
-        return HttpRequest.newBuilder()
-                .uri(URI.create(serviceUrl + path))
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-                .timeout(Duration.ofSeconds(30));
+    protected HttpRequest.Builder createRequestForPath(String path) {
+        return createBaseRequest(serviceUrl, path);
     }
 
     /**
-     * Sends an HTTP request and returns the response.
-     *
-     * @param request the request to send
-     * @return the HTTP response
-     * @throws IOException if an I/O error occurs
-     * @throws InterruptedException if the operation is interrupted
+     * Export metrics implementation for Quarkus benchmarks.
+     * Subclasses can override this to export specific metrics.
      */
-    protected HttpResponse<String> sendRequest(HttpRequest request) throws IOException, InterruptedException {
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-
-    /**
-     * Utility method to handle common error scenarios in benchmarks.
-     *
-     * @param response the response to check
-     * @param expectedStatus the expected HTTP status code
-     * @throws IllegalStateException if the response status doesn't match expected
-     */
-    protected void validateResponse(HttpResponse<String> response, int expectedStatus) {
-        if (response.statusCode() != expectedStatus) {
-            throw new IllegalStateException("Expected status %d but got %d. Response: %s".formatted(
-                    expectedStatus, response.statusCode(), response.body()));
-        }
+    @Override public void exportBenchmarkMetrics() {
+        // Default implementation - subclasses can override
+        logger.debug("Metrics export completed for Quarkus benchmark");
     }
 
 }

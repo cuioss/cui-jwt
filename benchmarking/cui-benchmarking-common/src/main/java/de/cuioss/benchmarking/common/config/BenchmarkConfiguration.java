@@ -19,7 +19,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.options.TimeValue;
 
-
 import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
 
 /**
@@ -134,7 +133,7 @@ IntegrationConfiguration integrationConfig
     public boolean hasIntegrationConfig() {
         return integrationConfig != null;
     }
-    
+
     /**
      * Convenience methods for accessing nested report configuration.
      */

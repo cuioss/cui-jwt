@@ -15,35 +15,33 @@
  */
 package de.cuioss.jwt.validation.benchmark.base;
 
+import de.cuioss.benchmarking.common.base.AbstractBenchmarkBase;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.benchmark.TokenRepository;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
-import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.TearDown;
 
 import java.io.IOException;
 
 /**
- * Abstract base class for all JWT benchmarks.
- * Provides common functionality to reduce code duplication.
+ * Abstract base class for all JWT library benchmarks.
+ * Extends the common base class and provides library-specific functionality.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-public abstract class AbstractBenchmark {
-
-    private static final CuiLogger log = new CuiLogger(AbstractBenchmark.class);
+public abstract class AbstractBenchmark extends AbstractBenchmarkBase {
 
     protected TokenRepository tokenRepository;
     protected TokenValidator tokenValidator;
 
     /**
-     * Setup method for benchmark initialization.
-     * Subclasses should call this from their @Setup method.
+     * Performs additional setup specific to library benchmarks.
+     * Initializes token repository and validator.
      */
-    protected void setupBase() {
+    @Override protected void performAdditionalSetup() {
         // Initialize token repository with cache size configured for 10% of tokens
         TokenRepository.Config config = TokenRepository.Config.builder()
                 .cacheSize(60) // 10% of default 600 tokens
@@ -63,12 +61,12 @@ public abstract class AbstractBenchmark {
      * Export metrics directly from this benchmark's monitor.
      * Called at the end of each benchmark trial.
      */
-    @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
+    @TearDown(Level.Trial) @Override public void exportBenchmarkMetrics() {
         if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
-                log.error("Failed to export benchmark metrics", e);
+                logger.error("Failed to export benchmark metrics", e);
             }
         }
     }

@@ -53,13 +53,13 @@ class AbstractBaseBenchmarkTest {
         // Setup with default values
         assertDoesNotThrow(() -> benchmark.setupBenchmark());
 
-        assertNotNull(benchmark.serviceUrl);
+        assertNotNull(benchmark.getServiceUrl());
         assertNotNull(benchmark.quarkusMetricsUrl);
         assertNotNull(benchmark.metricsExporter);
-        assertNotNull(benchmark.benchmarkResultsDir);
+        assertNotNull(benchmark.getBenchmarkResultsDir());
 
         // Check default values
-        assertEquals("https://localhost:10443", benchmark.serviceUrl);
+        assertEquals("https://localhost:10443", benchmark.getServiceUrl());
         assertEquals("https://localhost:10443", benchmark.quarkusMetricsUrl);
     }
 
@@ -70,16 +70,16 @@ class AbstractBaseBenchmarkTest {
 
         benchmark.setupBenchmark();
 
-        assertEquals("https://test:8080", benchmark.serviceUrl);
+        assertEquals("https://test:8080", benchmark.getServiceUrl());
         assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
         // Output directory is now fixed, not configurable
-        assertEquals("target/benchmark-results", benchmark.benchmarkResultsDir);
+        assertEquals("target/benchmark-results", benchmark.getBenchmarkResultsDir());
     }
 
     @Test void createBaseRequest() {
         benchmark.setupBenchmark();
 
-        HttpRequest.Builder requestBuilder = benchmark.createBaseRequest("/test/path");
+        HttpRequest.Builder requestBuilder = benchmark.createRequestForPath("/test/path");
         HttpRequest request = requestBuilder.build();
 
         assertNotNull(request);
@@ -149,9 +149,17 @@ class AbstractBaseBenchmarkTest {
 
     // Test implementation of AbstractBaseBenchmark
     private static class TestBenchmark extends AbstractBaseBenchmark {
-        // Expose protected methods for testing
-        @Override public HttpRequest.Builder createBaseRequest(String path) {
-            return super.createBaseRequest(path);
+        // Expose protected fields and methods for testing
+        public String getServiceUrl() {
+            return serviceUrl;
+        }
+
+        public String getBenchmarkResultsDir() {
+            return benchmarkResultsDir;
+        }
+
+        @Override public HttpRequest.Builder createRequestForPath(String path) {
+            return super.createRequestForPath(path);
         }
 
         @Override public void validateResponse(HttpResponse<String> response, int expectedStatus) {

@@ -75,7 +75,7 @@ import java.net.http.HttpRequest;
      * @return configured request builder with Authorization header
      */
     protected HttpRequest.Builder createAuthenticatedRequest(String path, String token) {
-        return createBaseRequest(path)
+        return createRequestForPath(path)
                 .header("Authorization", "Bearer " + token);
     }
 

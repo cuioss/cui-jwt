@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
      * Provides baseline throughput measurement without JWT processing.
      */
     @Benchmark @BenchmarkMode({Mode.Throughput, Mode.SampleTime}) public void healthCheckThroughput() throws IOException, InterruptedException {
-        HttpRequest request = createBaseRequest("/q/health")
+        HttpRequest request = createRequestForPath("/q/health")
                 .GET()
                 .build();
         HttpResponse<String> response = sendRequest(request);
