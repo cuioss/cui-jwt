@@ -13,7 +13,7 @@ To view benchmark results locally after running benchmarks:
 ./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
 
 # Run integration benchmarks
-./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
 ----
 
 === Step 2: Generate Reports

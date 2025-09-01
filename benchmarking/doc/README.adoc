@@ -27,7 +27,7 @@ For local development and testing of benchmark results:
 ./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
 
 # Run integration benchmarks  
-./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
 
 # Generate and view benchmark reports locally
 cd benchmarking/cui-benchmarking-common

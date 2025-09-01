@@ -211,7 +211,7 @@
 
     <profiles>
         <profile>
-            <id>benchmark-testing</id>
+            <id>benchmark</id>
             <properties>
                 <skip.benchmark>false</skip.benchmark>
             </properties>

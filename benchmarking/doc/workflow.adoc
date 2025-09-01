@@ -56,7 +56,7 @@ The benchmark processing is automatically triggered in GitHub Actions:
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
 
 # Integration benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
 ----
 
 === Viewing Generated Artifacts
@@ -142,7 +142,7 @@ See link:performance-requirements.adoc[Performance Requirements] for specific ta
 Check that:
 - Benchmarks completed successfully
 - No compilation errors in cui-benchmarking-common
-- Correct profile used (`-Pbenchmark` or `-Pbenchmark-testing`)
+- Correct profile used (`-Pbenchmark`)
 
 === Quality Gates Failing
 
