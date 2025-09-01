@@ -18,36 +18,8 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 == Code Structure and Design
 
-=== C7. Extract JFR Utilities to Common Module
-* [ ] *Priority:* Low
-
-*Description:* Move JFR event handling and instrumentation utilities from benchmark-library to cui-benchmarking-common for potential reuse in integration benchmarks.
-
-*Rationale:* JFR functionality could benefit integration benchmarks. Centralization enables broader usage.
-
-*Implementation Checklist:*
-
-* [ ] Create package `de.cuioss.benchmarking.common.jfr` in cui-benchmarking-common
-* [ ] Move `JfrInstrumentation` class to common module
-* [ ] Move `JfrVarianceAnalyzer` class to common module
-* [ ] Move JFR event classes to common module
-* [ ] Update package references in benchmark-library
-* [ ] Add JFR support detection utility
-* [ ] Create JFR configuration class for common settings
-* [ ] Update documentation for JFR usage
-
-*Verification Steps:*
-
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Execute JFR benchmarks (DO NOT cancel or shortcut - let it run completely): `./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr`
-* [ ] Verify JFR events are recorded correctly
-* [ ] Check JFR analysis reports are generated
-* [ ] Commit with message: `refactor: C7. Extract JFR Utilities to Common Module`
-
-
 === C9. Merge or Clarify Metrics Computation Responsibilities
-* [ ] *Priority:* Low
+* [x] *Priority:* Low
 
 *Description:* Review and refactor `MetricsComputer` and `TrendDataProcessor` to either merge overlapping functionality or clearly separate statistical computation from trend analysis.
 
@@ -55,23 +27,23 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Analyze current responsibilities of `MetricsComputer`
-* [ ] Analyze current responsibilities of `TrendDataProcessor`
-* [ ] Identify overlapping functionality
-* [ ] Create `StatisticsCalculator` for pure statistical computations
-* [ ] Refactor `MetricsComputer` to focus on metric-specific calculations
-* [ ] Refactor `TrendDataProcessor` to focus on time-series analysis
-* [ ] Update all usages to use appropriate component
-* [ ] Add clear Javadoc explaining when to use each component
+* [x] Analyze current responsibilities of `MetricsComputer`
+* [x] Analyze current responsibilities of `TrendDataProcessor`
+* [x] Identify overlapping functionality
+* [x] Create `StatisticsCalculator` for pure statistical computations
+* [x] Refactor `MetricsComputer` to focus on metric-specific calculations
+* [x] Refactor `TrendDataProcessor` to focus on time-series analysis
+* [x] Update all usages to use appropriate component
+* [x] Add clear Javadoc explaining when to use each component
 
 *Verification Steps:*
 
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Execute benchmarks with trend analysis (DO NOT cancel or shortcut)
-* [ ] Verify statistical calculations are correct
-* [ ] Check trend detection works properly
-* [ ] Compare results with previous implementation
-* [ ] Commit with message: `refactor: C9. Merge or Clarify Metrics Computation Responsibilities`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Execute benchmarks with trend analysis (DO NOT cancel or shortcut)
+* [x] Verify statistical calculations are correct
+* [x] Check trend detection works properly
+* [x] Compare results with previous implementation
+* [x] Commit with message: `refactor: C9. Merge or Clarify Metrics Computation Responsibilities`
 
 == Performance Improvements
 
@@ -127,33 +99,6 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Commit with message: `refactor: P1. Enhance HTTP Client Management` ONLY if performance improves
 
 == Documentation Improvements
-
-=== DOC1. Document Module Responsibilities
-* [x] *Priority:* High
-
-*Description:* Create clear documentation defining the responsibilities and boundaries of each benchmark module (benchmark-library, benchmark-integration-quarkus, cui-benchmarking-common).
-
-*Rationale:* Current module boundaries are unclear, leading to code placement confusion and duplication.
-
-*Implementation Checklist:*
-
-* [x] Create `Architecture.adoc` in benchmarking root
-* [x] Document cui-benchmarking-common responsibilities
-* [x] Document benchmark-library responsibilities
-* [x] Document benchmark-integration-quarkus responsibilities
-* [x] Create module dependency diagram
-* [x] Define clear rules for code placement
-* [x] Add examples of what belongs in each module
-* [x] Update README files in each module
-
-*Verification Steps:*
-
-* [x] Review documentation for clarity and completeness
-* [x] Validate module dependencies match documentation
-* [x] Check for any circular dependencies
-* [x] Ensure examples are accurate
-* [ ] Get team review of architecture documentation
-* [ ] Commit with message: `docs: DOC1. Document Module Responsibilities`
 
 === DOC2. Create Benchmark Development Guide
 * [ ] *Priority:* Medium

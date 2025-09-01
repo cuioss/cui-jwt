@@ -29,15 +29,22 @@ import java.util.stream.Collectors;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
 
 /**
- * Processes historical benchmark data to generate trend metrics and visualizations.
+ * Processes historical benchmark data for time-series analysis and trend visualization.
  * <p>
- * This processor analyzes historical benchmark results to:
+ * This processor specializes in time-series analysis of benchmark results:
  * <ul>
- *   <li>Calculate performance trends over time</li>
- *   <li>Compute percentage changes and trend directions</li>
- *   <li>Generate chart-ready data for visualization</li>
- *   <li>Provide moving averages and statistical analysis</li>
+ *   <li>Loading and managing historical benchmark data</li>
+ *   <li>Detecting performance trends over time</li>
+ *   <li>Preparing data for trend visualization charts</li>
+ *   <li>Tracking changes between benchmark runs</li>
  * </ul>
+ * <p>
+ * Use this class when you need to analyze benchmark performance over time.
+ * For pure statistical computations, use {@link StatisticsCalculator}.
+ * For processing individual benchmark results, use {@link MetricsComputer}.
+ * 
+ * @see StatisticsCalculator for statistical computations (mean, median, std dev, etc.)
+ * @see MetricsComputer for processing individual benchmark results
  */
 public class TrendDataProcessor {
 
@@ -185,38 +192,31 @@ public class TrendDataProcessor {
 
         // Compare with most recent historical data
         HistoricalDataPoint previousRun = historicalData.getFirst();
-        double scoreChange = currentMetrics.performanceScore() - previousRun.getPerformanceScore();
-        double changePercentage = (scoreChange / previousRun.getPerformanceScore()) * 100;
+        double changePercentage = StatisticsCalculator.calculatePercentageChange(
+                previousRun.getPerformanceScore(),
+                currentMetrics.performanceScore());
 
         // Determine trend direction
-        String direction;
-        if (Math.abs(changePercentage) < STABILITY_THRESHOLD * 100) {
-            direction = "stable";
-        } else if (changePercentage > 0) {
-            direction = "up";
-        } else {
-            direction = "down";
-        }
+        String direction = StatisticsCalculator.determineTrendDirection(
+                changePercentage, STABILITY_THRESHOLD * 100);
 
         // Calculate moving average (last 5 runs)
-        List<Double> recentScores = historicalData.stream()
+        List<Double> recentScores = new ArrayList<>();
+        recentScores.add(currentMetrics.performanceScore());
+        historicalData.stream()
                 .limit(4)
                 .map(HistoricalDataPoint::getPerformanceScore)
-                .collect(Collectors.toList());
-        recentScores.addFirst(currentMetrics.performanceScore());
-        double movingAverage = recentScores.stream()
-                .mapToDouble(Double::doubleValue)
-                .average()
-                .orElse(currentMetrics.performanceScore());
+                .forEach(recentScores::add);
+        double movingAverage = StatisticsCalculator.calculateMovingAverage(recentScores, 5);
 
         // Calculate throughput and latency trends
-        double throughputTrend = calculateTrendPercentage(
-                currentMetrics.throughput(),
-                previousRun.getThroughput()
+        double throughputTrend = StatisticsCalculator.calculatePercentageChange(
+                previousRun.getThroughput(),
+                currentMetrics.throughput()
         );
-        double latencyTrend = calculateTrendPercentage(
-                currentMetrics.latency(),
-                previousRun.getLatency()
+        double latencyTrend = StatisticsCalculator.calculatePercentageChange(
+                previousRun.getLatency(),
+                currentMetrics.latency()
         );
 
         return new TrendMetrics(direction, changePercentage, movingAverage,
@@ -266,12 +266,15 @@ public class TrendDataProcessor {
 
         // Add statistical analysis
         Map<String, Object> statistics = new LinkedHashMap<>();
-        statistics.put("throughputMin", Collections.min(throughputValues));
-        statistics.put("throughputMax", Collections.max(throughputValues));
-        statistics.put("throughputAvg", throughputValues.stream().mapToDouble(Double::doubleValue).average().orElse(0));
-        statistics.put("latencyMin", Collections.min(latencyValues));
-        statistics.put("latencyMax", Collections.max(latencyValues));
-        statistics.put("latencyAvg", latencyValues.stream().mapToDouble(Double::doubleValue).average().orElse(0));
+        StatisticsCalculator.Statistics throughputStats = StatisticsCalculator.computeStatistics(throughputValues);
+        StatisticsCalculator.Statistics latencyStats = StatisticsCalculator.computeStatistics(latencyValues);
+
+        statistics.put("throughputMin", throughputStats.getMin());
+        statistics.put("throughputMax", throughputStats.getMax());
+        statistics.put("throughputAvg", throughputStats.getMean());
+        statistics.put("latencyMin", latencyStats.getMin());
+        statistics.put("latencyMax", latencyStats.getMax());
+        statistics.put("latencyAvg", latencyStats.getMean());
 
         chartData.put("statistics", statistics);
 
@@ -344,15 +347,6 @@ public class TrendDataProcessor {
         }
     }
 
-    /**
-     * Calculates the percentage change between two values.
-     */
-    private double calculateTrendPercentage(double current, double previous) {
-        if (previous == 0) {
-            return current == 0 ? 0.0 : 100.0;
-        }
-        return ((current - previous) / previous) * 100;
-    }
 
     /**
      * Extracts timestamp from filename.

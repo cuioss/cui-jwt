@@ -28,8 +28,22 @@ import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.JsonFields.*;
 
 /**
- * Computes benchmark metrics from JSON results.
- * This is the single source of truth for metric calculations.
+ * Computes benchmark-specific metrics from JSON results.
+ * <p>
+ * This class is responsible for extracting and calculating domain-specific benchmark metrics:
+ * <ul>
+ *   <li>Extracting throughput and latency values from JMH JSON output</li>
+ *   <li>Converting units to standard measurements (ops/s, ms/op)</li>
+ *   <li>Calculating composite performance scores</li>
+ *   <li>Assigning performance grades based on scores</li>
+ * </ul>
+ * <p>
+ * Use this class when you need to process raw JMH benchmark results into meaningful metrics.
+ * For pure statistical computations, use {@link StatisticsCalculator}.
+ * For time-series analysis and trend detection, use {@link TrendDataProcessor}.
+ * 
+ * @see StatisticsCalculator for pure statistical computations
+ * @see TrendDataProcessor for trend analysis and historical data processing
  */
 public class MetricsComputer {
 
