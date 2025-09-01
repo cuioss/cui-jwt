@@ -8,7 +8,7 @@
 [IMPORTANT]
 ====
 This document follows the refactoring process standards defined in the CUI process documentation.
-Pre-1.0 rule: Do deprecation nor transitonary comments
+Pre-1.0 rule: No deprecation nor transitionally comments
 ====
 
 == Purpose

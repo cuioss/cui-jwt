@@ -272,15 +272,4 @@ public abstract class AbstractBenchmarkRunner {
         }
     }
 
-    /**
-     * Main execution method that delegates to the template method.
-     * Maintained for backward compatibility.
-     *
-     * @throws IOException if I/O operations fail
-     * @throws RunnerException if benchmark execution fails
-     * @deprecated Use {@link #runBenchmark()} directly
-     */
-    @Deprecated public void run() throws IOException, RunnerException {
-        runBenchmark();
-    }
 }

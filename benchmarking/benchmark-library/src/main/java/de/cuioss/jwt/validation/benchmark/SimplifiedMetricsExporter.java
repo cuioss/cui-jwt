@@ -112,7 +112,7 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
     }
 
     /**
-     * Legacy static method for backward compatibility.
+     * Exports metrics from the provided monitor.
      * 
      * @param monitor The monitor containing the metrics
      * @throws IOException if writing fails

@@ -103,12 +103,11 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
 
     /**
      * Gets the JFR-specific result file.
-     * This method appends "-jfr" to the file prefix to distinguish from regular benchmark results.
      * 
      * @return the JFR result file path
      */
     private static String getJfrResultFile() {
-        String resultFile = RESULTS_DIR + "/micro-result-jfr.json";
+        String resultFile = RESULTS_DIR + "/micro-result.json";
         File file = new File(resultFile);
         File parentDir = file.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
