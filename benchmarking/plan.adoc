@@ -126,64 +126,10 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Verify performance numbers justify the change
 * [ ] Commit with message: `refactor: P1. Enhance HTTP Client Management` ONLY if performance improves
 
-== Dependency Management
-
-=== D1. Centralize Logging Configuration
-* [x] *Priority:* High
-
-*Description:* Remove the profile stuff. Only consolidate the existing configuration.
-
-*Rationale:* Duplicate configuration files increase maintenance burden. Simple centralization without profile complexity.
-
-*Implementation Checklist:*
-
-* [x] Move single `benchmark-logging.properties` to `cui-benchmarking-common/src/main/resources`
-* [x] Remove duplicate logging configuration files from other modules
-* [x] Update logging initialization in all modules to use centralized config
-* [x] No profiles, no environment-specific variants - keep it simple
-* [x] Consolidate existing configuration into one unified file
-
-*Verification Steps:*
-
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Verify logging works correctly in all modules without warnings
-* [x] Check log output format is consistent across all modules
-* [x] Commit with message: `refactor: D1. Centralize Logging Configuration`
-
-=== D2. Standardize JSON Processing with GSON
-* [x] *Priority:* Medium
-
-*Description:* Optimize JSON serialization by leveraging GSON features more effectively. GSON remains the standard JSON processing library for this project.
-
-*Rationale:* Current `JsonSerializationHelper` reinvents some GSON functionality. Better utilization of GSON features reduces code and improves maintainability.
-
-*Implementation Checklist:*
-
-* [x] Audit current JSON processing usage across modules
-* [x] Identify GSON features that can replace custom implementations
-* [x] Optimize `JsonSerializationHelper` to use GSON features more effectively
-* [x] Leverage GSON's built-in type adapters and serializers
-* [x] Configure GSON instances for optimal performance (singleton pattern)
-* [x] Add custom GSON type adapters/serializers as needed
-* [x] Remove redundant JSON utility methods
-* [x] Update all JSON processing tests
-
-*Verification Steps:*
-
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Verify JSON output format remains compatible
-* [x] Test JSON round-trip serialization
-* [x] Check performance of JSON processing
-* [x] Commit with message: `refactor: D2. Standardize JSON Processing with GSON`
-
 == Documentation Improvements
 
 === DOC1. Document Module Responsibilities
-* [ ] *Priority:* High
+* [x] *Priority:* High
 
 *Description:* Create clear documentation defining the responsibilities and boundaries of each benchmark module (benchmark-library, benchmark-integration-quarkus, cui-benchmarking-common).
 
@@ -191,21 +137,21 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Create `Architecture.adoc` in benchmarking root
-* [ ] Document cui-benchmarking-common responsibilities
-* [ ] Document benchmark-library responsibilities
-* [ ] Document benchmark-integration-quarkus responsibilities
-* [ ] Create module dependency diagram
-* [ ] Define clear rules for code placement
-* [ ] Add examples of what belongs in each module
-* [ ] Update README files in each module
+* [x] Create `Architecture.adoc` in benchmarking root
+* [x] Document cui-benchmarking-common responsibilities
+* [x] Document benchmark-library responsibilities
+* [x] Document benchmark-integration-quarkus responsibilities
+* [x] Create module dependency diagram
+* [x] Define clear rules for code placement
+* [x] Add examples of what belongs in each module
+* [x] Update README files in each module
 
 *Verification Steps:*
 
-* [ ] Review documentation for clarity and completeness
-* [ ] Validate module dependencies match documentation
-* [ ] Check for any circular dependencies
-* [ ] Ensure examples are accurate
+* [x] Review documentation for clarity and completeness
+* [x] Validate module dependencies match documentation
+* [x] Check for any circular dependencies
+* [x] Ensure examples are accurate
 * [ ] Get team review of architecture documentation
 * [ ] Commit with message: `docs: DOC1. Document Module Responsibilities`
 
