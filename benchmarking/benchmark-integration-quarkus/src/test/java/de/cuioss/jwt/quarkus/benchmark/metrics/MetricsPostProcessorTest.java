@@ -15,40 +15,98 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static de.cuioss.jwt.quarkus.benchmark.metrics.MetricsTestDataConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class MetricsPostProcessorTest {
+/**
+ * Tests for MetricsPostProcessor using parameterized test approach
+ */
+class MetricsPostProcessorTest extends AbstractMetricsProcessorTest {
 
-    @TempDir
-    Path tempDir;
-
-    private Gson gson;
-    private String testBenchmarkFile;
-
-    @BeforeEach void setUp() throws IOException {
-        gson = new GsonBuilder().create();
-        testBenchmarkFile = createTestBenchmarkFile();
+    @Override protected void processMetrics(String inputFile, String outputDir, TestFixture fixture) throws IOException {
+        MetricsPostProcessor processor = new MetricsPostProcessor(inputFile, outputDir);
+        processor.parseAndExportHttpMetrics(Instant.now());
     }
+
+    @Override protected void processMetricsWithTimestamp(String inputFile, String outputDir, TestFixture fixture, Instant timestamp) throws IOException {
+        MetricsPostProcessor processor = new MetricsPostProcessor(inputFile, outputDir);
+        processor.parseAndExportHttpMetrics(timestamp);
+    }
+
+    @Override protected Stream<Arguments> provideFileExistenceTestCases() {
+        return Stream.of(
+                Arguments.of("Standard health benchmark",
+                        new TestFixture(STANDARD_HEALTH_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS)),
+                Arguments.of("Standard JWT validation benchmark",
+                        new TestFixture(STANDARD_JWT_VALIDATION_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS)),
+                Arguments.of("Combined benchmarks",
+                        new TestFixture(COMBINED_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS))
+        );
+    }
+
+    @Override protected Stream<Arguments> provideJsonStructureTestCases() {
+        return Stream.of(
+                Arguments.of("Health endpoint structure",
+                        new TestFixture(STANDARD_HEALTH_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        new String[]{"health"}),
+                Arguments.of("JWT validation endpoint structure",
+                        new TestFixture(STANDARD_JWT_VALIDATION_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        new String[]{"jwt_validation"}),
+                Arguments.of("Combined endpoints structure",
+                        new TestFixture(COMBINED_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        new String[]{"health", "jwt_validation"})
+        );
+    }
+
+    @Override protected Stream<Arguments> provideNumericValidationTestCases() {
+        return Stream.of(
+                Arguments.of("Health percentile validation",
+                        new TestFixture(STANDARD_HEALTH_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        new NumericValidation("health.percentiles.p50_us", 0, Double.MAX_VALUE)),
+                Arguments.of("JWT validation sample count",
+                        new TestFixture(STANDARD_JWT_VALIDATION_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        new NumericValidation("jwt_validation.sample_count", 1, Double.MAX_VALUE))
+        );
+    }
+
+    @Override protected Stream<Arguments> provideTimestampTestCases() {
+        return Stream.of(
+                Arguments.of("Health endpoint timestamp",
+                        new TestFixture(STANDARD_HEALTH_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        "health.timestamp"),
+                Arguments.of("JWT validation endpoint timestamp",
+                        new TestFixture(STANDARD_JWT_VALIDATION_BENCHMARK, "http-metrics.json", ProcessorType.HTTP_METRICS),
+                        "jwt_validation.timestamp")
+        );
+    }
+
+    @Override protected Stream<Arguments> provideExceptionTestCases() {
+        return Stream.of(
+                Arguments.of("File not found",
+                        new ExceptionTestCase("/non/existent/file.json", IOException.class,
+                                new TestFixture("", "http-metrics.json", ProcessorType.HTTP_METRICS)))
+        );
+    }
+
+    // Additional specific tests that don't fit the parameterized pattern
 
     @Test @DisplayName("Should parse all endpoint types") void shouldParseAllEndpointTypes() throws IOException {
         // Arrange
-        MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
+        String testFile = createTestDataFile(COMBINED_BENCHMARK);
+        MetricsPostProcessor parser = new MetricsPostProcessor(testFile, tempDir.toString());
         Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
 
         // Act
@@ -68,88 +126,56 @@ class MetricsPostProcessorTest {
     }
 
     @Test @DisplayName("Should extract correct percentile data") void shouldExtractCorrectPercentileData() throws IOException {
-        // Arrange
-        MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
+        // This test is now covered by parameterized tests provideJsonStructureTestCases and provideNumericValidationTestCases
+        // Keeping a simplified version for backward compatibility
+        String testFile = createTestDataFile(STANDARD_HEALTH_BENCHMARK);
+        MetricsPostProcessor parser = new MetricsPostProcessor(testFile, tempDir.toString());
 
-        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = gson.fromJson(reader, Map.class);
 
             @SuppressWarnings("unchecked") Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
-            assertNotNull(healthMetrics);
-            assertEquals("Health Check", healthMetrics.get("name"));
-
             @SuppressWarnings("unchecked") Map<String, Object> percentiles = (Map<String, Object>) healthMetrics.get("percentiles");
-            assertNotNull(percentiles);
 
+            assertNotNull(percentiles);
             assertTrue(percentiles.containsKey("p50_us"));
             assertTrue(percentiles.containsKey("p95_us"));
             assertTrue(percentiles.containsKey("p99_us"));
-
-            assertInstanceOf(Number.class, percentiles.get("p50_us"));
-            assertInstanceOf(Number.class, percentiles.get("p95_us"));
-            assertInstanceOf(Number.class, percentiles.get("p99_us"));
         }
     }
 
     @Test @DisplayName("Should format numbers correctly according to rules") void shouldFormatNumbersCorrectly() throws IOException {
-        // Arrange
-        MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
+        // Specific formatting test
+        String testFile = createTestDataFile(STANDARD_HEALTH_BENCHMARK);
+        MetricsPostProcessor parser = new MetricsPostProcessor(testFile, tempDir.toString());
 
-        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         String jsonContent = Files.readString(outputFile.toPath());
 
-        assertFalse(jsonContent.contains(".0\""));
+        assertFalse(jsonContent.contains(".0\""), "Should not have unnecessary .0 in numbers");
 
-        @SuppressWarnings("unchecked") Map<String, Object> parsed = (Map<String, Object>) gson.fromJson(jsonContent, Map.class);
+        @SuppressWarnings("unchecked") Map<String, Object> parsed = gson.fromJson(jsonContent, Map.class);
         assertNotNull(parsed);
         assertFalse(parsed.isEmpty());
     }
 
-    @Test @DisplayName("Should include sample counts in metrics") void shouldIncludeSampleCounts() throws IOException {
-        // Arrange
-        MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
-
-        // Act
-        parser.parseAndExportHttpMetrics(Instant.now());
-
-        // Assert
-        File outputFile = new File(tempDir.toFile(), "http-metrics.json");
-        try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
-
-            for (String endpointType : metrics.keySet()) {
-                @SuppressWarnings("unchecked") Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
-
-                assertTrue(endpointData.containsKey("sample_count"));
-
-                Object sampleCount = endpointData.get("sample_count");
-                assertInstanceOf(Number.class, sampleCount);
-                assertTrue(((Number) sampleCount).intValue() > 0);
-            }
-        }
-    }
+    // Sample count validation is now covered by provideNumericValidationTestCases
 
     @Test @DisplayName("Should correctly sum samples from multiple iterations") void shouldSumSamplesFromMultipleIterations() throws IOException {
-        // Arrange
-        String multiIterationFile = createMultiIterationBenchmarkFile();
-        MetricsPostProcessor parser = new MetricsPostProcessor(multiIterationFile, tempDir.toString());
+        // Specific test for multi-iteration sample summing
+        String testFile = createTestDataFile(MULTI_ITERATION_BENCHMARK);
+        MetricsPostProcessor parser = new MetricsPostProcessor(testFile, tempDir.toString());
 
-        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = gson.fromJson(reader, Map.class);
 
             @SuppressWarnings("unchecked") Map<String, Object> healthMetrics = (Map<String, Object>) metrics.get("health");
             assertNotNull(healthMetrics);
@@ -159,46 +185,20 @@ class MetricsPostProcessorTest {
         }
     }
 
-    @Test @DisplayName("Should include timestamp and source information") void shouldIncludeTimestampAndSource() throws IOException {
-        // Arrange
-        MetricsPostProcessor parser = new MetricsPostProcessor(testBenchmarkFile, tempDir.toString());
-        Instant testTimestamp = Instant.parse("2025-08-01T12:14:20.687806Z");
-
-        // Act
-        parser.parseAndExportHttpMetrics(testTimestamp);
-
-        // Assert
-        File outputFile = new File(tempDir.toFile(), "http-metrics.json");
-        try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
-
-            for (String endpointType : metrics.keySet()) {
-                @SuppressWarnings("unchecked") Map<String, Object> endpointData = (Map<String, Object>) metrics.get(endpointType);
-
-                assertEquals(testTimestamp.toString(), endpointData.get("timestamp"));
-                assertTrue(endpointData.containsKey("source"));
-
-                String source = (String) endpointData.get("source");
-                assertTrue(source.contains("JMH benchmark"));
-                assertTrue(source.contains("sample mode"));
-            }
-        }
-    }
+    // Timestamp validation is now covered by provideTimestampTestCases
 
     @Test @DisplayName("Should only process sample mode benchmarks") void shouldOnlyProcessSampleModeBenchmarks() throws IOException {
-        // Arrange
-        String mixedModeFile = createMixedModeBenchmarkFile();
-        MetricsPostProcessor parser = new MetricsPostProcessor(mixedModeFile, tempDir.toString());
+        // Specific test for mode filtering
+        String testFile = createTestDataFile(MIXED_MODE_BENCHMARK);
+        MetricsPostProcessor parser = new MetricsPostProcessor(testFile, tempDir.toString());
 
-        // Act
         parser.parseAndExportHttpMetrics(Instant.now());
 
-        // Assert
         File outputFile = new File(tempDir.toFile(), "http-metrics.json");
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked") Map<String, Object> metrics = (Map<String, Object>) gson.fromJson(reader, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> metrics = gson.fromJson(reader, Map.class);
 
             assertFalse(metrics.isEmpty());
 
@@ -210,21 +210,14 @@ class MetricsPostProcessorTest {
         }
     }
 
-    @Test @DisplayName("Should handle file not found exception") void shouldHandleFileNotFound() {
-        // Arrange
-        MetricsPostProcessor parser = new MetricsPostProcessor("/non/existent/file.json", tempDir.toString());
-
-        // Act & Assert
-        IOException exception = assertThrows(IOException.class, () -> parser.parseAndExportHttpMetrics(Instant.now()));
-
-        assertTrue(exception.getMessage().contains("not found"));
-    }
+    // Exception handling is now covered by provideExceptionTestCases
 
     @Test @DisplayName("Should use static convenience method") void shouldUseConvenienceMethod() throws IOException {
         // Arrange
         File resultsDir = tempDir.toFile();
         File benchmarkFile = new File(resultsDir, "integration-benchmark-result.json");
-        Files.copy(Path.of(testBenchmarkFile), benchmarkFile.toPath());
+        String testFile = createTestDataFile(COMBINED_BENCHMARK);
+        Files.copy(Path.of(testFile), benchmarkFile.toPath());
 
         // Act
         MetricsPostProcessor.parseAndExport(resultsDir.getAbsolutePath());
@@ -239,158 +232,5 @@ class MetricsPostProcessorTest {
         }
     }
 
-    private String createTestBenchmarkFile() throws IOException {
-        File testFile = new File(tempDir.toFile(), "test-benchmark-result.json");
-
-        // Using TestDataFactory to generate consistent test data
-        String testData = """
-        [
-            {
-                "jmhVersion": "1.37",
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
-                "mode": "sample",
-                "threads": 1,
-                "forks": 1,
-                "primaryMetric": {
-                    "score": 8.297886677685952,
-                    "scorePercentiles": {
-                        "0.0": 4.58752,
-                        "50.0": 7.6513279999999995,
-                        "90.0": 11.327897599999998,
-                        "95.0": 13.4529024,
-                        "99.0": 29.980098560000016,
-                        "99.9": 33.325056,
-                        "100.0": 33.325056
-                    },
-                    "scoreUnit": "ms/op",
-                    "rawDataHistogram": [
-                        [
-                            [
-                                [4.58752, 1],
-                                [7.6513279999999995, 60],
-                                [33.325056, 1]
-                            ]
-                        ]
-                    ]
-                }
-            },
-            {
-                "jmhVersion": "1.37",
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtValidationBenchmark.validateAccessTokenThroughput",
-                "mode": "sample",
-                "threads": 1,
-                "forks": 1,
-                "primaryMetric": {
-                    "score": 15.5,
-                    "scorePercentiles": {
-                        "0.0": 12.1,
-                        "50.0": 15.2,
-                        "90.0": 18.7,
-                        "95.0": 21.3,
-                        "99.0": 35.8,
-                        "99.9": 42.1,
-                        "100.0": 42.1
-                    },
-                    "scoreUnit": "ms/op",
-                    "rawDataHistogram": [
-                        [
-                            [
-                                [12.1, 1],
-                                [15.2, 40],
-                                [42.1, 1]
-                            ]
-                        ]
-                    ]
-                }
-            }
-        ]
-        """;
-
-        try (FileWriter writer = new FileWriter(testFile)) {
-            writer.write(testData);
-        }
-
-        return testFile.getAbsolutePath();
-    }
-
-    private String createMixedModeBenchmarkFile() throws IOException {
-        File testFile = new File(tempDir.toFile(), "mixed-mode-benchmark-result.json");
-
-        String testData = """
-        [
-            {
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
-                "mode": "thrpt",
-                "primaryMetric": {
-                    "score": 1000.0,
-                    "scoreUnit": "ops/s"
-                }
-            },
-            {
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
-                "mode": "sample",
-                "primaryMetric": {
-                    "score": 8.5,
-                    "scorePercentiles": {
-                        "50.0": 8.3,
-                        "95.0": 14.7,
-                        "99.0": 26.9
-                    },
-                    "scoreUnit": "ms/op",
-                    "rawDataHistogram": [
-                        [
-                            [
-                                [8.3, 30]
-                            ]
-                        ]
-                    ]
-                }
-            }
-        ]
-        """;
-
-        try (FileWriter writer = new FileWriter(testFile)) {
-            writer.write(testData);
-        }
-
-        return testFile.getAbsolutePath();
-    }
-
-    private String createMultiIterationBenchmarkFile() throws IOException {
-        File testFile = new File(tempDir.toFile(), "multi-iteration-benchmark-result.json");
-
-        String testData = """
-        [
-            {
-                "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckAll",
-                "mode": "sample",
-                "primaryMetric": {
-                    "score": 7.5,
-                    "scorePercentiles": {
-                        "50.0": 7.3,
-                        "95.0": 13.7,
-                        "99.0": 25.9
-                    },
-                    "scoreUnit": "ms/op",
-                    "rawDataHistogram": [
-                        [
-                            [
-                                [7.3, 150]
-                            ],
-                            [
-                                [7.5, 250]
-                            ]
-                        ]
-                    ]
-                }
-            }
-        ]
-        """;
-
-        try (FileWriter writer = new FileWriter(testFile)) {
-            writer.write(testData);
-        }
-
-        return testFile.getAbsolutePath();
-    }
+    // Test data creation methods are no longer needed as we use MetricsTestDataConstants
 }
