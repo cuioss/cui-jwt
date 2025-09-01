@@ -50,7 +50,7 @@ public abstract class AbstractMetricsExporter implements MetricsExporter {
             .setPrettyPrinting()
             .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>)
                     (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
-            .registerTypeAdapter(Double.class, (JsonSerializer<Double>)(src, typeOfSrc, context) -> {
+            .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (src, typeOfSrc, context) -> {
                 if (src == src.longValue()) {
                     return new JsonPrimitive(src.longValue());
                 }
@@ -139,10 +139,10 @@ public abstract class AbstractMetricsExporter implements MetricsExporter {
     }
 
     /**
-     * Format number according to rules: 1 decimal for <10, no decimal for >=10.
+     * Format number according to rules: 1 decimal for values less than 10, no decimal for values greater than or equal to 10.
      * 
      * @param value The value to format
-     * @return Formatted number (Double for <10, Long for >=10)
+     * @return Formatted number (Double for values less than 10, Long for values greater than or equal to 10)
      */
     protected Object formatNumber(double value) {
         if (value < 10) {

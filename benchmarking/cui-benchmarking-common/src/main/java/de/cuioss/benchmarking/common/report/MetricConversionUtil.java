@@ -102,7 +102,7 @@ public final class MetricConversionUtil {
      * @return performance grade string
      */
     public static String calculatePerformanceGrade(double throughput) {
-        return switch ((int)Math.log10(Math.max(1, throughput))) {
+        return switch ((int) Math.log10(Math.max(1, throughput))) {
             case 6, 7, 8, 9 -> Grades.A_PLUS;
             case 5 -> Grades.A;
             case 4 -> Grades.B;
@@ -114,9 +114,9 @@ public final class MetricConversionUtil {
     /**
      * Central method for formatting numeric values for display.
      * Rules:
-     * - Values < 2: 2 fraction digits
-     * - Values < 10: 1 fraction digit
-     * - Values >= 10: No fraction digits
+     * - Values less than 2: 2 fraction digits
+     * - Values less than 10: 1 fraction digit
+     * - Values greater than or equal to 10: No fraction digits
      * 
      * @param value the numeric value to format
      * @return formatted string representation

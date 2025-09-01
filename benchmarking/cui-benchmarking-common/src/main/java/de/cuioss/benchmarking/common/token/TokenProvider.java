@@ -26,7 +26,6 @@ import lombok.NonNull;
  *   <li>{@code MockTokenRepository} - Generates tokens in-memory for isolated library benchmarks</li>
  *   <li>{@code KeycloakTokenRepository} - Fetches real tokens from Keycloak for integration benchmarks</li>
  * </ul>
- * </p>
  * <p>
  * Implementations should provide efficient token rotation to simulate realistic usage patterns
  * and ensure proper cache miss scenarios during benchmarking.
@@ -69,7 +68,6 @@ public interface TokenProvider {
      *   <li>Fetch fresh tokens from authentication server (real implementations)</li>
      *   <li>Do nothing if token refresh is not supported</li>
      * </ul>
-     * </p>
      *
      * @throws RuntimeException if the refresh operation fails
      */

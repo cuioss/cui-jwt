@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>Supports SSL verification configuration</li>
  *   <li>Provides round-robin token distribution</li>
  * </ul>
- * </p>
  *
  * @author Oliver Wolff
  * @since 1.0
