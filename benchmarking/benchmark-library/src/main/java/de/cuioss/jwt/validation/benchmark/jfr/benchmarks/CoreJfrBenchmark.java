@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
-import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import org.openjdk.jmh.annotations.*;
 
@@ -83,9 +83,9 @@ import java.util.concurrent.TimeUnit;
             ValidationSupplier validationSupplier) {
         String token = coreValidationDelegate.getCurrentToken(tokenType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation(operationName, OPERATION_TYPE_VALIDATION)) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(tokenRepository.getTokenIssuer(token));
+        try (var recorder = jfrInstrumentation.recordOperation(operationName, OPERATION_TYPE_VALIDATION)) {
+            recorder.withPayloadSize(token.length())
+                    .withMetadata("issuer", tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = validationSupplier.validate();
             recorder.withSuccess(true);

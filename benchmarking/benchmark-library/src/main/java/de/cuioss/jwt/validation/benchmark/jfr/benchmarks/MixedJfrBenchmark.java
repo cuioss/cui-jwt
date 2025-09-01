@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
-import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -61,9 +61,9 @@ import java.util.concurrent.TimeUnit;
         String errorType = errorLoadDelegate0.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", MIXED_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
+        try (var recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", MIXED_VALIDATION_OPERATION)) {
+            recorder.withPayloadSize(token.length())
+                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
 
             if (!isValid) {
                 recorder.withError(errorType);
@@ -83,9 +83,9 @@ import java.util.concurrent.TimeUnit;
         String errorType = errorLoadDelegate50.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", MIXED_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
+        try (var recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", MIXED_VALIDATION_OPERATION)) {
+            recorder.withPayloadSize(token.length())
+                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
 
             if (!isValid) {
                 recorder.withError(errorType);

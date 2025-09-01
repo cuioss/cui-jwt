@@ -14,26 +14,34 @@
  * limitations under the License.
  */
 /**
- * JFR (Java Flight Recorder) instrumentation for JWT benchmark variance analysis.
+ * JWT benchmark JFR integration and testing.
  * <p>
- * This package provides comprehensive JFR instrumentation for measuring operation time variance
- * under concurrent load during JWT validation benchmarks. The instrumentation captures:
+ * This package contains JWT-specific JFR benchmark implementations and test utilities.
+ * The core JFR functionality has been extracted to {@code de.cuioss.benchmarking.common.jfr} 
+ * for reusability across all benchmark modules.
  * </p>
  * 
- * <h2>Key Components</h2>
+ * <h2>Package Structure</h2>
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JwtOperationEvent} - Records individual JWT operations</li>
- *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JwtOperationStatisticsEvent} - Periodic statistics snapshots</li>
- *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JwtBenchmarkPhaseEvent} - Benchmark lifecycle events</li>
- *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation} - Central instrumentation manager</li>
- *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer} - Post-benchmark analysis tool</li>
+ *   <li>{@code benchmarks/} - JWT-specific JFR-instrumented benchmark implementations</li>
+ *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JfrEventTest} - JFR event testing utility</li>
  * </ul>
  * 
  * <h2>Usage</h2>
+ * <p>
+ * JWT benchmarks use the common JFR utilities from {@code de.cuioss.benchmarking.common.jfr}:
+ * </p>
+ * <ul>
+ *   <li>{@code JfrInstrumentation} - Central instrumentation management</li>
+ *   <li>{@code JfrVarianceAnalyzer} - Variance analysis from JFR recordings</li>
+ *   <li>{@code JfrSupport} - JFR availability detection</li>
+ *   <li>{@code JfrConfiguration} - Configuration builder for recordings</li>
+ * </ul>
+ * 
  * <h3>Running Benchmarks with JFR</h3>
  * <pre>{@code
- * # Run benchmarks with JFR recording enabled (automatic with Maven profile)
- * mvn verify -Pbenchmark
+ * # Run benchmarks with JFR recording enabled
+ * mvn verify -Pbenchmark-jfr
  * 
  * # JFR file will be saved to: target/benchmark-results/benchmark.jfr
  * }</pre>
@@ -45,67 +53,7 @@
  * JfrVarianceAnalyzer analyzer = new JfrVarianceAnalyzer();
  * VarianceReport report = analyzer.analyze(jfrFile);
  * report.printSummary();
- * 
- * // Command-line analysis
- * java -cp target/classes:target/dependency/* \
- *   de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
- *   target/benchmark-results/benchmark.jfr
  * }</pre>
- * 
- * <h3>JFR Event Analysis with JDK Tools</h3>
- * <pre>{@code
- * # View all JWT operation events
- * jfr print --events de.cuioss.jwt.Operation benchmark.jfr
- * 
- * # Export to JSON for custom analysis
- * jfr print --json --events de.cuioss.jwt.* benchmark.jfr > jwt-events.json
- * 
- * # Summary of all events
- * jfr summary benchmark.jfr
- * }</pre>
- * 
- * <h2>Metrics Captured</h2>
- * <h3>Per-Operation Metrics</h3>
- * <ul>
- *   <li>Operation duration (nanosecond precision)</li>
- *   <li>Operation type (validation, parsing, signature verification)</li>
- *   <li>Token metadata (size, issuer)</li>
- *   <li>Success/failure status with error types</li>
- *   <li>Concurrent operation count</li>
- *   <li>Cache hit information</li>
- * </ul>
- * 
- * <h3>Periodic Statistics (1-second intervals)</h3>
- * <ul>
- *   <li>Sample count per interval</li>
- *   <li>Latency percentiles (P50, P95, P99)</li>
- *   <li>Variance and standard deviation</li>
- *   <li>Coefficient of variation (CV)</li>
- *   <li>Concurrent thread count</li>
- *   <li>Cache hit rate</li>
- * </ul>
- * 
- * <h2>Variance Analysis</h2>
- * <p>
- * The coefficient of variation (CV) is the primary metric for understanding operation time variance:
- * </p>
- * <ul>
- *   <li><strong>CV &lt; 25%</strong>: Low variance, consistent performance</li>
- *   <li><strong>CV 25-50%</strong>: Moderate variance, acceptable for concurrent workloads</li>
- *   <li><strong>CV &gt; 50%</strong>: High variance, potential performance issues</li>
- * </ul>
- * 
- * <h2>Performance Impact</h2>
- * <p>
- * JFR instrumentation is designed for minimal overhead (&lt;1% in production mode).
- * The implementation uses:
- * </p>
- * <ul>
- *   <li>Thread-local event objects to minimize allocation</li>
- *   <li>Conditional commit based on event thresholds</li>
- *   <li>Efficient HdrHistogram for accurate percentile tracking</li>
- *   <li>Striped statistics to reduce contention</li>
- * </ul>
  * 
  * @since 1.0
  */

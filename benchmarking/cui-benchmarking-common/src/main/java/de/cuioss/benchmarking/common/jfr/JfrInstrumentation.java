@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.benchmarking.common.jfr;
 
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.Recorder;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Central management for JFR instrumentation in JWT benchmarks.
+ * Central management for JFR instrumentation in benchmarks.
  * Provides utilities for recording events and computing statistics.
  */
 public class JfrInstrumentation {
@@ -49,7 +49,7 @@ public class JfrInstrumentation {
     }
 
     /**
-     * Records the start of a JWT operation.
+     * Records the start of a benchmark operation.
      * @return an AutoCloseable that should be used in try-with-resources to ensure proper event completion
      */
     public OperationRecorder recordOperation(String benchmarkName, String operationType) {
@@ -60,7 +60,7 @@ public class JfrInstrumentation {
      * Records a benchmark phase transition.
      */
     public void recordPhase(String benchmarkName, String phase, int iteration, int totalIterations, int fork, int threadCount) {
-        JwtBenchmarkPhaseEvent event = new JwtBenchmarkPhaseEvent();
+        BenchmarkPhaseEvent event = new BenchmarkPhaseEvent();
         event.benchmarkName = benchmarkName;
         event.phase = phase;
         event.iteration = iteration;
@@ -89,7 +89,7 @@ public class JfrInstrumentation {
         operationStats.forEach((key, stats) -> {
             Histogram snapshot = stats.recorder.getIntervalHistogram();
             if (snapshot.getTotalCount() > 0) {
-                JwtOperationStatisticsEvent event = new JwtOperationStatisticsEvent();
+                OperationStatisticsEvent event = new OperationStatisticsEvent();
                 String[] parts = key.split(":");
                 event.benchmarkName = parts[0];
                 event.operationType = parts[1];
@@ -116,12 +116,12 @@ public class JfrInstrumentation {
      * Helper class for recording individual operations.
      */
     public class OperationRecorder implements AutoCloseable {
-        private final JwtOperationEvent event;
+        private final OperationEvent event;
         private final String statsKey;
         private final long startTime;
 
         private OperationRecorder(String benchmarkName, String operationType) {
-            this.event = new JwtOperationEvent();
+            this.event = new OperationEvent();
             this.event.benchmarkName = benchmarkName;
             this.event.operationType = operationType;
             this.event.threadName = Thread.currentThread().getName();
@@ -139,13 +139,14 @@ public class JfrInstrumentation {
             }
         }
 
-        public OperationRecorder withTokenSize(long size) {
-            event.tokenSize = size;
+        public OperationRecorder withPayloadSize(long size) {
+            event.payloadSize = size;
             return this;
         }
 
-        public OperationRecorder withIssuer(String issuer) {
-            event.issuer = issuer;
+        public OperationRecorder withMetadata(String key, String value) {
+            event.metadataKey = key;
+            event.metadataValue = value;
             return this;
         }
 
@@ -157,6 +158,11 @@ public class JfrInstrumentation {
         public OperationRecorder withError(String errorType) {
             event.success = false;
             event.errorType = errorType;
+            return this;
+        }
+
+        public OperationRecorder withCached(boolean cached) {
+            event.cached = cached;
             return this;
         }
 

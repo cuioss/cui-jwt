@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.benchmarking.common.jfr;
 
 import jdk.jfr.*;
 
 /**
- * JFR event for tracking individual JWT operation performance.
- * This event captures timing and metadata for each JWT validation operation,
+ * JFR event for tracking individual benchmark operation performance.
+ * This event captures timing and metadata for each operation,
  * enabling analysis of operation variance under concurrent load.
  */
-@Name("de.cuioss.jwt.Operation") @Label("JWT Operation") @Description("Tracks individual JWT operation performance including validation, parsing, and signature verification") @Category({"JWT", "Performance", "Benchmark"}) @StackTrace(false) public class JwtOperationEvent extends Event {
+@Name("de.cuioss.benchmark.Operation") @Label("Benchmark Operation") @Description("Tracks individual benchmark operation performance") @Category({"Benchmark", "Performance"}) @StackTrace(false) public class OperationEvent extends Event {
 
     @Label("Operation Type")
-    @Description("Type of JWT operation (validation, parsing, signature_verification)")
+    @Description("Type of operation being benchmarked")
     public String operationType;
 
     @Label("Benchmark Name")
@@ -36,14 +36,18 @@ import jdk.jfr.*;
     @Description("Name of the thread executing this operation")
     public String threadName;
 
-    @Label("Token Size")
-    @Description("Size of the JWT token in bytes")
+    @Label("Payload Size")
+    @Description("Size of the operation payload in bytes")
     @DataAmount
-    public long tokenSize;
+    public long payloadSize;
 
-    @Label("Issuer")
-    @Description("JWT token issuer")
-    public String issuer;
+    @Label("Metadata Key")
+    @Description("Key for operation metadata")
+    public String metadataKey;
+
+    @Label("Metadata Value")
+    @Description("Value for operation metadata")
+    public String metadataValue;
 
     @Label("Success")
     @Description("Whether the operation completed successfully")

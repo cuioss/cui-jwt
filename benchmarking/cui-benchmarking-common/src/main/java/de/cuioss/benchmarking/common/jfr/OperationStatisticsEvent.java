@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.benchmarking.common.jfr;
 
 import jdk.jfr.*;
 
 /**
- * Periodic JFR event that captures JWT operation statistics over time windows.
+ * Periodic JFR event that captures operation statistics over time windows.
  * This event is emitted periodically to track variance and performance trends.
  */
-@Name("de.cuioss.jwt.OperationStatistics") @Label("JWT Operation Statistics") @Description("Periodic statistics for JWT operations including latency percentiles and variance metrics") @Category({"JWT", "Performance", "Statistics"}) @Period("1 s") @StackTrace(false) public class JwtOperationStatisticsEvent extends Event {
+@Name("de.cuioss.benchmark.OperationStatistics") @Label("Operation Statistics") @Description("Periodic statistics for benchmark operations including latency percentiles and variance metrics") @Category({"Benchmark", "Performance", "Statistics"}) @Period("1 s") @StackTrace(false) public class OperationStatisticsEvent extends Event {
 
     @Label("Benchmark Name")
     @Description("Name of the benchmark")
     public String benchmarkName;
 
     @Label("Operation Type")
-    @Description("Type of JWT operation")
+    @Description("Type of operation")
     public String operationType;
 
     @Label("Sample Count")

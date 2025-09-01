@@ -45,7 +45,6 @@ import java.util.Collection;
  * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.CoreJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.ErrorJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.MixedJfrBenchmark
- * @see de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer
  */
 public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
 

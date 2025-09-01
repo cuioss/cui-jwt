@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr;
 
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.tools.logging.CuiLogger;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -60,11 +61,11 @@ public class JfrEventTest {
                         executor.submit(() -> {
                             try {
                                 // Simulate JWT validation with varying latency
-                                try (JfrInstrumentation.OperationRecorder recorder =
+                                try (var recorder =
                                         instrumentation.recordOperation("TestBenchmark", "validation")) {
                                     // ThreadLocalRandom is safe for benchmark/test simulation
-                                    recorder.withTokenSize(ThreadLocalRandom.current().nextInt(100, 500))
-                                            .withIssuer("issuer-" + (index % 3))
+                                    recorder.withPayloadSize(ThreadLocalRandom.current().nextInt(100, 500))
+                                            .withMetadata("issuer", "issuer-" + (index % 3))
                                             .withSuccess(index % 10 != 0); // 90% success rate
 
                                     // Simulate processing time - ThreadLocalRandom is appropriate for test scenarios

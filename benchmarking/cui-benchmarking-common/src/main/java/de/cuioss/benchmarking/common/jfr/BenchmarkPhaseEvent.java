@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.benchmarking.common.jfr;
 
 import jdk.jfr.*;
 
@@ -21,7 +21,7 @@ import jdk.jfr.*;
  * JFR event to mark benchmark phases (warmup, measurement, etc).
  * Helps in separating analysis of different benchmark phases.
  */
-@Name("de.cuioss.jwt.BenchmarkPhase") @Label("JWT Benchmark Phase") @Description("Marks the beginning and end of benchmark phases") @Category({"JWT", "Benchmark", "Lifecycle"}) @StackTrace(false) public class JwtBenchmarkPhaseEvent extends Event {
+@Name("de.cuioss.benchmark.BenchmarkPhase") @Label("Benchmark Phase") @Description("Marks the beginning and end of benchmark phases") @Category({"Benchmark", "Lifecycle"}) @StackTrace(false) public class BenchmarkPhaseEvent extends Event {
 
     @Label("Benchmark Name")
     @Description("Name of the benchmark")

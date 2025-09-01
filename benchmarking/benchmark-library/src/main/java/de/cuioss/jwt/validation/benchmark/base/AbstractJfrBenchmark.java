@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark.base;
 
-import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.TearDown;

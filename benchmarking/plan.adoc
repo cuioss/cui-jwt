@@ -16,35 +16,6 @@ Pre-1.0 rule: No deprecation nor transitionally comments
 
 This document outlines the refactoring tasks identified for the cui-jwt benchmark module to improve code reuse, reduce duplication, and enhance maintainability through better distribution of responsibilities between modules.
 
-== Code Structure and Design
-
-=== C9. Merge or Clarify Metrics Computation Responsibilities
-* [x] *Priority:* Low
-
-*Description:* Review and refactor `MetricsComputer` and `TrendDataProcessor` to either merge overlapping functionality or clearly separate statistical computation from trend analysis.
-
-*Rationale:* Overlapping responsibilities create confusion about which component to use for specific computations.
-
-*Implementation Checklist:*
-
-* [x] Analyze current responsibilities of `MetricsComputer`
-* [x] Analyze current responsibilities of `TrendDataProcessor`
-* [x] Identify overlapping functionality
-* [x] Create `StatisticsCalculator` for pure statistical computations
-* [x] Refactor `MetricsComputer` to focus on metric-specific calculations
-* [x] Refactor `TrendDataProcessor` to focus on time-series analysis
-* [x] Update all usages to use appropriate component
-* [x] Add clear Javadoc explaining when to use each component
-
-*Verification Steps:*
-
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Execute benchmarks with trend analysis (DO NOT cancel or shortcut)
-* [x] Verify statistical calculations are correct
-* [x] Check trend detection works properly
-* [x] Compare results with previous implementation
-* [x] Commit with message: `refactor: C9. Merge or Clarify Metrics Computation Responsibilities`
-
 == Performance Improvements
 
 === P1. Enhance HTTP Client Management

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.benchmarking.common.jfr;
 
 import de.cuioss.tools.logging.CuiLogger;
 import jdk.jfr.consumer.RecordedEvent;
@@ -61,9 +61,9 @@ public class JfrVarianceAnalyzer {
             while (recordingFile.hasMoreEvents()) {
                 RecordedEvent event = recordingFile.readEvent();
 
-                if ("de.cuioss.jwt.Operation".equals(event.getEventType().getName())) {
+                if ("de.cuioss.benchmark.Operation".equals(event.getEventType().getName())) {
                     processOperationEvent(event, report);
-                } else if ("de.cuioss.jwt.OperationStatistics".equals(event.getEventType().getName())) {
+                } else if ("de.cuioss.benchmark.OperationStatistics".equals(event.getEventType().getName())) {
                     processStatisticsEvent(event, report);
                 }
             }
@@ -147,12 +147,18 @@ public class JfrVarianceAnalyzer {
                     });
         }
 
+        /**
+         * Returns the collected operation metrics map.
+         */
+        public Map<String, OperationMetrics> getOperationMetrics() {
+            return new HashMap<>(operationMetrics);
+        }
     }
 
     /**
      * Metrics for a specific operation type within a benchmark.
      */
-    static class OperationMetrics {
+    public static class OperationMetrics {
         final String benchmarkName;
         final String operationType;
 
