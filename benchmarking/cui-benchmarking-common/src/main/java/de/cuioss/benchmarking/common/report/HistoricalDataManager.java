@@ -15,8 +15,7 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
@@ -55,10 +54,6 @@ public class HistoricalDataManager {
     private static final DateTimeFormatter TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd-'T'HHmm'Z'").withZone(ZoneOffset.UTC);
 
-    private final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
-            .serializeSpecialFloatingPointValues()
-            .create();
 
     /**
      * Archives the current benchmark data to the history directory.
@@ -80,7 +75,7 @@ public class HistoricalDataManager {
         String filename = "%s-%s%s".formatted(timestamp, truncatedSha, JSON_EXTENSION);
 
         Path archiveFile = historyDir.resolve(filename);
-        String jsonContent = gson.toJson(currentData);
+        String jsonContent = JsonSerializationHelper.toJson(currentData);
         Files.writeString(archiveFile, jsonContent);
 
         LOGGER.info(INFO.GENERATING_REPORTS.format("Archived benchmark data to " + archiveFile));

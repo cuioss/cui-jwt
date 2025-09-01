@@ -153,7 +153,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [x] Commit with message: `refactor: D1. Centralize Logging Configuration`
 
 === D2. Standardize JSON Processing with GSON
-* [ ] *Priority:* Medium
+* [x] *Priority:* Medium
 
 *Description:* Optimize JSON serialization by leveraging GSON features more effectively. GSON remains the standard JSON processing library for this project.
 
@@ -161,24 +161,24 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Audit current JSON processing usage across modules
-* [ ] Identify GSON features that can replace custom implementations
-* [ ] Optimize `JsonSerializationHelper` to use GSON features more effectively
-* [ ] Leverage GSON's built-in type adapters and serializers
-* [ ] Configure GSON instances for optimal performance (singleton pattern)
-* [ ] Add custom GSON type adapters/serializers as needed
-* [ ] Remove redundant JSON utility methods
-* [ ] Update all JSON processing tests
+* [x] Audit current JSON processing usage across modules
+* [x] Identify GSON features that can replace custom implementations
+* [x] Optimize `JsonSerializationHelper` to use GSON features more effectively
+* [x] Leverage GSON's built-in type adapters and serializers
+* [x] Configure GSON instances for optimal performance (singleton pattern)
+* [x] Add custom GSON type adapters/serializers as needed
+* [x] Remove redundant JSON utility methods
+* [x] Update all JSON processing tests
 
 *Verification Steps:*
 
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Verify JSON output format remains compatible
-* [ ] Test JSON round-trip serialization
-* [ ] Check performance of JSON processing
-* [ ] Commit with message: `refactor: D2. Standardize JSON Processing with GSON`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+* [x] Verify JSON output format remains compatible
+* [x] Test JSON round-trip serialization
+* [x] Check performance of JSON processing
+* [x] Commit with message: `refactor: D2. Standardize JSON Processing with GSON`
 
 == Documentation Improvements
 

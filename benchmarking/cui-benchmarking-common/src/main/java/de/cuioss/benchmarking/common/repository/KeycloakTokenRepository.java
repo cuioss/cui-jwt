@@ -15,10 +15,10 @@
  */
 package de.cuioss.benchmarking.common.repository;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.benchmarking.common.token.TokenProvider;
+import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
@@ -56,7 +56,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class KeycloakTokenRepository implements TokenProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(KeycloakTokenRepository.class);
-    private static final Gson GSON = new Gson();
     private static final int HTTP_OK = 200;
 
     private final TokenRepositoryConfig config;
@@ -173,7 +172,7 @@ public class KeycloakTokenRepository implements TokenProvider {
             throw new TokenFetchException("Empty response body from token endpoint");
         }
 
-        JsonObject jsonResponse = GSON.fromJson(responseBody, JsonObject.class);
+        JsonObject jsonResponse = JsonSerializationHelper.fromJson(responseBody, JsonObject.class);
         if (jsonResponse == null || !jsonResponse.has("access_token")) {
             throw new TokenFetchException("No access_token field in response");
         }

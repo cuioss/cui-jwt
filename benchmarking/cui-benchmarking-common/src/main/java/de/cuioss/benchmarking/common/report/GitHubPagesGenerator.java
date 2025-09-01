@@ -15,9 +15,8 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
+import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 import org.apache.commons.io.FileUtils;
 
@@ -163,8 +162,7 @@ public class GitHubPagesGenerator {
         Map<String, Object> summary = new LinkedHashMap<>();
         if (Files.exists(summaryFile)) {
             String summaryContent = Files.readString(summaryFile);
-            var gson = new Gson();
-            @SuppressWarnings("unchecked") Map<String, Object> summaryData = gson.fromJson(summaryContent, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> summaryData = JsonSerializationHelper.jsonToMap(summaryContent);
             summary.put(TOTAL_BENCHMARKS, summaryData.getOrDefault(TOTAL_BENCHMARKS, 0));
             summary.put(PERFORMANCE_GRADE_KEY, summaryData.getOrDefault(PERFORMANCE_GRADE_KEY, N_A));
             summary.put(AVERAGE_THROUGHPUT, summaryData.getOrDefault(AVERAGE_THROUGHPUT, 0.0));
@@ -179,8 +177,7 @@ public class GitHubPagesGenerator {
         links.put(BADGES_DIR, BADGES_PATH);
         latestData.put(LINKS, links);
 
-        var gson = new GsonBuilder().setPrettyPrinting().create();
-        Files.writeString(latestFile, gson.toJson(latestData));
+        Files.writeString(latestFile, JsonSerializationHelper.toJson(latestData));
         LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(latestFile));
     }
 
@@ -191,21 +188,18 @@ public class GitHubPagesGenerator {
         if (Files.exists(benchmarkDataFile)) {
             // Extract benchmark data from benchmark-data.json
             String content = Files.readString(benchmarkDataFile);
-            var gson = new Gson();
-            @SuppressWarnings("unchecked") Map<String, Object> data = gson.fromJson(content, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> data = JsonSerializationHelper.jsonToMap(content);
             Map<String, Object> benchmarksData = new LinkedHashMap<>();
             benchmarksData.put(BENCHMARKS, data.getOrDefault(BENCHMARKS, new LinkedHashMap<>()));
             benchmarksData.put(GENERATED, Instant.now().toString());
 
-            var gsonWriter = new GsonBuilder().setPrettyPrinting().create();
-            Files.writeString(benchmarksFile, gsonWriter.toJson(benchmarksData));
+            Files.writeString(benchmarksFile, JsonSerializationHelper.toJson(benchmarksData));
         } else {
             Map<String, Object> benchmarksData = new LinkedHashMap<>();
             benchmarksData.put(BENCHMARKS, new LinkedHashMap<>());
             benchmarksData.put(GENERATED, Instant.now().toString());
 
-            var gson = new GsonBuilder().setPrettyPrinting().create();
-            Files.writeString(benchmarksFile, gson.toJson(benchmarksData));
+            Files.writeString(benchmarksFile, JsonSerializationHelper.toJson(benchmarksData));
         }
 
         LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(benchmarksFile));
@@ -222,8 +216,7 @@ public class GitHubPagesGenerator {
 
         if (Files.exists(summaryFile)) {
             String summaryContent = Files.readString(summaryFile);
-            var gson = new Gson();
-            @SuppressWarnings("unchecked") Map<String, Object> summaryData = gson.fromJson(summaryContent, Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> summaryData = JsonSerializationHelper.jsonToMap(summaryContent);
             statusData.put(LAST_RUN, summaryData.getOrDefault(TIMESTAMP, Instant.now().toString()));
         } else {
             statusData.put(LAST_RUN, Instant.now().toString());
@@ -234,8 +227,7 @@ public class GitHubPagesGenerator {
         services.put(REPORTS_DIR, Files.exists(sourceDir.resolve(INDEX)) ? STATUS_OPERATIONAL : STATUS_NO_DATA);
         statusData.put(SERVICES, services);
 
-        var gson = new GsonBuilder().setPrettyPrinting().create();
-        Files.writeString(statusFile, gson.toJson(statusData));
+        Files.writeString(statusFile, JsonSerializationHelper.toJson(statusData));
         LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(statusFile));
     }
 

@@ -15,9 +15,12 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
+import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
@@ -61,10 +64,6 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 public class ReportDataGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportDataGenerator.class);
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .serializeSpecialFloatingPointValues()
-            .create();
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
     private static final String DATA_FILE_NAME = BENCHMARK_DATA_JSON;
 
@@ -85,7 +84,7 @@ public class ReportDataGenerator {
             throws IOException {
 
         String jsonContent = Files.readString(jsonFile);
-        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
+        JsonArray benchmarks = JsonSerializationHelper.fromJson(jsonContent, JsonArray.class);
 
         Map<String, Object> data = new LinkedHashMap<>();
 
@@ -108,7 +107,7 @@ public class ReportDataGenerator {
         Path dataDir = Path.of(outputDir, DATA_DIR);
         Files.createDirectories(dataDir);
         Path dataFile = dataDir.resolve(DATA_FILE_NAME);
-        Files.writeString(dataFile, GSON.toJson(data));
+        Files.writeString(dataFile, JsonSerializationHelper.toJson(data));
 
         LOGGER.info(INFO.METRICS_FILE_GENERATED.format(dataFile));
 
