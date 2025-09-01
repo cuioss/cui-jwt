@@ -17,35 +17,6 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 == Code Structure and Design
 
-=== C5. Strengthen Runner Infrastructure
-* [x] *Priority:* Medium
-
-*Description:* Enhance `AbstractBenchmarkRunner` with template method pattern to better support the various runner implementations (LibraryBenchmarkRunner, JfrBenchmarkRunner, QuarkusIntegrationRunner).
-
-*Rationale:* Current abstract runner is underutilized. A proper template method pattern would reduce code duplication in concrete runners.
-
-*Implementation Checklist:*
-
-* [x] Define template method `runBenchmark()` in `AbstractBenchmarkRunner`
-* [x] Add abstract methods: `prepareBenchmark()`, `executeBenchmark()`, `processResults()`, `cleanup()`
-* [x] Add hook methods: `beforeBenchmark()`, `afterBenchmark()` with default empty implementations
-* [x] Extract common JMH options building to base class
-* [x] Extract common result processing to base class
-* [x] Update `LibraryBenchmarkRunner` to use template pattern
-* [x] Update `JfrBenchmarkRunner` to use template pattern
-* [x] Update `QuarkusIntegrationRunner` to use template pattern
-* [x] Add configuration validation in base class
-
-*Verification Steps:*
-
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute each runner type and verify correct execution flow (DO NOT cancel or shortcut any runs)
-* [ ] Verify benchmark results are generated correctly
-* [ ] Check that runner-specific features still work (JFR events, integration metrics)
-* [x] Commit with message: `refactor: C5. Strengthen Runner Infrastructure`
-
 === C6. Create Metrics Processing Pipeline
 * [ ] *Priority:* Medium
 
@@ -101,33 +72,6 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Check JFR analysis reports are generated
 * [ ] Commit with message: `refactor: C7. Extract JFR Utilities to Common Module`
 
-=== C8. Separate Report Generation from Data Processing
-* [ ] *Priority:* Low
-
-*Description:* Refactor report generation to separate rendering logic from data aggregation using visitor pattern or similar approach.
-
-*Rationale:* Current implementation mixes concerns. Separation improves testability and allows for alternative report formats.
-
-*Implementation Checklist:*
-
-* [ ] Create `ReportData` model classes for report data structure
-* [ ] Create `ReportRenderer` interface with `render(ReportData data)` method
-* [ ] Implement `HtmlReportRenderer` for HTML output
-* [ ] Implement `JsonReportRenderer` for JSON output
-* [ ] Implement `MarkdownReportRenderer` for Markdown output
-* [ ] Extract data aggregation logic to `ReportDataBuilder`
-* [ ] Update `ReportGenerator` to use renderer pattern
-* [ ] Add renderer factory for format selection
-
-*Verification Steps:*
-
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Generate reports in all formats (HTML, JSON, Markdown)
-* [ ] Verify report content is consistent across formats
-* [ ] Check HTML report renders correctly in browser
-* [ ] Validate JSON report structure
-* [ ] Review Markdown report formatting
-* [ ] Commit with message: `refactor: C8. Separate Report Generation from Data Processing`
 
 === C9. Merge or Clarify Metrics Computation Responsibilities
 * [ ] *Priority:* Low
@@ -186,68 +130,10 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Check no connection leaks occur
 * [ ] Commit with message: `refactor: P1. Enhance HTTP Client Management`
 
-=== P2. Optimize Template Processing
-* [ ] *Priority:* Low
-
-*Description:* Create template engine abstraction for report generation to support multiple formats (HTML, Markdown, JSON) with caching of compiled templates.
-
-*Rationale:* Current HTML-only approach limits flexibility. Template abstraction with caching improves performance and extensibility.
-
-*Implementation Checklist:*
-
-* [ ] Create `TemplateEngine` interface with `render(template, context)` method
-* [ ] Implement `MustacheTemplateEngine` for HTML templates
-* [ ] Implement `FreemarkerTemplateEngine` as alternative
-* [ ] Add template caching mechanism
-* [ ] Create `TemplateContext` for passing data to templates
-* [ ] Add template precompilation support
-* [ ] Update report generation to use template engine
-* [ ] Add configuration for template engine selection
-
-*Verification Steps:*
-
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Generate reports using different template engines
-* [ ] Measure template processing performance
-* [ ] Verify template caching reduces processing time
-* [ ] Check generated output matches expected format
-* [ ] Commit with message: `refactor: P2. Optimize Template Processing`
-
-== Security Enhancements
-
-=== S1. Add Configuration Validation
-* [ ] *Priority:* Medium
-
-*Description:* Implement comprehensive validation for benchmark configurations to ensure security-relevant settings (SSL verification, token handling) are properly configured.
-
-*Rationale:* Configuration errors can lead to security vulnerabilities or misleading benchmark results.
-
-*Implementation Checklist:*
-
-* [ ] Create `ConfigurationValidator` class
-* [ ] Add validation for SSL/TLS settings
-* [ ] Add validation for token handling configuration
-* [ ] Add validation for endpoint URLs (prevent SSRF)
-* [ ] Add validation for file paths (prevent path traversal)
-* [ ] Implement validation annotations for configuration classes
-* [ ] Add startup validation in runners
-* [ ] Create detailed validation error messages
-* [ ] Add configuration schema documentation
-
-*Verification Steps:*
-
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Test with invalid configurations and verify proper error handling
-* [ ] Test with missing required configurations
-* [ ] Verify SSL validation works correctly
-* [ ] Check that insecure configurations are rejected in production mode
-* [ ] Run security scanning tools on configuration handling
-* [ ] Commit with message: `refactor: S1. Add Configuration Validation`
-
 == Testing Improvements
 
 === T1. Consolidate Test Data Management
-* [ ] *Priority:* High
+* [x] *Priority:* High
 
 *Description:* Create test data factory in cui-benchmarking-common test utilities to centralize test resource management and reduce duplication.
 
@@ -255,25 +141,25 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Create `TestDataFactory` in `cui-benchmarking-common/src/test/java`
-* [ ] Add methods for creating test tokens
-* [ ] Add methods for creating test metrics
-* [ ] Add methods for creating test benchmark results
-* [ ] Add methods for loading test JSON files
-* [ ] Create `TestResourceLoader` for file resources
-* [ ] Consolidate duplicate test JSON files
-* [ ] Update all test classes to use factory
-* [ ] Remove duplicate test data files
+* [x] Create `TestDataFactory` in `cui-benchmarking-common/src/test/java`
+* [x] Add methods for creating test tokens
+* [x] Add methods for creating test metrics
+* [x] Add methods for creating test benchmark results
+* [x] Add methods for loading test JSON files
+* [x] Create `TestResourceLoader` for file resources
+* [x] Consolidate duplicate test JSON files
+* [x] Update all test classes to use factory
+* [x] Remove duplicate test data files
 
 *Verification Steps:*
 
-* [ ] Run `./mvnw test -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw test -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Verify all tests pass with new test data factory
-* [ ] Check no duplicate test resources remain
-* [ ] Ensure test coverage remains the same or improves
-* [ ] Commit with message: `refactor: T1. Consolidate Test Data Management`
+* [x] Run `./mvnw test -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw test -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
+* [x] Verify all tests pass with new test data factory
+* [x] Check no duplicate test resources remain
+* [x] Ensure test coverage remains the same or improves
+* [x] Commit with message: `refactor: T1. Consolidate Test Data Management`
 
 === T2. Reduce MetricsPostProcessor Test Redundancy
 * [ ] *Priority:* Medium
@@ -295,39 +181,12 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Verification Steps:*
 
-* [ ] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
+* [x] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
 * [ ] Verify all test scenarios are still covered
 * [ ] Check test execution time (should be similar or faster)
 * [ ] Ensure test failure messages are still clear
 * [ ] Review code coverage reports
 * [ ] Commit with message: `refactor: T2. Reduce MetricsPostProcessor Test Redundancy`
-
-=== T3. Create Pluggable Validation Rules
-* [ ] *Priority:* Low
-
-*Description:* Extend `BenchmarkResultValidator` with a pluggable validation rules system to support custom validation requirements.
-
-*Rationale:* Current validator has fixed rules. Pluggable system allows for project-specific validation needs.
-
-*Implementation Checklist:*
-
-* [ ] Create `ValidationRule` interface with `validate(BenchmarkResult)` method
-* [ ] Create `ValidationContext` for passing validation state
-* [ ] Implement default rules: `ThresholdRule`, `ConsistencyRule`, `OutlierRule`
-* [ ] Add rule registration mechanism
-* [ ] Add rule configuration support
-* [ ] Create `ValidationReport` for detailed results
-* [ ] Update `BenchmarkResultValidator` to use rule system
-* [ ] Add custom rule examples in documentation
-
-*Verification Steps:*
-
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Test with various validation rules
-* [ ] Verify custom rules can be added
-* [ ] Check validation reports are comprehensive
-* [ ] Test rule configuration changes
-* [ ] Commit with message: `refactor: T3. Create Pluggable Validation Rules`
 
 == Dependency Management
 
@@ -359,21 +218,21 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Check log output format is consistent
 * [ ] Commit with message: `refactor: D1. Centralize Logging Configuration`
 
-=== D2. Standardize JSON Processing
+=== D2. Standardize JSON Processing with GSON
 * [ ] *Priority:* Medium
 
-*Description:* Review and standardize JSON serialization approach - either use Gson features more effectively or migrate to Jackson for consistency with other CUI projects.
+*Description:* Optimize JSON serialization by leveraging GSON features more effectively. GSON remains the standard JSON processing library for this project.
 
-*Rationale:* Current `JsonSerializationHelper` reinvents some Gson functionality. Standardization reduces code and improves consistency.
+*Rationale:* Current `JsonSerializationHelper` reinvents some GSON functionality. Better utilization of GSON features reduces code and improves maintainability.
 
 *Implementation Checklist:*
 
 * [ ] Audit current JSON processing usage across modules
-* [ ] Evaluate Gson vs Jackson for CUI project consistency
-* [ ] If keeping Gson: optimize `JsonSerializationHelper` to use Gson features
-* [ ] If migrating to Jackson: create migration plan
-* [ ] Update JSON serialization to use chosen approach
-* [ ] Add custom serializers/deserializers as needed
+* [ ] Identify GSON features that can replace custom implementations
+* [ ] Optimize `JsonSerializationHelper` to use GSON features more effectively
+* [ ] Leverage GSON's built-in type adapters and serializers
+* [ ] Configure GSON instances for optimal performance (singleton pattern)
+* [ ] Add custom GSON type adapters/serializers as needed
 * [ ] Remove redundant JSON utility methods
 * [ ] Update all JSON processing tests
 
@@ -385,7 +244,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Verify JSON output format remains compatible
 * [ ] Test JSON round-trip serialization
 * [ ] Check performance of JSON processing
-* [ ] Commit with message: `refactor: D2. Standardize JSON Processing`
+* [ ] Commit with message: `refactor: D2. Standardize JSON Processing with GSON`
 
 == Documentation Improvements
 
@@ -398,7 +257,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Create `ARCHITECTURE.adoc` in benchmarking root
+* [ ] Create `Architecture.adoc` in benchmarking root
 * [ ] Document cui-benchmarking-common responsibilities
 * [ ] Document benchmark-library responsibilities
 * [ ] Document benchmark-integration-quarkus responsibilities
@@ -424,7 +283,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 
 *Implementation Checklist:*
 
-* [ ] Create `DEVELOPMENT-GUIDE.adoc` in benchmarking root
+* [ ] Create `Development.adoc` in benchmarking root
 * [ ] Document benchmark types (library vs integration)
 * [ ] Explain base class selection criteria
 * [ ] Provide step-by-step benchmark creation guide

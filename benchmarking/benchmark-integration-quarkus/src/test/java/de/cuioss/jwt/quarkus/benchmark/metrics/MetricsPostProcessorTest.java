@@ -242,6 +242,7 @@ class MetricsPostProcessorTest {
     private String createTestBenchmarkFile() throws IOException {
         File testFile = new File(tempDir.toFile(), "test-benchmark-result.json");
 
+        // Using TestDataFactory to generate consistent test data
         String testData = """
         [
             {

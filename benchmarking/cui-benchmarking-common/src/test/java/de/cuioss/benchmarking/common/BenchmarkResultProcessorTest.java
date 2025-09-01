@@ -17,6 +17,8 @@ package de.cuioss.benchmarking.common;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
+import de.cuioss.benchmarking.common.test.TestDataFactory;
+import de.cuioss.benchmarking.common.test.TestResourceLoader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.RunResult;
@@ -39,10 +41,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class BenchmarkResultProcessorTest {
 
     @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
-        // Copy test JSON file to expected location
-        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        // Use TestResourceLoader to copy test JSON file to expected location
         Path targetJson = tempDir.resolve("micro-result.json");
-        Files.copy(sourceJson, targetJson);
+        TestResourceLoader.copyResourceToFile("/library-benchmark-results/micro-result.json", targetJson.toFile());
 
         // Use empty results - the processor will read from JSON file
         Collection<RunResult> results = List.of();
