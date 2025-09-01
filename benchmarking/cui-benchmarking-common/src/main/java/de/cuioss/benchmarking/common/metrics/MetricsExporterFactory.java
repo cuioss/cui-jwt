@@ -72,7 +72,7 @@ public class MetricsExporterFactory {
                 // Use reflection to avoid compile-time dependency on benchmark-integration-quarkus
                 try {
                     Class<?> clazz = Class.forName("de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter");
-                    return (MetricsExporter)clazz.getConstructor(String.class, MetricsFetcher.class)
+                    return (MetricsExporter) clazz.getConstructor(String.class, MetricsFetcher.class)
                             .newInstance(outputDirectory, metricsFetcher);
                 } catch (Exception e) {
                     LOGGER.error("Failed to create integration metrics exporter", e);

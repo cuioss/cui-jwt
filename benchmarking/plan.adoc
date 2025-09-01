@@ -8,6 +8,7 @@
 [IMPORTANT]
 ====
 This document follows the refactoring process standards defined in the CUI process documentation.
+
 Pre-1.0 rule: No deprecation nor transitionally comments
 ====
 
@@ -16,34 +17,6 @@ Pre-1.0 rule: No deprecation nor transitionally comments
 This document outlines the refactoring tasks identified for the cui-jwt benchmark module to improve code reuse, reduce duplication, and enhance maintainability through better distribution of responsibilities between modules.
 
 == Code Structure and Design
-
-=== C6. Create Metrics Processing Pipeline
-* [x] *Priority:* Medium
-
-*Description:* Implement chain-of-responsibility or pipeline pattern for metrics processing to replace multiple overlapping `MetricsPostProcessor` implementations.
-
-*Rationale:* Current implementations have significant overlap. A pipeline approach allows for modular, reusable processing stages.
-
-*Implementation Checklist:*
-
-* [x] Create `MetricsProcessor` interface with `process(MetricsContext context)` method
-* [x] Create `MetricsContext` class to hold metrics data through pipeline
-* [x] Create `MetricsPipeline` class to manage processor chain
-* [x] Implement processors: `ValidationProcessor`, `AggregationProcessor`, `EnrichmentProcessor`
-* [x] Implement processors: `FormatProcessor`, `ExportProcessor`
-* [x] Refactor existing `MetricsPostProcessor` classes to use pipeline
-* [x] Add pipeline configuration support
-* [x] Create builder pattern for pipeline construction
-
-*Verification Steps:*
-
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [x] Execute benchmarks with metrics processing (DO NOT cancel or shortcut)
-* [x] Verify all metrics are processed correctly through pipeline
-* [x] Check that processed metrics match expected format
-* [x] Run all metrics processor tests
-* [x] Commit with message: `refactor: C6. Create Metrics Processing Pipeline`
 
 === C7. Extract JFR Utilities to Common Module
 * [ ] *Priority:* Low
@@ -105,118 +78,79 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 === P1. Enhance HTTP Client Management
 * [ ] *Priority:* Medium
 
-*Description:* Add connection pooling configuration and timeout presets to `HttpClientFactory` for different benchmark scenarios (short-lived vs long-running benchmarks).
+*Description:* Reduce complexity by adding simple connection pooling only, no preset overkill. Must run baseline benchmarks first to capture performance numbers, then implement simple pooling, run again and compare. Only commit if performance really improves.
 
-*Rationale:* Current implementation uses basic clients. Connection pooling and scenario-specific configurations would improve benchmark performance.
+*Rationale:* Current implementation uses basic clients. Simple connection pooling would improve benchmark performance if proven by measurements.
+
+*Baseline Performance Numbers:*
+
+*BEFORE IMPLEMENTATION - TO BE CAPTURED:*
+
+* [ ] Baseline benchmark execution times
+* [ ] Memory usage patterns  
+* [ ] Connection creation overhead
+* [ ] Throughput metrics
+* [ ] Error rates and connection failures
 
 *Implementation Checklist:*
 
-* [ ] Add `HttpClientConfig` class with pooling and timeout settings
-* [ ] Create preset configurations: `SHORT_LIVED`, `LONG_RUNNING`, `HIGH_CONCURRENCY`
-* [ ] Implement connection pool management in `HttpClientFactory`
-* [ ] Add methods: `getPooledClient(HttpClientConfig config)`
-* [ ] Add connection pool monitoring/metrics
-* [ ] Update existing client creation to use pooling
-* [ ] Add configuration through system properties
-* [ ] Document recommended settings for different scenarios
+* [ ] Run baseline benchmark tests and extract performance numbers into this plan
+* [ ] Examine current HTTP client management implementation
+* [ ] Add simple `HttpClientPool` with basic connection pooling only
+* [ ] Update `HttpClientFactory` to use pooling (keep it simple)
+* [ ] No presets, no overkill - just basic pooling functionality
+
+*Post-Implementation Performance Numbers:*
+
+*AFTER IMPLEMENTATION - TO BE CAPTURED:*
+
+* [ ] Post-implementation benchmark execution times
+* [ ] Memory usage patterns with pooling
+* [ ] Connection reuse effectiveness
+* [ ] Throughput improvements (if any)
+* [ ] Error rates and connection stability
+
+*Performance Comparison & Decision:*
+
+* [ ] Compare baseline vs post-implementation numbers
+* [ ] Calculate performance improvement percentage
+* [ ] Present analysis with recommendation to commit or discard
+* [ ] Only commit if measurable performance improvement is achieved
 
 *Verification Steps:*
 
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
 * [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Execute integration benchmarks with different client configurations (DO NOT cancel or shortcut)
-* [ ] Monitor connection pool usage during benchmarks
-* [ ] Verify performance improvement with pooling enabled
+* [ ] Execute integration benchmarks to capture post-implementation metrics (DO NOT cancel or shortcut)
 * [ ] Check no connection leaks occur
-* [ ] Commit with message: `refactor: P1. Enhance HTTP Client Management`
-
-== Testing Improvements
-
-=== T1. Consolidate Test Data Management
-* [x] *Priority:* High
-
-*Description:* Create test data factory in cui-benchmarking-common test utilities to centralize test resource management and reduce duplication.
-
-*Rationale:* Test resources are currently scattered across modules with significant duplication. Centralization improves test maintainability.
-
-*Implementation Checklist:*
-
-* [x] Create `TestDataFactory` in `cui-benchmarking-common/src/test/java`
-* [x] Add methods for creating test tokens
-* [x] Add methods for creating test metrics
-* [x] Add methods for creating test benchmark results
-* [x] Add methods for loading test JSON files
-* [x] Create `TestResourceLoader` for file resources
-* [x] Consolidate duplicate test JSON files
-* [x] Update all test classes to use factory
-* [x] Remove duplicate test data files
-
-*Verification Steps:*
-
-* [x] Run `./mvnw test -pl benchmarking/cui-benchmarking-common`
-* [x] Run `./mvnw test -pl benchmarking/benchmark-library`
-* [x] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
-* [x] Verify all tests pass with new test data factory
-* [x] Check no duplicate test resources remain
-* [x] Ensure test coverage remains the same or improves
-* [x] Commit with message: `refactor: T1. Consolidate Test Data Management`
-
-=== T2. Reduce MetricsPostProcessor Test Redundancy
-* [x] *Priority:* Medium
-
-*Description:* Create parameterized tests or test fixtures for MetricsPostProcessor testing to eliminate duplicate test patterns.
-
-*Rationale:* Multiple test classes implement similar test patterns. Parameterized tests reduce code duplication.
-
-*Implementation Checklist:*
-
-* [x] Identify common test patterns across MetricsPostProcessor tests
-* [x] Create `AbstractMetricsProcessorTest` base class
-* [x] Implement parameterized test methods
-* [x] Create test fixtures for common test scenarios
-* [x] Extract test data sets to shared constants
-* [x] Update existing tests to use parameterized approach
-* [x] Remove redundant test methods
-* [x] Add test documentation explaining parameterization
-
-*Verification Steps:*
-
-* [x] Run `./mvnw test -pl benchmarking/benchmark-integration-quarkus`
-* [x] Verify all test scenarios are still covered
-* [x] Check test execution time (should be similar or faster)
-* [x] Ensure test failure messages are still clear
-* [x] Review code coverage reports
-* [x] Commit with message: `refactor: T2. Reduce MetricsPostProcessor Test Redundancy`
+* [ ] Verify performance numbers justify the change
+* [ ] Commit with message: `refactor: P1. Enhance HTTP Client Management` ONLY if performance improves
 
 == Dependency Management
 
 === D1. Centralize Logging Configuration
-* [ ] *Priority:* High
+* [x] *Priority:* High
 
-*Description:* Move duplicate `benchmark-logging.properties` files to cui-benchmarking-common with support for environment-specific overrides.
+*Description:* Remove the profile stuff. Only consolidate the existing configuration.
 
-*Rationale:* Duplicate configuration files increase maintenance burden. Centralization with override capability provides flexibility.
+*Rationale:* Duplicate configuration files increase maintenance burden. Simple centralization without profile complexity.
 
 *Implementation Checklist:*
 
-* [ ] Move `benchmark-logging.properties` to `cui-benchmarking-common/src/main/resources`
-* [ ] Create `benchmark-logging-dev.properties` for development
-* [ ] Create `benchmark-logging-prod.properties` for production
-* [ ] Add profile-based loading mechanism
-* [ ] Remove duplicate logging configuration files
-* [ ] Update logging initialization in all modules
-* [ ] Add system property for custom logging config
-* [ ] Document logging configuration approach
+* [x] Move single `benchmark-logging.properties` to `cui-benchmarking-common/src/main/resources`
+* [x] Remove duplicate logging configuration files from other modules
+* [x] Update logging initialization in all modules to use centralized config
+* [x] No profiles, no environment-specific variants - keep it simple
+* [x] Consolidate existing configuration into one unified file
 
 *Verification Steps:*
 
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
-* [ ] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
-* [ ] Verify logging works correctly in all modules
-* [ ] Test with different logging profiles
-* [ ] Check log output format is consistent
-* [ ] Commit with message: `refactor: D1. Centralize Logging Configuration`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/cui-benchmarking-common`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-library`
+* [x] Run `./mvnw -Ppre-commit clean install -pl benchmarking/benchmark-integration-quarkus`
+* [x] Verify logging works correctly in all modules without warnings
+* [x] Check log output format is consistent across all modules
+* [x] Commit with message: `refactor: D1. Centralize Logging Configuration`
 
 === D2. Standardize JSON Processing with GSON
 * [ ] *Priority:* Medium
@@ -267,6 +201,7 @@ This document outlines the refactoring tasks identified for the cui-jwt benchmar
 * [ ] Update README files in each module
 
 *Verification Steps:*
+
 * [ ] Review documentation for clarity and completeness
 * [ ] Validate module dependencies match documentation
 * [ ] Check for any circular dependencies

@@ -84,7 +84,7 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
         builder.jvmArgs("-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+DebugNonSafepoints",
                 "-XX:StartFlightRecording=filename=" + config.resultsDirectory() + "/jfr-benchmark.jfr,settings=profile",
-                "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
+                "-Djava.util.logging.config.file=benchmark-logging.properties",
                 "-Dbenchmark.results.dir=" + config.resultsDirectory());
 
         return builder;

@@ -190,7 +190,7 @@
                                 <argument>-Dtoken.request.timeoutMs=${token.request.timeoutMs}</argument>
                                 <argument>-Dtoken.verifySsl=${token.verifySsl}</argument>
                                 <argument>-Dtoken.refreshThresholdSeconds=${token.refreshThresholdSeconds}</argument>
-                                <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
+                                <argument>-Djava.util.logging.config.file=benchmark-logging.properties</argument>
                                 <argument>-XX:+UnlockDiagnosticVMOptions</argument>
                                 <argument>-XX:+DebugNonSafepoints</argument>
                                 <argument>${benchmark.runner}</argument>
@@ -391,7 +391,7 @@
                                         <argument>-Dkeycloak.url=${keycloak.url}</argument>
                                         <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
                                         <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
-                                        <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
+                                        <argument>-Djava.util.logging.config.file=benchmark-logging.properties</argument>
                                         <argument>-XX:+UnlockDiagnosticVMOptions</argument>
                                         <argument>-XX:+DebugNonSafepoints</argument>
                                         <argument>-XX:StartFlightRecording=settings=profile,filename=${benchmark.results.dir}/jfr-recordings/benchmark.jfr,dumponexit=true</argument>

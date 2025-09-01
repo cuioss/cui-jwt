@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>Pre-configured TokenValidator instances with monitoring</li>
  *   <li>Consistent token shuffling for randomized access patterns</li>
  * </ul>
- * </p>
  * <p>
  * The mock implementation uses pre-generated RSA keys to avoid key generation
  * overhead during benchmarks and provides deterministic token generation for

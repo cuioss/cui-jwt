@@ -358,7 +358,7 @@ public class ReportDataGenerator {
         percentilesChart.put(BenchmarkConstants.Report.JsonFields.BENCHMARKS, benchmarkNames);
         percentilesChart.put(DATA, dataByBenchmark);
         percentilesChart.put(LABELS, benchmarkNames);
-        
+
         Map<String, List<Double>> datasets = new LinkedHashMap<>();
         for (int i = 0; i < percentileKeys.length; i++) {
             String percentileLabel = percentileKeys[i] + SUFFIX_TH;
