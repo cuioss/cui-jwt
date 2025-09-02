@@ -45,6 +45,7 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 === Core Documentation
 
+* link:Architecture.adoc[Module Architecture] - Comprehensive module architecture, responsibilities, and code placement guidelines
 * link:performance-requirements.adoc[Performance Requirements] - Specific performance targets and verification criteria
 * link:workflow.adoc[Benchmark Workflow] - Complete workflow guide for running and processing benchmarks
 * link:local-testing.adoc[Local Testing Guide] - How to test visualizations locally
@@ -79,14 +80,8 @@ Located in `benchmarking/benchmark-integration-quarkus`:
 
 === Common Infrastructure (cui-benchmarking-common)
 
-Located in `benchmarking/cui-benchmarking-common`:
-
-* **BenchmarkOptionsHelper** - Centralized JMH configuration via system properties
-* **BenchmarkLoggingSetup** - Unified logging with dual console/file output
-* **BenchmarkResultProcessor** - Orchestrates artifact generation
-* **JsonSerializationHelper** - Consistent JSON formatting utilities
-* **Badge/Report/Metrics Generators** - Automated artifact creation
-* **GitHubPagesGenerator** - Deployment-ready structure generation
+Shared infrastructure providing benchmark framework, metrics collection, and artifact generation.
+See link:Architecture.adoc[Module Architecture] for detailed component documentation.
 
 == Artifact Generation
 
