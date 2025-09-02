@@ -73,12 +73,14 @@ public class KeycloakTokenRepository implements TokenProvider {
         this.tokenPool = new ArrayList<>(config.getTokenPoolSize());
         this.tokenIndex = new AtomicInteger(0);
 
-        // Get HttpClient from factory based on SSL verification setting
+        // Get URL-specific HttpClient from factory based on SSL verification setting
+        // This ensures Keycloak connections are isolated from benchmark target connections
+        String keycloakUrl = config.getKeycloakBaseUrl();
         this.httpClient = config.isVerifySsl() ?
-                HttpClientFactory.getSecureClient() :
-                HttpClientFactory.getInsecureClient();
-        LOGGER.debug("Using {} HttpClient from factory",
-                config.isVerifySsl() ? "secure" : "insecure");
+                HttpClientFactory.getSecureClientForUrl(keycloakUrl) :
+                HttpClientFactory.getInsecureClientForUrl(keycloakUrl);
+        LOGGER.debug("Using {} HttpClient for Keycloak URL: {}",
+                config.isVerifySsl() ? "secure" : "insecure", keycloakUrl);
 
         // Initialize token pool
         initializeTokenPool();

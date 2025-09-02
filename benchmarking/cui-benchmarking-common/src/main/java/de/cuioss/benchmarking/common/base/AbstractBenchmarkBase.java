@@ -70,22 +70,38 @@ public abstract class AbstractBenchmarkBase {
      * <p>This method:
      * <ul>
      *   <li>Initializes the benchmark results directory</li>
-     *   <li>Creates the HTTP client</li>
      *   <li>Performs additional setup via template method</li>
+     *   <li>Creates the HTTP client after serviceUrl is set</li>
      * </ul>
      */
     protected void setupBase() {
         // Initialize benchmark results directory
         benchmarkResultsDir = System.getProperty("benchmark.results.dir", "target/benchmark-results");
 
-        // Get cached HttpClient from factory (insecure for self-signed certs)
-        httpClient = HttpClientFactory.getInsecureClient();
-        logger.debug("Using cached HttpClient from factory");
-
-        // Call template method for subclass-specific setup
+        // Call template method for subclass-specific setup (sets serviceUrl)
         performAdditionalSetup();
 
+        // Initialize HttpClient AFTER serviceUrl has been set
+        initializeHttpClient();
+
         logger.debug("Base benchmark setup completed");
+    }
+
+    /**
+     * Initialize the HTTP client. This is called after performAdditionalSetup()
+     * to allow serviceUrl to be set first for URL-based client caching.
+     * Subclasses can override this to customize HTTP client initialization.
+     */
+    protected void initializeHttpClient() {
+        if (serviceUrl != null && !serviceUrl.isEmpty()) {
+            // Use URL-based caching for better isolation
+            httpClient = HttpClientFactory.getInsecureClientForUrl(serviceUrl);
+            logger.debug("Using URL-specific HttpClient for: {}", serviceUrl);
+        } else {
+            // Fallback to shared client if no serviceUrl is set
+            httpClient = HttpClientFactory.getInsecureClient();
+            logger.debug("Using shared HttpClient (no serviceUrl specified)");
+        }
     }
 
     /**

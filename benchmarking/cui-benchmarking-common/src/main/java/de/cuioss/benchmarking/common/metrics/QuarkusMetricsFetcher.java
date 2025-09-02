@@ -46,9 +46,10 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
         this.quarkusUrl = quarkusUrl;
-        // Use insecure client for self-signed certificates in test environment
-        this.httpClient = HttpClientFactory.getInsecureClient();
-        LOGGER.debug("Using insecure HttpClient from factory for metrics fetching");
+        // Use URL-specific insecure client for self-signed certificates in test environment
+        // This ensures metrics connections are isolated from other connections
+        this.httpClient = HttpClientFactory.getInsecureClientForUrl(quarkusUrl);
+        LOGGER.debug("Using URL-specific insecure HttpClient for metrics URL: {}", quarkusUrl);
     }
 
     @Override public Map<String, Double> fetchMetrics() {

@@ -57,6 +57,12 @@ import java.util.concurrent.TimeUnit;
     private static final ConcurrentHashMap<String, HttpClient> CLIENT_CACHE = new ConcurrentHashMap<>();
 
     /**
+     * Cache for URL-specific HttpClient instances to provide isolation per endpoint.
+     * Key format: "insecure-<baseUrl>" or "secure-<baseUrl>"
+     */
+    private static final ConcurrentHashMap<String, HttpClient> URL_CLIENT_CACHE = new ConcurrentHashMap<>();
+
+    /**
      * Default connection timeout for all clients.
      */
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
@@ -118,6 +124,60 @@ import java.util.concurrent.TimeUnit;
     }
 
     /**
+     * Gets or creates a cached HttpClient for a specific base URL with insecure connections.
+     * This ensures connection pools are isolated per endpoint while maintaining
+     * the performance benefits of connection reuse within each benchmark.
+     *
+     * @param baseUrl the base URL (e.g., "https://localhost:10443")
+     * @return HttpClient configured for the specific URL with trust-all certificates
+     */
+    public static HttpClient getInsecureClientForUrl(String baseUrl) {
+        String cacheKey = "insecure-" + baseUrl;
+        return URL_CLIENT_CACHE.computeIfAbsent(cacheKey, key -> {
+            LOGGER.debug("Creating new insecure HttpClient for URL: {}", baseUrl);
+            try {
+                SSLContext sslContext = createTrustAllSSLContext();
+                return createHttpClient(sslContext);
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                throw new IllegalStateException("Failed to create insecure HttpClient for URL: " + baseUrl, e);
+            }
+        });
+    }
+
+    /**
+     * Gets or creates a cached HttpClient for a specific base URL with secure connections.
+     * This ensures connection pools are isolated per endpoint while maintaining
+     * the performance benefits of connection reuse within each benchmark.
+     *
+     * @param baseUrl the base URL (e.g., "https://localhost:10443")
+     * @return HttpClient configured for the specific URL with standard SSL
+     */
+    public static HttpClient getSecureClientForUrl(String baseUrl) {
+        String cacheKey = "secure-" + baseUrl;
+        return URL_CLIENT_CACHE.computeIfAbsent(cacheKey, key -> {
+            LOGGER.debug("Creating new secure HttpClient for URL: {}", baseUrl);
+            try {
+                SSLContext sslContext = SSLContext.getDefault();
+                return createHttpClient(sslContext);
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("Failed to create secure HttpClient for URL: " + baseUrl, e);
+            }
+        });
+    }
+
+    /**
+     * Clears the cached HttpClient for a specific URL if needed.
+     * This can be useful for cleanup or testing purposes.
+     *
+     * @param baseUrl the base URL to clear from cache
+     * @param secure whether to clear the secure or insecure client
+     */
+    public static void clearClientForUrl(String baseUrl, boolean secure) {
+        String cacheKey = (secure ? "secure-" : "insecure-") + baseUrl;
+        URL_CLIENT_CACHE.remove(cacheKey);
+    }
+
+    /**
      * Shuts down the shared executor service and clears the client cache.
      * This method should be called when the application is shutting down to ensure
      * proper resource cleanup.
@@ -132,8 +192,9 @@ import java.util.concurrent.TimeUnit;
     public static void shutdown() {
         LOGGER.debug("Shutting down HttpClientFactory resources");
 
-        // Clear the client cache first
+        // Clear both client caches
         CLIENT_CACHE.clear();
+        URL_CLIENT_CACHE.clear();
 
         // Note: With the initialization-on-demand holder pattern, we cannot check if
         // ExecutorHolder has been initialized without triggering initialization.
