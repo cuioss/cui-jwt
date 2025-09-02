@@ -26,7 +26,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +41,6 @@ import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Grades.CssClasses.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.JsonFields.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Messages.HISTORICAL_DATA_NOT_AVAILABLE;
-import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Versions.REPORT_VERSION;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
@@ -92,7 +90,7 @@ public class ReportDataGenerator {
         data.put(METADATA, createMetadata(type));
 
         // Add overview using pre-computed metrics
-        data.put(OVERVIEW, createOverview(metrics, benchmarks.size()));
+        data.put(OVERVIEW, createOverview(metrics));
 
         // Add detailed results
         data.put(BENCHMARKS, createBenchmarkResults(benchmarks));
@@ -145,7 +143,7 @@ public class ReportDataGenerator {
         return metadata;
     }
 
-    private Map<String, Object> createOverview(BenchmarkMetrics metrics, int totalBenchmarks) {
+    private Map<String, Object> createOverview(BenchmarkMetrics metrics) {
         Map<String, Object> overview = new LinkedHashMap<>();
 
         // Using pre-computed metrics directly
@@ -419,21 +417,13 @@ public class ReportDataGenerator {
         String direction = trendMetrics.getDirection();
         double change = Math.abs(trendMetrics.getChangePercentage());
 
-        if ("stable".equals(direction)) {
-            return "Performance is stable (%.1f%% change)".formatted(change);
-        } else if ("up".equals(direction)) {
-            return "Performance improved by %.1f%%".formatted(change);
+        if (BenchmarkConstants.Report.Badge.TrendDirection.STABLE.equals(direction)) {
+            return BenchmarkConstants.Report.Messages.PERFORMANCE_STABLE_FORMAT.formatted(change);
+        } else if (BenchmarkConstants.Report.Badge.TrendDirection.UP.equals(direction)) {
+            return BenchmarkConstants.Report.Messages.PERFORMANCE_IMPROVED_FORMAT.formatted(change);
         } else {
-            return "Performance decreased by %.1f%%".formatted(change);
+            return BenchmarkConstants.Report.Messages.PERFORMANCE_DECREASED_FORMAT.formatted(change);
         }
     }
 
-    /**
-     * Copies the JSON result file to the output directory.
-     */
-    public void copyJsonFile(Path jsonFile, String outputDir) throws IOException {
-        Path destination = Path.of(outputDir, jsonFile.getFileName().toString());
-        Files.copy(jsonFile, destination, StandardCopyOption.REPLACE_EXISTING);
-        LOGGER.info(INFO.METRICS_FILE_GENERATED.format(destination));
-    }
 }

@@ -24,7 +24,6 @@
  *   <li>{@link de.cuioss.benchmarking.common.jfr.JfrInstrumentation} - Central management for JFR event recording</li>
  *   <li>{@link de.cuioss.benchmarking.common.jfr.JfrVarianceAnalyzer} - Analysis of JFR recordings for variance metrics</li>
  *   <li>{@link de.cuioss.benchmarking.common.jfr.JfrSupport} - Detection and validation of JFR availability</li>
- *   <li>{@link de.cuioss.benchmarking.common.jfr.JfrConfiguration} - Configuration builder for JFR recordings</li>
  *   <li>Custom JFR Events:
  *     <ul>
  *       <li>{@link de.cuioss.benchmarking.common.jfr.OperationEvent} - Individual operation tracking</li>
@@ -42,12 +41,11 @@
  *     return;
  * }
  * 
- * // Configure and start recording
- * JfrConfiguration config = JfrConfiguration.benchmarkDefault()
- *     .setDestination(Path.of("benchmark.jfr"))
- *     .setName("My Benchmark");
- * 
- * Recording recording = config.createAndStart();
+ * // Start recording directly
+ * Recording recording = new Recording();
+ * recording.setDestination(Path.of("benchmark.jfr"));
+ * recording.setName("My Benchmark");
+ * recording.start();
  * 
  * // Use instrumentation
  * JfrInstrumentation instrumentation = new JfrInstrumentation();

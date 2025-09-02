@@ -21,6 +21,7 @@ import lombok.experimental.UtilityClass;
  * Consolidated constants for benchmark modules.
  * Organized using the DSL-Style Nested Constants Pattern with static imports.
  */
+@SuppressWarnings("java:S1075") // False positive, no URL Parameter
 @UtilityClass public final class BenchmarkConstants {
 
     /**
@@ -210,17 +211,21 @@ import lombok.experimental.UtilityClass;
             @UtilityClass public static final class Colors {
                 public static final String BRIGHT_GREEN = "brightgreen";
                 public static final String GREEN = "green";
+                public static final String YELLOW_GREEN = "yellowgreen";
                 public static final String YELLOW = "yellow";
                 public static final String ORANGE = "orange";
                 public static final String RED = "red";
                 public static final String BLUE = "blue";
+                public static final String LIGHT_GRAY = "lightgray";
             }
 
             /**
              * Badge labels.
              */
             @UtilityClass public static final class Labels {
+                public static final String PERFORMANCE = "Performance";
                 public static final String PERFORMANCE_TREND = "Performance Trend";
+                public static final String TREND = "Trend";
                 public static final String LAST_RUN = "Last Run";
             }
 
@@ -231,6 +236,41 @@ import lombok.experimental.UtilityClass;
                 public static final String STABLE = "→ stable";
                 public static final String IMPROVING_FORMAT = "↑ +%.1f%%";
                 public static final String DEGRADING_FORMAT = "↓ %.1f%%";
+            }
+
+            /**
+             * Badge messages.
+             */
+            @UtilityClass public static final class Messages {
+                public static final String NO_HISTORY = "No history";
+            }
+
+            /**
+             * Badge file names.
+             */
+            @UtilityClass public static final class FileNames {
+                public static final String PERFORMANCE_BADGE_JSON = "performance-badge.json";
+                public static final String TREND_BADGE_JSON = "trend-badge.json";
+                public static final String LAST_RUN_BADGE_JSON = "last-run-badge.json";
+            }
+
+            /**
+             * Trend direction constants.
+             */
+            @UtilityClass public static final class TrendDirection {
+                public static final String UP = "up";
+                public static final String DOWN = "down";
+                public static final String STABLE = "stable";
+            }
+
+            /**
+             * Arrow symbols for trends.
+             */
+            @UtilityClass public static final class Arrows {
+                public static final String UP = "↑";
+                public static final String DOWN = "↓";
+                public static final String RIGHT = "→";
+                public static final String BULLET = "•";
             }
         }
 
@@ -294,6 +334,9 @@ import lombok.experimental.UtilityClass;
          */
         @UtilityClass public static final class Messages {
             public static final String HISTORICAL_DATA_NOT_AVAILABLE = "Historical data not yet available";
+            public static final String PERFORMANCE_STABLE_FORMAT = "Performance is stable (%.1f%% change)";
+            public static final String PERFORMANCE_IMPROVED_FORMAT = "Performance improved by %.1f%%";
+            public static final String PERFORMANCE_DECREASED_FORMAT = "Performance decreased by %.1f%%";
         }
 
         /**

@@ -89,7 +89,11 @@ ResultFormatType resultFormat
         // Create results directory if it doesn't exist
         File dir = new File(resultsDirectory);
         if (!dir.exists()) {
-            dir.mkdirs();
+            boolean created = dir.mkdirs();
+            if (!created) {
+                // Directory already exists or could not be created
+                // Log warning if needed, but continue with default path
+            }
         }
 
         // Generate result file name based on benchmark type
@@ -165,19 +169,19 @@ ResultFormatType resultFormat
                     resultFormat
             );
         }
-    }
 
-    private static ResultFormatType parseResultFormat(String format) {
-        return switch (format.toUpperCase()) {
-            case "JSON" -> ResultFormatType.JSON;
-            case "CSV" -> ResultFormatType.CSV;
-            case "SCSV" -> ResultFormatType.SCSV;
-            case "LATEX" -> ResultFormatType.LATEX;
-            case "TEXT" -> ResultFormatType.TEXT;
-            default -> {
-                LOGGER.warn("Unknown result format: {}, defaulting to JSON", format);
-                yield ResultFormatType.JSON;
-            }
-        };
+        private static ResultFormatType parseResultFormat(String format) {
+            return switch (format.toUpperCase()) {
+                case "JSON" -> ResultFormatType.JSON;
+                case "CSV" -> ResultFormatType.CSV;
+                case "SCSV" -> ResultFormatType.SCSV;
+                case "LATEX" -> ResultFormatType.LATEX;
+                case "TEXT" -> ResultFormatType.TEXT;
+                default -> {
+                    LOGGER.warn("Unknown result format: {}, defaulting to JSON", format);
+                    yield ResultFormatType.JSON;
+                }
+            };
+        }
     }
 }

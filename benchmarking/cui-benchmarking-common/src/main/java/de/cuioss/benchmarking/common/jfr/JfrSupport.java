@@ -17,7 +17,6 @@ package de.cuioss.benchmarking.common.jfr;
 
 import de.cuioss.tools.logging.CuiLogger;
 import jdk.jfr.FlightRecorder;
-import jdk.jfr.Recording;
 
 /**
  * Utility class for detecting and verifying JFR (Java Flight Recorder) support.
@@ -44,109 +43,6 @@ public final class JfrSupport {
         return JFR_AVAILABLE;
     }
 
-    /**
-     * Checks if JFR is available and can be used for recording.
-     * This performs a more thorough check by attempting to create a recording.
-     * 
-     * @return true if JFR can be used for recording, false otherwise
-     */
-    public static boolean isRecordingSupported() {
-        if (!JFR_AVAILABLE) {
-            return false;
-        }
-
-        try {
-            // Try to create a test recording
-            try (Recording testRecording = new Recording()) {
-                testRecording.enable("jdk.CPULoad");
-                testRecording.start();
-                testRecording.stop();
-                return true;
-            }
-        } catch (Exception e) {
-            log.debug("JFR recording test failed: %s", e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Checks if a specific event type is available.
-     * 
-     * @param eventName the fully qualified name of the event (e.g., "de.cuioss.benchmark.Operation")
-     * @return true if the event type is registered and available
-     */
-    public static boolean isEventAvailable(String eventName) {
-        if (!JFR_AVAILABLE) {
-            return false;
-        }
-
-        try {
-            return FlightRecorder.getFlightRecorder()
-                    .getEventTypes()
-                    .stream()
-                    .anyMatch(eventType -> eventType.getName().equals(eventName));
-        } catch (Exception e) {
-            log.debug("Failed to check event availability for %s: %s", eventName, e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Gets information about JFR support status.
-     * 
-     * @return a descriptive string about JFR support status
-     */
-    public static String getSupportInfo() {
-        StringBuilder info = new StringBuilder();
-        info.append("JFR Support Status:\n");
-        info.append("  Available: ").append(isAvailable()).append("\n");
-        info.append("  Recording Supported: ").append(isRecordingSupported()).append("\n");
-
-        if (isAvailable()) {
-            info.append("  JDK Version: ").append(System.getProperty("java.version")).append("\n");
-            info.append("  JVM Vendor: ").append(System.getProperty("java.vendor")).append("\n");
-
-            try {
-                long eventTypes = FlightRecorder.getFlightRecorder().getEventTypes().size();
-                info.append("  Registered Event Types: ").append(eventTypes).append("\n");
-            } catch (Exception e) {
-                info.append("  Event Types: Unable to determine\n");
-            }
-        } else {
-            info.append("  Reason: JFR classes not found or not accessible\n");
-            info.append("  Note: JFR requires JDK 11+ with commercial features enabled\n");
-        }
-
-        return info.toString();
-    }
-
-    /**
-     * Logs JFR support information at INFO level.
-     */
-    public static void logSupportInfo() {
-        log.info(getSupportInfo());
-    }
-
-    /**
-     * Validates that JFR is available and throws an exception if not.
-     * 
-     * @throws IllegalStateException if JFR is not available
-     */
-    public static void requireJfrSupport() {
-        if (!isAvailable()) {
-            throw new IllegalStateException(
-                    "JFR (Java Flight Recorder) is not available in this JVM. " +
-                            "Please use JDK 11+ with JFR support enabled."
-            );
-        }
-
-        if (!isRecordingSupported()) {
-            throw new IllegalStateException(
-                    "JFR is available but recording is not supported. " +
-                            "Please check JVM flags and permissions."
-            );
-        }
-    }
 
     private static boolean checkJfrAvailability() {
         try {

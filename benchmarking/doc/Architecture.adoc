@@ -386,7 +386,6 @@ Resource creation is centralized in factories:
 
 * `HttpClientFactory` - Creates optimized HTTP clients
 * `MetricsExporterFactory` - Creates appropriate metrics exporters
-* `PipelineFactory` - Creates metrics processing pipelines
 
 === Strategy Pattern
 Different benchmark types use different strategies:

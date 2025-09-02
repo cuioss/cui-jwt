@@ -40,15 +40,6 @@ public final class TestDataFactory {
     }
 
     /**
-     * Creates a test JWT token string with default claims.
-     *
-     * @return A JWT token string for testing
-     */
-    public static String createTestToken() {
-        return createTestToken("test-subject", "test-issuer", System.currentTimeMillis() + 3600000);
-    }
-
-    /**
      * Creates a test JWT token string with specified claims.
      *
      * @param subject The subject claim
@@ -74,15 +65,6 @@ public final class TestDataFactory {
         String signature = "test-signature";
 
         return header + "." + encodedPayload + "." + signature;
-    }
-
-    /**
-     * Creates a test metrics map with default values.
-     *
-     * @return A map containing test metrics
-     */
-    public static Map<String, Object> createTestMetrics() {
-        return createTestMetrics("test-endpoint", 100, 50.0, 95.0, 99.0);
     }
 
     /**
@@ -155,7 +137,6 @@ public final class TestDataFactory {
         primaryMetric.addProperty("scoreError", 5.0);
         primaryMetric.addProperty("scoreUnit", "us/op");
 
-        JsonArray scorePercentiles = new JsonArray();
         JsonObject percentiles = new JsonObject();
         percentiles.addProperty("50.0", 50.0);
         percentiles.addProperty("95.0", 95.0);

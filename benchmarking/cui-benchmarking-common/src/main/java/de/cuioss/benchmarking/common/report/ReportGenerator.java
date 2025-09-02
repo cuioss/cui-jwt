@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Data.BENCHMARK_DATA_JSON;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Html.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Support.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.NOT_FOUND_FORMAT;
@@ -46,10 +45,8 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 public class ReportGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
-    private static final String DATA_FILE_NAME = BENCHMARK_DATA_JSON;
     private final ReportDataGenerator dataGenerator;
     private final BenchmarkMetrics metrics;
-    private final BadgeGenerator badgeGenerator;
 
     /**
      * Creates a ReportGenerator with pre-computed metrics.
@@ -59,7 +56,6 @@ public class ReportGenerator {
     public ReportGenerator(BenchmarkMetrics metrics) {
         this.metrics = metrics;
         this.dataGenerator = new ReportDataGenerator();
-        this.badgeGenerator = new BadgeGenerator();
     }
 
     /**

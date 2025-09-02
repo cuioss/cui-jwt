@@ -395,27 +395,21 @@ class BenchmarkConfigurationTest {
 
     @Test void requiredFieldValidation() {
         // Missing benchmark type
-        assertThrows(IllegalArgumentException.class, () ->
-                BenchmarkConfiguration.defaults()
-                        .withThroughputBenchmarkName("throughput")
-                        .withLatencyBenchmarkName("latency")
-                        .build()
-        );
+        var builder1 = BenchmarkConfiguration.defaults()
+                .withThroughputBenchmarkName("throughput")
+                .withLatencyBenchmarkName("latency");
+        assertThrows(IllegalArgumentException.class, builder1::build);
 
         // Missing throughput benchmark name
-        assertThrows(IllegalArgumentException.class, () ->
-                BenchmarkConfiguration.defaults()
-                        .withBenchmarkType(BenchmarkType.MICRO)
-                        .withLatencyBenchmarkName("latency")
-                        .build()
-        );
+        var builder2 = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withLatencyBenchmarkName("latency");
+        assertThrows(IllegalArgumentException.class, builder2::build);
 
         // Missing latency benchmark name
-        assertThrows(IllegalArgumentException.class, () ->
-                BenchmarkConfiguration.defaults()
-                        .withBenchmarkType(BenchmarkType.MICRO)
-                        .withThroughputBenchmarkName("throughput")
-                        .build()
-        );
+        var builder3 = BenchmarkConfiguration.defaults()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("throughput");
+        assertThrows(IllegalArgumentException.class, builder3::build);
     }
 }

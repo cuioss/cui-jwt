@@ -29,6 +29,14 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.Arrows;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.Colors.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.FileNames;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.Labels;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.Messages;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.TrendDirection;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Grades;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
@@ -56,73 +64,73 @@ public class BadgeGenerator {
 
     /**
      * Generates a performance badge JSON based on the benchmark metrics.
-     * 
+     *
      * @param metrics the current benchmark metrics
      * @return JSON string for the performance badge
      */
     public String generatePerformanceBadge(BenchmarkMetrics metrics) {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", "Performance");
-        badge.put("message", "Grade " + metrics.performanceGrade());
-        badge.put("color", getGradeColor(metrics.performanceGrade()));
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, Labels.PERFORMANCE);
+        badge.put(MESSAGE, "Grade " + metrics.performanceGrade());
+        badge.put(COLOR, getGradeColor(metrics.performanceGrade()));
 
         return gson.toJson(badge);
     }
 
     /**
      * Generates a trend badge JSON based on the trend metrics.
-     * 
+     *
      * @param trendMetrics the calculated trend metrics
      * @return JSON string for the trend badge
      */
     public String generateTrendBadge(TrendDataProcessor.TrendMetrics trendMetrics) {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", "Trend");
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, Labels.TREND);
 
         String arrow = getTrendArrow(trendMetrics.getDirection());
         String percentage = String.format(Locale.US, "%.1f%%", Math.abs(trendMetrics.getChangePercentage()));
-        badge.put("message", arrow + " " + percentage);
-        badge.put("color", getTrendColor(trendMetrics.getDirection()));
+        badge.put(MESSAGE, arrow + " " + percentage);
+        badge.put(COLOR, getTrendColor(trendMetrics.getDirection()));
 
         return gson.toJson(badge);
     }
 
     /**
      * Generates a last run timestamp badge.
-     * 
+     *
      * @param timestamp the benchmark run timestamp
      * @return JSON string for the last run badge
      */
     public String generateLastRunBadge(Instant timestamp) {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", "Last Run");
-        badge.put("message", DATE_FORMAT.format(timestamp));
-        badge.put("color", "blue");
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, Labels.LAST_RUN);
+        badge.put(MESSAGE, DATE_FORMAT.format(timestamp));
+        badge.put(COLOR, BLUE);
 
         return gson.toJson(badge);
     }
 
     /**
      * Generates a default trend badge when no historical data is available.
-     * 
+     *
      * @return JSON string for the default trend badge
      */
     public String generateDefaultTrendBadge() {
         Map<String, Object> badge = new LinkedHashMap<>();
-        badge.put("schemaVersion", 1);
-        badge.put("label", "Trend");
-        badge.put("message", "No history");
-        badge.put("color", "lightgray");
+        badge.put(SCHEMA_VERSION, 1);
+        badge.put(LABEL, Labels.TREND);
+        badge.put(MESSAGE, Messages.NO_HISTORY);
+        badge.put(COLOR, LIGHT_GRAY);
 
         return gson.toJson(badge);
     }
 
     /**
      * Writes all badge files to the specified directory.
-     * 
+     *
      * @param metrics the current benchmark metrics
      * @param trendMetrics the trend metrics (can be null)
      * @param outputDir the output directory path
@@ -136,7 +144,7 @@ public class BadgeGenerator {
 
         // Write performance badge
         String perfBadge = generatePerformanceBadge(metrics);
-        Path perfBadgePath = badgesDir.resolve("performance-badge.json");
+        Path perfBadgePath = badgesDir.resolve(FileNames.PERFORMANCE_BADGE_JSON);
         Files.writeString(perfBadgePath, perfBadge);
         LOGGER.info(INFO.GENERATING_REPORTS.format("Performance badge written to " + perfBadgePath));
 
@@ -144,13 +152,13 @@ public class BadgeGenerator {
         String trendBadge = trendMetrics != null
                 ? generateTrendBadge(trendMetrics)
                 : generateDefaultTrendBadge();
-        Path trendBadgePath = badgesDir.resolve("trend-badge.json");
+        Path trendBadgePath = badgesDir.resolve(FileNames.TREND_BADGE_JSON);
         Files.writeString(trendBadgePath, trendBadge);
         LOGGER.info(INFO.GENERATING_REPORTS.format("Trend badge written to " + trendBadgePath));
 
         // Write last run badge
         String lastRunBadge = generateLastRunBadge(Instant.now());
-        Path lastRunBadgePath = badgesDir.resolve("last-run-badge.json");
+        Path lastRunBadgePath = badgesDir.resolve(FileNames.LAST_RUN_BADGE_JSON);
         Files.writeString(lastRunBadgePath, lastRunBadge);
         LOGGER.info(INFO.GENERATING_REPORTS.format("Last run badge written to " + lastRunBadgePath));
     }
@@ -160,13 +168,13 @@ public class BadgeGenerator {
      */
     private String getGradeColor(String grade) {
         return switch (grade) {
-            case "A+" -> "brightgreen";
-            case "A" -> "green";
-            case "B" -> "yellowgreen";
-            case "C" -> "yellow";
-            case "D" -> "orange";
-            case "F" -> "red";
-            default -> "lightgray";
+            case Grades.A_PLUS -> BRIGHT_GREEN;
+            case Grades.A -> GREEN;
+            case Grades.B -> YELLOW_GREEN;
+            case Grades.C -> YELLOW;
+            case Grades.D -> ORANGE;
+            case Grades.F -> RED;
+            default -> LIGHT_GRAY;
         };
     }
 
@@ -175,10 +183,10 @@ public class BadgeGenerator {
      */
     private String getTrendColor(String direction) {
         return switch (direction) {
-            case "up" -> "green";
-            case "down" -> "red";
-            case "stable" -> "blue";
-            default -> "lightgray";
+            case TrendDirection.UP -> GREEN;
+            case TrendDirection.DOWN -> RED;
+            case TrendDirection.STABLE -> BLUE;
+            default -> LIGHT_GRAY;
         };
     }
 
@@ -187,10 +195,10 @@ public class BadgeGenerator {
      */
     private String getTrendArrow(String direction) {
         return switch (direction) {
-            case "up" -> "↑";
-            case "down" -> "↓";
-            case "stable" -> "→";
-            default -> "•";
+            case TrendDirection.UP -> Arrows.UP;
+            case TrendDirection.DOWN -> Arrows.DOWN;
+            case TrendDirection.STABLE -> Arrows.RIGHT;
+            default -> Arrows.BULLET;
         };
     }
 }

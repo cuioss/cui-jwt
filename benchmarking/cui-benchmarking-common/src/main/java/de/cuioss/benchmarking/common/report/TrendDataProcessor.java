@@ -24,8 +24,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.TrendDirection.STABLE;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
 
 /**
@@ -64,7 +65,7 @@ public class TrendDataProcessor {
         private final double throughput;
         private final double latency;
         private final double performanceScore;
-        private final String commitSha;
+        private final String commitSha; // Reserved for future use
 
         public HistoricalDataPoint(String timestamp, double throughput, double latency,
                 double performanceScore, String commitSha) {
@@ -91,9 +92,6 @@ public class TrendDataProcessor {
             return performanceScore;
         }
 
-        public String getCommitSha() {
-            return commitSha;
-        }
     }
 
     /**
@@ -149,13 +147,13 @@ public class TrendDataProcessor {
 
         List<HistoricalDataPoint> dataPoints = new ArrayList<>();
 
-        try {
-            List<Path> historyFiles = Files.list(historyDir)
+        try (Stream<Path> pathStream = Files.list(historyDir)) {
+            List<Path> historyFiles = pathStream
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".json"))
                     .sorted(Comparator.reverseOrder()) // Newest first
                     .limit(MAX_HISTORY_ENTRIES)
-                    .collect(Collectors.toList());
+                    .toList();
 
             for (Path file : historyFiles) {
                 try {
@@ -187,7 +185,7 @@ public class TrendDataProcessor {
     public TrendMetrics calculateTrends(BenchmarkMetrics currentMetrics,
             List<HistoricalDataPoint> historicalData) {
         if (historicalData.isEmpty()) {
-            return new TrendMetrics("stable", 0.0, currentMetrics.performanceScore(), 0.0, 0.0);
+            return new TrendMetrics(STABLE, 0.0, currentMetrics.performanceScore(), 0.0, 0.0);
         }
 
         // Compare with most recent historical data

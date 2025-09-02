@@ -34,7 +34,7 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Get the phase name for JFR recording.
      * Subclasses can override this to provide specific phase names.
-     * 
+     *
      * @return Phase name for JFR events
      */
     protected String getJfrPhase() {
@@ -67,6 +67,7 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Shuts down JFR instrumentation at the end of the trial.
      */
+    @Override
     @TearDown(Level.Trial) public void tearDown() {
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {

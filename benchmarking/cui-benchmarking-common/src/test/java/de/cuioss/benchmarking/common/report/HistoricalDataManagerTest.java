@@ -21,8 +21,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +31,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit tests for HistoricalDataManager.
  */
 class HistoricalDataManagerTest {
-
-    private static final DateTimeFormatter TIMESTAMP_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd-'T'HHmm'Z'").withZone(ZoneOffset.UTC);
 
     @Test void archiveCurrentRun(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
@@ -128,7 +123,7 @@ class HistoricalDataManagerTest {
         Files.writeString(historyDir.resolve("2025-01-10-T1200Z-def.json"), "{}");
         Files.writeString(historyDir.resolve("2025-01-20-T1200Z-ghi.json"), "{}");
         Files.writeString(historyDir.resolve("not-a-json.txt"), "text"); // Should be ignored
-        
+
         List<Path> files = manager.getHistoricalFiles(historyDir);
 
         // Should only return JSON files, sorted newest first

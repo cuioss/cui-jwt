@@ -15,6 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
+import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
+import lombok.Getter;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -33,11 +36,13 @@ import java.util.Objects;
  * Use this class when you need to perform mathematical/statistical operations on benchmark data.
  * For metric-specific calculations (performance scores, grades), use {@link MetricsComputer}.
  * For time-series analysis and trend detection, use {@link TrendDataProcessor}.
- * 
+ *
  * @see MetricsComputer for benchmark-specific metric calculations
  * @see TrendDataProcessor for time-series and trend analysis
  */
 public final class StatisticsCalculator {
+
+    public static final String COLLECTION_CANNOT_BE_NULL = "Values collection cannot be null";
 
     private StatisticsCalculator() {
         // Utility class with static methods only
@@ -51,7 +56,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static double calculateMean(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         if (values.isEmpty()) {
             return 0.0;
@@ -71,7 +76,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static double findMin(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         return values.stream()
                 .mapToDouble(Double::doubleValue)
@@ -87,7 +92,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static double findMax(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         return values.stream()
                 .mapToDouble(Double::doubleValue)
@@ -103,7 +108,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static double calculateMedian(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         if (values.isEmpty()) {
             return 0.0;
@@ -172,7 +177,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static double calculateStandardDeviation(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         if (values.size() < 2) {
             return 0.0;
@@ -196,9 +201,9 @@ public final class StatisticsCalculator {
      */
     public static String determineTrendDirection(double percentageChange, double stabilityThreshold) {
         if (Math.abs(percentageChange) < stabilityThreshold) {
-            return "stable";
+            return BenchmarkConstants.Report.Badge.TrendDirection.STABLE;
         }
-        return percentageChange > 0 ? "up" : "down";
+        return percentageChange > 0 ? BenchmarkConstants.Report.Badge.TrendDirection.UP : BenchmarkConstants.Report.Badge.TrendDirection.DOWN;
     }
 
     /**
@@ -211,7 +216,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static double calculateCoefficientOfVariation(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         double mean = calculateMean(values);
         if (mean == 0) {
@@ -225,7 +230,7 @@ public final class StatisticsCalculator {
     /**
      * Statistical summary containing basic statistics for a dataset.
      */
-    public static class Statistics {
+    @Getter public static class Statistics {
         private final double min;
         private final double max;
         private final double mean;
@@ -241,30 +246,6 @@ public final class StatisticsCalculator {
             this.stdDev = stdDev;
             this.count = count;
         }
-
-        public double getMin() {
-            return min;
-        }
-
-        public double getMax() {
-            return max;
-        }
-
-        public double getMean() {
-            return mean;
-        }
-
-        public double getMedian() {
-            return median;
-        }
-
-        public double getStdDev() {
-            return stdDev;
-        }
-
-        public int getCount() {
-            return count;
-        }
     }
 
     /**
@@ -275,7 +256,7 @@ public final class StatisticsCalculator {
      * @throws NullPointerException if values is null
      */
     public static Statistics computeStatistics(Collection<Double> values) {
-        Objects.requireNonNull(values, "Values collection cannot be null");
+        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
 
         return new Statistics(
                 findMin(values),

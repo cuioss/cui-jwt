@@ -57,7 +57,7 @@ public class HistoricalDataManager {
 
     /**
      * Archives the current benchmark data to the history directory.
-     * 
+     *
      * @param currentData the current benchmark data to archive
      * @param outputDir the base output directory
      * @param commitSha the Git commit SHA (will be truncated to 8 chars)
@@ -83,7 +83,7 @@ public class HistoricalDataManager {
 
     /**
      * Enforces the retention policy by keeping only the most recent files.
-     * 
+     *
      * @param historyDir the history directory path
      * @throws IOException if accessing or deleting files fails
      */
@@ -111,7 +111,7 @@ public class HistoricalDataManager {
 
     /**
      * Retrieves a sorted list of historical data files.
-     * 
+     *
      * @param historyDir the history directory path
      * @return sorted list of historical data files (newest first)
      * @throws IOException if reading the directory fails
@@ -132,7 +132,7 @@ public class HistoricalDataManager {
 
     /**
      * Checks if historical data is available.
-     * 
+     *
      * @param outputDir the base output directory
      * @return true if historical data exists, false otherwise
      */
@@ -145,9 +145,7 @@ public class HistoricalDataManager {
         try (Stream<Path> files = Files.list(historyDir)) {
             return files
                     .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(JSON_EXTENSION))
-                    .findAny()
-                    .isPresent();
+                    .anyMatch(p -> p.toString().endsWith(JSON_EXTENSION));
         } catch (IOException e) {
             LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("checking historical data"), e);
             return false;
@@ -156,7 +154,7 @@ public class HistoricalDataManager {
 
     /**
      * Extracts the timestamp from a historical data filename.
-     * 
+     *
      * @param file the file path
      * @return the timestamp string, or empty string if extraction fails
      */

@@ -124,10 +124,8 @@ public class BenchmarkResultProcessor {
         Files.copy(jsonFile, targetJsonFile, StandardCopyOption.REPLACE_EXISTING);
         LOGGER.info(INFO.JMH_RESULT_COPIED.format(targetJsonFile));
 
-        // Generate all badges using pre-computed metrics
-        generateBadges(jsonFile, benchmarkType, outputDir, metrics);
-
         // Generate HTML reports using pre-computed metrics
+        // Note: Badge generation is now handled by ReportDataGenerator inside generateIndexPage
         generateReports(jsonFile, outputDir, metrics);
 
         // Generate GitHub Pages structure
@@ -150,15 +148,6 @@ public class BenchmarkResultProcessor {
         for (String dir : directories) {
             Files.createDirectories(Path.of(dir));
         }
-    }
-
-    /**
-     * Generates all types of badges.
-     */
-    private void generateBadges(Path jsonFile, BenchmarkType type, String outputDir, BenchmarkMetrics metrics)
-            throws IOException {
-        // Badge generation is now handled by ReportDataGenerator which includes trend processing
-        LOGGER.info(INFO.GENERATING_BADGES.format(type.getDisplayName()));
     }
 
 
