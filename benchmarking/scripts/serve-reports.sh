@@ -1,13 +1,17 @@
 #!/bin/bash
 # HTTP server for viewing generated benchmark reports locally
 # Usage: 
-#   ./serve-reports.sh [port]    - Start server on specified port (default: 8080)
-#   ./serve-reports.sh stop      - Stop running server
+#   ./serve-reports.sh [module] [port]    - Start server for specified module (default: common, port: 8080)
+#   ./serve-reports.sh stop               - Stop running server
+# Modules:
+#   common   - cui-benchmarking-common preview reports (default)
+#   library  - benchmark-library raw results
+#   quarkus  - benchmark-integration-quarkus raw results
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-REPORTS_DIR="$PROJECT_ROOT/benchmarking/cui-benchmarking-common/target/benchmark-reports-preview"
 DEFAULT_PORT=8080
+DEFAULT_MODULE="common"
 
 # Function to stop the server
 stop_server() {
@@ -45,19 +49,70 @@ if [ "$1" = "stop" ]; then
     stop_server
 fi
 
-# Start server mode
-PORT="${1:-$DEFAULT_PORT}"
+# Parse parameters
+MODULE="$DEFAULT_MODULE"
+PORT="$DEFAULT_PORT"
+
+# Check if first parameter is a module name
+if [[ "$1" =~ ^(common|library|quarkus)$ ]]; then
+    MODULE="$1"
+    PORT="${2:-$DEFAULT_PORT}"
+elif [[ "$1" =~ ^[0-9]+$ ]]; then
+    # First parameter is a port number
+    PORT="$1"
+else
+    # Show usage if invalid parameter
+    if [ -n "$1" ]; then
+        echo "❌ Invalid parameter: $1"
+        echo ""
+        echo "Usage:"
+        echo "  ./serve-reports.sh [module] [port]"
+        echo "  ./serve-reports.sh stop"
+        echo ""
+        echo "Modules: common (default), library, quarkus"
+        echo "Port: default is 8080"
+        exit 1
+    fi
+fi
+
+# Set reports directory based on module
+case "$MODULE" in
+    common)
+        REPORTS_DIR="$PROJECT_ROOT/benchmarking/cui-benchmarking-common/target/benchmark-reports-preview"
+        MODULE_DESC="Common Preview Reports"
+        ;;
+    library)
+        REPORTS_DIR="$PROJECT_ROOT/benchmarking/benchmark-library/target/benchmark-results"
+        MODULE_DESC="Library Benchmark Results"
+        ;;
+    quarkus)
+        REPORTS_DIR="$PROJECT_ROOT/benchmarking/benchmark-integration-quarkus/target/benchmark-results"
+        MODULE_DESC="Quarkus Integration Results"
+        ;;
+esac
 
 # Check if reports directory exists
 if [ ! -d "$REPORTS_DIR" ]; then
     echo "❌ Reports directory not found: $REPORTS_DIR"
     echo ""
-    echo "Please generate reports first by running:"
-    echo "  cd benchmarking/cui-benchmarking-common"
-    echo "  mvn test-compile"
-    echo "  mvn exec:java -Dexec.mainClass=\"de.cuioss.benchmarking.common.LocalReportGeneratorTest\" -Dexec.classpathScope=\"test\""
-    echo ""
-    echo "Or run directly from IDE: LocalReportGeneratorTest.main()"
+    case "$MODULE" in
+        common)
+            echo "Please generate reports first by running:"
+            echo "  cd benchmarking/cui-benchmarking-common"
+            echo "  mvn test-compile"
+            echo "  mvn exec:java -Dexec.mainClass=\"de.cuioss.benchmarking.common.LocalReportGeneratorTest\" -Dexec.classpathScope=\"test\""
+            echo ""
+            echo "Or run directly from IDE: LocalReportGeneratorTest.main()"
+            ;;
+        library)
+            echo "Please run library benchmarks first:"
+            echo "  ./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark"
+            ;;
+        quarkus)
+            echo "Please run Quarkus integration benchmarks first:"
+            echo "  ./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark"
+            ;;
+    esac
     exit 1
 fi
 
@@ -73,26 +128,52 @@ if [ -n "$EXISTING_PID" ]; then
     exit 1
 fi
 
-echo "🚀 Starting local HTTP server for benchmark reports"
-echo "📁 Serving from: $REPORTS_DIR"
+echo "🚀 Starting local HTTP server for $MODULE_DESC"
+echo "📁 Module: $MODULE"
+echo "📂 Serving from: $REPORTS_DIR"
 echo "🌐 URL: http://localhost:$PORT"
 echo ""
-echo "Available reports:"
-echo "  - http://localhost:$PORT                          (Combined Index)"
-echo "  - http://localhost:$PORT/micro/index.html         (Micro Benchmark Overview)"
-echo "  - http://localhost:$PORT/micro/trends.html        (Micro Benchmark Trends)"
-echo "  - http://localhost:$PORT/micro/detailed.html      (Micro Benchmark Details)"
-echo "  - http://localhost:$PORT/integration/index.html   (Integration Overview)"
-echo "  - http://localhost:$PORT/integration/trends.html  (Integration Trends)"
-echo "  - http://localhost:$PORT/integration/detailed.html (Integration Details)"
-echo ""
-echo "Badge endpoints:"
-echo "  - http://localhost:$PORT/micro/badges/performance-badge.json"
-echo "  - http://localhost:$PORT/integration/badges/integration-performance-badge.json"
-echo ""
-echo "Data endpoints:"
-echo "  - http://localhost:$PORT/micro/benchmark-data.json"
-echo "  - http://localhost:$PORT/integration/benchmark-data.json"
+
+# Show available content based on module
+case "$MODULE" in
+    common)
+        echo "Available reports:"
+        echo "  - http://localhost:$PORT                          (Combined Index)"
+        echo "  - http://localhost:$PORT/micro/index.html         (Micro Benchmark Overview)"
+        echo "  - http://localhost:$PORT/micro/trends.html        (Micro Benchmark Trends)"
+        echo "  - http://localhost:$PORT/micro/detailed.html      (Micro Benchmark Details)"
+        echo "  - http://localhost:$PORT/integration/index.html   (Integration Overview)"
+        echo "  - http://localhost:$PORT/integration/trends.html  (Integration Trends)"
+        echo "  - http://localhost:$PORT/integration/detailed.html (Integration Details)"
+        echo ""
+        echo "Badge endpoints:"
+        echo "  - http://localhost:$PORT/micro/badges/performance-badge.json"
+        echo "  - http://localhost:$PORT/integration/badges/integration-performance-badge.json"
+        echo ""
+        echo "Data endpoints:"
+        echo "  - http://localhost:$PORT/micro/benchmark-data.json"
+        echo "  - http://localhost:$PORT/integration/benchmark-data.json"
+        ;;
+    library)
+        echo "Available artifacts:"
+        echo "  - http://localhost:$PORT                          (Directory listing)"
+        echo "  - http://localhost:$PORT/index.html               (Main results page)"
+        echo "  - http://localhost:$PORT/trends.html              (Historical trends)"
+        echo "  - http://localhost:$PORT/badges/                  (Performance badges)"
+        echo "  - http://localhost:$PORT/data/                    (Metrics JSON files)"
+        echo "  - http://localhost:$PORT/micro-result.json        (Raw JMH results)"
+        ;;
+    quarkus)
+        echo "Available artifacts:"
+        echo "  - http://localhost:$PORT                          (Directory listing)"
+        echo "  - http://localhost:$PORT/index.html               (Main results page)"
+        echo "  - http://localhost:$PORT/trends.html              (Historical trends)"
+        echo "  - http://localhost:$PORT/badges/                  (Performance badges)"
+        echo "  - http://localhost:$PORT/data/                    (Metrics JSON files)"
+        echo "  - http://localhost:$PORT/integration-result.json  (Raw JMH results)"
+        ;;
+esac
+
 echo ""
 echo "📌 To stop the server:"
 echo "   Press Ctrl+C or run: ./serve-reports.sh stop"
