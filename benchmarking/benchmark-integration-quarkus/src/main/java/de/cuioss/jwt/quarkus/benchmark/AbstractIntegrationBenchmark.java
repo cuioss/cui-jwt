@@ -19,9 +19,7 @@ import de.cuioss.benchmarking.common.repository.KeycloakTokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 import java.net.http.HttpRequest;
@@ -45,11 +43,10 @@ import java.net.http.HttpRequest;
      * Additional setup for integration benchmarks.
      * Called by parent's setupBenchmark after base initialization.
      */
-    @Override
-    protected void performAdditionalSetup() {
+    @Override protected void performAdditionalSetup() {
         // Call parent's additional setup first
         super.performAdditionalSetup();
-        
+
         LOGGER.info("Setting up integration benchmark with token repository");
 
         // Initialize token repository using shared instance if available
