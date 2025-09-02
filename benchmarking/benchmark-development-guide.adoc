@@ -1,624 +1,194 @@
-= Benchmark Development Guide
+= CUI JWT Benchmark Development Guide
 :toc: left
-:toclevels: 3
-:icons: font
-:source-highlighter: coderay
+:toclevels: 2
 
 == Overview
 
-This guide provides comprehensive instructions for developing, running, and analyzing benchmarks in the CUI JWT project. Our benchmarking framework is built on JMH (Java Microbenchmark Harness) and includes both unit-level microbenchmarks and integration-level benchmarks.
+The CUI JWT project includes a comprehensive benchmarking framework for measuring JWT validation performance at both library and integration levels.
 
-== Quick Start
-
-=== Running Benchmarks
-
-.Run all benchmarks
-[source,bash]
-----
-./mvnw clean verify -Pbenchmark
-----
-
-.Run specific module benchmarks
-[source,bash]
-----
-# Library benchmarks
-./mvnw clean verify -Pbenchmark -pl cui-jwt-validation
-
-# Integration benchmarks  
-./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
-----
-
-.Run specific benchmark class
-[source,bash]
-----
-./mvnw clean verify -Pbenchmark -pl cui-jwt-validation \
-  -Djmh.includes=".*JwtDecoderBenchmark.*"
-----
-
-== Architecture
-
-=== Module Structure
+== Project Structure
 
 [cols="1,3", options="header"]
 |===
 |Module |Purpose
 
-|`cui-jwt-validation`
-|Core library benchmarks for JWT validation, parsing, and decoding
+|`benchmarking/cui-benchmarking-common`
+|Shared benchmark infrastructure, metrics collection, JFR integration
+
+|`benchmarking/benchmark-library`
+|Library-level microbenchmarks for JWT validation core
 
 |`benchmarking/benchmark-integration-quarkus`
-|Integration benchmarks testing the full JWT validation pipeline in Quarkus
-
-|`benchmarking/benchmark-integration-spring`
-|Integration benchmarks for Spring Boot applications (future)
+|Integration benchmarks for Quarkus REST endpoints
 |===
 
-=== Benchmark Types
+== Running Benchmarks
 
-==== Microbenchmarks
-* Located in library modules (`cui-jwt-validation`)
-* Test individual components in isolation
-* Focus on specific operations (parsing, validation, decoding)
-* Measure nanosecond-level performance
-
-==== Integration Benchmarks
-* Located in `benchmarking/` directory
-* Test complete validation pipelines
-* Include framework overhead (Quarkus, Spring)
-* Measure end-to-end performance
-
-== Writing Benchmarks
-
-=== Basic Benchmark Structure
-
-[source,java]
+[source,bash]
 ----
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
-@Fork(value = 2, jvmArgs = {"-Xms2G", "-Xmx2G"})
-@Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
-public class MyBenchmark {
+# Run all benchmarks (library + integration)
+./mvnw clean verify -Pbenchmark
 
-    @Param({"small", "medium", "large"})
-    private String dataSize;
-    
-    private MyComponent component;
-    
-    @Setup
-    public void setup() {
-        component = new MyComponent();
-        // Initialize test data based on dataSize
-    }
-    
-    @Benchmark
-    public Result measureOperation() {
-        return component.performOperation();
-    }
-    
-    @TearDown
-    public void tearDown() {
-        // Cleanup resources
-    }
-}
+# Run only library benchmarks
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library
+
+# Run only Quarkus integration benchmarks  
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
+
+# Run specific benchmark class
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library \
+  -Djmh.includes=".*ErrorLoadBenchmark.*"
 ----
 
-=== JMH Annotations
+== Library Benchmarks (`benchmark-library`)
 
-[cols="1,3", options="header"]
-|===
-|Annotation |Purpose
+=== Core Benchmarks
 
-|`@Benchmark`
-|Marks a method as a benchmark
+==== `ErrorLoadBenchmark`
+Tests error handling performance with various token failure scenarios:
+- Expired tokens
+- Malformed tokens
+- Invalid signatures
+- Mixed error loads (0%, 50% error rates)
 
-|`@BenchmarkMode`
-|Specifies measurement mode (Throughput, AverageTime, SampleTime, etc.)
+==== `SimpleCoreValidationBenchmark`
+Measures core validation throughput and latency for valid tokens.
 
-|`@OutputTimeUnit`
-|Sets the time unit for results
+==== `SimpleErrorLoadBenchmark`
+Streamlined error scenario testing with reduced token sets.
 
-|`@State`
-|Defines benchmark state scope (Thread, Benchmark, Group)
+=== JFR-Enabled Benchmarks
 
-|`@Setup`/`@TearDown`
-|Lifecycle methods for initialization and cleanup
+==== `UnifiedJfrBenchmark`
+Combined benchmark with Java Flight Recorder integration for detailed profiling.
 
-|`@Param`
-|Parameterized benchmark values
+==== `CoreJfrBenchmark`, `ErrorJfrBenchmark`, `MixedJfrBenchmark`
+Specialized JFR benchmarks for different validation scenarios.
 
-|`@Fork`
-|Number of JVM forks and JVM arguments
+=== Infrastructure
 
-|`@Warmup`
-|Warmup iterations configuration
+==== `LibraryBenchmarkRunner`
+Main runner that:
+- Collects all benchmark classes
+- Configures JMH settings
+- Produces JSON results in `target/benchmark-results/micro-result.json`
+- Initializes `BenchmarkKeyCache` for JWT key management
 
-|`@Measurement`
-|Measurement iterations configuration
-|===
+==== `JfrBenchmarkRunner`
+Alternative runner with JFR profiling enabled for deep performance analysis.
 
-=== Best Practices
+== Integration Benchmarks (`benchmark-integration-quarkus`)
 
-==== State Management
-[source,java]
-----
-@State(Scope.Benchmark)
-public class BenchmarkState {
-    // Shared across all threads
-    private volatile String sharedData;
-}
+=== Benchmark Classes
 
-@State(Scope.Thread)
-public class ThreadState {
-    // Per-thread instance
-    private StringBuilder buffer = new StringBuilder();
-}
-----
+==== `JwtValidationBenchmark`
+Tests `/jwt/validate` endpoint with valid tokens, measuring:
+- Throughput (ops/sec)
+- Sample time distribution
 
-==== Avoiding Common Pitfalls
+==== `JwtHealthBenchmark`
+Tests health check endpoint performance under load.
 
-1. **Dead Code Elimination**
-+
-[source,java]
-----
-// BAD: Result might be eliminated
-@Benchmark
-public void badBenchmark() {
-    String result = expensiveOperation();
-    // JVM might eliminate this
-}
+=== Infrastructure
 
-// GOOD: Return or consume the result
-@Benchmark
-public String goodBenchmark() {
-    return expensiveOperation();
-}
+==== `AbstractIntegrationBenchmark`
+Base class providing:
+- HTTP client setup
+- Token generation
+- Request/response validation
+- Quarkus server interaction
 
-// GOOD: Use Blackhole to consume
-@Benchmark
-public void goodBenchmark(Blackhole blackhole) {
-    blackhole.consume(expensiveOperation());
-}
-----
+== Common Infrastructure (`cui-benchmarking-common`)
 
-2. **Constant Folding**
-+
-[source,java]
-----
-// BAD: Computation might be folded
-@Benchmark
-public int badConstant() {
-    return 2 + 2; // Folded to 4 at compile time
-}
+=== Core Components
 
-// GOOD: Use state variables
-@State(Scope.Benchmark)
-public class GoodState {
-    int a = 2;
-    int b = 2;
-    
-    @Benchmark
-    public int goodBenchmark() {
-        return a + b;
-    }
-}
-----
+==== `AbstractBenchmarkRunner`
+Base runner providing:
+- JMH configuration from Maven properties
+- Result processing and validation
+- Metrics collection
+- Report generation
 
-3. **Loop Optimizations**
-+
-[source,java]
-----
-// BAD: Loop might be optimized away
-@Benchmark
-public void badLoop() {
-    for (int i = 0; i < 1000; i++) {
-        doWork();
-    }
-}
+==== `BenchmarkConfiguration`
+Configuration management for:
+- Benchmark type (MICRO, MACRO, INTEGRATION)
+- JMH parameters (forks, iterations, warmup)
+- Output directories and formats
 
-// GOOD: Let JMH handle iterations
-@Benchmark
-@BenchmarkMode(Mode.SingleShotTime)
-@Measurement(batchSize = 1000)
-public void goodBatch() {
-    doWork();
-}
-----
+==== `BenchmarkMetrics`
+Standardized metrics collection:
+- Throughput measurements
+- Latency percentiles (p50, p95, p99)
+- Error rates
+- JVM statistics
+
+=== JFR Integration
+
+==== `BenchmarkPhaseEvent`
+Custom JFR events for tracking:
+- Warmup phases
+- Measurement iterations
+- Error occurrences
 
 == Configuration
 
-=== Maven Configuration
+=== Maven Profile
+The `benchmark` profile in parent POM:
+- Skips regular tests
+- Enables benchmark execution
+- Configures JMH plugin
+- Sets output directories
 
-The benchmark profile is configured in the parent POM:
-
-[source,xml]
-----
-<profile>
-    <id>benchmark</id>
-    <properties>
-        <skipTests>true</skipTests>
-        <benchmark.skip>false</benchmark.skip>
-    </properties>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>run-benchmarks</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>java</executable>
-                            <arguments>
-                                <argument>-jar</argument>
-                                <argument>${project.build.directory}/benchmarks.jar</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-</profile>
-----
-
-=== JMH Runner Options
-
-[source,java]
-----
-public static void main(String[] args) throws RunnerException {
-    Options opt = new OptionsBuilder()
-        .include(MyBenchmark.class.getSimpleName())
-        .forks(2)
-        .warmupIterations(3)
-        .measurementIterations(5)
-        .threads(4)
-        .jvmArgs("-Xms2G", "-Xmx2G", "-XX:+UseG1GC")
-        .shouldDoGC(true)
-        .result("benchmark-results.json")
-        .resultFormat(ResultFormatType.JSON)
-        .build();
-        
-    new Runner(opt).run();
-}
-----
-
-== Analysis and Reporting
-
-=== Understanding Results
-
-.Sample Output
-----
-Benchmark                              (size)  Mode  Cnt     Score    Error  Units
-JwtDecoderBenchmark.decodeCompact      small  avgt   10   145.234 ±  2.341  ns/op
-JwtDecoderBenchmark.decodeCompact     medium  avgt   10   523.456 ± 12.234  ns/op
-JwtDecoderBenchmark.decodeCompact      large  avgt   10  1234.567 ± 34.567  ns/op
-----
-
-* **Score**: Average time per operation
-* **Error**: Standard deviation (±)
-* **Units**: Measurement unit (ns/op, ms/op, ops/s)
-* **Cnt**: Number of benchmark iterations
-
-=== Performance Regression Detection
-
-1. **Baseline Establishment**
-   - Run benchmarks on main branch
-   - Save results as baseline
-   
-2. **Comparison**
-   - Run benchmarks on feature branch
-   - Compare against baseline
-   
-3. **Threshold Definition**
-   - Define acceptable variance (e.g., ±5%)
-   - Flag regressions exceeding threshold
-
+=== JMH Parameters (via Maven)
 [source,bash]
 ----
-# Generate baseline
-./mvnw clean verify -Pbenchmark > baseline.txt
-
-# After changes
-./mvnw clean verify -Pbenchmark > current.txt
-
-# Compare (example script)
-./scripts/compare-benchmarks.sh baseline.txt current.txt
+-Djmh.forks=2           # Number of JVM forks
+-Djmh.wi=3              # Warmup iterations  
+-Djmh.i=5               # Measurement iterations
+-Djmh.time=1            # Time per iteration (seconds)
+-Djmh.threads=1         # Thread count
 ----
 
-=== Profiling Integration
+== Output and Reports
 
-==== Using JMH Profilers
+=== Result Files
+- Library: `benchmarking/benchmark-library/target/benchmark-results/micro-result.json`
+- Integration: `benchmarking/benchmark-integration-quarkus/target/benchmark-results/integration-result.json`
 
-[source,java]
+=== Metrics Format
+[source,json]
 ----
-@Fork(value = 1, jvmArgs = {
-    "-XX:+UnlockDiagnosticVMOptions",
-    "-XX:+PrintInlining",
-    "-XX:+PrintCompilation"
-})
-public class ProfilingBenchmark {
-    
-    public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder()
-            .include(ProfilingBenchmark.class.getSimpleName())
-            .addProfiler(StackProfiler.class)
-            .addProfiler(GCProfiler.class)
-            .addProfiler(HotspotMemoryProfiler.class)
-            .build();
-            
-        new Runner(opt).run();
-    }
+{
+  "benchmark": "ErrorLoadBenchmark.validateExpiredToken",
+  "mode": "avgt",
+  "score": 145.234,
+  "scoreError": 2.341,
+  "scoreUnit": "ns/op",
+  "params": {
+    "errorRate": "50"
+  }
 }
 ----
 
-==== Available Profilers
+== Adding New Benchmarks
 
-* `StackProfiler`: Call stack sampling
-* `GCProfiler`: Garbage collection statistics
-* `HotspotMemoryProfiler`: Memory allocation
-* `CompilerProfiler`: JIT compilation events
-* `ClassloaderProfiler`: Class loading statistics
+=== Library Benchmark
+1. Extend `AbstractBenchmark` or create standalone JMH benchmark
+2. Place in `benchmarking/benchmark-library/src/main/java`
+3. Use existing token generators from `TestTokenGenerators`
+4. Benchmark will be auto-discovered by `LibraryBenchmarkRunner`
 
-== Integration Testing
+=== Integration Benchmark  
+1. Extend `AbstractIntegrationBenchmark`
+2. Place in `benchmarking/benchmark-integration-quarkus`
+3. Use provided HTTP client and token helpers
+4. Ensure Quarkus server is running during benchmark
 
-=== Quarkus Integration Benchmarks
+== Best Practices
 
-[source,java]
-----
-@QuarkusTest
-@TestProfile(BenchmarkProfile.class)
-public class QuarkusJwtBenchmark {
-    
-    @Inject
-    JwtValidator validator;
-    
-    @Benchmark
-    public void validateToken(BenchmarkState state) {
-        validator.validate(state.getToken());
-    }
-    
-    @State(Scope.Benchmark)
-    public static class BenchmarkState {
-        private String token;
-        
-        @Setup
-        public void setup() {
-            token = generateTestToken();
-        }
-        
-        public String getToken() {
-            return token;
-        }
-    }
-}
-----
-
-=== Spring Integration Benchmarks
-
-[source,java]
-----
-@SpringBootTest
-@ActiveProfiles("benchmark")
-public class SpringJwtBenchmark {
-    
-    @Autowired
-    private JwtService jwtService;
-    
-    @Benchmark
-    public void processJwt(BenchmarkState state) {
-        jwtService.process(state.getJwt());
-    }
-}
-----
-
-== Continuous Integration
-
-=== GitHub Actions Integration
-
-[source,yaml]
-----
-name: Benchmark
-
-on:
-  pull_request:
-    paths:
-      - 'cui-jwt-validation/**'
-      - 'benchmarking/**'
-
-jobs:
-  benchmark:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          
-      - name: Run Benchmarks
-        run: ./mvnw clean verify -Pbenchmark
-        
-      - name: Upload Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: benchmark-results
-          path: '**/benchmark-results.json'
-          
-      - name: Comment PR
-        uses: actions/github-script@v6
-        with:
-          script: |
-            // Parse and format benchmark results
-            // Post as PR comment
-----
-
-=== Performance Gates
-
-Define performance requirements:
-
-[source,xml]
-----
-<configuration>
-    <performanceGates>
-        <gate>
-            <benchmark>JwtDecoderBenchmark.decodeCompact</benchmark>
-            <threshold>500</threshold>
-            <unit>ns/op</unit>
-        </gate>
-    </performanceGates>
-</configuration>
-----
-
-== Troubleshooting
-
-=== Common Issues
-
-1. **High Variance in Results**
-   - Increase warmup iterations
-   - Ensure exclusive CPU access
-   - Disable CPU frequency scaling
-   - Use performance CPU governor
-
-2. **Out of Memory Errors**
-   - Increase heap size in @Fork JVM args
-   - Reduce batch size
-   - Check for memory leaks in @Setup
-
-3. **Benchmarks Not Found**
-   - Verify @Benchmark annotation
-   - Check package scanning configuration
-   - Ensure benchmarks.jar is built
-
-4. **Inconsistent Results**
-   - Check for JVM optimizations
-   - Verify state management
-   - Look for external dependencies
-
-=== Performance Tuning
-
-[source,bash]
-----
-# Disable CPU frequency scaling
-sudo cpupower frequency-set -g performance
-
-# Set CPU affinity
-taskset -c 0-3 ./mvnw clean verify -Pbenchmark
-
-# Disable Turbo Boost (Intel)
-echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
-----
-
-== Advanced Topics
-
-=== Asymmetric Benchmarks
-
-For comparing different implementations:
-
-[source,java]
-----
-@State(Scope.Benchmark)
-public class ComparisonBenchmark {
-    
-    @Benchmark
-    public Result oldImplementation() {
-        return OldValidator.validate(token);
-    }
-    
-    @Benchmark
-    public Result newImplementation() {
-        return NewValidator.validate(token);
-    }
-}
-----
-
-=== Multi-threaded Benchmarks
-
-[source,java]
-----
-@State(Scope.Group)
-@GroupThreads(3)
-public class ConcurrentBenchmark {
-    
-    private final Queue<String> queue = new ConcurrentLinkedQueue<>();
-    
-    @Benchmark
-    @Group("concurrent")
-    @GroupThreads(2)
-    public void producer() {
-        queue.offer(generateData());
-    }
-    
-    @Benchmark
-    @Group("concurrent")
-    @GroupThreads(1)
-    public String consumer() {
-        return queue.poll();
-    }
-}
-----
-
-=== Custom Metrics
-
-[source,java]
-----
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-public class CustomMetricsBenchmark {
-    
-    @Benchmark
-    @Measurement(iterations = 5)
-    public void measureWithStatistics(Blackhole bh) {
-        long start = System.nanoTime();
-        Object result = performOperation();
-        long elapsed = System.nanoTime() - start;
-        
-        // Custom metric collection
-        MetricsCollector.record("custom.metric", elapsed);
-        
-        bh.consume(result);
-    }
-}
-----
-
-== Resources
-
-=== Documentation
-* link:https://github.com/openjdk/jmh[JMH Official Repository]
-* link:https://github.com/openjdk/jmh/tree/master/jmh-samples[JMH Samples]
-* link:https://shipilev.net/blog/2014/nanotrusting-nanotime/[Nanotrusting Nanotime]
-
-=== Tools
-* JMH Visualizer: link:https://jmh.morethan.io/[Online Results Viewer]
-* JMH Gradle Plugin: For Gradle-based projects
-* IntelliJ JMH Plugin: IDE integration
-
-=== Best Practices Articles
-* link:https://shipilev.net/blog/2014/java-scala-divided-we-fail/[JMH Anti-patterns]
-* link:https://mechanical-sympathy.blogspot.com/[Mechanical Sympathy Blog]
-
-== Appendix: Benchmark Checklist
-
-Before committing benchmark code, ensure:
-
-- [ ] Benchmark class has appropriate JMH annotations
-- [ ] State management is correctly scoped
-- [ ] Results are consumed (return or Blackhole)
-- [ ] No constant folding or dead code elimination
-- [ ] Warmup and measurement iterations are sufficient
-- [ ] Fork count is appropriate (usually 2-3)
-- [ ] JVM arguments are specified if needed
-- [ ] Benchmark names are descriptive
-- [ ] Parameters cover relevant scenarios
-- [ ] Documentation explains what is being measured
-- [ ] Results are reproducible
-- [ ] No external dependencies affect results
-- [ ] Thread safety is maintained for concurrent benchmarks
-- [ ] Resource cleanup in @TearDown methods
-- [ ] Performance gates defined for CI/CD
+1. **Use existing infrastructure** - Don't reinvent token generation or HTTP clients
+2. **Keep benchmarks focused** - Test one specific scenario per method
+3. **Use realistic data** - Token sizes and claim counts should match production
+4. **Document parameters** - Explain what each `@Param` value represents
+5. **Validate results** - Check response codes and error handling
+6. **Monitor resource usage** - Watch for memory leaks in long-running benchmarks
