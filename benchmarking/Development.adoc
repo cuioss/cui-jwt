@@ -4,100 +4,111 @@
 
 == Adding Library Benchmarks
 
-=== Creating a New Benchmark Class
+=== Using the Existing Infrastructure
 
-Create your benchmark in `benchmarking/benchmark-library/src/main/java`:
+Library benchmarks extend `AbstractBenchmark` which provides:
 
 [source,java]
 ----
-package de.cuioss.jwt.validation.benchmark;
-
-import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
-import org.openjdk.jmh.annotations.*;
-import java.util.concurrent.TimeUnit;
-
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 2, jvmArgs = {"-Xms2G", "-Xmx2G"})
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
-public class MyNewBenchmark extends AbstractBenchmark {
+public class MyBenchmark extends AbstractBenchmark {
     
-    @Param({"small", "medium", "large"})
-    private String tokenSize;
+    // Inherited from AbstractBenchmark:
+    // - tokenRepository: MockTokenRepository with 600 test tokens
+    // - tokenValidator: Configured TokenValidator with performance monitoring
     
-    @Setup
+    @Setup(Level.Trial)
     public void setup() {
-        super.setup();  // Initializes validator and test data
-        // Your custom setup
-    }
-    
-    @Benchmark
-    public void measureMyScenario() {
-        // Your benchmark code
-        validator.validate(getTestToken(tokenSize));
+        setupBase();  // Initializes token repository and validator
+        // Your additional setup here
     }
 }
 ----
 
-=== Using Token Generation
+=== Using the Delegate Pattern
 
-Leverage existing test token infrastructure:
+The project uses delegates to organize benchmark logic:
 
 [source,java]
 ----
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
+// Create a delegate for your benchmark logic
+public class MyValidationDelegate extends BenchmarkDelegate {
+    
+    private final AtomicInteger tokenIndex = new AtomicInteger(0);
+    
+    public MyValidationDelegate(TokenValidator validator, MockTokenRepository repository) {
+        super(validator, repository);
+    }
+    
+    public AccessTokenContent validateWithRotation() {
+        // Rotate through token pool
+        String token = tokenRepository.getToken(tokenIndex.getAndIncrement());
+        return validateToken(token);
+    }
+}
 
-@State(Scope.Benchmark)
-public class TokenBenchmark {
+// Use in your benchmark
+public class MyBenchmark extends AbstractBenchmark {
+    private MyValidationDelegate delegate;
     
-    private List<TestTokenHolder> tokens;
-    
-    @Setup
+    @Setup(Level.Trial)
     public void setup() {
-        // Generate various token types
-        tokens = new ArrayList<>();
-        
-        // Valid tokens
-        tokens.add(TestTokenGenerators.generateValidToken());
-        
-        // Expired tokens
-        tokens.add(TestTokenGenerators.generateExpiredToken());
-        
-        // Custom claim configuration
-        var customClaims = ClaimControlParameter.builder()
-            .withAdditionalClaim("custom", "value")
-            .withAudience("benchmark-test")
-            .build();
-        tokens.add(TestTokenGenerators.generateTokenWithClaims(customClaims));
+        setupBase();
+        delegate = new MyValidationDelegate(tokenValidator, tokenRepository);
+    }
+    
+    @Benchmark
+    public AccessTokenContent measureValidation() {
+        return delegate.validateWithRotation();
     }
 }
 ----
 
-=== Adding JFR Profiling
+=== Token Repository Patterns
 
-For detailed performance analysis, extend `AbstractJfrBenchmark`:
+The `MockTokenRepository` provides 600 pre-generated tokens:
 
 [source,java]
 ----
-import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
-import de.cuioss.benchmarking.common.jfr.BenchmarkPhaseEvent;
+// Access tokens by index (0-599)
+String token = tokenRepository.getToken(index);
 
-public class ProfilingBenchmark extends AbstractJfrBenchmark {
+// Get issuer configuration
+IssuerConfig issuer = tokenRepository.getIssuerConfig();
+
+// Token rotation for cache testing
+int index = counter.getAndIncrement() % tokenRepository.getTokenPoolSize();
+String rotatingToken = tokenRepository.getToken(index);
+----
+
+=== Error Scenario Testing
+
+For error scenarios, use the test token generators:
+
+[source,java]
+----
+public class ErrorBenchmark extends AbstractBenchmark {
+    
+    private List<TestTokenHolder> errorTokens;
+    
+    @Setup
+    public void setup() {
+        setupBase();
+        
+        errorTokens = Arrays.asList(
+            TestTokenGenerators.generateExpiredToken(),
+            TestTokenGenerators.generateMalformedToken(),
+            TestTokenGenerators.generateInvalidSignatureToken()
+        );
+    }
     
     @Benchmark
-    public void measureWithProfiling() {
-        try (var event = new BenchmarkPhaseEvent()) {
-            event.phase = "validation";
-            event.begin();
-            
-            // Your benchmark code
-            var result = validator.validate(token);
-            
-            event.success = result.isValid();
-            event.commit();
+    public void measureErrorHandling() {
+        for (TestTokenHolder token : errorTokens) {
+            try {
+                tokenValidator.validate(token.getTokenString());
+            } catch (TokenValidationException expected) {
+                // Expected error, part of benchmark
+            }
         }
     }
 }
@@ -105,293 +116,203 @@ public class ProfilingBenchmark extends AbstractJfrBenchmark {
 
 == Adding Integration Benchmarks
 
-=== Creating Quarkus Integration Benchmark
+=== Using AbstractIntegrationBenchmark
 
-Extend `AbstractIntegrationBenchmark` in `benchmarking/benchmark-integration-quarkus`:
+Integration benchmarks test against a running Quarkus instance:
 
 [source,java]
 ----
-package de.cuioss.jwt.quarkus.benchmark.benchmarks;
-
-import de.cuioss.jwt.quarkus.benchmark.AbstractIntegrationBenchmark;
-import org.openjdk.jmh.annotations.*;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
-@BenchmarkMode({Mode.Throughput, Mode.SampleTime})
-@Fork(1)  // Single fork for integration tests
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3, time = 10)
 public class MyEndpointBenchmark extends AbstractIntegrationBenchmark {
     
-    private static final String ENDPOINT = "/api/my-endpoint";
+    // Inherited:
+    // - httpClient: Configured HTTP client
+    // - tokenRepository: KeycloakTokenRepository with real tokens
+    // - baseUrl: From system properties
     
     @Benchmark
     public void measureEndpoint() throws Exception {
-        // Create authenticated request with valid JWT
-        HttpRequest request = createAuthenticatedRequest(ENDPOINT)
+        // Get a valid token from repository
+        String token = tokenRepository.getValidToken();
+        
+        // Create authenticated request
+        HttpRequest request = createAuthenticatedRequest("/api/endpoint", token)
             .POST(HttpRequest.BodyPublishers.ofString("{\"data\":\"test\"}"))
-            .header("Content-Type", "application/json")
             .build();
         
+        // Send and validate
         HttpResponse<String> response = sendRequest(request);
         validateResponse(response, 200);
     }
-    
-    @Benchmark
-    public void measureErrorScenario() throws Exception {
-        // Test with invalid token
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(getBaseUrl() + ENDPOINT))
-            .header("Authorization", "Bearer invalid-token")
-            .GET()
-            .build();
-        
-        HttpResponse<String> response = sendRequest(request);
-        validateResponse(response, 401);
-    }
 }
 ----
 
-=== Testing Different Token Scenarios
+=== Token Repository in Integration Tests
+
+Integration benchmarks use `KeycloakTokenRepository`:
 
 [source,java]
 ----
-public class TokenScenarioBenchmark extends AbstractIntegrationBenchmark {
-    
-    @Param({"valid", "expired", "malformed"})
-    private String tokenType;
-    
-    private String token;
-    
-    @Setup
-    public void setup() {
-        super.setup();
-        
-        switch (tokenType) {
-            case "valid":
-                token = generateValidToken();
-                break;
-            case "expired":
-                token = TestTokenGenerators.generateExpiredToken().getTokenString();
-                break;
-            case "malformed":
-                token = "not.a.token";
-                break;
-        }
-    }
-    
-    @Benchmark
-    public void measureTokenValidation() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(getBaseUrl() + "/jwt/validate"))
-            .header("Authorization", "Bearer " + token)
-            .POST(HttpRequest.BodyPublishers.noBody())
-            .build();
-        
-        sendRequest(request);
-        // Response validation depends on token type
-    }
-}
+// Get valid tokens
+String validToken = tokenRepository.getValidToken();
+
+// Rotate through token pool
+String rotatingToken = tokenRepository.getTokenAtIndex(index++ % tokenRepository.getTokenPoolSize());
+
+// Token repository is configured via properties:
+// - keycloak.url
+// - keycloak.realm
+// - keycloak.client-id
+// - keycloak.client-secret
 ----
 
-== Benchmark Configuration
+== Benchmark Patterns in This Project
 
-=== Customizing JMH Settings
-
-Override defaults in your benchmark class:
+=== Full Spectrum Testing
+Tests cache effectiveness by rotating through all available tokens:
 
 [source,java]
 ----
-@Fork(value = 3, jvmArgs = {
-    "-Xms4G", 
-    "-Xmx4G",
-    "-XX:+UseG1GC",
-    "-XX:MaxGCPauseMillis=10",
-    "-Djava.security.egd=file:/dev/./urandom"
-})
-@Threads(4)  // For concurrent benchmarks
-@Timeout(time = 30, timeUnit = TimeUnit.SECONDS)  // Prevent hanging
-public class CustomConfigBenchmark {
-    // ...
+public AccessTokenContent validateWithFullSpectrum() {
+    // Rotates through entire 600-token pool
+    String token = tokenRepository.getToken(tokenIndex.getAndIncrement());
+    return validateToken(token);
 }
 ----
 
-=== Using Custom Metrics
-
-Integrate with the metrics framework:
+=== Concurrent Validation Pattern
+Tests multi-threaded performance:
 
 [source,java]
 ----
-import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
-
-public class MetricsBenchmark extends AbstractBenchmark {
-    
-    private BenchmarkMetrics metrics;
-    
-    @Setup
-    public void setup() {
-        super.setup();
-        metrics = new BenchmarkMetrics("custom-benchmark");
-    }
+@State(Scope.Thread)  // Thread-local state
+public class ConcurrentBenchmark extends AbstractBenchmark {
     
     @Benchmark
-    public void measureWithMetrics() {
-        long start = System.nanoTime();
-        
-        try {
-            performOperation();
-            metrics.recordSuccess(System.nanoTime() - start);
-        } catch (Exception e) {
-            metrics.recordError(e);
-        }
-    }
-    
-    @TearDown
-    public void tearDown() {
-        metrics.printSummary();
+    @BenchmarkMode(Mode.Throughput)
+    @Threads(4)  // Explicit thread count
+    public AccessTokenContent measureConcurrent() {
+        return delegate.validateWithRotation();
     }
 }
 ----
 
-== Running and Testing
+=== Metrics Export
+Benchmarks automatically export metrics via `SimplifiedMetricsExporter`:
 
-=== Local Development
+[source,java]
+----
+@TearDown(Level.Trial)
+public void exportBenchmarkMetrics() {
+    // Automatically called by AbstractBenchmark
+    // Exports to target/benchmark-results/
+    SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+}
+----
 
+== Running Benchmarks
+
+=== Quick Development Run
 [source,bash]
 ----
-# Quick test run (minimal iterations)
-./mvnw clean compile exec:java \
-  -Dexec.mainClass="de.cuioss.jwt.validation.benchmark.LibraryBenchmarkRunner" \
-  -Dexec.args="-wi 1 -i 1 -f 1" \
-  -pl benchmarking/benchmark-library
+# Minimal run for development (1 fork, 1 iteration)
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library \
+  -Djmh.f=1 -Djmh.wi=1 -Djmh.i=1
 
-# Run specific benchmark only
-./mvnw clean verify -Pbenchmark \
-  -Djmh.includes="MyNewBenchmark" \
-  -pl benchmarking/benchmark-library
-
-# With profiling
-./mvnw clean verify -Pbenchmark \
-  -Djmh.prof="stack:lines=5;top=3" \
-  -pl benchmarking/benchmark-library
+# Run specific benchmark class
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library \
+  -Djmh.includes="SimpleCoreValidationBenchmark"
 ----
 
-=== Integration Testing
-
-For Quarkus benchmarks, ensure the server is running:
-
+=== Integration Benchmark Setup
 [source,bash]
 ----
-# Start Quarkus in one terminal
+# 1. Start Quarkus (required for integration benchmarks)
 cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 ./mvnw quarkus:dev
 
-# Run benchmarks in another terminal
-./mvnw clean verify -Pbenchmark \
-  -pl benchmarking/benchmark-integration-quarkus
+# 2. Run integration benchmarks
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
 ----
 
-== Best Practices
+=== Output Files
+- Library benchmarks: `benchmark-library/target/benchmark-results/micro-result.json`
+- Integration benchmarks: `benchmark-integration-quarkus/target/benchmark-results/integration-result.json`
+- Metrics export: `target/benchmark-results/metrics-*.json`
 
-=== State Management
+== Configuration
 
+=== System Properties
+[source,bash]
+----
+# JMH configuration
+-Djmh.f=2          # Forks
+-Djmh.wi=3         # Warmup iterations
+-Djmh.i=5          # Measurement iterations
+-Djmh.t=1          # Threads
+
+# Integration test configuration
+-Dquarkus.url=http://localhost:8080
+-Dkeycloak.url=http://localhost:8080/auth
+----
+
+=== MockTokenRepository Configuration
 [source,java]
 ----
-@State(Scope.Benchmark)  // Shared across all threads
-public class SharedState {
-    // Expensive setup, done once
-    TokenValidator validator;
-    List<String> testData;
-}
-
-@State(Scope.Thread)  // Per-thread instance
-public class ThreadState {
-    // Thread-local data to avoid contention
-    Random random = new Random();
-    StringBuilder buffer = new StringBuilder();
-}
+MockTokenRepository.Config config = MockTokenRepository.Config.builder()
+    .cacheSize(60)      // 10% of 600 tokens
+    .tokenPoolSize(600) // Total tokens in pool
+    .build();
 ----
 
-=== Avoiding Measurement Pitfalls
+== Common Pitfalls and Solutions
 
+=== Token Index Overflow
 [source,java]
 ----
-public class CorrectBenchmark {
-    
-    // DON'T: Result might be optimized away
-    @Benchmark
-    public void wrong() {
-        String result = processToken();
-        // JVM might eliminate this
-    }
-    
-    // DO: Return the result
-    @Benchmark
-    public String correct() {
-        return processToken();
-    }
-    
-    // DO: Use Blackhole for void operations
-    @Benchmark
-    public void correctVoid(Blackhole bh) {
-        bh.consume(processToken());
-    }
-    
-    // DO: Ensure realistic data
-    @State(Scope.Benchmark)
-    public static class RealisticState {
-        @Param({"10", "100", "1000"})
-        int claimCount;
-        
-        @Setup
-        public void setup() {
-            // Generate tokens with varying claim counts
-            // matching production scenarios
-        }
-    }
+// Wrong - will overflow
+String token = tokenRepository.getToken(counter.getAndIncrement());
+
+// Correct - use modulo
+int index = counter.getAndIncrement() % tokenRepository.getTokenPoolSize();
+String token = tokenRepository.getToken(index);
+----
+
+=== Missing Base Setup
+[source,java]
+----
+// Wrong - forgot base setup
+@Setup
+public void setup() {
+    myDelegate = new MyDelegate(tokenValidator, tokenRepository);
+    // NullPointerException - tokenValidator not initialized!
+}
+
+// Correct - call setupBase first
+@Setup
+public void setup() {
+    setupBase();  // MUST call this first
+    myDelegate = new MyDelegate(tokenValidator, tokenRepository);
 }
 ----
 
-=== Error Handling
-
+=== Integration Test Connection
 [source,java]
 ----
-@Benchmark
-public void robustBenchmark(Blackhole bh) {
+// Check Quarkus is running before benchmarks
+@Setup
+public void verifyConnection() {
     try {
-        var result = riskyOperation();
-        bh.consume(result);
-    } catch (ExpectedException e) {
-        // Expected errors are part of the benchmark
-        bh.consume(e.getMessage());
+        HttpResponse<String> health = httpClient.send(
+            HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/health"))
+                .GET().build(),
+            HttpResponse.BodyHandlers.ofString());
+        
+        if (health.statusCode() != 200) {
+            throw new IllegalStateException("Quarkus not responding");
+        }
     } catch (Exception e) {
-        // Unexpected errors should fail the benchmark
-        throw new BenchmarkException("Unexpected error", e);
+        throw new IllegalStateException("Cannot connect to Quarkus", e);
     }
 }
 ----
-
-== Troubleshooting
-
-=== Common Issues
-
-**Benchmark not discovered:**
-- Ensure class/method has `@Benchmark` annotation
-- Check package name matches pattern
-- Verify Maven compilation succeeded
-
-**High variance in results:**
-- Increase warmup iterations: `-Djmh.wi=5`
-- Add more measurement iterations: `-Djmh.i=10`
-- Check for GC interference: add `-Djmh.prof=gc`
-
-**Out of memory:**
-- Increase heap in `@Fork`: `-Xmx4G`
-- Check for memory leaks in `@Setup`
-- Use `@TearDown` for cleanup
-
-**Integration benchmark failures:**
-- Verify Quarkus server is running
-- Check endpoint URLs are correct
-- Ensure test tokens are valid
