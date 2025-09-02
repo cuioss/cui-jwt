@@ -42,13 +42,14 @@ import java.net.http.HttpRequest;
     protected TokenProvider tokenRepository;
 
     /**
-     * Setup method called once before all benchmark iterations.
-     * Extends parent setup and initializes or reuses the shared token repository.
+     * Additional setup for integration benchmarks.
+     * Called by parent's setupBenchmark after base initialization.
      */
-    @Override @Setup(Level.Trial) public void setupBenchmark() {
-        // Call parent setup first
-        super.setupBenchmark();
-
+    @Override
+    protected void performAdditionalSetup() {
+        // Call parent's additional setup first
+        super.performAdditionalSetup();
+        
         LOGGER.info("Setting up integration benchmark with token repository");
 
         // Initialize token repository using shared instance if available

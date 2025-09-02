@@ -21,7 +21,6 @@ import org.openjdk.jmh.annotations.*;
 import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Benchmark class for health endpoints to establish baseline performance.
@@ -29,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@Fork(value = 1) @Threads(1) @Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS) @Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS) public class JwtHealthBenchmark extends AbstractBaseBenchmark {
+public class JwtHealthBenchmark extends AbstractBaseBenchmark {
 
     /**
      * Benchmark for Quarkus health endpoint throughput.

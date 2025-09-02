@@ -94,12 +94,14 @@ class SimplifiedMetricsExporterTest {
 
         // Get the first benchmark entry (should be "unknown_benchmark")
         String benchmarkName = allMetrics.keySet().iterator().next();
+        @SuppressWarnings("unchecked")
         Map<String, Object> benchmarkMetrics = (Map<String, Object>) allMetrics.get(benchmarkName);
 
         // Verify JSON structure for the benchmark
         assertNotNull(benchmarkMetrics.get("timestamp"));
         assertNotNull(benchmarkMetrics.get("steps"));
 
+        @SuppressWarnings("unchecked")
         Map<String, Map<String, Object>> steps = (Map<String, Map<String, Object>>) benchmarkMetrics.get("steps");
         assertTrue(steps.containsKey("token_parsing"));
         assertTrue(steps.containsKey("header_validation"));
