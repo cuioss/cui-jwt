@@ -26,11 +26,11 @@ cd benchmarking/cui-benchmarking-common
 mvn test -Dtest=LocalReportGeneratorTest
 ----
 
-This creates reports in `target/benchmark-reports-preview/`.
+This creates reports in `benchmarking/cui-benchmarking-common/target/benchmark-reports-preview/`.
 
 === Step 3: Serve Results Locally
 
-To view the generated reports:
+The serve-reports.sh script automatically serves from the correct directory:
 
 [source,bash]
 ----
@@ -43,6 +43,8 @@ cd benchmarking/scripts
 ./serve-reports.sh stop
 ----
 
+The script serves from `benchmarking/cui-benchmarking-common/target/benchmark-reports-preview/`.
+
 === Step 4: View Results
 
 Open your browser to http://localhost:8080 to view the comprehensive reports including:
@@ -53,31 +55,24 @@ Open your browser to http://localhost:8080 to view the comprehensive reports inc
 
 == Generated Artifacts Location
 
-After running benchmarks, artifacts are generated in:
+After running benchmarks, raw results are generated in:
 
 * **Micro Benchmarks**: `benchmarking/benchmark-library/target/benchmark-results/`
 * **Integration Benchmarks**: `benchmarking/benchmark-integration-quarkus/target/benchmark-results/`
 
-Each location contains:
-- `index.html` - Main results page
-- `trends.html` - Historical trends visualization
-- `badges/` - Performance badges
-- `data/` - Metrics JSON files
-- `gh-pages-ready/` - GitHub Pages deployment structure
+These contain raw benchmark data. The LocalReportGeneratorTest then processes these raw results 
+and creates the preview reports in `benchmarking/cui-benchmarking-common/target/benchmark-reports-preview/`
+with HTML visualizations, badges, and interactive dashboards.
 
 == Manual HTTP Server Options
 
-You can also serve the results directly from the benchmark directories:
+If you want to bypass the serve-reports.sh script, you can serve the preview reports directly:
 
 [source,bash]
 ----
-# For micro benchmark results
-cd benchmarking/benchmark-library/target/benchmark-results
+# Serve the preview reports
+cd benchmarking/cui-benchmarking-common/target/benchmark-reports-preview
 python3 -m http.server 8080
-
-# For integration benchmark results
-cd benchmarking/benchmark-integration-quarkus/target/benchmark-results
-python3 -m http.server 8081
 ----
 
 Alternative servers:
