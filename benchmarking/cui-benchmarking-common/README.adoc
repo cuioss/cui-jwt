@@ -108,15 +108,11 @@ de.cuioss.benchmarking.common/
   - Configurable JMH options via system properties
   - Automatic artifact generation
   - Hooks for initialization and post-processing
-  
-* **LibraryBenchmarkRunner** - Micro benchmark runner (in benchmark-library module)
-  - Executes JWT library validation benchmarks
-  - Initializes key cache before execution
-  
-* **QuarkusIntegrationRunner** - Integration benchmark runner (in benchmark-integration-quarkus module)
-  - Executes benchmarks against live Quarkus application
-  - Initializes token repository
-  - Processes metrics after execution
+
+* **BenchmarkResultProcessor** - Orchestrates post-benchmark artifact generation
+  - Processes JMH results into multiple output formats
+  - Coordinates all generators for complete artifact set
+  - Creates GitHub Pages deployment structure
 
 === Utilities (`util/`)
 
@@ -275,3 +271,12 @@ This module depends on:
 * CUI Tools - Logging utilities
 * Lombok - Annotation processing (provided scope)
 * HdrHistogram - High Dynamic Range histograms
+
+== Documentation
+
+For comprehensive benchmarking documentation:
+
+* link:../doc/README.adoc[Main Documentation Hub]
+* link:../doc/Architecture.adoc[Module Architecture] - Detailed architecture and code placement guidelines
+* link:../doc/workflow.adoc[Benchmark Workflow] - Complete execution workflow
+* link:../doc/local-testing.adoc[Local Testing] - How to view results locally

@@ -55,24 +55,33 @@ Pre-initialized `TokenRepository` with 100-token pool for realistic cache testin
 
 Results in `target/benchmark-results/`:
 
-* `integration-benchmark-result.json` - JMH results
-* `http-metrics.json` - HTTP performance metrics
-* `integration-metrics.json` - Detailed metrics with security events
+* `integration-result.json` - Raw JMH results
+* `benchmark-summary.json` - Overall summary with quality gates
+* `badges/` - Performance badges (score, trend, last-run)
+* `data/` - Individual benchmark metrics JSON files
+* `gh-pages-ready/` - GitHub Pages deployment structure
 * `benchmark-run_*.log` - Complete console output
 
 == Analysis
 
+=== View Results
+
 [source,bash]
 ----
+# Serve results locally with web UI
+cd benchmarking/scripts
+./serve-reports.sh quarkus  # Opens http://localhost:8080
+
+# Or analyze JSON directly
 # View throughput
 jq '.[] | select(.mode == "thrpt") | {benchmark: .benchmark, score: .primaryMetric.score}' \
-  target/benchmark-results/integration-benchmark-result.json
+  target/benchmark-results/integration-result.json
 
 # View latency percentiles
 jq '.[] | select(.mode == "sample") | .primaryMetric.scorePercentiles' \
-  target/benchmark-results/integration-benchmark-result.json
+  target/benchmark-results/integration-result.json
 
-# JFR analysis
+# JFR analysis (if enabled)
 jfr summary target/benchmark-results/jfr-recordings/benchmark.jfr
 ----
 
@@ -103,3 +112,13 @@ curl -k https://localhost:1443/realms/benchmark
 # Review logs
 tail -f target/benchmark-results/benchmark-run_*.log
 ----
+
+== Documentation
+
+For comprehensive benchmarking documentation:
+
+* link:../doc/README.adoc[Main Documentation Hub]
+* link:../doc/Architecture.adoc[Module Architecture] - Detailed architecture and code placement guidelines
+* link:../doc/workflow.adoc[Benchmark Workflow] - Complete execution workflow
+* link:../doc/local-testing.adoc[Local Testing] - How to view results locally
+* link:../benchmark-library/README.adoc[Library Benchmarks] - Micro benchmark documentation
