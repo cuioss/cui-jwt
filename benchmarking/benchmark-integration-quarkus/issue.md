@@ -105,22 +105,31 @@
 - **Service-Independent**: Affects both health and JWT endpoints - it's client-side issue
 - **Intermittent Nature**: System oscillates between working and complete failure states
 
-**Most Likely Initialization Bottlenecks:**
+**Most Likely Initialization Bottlenecks (Updated Based on Evidence):**
 
-1. **SSL Context/Trust Store First-Time Loading (80% confidence)**
-   - Loading trust store for self-signed certificates
-   - SSL context initialization with localhost certificates
-   - Certificate validation chain setup
+1. **HttpClient Internal Initialization Bug (90% confidence)**
+   - First HttpClient request triggers buggy initialization that times out
+   - Initialization partially completes, allowing subsequent requests to work
+   - After ~20-30 seconds, some internal state expires or is garbage collected
+   - Evidence: Immediate success after timeout proves it's not network/SSL related
 
-2. **HttpClient Internal State Initialization (60% confidence)**  
-   - Even fresh HttpClient instances may share internal state
-   - DNS resolution caching, SSL providers, internal connection managers
-   - Java HttpClient internal lazy initialization
+2. **Connection Pool Bootstrap Failure (70% confidence)**
+   - Initial pool creation times out but continues in background
+   - Pool works for keep-alive timeout period (30 seconds default)
+   - Pool gets evicted/recreated, causing cycle to repeat
+   - May be related to JDK-8312433 connection pool bugs
 
-3. **System-Level Network Stack Initialization (40% confidence)**
-   - First HTTPS connection triggering system SSL library loading
-   - Network interface initialization for localhost connections
-   - Operating system socket/SSL stack first-time setup
+3. **Docker Network Bridge Issue (50% confidence)**
+   - First connection through Docker network layer times out
+   - Network route established after timeout
+   - Route expires or resets after ~20 seconds
+   - Could explain localhost-specific behavior
+
+4. **DNS/Host Resolution Cache (30% confidence)**
+   - First resolution of "localhost" times out
+   - Resolution cached after timeout completes
+   - Cache expires after ~20-30 seconds
+   - Less likely since localhost should resolve instantly
 
 ## Investigation Plan - Initialization Focus
 
@@ -299,6 +308,32 @@
 - **Test**: Health endpoint includes JWT subsystem status
 - **Conclusion**: JWT subsystem is fully initialized before first HTTP request
 
+## Critical Timeout Analysis
+
+### Observed vs Documented Timeouts
+
+**What We Observe:**
+- **10-second initial timeout**: Matches default connect timeout
+- **Immediate success after timeout**: Proves it's NOT actually connection establishment
+- **~20-second working window**: Less than documented 30s keep-alive
+- **Complete failure**: After ~20 seconds, not 30 seconds
+
+**Documented Defaults:**
+- **Connect Timeout**: ~10 seconds (implementation dependent)
+- **Keep-Alive Timeout**: 30 seconds (was 1200s before JDK-8297030)
+- **SSL Session Timeout**: 24 hours (86400 seconds)
+- **Request Timeout**: Unlimited by default
+
+**Critical Contradiction:**
+If the connect timeout was actually failing, the first iteration couldn't succeed immediately. This proves the timeout is NOT from connection establishment but from some internal HttpClient bug or initialization issue.
+
+**The 20 vs 30 Second Mystery:**
+The working window is ~20 seconds, but keep-alive timeout is 30 seconds. This suggests:
+- Keep-alive implementation bug (premature eviction)
+- Undocumented internal timeout
+- State corruption after ~20 seconds
+- Related to JDK-8312433 "no active streams" bug
+
 ## Web Research Findings (2025-09-03)
 
 ### Critical JDK Bug Reports Identified
@@ -337,14 +372,23 @@
 
 ### Connection Pool Behavior Analysis
 
-#### The 20-Second Pattern Explanation
-Based on research, our ~20-second working window likely results from:
+#### The 20-Second Pattern - Critical Analysis
 
-1. **Initial Timeout (10 seconds)**: SSL handshake/certificate validation timeout
-2. **Connection Establishment**: System eventually establishes connection after timeout
-3. **Working Window (~20 seconds)**: Connection remains in pool and is reused
-4. **Pool Eviction**: Connection closed due to idle timeout or validation failure
-5. **Cycle Repeats**: Next request triggers new handshake, timeout occurs again
+**Important Contradiction**: SSL handshake to localhost should take milliseconds, not 10+ seconds on modern hardware. The fact that iteration 1 works IMMEDIATELY after the priming timeout proves this is NOT an SSL handshake issue.
+
+**Actual Pattern Observed**:
+1. **Initial Timeout (10 seconds)**: HttpClient internal initialization timeout (NOT SSL)
+2. **Immediate Success**: First benchmark iteration works perfectly (2.283 ops/ms)
+3. **Working Window (~20 seconds)**: Iterations 1-2 succeed with excellent performance
+4. **Complete Failure**: After ~20 seconds, system completely fails with timeout
+5. **Key Evidence**: If SSL took 10+ seconds, iteration 1 couldn't succeed immediately
+
+**Alternative Root Causes to Investigate**:
+- **HttpClient Initialization Bug**: First use triggers buggy initialization that times out but partially completes
+- **Connection Pool Bootstrap**: Pool creation times out but completes in background
+- **Docker Network Issue**: First connection through Docker bridge times out
+- **DNS Resolution Cache**: First resolution times out, cache expires after 20s
+- **NOT SSL/Certificate Issue**: Performance after timeout proves SSL works fine
 
 #### Known Connection Pool Issues
 - **Stale Connection Detection**: HttpClient may not detect server-closed connections
