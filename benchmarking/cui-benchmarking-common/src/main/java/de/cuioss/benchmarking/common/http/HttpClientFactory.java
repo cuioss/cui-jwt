@@ -19,10 +19,8 @@ import de.cuioss.tools.logging.CuiLogger;
 import okhttp3.*;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -51,41 +49,6 @@ public class HttpClientFactory {
 
     public static OkHttpClient getInsecureClient() {
         return CLIENT;
-    }
-
-    /**
-     * Execute a GET request and return response body as string.
-     */
-    public static String executeGet(String url) throws IOException {
-        Request request = new Request.Builder()
-                .url(url)
-                .get()
-                .build();
-
-        try (Response response = CLIENT.newCall(request).execute()) {
-            if (response.body() != null) {
-                return response.body().string();
-            }
-            return "";
-        }
-    }
-
-    /**
-     * Execute a POST request with form data and return response body as string.
-     */
-    public static String executePost(String url, String formData) throws IOException {
-        RequestBody body = RequestBody.create(formData, MediaType.parse("application/x-www-form-urlencoded"));
-        Request request = new Request.Builder()
-                .url(url)
-                .post(body)
-                .build();
-
-        try (Response response = CLIENT.newCall(request).execute()) {
-            if (response.body() != null) {
-                return response.body().string();
-            }
-            return "";
-        }
     }
 
     private static OkHttpClient createClient() {
