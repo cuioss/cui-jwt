@@ -197,6 +197,8 @@
                                 <argument>-Dtoken.request.timeoutMs=${token.request.timeoutMs}</argument>
                                 <argument>-Dtoken.verifySsl=${token.verifySsl}</argument>
                                 <argument>-Dtoken.refreshThresholdSeconds=${token.refreshThresholdSeconds}</argument>
+                                <!-- HTTP Protocol Configuration -->
+                                <argument>-Dbenchmark.http.protocol=${benchmark.http.protocol}</argument>
                                 <argument>-Djava.util.logging.config.file=benchmark-logging.properties</argument>
                                 <argument>-XX:+UnlockDiagnosticVMOptions</argument>
                                 <argument>-XX:+DebugNonSafepoints</argument>

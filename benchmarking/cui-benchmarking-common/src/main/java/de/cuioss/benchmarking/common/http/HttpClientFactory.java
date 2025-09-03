@@ -16,7 +16,8 @@
 package de.cuioss.benchmarking.common.http;
 
 import de.cuioss.tools.logging.CuiLogger;
-import okhttp3.*;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -26,7 +27,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Factory for creating OkHttp client instances for benchmarking.
@@ -44,6 +47,14 @@ public class HttpClientFactory {
     private static final int CONNECT_TIMEOUT_SECONDS = 5;
     private static final int READ_TIMEOUT_SECONDS = 5;
     private static final int WRITE_TIMEOUT_SECONDS = 5;
+
+    /**
+     * System property to configure HTTP protocol version.
+     * Values: "http2" (default), "http1" (HTTP/1.1 only)
+     * Set -Dbenchmark.http.protocol=http1 to force HTTP/1.1
+     */
+    private static final String HTTP_PROTOCOL_PROPERTY = "benchmark.http.protocol";
+    private static final String DEFAULT_HTTP_PROTOCOL = "http2";
 
     private static final OkHttpClient CLIENT = createClient();
 
@@ -78,14 +89,35 @@ public class HttpClientFactory {
                     .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0])
                     .hostnameVerifier((hostname, session) -> true) // Accept all hostnames for benchmark testing
-                    .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1))
+                    .protocols(getHttpProtocols())
                     .build();
 
-            LOGGER.info("Created OkHttp client with HTTP/2, timeouts: {}s", CONNECT_TIMEOUT_SECONDS);
+            String protocolInfo = getHttpProtocols().stream()
+                    .map(Protocol::toString)
+                    .collect(Collectors.joining(", "));
+            LOGGER.info("Created OkHttp client with protocols: [{}], timeouts: {}s", protocolInfo, CONNECT_TIMEOUT_SECONDS);
             return client;
 
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new IllegalStateException("Failed to create OkHttp client", e);
+        }
+    }
+
+    /**
+     * Determines which HTTP protocols to use based on system property configuration.
+     * @return List of protocols to use (HTTP/2 + HTTP/1.1 by default, HTTP/1.1 only if configured)
+     */
+    private static List<Protocol> getHttpProtocols() {
+        String protocol = System.getProperty(HTTP_PROTOCOL_PROPERTY, DEFAULT_HTTP_PROTOCOL).toLowerCase();
+
+        switch (protocol) {
+            case "http1":
+                LOGGER.info("Using HTTP/1.1 only (configured via -D{}=http1)", HTTP_PROTOCOL_PROPERTY);
+                return Arrays.asList(Protocol.HTTP_1_1);
+            case "http2":
+            default:
+                LOGGER.info("Using HTTP/2 with HTTP/1.1 fallback (default or -D{}=http2)", HTTP_PROTOCOL_PROPERTY);
+                return Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1);
         }
     }
 }

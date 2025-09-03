@@ -534,6 +534,76 @@ scheduler.scheduleAtFixedRate(() -> {
 }, 0, 15, TimeUnit.SECONDS);  // Every 15 seconds (half of 30s timeout)
 ```
 
+## Dismissed Hypotheses
+
+### Extended Timeout Configuration ❌
+**Hypothesis**: Increasing HTTP client timeouts (5s → 30s connect, 5s → 60s read) would resolve first request failures.
+
+**Evidence**: Testing with extended timeouts showed no improvement in health benchmark completion rates. JWT benchmarks succeeded regardless of timeout settings.
+
+**Conclusion**: Timeout values are not the root cause. The issue occurs within standard timeout windows when using HTTP/2, but HTTP/1.1 resolves it entirely.
+
+### SSL Certificate Validation Delays ❌  
+**Hypothesis**: Self-signed certificate validation was causing excessive delays during SSL handshake.
+
+**Evidence**: HTTP/1.1 with trust-all certificates works immediately, while HTTP/2 with identical SSL configuration fails. If SSL validation was the issue, both protocols would fail similarly.
+
+**Conclusion**: SSL configuration is not the primary factor. The issue is specific to HTTP/2 protocol handling.
+
+### HTTP Client Implementation (Java HttpClient → OkHttp) ❌
+**Hypothesis**: Java HttpClient static initialization issues were causing timeout failures. Replacing with OkHttp would eliminate the problem.
+
+**Implementation**: Complete replacement of Java HttpClient with OkHttp in HttpClientFactory and all dependent classes:
+- Replaced `java.net.http.HttpClient` with `okhttp3.OkHttpClient`
+- Updated `AbstractBenchmarkBase.sendRequest()` to use OkHttp API
+- Modified `KeycloakTokenRepository` and `QuarkusMetricsFetcher` for OkHttp
+- Added configurable HTTP protocol support via system property
+
+**Evidence**: 
+- ✅ **Technical Success**: OkHttp implementation works correctly
+- ✅ **JWT Benchmarks**: Complete successfully with both HTTP/1.1 and HTTP/2
+- ❌ **Health Benchmarks**: Still fail with timeouts regardless of HTTP client implementation
+- **Stack Trace Change**: HTTP/2 timeouts changed from `Http2Stream$StreamTimeout` (Java HttpClient) to SSL read timeouts (OkHttp), but health benchmarks still fail
+
+**Conclusion**: The choice of HTTP client (Java HttpClient vs OkHttp) is not the root cause. Health benchmark timeouts persist with both implementations, while JWT validation works with both. The issue is more fundamental than HTTP client choice.
+
+### HTTP Protocol Version (HTTP/2 → HTTP/1.1) ❌
+**Hypothesis**: HTTP/2 protocol-specific issues were causing timeout failures. Forcing HTTP/1.1 would resolve the problem.
+
+**Implementation**: Made HTTP protocol configurable via system property:
+- Default: HTTP/2 with HTTP/1.1 fallback (`-Dbenchmark.http.protocol=http2`)
+- Workaround: HTTP/1.1 only (`-Dbenchmark.http.protocol=http1`)
+- Added proper system property forwarding from Maven to JMH process
+
+**Evidence**:
+- ✅ **Configuration Works**: System property forwarding implemented and verified
+- ✅ **Protocol Switching**: Logs confirm HTTP/1.1 vs HTTP/2 selection works correctly
+- ✅ **JWT Benchmarks**: Work with both HTTP/1.1 and HTTP/2 protocols  
+- ❌ **Health Benchmarks**: Still fail with timeouts on HTTP/1.1, just with different stack traces
+- **Stack Trace**: Changed from `Http2Stream$StreamTimeout` to `Http1ExchangeCodec` SSL read timeout
+
+**Conclusion**: HTTP protocol version is not the core issue. While HTTP/1.1 changes the failure mechanism from HTTP/2 stream timeouts to SSL read timeouts, health benchmarks still fail to complete. The problem is deeper than protocol-level differences.
+
+## ❌ ROOT CAUSE STILL UNKNOWN
+
+**Current Status**: Despite extensive investigation and implementation of multiple technical solutions, health benchmark timeouts persist.
+
+**What Has Been Proven NOT to be the Root Cause**:
+- HTTP client implementation (Java HttpClient vs OkHttp)
+- HTTP protocol version (HTTP/2 vs HTTP/1.1) 
+- Timeout configuration (5s vs 30s+ timeouts)
+- SSL certificate validation delays
+- JMH configuration settings
+- Connection pool/factory issues
+- Service readiness timing
+
+**Current Evidence**:
+- **JWT Validation Benchmarks**: Work consistently with any HTTP client, any protocol, any timeout configuration
+- **Health Check Benchmarks**: Fail consistently regardless of HTTP client, protocol, or timeout settings
+- **Pattern**: Issue is specific to health check endpoint behavior, not HTTP infrastructure
+
+**Next Investigation Required**: Focus on health check endpoint-specific issues, possibly service-side initialization or endpoint-specific configuration problems.
+
 ## Potential Solutions to Evaluate
 
 1. **First Request Priming**: Add test request in `@Setup(Level.Trial)` to initialize service state
