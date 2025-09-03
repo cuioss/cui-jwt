@@ -484,54 +484,28 @@ The working window is ~20 seconds, but keep-alive timeout is 30 seconds. This su
 **Evidence:**
 - `benchmarking/benchmark-integration-quarkus/src/test/resources/integration-benchmark-result.json` (working version)
 
-## Recommended Solutions Based on Research
+## Potential Solutions to Evaluate (Untested)
 
-### Priority 1: Connection Timeout Configuration
+### Priority 1: First Request Priming
 ```java
-// Increase connection timeout to account for SSL handshake overhead
-HttpClient client = HttpClient.newBuilder()
-    .connectTimeout(Duration.ofSeconds(30))  // Increased from default 10s
-    .build();
+// Add test request in @Setup(Level.Trial) to initialize service state
+@Setup(Level.Trial)
+public void performAdditionalSetup() {
+    // Make priming request to initialize all service state
+    sendHealthCheckRequest();
+}
 ```
 
-### Priority 2: Keep-Alive Timeout Adjustment
+### Priority 2: Enhanced Service Readiness
+```java
+// Wait for deeper readiness criteria beyond basic health endpoint
+// Check service internals, not just HTTP response status
+```
+
+### Priority 3: Service-Side Investigation
 ```bash
-# Set keep-alive timeout to match infrastructure
--Djdk.httpclient.keepalive.timeout=60
--Djdk.httpclient.keepalive.timeout.h2=60
-```
-
-### Priority 3: SSL Session Configuration
-```bash
-# Increase SSL session cache size and timeout
--Djavax.net.ssl.sessionCacheSize=40960
--Djavax.net.ssl.sessionTimeout=3600
-```
-
-### Priority 4: Trust Store Optimization for Self-Signed Certificates
-```java
-// Pre-load trust store with self-signed certificates
-KeyStore trustStore = KeyStore.getInstance("PKCS12");
-trustStore.load(new FileInputStream("localhost-truststore.p12"), password);
-TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-tmf.init(trustStore);
-SSLContext sslContext = SSLContext.getInstance("TLS");
-sslContext.init(null, tmf.getTrustManagers(), null);
-
-HttpClient client = HttpClient.newBuilder()
-    .sslContext(sslContext)
-    .connectTimeout(Duration.ofSeconds(30))
-    .build();
-```
-
-### Priority 5: Connection Pool Management
-```java
-// Implement connection warming to prevent idle timeout
-ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-scheduler.scheduleAtFixedRate(() -> {
-    // Keep connection alive with periodic health checks
-    sendHealthCheck();
-}, 0, 15, TimeUnit.SECONDS);  // Every 15 seconds (half of 30s timeout)
+# Analyze what happens on Quarkus service during first request handling
+# Focus on service initialization vs client initialization
 ```
 
 ## Dismissed Hypotheses
@@ -584,6 +558,54 @@ scheduler.scheduleAtFixedRate(() -> {
 
 **Conclusion**: HTTP protocol version is not the core issue. While HTTP/1.1 changes the failure mechanism from HTTP/2 stream timeouts to SSL read timeouts, health benchmarks still fail to complete. The problem is deeper than protocol-level differences.
 
+### Connection Timeout Configuration ❌
+**Hypothesis**: Increasing connection timeouts from 5s to 30s+ would resolve SSL handshake delays.
+
+**Implementation**: Tested with extended connection timeouts in OkHttp configuration (5s → 30s connect timeout).
+
+**Evidence**: 
+- JWT benchmarks work with both 5s and 30s timeouts
+- Health benchmarks fail with both 5s and 30s timeouts
+- If SSL handshake was taking >5s, JWT benchmarks would also fail initially
+
+**Conclusion**: Connection timeout values are not the limiting factor. The issue occurs within normal SSL handshake timeframes.
+
+### Keep-Alive Timeout Adjustment ❌
+**Hypothesis**: Default keep-alive timeouts (30s) were causing connection premature closure, leading to re-establishment delays.
+
+**Implementation**: Investigated JDK keep-alive settings (`jdk.httpclient.keepalive.timeout`, `jdk.httpclient.keepalive.timeout.h2`).
+
+**Evidence**:
+- Health benchmark failures occur on first request (no keep-alive involved)
+- JWT benchmarks succeed consistently (would fail if keep-alive was broken)
+- OkHttp implementation bypasses JDK keep-alive mechanisms entirely
+
+**Conclusion**: Keep-alive timeout configuration is not relevant to first request failures.
+
+### SSL Session Configuration ❌
+**Hypothesis**: SSL session cache size/timeout issues were causing repeated expensive handshakes.
+
+**Implementation**: Analysis of SSL session cache behavior (default 24-hour timeout, 20,480 entry cache).
+
+**Evidence**:
+- SSL sessions have 24-hour timeout (much longer than our 20-second working window)
+- First request after timeout succeeds immediately (proves SSL handshake works fine)
+- OkHttp uses trust-all certificates (bypasses most SSL validation)
+
+**Conclusion**: SSL session management is not the bottleneck. SSL handshake completes successfully when HTTP infrastructure allows it.
+
+### Trust Store Optimization ❌
+**Hypothesis**: Self-signed certificate trust store configuration was causing validation delays during PKIX path building.
+
+**Implementation**: OkHttp configured with trust-all certificates (bypasses trust store validation entirely).
+
+**Evidence**:
+- Trust-all configuration eliminates certificate validation overhead
+- Health benchmarks still fail even with no certificate validation
+- JWT benchmarks work perfectly with identical SSL configuration
+
+**Conclusion**: Certificate validation and trust store configuration are not the root cause. The issue persists even when certificate validation is completely bypassed.
+
 ## ❌ ROOT CAUSE STILL UNKNOWN
 
 **Current Status**: Despite extensive investigation and implementation of multiple technical solutions, health benchmark timeouts persist.
@@ -591,8 +613,11 @@ scheduler.scheduleAtFixedRate(() -> {
 **What Has Been Proven NOT to be the Root Cause**:
 - HTTP client implementation (Java HttpClient vs OkHttp)
 - HTTP protocol version (HTTP/2 vs HTTP/1.1) 
-- Timeout configuration (5s vs 30s+ timeouts)
-- SSL certificate validation delays
+- Connection timeout configuration (5s vs 30s+ timeouts)
+- Keep-alive timeout settings (JDK httpclient.keepalive.timeout)
+- SSL certificate validation delays (trust-all certificates tested)
+- SSL session cache configuration (24-hour timeout vs 20s working window)
+- Trust store optimization (bypassed entirely with trust-all)
 - JMH configuration settings
 - Connection pool/factory issues
 - Service readiness timing
@@ -603,11 +628,3 @@ scheduler.scheduleAtFixedRate(() -> {
 - **Pattern**: Issue is specific to health check endpoint behavior, not HTTP infrastructure
 
 **Next Investigation Required**: Focus on health check endpoint-specific issues, possibly service-side initialization or endpoint-specific configuration problems.
-
-## Potential Solutions to Evaluate
-
-1. **First Request Priming**: Add test request in `@Setup(Level.Trial)` to initialize service state
-2. **Enhanced Service Readiness**: Wait for deeper readiness criteria beyond basic health endpoint
-3. **Connection Pre-warming**: Pre-establish HTTP connections before benchmark execution  
-4. **Retry Strategy**: Implement exponential backoff for first requests
-5. **Service-Side Investigation**: Analyze what happens on Quarkus service during first request handling
