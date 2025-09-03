@@ -21,15 +21,11 @@ import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
+import okhttp3.*;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +57,7 @@ public class KeycloakTokenRepository implements TokenProvider {
     private final TokenRepositoryConfig config;
     private final List<TokenInfo> tokenPool;
     private final AtomicInteger tokenIndex;
-    private final HttpClient httpClient;
+    private final OkHttpClient httpClient;
 
     /**
      * Creates a new KeycloakTokenRepository with the given configuration.
@@ -73,14 +69,7 @@ public class KeycloakTokenRepository implements TokenProvider {
         this.tokenPool = new ArrayList<>(config.getTokenPoolSize());
         this.tokenIndex = new AtomicInteger(0);
 
-        // Get URL-specific HttpClient from factory based on SSL verification setting
-        // This ensures Keycloak connections are isolated from benchmark target connections
-        String keycloakUrl = config.getKeycloakBaseUrl();
-        this.httpClient = config.isVerifySsl() ?
-                HttpClientFactory.getSecureClientForUrl(keycloakUrl) :
-                HttpClientFactory.getInsecureClientForUrl(keycloakUrl);
-        LOGGER.debug("Using {} HttpClient for Keycloak URL: {}",
-                config.isVerifySsl() ? "secure" : "insecure", keycloakUrl);
+        this.httpClient = HttpClientFactory.getInsecureClient();
 
         // Initialize token pool
         initializeTokenPool();
@@ -137,24 +126,20 @@ public class KeycloakTokenRepository implements TokenProvider {
                     "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
                     "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(tokenEndpoint))
-                    .timeout(Duration.ofMillis(config.getRequestTimeoutMs()))
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(formData))
+            RequestBody requestBody = RequestBody.create(formData, MediaType.parse("application/x-www-form-urlencoded"));
+            Request request = new Request.Builder()
+                    .url(tokenEndpoint)
+                    .post(requestBody)
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == HTTP_OK) {
-                return extractAccessToken(response);
-            } else {
-                handleTokenFetchError(response);
-                throw new TokenFetchException("Unexpected error - handleTokenFetchError should have thrown");
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (response.code() == HTTP_OK) {
+                    return extractAccessToken(response);
+                } else {
+                    handleTokenFetchError(response);
+                    throw new TokenFetchException("Unexpected error - handleTokenFetchError should have thrown");
+                }
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new TokenFetchException("Token fetch was interrupted", e);
         } catch (IOException e) {
             throw new TokenFetchException("Error fetching token from Keycloak", e);
         }
@@ -168,8 +153,8 @@ public class KeycloakTokenRepository implements TokenProvider {
 
     }
 
-    @NonNull private String extractAccessToken(@NonNull HttpResponse<String> response) {
-        String responseBody = response.body();
+    @NonNull private String extractAccessToken(@NonNull Response response) throws IOException {
+        String responseBody = response.body() != null ? response.body().string() : null;
         if (responseBody == null || responseBody.isEmpty()) {
             throw new TokenFetchException("Empty response body from token endpoint");
         }
@@ -187,15 +172,15 @@ public class KeycloakTokenRepository implements TokenProvider {
         return token;
     }
 
-    private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
-        String errorBody = response.body() != null ? response.body() : "<no body>";
+    private void handleTokenFetchError(@NonNull Response response) throws IOException {
+        String errorBody = response.body() != null ? response.body().string() : "<no body>";
 
         LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
-                response.statusCode(), errorBody);
+                response.code(), errorBody);
 
         throw new TokenFetchException(
                 "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
-                        response.statusCode(), errorBody)
+                        response.code(), errorBody)
         );
     }
 

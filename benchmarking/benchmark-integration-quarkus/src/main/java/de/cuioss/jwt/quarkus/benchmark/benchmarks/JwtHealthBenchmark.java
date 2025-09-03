@@ -18,9 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.Setup;
 
 import java.io.IOException;
 import java.net.http.HttpRequest;
@@ -38,11 +36,10 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      * Override the base class setup to add endpoint-specific priming.
      * Primes the system with a real health check request after base setup.
      */
-    @Override
-    protected void performAdditionalSetup() {
+    @Override protected void performAdditionalSetup() {
         // Call parent's additional setup first
         super.performAdditionalSetup();
-        
+
         // Prime with health endpoint (non-blocking - continue even if priming fails)
         try {
             long startTime = System.currentTimeMillis();
@@ -51,7 +48,7 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
                     .build();
             HttpResponse<String> response = sendRequest(request);
             long elapsedTime = System.currentTimeMillis() - startTime;
-            
+
             validateResponse(response, 200);
             logger.info("Benchmark primed successfully with /q/health in {}ms", elapsedTime);
         } catch (Exception e) {

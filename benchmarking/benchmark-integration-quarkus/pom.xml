@@ -73,6 +73,13 @@
             <artifactId>cui-benchmarking-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <!-- HTTP Client for benchmarks -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
+        </dependency>
 
         <!-- JSON processing -->
         <dependency>

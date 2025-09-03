@@ -17,15 +17,13 @@ package de.cuioss.benchmarking.common.metrics;
 
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,14 +40,11 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
     private static final int REQUEST_TIMEOUT_MS = 10000;
 
     private final String quarkusUrl;
-    private final HttpClient httpClient;
+    private final OkHttpClient httpClient;
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
         this.quarkusUrl = quarkusUrl;
-        // Use URL-specific insecure client for self-signed certificates in test environment
-        // This ensures metrics connections are isolated from other connections
-        this.httpClient = HttpClientFactory.getInsecureClientForUrl(quarkusUrl);
-        LOGGER.debug("Using URL-specific insecure HttpClient for metrics URL: {}", quarkusUrl);
+        this.httpClient = HttpClientFactory.getInsecureClient();
     }
 
     @Override public Map<String, Double> fetchMetrics() {
@@ -58,27 +53,23 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         try {
             String metricsUrl = quarkusUrl + "/q/metrics";
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(metricsUrl))
-                    .timeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
-                    .GET()
+            Request request = new Request.Builder()
+                    .url(metricsUrl)
+                    .get()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (response.code() == HTTP_OK && response.body() != null) {
+                    String responseBody = response.body().string();
 
-            if (response.statusCode() == HTTP_OK) {
-                String responseBody = response.body();
+                    // Save raw metrics for development
+                    saveRawMetricsData(responseBody);
 
-                // Save raw metrics for development
-                saveRawMetricsData(responseBody);
-
-                parseQuarkusMetrics(responseBody, results);
-            } else {
-                LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.statusCode());
+                    parseQuarkusMetrics(responseBody, results);
+                } else {
+                    LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.code());
+                }
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.warn("Metrics query was interrupted", e);
         } catch (IOException e) {
             LOGGER.warn("Error querying Quarkus metrics", e);
         }

@@ -17,13 +17,18 @@ package de.cuioss.benchmarking.common.base;
 
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
+import okhttp3.*;
 
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Optional;
 
 /**
  * Abstract base class for all benchmarks in the CUI JWT project.
@@ -53,7 +58,7 @@ public abstract class AbstractBenchmarkBase {
 
     protected String serviceUrl;
     protected String benchmarkResultsDir;
-    protected HttpClient httpClient;
+    protected OkHttpClient httpClient;
 
     /**
      * Constructor for AbstractBenchmarkBase.
@@ -93,15 +98,8 @@ public abstract class AbstractBenchmarkBase {
      * Subclasses can override this to customize HTTP client initialization.
      */
     protected void initializeHttpClient() {
-        if (serviceUrl != null && !serviceUrl.isEmpty()) {
-            // Use URL-based caching for better isolation
-            httpClient = HttpClientFactory.getInsecureClientForUrl(serviceUrl);
-            logger.debug("Using URL-specific HttpClient for: {}", serviceUrl);
-        } else {
-            // Fallback to shared client if no serviceUrl is set
-            httpClient = HttpClientFactory.getInsecureClient();
-            logger.debug("Using shared HttpClient (no serviceUrl specified)");
-        }
+        httpClient = HttpClientFactory.getInsecureClient();
+        logger.debug("Using shared OkHttpClient");
     }
 
     /**
@@ -169,7 +167,34 @@ public abstract class AbstractBenchmarkBase {
         if (httpClient == null) {
             throw new IllegalStateException("HTTP client not initialized. Ensure setupBase() was called.");
         }
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Build OkHttp request
+        Request.Builder builder = new Request.Builder()
+                .url(request.uri().toString());
+
+        // Copy headers
+        request.headers().map().forEach((name, values) ->
+                values.forEach(value -> builder.addHeader(name, value))
+        );
+
+        // Handle body
+        RequestBody body = null;
+        if (request.bodyPublisher().isPresent()) {
+            // For benchmarks we only use JSON bodies
+            body = RequestBody.create("", MediaType.parse("application/json"));
+        }
+
+        String method = request.method();
+        builder.method(method, body);
+
+        // Execute request
+        try (Response response = httpClient.newCall(builder.build()).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+            int statusCode = response.code();
+
+            // Create HttpResponse wrapper
+            return new HttpResponseWrapper(request, statusCode, responseBody);
+        }
     }
 
     /**
@@ -191,4 +216,49 @@ public abstract class AbstractBenchmarkBase {
      * Subclasses should override this method to implement specific metrics export logic.
      */
     public abstract void exportBenchmarkMetrics();
+
+    // Add inner class for HttpResponse wrapper (at end of class)
+    private static class HttpResponseWrapper implements HttpResponse<String> {
+        private final HttpRequest request;
+        private final int statusCode;
+        private final String body;
+
+        HttpResponseWrapper(HttpRequest request, int statusCode, String body) {
+            this.request = request;
+            this.statusCode = statusCode;
+            this.body = body;
+        }
+
+        @Override public int statusCode() {
+            return statusCode;
+        }
+
+        @Override public HttpRequest request() {
+            return request;
+        }
+
+        @Override public Optional<HttpResponse<String>> previousResponse() {
+            return Optional.empty();
+        }
+
+        @Override public HttpHeaders headers() {
+            return HttpHeaders.of(new HashMap<>(), (a, b) -> true);
+        }
+
+        @Override public String body() {
+            return body;
+        }
+
+        @Override public Optional<SSLSession> sslSession() {
+            return Optional.empty();
+        }
+
+        @Override public URI uri() {
+            return request.uri();
+        }
+
+        @Override public HttpClient.Version version() {
+            return HttpClient.Version.HTTP_2;
+        }
+    }
 }

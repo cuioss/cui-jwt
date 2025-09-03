@@ -58,6 +58,13 @@
             <artifactId>commons-io</artifactId>
         </dependency>
         
+        <!-- HTTP Client for benchmarks -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
+        </dependency>
+        
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
