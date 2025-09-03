@@ -18,6 +18,19 @@
 - **Key insight**: The priming requests themselves experience the exact same first HTTP request initialization failure
 - **Validation**: This definitively proves the issue is client-side first HTTP request initialization, not benchmark measurement phase timing
 
+**Non-Blocking Priming Results - CRITICAL PATTERN** (2025-09-03):
+- **Test configuration**: Modified priming to be non-blocking (log error but continue execution)
+- **Health Benchmark Results**:
+  - Priming during setup: **FAILED** (HttpTimeoutException)
+  - Iteration 1: **SUCCESS** - 2.283 ops/ms (first request after priming failure works!)
+  - Iteration 2: **SUCCESS** - 2.602 ops/ms (still working)
+  - Iteration 3: **COMPLETE FAILURE** - HttpTimeoutException (system fails again after ~20 seconds)
+- **JWT Validation Benchmark Results** (runs after health benchmark):
+  - Priming during setup: **FAILED** (HttpTimeoutException)
+  - Iteration 1-5: **ALL SUCCESS** - 1.447 to 0.464 ops/ms (benefits from health benchmark initialization)
+- **Critical Pattern**: System initializes after first timeout, works for ~20 seconds, then **completely fails again**
+- **This is not degradation - this is intermittent complete failure!**
+
 ## Problem Pattern
 
 1. **First HTTP request per thread**: Times out after 10 seconds
@@ -75,19 +88,22 @@
 
 ## Root Cause Analysis
 
-### Global Initialization Failure
+### Global Initialization Failure with Intermittent Pattern
 
-**Primary Cause: First HTTP Request Initialization Bottleneck (95% Confidence)**
-- **Pattern**: All first requests fail (100%), all subsequent requests succeed (100%)
-- **Not Contention**: If contention, we'd see mixed success/failure - some threads would win, some would lose
-- **Actual Behavior**: Perfect failure pattern indicates global initialization issue
-- **Evidence**: Something must be initialized on the very first HTTP request system-wide
+**Primary Cause: First HTTP Request Initialization with Intermittent Complete Failure (95% Confidence)**
+- **Initial Pattern**: All first requests fail (100%) with 10-second timeout
+- **After Initial Failure**: System self-initializes and works for ~20 seconds
+- **Intermittent Failure**: After ~20 seconds, system completely fails again with timeouts
+- **Not Contention**: Consistent failure/success pattern rules out resource contention
+- **Evidence**: Non-blocking priming shows clear working window followed by complete failure
 
-**Initialization Failure Characteristics:**
-- **Timeout Duration**: Exactly 10 seconds (request timeout) - initialization takes longer than timeout
-- **Global State**: Once first requests fail, the system is "warmed up" for subsequent requests  
-- **Thread-Independent**: 1 thread or 24 threads - all first requests fail, all subsequent succeed
-- **Service-Independent**: Affects both health and JWT endpoints - it's client-side initialization
+**Failure Characteristics:**
+- **Timeout Duration**: Exactly 10 seconds (request timeout)
+- **Working Window**: ~20 seconds after initial timeout where requests succeed
+- **Complete Failure**: After working window, system fails completely again
+- **Thread-Independent**: 1 thread or 24 threads - same pattern occurs
+- **Service-Independent**: Affects both health and JWT endpoints - it's client-side issue
+- **Intermittent Nature**: System oscillates between working and complete failure states
 
 **Most Likely Initialization Bottlenecks:**
 
@@ -136,7 +152,28 @@
 - **Results**: **BOTH priming requests timeout with `java.net.http.HttpTimeoutException`**
 - **Critical Finding**: The priming requests themselves experience the exact same first HTTP request initialization failure
 - **Evidence Significance**: This definitively proves the issue is client-side first HTTP request initialization bottleneck, not JMH measurement phase timing
-- **Next Steps**: Focus investigation on client-side HTTP initialization (SSL, DNS, HttpClient internal state)
+- **Additional Finding**: Non-blocking priming reveals intermittent failure pattern - system works for ~20 seconds after initial timeout, then completely fails again
+- **Next Steps**: Focus investigation on what causes the intermittent complete failure after successful initialization
+
+#### Task 1.3: Intermittent Failure Pattern Investigation
+- **Objective**: Understand why system works for ~20 seconds then completely fails again
+- **Rationale**: Non-blocking priming revealed system oscillates between working and complete failure states
+- **Critical Evidence**:
+  - Health benchmark: Works for iterations 1-2 (~20 seconds), completely fails on iteration 3
+  - JWT benchmark: Works for all 5 iterations (benefits from health benchmark initialization)
+  - Pattern suggests some state expires or gets invalidated after ~20 seconds
+- **Hypotheses to Test**:
+  - SSL session cache expiry or invalidation
+  - HttpClient connection pool state corruption
+  - Certificate validation cache timeout
+  - DNS cache entry expiration
+  - System resource exhaustion (file descriptors, threads)
+- **Method**:
+  - Add detailed timing logs between iterations
+  - Monitor SSL session state and connection pool metrics
+  - Test with extended iteration delays to identify time-based triggers
+  - Check for resource leaks or exhaustion patterns
+- **Success Criteria**: Identify the specific cause of the ~20-second working window
 
 ### Priority 2: SSL/Trust Store Initialization Analysis
 

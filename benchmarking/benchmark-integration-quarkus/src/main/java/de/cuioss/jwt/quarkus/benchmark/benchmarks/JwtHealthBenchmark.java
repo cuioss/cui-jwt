@@ -43,7 +43,7 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
         // Call parent's additional setup first
         super.performAdditionalSetup();
         
-        // Prime with health endpoint
+        // Prime with health endpoint (non-blocking - continue even if priming fails)
         try {
             long startTime = System.currentTimeMillis();
             HttpRequest request = createRequestForPath("/q/health")
@@ -55,8 +55,8 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
             validateResponse(response, 200);
             logger.info("Benchmark primed successfully with /q/health in {}ms", elapsedTime);
         } catch (Exception e) {
-            logger.error("Benchmark priming FAILED for /q/health: {}", e.getMessage());
-            throw new RuntimeException("Health endpoint priming failed", e);
+            logger.error("Benchmark priming FAILED for /q/health: {} - continuing with benchmark execution", e.getMessage());
+            // DO NOT throw exception - allow benchmark to continue and demonstrate the pattern
         }
     }
 

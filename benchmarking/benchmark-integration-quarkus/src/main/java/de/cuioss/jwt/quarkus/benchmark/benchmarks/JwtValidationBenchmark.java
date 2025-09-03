@@ -42,7 +42,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      */
     @Override
     protected void performIntegrationSpecificSetup() {
-        // Prime with JWT validation endpoint
+        // Prime with JWT validation endpoint (non-blocking - continue even if priming fails)
         try {
             long startTime = System.currentTimeMillis();
             HttpRequest request = createAuthenticatedRequest(PATH)
@@ -54,8 +54,8 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
             validateResponse(response, 200);
             logger.info("Benchmark primed successfully with {} in {}ms", PATH, elapsedTime);
         } catch (Exception e) {
-            logger.error("Benchmark priming FAILED for {}: {}", PATH, e.getMessage());
-            throw new RuntimeException("JWT validation endpoint priming failed", e);
+            logger.error("Benchmark priming FAILED for {}: {} - continuing with benchmark execution", PATH, e.getMessage());
+            // DO NOT throw exception - allow benchmark to continue and demonstrate the pattern
         }
     }
 

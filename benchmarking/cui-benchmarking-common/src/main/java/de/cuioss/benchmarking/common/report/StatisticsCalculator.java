@@ -206,26 +206,6 @@ public final class StatisticsCalculator {
         return percentageChange > 0 ? BenchmarkConstants.Report.Badge.TrendDirection.UP : BenchmarkConstants.Report.Badge.TrendDirection.DOWN;
     }
 
-    /**
-     * Calculates the coefficient of variation (relative standard deviation).
-     * <p>
-     * This is useful for comparing the relative variability of datasets with different means.
-     *
-     * @param values collection of numeric values
-     * @return the coefficient of variation as a percentage, or 0.0 if mean is 0
-     * @throws NullPointerException if values is null
-     */
-    public static double calculateCoefficientOfVariation(Collection<Double> values) {
-        Objects.requireNonNull(values, COLLECTION_CANNOT_BE_NULL);
-
-        double mean = calculateMean(values);
-        if (mean == 0) {
-            return 0.0;
-        }
-
-        double stdDev = calculateStandardDeviation(values);
-        return (stdDev / mean) * 100;
-    }
 
     /**
      * Statistical summary containing basic statistics for a dataset.

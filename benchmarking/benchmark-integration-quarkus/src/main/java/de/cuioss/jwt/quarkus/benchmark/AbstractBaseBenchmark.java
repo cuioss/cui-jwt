@@ -46,8 +46,10 @@ import java.util.concurrent.TimeUnit;
      * Calls the base setup and initializes Quarkus-specific components.
      */
     @Setup(Level.Trial) public void setupBenchmark() {
+        logger.debug("Starting setupBenchmark for {}", this.getClass().getSimpleName());
         // Call base setup
         setupBase();
+        logger.debug("Base setup completed for {}", this.getClass().getSimpleName());
     }
 
     /**
