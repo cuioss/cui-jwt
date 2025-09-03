@@ -18,7 +18,9 @@ package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 import de.cuioss.jwt.quarkus.benchmark.AbstractIntegrationBenchmark;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.Setup;
 
 import java.io.IOException;
 import java.net.http.HttpRequest;
@@ -33,6 +35,29 @@ import java.net.http.HttpResponse;
 public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
 
     public static final String PATH = "/jwt/validate";
+
+    /**
+     * Override integration-specific setup to add JWT endpoint priming after token repository is initialized.
+     * Called by AbstractIntegrationBenchmark after token repository initialization.
+     */
+    @Override
+    protected void performIntegrationSpecificSetup() {
+        // Prime with JWT validation endpoint
+        try {
+            long startTime = System.currentTimeMillis();
+            HttpRequest request = createAuthenticatedRequest(PATH)
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+            HttpResponse<String> response = sendRequest(request);
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            
+            validateResponse(response, 200);
+            logger.info("Benchmark primed successfully with {} in {}ms", PATH, elapsedTime);
+        } catch (Exception e) {
+            logger.error("Benchmark priming FAILED for {}: {}", PATH, e.getMessage());
+            throw new RuntimeException("JWT validation endpoint priming failed", e);
+        }
+    }
 
     /**
      * Benchmark for successful JWT validation with valid tokens.

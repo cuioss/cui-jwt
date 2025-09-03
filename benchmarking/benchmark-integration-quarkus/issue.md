@@ -12,6 +12,12 @@
 
 **Root Cause**: Something broke during refactoring that affects first HTTP request initialization. There's a gap between service "ready" signal and actual first request handling capability - occurs even with single thread.
 
+**Critical Priming Evidence** (2025-09-03):
+- **Manual priming implementation**: Added `performAdditionalSetup()` methods to both benchmarks to make real HTTPS requests during setup
+- **Priming timeout results**: Both health endpoint priming AND JWT validation endpoint priming timeout with `java.net.http.HttpTimeoutException`
+- **Key insight**: The priming requests themselves experience the exact same first HTTP request initialization failure
+- **Validation**: This definitively proves the issue is client-side first HTTP request initialization, not benchmark measurement phase timing
+
 ## Problem Pattern
 
 1. **First HTTP request per thread**: Times out after 10 seconds
@@ -121,11 +127,16 @@
 #### Task 1.2: Manual Pre-Setup Priming Implementation
 - **Objective**: Implement manual initialization in `@Setup(Level.Trial)` before JMH warmup starts
 - **Rationale**: Since JMH's warmup mechanism fails, implement priming at JMH framework level
-- **Method**:
-  - Add setup phase in `@Setup(Level.Trial)` that makes dummy HTTPS request
-  - Ensure initialization happens before JMH's warmup/measurement phases
-  - Test with both single-thread and 24-thread configurations
-- **Success Criteria**: Zero first request timeouts after manual pre-setup priming
+- **Status**: **COMPLETED - CRITICAL EVIDENCE OBTAINED**
+- **Implementation**:
+  - Added `performAdditionalSetup()` override methods to both benchmark classes
+  - Health benchmark: Makes real `/q/health` request during setup
+  - JWT benchmark: Makes real `/jwt/validate` request during setup (after token repository initialization)
+  - Added proper INFO/ERROR logging for priming success/failure
+- **Results**: **BOTH priming requests timeout with `java.net.http.HttpTimeoutException`**
+- **Critical Finding**: The priming requests themselves experience the exact same first HTTP request initialization failure
+- **Evidence Significance**: This definitively proves the issue is client-side first HTTP request initialization bottleneck, not JMH measurement phase timing
+- **Next Steps**: Focus investigation on client-side HTTP initialization (SSL, DNS, HttpClient internal state)
 
 ### Priority 2: SSL/Trust Store Initialization Analysis
 
