@@ -299,6 +299,73 @@
 - **Test**: Health endpoint includes JWT subsystem status
 - **Conclusion**: JWT subsystem is fully initialized before first HTTP request
 
+## Web Research Findings (2025-09-03)
+
+### Critical JDK Bug Reports Identified
+
+#### JDK-8312433: Connection Pool "No Active Streams" Failures
+- **Issue**: HttpClient requests fail with "HttpConnectTimeoutException: HTTP connection idle, no active streams"
+- **Affected Versions**: Java 20+ (regression from Java 19)
+- **Pattern**: Connections incorrectly considered idle and closed, leading to request failures
+- **Relevance**: Matches our exact error pattern with intermittent timeouts
+
+#### JDK-8297030: Default Keep-Alive Timeout Reduced
+- **Change**: Default keep-alive timeout reduced from 1200 seconds to 30 seconds
+- **Rationale**: Better alignment with cloud load balancer configurations (typically 60-350 seconds)
+- **Impact**: More aggressive connection cycling, increased SSL handshake overhead
+- **Configuration**: Can override with `-Djdk.httpclient.keepalive.timeout=X`
+
+#### JDK-8288717: HTTP/2 Idle Connection Management
+- **Issue**: HTTP/2 connections lacked idle timeout management
+- **Fix**: Added configurable idle timeout for HTTP/2 (`jdk.httpclient.keepalive.timeout.h2`)
+- **Default**: 30 seconds (was previously unlimited)
+- **Impact**: HTTP/2 connections now closed after 30 seconds of inactivity
+
+### SSL Session Cache and Self-Signed Certificate Issues
+
+#### SSL Session Cache Changes
+- **JDK 8u261+**: Default cache size changed from unlimited to 20,480 entries
+- **Session Timeout**: Default 24 hours (86400 seconds)
+- **Memory Impact**: Prevents GC pauses from millions of expired sessions
+- **Configuration**: `javax.net.ssl.sessionCacheSize` system property
+
+#### Self-Signed Certificate Validation Overhead
+- **PKIX Path Building**: Can timeout during certificate validation
+- **Default SSL Handshake Timeout**: ~10 seconds
+- **Localhost Issues**: Hostname verification failures with self-signed certs
+- **Docker Impact**: Additional network layer adds validation complexity
+
+### Connection Pool Behavior Analysis
+
+#### The 20-Second Pattern Explanation
+Based on research, our ~20-second working window likely results from:
+
+1. **Initial Timeout (10 seconds)**: SSL handshake/certificate validation timeout
+2. **Connection Establishment**: System eventually establishes connection after timeout
+3. **Working Window (~20 seconds)**: Connection remains in pool and is reused
+4. **Pool Eviction**: Connection closed due to idle timeout or validation failure
+5. **Cycle Repeats**: Next request triggers new handshake, timeout occurs again
+
+#### Known Connection Pool Issues
+- **Stale Connection Detection**: HttpClient may not detect server-closed connections
+- **Race Conditions**: TLS 1.3 session resumption race conditions
+- **Validation Failures**: Connections appear valid but fail when used
+- **Pool Exhaustion**: All connections busy, new requests timeout waiting
+
+### Infrastructure Interaction Issues
+
+#### Load Balancer Conflicts
+- **AWS ALB**: 60-second default idle timeout
+- **Azure LB**: 4-15 minute timeouts
+- **Mismatch**: Client timeout (30s) vs infrastructure timeouts creates failure windows
+- **Silent Drops**: Connections closed server-side without client notification
+
+#### Docker/Container Networking
+- **Additional Latency**: Container networking adds SSL handshake overhead
+- **DNS Resolution**: Container DNS can add significant delays
+- **Certificate Access**: Trust stores must be properly mounted in containers
+- **Network Isolation**: May prevent proper connection validation
+
 ## Investigation History
 
 ### Completed Investigations
@@ -357,6 +424,56 @@
 
 **Evidence:**
 - `benchmarking/benchmark-integration-quarkus/src/test/resources/integration-benchmark-result.json` (working version)
+
+## Recommended Solutions Based on Research
+
+### Priority 1: Connection Timeout Configuration
+```java
+// Increase connection timeout to account for SSL handshake overhead
+HttpClient client = HttpClient.newBuilder()
+    .connectTimeout(Duration.ofSeconds(30))  // Increased from default 10s
+    .build();
+```
+
+### Priority 2: Keep-Alive Timeout Adjustment
+```bash
+# Set keep-alive timeout to match infrastructure
+-Djdk.httpclient.keepalive.timeout=60
+-Djdk.httpclient.keepalive.timeout.h2=60
+```
+
+### Priority 3: SSL Session Configuration
+```bash
+# Increase SSL session cache size and timeout
+-Djavax.net.ssl.sessionCacheSize=40960
+-Djavax.net.ssl.sessionTimeout=3600
+```
+
+### Priority 4: Trust Store Optimization for Self-Signed Certificates
+```java
+// Pre-load trust store with self-signed certificates
+KeyStore trustStore = KeyStore.getInstance("PKCS12");
+trustStore.load(new FileInputStream("localhost-truststore.p12"), password);
+TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+tmf.init(trustStore);
+SSLContext sslContext = SSLContext.getInstance("TLS");
+sslContext.init(null, tmf.getTrustManagers(), null);
+
+HttpClient client = HttpClient.newBuilder()
+    .sslContext(sslContext)
+    .connectTimeout(Duration.ofSeconds(30))
+    .build();
+```
+
+### Priority 5: Connection Pool Management
+```java
+// Implement connection warming to prevent idle timeout
+ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+scheduler.scheduleAtFixedRate(() -> {
+    // Keep connection alive with periodic health checks
+    sendHealthCheck();
+}, 0, 15, TimeUnit.SECONDS);  // Every 15 seconds (half of 30s timeout)
+```
 
 ## Potential Solutions to Evaluate
 
