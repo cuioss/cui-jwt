@@ -189,6 +189,69 @@ cui.jwt.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
 * **Standards Compliance**: Maintains compatibility with standard JWT claim names
 * **Flexible Deployment**: Mix Keycloak and non-Keycloak issuers with appropriate configurations
 
+== HTTP Access Log Filter Configuration
+
+The extension provides a custom HTTP access log filter that offers more granular control than Quarkus built-in access logging. The filter is controlled by DEBUG log level and allows filtering by HTTP status codes and URL patterns.
+
+[cols="2,1,5"]
+|===
+|Property |Type |Description
+
+|`cui.http.access-log.filter.min-status-code`
+|int (default: 400)
+|Minimum HTTP status code to log. Only responses with status codes >= this value will be logged. Common values: 200 (log all responses), 400 (log only client and server errors), 500 (log only server errors).
+
+|`cui.http.access-log.filter.max-status-code`
+|int (default: 599)
+|Maximum HTTP status code to log. Only responses with status codes <= this value will be logged. Set to 599 to include all error codes.
+
+|`cui.http.access-log.filter.include-status-codes`
+|String (comma-separated)
+|Specific HTTP status codes to always log, regardless of min/max range. Useful for logging specific success codes (like 201, 202) along with errors. Example: "201,202,204".
+
+|`cui.http.access-log.filter.include-paths`
+|String (comma-separated)
+|URL path patterns to include in logging. If specified, only requests matching these patterns will be considered for logging. Uses simple glob patterns (* and **). Empty means all paths are eligible. Example: "/api/**,/health/**".
+
+|`cui.http.access-log.filter.exclude-paths`
+|String (comma-separated)
+|URL path patterns to exclude from logging. These patterns override include patterns. Uses simple glob patterns (* and **). Common exclusions: "/jwt/validate". Example: "/metrics/**".
+
+|`cui.http.access-log.filter.pattern`
+|String (default: "{remoteAddr} {method} {path} -> {status} ({duration}ms)")
+|Log format pattern. Supports placeholders: {method} (HTTP method), {path} (request path), {status} (HTTP status code), {duration} (request duration in milliseconds), {remoteAddr} (remote IP address), {userAgent} (User-Agent header).
+
+|`cui.http.access-log.filter.logger-name`
+|String (default: CustomAccessLogFilter class name)
+|Logger name for access log entries. Allows configuring separate log level and appenders for access logs.
+|===
+
+=== Enabling Access Log Filter
+
+The access log filter is controlled by the DEBUG log level. To enable it, configure the logger level:
+
+[source,properties]
+----
+# Enable access log filter (DEBUG level required)
+quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+
+# Example: Log only errors (4xx and 5xx status codes) - this is the default
+cui.http.access-log.filter.min-status-code=400
+cui.http.access-log.filter.max-status-code=599
+
+# Example: Log only server errors (5xx status codes)
+cui.http.access-log.filter.min-status-code=500
+cui.http.access-log.filter.max-status-code=599
+
+# Example: Log errors plus specific success codes
+cui.http.access-log.filter.min-status-code=400
+cui.http.access-log.filter.include-status-codes=201,202,204
+
+# Example: Log only API endpoints, exclude metrics
+cui.http.access-log.filter.include-paths=/api/**
+cui.http.access-log.filter.exclude-paths=/metrics/**
+----
+
 == Health Check Configuration
 
 The extension provides MicroProfile Health checks for JWT validation components. These health checks are automatically enabled when the `quarkus-smallrye-health` extension is present.

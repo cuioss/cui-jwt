@@ -263,6 +263,21 @@
                             </execution>
                             <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
                             <!-- No separate CLI execution needed anymore -->
+                            <!-- Dump Quarkus logs before stopping containers -->
+                            <execution>
+                                <id>dump-quarkus-logs</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/dump-quarkus-logs.sh</executable>
+                                    <arguments>
+                                        <argument>target</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-integration-containers</id>
@@ -441,6 +456,21 @@
                             <!-- Generate HTTP metrics from benchmark results (JFR profile) -->
                             <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
                             <!-- No separate CLI execution needed anymore -->
+                            <!-- Dump Quarkus logs before stopping containers -->
+                            <execution>
+                                <id>dump-quarkus-logs-jfr</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/dump-quarkus-logs.sh</executable>
+                                    <arguments>
+                                        <argument>target</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-jfr-containers</id>

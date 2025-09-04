@@ -15,7 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
+import de.cuioss.jwt.quarkus.config.AccessLogFilterConfigProducer;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
 import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
@@ -56,6 +58,7 @@ import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
 import io.quarkus.devui.spi.JsonRPCProvidersBuildItem;
+import io.quarkus.resteasy.common.spi.ResteasyJaxrsProviderBuildItem;
 import io.quarkus.devui.spi.page.CardPageBuildItem;
 import io.quarkus.devui.spi.page.Page;
 import lombok.NonNull;
@@ -261,8 +264,23 @@ public class CuiJwtProcessor {
                         VertxServletObjectsResolver.class,
                         JwtMetricsCollector.class
                 )
+                // Register additional configuration producers using class references
+                .addBeanClass(AccessLogFilterConfigProducer.class)
+                .addBeanClass(CustomAccessLogFilter.class)
                 .setUnremovable()
                 .build();
+    }
+
+    /**
+     * Register the CustomAccessLogFilter as a JAX-RS provider.
+     * This is required for Quarkus extensions to properly register JAX-RS providers.
+     *
+     * @return A {@link ResteasyJaxrsProviderBuildItem} for the CustomAccessLogFilter
+     */
+    @BuildStep
+    @NonNull
+    public ResteasyJaxrsProviderBuildItem registerCustomAccessLogFilter() {
+        return new ResteasyJaxrsProviderBuildItem(CustomAccessLogFilter.class.getName());
     }
 
     /**

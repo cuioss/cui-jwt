@@ -90,6 +90,12 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(12)
                 .build();
 
+        public static final LogRecord RESOLVING_ACCESS_LOG_FILTER_CONFIG = LogRecordModel.builder()
+                .template("Resolving access log filter configuration from properties")
+                .prefix(PREFIX)
+                .identifier(13)
+                .build();
+
         // Metrics Messages (021-030)
         
         public static final LogRecord INITIALIZING_JWT_METRICS_COLLECTOR = LogRecordModel.builder()

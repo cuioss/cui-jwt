@@ -465,6 +465,124 @@ public final class JwtPropertyKeys {
     }
 
     /**
+     * Properties related to HTTP access log filtering configuration.
+     * <p>
+     * These properties control the custom access log filter that provides
+     * more granular logging control than Quarkus built-in access logging.
+     * The filter is controlled by DEBUG log level and can filter by status codes and paths.
+     * </p>
+     * <p>
+     * All properties are prefixed with "cui.http.access-log.filter".
+     * Control via log level: quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+     * </p>
+     */
+    @UtilityClass
+    public static final class ACCESS_LOG {
+        /**
+         * Base path for access log filter configurations.
+         */
+        public static final String BASE = "cui.http.access-log.filter";
+
+        /**
+         * Minimum HTTP status code to log.
+         * Template: "cui.http.access-log.filter.min-status-code"
+         * <p>
+         * Only responses with status codes >= this value will be logged.
+         * Common values:
+         * - 200: Log all responses (equivalent to standard access log)
+         * - 400: Log only client and server errors (default)
+         * - 500: Log only server errors
+         * </p>
+         * <p>
+         * Default value is {@code 400}.
+         * </p>
+         */
+        public static final String MIN_STATUS_CODE = BASE + ".min-status-code";
+
+        /**
+         * Maximum HTTP status code to log.
+         * Template: "cui.http.access-log.filter.max-status-code"
+         * <p>
+         * Only responses with status codes <= this value will be logged.
+         * Set to 599 to include all error codes.
+         * </p>
+         * <p>
+         * Default value is {@code 599}.
+         * </p>
+         */
+        public static final String MAX_STATUS_CODE = BASE + ".max-status-code";
+
+        /**
+         * Specific HTTP status codes to always log (comma-separated).
+         * Template: "cui.http.access-log.filter.include-status-codes"
+         * <p>
+         * These status codes will be logged regardless of min/max range.
+         * Useful for logging specific success codes (like 201, 202) along with errors.
+         * </p>
+         * <p>
+         * Example: "201,202,204" to log created and accepted responses.
+         * </p>
+         */
+        public static final String INCLUDE_STATUS_CODES = BASE + ".include-status-codes";
+
+        /**
+         * URL path patterns to include in logging (comma-separated).
+         * Template: "cui.http.access-log.filter.include-paths"
+         * <p>
+         * If specified, only requests matching these patterns will be considered for logging.
+         * Uses simple glob patterns (* and **).
+         * Empty list means all paths are eligible.
+         * </p>
+         * <p>
+         * Example: "/api/**,/health/**" to log only API and health endpoints.
+         * </p>
+         */
+        public static final String INCLUDE_PATHS = BASE + ".include-paths";
+
+        /**
+         * URL path patterns to exclude from logging (comma-separated).
+         * Template: "cui.http.access-log.filter.exclude-paths"
+         * <p>
+         * These patterns override include patterns.
+         * Uses simple glob patterns (* and **).
+         * Common exclusions: /health/*, /metrics/*, /jwt/validate
+         * </p>
+         * <p>
+         * Example: "/health/**,/metrics/**" to exclude health and metrics endpoints.
+         * </p>
+         */
+        public static final String EXCLUDE_PATHS = BASE + ".exclude-paths";
+
+        /**
+         * Log format pattern.
+         * Template: "cui.http.access-log.filter.pattern"
+         * <p>
+         * Supports placeholders:
+         * - {method}: HTTP method (GET, POST, etc.)
+         * - {path}: Request path
+         * - {status}: HTTP status code
+         * - {duration}: Request duration in milliseconds
+         * - {remoteAddr}: Remote IP address
+         * - {userAgent}: User-Agent header
+         * </p>
+         * <p>
+         * Default pattern: "{remoteAddr} {method} {path} -> {status} ({duration}ms)"
+         * </p>
+         */
+        public static final String PATTERN = BASE + ".pattern";
+
+        /**
+         * Logger name for access log entries.
+         * Template: "cui.http.access-log.filter.logger-name"
+         * <p>
+         * Allows configuring separate log level and appenders for access logs.
+         * By default, uses the CustomAccessLogFilter class name.
+         * </p>
+         */
+        public static final String LOGGER_NAME = BASE + ".logger-name";
+    }
+
+    /**
      * Properties related to access token caching configuration.
      */
     @UtilityClass

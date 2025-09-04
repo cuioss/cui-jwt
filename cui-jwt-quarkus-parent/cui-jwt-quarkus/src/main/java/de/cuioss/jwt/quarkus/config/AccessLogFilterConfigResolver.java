@@ -1,0 +1,98 @@
+/*
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.jwt.quarkus.config;
+
+import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
+import de.cuioss.tools.logging.CuiLogger;
+
+import lombok.RequiredArgsConstructor;
+import org.eclipse.microprofile.config.Config;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+
+/**
+ * Resolver for creating {@link AccessLogFilterConfig} instances from Quarkus configuration.
+ * <p>
+ * This resolver handles the creation of access log filter configuration from properties,
+ * providing sensible defaults for all optional values.
+ * </p>
+ * <p>
+ * Configuration properties are defined in {@link JwtPropertyKeys.ACCESS_LOG}.
+ * </p>
+ * <p>
+ * Control via log level: quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+ * - DEBUG: Enable access logging
+ * - INFO or higher: Disable access logging (default)
+ * </p>
+ */
+@RequiredArgsConstructor
+public class AccessLogFilterConfigResolver {
+
+    private static final CuiLogger LOGGER = new CuiLogger(AccessLogFilterConfigResolver.class);
+
+
+    private final Config config;
+
+    /**
+     * Resolves the access log filter configuration from the Quarkus configuration.
+     * <p>
+     * Uses default values if properties are not configured.
+     * </p>
+     *
+     * @return The resolved AccessLogFilterConfig
+     */
+    public AccessLogFilterConfig resolveConfig() {
+        LOGGER.info(INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG::format);
+
+        return AccessLogFilterConfig.builder()
+                .minStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.MIN_STATUS_CODE, Integer.class)
+                        .orElse(400))
+                .maxStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.MAX_STATUS_CODE, Integer.class)
+                        .orElse(599))
+                .includeStatusCodes(resolveIntegerList(JwtPropertyKeys.ACCESS_LOG.INCLUDE_STATUS_CODES))
+                .includePaths(resolveStringList(JwtPropertyKeys.ACCESS_LOG.INCLUDE_PATHS))
+                .excludePaths(resolveStringList(JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS))
+                .pattern(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.PATTERN, String.class)
+                        .orElse("{remoteAddr} {method} {path} -> {status} ({duration}ms)"))
+                .loggerName(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.LOGGER_NAME, String.class)
+                        .orElse(CustomAccessLogFilter.class.getName()))
+                .build();
+    }
+
+    private List<Integer> resolveIntegerList(String key) {
+        Optional<String> value = config.getOptionalValue(key, String.class);
+        return value.map(string -> Arrays.stream(string.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Integer::parseInt)
+                .toList()).orElse(Collections.emptyList());
+
+    }
+
+    private List<String> resolveStringList(String key) {
+        Optional<String> value = config.getOptionalValue(key, String.class);
+        return value.map(string -> Arrays.stream(string.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList()).orElse(Collections.emptyList());
+
+    }
+}
