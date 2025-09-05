@@ -70,6 +70,8 @@ class JwksLoaderFactoryTest {
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
         assertEquals(JwksType.HTTP, loader.getJwksType(), "Loader should have HTTP type");
+        // Trigger loading by attempting to get a key, then check health status
+        loader.getKeyInfo("test-key-id"); // This triggers loading attempt
         assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "HTTP loader should have ERROR status when unable to load from invalid URL");
     }
 
@@ -85,6 +87,8 @@ class JwksLoaderFactoryTest {
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
         assertEquals(JwksType.WELL_KNOWN, loader.getJwksType(), "Loader should have WELL_KNOWN type");
+        // Trigger loading by attempting to get a key, then check health status  
+        loader.getKeyInfo("test-key-id"); // This triggers loading attempt
         assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "Well-known loader should have ERROR status when unable to load from invalid URL");
     }
 

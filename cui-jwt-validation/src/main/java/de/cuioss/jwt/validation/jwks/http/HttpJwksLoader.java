@@ -87,17 +87,15 @@ public class HttpJwksLoader implements JwksLoader {
     }
 
     @Override
+    public LoaderStatus getCurrentStatus() {
+        return status; // Return cached status immediately - NO I/O
+    }
+
+    @Override
     public LoaderStatus isHealthy() {
-        // For cached loader, we consider it healthy if we can load keys
-        // This will trigger lazy loading on first health check
-        if (keyLoader.get() == null) {
-            ensureLoaded();
-            if (status == LoaderStatus.ERROR) {
-                LOGGER.debug("Health check failed during key loading");
-                return LoaderStatus.ERROR;
-            }
-        }
-        return status;
+        // REMOVE: ensureLoaded() call - this violates MicroProfile spec
+        // REPLACE: return getCurrentStatus()
+        return getCurrentStatus();
     }
 
     @Override

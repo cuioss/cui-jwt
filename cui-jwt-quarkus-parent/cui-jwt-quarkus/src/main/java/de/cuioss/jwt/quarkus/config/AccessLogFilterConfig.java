@@ -15,8 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
-import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
-
 import lombok.Builder;
 import lombok.Value;
 
@@ -137,7 +135,7 @@ public class AccessLogFilterConfig {
 
     @Override
     public String toString() {
-        return String.format("AccessLogFilterConfig{enabled=%s, statusCodes=%d-%d, includeStatusCodes=%s, includePaths=%s, excludePaths=%s, pattern='%s'}",
+        return "AccessLogFilterConfig{enabled=%s, statusCodes=%d-%d, includeStatusCodes=%s, includePaths=%s, excludePaths=%s, pattern='%s'}".formatted(
                 enabled, minStatusCode, maxStatusCode, getIncludeStatusCodes(), getIncludePaths(), getExcludePaths(), pattern);
     }
 }

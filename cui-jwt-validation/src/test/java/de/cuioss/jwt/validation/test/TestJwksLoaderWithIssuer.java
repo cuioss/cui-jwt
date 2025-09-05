@@ -61,6 +61,11 @@ public class TestJwksLoaderWithIssuer implements JwksLoader {
     }
 
     @Override
+    public LoaderStatus getCurrentStatus() {
+        return delegate.getCurrentStatus();
+    }
+
+    @Override
     public LoaderStatus isHealthy() {
         return delegate.isHealthy();
     }
