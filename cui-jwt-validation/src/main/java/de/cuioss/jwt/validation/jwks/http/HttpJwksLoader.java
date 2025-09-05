@@ -28,6 +28,7 @@ import de.cuioss.tools.net.http.HttpHandler;
 import lombok.NonNull;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -199,6 +200,44 @@ public class HttpJwksLoader implements JwksLoader {
                 LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Failed to load JWKS and no cached content available"));
                 break;
         }
+    }
+
+    /**
+     * Triggers asynchronous loading of JWKS without blocking.
+     * Updates internal status when loading completes.
+     * <p>
+     * This method provides non-blocking JWKS initialization suitable for
+     * startup services and background loading scenarios. The returned
+     * CompletableFuture completes with the final LoaderStatus.
+     * </p>
+     *
+     * @return CompletableFuture that completes with the LoaderStatus after loading
+     * @since 1.1
+     */
+    public CompletableFuture<LoaderStatus> loadAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                if (!initialized.get()) {
+                    LOGGER.warn("HttpJwksLoader not initialized during async loading - initializing with empty SecurityEventCounter");
+                    // Handle case where async loading is called before initialization
+                    this.status = LoaderStatus.ERROR;
+                    return LoaderStatus.ERROR;
+                }
+
+                LOGGER.debug("Starting asynchronous JWKS loading");
+                loadKeys(); // Existing synchronous method
+                
+                // Return the updated status
+                LoaderStatus currentStatus = this.status;
+                LOGGER.debug("Asynchronous JWKS loading completed with status: {}", currentStatus);
+                return currentStatus;
+
+            } catch (Exception e) {
+                LOGGER.error("Asynchronous JWKS loading failed: {}", e.getMessage());
+                this.status = LoaderStatus.ERROR;
+                return LoaderStatus.ERROR;
+            }
+        });
     }
 
     private void updateKeyLoader(ETagAwareHttpHandler.LoadResult result) {

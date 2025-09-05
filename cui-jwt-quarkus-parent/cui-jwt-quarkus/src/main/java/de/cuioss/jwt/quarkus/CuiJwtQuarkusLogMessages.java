@@ -152,6 +152,38 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(52)
                 .build();
+
+        // JWKS Startup Messages (061-070)
+        
+        public static final LogRecord JWKS_STARTUP_SERVICE_INITIALIZED = LogRecordModel.builder()
+                .template("JWKS startup service activated for background key loading")
+                .prefix(PREFIX)
+                .identifier(60)
+                .build();
+
+        public static final LogRecord STARTING_ASYNCHRONOUS_JWKS_INITIALIZATION = LogRecordModel.builder()
+                .template("Starting asynchronous JWKS initialization for %s issuer(s)")
+                .prefix(PREFIX)
+                .identifier(61)
+                .build();
+
+        public static final LogRecord NO_ISSUER_CONFIGURATIONS_FOUND = LogRecordModel.builder()
+                .template("No issuer configurations found - skipping JWKS initialization")
+                .prefix(PREFIX)
+                .identifier(62)
+                .build();
+
+        public static final LogRecord BACKGROUND_JWKS_INITIALIZATION_COMPLETED = LogRecordModel.builder()
+                .template("Background JWKS initialization completed successfully")
+                .prefix(PREFIX)
+                .identifier(63)
+                .build();
+
+        public static final LogRecord BACKGROUND_JWKS_LOADING_COMPLETED_FOR_ISSUER = LogRecordModel.builder()
+                .template("Background JWKS loading completed for issuer: %s with status: %s")
+                .prefix(PREFIX)
+                .identifier(64)
+                .build();
     }
 
     /**
@@ -232,6 +264,20 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(128)
                 .build();
+
+        // JWKS Startup Warnings (131-140)
+        
+        public static final LogRecord BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER = LogRecordModel.builder()
+                .template("Background JWKS loading failed for issuer %s: %s")
+                .prefix(PREFIX)
+                .identifier(131)
+                .build();
+
+        public static final LogRecord JWKS_BACKGROUND_LOADING_COMPLETED_WITH_ERRORS = LogRecordModel.builder()
+                .template("JWKS background loading completed with errors or timeout: %s")
+                .prefix(PREFIX)
+                .identifier(132)
+                .build();
     }
 
     /**
@@ -252,6 +298,20 @@ public final class CuiJwtQuarkusLogMessages {
                 .template("Vertx HttpServerRequest context is unavailable - no active request context found")
                 .prefix(PREFIX)
                 .identifier(201)
+                .build();
+
+        // JWKS Startup Errors (211-220)
+        
+        public static final LogRecord BACKGROUND_JWKS_INITIALIZATION_ERROR = LogRecordModel.builder()
+                .template("Background JWKS initialization completed with errors: %s")
+                .prefix(PREFIX)
+                .identifier(211)
+                .build();
+
+        public static final LogRecord JWKS_BACKGROUND_LOADING_COORDINATION_ERROR = LogRecordModel.builder()
+                .template("Error during JWKS background loading coordination: %s")
+                .prefix(PREFIX)
+                .identifier(212)
                 .build();
     }
 }
