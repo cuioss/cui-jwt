@@ -51,9 +51,13 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
 
             validateResponse(response, 200);
             logger.info("Benchmark primed successfully with /q/health/live in {}ms", elapsedTime);
-        } catch (Exception e) {
+        } catch (IOException | AssertionError e) {
             logger.error("Benchmark priming FAILED for /q/health/live: {} - continuing with benchmark execution", e.getMessage());
             // DO NOT throw exception - allow benchmark to continue and demonstrate the pattern
+        } catch (InterruptedException e) {
+            logger.error("Benchmark priming was interrupted for /q/health/live: {} - continuing with benchmark execution", e.getMessage());
+            // Restore interrupt status and continue - DO NOT throw exception
+            Thread.currentThread().interrupt();
         }
     }
 

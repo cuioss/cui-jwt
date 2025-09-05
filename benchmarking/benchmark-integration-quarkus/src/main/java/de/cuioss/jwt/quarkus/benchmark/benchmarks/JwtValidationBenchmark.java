@@ -50,9 +50,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
 
             validateResponse(readinessResponse, 200);
             logger.info("Readiness check completed successfully in {}ms - JWKS loading ready", elapsedTime);
-        } catch (Exception e) {
+        } catch (IOException | AssertionError e) {
             logger.warn("Readiness check failed: {} - proceeding with JWT warmup anyway", e.getMessage());
             // Continue with JWT priming even if readiness fails
+        } catch (InterruptedException e) {
+            logger.warn("Readiness check was interrupted: {} - proceeding with JWT warmup anyway", e.getMessage());
+            // Restore interrupt status and continue
+            Thread.currentThread().interrupt();
         }
 
         // Prime with JWT validation endpoint (non-blocking - continue even if priming fails)
@@ -66,9 +70,13 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
 
             validateResponse(response, 200);
             logger.info("Benchmark primed successfully with {} in {}ms", PATH, elapsedTime);
-        } catch (Exception e) {
+        } catch (IOException | AssertionError e) {
             logger.error("Benchmark priming FAILED for {}: {} - continuing with benchmark execution", PATH, e.getMessage());
             // DO NOT throw exception - allow benchmark to continue and demonstrate the pattern
+        } catch (InterruptedException e) {
+            logger.error("Benchmark priming was interrupted for {}: {} - continuing with benchmark execution", PATH, e.getMessage());
+            // Restore interrupt status and continue - DO NOT throw exception
+            Thread.currentThread().interrupt();
         }
     }
 
