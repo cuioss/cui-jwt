@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
-import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
 import de.cuioss.jwt.quarkus.test.TestConfig;
 
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +45,7 @@ class AccessLogFilterConfigResolverTest {
         assertTrue(result.getIncludePaths() == null || result.getIncludePaths().isEmpty());
         assertTrue(result.getExcludePaths() == null || result.getExcludePaths().isEmpty());
         assertEquals("{remoteAddr} {method} {path} -> {status} ({duration}ms)", result.getPattern());
-        assertEquals(CustomAccessLogFilter.class.getName(), result.getLoggerName());
+        assertFalse(result.isEnabled());
     }
 
     @Test
@@ -60,7 +59,7 @@ class AccessLogFilterConfigResolverTest {
                 JwtPropertyKeys.ACCESS_LOG.INCLUDE_PATHS, "/api/*,/health/*",
                 JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS, "/metrics/*,/jwt/validate",
                 JwtPropertyKeys.ACCESS_LOG.PATTERN, "{method} {path} -> {status}",
-                JwtPropertyKeys.ACCESS_LOG.LOGGER_NAME, "my.custom.logger"
+                JwtPropertyKeys.ACCESS_LOG.ENABLED, "true"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -75,7 +74,7 @@ class AccessLogFilterConfigResolverTest {
         assertEquals(List.of("/api/*", "/health/*"), result.getIncludePaths());
         assertEquals(List.of("/metrics/*", "/jwt/validate"), result.getExcludePaths());
         assertEquals("{method} {path} -> {status}", result.getPattern());
-        assertEquals("my.custom.logger", result.getLoggerName());
+        assertTrue(result.isEnabled());
     }
 
     @Test

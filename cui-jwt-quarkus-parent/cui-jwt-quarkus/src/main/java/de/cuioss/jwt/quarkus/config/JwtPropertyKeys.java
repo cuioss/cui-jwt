@@ -572,14 +572,18 @@ public final class JwtPropertyKeys {
         public static final String PATTERN = BASE + ".pattern";
 
         /**
-         * Logger name for access log entries.
-         * Template: "cui.http.access-log.filter.logger-name"
+         * Whether the access log filter is enabled.
+         * Template: "cui.http.access-log.filter.enabled"
          * <p>
-         * Allows configuring separate log level and appenders for access logs.
-         * By default, uses the CustomAccessLogFilter class name.
+         * When set to true, the access log filter will process HTTP requests and responses
+         * according to the configured filtering rules. When false, the filter is disabled
+         * and no access logging will occur.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
          * </p>
          */
-        public static final String LOGGER_NAME = BASE + ".logger-name";
+        public static final String ENABLED = BASE + ".enabled";
     }
 
     /**

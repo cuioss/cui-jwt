@@ -191,11 +191,15 @@ cui.jwt.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
 
 == HTTP Access Log Filter Configuration
 
-The extension provides a custom HTTP access log filter that offers more granular control than Quarkus built-in access logging. The filter is controlled by DEBUG log level and allows filtering by HTTP status codes and URL patterns.
+The extension provides a custom HTTP access log filter that offers more granular control than Quarkus built-in access logging. The filter is controlled by an enabled flag and allows filtering by HTTP status codes and URL patterns.
 
 [cols="2,1,5"]
 |===
 |Property |Type |Description
+
+|`cui.http.access-log.filter.enabled`
+|boolean (default: false)
+|Whether the access log filter is enabled. When set to true, the filter will process HTTP requests and responses according to the configured filtering rules. When false, the filter is disabled and no access logging will occur.
 
 |`cui.http.access-log.filter.min-status-code`
 |int (default: 400)
@@ -220,20 +224,16 @@ The extension provides a custom HTTP access log filter that offers more granular
 |`cui.http.access-log.filter.pattern`
 |String (default: "{remoteAddr} {method} {path} -> {status} ({duration}ms)")
 |Log format pattern. Supports placeholders: {method} (HTTP method), {path} (request path), {status} (HTTP status code), {duration} (request duration in milliseconds), {remoteAddr} (remote IP address), {userAgent} (User-Agent header).
-
-|`cui.http.access-log.filter.logger-name`
-|String (default: CustomAccessLogFilter class name)
-|Logger name for access log entries. Allows configuring separate log level and appenders for access logs.
 |===
 
 === Enabling Access Log Filter
 
-The access log filter is controlled by the DEBUG log level. To enable it, configure the logger level:
+The access log filter is controlled by the enabled flag. To enable it, set the enabled property:
 
 [source,properties]
 ----
-# Enable access log filter (DEBUG level required)
-quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+# Enable access log filter
+cui.http.access-log.filter.enabled=true
 
 # Example: Log only errors (4xx and 5xx status codes) - this is the default
 cui.http.access-log.filter.min-status-code=400

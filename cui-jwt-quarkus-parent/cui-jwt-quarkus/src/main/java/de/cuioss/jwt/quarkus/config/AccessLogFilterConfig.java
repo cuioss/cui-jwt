@@ -20,6 +20,8 @@ import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
 import lombok.Builder;
 import lombok.Value;
 
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
 import java.util.List;
 
 /**
@@ -86,9 +88,56 @@ public class AccessLogFilterConfig {
     String pattern = "{remoteAddr} {method} {path} -> {status} ({duration}ms)";
 
     /**
-     * Logger name for access log entries.
-     * Allows configuring separate log level and appenders for access logs.
+     * Whether the access log filter is enabled.
+     * When disabled, the filter will not process any requests or responses.
      */
     @Builder.Default
-    String loggerName = CustomAccessLogFilter.class.getName();
+    boolean enabled = false;
+
+    /**
+     * Get include paths, defaulting to empty list if null.
+     */
+    public List<String> getIncludePaths() {
+        return includePaths != null ? includePaths : List.of();
+    }
+
+    /**
+     * Get exclude paths, defaulting to empty list if null.
+     */
+    public List<String> getExcludePaths() {
+        return excludePaths != null ? excludePaths : List.of();
+    }
+
+    /**
+     * Get include status codes, defaulting to empty list if null.
+     */
+    public List<Integer> getIncludeStatusCodes() {
+        return includeStatusCodes != null ? includeStatusCodes : List.of();
+    }
+
+    /**
+     * Get compiled PathMatcher objects for include patterns.
+     * @return List of compiled PathMatcher objects
+     */
+    public List<PathMatcher> getIncludePathMatchers() {
+        return getIncludePaths().stream()
+                .map(pathPattern -> FileSystems.getDefault().getPathMatcher("glob:" + pathPattern))
+                .toList();
+    }
+
+    /**
+     * Get compiled PathMatcher objects for exclude patterns.
+     * @return List of compiled PathMatcher objects
+     */
+    public List<PathMatcher> getExcludePathMatchers() {
+        return getExcludePaths().stream()
+                .map(pathPattern -> FileSystems.getDefault().getPathMatcher("glob:" + pathPattern))
+                .toList();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("AccessLogFilterConfig{enabled=%s, statusCodes=%d-%d, includeStatusCodes=%s, includePaths=%s, excludePaths=%s, pattern='%s'}",
+                enabled, minStatusCode, maxStatusCode, getIncludeStatusCodes(), getIncludePaths(), getExcludePaths(), pattern);
+    }
 }

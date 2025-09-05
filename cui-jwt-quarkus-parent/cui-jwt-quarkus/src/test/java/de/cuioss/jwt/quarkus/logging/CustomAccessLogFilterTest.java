@@ -45,7 +45,9 @@ class CustomAccessLogFilterTest {
         assertDoesNotThrow(() -> new CustomAccessLogFilter(resolver));
 
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "CustomAccessLogFilter initialized");
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "logging status codes");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=false");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=false");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "statusCodes=400-599");
     }
 
     @Test
@@ -61,7 +63,9 @@ class CustomAccessLogFilterTest {
         assertDoesNotThrow(() -> new CustomAccessLogFilter(resolver));
 
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "CustomAccessLogFilter initialized");
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "logging status codes");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=false");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=false");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "statusCodes=500-599");
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "/health/**");
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "/metrics/**");
     }
@@ -77,19 +81,34 @@ class CustomAccessLogFilterTest {
         assertDoesNotThrow(() -> new CustomAccessLogFilter(resolver));
 
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "CustomAccessLogFilter initialized");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=false");
     }
 
     @Test
-    @DisplayName("Should initialize filter with custom pattern and logger")
-    void shouldInitializeFilterWithCustomPatternAndLogger() {
+    @DisplayName("Should initialize filter with custom pattern")
+    void shouldInitializeFilterWithCustomPattern() {
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.PATTERN, "{method} {path} {status}",
-                JwtPropertyKeys.ACCESS_LOG.LOGGER_NAME, "custom.access.logger"
+                JwtPropertyKeys.ACCESS_LOG.PATTERN, "{method} {path} {status}"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
         assertDoesNotThrow(() -> new CustomAccessLogFilter(resolver));
 
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "CustomAccessLogFilter initialized");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=false");
+    }
+
+    @Test
+    @DisplayName("Should initialize filter with enabled flag set to true")
+    void shouldInitializeFilterWithEnabledFlag() {
+        TestConfig config = new TestConfig(Map.of(
+                JwtPropertyKeys.ACCESS_LOG.ENABLED, "true"
+        ));
+        AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
+
+        assertDoesNotThrow(() -> new CustomAccessLogFilter(resolver));
+
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "CustomAccessLogFilter initialized");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "enabled=true");
     }
 }

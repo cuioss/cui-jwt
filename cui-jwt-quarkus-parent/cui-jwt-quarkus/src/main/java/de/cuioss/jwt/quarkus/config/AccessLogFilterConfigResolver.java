@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
-import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
 import de.cuioss.tools.logging.CuiLogger;
 
 import lombok.RequiredArgsConstructor;
@@ -38,9 +37,9 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * Configuration properties are defined in {@link JwtPropertyKeys.ACCESS_LOG}.
  * </p>
  * <p>
- * Control via log level: quarkus.log.category."cui.http.access-log.filter".level=DEBUG
- * - DEBUG: Enable access logging
- * - INFO or higher: Disable access logging (default)
+ * Control via enabled flag: cui.http.access-log.filter.enabled=true
+ * - true: Enable access logging 
+ * - false: Disable access logging (default)
  * </p>
  */
 @RequiredArgsConstructor
@@ -72,8 +71,8 @@ public class AccessLogFilterConfigResolver {
                 .excludePaths(resolveStringList(JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS))
                 .pattern(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.PATTERN, String.class)
                         .orElse("{remoteAddr} {method} {path} -> {status} ({duration}ms)"))
-                .loggerName(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.LOGGER_NAME, String.class)
-                        .orElse(CustomAccessLogFilter.class.getName()))
+                .enabled(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.ENABLED, Boolean.class)
+                        .orElse(false))
                 .build();
     }
 

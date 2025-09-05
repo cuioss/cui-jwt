@@ -28,7 +28,6 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
 
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.time.Duration;
@@ -40,14 +39,14 @@ import java.util.List;
  * This filter provides more granular control than Quarkus built-in access logging,
  * allowing filtering by HTTP status codes and URL patterns.
  *
- * Control via log level: quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+ * Control via enabled flag: cui.http.access-log.filter.enabled=true
  *
  * Features:
- * - Uses DEBUG level logging (disabled by default)
+ * - Uses INFO level logging
  * - Filter by HTTP status code ranges
  * - Include/exclude specific status codes
  * - Include/exclude URL path patterns
- * - Configurable log format and logger
+ * - Configurable log format
  * - Performance optimized with cached disabled state
  */
 @Provider
@@ -60,7 +59,6 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
 
 
     private final AccessLogFilterConfig config;
-    private final CuiLogger opLogger;
     private final List<PathMatcher> includePathMatchers;
     private final List<PathMatcher> excludePathMatchers;
     private final boolean disabled;
@@ -68,26 +66,15 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
     @Inject
     public CustomAccessLogFilter(AccessLogFilterConfigResolver configResolver) {
         this.config = configResolver.resolveConfig();
-        this.opLogger = new CuiLogger(config.getLoggerName());
 
-        // Cache debug enabled state for performance optimization
-        this.disabled = !opLogger.isDebugEnabled();
+        // Cache disabled state for performance optimization
+        this.disabled = !config.isEnabled();
 
-        // Pre-compile path matchers for performance
-        this.includePathMatchers = config.getIncludePaths() != null ?
-                config.getIncludePaths().stream()
-                        .map(pattern -> FileSystems.getDefault().getPathMatcher("glob:" + pattern))
-                        .toList() : List.of();
+        // Get pre-compiled path matchers from config
+        this.includePathMatchers = config.getIncludePathMatchers();
+        this.excludePathMatchers = config.getExcludePathMatchers();
 
-        this.excludePathMatchers = config.getExcludePaths() != null ?
-                config.getExcludePaths().stream()
-                        .map(pattern -> FileSystems.getDefault().getPathMatcher("glob:" + pattern))
-                        .toList() : List.of();
-
-        LOGGER.info("CustomAccessLogFilter initialized - logging status codes %d-%d, include patterns: %s, exclude patterns: %s (controlled by DEBUG level)",
-                config.getMinStatusCode(), config.getMaxStatusCode(),
-                config.getIncludePaths() != null ? config.getIncludePaths() : List.of(),
-                config.getExcludePaths() != null ? config.getExcludePaths() : List.of());
+        LOGGER.info("CustomAccessLogFilter initialized: %s", config);
     }
 
     @Override
@@ -123,7 +110,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
 
         // Format and log the access entry
         String logEntry = formatLogEntry(requestContext, responseContext, duration);
-        opLogger.debug(logEntry);
+        LOGGER.info(logEntry);
     }
 
     /**
@@ -141,8 +128,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
         }
 
         // Check if status code is in the explicit include list
-        return config.getIncludeStatusCodes() != null &&
-                config.getIncludeStatusCodes().contains(statusCode);
+        return config.getIncludeStatusCodes().contains(statusCode);
     }
 
     /**
@@ -150,8 +136,9 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
      */
     private boolean isPathIncluded(String path) {
         // Check exclude patterns first (take precedence)
+        Path checkPath = Path.of(path);
         for (PathMatcher matcher : excludePathMatchers) {
-            if (matcher.matches(Path.of(path))) {
+            if (matcher.matches(checkPath)) {
                 return false;
             }
         }
@@ -163,7 +150,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
 
         // Check include patterns
         for (PathMatcher matcher : includePathMatchers) {
-            if (matcher.matches(Path.of(path))) {
+            if (matcher.matches(checkPath)) {
                 return true;
             }
         }
@@ -178,7 +165,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
             ContainerResponseContext responseContext,
             long duration) {
         String pattern = config.getPattern();
-        String remoteAddr = getRemoteAddress(requestContext);
+        String remoteAddr = ClientIpExtractor.extractClientIp(requestContext.getHeaders());
         String userAgent = requestContext.getHeaderString("User-Agent");
 
         return pattern
@@ -190,11 +177,4 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
                 .replace("{userAgent}", userAgent != null ? userAgent : "-");
     }
 
-    /**
-     * Extracts the remote address from the request context using ClientIpExtractor.
-     * Uses JAX-RS headers directly without unnecessary copying.
-     */
-    private String getRemoteAddress(ContainerRequestContext requestContext) {
-        return ClientIpExtractor.extractClientIp(requestContext.getHeaders());
-    }
 }
