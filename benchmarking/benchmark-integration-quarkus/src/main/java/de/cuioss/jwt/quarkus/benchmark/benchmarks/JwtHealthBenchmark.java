@@ -40,30 +40,31 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
         // Call parent's additional setup first
         super.performAdditionalSetup();
 
-        // Prime with health endpoint (non-blocking - continue even if priming fails)
+        // Prime with liveness endpoint (non-blocking - continue even if priming fails)
         try {
             long startTime = System.currentTimeMillis();
-            HttpRequest request = createRequestForPath("/q/health")
+            HttpRequest request = createRequestForPath("/q/health/live")
                     .GET()
                     .build();
             HttpResponse<String> response = sendRequest(request);
             long elapsedTime = System.currentTimeMillis() - startTime;
 
             validateResponse(response, 200);
-            logger.info("Benchmark primed successfully with /q/health in {}ms", elapsedTime);
+            logger.info("Benchmark primed successfully with /q/health/live in {}ms", elapsedTime);
         } catch (Exception e) {
-            logger.error("Benchmark priming FAILED for /q/health: {} - continuing with benchmark execution", e.getMessage());
+            logger.error("Benchmark priming FAILED for /q/health/live: {} - continuing with benchmark execution", e.getMessage());
             // DO NOT throw exception - allow benchmark to continue and demonstrate the pattern
         }
     }
 
     /**
-     * Benchmark for Quarkus health endpoint throughput.
+     * Benchmark for Quarkus liveness endpoint throughput.
      * Provides baseline throughput measurement without JWT processing.
+     * Uses liveness endpoint which is more suitable for performance testing.
      */
     @Benchmark @BenchmarkMode({Mode.Throughput, Mode.SampleTime}) public void healthCheckThroughput() throws IOException, InterruptedException {
-        logger.debug("Starting health check request");
-        HttpRequest request = createRequestForPath("/q/health")
+        logger.debug("Starting liveness check request");
+        HttpRequest request = createRequestForPath("/q/health/live")
                 .GET()
                 .build();
         logger.debug("Sending request to {}", request.uri());

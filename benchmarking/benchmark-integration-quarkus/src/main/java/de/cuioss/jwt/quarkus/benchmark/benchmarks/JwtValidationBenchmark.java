@@ -39,6 +39,22 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
      * Called by AbstractIntegrationBenchmark after token repository initialization.
      */
     @Override protected void performIntegrationSpecificSetup() {
+        // First call readiness endpoint to ensure JWKS loading is complete before JWT validation
+        try {
+            long startTime = System.currentTimeMillis();
+            HttpRequest readinessRequest = createRequestForPath("/q/health/ready")
+                    .GET()
+                    .build();
+            HttpResponse<String> readinessResponse = sendRequest(readinessRequest);
+            long elapsedTime = System.currentTimeMillis() - startTime;
+
+            validateResponse(readinessResponse, 200);
+            logger.info("Readiness check completed successfully in {}ms - JWKS loading ready", elapsedTime);
+        } catch (Exception e) {
+            logger.warn("Readiness check failed: {} - proceeding with JWT warmup anyway", e.getMessage());
+            // Continue with JWT priming even if readiness fails
+        }
+
         // Prime with JWT validation endpoint (non-blocking - continue even if priming fails)
         try {
             long startTime = System.currentTimeMillis();
