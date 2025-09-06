@@ -16,6 +16,7 @@
 package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -50,14 +51,14 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
 
         List<HealthCheckResult> healthCheckResults = new ArrayList<>();
         List<EndpointAccessResult> endpointResults = new ArrayList<>();
-        
+
         Instant testStart = Instant.now();
 
         // Test the behavior during startup period when JWKS loading might fail
         for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
             Instant attemptTime = Instant.now();
             Duration elapsedTime = Duration.between(testStart, attemptTime);
-            
+
             LOGGER.debug("Attempt %d (elapsed: %s)", attempt, elapsedTime);
 
             // Check all health endpoints
@@ -98,50 +99,50 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
 
         try {
             // Check liveness
-            livenessUp = given()
+            livenessUp = "UP".equals(given()
                     .when()
                     .get("/q/health/live")
                     .then()
-                    .extract().path("status").equals("UP");
+                    .extract().path("status"));
         } catch (Exception e) {
             LOGGER.debug("Liveness check failed at attempt %d: %s", attempt, e.getMessage());
         }
 
         try {
             // Check readiness
-            readinessUp = given()
+            readinessUp = "UP".equals(given()
                     .when()
                     .get("/q/health/ready")
                     .then()
-                    .extract().path("status").equals("UP");
+                    .extract().path("status"));
         } catch (Exception e) {
             LOGGER.debug("Readiness check failed at attempt %d: %s", attempt, e.getMessage());
         }
 
         try {
             // Check startup
-            startupUp = given()
+            startupUp = "UP".equals(given()
                     .when()
                     .get("/q/health/started")
                     .then()
-                    .extract().path("status").equals("UP");
+                    .extract().path("status"));
         } catch (Exception e) {
             LOGGER.debug("Startup check failed at attempt %d: %s", attempt, e.getMessage());
         }
 
         try {
             // Check overall health
-            overallUp = given()
+            overallUp = "UP".equals(given()
                     .when()
                     .get("/q/health")
                     .then()
-                    .extract().path("status").equals("UP");
+                    .extract().path("status"));
         } catch (Exception e) {
             LOGGER.debug("Overall health check failed at attempt %d: %s", attempt, e.getMessage());
         }
 
-        LOGGER.info("Attempt %d (%s): Liveness=%s, Readiness=%s, Startup=%s, Overall=%s", 
-                   attempt, elapsedTime, livenessUp, readinessUp, startupUp, overallUp);
+        LOGGER.info("Attempt %d (%s): Liveness=%s, Readiness=%s, Startup=%s, Overall=%s",
+                attempt, elapsedTime, livenessUp, readinessUp, startupUp, overallUp);
 
         return new HealthCheckResult(attempt, elapsedTime, livenessUp, readinessUp, startupUp, overallUp);
     }
@@ -156,7 +157,7 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
 
         try {
             long startTime = System.currentTimeMillis();
-            
+
             // POST to the JWT validation endpoint without token
             given()
                     .contentType("application/json")
@@ -168,7 +169,7 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
             responseTime = (int) (System.currentTimeMillis() - startTime);
             success = true;
             LOGGER.debug("JWT endpoint accessible at attempt %d (response time: %dms)", attempt, responseTime);
-            
+
         } catch (Exception e) {
             errorMessage = e.getMessage();
             LOGGER.debug("JWT endpoint failed at attempt %d: %s", attempt, errorMessage);
@@ -180,10 +181,10 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
     /**
      * Analyzes the collected results to validate the timing issue pattern.
      */
-    private void analyzeAndValidateTimingPattern(List<HealthCheckResult> healthResults, 
-                                               List<EndpointAccessResult> endpointResults) {
-        LOGGER.info("Analyzing timing pattern from %d health checks and %d endpoint attempts", 
-                   healthResults.size(), endpointResults.size());
+    private void analyzeAndValidateTimingPattern(List<HealthCheckResult> healthResults,
+                                                 List<EndpointAccessResult> endpointResults) {
+        LOGGER.info("Analyzing timing pattern from %d health checks and %d endpoint attempts",
+                healthResults.size(), endpointResults.size());
 
         // Find the first successful readiness check
         HealthCheckResult firstReadinessSuccess = healthResults.stream()
@@ -208,15 +209,15 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
         }
 
         if (firstReadinessSuccess != null) {
-            LOGGER.info("✅ Service became ready after: %s (attempt %d)", 
-                       firstReadinessSuccess.elapsedTime, firstReadinessSuccess.attempt);
+            LOGGER.info("✅ Service became ready after: %s (attempt %d)",
+                    firstReadinessSuccess.elapsedTime, firstReadinessSuccess.attempt);
         } else {
             fail("Service never became ready during test period");
         }
 
         if (firstEndpointSuccess != null) {
-            LOGGER.info("✅ JWT endpoint became accessible after: %s (attempt %d, response time: %dms)", 
-                       firstEndpointSuccess.elapsedTime, firstEndpointSuccess.attempt, firstEndpointSuccess.responseTimeMs);
+            LOGGER.info("✅ JWT endpoint became accessible after: %s (attempt %d, response time: %dms)",
+                    firstEndpointSuccess.elapsedTime, firstEndpointSuccess.attempt, firstEndpointSuccess.responseTimeMs);
         } else {
             fail("JWT endpoint never became accessible during test period");
         }
@@ -227,9 +228,11 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
         assertNotNull(firstEndpointSuccess, "Expected JWT endpoint to eventually become accessible");
     }
 
-    private record HealthCheckResult(int attempt, Duration elapsedTime, boolean livenessUp, 
-                                   boolean readinessUp, boolean startupUp, boolean overallUp) {}
+    private record HealthCheckResult(int attempt, Duration elapsedTime, boolean livenessUp,
+                                   boolean readinessUp, boolean startupUp, boolean overallUp) {
+    }
 
-    private record EndpointAccessResult(int attempt, Duration elapsedTime, boolean success, 
-                                      int responseTimeMs, String errorMessage) {}
+    private record EndpointAccessResult(int attempt, Duration elapsedTime, boolean success,
+                                      int responseTimeMs, String errorMessage) {
+    }
 }

@@ -319,6 +319,30 @@ DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
 
 == Troubleshooting
 
+=== Container Logs and Diagnostics
+
+[source,bash]
+----
+# Dump all container logs (Quarkus + Keycloak with access logs)
+./scripts/dump-quarkus-logs.sh target
+
+# Manual log inspection
+docker logs cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1
+docker logs cui-jwt-quarkus-integration-tests-keycloak-1
+
+# Check container status
+docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+----
+
+**Keycloak Access Logging**: The Keycloak container includes HTTP access logging to diagnose JWKS endpoint issues:
+
+* **JWKS endpoint requests**: `/.well-known/openid_configuration`, `/protocol/openid-connect/certs`
+* **Container-to-container communication**: Network connectivity between JWT app and Keycloak
+* **SSL/TLS handshake diagnostics**: Certificate validation success/failure
+* **Request timing**: Latency and timeout analysis for JWKS loading
+
+=== Common Issues
+
 [source,bash]
 ----
 # Certificate issues
@@ -330,9 +354,12 @@ keytool -list -keystore localhost-truststore.p12 -storetype PKCS12
 docker --version
 
 # Runtime issues
-docker logs cui-jwt-integration-tests
 lsof -i :10443
 curl -k https://localhost:10443/q/health
+
+# JWKS connectivity test
+curl -k https://localhost:1443/realms/integration/protocol/openid-connect/certs
+curl -k https://localhost:1443/realms/benchmark/.well-known/openid-configuration
 ----
 
 == Performance Metrics

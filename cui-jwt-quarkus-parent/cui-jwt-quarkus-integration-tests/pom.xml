@@ -243,7 +243,7 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Dump Quarkus logs before stopping containers -->
+                            <!-- Dump container logs (Quarkus and Keycloak) before stopping containers -->
                             <execution>
                                 <id>dump-quarkus-logs</id>
                                 <phase>post-integration-test</phase>
@@ -372,7 +372,7 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
-                            <!-- Dump Quarkus logs before stopping containers -->
+                            <!-- Dump container logs (Quarkus and Keycloak) before stopping containers -->
                             <execution>
                                 <id>dump-quarkus-logs</id>
                                 <phase>post-integration-test</phase>

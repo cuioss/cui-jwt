@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Quarkus Container Log Dumping Script
+# JWT Integration Tests Container Log Dumping Script
 # Usage: ./dump-quarkus-logs.sh <target-directory>
 # Example: ./dump-quarkus-logs.sh target
 # Example: ./dump-quarkus-logs.sh ../../benchmarking/benchmark-integration-quarkus/target
@@ -8,9 +8,11 @@
 set -euo pipefail
 
 # Configuration
-CONTAINER_NAME="cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1"
+QUARKUS_CONTAINER_NAME="cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1"
+KEYCLOAK_CONTAINER_NAME="cui-jwt-quarkus-integration-tests-keycloak-1"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-LOG_FILENAME="cui-jwt-quarkus-logs-${TIMESTAMP}.txt"
+QUARKUS_LOG_FILENAME="cui-jwt-quarkus-logs-${TIMESTAMP}.txt"
+KEYCLOAK_LOG_FILENAME="cui-jwt-keycloak-logs-${TIMESTAMP}.txt"
 
 # Parameter validation
 if [ $# -ne 1 ]; then
@@ -31,35 +33,79 @@ fi
 
 # Resolve absolute path for clarity
 TARGET_ABS_PATH=$(cd "$TARGET_DIR" && pwd)
-LOG_FILE_PATH="${TARGET_ABS_PATH}/${LOG_FILENAME}"
+QUARKUS_LOG_FILE_PATH="${TARGET_ABS_PATH}/${QUARKUS_LOG_FILENAME}"
+KEYCLOAK_LOG_FILE_PATH="${TARGET_ABS_PATH}/${KEYCLOAK_LOG_FILENAME}"
 
-echo "🚀 Dumping Quarkus container logs..."
-echo "📦 Container: $CONTAINER_NAME"
-echo "📝 Output file: $LOG_FILE_PATH"
+echo "🚀 Dumping JWT Integration Tests container logs..."
+echo "📦 Quarkus container: $QUARKUS_CONTAINER_NAME"
+echo "📦 Keycloak container: $KEYCLOAK_CONTAINER_NAME"
+echo "📝 Output files: $TARGET_ABS_PATH/"
 
-# Check if container exists and is running
-if ! docker ps --format "table {{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-    if docker ps -a --format "table {{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-        echo "⚠️  Warning: Container $CONTAINER_NAME exists but is not running"
-        echo "📋 Attempting to dump logs from stopped container..."
+# Function to check and dump container logs
+dump_container_logs() {
+    local container_name="$1"
+    local log_file_path="$2"
+    local service_name="$3"
+    
+    echo ""
+    echo "📋 Processing $service_name container..."
+    
+    # Check if container exists and is running
+    if ! docker ps --format "table {{.Names}}" | grep -q "^${container_name}$"; then
+        if docker ps -a --format "table {{.Names}}" | grep -q "^${container_name}$"; then
+            echo "⚠️  Warning: Container $container_name exists but is not running"
+            echo "📋 Attempting to dump logs from stopped container..."
+        else
+            echo "❌ Error: Container $container_name not found"
+            echo "🔍 Available containers:"
+            docker ps -a --format "table {{.Names}}\t{{.Status}}"
+            return 1
+        fi
     else
-        echo "❌ Error: Container $CONTAINER_NAME not found"
-        echo "🔍 Available containers:"
-        docker ps -a --format "table {{.Names}}\t{{.Status}}"
-        exit 1
+        echo "✅ Container is running"
     fi
+    
+    # Dump logs
+    echo "📥 Dumping $service_name logs to: $(basename "$log_file_path")"
+    if docker logs "$container_name" > "$log_file_path" 2>&1; then
+        LOG_SIZE=$(wc -l < "$log_file_path")
+        FILE_SIZE=$(du -h "$log_file_path" | cut -f1)
+        echo "✅ Successfully dumped $LOG_SIZE lines ($FILE_SIZE) to: $(basename "$log_file_path")"
+        echo "📍 Full path: $log_file_path"
+        return 0
+    else
+        echo "❌ Failed to dump logs from container: $container_name"
+        return 1
+    fi
+}
+
+# Dump Quarkus container logs
+QUARKUS_SUCCESS=true
+dump_container_logs "$QUARKUS_CONTAINER_NAME" "$QUARKUS_LOG_FILE_PATH" "Quarkus" || QUARKUS_SUCCESS=false
+
+# Dump Keycloak container logs
+KEYCLOAK_SUCCESS=true
+dump_container_logs "$KEYCLOAK_CONTAINER_NAME" "$KEYCLOAK_LOG_FILE_PATH" "Keycloak" || KEYCLOAK_SUCCESS=false
+
+# Summary
+echo ""
+echo "📊 Log Dump Summary:"
+if [ "$QUARKUS_SUCCESS" = true ]; then
+    echo "✅ Quarkus logs: $(basename "$QUARKUS_LOG_FILENAME")"
 else
-    echo "✅ Container is running"
+    echo "❌ Quarkus logs: FAILED"
 fi
 
-# Dump logs
-echo "📥 Dumping logs to: $LOG_FILE_PATH"
-if docker logs "$CONTAINER_NAME" > "$LOG_FILE_PATH" 2>&1; then
-    LOG_SIZE=$(wc -l < "$LOG_FILE_PATH")
-    FILE_SIZE=$(du -h "$LOG_FILE_PATH" | cut -f1)
-    echo "✅ Successfully dumped $LOG_SIZE lines ($FILE_SIZE) to: $LOG_FILENAME"
-    echo "📍 Full path: $LOG_FILE_PATH"
+if [ "$KEYCLOAK_SUCCESS" = true ]; then
+    echo "✅ Keycloak logs: $(basename "$KEYCLOAK_LOG_FILENAME")"
 else
-    echo "❌ Failed to dump logs from container: $CONTAINER_NAME"
+    echo "❌ Keycloak logs: FAILED"
+fi
+
+# Exit with error if any dump failed
+if [ "$QUARKUS_SUCCESS" = false ] || [ "$KEYCLOAK_SUCCESS" = false ]; then
+    echo "⚠️  Some log dumps failed - see details above"
     exit 1
+else
+    echo "🎉 All container logs successfully dumped to: $TARGET_ABS_PATH"
 fi

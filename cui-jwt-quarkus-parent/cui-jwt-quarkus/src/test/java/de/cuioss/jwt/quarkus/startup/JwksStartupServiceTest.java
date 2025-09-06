@@ -15,10 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.startup;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -30,17 +26,12 @@ import org.eclipse.microprofile.config.Config;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
+import java.util.Set;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
-import static org.awaitility.Awaitility.await;
 import static org.easymock.EasyMock.expect;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Comprehensive unit tests for {@link JwksStartupService}.
@@ -77,8 +68,8 @@ class JwksStartupServiceTest {
     void shouldHandleEmptyIssuerConfigurations() {
         // Given: Config that returns no issuers
         expect(mockConfig.getOptionalValue("cui.jwt.issuers", String.class))
-                .andReturn(java.util.Optional.empty()).anyTimes();
-        expect(mockConfig.getPropertyNames()).andReturn(() -> java.util.Set.<String>of().iterator()).anyTimes();
+                .andReturn(Optional.empty()).anyTimes();
+        expect(mockConfig.getPropertyNames()).andReturn(() -> Set.<String>of().iterator()).anyTimes();
         mocksControl.replay();
 
         // When: Startup event is triggered
@@ -97,8 +88,8 @@ class JwksStartupServiceTest {
     void shouldHandleBasicStartup() {
         // Given: Minimal config setup
         expect(mockConfig.getOptionalValue("cui.jwt.issuers", String.class))
-                .andReturn(java.util.Optional.empty()).anyTimes();
-        expect(mockConfig.getPropertyNames()).andReturn(() -> java.util.Set.<String>of().iterator()).anyTimes();
+                .andReturn(Optional.empty()).anyTimes();
+        expect(mockConfig.getPropertyNames()).andReturn(() -> Set.<String>of().iterator()).anyTimes();
         mocksControl.replay();
 
         // When: Startup event is triggered

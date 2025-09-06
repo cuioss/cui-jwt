@@ -106,13 +106,21 @@ public class JwksEndpointHealthCheck implements HealthCheck {
             results.get(i).addToResponse(responseBuilder, "issuer." + i + ".");
         }
 
-        // Set overall health status
-        boolean allUp = results.stream().allMatch(EndpointResult::isHealthy);
-        responseBuilder.withData("checkedEndpoints", results.size());
+        // Calculate overall readiness and loading status
+        boolean allReady = results.stream().allMatch(EndpointResult::isHealthy);
+        boolean anyLoading = results.stream().anyMatch(r -> r.status() == LoaderStatus.UNDEFINED);
 
-        if (!allUp) {
+        // Set overall health status with enhanced readiness reporting
+        responseBuilder.withData("checkedEndpoints", results.size());
+        
+        if (!allReady) {
             responseBuilder.down();
         }
+        
+        // Add enhanced readiness reporting
+        responseBuilder
+                .withData("readiness", allReady ? "READY" : "NOT_READY")
+                .withData("loading", anyLoading ? "IN_PROGRESS" : "COMPLETE");
 
         return responseBuilder.build();
     }

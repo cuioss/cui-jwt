@@ -89,13 +89,11 @@ public class HttpJwksLoader implements JwksLoader {
 
     @Override
     public LoaderStatus getCurrentStatus() {
-        return status; // Return cached status immediately - NO I/O
+        return status;
     }
 
     @Override
     public LoaderStatus isHealthy() {
-        // REMOVE: ensureLoaded() call - this violates MicroProfile spec
-        // REPLACE: return getCurrentStatus()
         return getCurrentStatus();
     }
 
@@ -226,7 +224,7 @@ public class HttpJwksLoader implements JwksLoader {
 
                 LOGGER.debug("Starting asynchronous JWKS loading");
                 loadKeys(); // Existing synchronous method
-                
+
                 // Return the updated status
                 LoaderStatus currentStatus = this.status;
                 LOGGER.debug("Asynchronous JWKS loading completed with status: {}", currentStatus);

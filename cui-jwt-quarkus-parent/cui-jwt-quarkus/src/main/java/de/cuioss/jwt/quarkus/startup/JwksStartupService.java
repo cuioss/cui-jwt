@@ -68,6 +68,7 @@ public class JwksStartupService {
     /**
      * Initializes asynchronous JWKS loading on application startup.
      * This method is called automatically when the application starts up due to the @Startup annotation.
+     * Includes startup delay to allow external services (like Keycloak) to fully initialize.
      */
     @PostConstruct
     public void initializeJwks() {
@@ -94,8 +95,8 @@ public class JwksStartupService {
             return;
         }
 
-        // Trigger async JWKS loading for all issuers
-        CompletableFuture.runAsync(() -> loadAllJwksAsync(configs))
+        // Trigger async JWKS loading for all issuers with startup delay
+        CompletableFuture.runAsync(() -> loadAllJwksAsyncWithStartupDelay(configs))
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
                         LOGGER.error(ERROR.BACKGROUND_JWKS_INITIALIZATION_ERROR.format(throwable.getMessage()));
@@ -103,6 +104,30 @@ public class JwksStartupService {
                         LOGGER.info(INFO.BACKGROUND_JWKS_INITIALIZATION_COMPLETED.format());
                     }
                 });
+    }
+
+    /**
+     * Loads JWKS asynchronously for all configured issuers with startup delay.
+     * This method includes a startup delay to allow external services to fully initialize,
+     * then delegates to the standard async loading method.
+     *
+     * @param configs the issuer configurations to load JWKS for
+     */
+    private void loadAllJwksAsyncWithStartupDelay(List<IssuerConfig> configs) {
+        try {
+            // Add startup delay to allow external services (like Keycloak) to initialize
+            LOGGER.info(INFO.JWKS_STARTUP_SERVICE_INITIALIZED.format("Adding 10-second startup delay for external service readiness"));
+            Thread.sleep(10000);
+            LOGGER.info(INFO.JWKS_STARTUP_SERVICE_INITIALIZED.format("Startup delay completed, beginning JWKS loading"));
+            
+            // Delegate to existing async loading method
+            loadAllJwksAsync(configs);
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.warn("Startup delay interrupted - proceeding with immediate JWKS loading");
+            loadAllJwksAsync(configs);
+        }
     }
 
     /**
@@ -141,7 +166,7 @@ public class JwksStartupService {
     }
 
     /**
-     * Loads JWKS asynchronously for a single issuer configuration.
+     * Loads JWKS asynchronously for a single issuer configuration with retry logic.
      *
      * @param issuerConfig the issuer configuration to load JWKS for
      * @return CompletableFuture representing the loading operation
@@ -154,18 +179,59 @@ public class JwksStartupService {
 
         // Only trigger loading for HTTP-based loaders that support async loading
         if (jwksLoader instanceof HttpJwksLoader httpLoader) {
-            return httpLoader.loadAsync()
-                    .handle((loaderStatus, throwable) -> {
-                        if (throwable != null) {
-                            LOGGER.warn(WARN.BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER.format(issuerId, throwable.getMessage()));
-                        } else {
-                            LOGGER.info(INFO.BACKGROUND_JWKS_LOADING_COMPLETED_FOR_ISSUER.format(issuerId, loaderStatus));
-                        }
-                        return null; // Return Void
-                    });
+            return loadWithRetry(httpLoader, issuerId, 3, 2000);
         } else {
             LOGGER.debug("JWKS loader for issuer {} is not HTTP-based - skipping background loading", issuerId);
             return CompletableFuture.completedFuture(null);
         }
+    }
+
+    /**
+     * Loads JWKS with exponential backoff retry logic.
+     *
+     * @param httpLoader the HTTP JWKS loader
+     * @param issuerId   the issuer identifier for logging
+     * @param maxRetries maximum number of retry attempts
+     * @param baseDelayMs base delay in milliseconds
+     * @return CompletableFuture representing the loading operation
+     */
+    private CompletableFuture<Void> loadWithRetry(HttpJwksLoader httpLoader, String issuerId, int maxRetries, long baseDelayMs) {
+        return CompletableFuture.supplyAsync(() -> {
+            Exception lastException = null;
+            
+            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    CompletableFuture<de.cuioss.jwt.validation.jwks.LoaderStatus> loadFuture = httpLoader.loadAsync();
+                    de.cuioss.jwt.validation.jwks.LoaderStatus status = loadFuture.get(10, TimeUnit.SECONDS);
+                    
+                    if (status != de.cuioss.jwt.validation.jwks.LoaderStatus.ERROR) {
+                        LOGGER.info(INFO.BACKGROUND_JWKS_LOADING_COMPLETED_FOR_ISSUER.format(issuerId, status));
+                        return null;
+                    } else {
+                        lastException = new RuntimeException("JWKS loading returned ERROR status");
+                    }
+                } catch (Exception e) {
+                    lastException = e;
+                    LOGGER.debug("JWKS loading attempt {} failed for issuer {}: {}", attempt, issuerId, e.getMessage());
+                }
+                
+                // If not the last attempt, wait before retrying
+                if (attempt < maxRetries) {
+                    try {
+                        long delay = baseDelayMs * (1L << (attempt - 1)); // Exponential backoff
+                        LOGGER.debug("Retrying JWKS loading for issuer {} in {}ms (attempt {} of {})", issuerId, delay, attempt + 1, maxRetries);
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+            
+            // All retry attempts failed
+            LOGGER.warn(WARN.BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER.format(issuerId, 
+                lastException != null ? lastException.getMessage() : "Unknown error after " + maxRetries + " attempts"));
+            return null;
+        });
     }
 }
