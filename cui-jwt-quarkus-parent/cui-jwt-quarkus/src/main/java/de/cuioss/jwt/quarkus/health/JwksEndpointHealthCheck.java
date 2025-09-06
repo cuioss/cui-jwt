@@ -112,11 +112,11 @@ public class JwksEndpointHealthCheck implements HealthCheck {
 
         // Set overall health status with enhanced readiness reporting
         responseBuilder.withData("checkedEndpoints", results.size());
-        
+
         if (!allReady) {
             responseBuilder.down();
         }
-        
+
         // Add enhanced readiness reporting
         responseBuilder
                 .withData("readiness", allReady ? "READY" : "NOT_READY")

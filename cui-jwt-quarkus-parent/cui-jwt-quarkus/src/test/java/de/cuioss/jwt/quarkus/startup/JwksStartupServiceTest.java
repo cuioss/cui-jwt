@@ -23,6 +23,7 @@ import io.quarkus.runtime.StartupEvent;
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,12 +55,14 @@ class JwksStartupServiceTest {
     private StartupEvent startupEvent;
     private IMocksControl mocksControl;
     private Config mockConfig;
+    private ManagedExecutor mockManagedExecutor;
 
     @BeforeEach
     void setUp() {
         mocksControl = EasyMock.createControl();
         mockConfig = mocksControl.createMock(Config.class);
-        startupService = new JwksStartupService(mockConfig);
+        mockManagedExecutor = mocksControl.createMock(ManagedExecutor.class);
+        startupService = new JwksStartupService(mockConfig, mockManagedExecutor);
         startupEvent = new StartupEvent();
     }
 

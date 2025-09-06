@@ -16,6 +16,7 @@
 package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration test to demonstrate that health checks themselves can BLOCK during JWKS loading failures.
@@ -56,8 +57,8 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
 
             for (int i = 1; i <= CONCURRENT_HEALTH_CHECKS; i++) {
                 final int checkId = i;
-                Future<HealthCheckTimingResult> future = executor.submit(() -> 
-                    performTimedHealthCheck("readiness", "/q/health/ready", checkId));
+                Future<HealthCheckTimingResult> future = executor.submit(() ->
+                        performTimedHealthCheck("readiness", "/q/health/ready", checkId));
                 futures.add(future);
             }
 
@@ -69,12 +70,12 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
                     LOGGER.info("Health check %d completed: %s", i + 1, result);
                 } catch (TimeoutException e) {
                     LOGGER.error("Health check %d TIMED OUT after %d seconds", i + 1, HEALTH_CHECK_TIMEOUT_SECONDS);
-                    results.add(new HealthCheckTimingResult(i + 1, "readiness", Duration.ofSeconds(HEALTH_CHECK_TIMEOUT_SECONDS), 
-                                                          false, true, "TIMEOUT", null));
+                    results.add(new HealthCheckTimingResult(i + 1, "readiness", Duration.ofSeconds(HEALTH_CHECK_TIMEOUT_SECONDS),
+                            false, true, "TIMEOUT", null));
                 } catch (Exception e) {
                     LOGGER.error(e, "Health check %d failed with exception", i + 1);
-                    results.add(new HealthCheckTimingResult(i + 1, "readiness", Duration.ZERO, 
-                                                          false, false, "EXCEPTION", e.getMessage()));
+                    results.add(new HealthCheckTimingResult(i + 1, "readiness", Duration.ZERO,
+                            false, false, "EXCEPTION", e.getMessage()));
                 }
             }
         } finally {
@@ -89,17 +90,17 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
         LOGGER.info("Comparing blocking behavior across different health check types");
 
         List<String> healthCheckTypes = List.of(
-            "liveness", 
-            "readiness", 
-            "startup", 
-            "overall"
+                "liveness",
+                "readiness",
+                "startup",
+                "overall"
         );
 
         List<String> healthCheckUrls = List.of(
-            "/q/health/live",
-            "/q/health/ready", 
-            "/q/health/started",
-            "/q/health"
+                "/q/health/live",
+                "/q/health/ready",
+                "/q/health/started",
+                "/q/health"
         );
 
         List<HealthCheckTimingResult> results = new ArrayList<>();
@@ -110,9 +111,9 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
 
             HealthCheckTimingResult result = performTimedHealthCheck(type, url, i + 1);
             results.add(result);
-            
+
             LOGGER.info("Health check %s: %s", type, result);
-            
+
             // Brief pause between checks
             try {
                 Thread.sleep(500);
@@ -137,18 +138,18 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
 
         try {
             LOGGER.debug("Starting %s health check %d at %s", type, checkId, url);
-            
+
             String responseStatus = given()
                     .when()
                     .get(url)
                     .then()
                     .extract().path("status");
-                    
+
             status = responseStatus;
             success = "UP".equals(responseStatus);
-            
+
             LOGGER.debug("Health check %s %d completed with status: %s", type, checkId, status);
-            
+
         } catch (Exception e) {
             errorMessage = e.getMessage();
             if (errorMessage != null && (errorMessage.contains("timeout") || errorMessage.contains("timed out"))) {
@@ -169,12 +170,12 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
 
         long timeouts = results.stream().mapToLong(r -> r.timedOut ? 1 : 0).sum();
         long successes = results.stream().mapToLong(r -> r.success ? 1 : 0).sum();
-        
+
         Duration avgResponseTime = Duration.ofMillis(
-            (long) results.stream()
-                .mapToLong(r -> r.responseTime.toMillis())
-                .average()
-                .orElse(0)
+                (long) results.stream()
+                        .mapToLong(r -> r.responseTime.toMillis())
+                        .average()
+                        .orElse(0)
         );
 
         Duration maxResponseTime = results.stream()
@@ -189,8 +190,8 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
         LOGGER.info("- Maximum response time: %s", maxResponseTime);
 
         // Validate that we demonstrate blocking behavior
-        assertTrue(timeouts > 0 || maxResponseTime.compareTo(Duration.ofSeconds(5)) > 0, 
-                  "Expected to demonstrate blocking behavior (timeouts or slow responses)");
+        assertTrue(timeouts > 0 || maxResponseTime.compareTo(Duration.ofSeconds(5)) > 0,
+                "Expected to demonstrate blocking behavior (timeouts or slow responses)");
 
         if (timeouts > 0) {
             LOGGER.info("✅ BLOCKING BEHAVIOR CONFIRMED: %d health checks timed out", timeouts);
@@ -206,16 +207,16 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
      */
     private void analyzeDifferentialBlockingBehavior(List<HealthCheckTimingResult> results) {
         LOGGER.info("DIFFERENTIAL BLOCKING ANALYSIS:");
-        
+
         for (HealthCheckTimingResult result : results) {
-            String blockingStatus = result.timedOut ? "BLOCKED" : 
-                                   result.responseTime.compareTo(Duration.ofSeconds(2)) > 0 ? "SLOW" : "FAST";
-            
-            LOGGER.info("- %s: %s (%s, %dms)", 
-                       result.type.toUpperCase(), 
-                       blockingStatus,
-                       result.success ? "UP" : "DOWN/ERROR",
-                       result.responseTime.toMillis());
+            String blockingStatus = result.timedOut ? "BLOCKED" :
+                    result.responseTime.compareTo(Duration.ofSeconds(2)) > 0 ? "SLOW" : "FAST";
+
+            LOGGER.info("- %s: %s (%s, %dms)",
+                    result.type.toUpperCase(),
+                    blockingStatus,
+                    result.success ? "UP" : "DOWN/ERROR",
+                    result.responseTime.toMillis());
         }
 
         // Find which types block vs respond quickly
@@ -228,25 +229,26 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
                 .toList();
 
         if (!blocking.isEmpty()) {
-            LOGGER.info("✅ BLOCKING HEALTH CHECKS: %s", 
-                       blocking.stream().map(r -> r.type).toList());
+            LOGGER.info("✅ BLOCKING HEALTH CHECKS: %s",
+                    blocking.stream().map(r -> r.type).toList());
         }
 
         if (!responsive.isEmpty()) {
-            LOGGER.info("✅ RESPONSIVE HEALTH CHECKS: %s", 
-                       responsive.stream().map(r -> r.type).toList());
+            LOGGER.info("✅ RESPONSIVE HEALTH CHECKS: %s",
+                    responsive.stream().map(r -> r.type).toList());
         }
 
         // The key insight: readiness checks should block while liveness checks should not
         boolean readinessBlocks = results.stream()
-                .anyMatch(r -> "readiness".equals(r.type) && 
-                             (r.timedOut || r.responseTime.compareTo(Duration.ofSeconds(2)) > 0));
+                .anyMatch(r -> "readiness".equals(r.type) &&
+                        (r.timedOut || r.responseTime.compareTo(Duration.ofSeconds(2)) > 0));
 
         if (readinessBlocks) {
             LOGGER.info("🎯 ROOT CAUSE CONFIRMED: Readiness check blocks during JWKS loading failures");
         }
     }
 
-    private record HealthCheckTimingResult(int checkId, String type, Duration responseTime, 
-                                         boolean success, boolean timedOut, String status, String errorMessage) {}
+    private record HealthCheckTimingResult(int checkId, String type, Duration responseTime,
+                                         boolean success, boolean timedOut, String status, String errorMessage) {
+    }
 }
