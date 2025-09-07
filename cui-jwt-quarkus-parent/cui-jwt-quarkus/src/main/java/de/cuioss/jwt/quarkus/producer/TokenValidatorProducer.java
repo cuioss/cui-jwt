@@ -101,6 +101,14 @@ public class TokenValidatorProducer {
         IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(config);
         issuerConfigs = issuerConfigResolver.resolveIssuerConfigs();
 
+        // Create SecurityEventCounter for proper initialization
+        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
+
+        // Initialize each IssuerConfig with SecurityEventCounter so JwksLoader can be used
+        for (IssuerConfig issuerConfig : issuerConfigs) {
+            issuerConfig.initSecurityEventCounter(securityEventCounter);
+        }
+
         // Resolve parser config using the dedicated resolver
         ParserConfigResolver parserConfigResolver = new ParserConfigResolver(config);
         ParserConfig parserConfig = parserConfigResolver.resolveParserConfig();
@@ -122,8 +130,9 @@ public class TokenValidatorProducer {
 
         tokenValidator = builder.build();
 
-        // Extract SecurityEventCounter from the TokenValidator
-        securityEventCounter = tokenValidator.getSecurityEventCounter();
+        // Use the same SecurityEventCounter instance we used for initialization
+        // Note: tokenValidator.getSecurityEventCounter() returns the same instance
+        this.securityEventCounter = securityEventCounter;
 
         LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
     }

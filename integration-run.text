@@ -1,0 +1,1252 @@
+[INFO] Scanning for projects...
+[INFO] Inspecting build with total of 1 modules
+[INFO] Installing Central Publishing features
+[INFO] 
+[INFO] ----------< de.cuioss.jwt:cui-jwt-quarkus-integration-tests >-----------
+[INFO] Building JWT Token Validation Quarkus Integration Tests 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- exec:3.5.1:exec (stop-docker-containers) @ cui-jwt-quarkus-integration-tests ---
+🛑 Stopping JWT Integration Tests Docker containers
+📦 Stopping Docker containers (native mode)...
+🧹 Cleaning up Docker images and volumes...
+✅ JWT Integration Tests stopped successfully
+✅ All containers are stopped
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Deleting /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target
+[INFO] 
+[INFO] --- enforcer:3.5.0:enforce (mojo-enforcer-rules) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.RequirePluginVersions passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 3: org.codehaus.mojo.extraenforcer.model.RequirePropertyDiverges passed
+[INFO] Rule 4: org.codehaus.mojo.extraenforcer.model.RequirePropertyDiverges passed
+[INFO] Rule 5: org.apache.maven.enforcer.rules.RequireSameVersions passed
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 2 source files with javac [debug release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 10 source files with javac [debug release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.3:test (default-test) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Building jar: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- exec:3.5.1:exec (build-native-if-needed) @ cui-jwt-quarkus-integration-tests ---
+🔨 Native executable not found, building it now...
+This will take approximately 2 minutes...
+[INFO] Scanning for projects...
+[INFO] Inspecting build with total of 1 modules
+[INFO] Installing Central Publishing features
+[INFO] 
+[INFO] ----------< de.cuioss.jwt:cui-jwt-quarkus-integration-tests >-----------
+[INFO] Building JWT Token Validation Quarkus Integration Tests 1.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- quarkus:3.25.4:build (default-cli) @ cui-jwt-quarkus-integration-tests ---
+[WARNING] [io.smallrye.common.process] SRCOM05000: Command docker (pid 52600) completed but logged errors:
+	WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+[INFO] [io.quarkus.deployment.pkg.steps.JarResultBuildStep] Building native image source jar: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-native-image-source-jar/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner.jar
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildStep] Building native image from /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-native-image-source-jar/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner.jar
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildContainerRunner] Using docker to run the native image builder
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildContainerRunner] Pulling builder image 'quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21'
+jdk-21: Pulling from quarkus/ubi9-quarkus-mandrel-builder-image
+Digest: sha256:d7b1e7d44da14c97eae83e7cea56e0042bf8f73cf01e8565a06bfb9b10b4f547
+Status: Image is up to date for quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21
+quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildStep] Running Quarkus native-image plugin on MANDREL 23.1.8.0 JDK 21.0.8+9-LTS
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildRunner] docker run --env LANG=C --rm --user 501:20 -v /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-native-image-source-jar:/project:z --name build-native-Tqleg quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 -J-Dsun.nio.ch.maxUpdateArraySize=100 -J-Duser.language=de -J-Duser.country=DE -J-Dlogging.initial-configurator.min-level=500 -J-Djava.util.logging.manager=org.jboss.logmanager.LogManager -J-Dvertx.logger-delegate-factory-class-name=io.quarkus.vertx.core.runtime.VertxLogDelegateFactory -J-Dvertx.disableDnsResolver=true -J-Dio.netty.leakDetection.level=DISABLED -J-Dio.netty.allocator.maxOrder=3 -J-Dquarkus.native.monitoring=jfr -H:+UnlockExperimentalVMOptions -H:IncludeLocales=de-DE -H:-UnlockExperimentalVMOptions -J-Dfile.encoding=UTF-8 -J--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk=ALL-UNNAMED --features=io.quarkus.runner.Feature,io.quarkus.runtime.graal.DisableLoggingFeature,io.quarkus.hibernate.validator.runtime.DisableLoggingFeature,io.quarkus.runtime.graal.SkipConsoleServiceProvidersFeature -J--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED -J--add-exports=java.security.jgss/sun.security.jgss=ALL-UNNAMED -J--add-opens=java.base/java.text=ALL-UNNAMED -J--add-opens=java.base/java.io=ALL-UNNAMED -J--add-opens=java.base/java.lang.invoke=ALL-UNNAMED -J--add-opens=java.base/java.util=ALL-UNNAMED -H:+UnlockExperimentalVMOptions -H:BuildOutputJSONFile=cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner-build-output-stats.json -H:-UnlockExperimentalVMOptions -H:+UnlockExperimentalVMOptions -H:+GenerateBuildArtifactsFile -H:-UnlockExperimentalVMOptions --strict-image-heap --install-exit-handlers --enable-url-protocols=https --enable-http --enable-https -O2 -H:+UnlockExperimentalVMOptions -H:+AllowFoldMethods -H:-UnlockExperimentalVMOptions -J-Djava.awt.headless=true --no-fallback --link-at-build-time -H:+UnlockExperimentalVMOptions -H:+ReportExceptionStackTraces -H:-UnlockExperimentalVMOptions -H:-AddAllCharsets --enable-url-protocols=http,https --enable-monitoring=heapdump,jfr -H:+UnlockExperimentalVMOptions -H:-UseServiceLoaderFeature -H:-UnlockExperimentalVMOptions -J--add-exports=org.graalvm.nativeimage/org.graalvm.nativeimage.impl=ALL-UNNAMED --exclude-config io\.netty\.netty-codec /META-INF/native-image/io\.netty/netty-codec/generated/handlers/reflect-config\.json --exclude-config io\.netty\.netty-handler /META-INF/native-image/io\.netty/netty-handler/generated/handlers/reflect-config\.json cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner -jar cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner.jar
+========================================================================================================================
+GraalVM Native Image: Generating 'cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner' (executable)...
+========================================================================================================================
+For detailed information and explanations on the build output, visit:
+https://github.com/oracle/graal/blob/master/docs/reference-manual/native-image/BuildOutput.md
+------------------------------------------------------------------------------------------------------------------------
+[1/8] Initializing...                                                                                    (4,3s @ 0,14GB)
+ Java version: 21.0.8+9-LTS, vendor version: Mandrel-23.1.8.0-Final
+ Graal compiler: optimization level: 2, target machine: armv8-a
+ C compiler: gcc (redhat, aarch64, 11.5.0)
+ Garbage collector: Serial GC (max heap size: 80% of RAM)
+ 6 user-specific feature(s):
+ - com.oracle.svm.thirdparty.gson.GsonFeature
+ - io.quarkus.hibernate.validator.runtime.DisableLoggingFeature: Disables INFO logging during the analysis phase for the [org.hibernate.validator.internal.util.Version] categories
+ - io.quarkus.runner.Feature: Auto-generated class by Quarkus from the existing extensions
+ - io.quarkus.runtime.graal.DisableLoggingFeature: Adapts logging during the analysis phase
+ - io.quarkus.runtime.graal.SkipConsoleServiceProvidersFeature: Skip unsupported console service providers when quarkus.native.auto-service-loader-registration is false
+ - org.eclipse.angus.activation.nativeimage.AngusActivationFeature
+------------------------------------------------------------------------------------------------------------------------
+ 5 experimental option(s) unlocked:
+ - '-H:+AllowFoldMethods' (origin(s): command line)
+ - '-H:BuildOutputJSONFile' (origin(s): command line)
+ - '-H:-UseServiceLoaderFeature' (origin(s): command line)
+ - '-H:+GenerateBuildArtifactsFile' (origin(s): command line)
+ - '-H:AddOpens' (alternative API option(s): --add-opens java.base/java.lang=ALL-UNNAMED; origin(s): command line)
+------------------------------------------------------------------------------------------------------------------------
+Build resources:
+ - 13,05GB of memory (83,3% of 15,66GB system memory, determined at start)
+ - 10 thread(s) (100,0% of 10 available processor(s), determined at start)
+08:25:29,773 INFO  [de.cui.jwt.qua.con.AccessLogFilterConfigResolver] CUI_JWT_QUARKUS-13: Resolving access log filter configuration from properties
+08:25:29,775 INFO  [de.cui.jwt.qua.log.CustomAccessLogFilter] CustomAccessLogFilter initialized: AccessLogFilterConfig{enabled=true, statusCodes=206-599, includeStatusCodes=[], includePaths=[], excludePaths=[], pattern='{remoteAddr} {method} {path} -> {status} ({duration}ms)'}
+[2/8] Performing analysis...  [*****]                                                                   (32,1s @ 1,35GB)
+   16.209 reachable types   (88,4% of   18.334 total)
+   23.672 reachable fields  (61,9% of   38.227 total)
+   80.963 reachable methods (59,3% of  136.437 total)
+    4.889 types,   254 fields, and 4.681 methods registered for reflection
+       62 types,    67 fields, and    55 methods registered for JNI access
+        4 native libraries: dl, pthread, rt, z
+[3/8] Building universe...                                                                               (4,1s @ 1,50GB)
+[4/8] Parsing methods...      [**]                                                                       (2,2s @ 1,70GB)
+[5/8] Inlining methods...     [***]                                                                      (1,2s @ 1,90GB)
+[6/8] Compiling methods...    [*****]                                                                   (21,5s @ 1,13GB)
+[7/8] Laying out methods...   [**]                                                                       (4,9s @ 1,60GB)
+[8/8] Creating image...       [***]                                                                      (6,7s @ 1,81GB)
+  30,38MB (45,23%) for code area:    52.033 compilation units
+  36,39MB (54,17%) for image heap:  413.927 objects and 59 resources
+ 414,85kB ( 0,60%) for other data
+  67,17MB in total
+------------------------------------------------------------------------------------------------------------------------
+Top 10 origins of code area:                                Top 10 object types in image heap:
+  12,26MB java.base                                           10,30MB byte[] for code metadata
+   1,86MB c.f.jackson.core.jackson-databind-2.19.2.jar         5,48MB byte[] for java.lang.String
+   1,65MB c.0.0-SNAPSHOT-runner.jar                            4,00MB java.lang.Class
+   1,56MB svm.jar (Native Image)                               3,72MB java.lang.String
+   1,29MB java.net.http                                        1,48MB com.oracle.svm.core.hub.DynamicHubCompanion
+ 914,23kB modified-io.vertx.vertx-core-4.5.18.jar              1,13MB byte[] for general heap data
+ 668,75kB io.netty.netty-buffer-4.1.124.Final.jar            954,52kB byte[] for reflection metadata
+ 646,50kB m.jboss.resteasy.resteasy-core-6.2.12.Final.jar    732,30kB java.lang.String[]
+ 629,71kB jdk.jfr                                            589,18kB c.o.svm.core.hub.DynamicHub$ReflectionMetadata
+ 595,56kB com.fasterxml.jackson.core.jackson-core-2.19.2.jar 554,11kB java.util.HashMap$Node
+   8,09MB for 126 more packages                                7,50MB for 4180 more object types
+------------------------------------------------------------------------------------------------------------------------
+Recommendations:
+ HEAP: Set max heap for improved and more predictable memory usage.
+ CPU:  Enable more CPU features with '-march=native' for improved performance.
+------------------------------------------------------------------------------------------------------------------------
+                        7,4s (9,4% of total time) in 524 GCs | Peak RSS: 2,82GB | CPU load: 6,94
+------------------------------------------------------------------------------------------------------------------------
+Produced artifacts:
+ /project/build-artifacts.json (build_info)
+ /project/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner (executable)
+ /project/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner-build-output-stats.json (build_info)
+========================================================================================================================
+Finished generating 'cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner' in 1m 17s.
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildRunner] docker run --env LANG=C --rm --user 501:20 -v /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-native-image-source-jar:/project:z --entrypoint /bin/bash quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 -c objcopy --strip-debug cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner
+[INFO] [io.quarkus.deployment.QuarkusAugmentor] Quarkus augmentation completed in 84985ms
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:26 min
+[INFO] Finished at: 2025-09-07T10:26:44+02:00
+[INFO] ------------------------------------------------------------------------
+✅ Native executable built: cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner
+[INFO] 
+[INFO] --- exec:3.5.1:exec (docker-build-distroless) @ cui-jwt-quarkus-integration-tests ---
+#1 [internal] load local bake definitions
+#1 reading from stdin 913B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile.native.distroless
+#2 transferring dockerfile: 1.68kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for quay.io/quarkus/quarkus-distroless-image:2.0
+#3 DONE 1.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/6] FROM quay.io/quarkus/quarkus-distroless-image:2.0@sha256:2845c7b4e28343a517fcf0af63e87cf220ee4e00d0a113450f101233b1bcc708
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 DONE 0.0s
+
+#7 importing cache manifest from quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21
+#7 inferred cache manifest type: application/vnd.docker.distribution.manifest.list.v2+json done
+#7 ...
+
+#8 importing cache manifest from quay.io/quarkus/quarkus-distroless-image:2.0
+#8 inferred cache manifest type: application/vnd.docker.distribution.manifest.list.v2+json done
+#8 DONE 1.4s
+
+#9 importing cache manifest from registry.access.redhat.com/ubi8/ubi-minimal:8.10
+#9 inferred cache manifest type: application/vnd.oci.image.index.v1+json done
+#9 ...
+
+#7 importing cache manifest from quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21
+#7 DONE 1.6s
+
+#9 importing cache manifest from registry.access.redhat.com/ubi8/ubi-minimal:8.10
+#9 DONE 2.3s
+
+#6 [internal] load build context
+#6 transferring context: 69.62MB 2.6s
+#6 transferring context: 70.29MB 2.6s done
+#6 DONE 2.7s
+
+#10 [2/6] WORKDIR /app
+#10 CACHED
+
+#11 [3/6] COPY --chmod=0755 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/*-runner /app/application
+#11 DONE 0.3s
+
+#12 [4/6] COPY --chmod=0644 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.crt /app/certificates/localhost.crt
+#12 DONE 0.1s
+
+#13 [5/6] COPY --chmod=0600 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost.key /app/certificates/localhost.key
+#13 DONE 0.0s
+
+#14 [6/6] COPY --chmod=0644 cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/certificates/localhost-truststore.p12 /app/certificates/localhost-truststore.p12
+#14 DONE 0.0s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 0.2s done
+#15 writing image sha256:2c6888e192892252f1bb84cf9e7a9aed212111485deb94e4e22e27679e549e73 done
+#15 naming to docker.io/library/cui-jwt-integration-tests:distroless done
+#15 DONE 0.2s
+
+#16 resolving provenance for metadata file
+#16 DONE 0.0s
+[INFO] 
+[INFO] --- exec:3.5.1:exec (start-integration-app) @ cui-jwt-quarkus-integration-tests ---
+🚀 Starting JWT Integration Tests with Docker Compose
+Project directory: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+Root directory: /Users/oliver/git/cui-jwt
+📦 Using Maven-built native executable: cui-jwt-quarkus-integration-tests-1.0.0-SNAPSHOT-runner
+🐳 Docker image: cui-jwt-integration-tests:distroless (distroless mode)
+🐳 Starting Docker containers (Quarkus native (Maven-built + Docker copy) - distroless + Keycloak)...
+⏳ Waiting for Keycloak to be ready...
+⏳ Waiting for Keycloak... (attempt 1/60)
+⏳ Waiting for Keycloak... (attempt 2/60)
+⏳ Waiting for Keycloak... (attempt 3/60)
+⏳ Waiting for Keycloak... (attempt 4/60)
+⏳ Waiting for Keycloak... (attempt 5/60)
+⏳ Waiting for Keycloak... (attempt 6/60)
+⏳ Waiting for Keycloak... (attempt 7/60)
+⏳ Waiting for Keycloak... (attempt 8/60)
+⏳ Waiting for Keycloak... (attempt 9/60)
+⏳ Waiting for Keycloak... (attempt 10/60)
+⏳ Waiting for Keycloak... (attempt 11/60)
+⏳ Waiting for Keycloak... (attempt 12/60)
+⏳ Waiting for Keycloak... (attempt 13/60)
+⏳ Waiting for Keycloak... (attempt 14/60)
+✅ Keycloak is ready!
+⏳ Waiting for Quarkus service to be ready...
+✅ Quarkus service is ready!
+📈 Actual startup time: 0s (container + application)
+⚡ Native app startup: 0.220s (application only)
+📦 Image size: 105MB (native image)
+
+🎉 JWT Integration Benchmark Environment is running!
+
+📱 Application URLs:
+  🔍 Health Check:   https://localhost:10443/q/health
+  📊 Metrics:        https://localhost:10443/q/metrics
+  🔑 Keycloak:       https://localhost:1443/auth
+
+🧪 Quick test commands:
+  curl -k https://localhost:10443/q/health/live
+  curl -k https://localhost:1090/health/ready
+
+🛑 To stop: ./scripts/stop-integration-container.sh
+📋 To view logs: docker compose logs -f
+[INFO] 
+[INFO] --- failsafe:3.5.3:integration-test (default) @ cui-jwt-quarkus-integration-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT
+2025-09-07 10:27:30,768 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:30,771 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$BearerTokenAuthorizationTests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$BearerTokenAuthorizationTests
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$InvalidTokenFormatTests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.072 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$InvalidTokenFormatTests
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$MalformedJsonTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$MalformedJsonTests
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$NullTokenTests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$NullTokenTests
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$WhitespaceTokenTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.081 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$WhitespaceTokenTests
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$EmptyTokenTests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.059 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$EmptyTokenTests
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$MissingRequestBodyTests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT$MissingRequestBodyTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.762 s -- in de.cuioss.jwt.integration.JwtValidationEndpointApiValidationIT
+[INFO] Running de.cuioss.jwt.integration.HealthCheckBlockingReproductionIT
+2025-09-07 10:27:33,122 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:33,126 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+2025-09-07 10:27:33,133 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Comparing blocking behavior across different health check types
+2025-09-07 10:27:33,134 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Starting liveness health check %d at 1 [/q/health/live]
+2025-09-07 10:27:33,883 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check liveness %d completed with status: 1 [UP]
+2025-09-07 10:27:33,890 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check liveness: HealthCheckTimingResult[checkId=1, type=liveness, responseTime=PT0.749514S, success=true, timedOut=false, status=UP, errorMessage=null]
+2025-09-07 10:27:34,395 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Starting readiness health check %d at 2 [/q/health/ready]
+2025-09-07 10:27:34,421 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check readiness %d completed with status: 2 [UP]
+2025-09-07 10:27:34,422 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check readiness: HealthCheckTimingResult[checkId=2, type=readiness, responseTime=PT0.026701S, success=true, timedOut=false, status=UP, errorMessage=null]
+2025-09-07 10:27:34,923 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Starting startup health check %d at 3 [/q/health/started]
+2025-09-07 10:27:34,945 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check startup %d completed with status: 3 [UP]
+2025-09-07 10:27:34,945 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check startup: HealthCheckTimingResult[checkId=3, type=startup, responseTime=PT0.022024S, success=true, timedOut=false, status=UP, errorMessage=null]
+2025-09-07 10:27:35,451 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Starting overall health check %d at 4 [/q/health]
+2025-09-07 10:27:35,478 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check overall %d completed with status: 4 [UP]
+2025-09-07 10:27:35,478 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check overall: HealthCheckTimingResult[checkId=4, type=overall, responseTime=PT0.027844S, success=true, timedOut=false, status=UP, errorMessage=null]
+2025-09-07 10:27:35,984 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) DIFFERENTIAL BLOCKING ANALYSIS:
+2025-09-07 10:27:35,985 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - LIVENESS: FAST (UP, %dms) [749]
+2025-09-07 10:27:35,985 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - READINESS: FAST (UP, %dms) [26]
+2025-09-07 10:27:35,986 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - STARTUP: FAST (UP, %dms) [22]
+2025-09-07 10:27:35,986 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - OVERALL: FAST (UP, %dms) [27]
+2025-09-07 10:27:35,987 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) ✅ RESPONSIVE HEALTH CHECKS: [liveness, readiness, startup, overall]
+2025-09-07 10:27:35,998 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Testing health check blocking behavior during JWKS loading failures
+2025-09-07 10:27:35,999 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-1) Starting readiness health check %d at 1 [/q/health/ready]
+2025-09-07 10:27:35,999 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-2) Starting readiness health check %d at 2 [/q/health/ready]
+2025-09-07 10:27:35,999 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-3) Starting readiness health check %d at 3 [/q/health/ready]
+2025-09-07 10:27:35,999 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-5) Starting readiness health check %d at 5 [/q/health/ready]
+2025-09-07 10:27:35,999 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-4) Starting readiness health check %d at 4 [/q/health/ready]
+2025-09-07 10:27:36,019 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-5) Health check readiness %d completed with status: 5 [UP]
+2025-09-07 10:27:36,050 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-1) Health check readiness %d completed with status: 1 [UP]
+2025-09-07 10:27:36,050 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-4) Health check readiness %d completed with status: 4 [UP]
+2025-09-07 10:27:36,050 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-3) Health check readiness %d completed with status: 3 [UP]
+2025-09-07 10:27:36,050 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check %d completed: 1 [HealthCheckTimingResult[checkId=1, type=readiness, responseTime=PT0.05134S, success=true, timedOut=false, status=UP, errorMessage=null]]
+2025-09-07 10:27:36,050 FINE  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (pool-2-thread-2) Health check readiness %d completed with status: 2 [UP]
+2025-09-07 10:27:36,051 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check %d completed: 2 [HealthCheckTimingResult[checkId=2, type=readiness, responseTime=PT0.051693S, success=true, timedOut=false, status=UP, errorMessage=null]]
+2025-09-07 10:27:36,051 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check %d completed: 3 [HealthCheckTimingResult[checkId=3, type=readiness, responseTime=PT0.051423S, success=true, timedOut=false, status=UP, errorMessage=null]]
+2025-09-07 10:27:36,051 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check %d completed: 4 [HealthCheckTimingResult[checkId=4, type=readiness, responseTime=PT0.051179S, success=true, timedOut=false, status=UP, errorMessage=null]]
+2025-09-07 10:27:36,051 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Health check %d completed: 5 [HealthCheckTimingResult[checkId=5, type=readiness, responseTime=PT0.019693S, success=true, timedOut=false, status=UP, errorMessage=null]]
+2025-09-07 10:27:36,051 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) Analyzing blocking behavior from %d health check attempts [5]
+2025-09-07 10:27:36,053 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) BLOCKING BEHAVIOR ANALYSIS:
+2025-09-07 10:27:36,053 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - Timeouts: %d/%d (%.1f%%) [0, 5, 0.0]
+2025-09-07 10:27:36,054 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - Successes: %d/%d (%.1f%%) [5, 5, 100.0]
+2025-09-07 10:27:36,054 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - Average response time: PT0.044S
+2025-09-07 10:27:36,054 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) - Maximum response time: PT0.051693S
+2025-09-07 10:27:36,054 INFO  [de.cui.jwt.int.HealthCheckBlockingReproductionIT] (main) ✅ SUCCESS: Health checks are responsive (no blocking behavior detected)
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.162 s -- in de.cuioss.jwt.integration.HealthCheckBlockingReproductionIT
+[INFO] Running de.cuioss.jwt.integration.StartupTimingIssueReproductionIT
+2025-09-07 10:27:36,863 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:36,866 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+2025-09-07 10:27:36,873 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) Starting startup timing issue reproduction test
+2025-09-07 10:27:36,873 FINE  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) Attempt %d (elapsed: 1) [PT0.000001S]
+2025-09-07 10:27:37,677 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) Attempt %d (1): Liveness=PT0.000001S, Readiness=true, Startup=true, Overall=true [true]
+2025-09-07 10:27:37,701 FINE  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) JWT endpoint accessible at attempt %d (response time: %dms) [1, 23]
+2025-09-07 10:27:37,702 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) Service fully operational after PT0.000001S (attempt %d) [1]
+2025-09-07 10:27:37,702 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) Analyzing timing pattern from %d health checks and %d endpoint attempts [1, 1]
+2025-09-07 10:27:37,702 WARNING [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) ❌ Could not reproduce timing issue - service may have started too quickly
+2025-09-07 10:27:37,703 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) ✅ Service became ready after: PT0.000001S (attempt %d) [1]
+2025-09-07 10:27:37,703 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) ✅ JWT endpoint became accessible after: PT0.000001S (attempt %d, response time: %dms) [1, 23]
+2025-09-07 10:27:37,703 INFO  [de.cui.jwt.int.StartupTimingIssueReproductionIT] (main) ✅ Timing issue reproduction test completed successfully in unit test environment
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.065 s -- in de.cuioss.jwt.integration.StartupTimingIssueReproductionIT
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointTokenRequestIT
+2025-09-07 10:27:38,518 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:38,521 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.241 s -- in de.cuioss.jwt.integration.JwtValidationEndpointTokenRequestIT
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointIntegrationIT
+2025-09-07 10:27:40,387 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:40,390 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+2025-09-07 10:27:41,582 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Verifying SecurityEventCounter metrics bounds after all integration tests
+2025-09-07 10:27:42,668 FINE  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Raw metrics response length: 19946
+2025-09-07 10:27:42,668 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # TYPE cui_jwt_validation_errors counter
+2025-09-07 10:27:42,669 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # HELP cui_jwt_validation_errors Number of JWT validation errors by type
+2025-09-07 10:27:42,669 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"} 0.0
+2025-09-07 10:27:42,669 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_SIZE_EXCEEDED",result="failure"} 0.0
+2025-09-07 10:27:42,669 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="MISSING_RECOMMENDED_ELEMENT",result="failure"} 0.0
+2025-09-07 10:27:42,669 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="JWKS_FETCH_FAILED",result="failure"} 0.0
+2025-09-07 10:27:42,669 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="JWKS_JSON_PARSE_FAILED",result="failure"} 0.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="INVALID_JWT_FORMAT",result="failure"} 0.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_EXPIRED",result="failure"} 0.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_JWT",result="failure"} 5.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="AZP_MISMATCH",result="failure"} 0.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="NO_ISSUER_CONFIG",result="failure"} 0.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="MISSING_CLAIM",result="failure"} 0.0
+2025-09-07 10:27:42,670 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="UNSUPPORTED_ALGORITHM",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="ISSUER_MISMATCH",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="FAILED_TO_READ_JWKS_FILE",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_NOT_FOUND",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_EMPTY",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="AUDIENCE_MISMATCH",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="SIGNATURE_VALIDATION_FAILED",result="failure"} 0.0
+2025-09-07 10:27:42,671 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_PAYLOAD",result="failure"} 0.0
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_ROTATION_DETECTED",result="failure"} 0.0
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="DECODED_PART_SIZE_EXCEEDED",result="failure"} 0.0
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_NBF_FUTURE",result="failure"} 0.0
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # TYPE cui_jwt_validation_success_operations counter
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # HELP cui_jwt_validation_success_operations Number of successful JWT operations by type
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CREATED",result="success"} 0.0
+2025-09-07 10:27:42,672 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="ID_TOKEN_CREATED",result="success"} 0.0
+2025-09-07 10:27:42,673 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="REFRESH_TOKEN_CREATED",result="success"} 1.0
+2025-09-07 10:27:42,673 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CACHE_HIT",result="success"} 0.0
+2025-09-07 10:27:42,673 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Success metrics present: false
+2025-09-07 10:27:42,673 WARNING [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Success metrics not found - this indicates SecurityEventCounter success events are not being published
+[INFO] Running de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests
+2025-09-07 10:27:42,770 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) bearerTokenWithScopes:eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ2S2o2QzhFQTd4NS05XzQydkp5SDh5RWpoam9CQ2tGVjh4R0x3V2ZwV0dNIn0.eyJleHAiOjE3NTcyMzQ1NjIsImlhdCI6MTc1NzIzMzY2MiwianRpIjoib25ydHJvOjEzYzYyYWRmLTg1ZTctNGViZi1hNDNmLWFiMWI4YTUzMGRlNSIsImlzcyI6Imh0dHBzOi8va2V5Y2xvYWs6ODQ0My9yZWFsbXMvaW50ZWdyYXRpb24iLCJhdWQiOiJpbnRlZ3JhdGlvbi1jbGllbnQiLCJzdWIiOiJmOTAwN2ZiNi1mYWJiLTQ1NDYtOTUwNC01OWU4ZTBhY2Y2NTAiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJpbnRlZ3JhdGlvbi1jbGllbnQiLCJzaWQiOiI1YTE5YzdhMi1lNDM5LTQzZDMtODQyMS03YWNmMzBmNzE1NzAiLCJzY29wZSI6InJlYWQgZW1haWwgb3BlbmlkIHByb2ZpbGUiLCJyb2xlcyI6WyJ1c2VyIl0sImdyb3VwcyI6WyJ0ZXN0LWdyb3VwIl0sInByZWZlcnJlZF91c2VybmFtZSI6ImludGVncmF0aW9uLXVzZXIiLCJlbWFpbCI6ImludGVncmF0aW9uQGV4YW1wbGUuY29tIn0.A4p5P99UIRO5F2-23nOmobXBMWsVsnca83xpRPe4hdQ0YCWazWy2fLTkLhaxk7qqxO6MOH-bxi9DWyfcIeUyfZydWE49VHnJHtIeQjDxMmcD3YZv5-UDVj6Otx1h3L2cmyFm3VlHrBDij-iK3FsZUv97y-2FEX4AbJno3xMj9U5ODdoKGy_EStBT7AywiRVemrlNlQpWpbLibVReGlj6lxpuGB_nPulcA86F3AbC7tIkci7fwjM5G9QSLMaPH2Yi8zIs-tC8NfaVeu2r1kLM29BaotT0nbYad75-a6Tw6_3DTw2AJGMr0tMLFsVUGs-YjGIzUfzg-DQlsJK-nZ8Arw
+[ERROR] Tests run: 4, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 0.350 s <<< FAILURE! -- in de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[1] -- Time elapsed: 0.104 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallConstructor(CallSiteArray.java:57)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:263)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[2] -- Time elapsed: 0.074 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[3] -- Time elapsed: 0.078 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[4] -- Time elapsed: 0.071 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Running de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests
+[ERROR] Tests run: 4, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.691 s <<< FAILURE! -- in de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive -- Time elapsed: 0.070 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive(AbstractJwtValidationEndpointTest.java:98)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive -- Time elapsed: 0.245 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive(AbstractJwtValidationEndpointTest.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests -- Time elapsed: 0.081 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests(AbstractJwtValidationEndpointTest.java:159)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.552 s -- in de.cuioss.jwt.integration.JwtValidationEndpointIntegrationIT
+[INFO] Running de.cuioss.jwt.integration.JwtValidationEndpointBenchmarkIT
+2025-09-07 10:27:44,554 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:44,557 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+2025-09-07 10:27:45,265 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Verifying SecurityEventCounter metrics bounds after all integration tests
+2025-09-07 10:27:46,345 FINE  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Raw metrics response length: 21498
+2025-09-07 10:27:46,345 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # TYPE cui_jwt_validation_errors counter
+2025-09-07 10:27:46,345 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # HELP cui_jwt_validation_errors Number of JWT validation errors by type
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"} 0.0
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_SIZE_EXCEEDED",result="failure"} 0.0
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="MISSING_RECOMMENDED_ELEMENT",result="failure"} 0.0
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="JWKS_FETCH_FAILED",result="failure"} 0.0
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="JWKS_JSON_PARSE_FAILED",result="failure"} 0.0
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="INVALID_JWT_FORMAT",result="failure"} 0.0
+2025-09-07 10:27:46,346 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_EXPIRED",result="failure"} 0.0
+2025-09-07 10:27:46,347 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_JWT",result="failure"} 5.0
+2025-09-07 10:27:46,347 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="AZP_MISMATCH",result="failure"} 0.0
+2025-09-07 10:27:46,347 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="NO_ISSUER_CONFIG",result="failure"} 7.0
+2025-09-07 10:27:46,347 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="MISSING_CLAIM",result="failure"} 0.0
+2025-09-07 10:27:46,347 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="UNSUPPORTED_ALGORITHM",result="failure"} 0.0
+2025-09-07 10:27:46,347 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="ISSUER_MISMATCH",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="FAILED_TO_READ_JWKS_FILE",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_NOT_FOUND",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_EMPTY",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="AUDIENCE_MISMATCH",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="SIGNATURE_VALIDATION_FAILED",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_PAYLOAD",result="failure"} 0.0
+2025-09-07 10:27:46,348 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_ROTATION_DETECTED",result="failure"} 0.0
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="DECODED_PART_SIZE_EXCEEDED",result="failure"} 0.0
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_NBF_FUTURE",result="failure"} 0.0
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # TYPE cui_jwt_validation_success_operations counter
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: # HELP cui_jwt_validation_success_operations Number of successful JWT operations by type
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CREATED",result="success"} 0.0
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="ID_TOKEN_CREATED",result="success"} 0.0
+2025-09-07 10:27:46,349 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="REFRESH_TOKEN_CREATED",result="success"} 2.0
+2025-09-07 10:27:46,350 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Found JWT validation metric: cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CACHE_HIT",result="success"} 0.0
+2025-09-07 10:27:46,350 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Success metrics present: false
+2025-09-07 10:27:46,350 WARNING [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) Success metrics not found - this indicates SecurityEventCounter success events are not being published
+[INFO] Running de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests
+2025-09-07 10:27:46,440 INFO  [de.cui.jwt.int.AbstractJwtValidationEndpointTest] (main) bearerTokenWithScopes:eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJtQUdkenJMSkhrRHhEckJoSTFrWEZlS3d5V29QZ1dwNFdKbVJDNWNZT0ZrIn0.eyJleHAiOjE3NTcyMzQ1NjYsImlhdCI6MTc1NzIzMzY2NiwianRpIjoib25ydHJvOjQ0YTkxZmFiLWY3MWMtNDA0MS05YTA5LWQ5ODc3NWMxMzBhNCIsImlzcyI6Imh0dHBzOi8va2V5Y2xvYWs6ODQ0My9yZWFsbXMvYmVuY2htYXJrIiwiYXVkIjoiYmVuY2htYXJrLWNsaWVudCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImJlbmNobWFyay1jbGllbnQiLCJzaWQiOiI5MjQ5MDhiYy0yMzM5LTQ4YWUtYjlkOS04MzA4YmQ4NTk2MDYiLCJzY29wZSI6InJlYWQgZW1haWwgb3BlbmlkIHByb2ZpbGUiLCJyb2xlcyI6WyJ1c2VyIl0sImdyb3VwcyI6WyJ0ZXN0LWdyb3VwIl0sInByZWZlcnJlZF91c2VybmFtZSI6ImJlbmNobWFyay11c2VyIiwiZW1haWwiOiJiZW5jaG1hcmtAZXhhbXBsZS5jb20ifQ.oi8T3tpqeAQ-AFRACaDkje7hKJsmCWOhN0WiBut-bWXYVfK60kD--q7C51ERPTMpdX8RwGqVVMKckTc6QSVDclM5Vvwx7CJbZm1fc6c13Kbw-qHc1X9TV1rnS9K0HOp9XsiOPj0WyH9xu2fK3tnQCEthbVnYcLGWFXnga4E5eeOg3CfSyiE_qshgRAr0K23Zphx8kSJwEEqZaCK3V1iAubkHMgbvnsUT_syl_i5F19xkcMzYwlrvy704oy1G5F3lhWCjBaPO-em9xhhy_LEE0oQMOfoDckr8cz-gMga_2bUnNY8mLmSOYdQUnqKz1X0vKf3tbnrDV7a10HUPdNRuqw
+[ERROR] Tests run: 4, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 0.325 s <<< FAILURE! -- in de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[1] -- Time elapsed: 0.096 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallConstructor(CallSiteArray.java:57)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:263)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[2] -- Time elapsed: 0.069 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[3] -- Time elapsed: 0.066 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[4] -- Time elapsed: 0.071 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(AbstractJwtValidationEndpointTest.java:191)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.Spliterators$ArraySpliterator.forEachRemaining(Spliterators.java:1024)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Running de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests
+[ERROR] Tests run: 4, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 0.682 s <<< FAILURE! -- in de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive -- Time elapsed: 0.075 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive(AbstractJwtValidationEndpointTest.java:98)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive -- Time elapsed: 0.235 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive(AbstractJwtValidationEndpointTest.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests -- Time elapsed: 0.079 s <<< FAILURE!
+java.lang.AssertionError: 
+1 expectation failed.
+Expected status code <200> but was <401>.
+
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at org.codehaus.groovy.reflection.CachedConstructor.invoke(CachedConstructor.java:73)
+	at org.codehaus.groovy.runtime.callsite.ConstructorSite$ConstructorSiteNoUnwrapNoCoerce.callConstructor(ConstructorSite.java:108)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callConstructor(AbstractCallSite.java:277)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure.validate(ResponseSpecificationImpl.groovy:512)
+	at io.restassured.internal.ResponseSpecificationImpl$HamcrestAssertionClosure$validate$1.call(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.validateResponseIfRequired(ResponseSpecificationImpl.groovy:696)
+	at io.restassured.internal.ResponseSpecificationImpl.this$2$validateResponseIfRequired(ResponseSpecificationImpl.groovy)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.codehaus.groovy.runtime.callsite.PlainObjectMetaMethodSite.doInvoke(PlainObjectMetaMethodSite.java:43)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite$PogoCachedMethodSiteNoUnwrapNoCoerce.invoke(PogoMetaMethodSite.java:198)
+	at org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite.callCurrent(PogoMetaMethodSite.java:62)
+	at org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(AbstractCallSite.java:185)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:135)
+	at io.restassured.specification.ResponseSpecification$statusCode$0.callCurrent(Unknown Source)
+	at io.restassured.internal.ResponseSpecificationImpl.statusCode(ResponseSpecificationImpl.groovy:143)
+	at io.restassured.internal.ValidatableResponseOptionsImpl.statusCode(ValidatableResponseOptionsImpl.java:89)
+	at de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests(AbstractJwtValidationEndpointTest.java:159)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.022 s -- in de.cuioss.jwt.integration.JwtValidationEndpointBenchmarkIT
+[INFO] Running de.cuioss.jwt.integration.HealthCheckIntegrationIT
+2025-09-07 10:27:48,181 FINE  [de.cui.jwt.int.BaseIntegrationTest] (main) Configured relaxed HTTPS validation for integration tests
+2025-09-07 10:27:48,184 INFO  [de.cui.jwt.int.BaseIntegrationTest] (main) Integration tests configured for HTTPS port: 10443 with relaxed HTTPS validation
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.053 s -- in de.cuioss.jwt.integration.HealthCheckIntegrationIT
+[INFO] 
+[INFO] Results:
+[INFO] 
+[ERROR] Failures: 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[1]
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[2]
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[3]
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation(String)[4]
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$BearerTokenProducerTests.bearerTokenEndpointValidation:191 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests:159 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointMultipleRequests:159 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive:98 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$PositiveTests.validateAccessTokenEndpointPositive:98 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[ERROR] de.cuioss.jwt.integration.AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive
+[ERROR]   Run 1: AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive:118 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[ERROR]   Run 2: AbstractJwtValidationEndpointTest$PositiveTests.validateIdTokenEndpointPositive:118 1 expectation failed.
+Expected status code <200> but was <401>.
+
+[INFO] 
+[INFO] 
+[ERROR] Tests run: 44, Failures: 7, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- exec:3.5.1:exec (dump-quarkus-logs) @ cui-jwt-quarkus-integration-tests ---
+🚀 Dumping JWT Integration Tests container logs...
+📦 Quarkus container: cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1
+📦 Keycloak container: cui-jwt-quarkus-integration-tests-keycloak-1
+📝 Output files: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/
+
+📋 Processing Quarkus container...
+✅ Container is running
+📥 Dumping Quarkus logs to: cui-jwt-quarkus-logs-2025-09-07_10-27-49.txt
+✅ Successfully dumped     1760 lines (212K) to: cui-jwt-quarkus-logs-2025-09-07_10-27-49.txt
+📍 Full path: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-quarkus-logs-2025-09-07_10-27-49.txt
+
+📋 Processing Keycloak container...
+✅ Container is running
+📥 Dumping Keycloak logs to: cui-jwt-keycloak-logs-2025-09-07_10-27-49.txt
+✅ Successfully dumped       54 lines ( 12K) to: cui-jwt-keycloak-logs-2025-09-07_10-27-49.txt
+📍 Full path: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/cui-jwt-keycloak-logs-2025-09-07_10-27-49.txt
+
+📊 Log Dump Summary:
+✅ Quarkus logs: cui-jwt-quarkus-logs-2025-09-07_10-27-49.txt
+✅ Keycloak logs: cui-jwt-keycloak-logs-2025-09-07_10-27-49.txt
+🎉 All container logs successfully dumped to: /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target
+[INFO] 
+[INFO] --- exec:3.5.1:exec (stop-integration-app) @ cui-jwt-quarkus-integration-tests ---
+🛑 Stopping JWT Integration Tests Docker containers
+📦 Stopping Docker containers (native mode)...
+✅ JWT Integration Tests stopped successfully
+✅ All containers are stopped
+[INFO] 
+[INFO] --- failsafe:3.5.3:verify (default) @ cui-jwt-quarkus-integration-tests ---
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:37 min
+[INFO] Finished at: 2025-09-07T10:27:50+02:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-failsafe-plugin:3.5.3:verify (default) on project cui-jwt-quarkus-integration-tests: There are test failures.
+[ERROR] 
+[ERROR] See /Users/oliver/git/cui-jwt/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/failsafe-reports for the individual test results.
+[ERROR] See dump files (if any exist) [date].dump, [date]-jvmRun[N].dump and [date].dumpstream.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

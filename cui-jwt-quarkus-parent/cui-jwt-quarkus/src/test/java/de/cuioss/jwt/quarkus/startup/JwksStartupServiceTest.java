@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.startup;
 
+import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -62,7 +64,8 @@ class JwksStartupServiceTest {
         mocksControl = EasyMock.createControl();
         mockConfig = mocksControl.createMock(Config.class);
         mockManagedExecutor = mocksControl.createMock(ManagedExecutor.class);
-        startupService = new JwksStartupService(mockConfig, mockManagedExecutor);
+        List<IssuerConfig> emptyIssuerConfigs = List.of(); // Empty list for test
+        startupService = new JwksStartupService(emptyIssuerConfigs, mockManagedExecutor);
         startupEvent = new StartupEvent();
     }
 

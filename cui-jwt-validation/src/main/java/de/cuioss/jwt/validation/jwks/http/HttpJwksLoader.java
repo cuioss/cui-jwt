@@ -162,6 +162,10 @@ public class HttpJwksLoader implements JwksLoader {
         if (cacheOpt.isEmpty()) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
+            
+            // Start background refresh even when HTTP cache setup fails
+            // This ensures that failed initial loads will be retried
+            startBackgroundRefreshIfNeeded();
             return;
         }
 
@@ -173,10 +177,11 @@ public class HttpJwksLoader implements JwksLoader {
         if (result.content() != null && (result.loadState().isDataChanged() || keyLoader.get() == null)) {
             updateKeyLoader(result);
             LOGGER.info(INFO.JWKS_KEYS_UPDATED.format(result.loadState()));
-
-            // Start background refresh after first successful load
-            startBackgroundRefreshIfNeeded();
         }
+
+        // Start background refresh after any load attempt (success or failure)
+        // This ensures that failed initial loads will be retried
+        startBackgroundRefreshIfNeeded();
 
         // Log appropriate message based on load state and handle error states
         switch (result.loadState()) {

@@ -27,6 +27,7 @@ import java.util.concurrent.*;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration test to demonstrate that health checks themselves can BLOCK during JWKS loading failures.
@@ -189,9 +190,17 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
         LOGGER.info("- Average response time: %s", avgResponseTime);
         LOGGER.info("- Maximum response time: %s", maxResponseTime);
 
-        // Validate that we demonstrate blocking behavior
-        assertTrue(timeouts > 0 || maxResponseTime.compareTo(Duration.ofSeconds(5)) > 0,
-                "Expected to demonstrate blocking behavior (timeouts or slow responses)");
+        // Since we fixed the blocking issues, we now expect fast responses
+        // This test validates that health checks are NOT blocking anymore
+        boolean hasBlockingBehavior = timeouts > 0 || maxResponseTime.compareTo(Duration.ofSeconds(5)) > 0;
+        
+        if (hasBlockingBehavior) {
+            LOGGER.warn("Health checks are still showing blocking behavior - this indicates remaining issues");
+            fail("Health checks should be responsive after our fixes, but found blocking behavior");
+        } else {
+            LOGGER.info("✅ SUCCESS: Health checks are responsive (no blocking behavior detected)");
+            assertTrue(true, "Health checks are working correctly without blocking");
+        }
 
         if (timeouts > 0) {
             LOGGER.info("✅ BLOCKING BEHAVIOR CONFIRMED: %d health checks timed out", timeouts);
