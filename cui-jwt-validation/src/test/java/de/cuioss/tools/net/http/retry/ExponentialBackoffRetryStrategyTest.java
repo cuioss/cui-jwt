@@ -17,6 +17,10 @@ package de.cuioss.tools.net.http.retry;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.result.HttpErrorCategory;
+import de.cuioss.tools.net.http.result.HttpResultObject;
+import de.cuioss.uimodel.result.ResultDetail;
+import de.cuioss.uimodel.result.ResultState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -58,11 +62,13 @@ class ExponentialBackoffRetryStrategyTest {
         @Test
         @DisplayName("Should return result on first attempt success")
         void shouldReturnResultOnFirstAttemptSuccess() throws Exception {
-            HttpOperation<String> operation = () -> "success";
+            HttpOperation<String> operation = () -> HttpResultObject.success("success", null, 200);
 
-            String result = strategy.execute(operation, context);
+            HttpResultObject<String> result = strategy.execute(operation, context);
 
-            assertEquals("success", result, "Strategy should return operation result on first attempt success");
+            assertTrue(result.isValid(), "Result should be valid on first attempt success");
+            assertEquals("success", result.getResult(), "Strategy should return operation result on first attempt success");
+            assertEquals(200, result.getHttpStatus().orElse(0), "Should have success HTTP status");
         }
 
         @Test
@@ -72,14 +78,18 @@ class ExponentialBackoffRetryStrategyTest {
             HttpOperation<String> operation = () -> {
                 int attempt = attempts.incrementAndGet();
                 if (attempt < 3) {
-                    throw new ConnectException("Connection failed on attempt " + attempt);
+                    return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                            new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Connection failed on attempt " + attempt),
+                                    new ConnectException("Connection failed on attempt " + attempt)));
                 }
-                return "success-on-attempt-" + attempt;
+                return HttpResultObject.success("success-on-attempt-" + attempt, null, 200);
             };
 
-            String result = strategy.execute(operation, context);
+            HttpResultObject<String> result = strategy.execute(operation, context);
 
-            assertEquals("success-on-attempt-3", result, "Strategy should return result from successful retry attempt");
+            assertTrue(result.isValid(), "Result should be valid after successful retry");
+            assertEquals("success-on-attempt-3", result.getResult(), "Strategy should return result from successful retry attempt");
+            assertEquals(ResultState.VALID, result.getState(), "Should indicate successful recovery");
             assertEquals(3, attempts.get(), "Strategy should have made exactly 3 attempts before success");
         }
     }
@@ -94,14 +104,17 @@ class ExponentialBackoffRetryStrategyTest {
             AtomicInteger attempts = new AtomicInteger(0);
             HttpOperation<String> operation = () -> {
                 attempts.incrementAndGet();
-                throw new ConnectException("Connection refused");
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Connection refused"),
+                                new ConnectException("Connection refused")));
             };
 
-            RetryException exception = assertThrows(RetryException.class,
-                    () -> strategy.execute(operation, context));
+            HttpResultObject<String> result = strategy.execute(operation, context);
 
-            assertEquals("All 3 retry attempts failed for test-operation", exception.getMessage(), "RetryException should contain descriptive failure message");
-            assertTrue(exception.getCause() instanceof ConnectException, "Exception cause should be original ConnectException");
+            assertFalse(result.isValid(), "Result should be invalid when all retry attempts fail");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertEquals(HttpErrorCategory.NETWORK_ERROR, result.getHttpErrorCategory().orElse(null));
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
             assertEquals(3, attempts.get(), "Strategy should have exhausted all 3 retry attempts");
         }
 
@@ -111,13 +124,17 @@ class ExponentialBackoffRetryStrategyTest {
             AtomicInteger attempts = new AtomicInteger(0);
             HttpOperation<String> operation = () -> {
                 attempts.incrementAndGet();
-                throw new SocketTimeoutException("Read timeout");
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Read timeout"),
+                                new SocketTimeoutException("Read timeout")));
             };
 
-            RetryException exception = assertThrows(RetryException.class,
-                    () -> strategy.execute(operation, context));
+            HttpResultObject<String> result = strategy.execute(operation, context);
 
-            assertTrue(exception.getCause() instanceof SocketTimeoutException, "Exception cause should be original SocketTimeoutException");
+            assertFalse(result.isValid(), "Result should be invalid when all retry attempts fail");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertEquals(HttpErrorCategory.NETWORK_ERROR, result.getHttpErrorCategory().orElse(null));
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
             assertEquals(3, attempts.get(), "Strategy should have exhausted all 3 retry attempts for timeout exception");
         }
 
@@ -127,13 +144,17 @@ class ExponentialBackoffRetryStrategyTest {
             AtomicInteger attempts = new AtomicInteger(0);
             HttpOperation<String> operation = () -> {
                 attempts.incrementAndGet();
-                throw new HttpConnectTimeoutException("HTTP timeout");
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("HTTP timeout"),
+                                new HttpConnectTimeoutException("HTTP timeout")));
             };
 
-            RetryException exception = assertThrows(RetryException.class,
-                    () -> strategy.execute(operation, context));
+            HttpResultObject<String> result = strategy.execute(operation, context);
 
-            assertTrue(exception.getCause() instanceof HttpConnectTimeoutException, "Exception cause should be original HttpConnectTimeoutException");
+            assertFalse(result.isValid(), "Result should be invalid when all retry attempts fail");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertEquals(HttpErrorCategory.NETWORK_ERROR, result.getHttpErrorCategory().orElse(null));
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
             assertEquals(3, attempts.get(), "Strategy should have exhausted all 3 retry attempts for HTTP timeout");
         }
 
@@ -143,13 +164,17 @@ class ExponentialBackoffRetryStrategyTest {
             AtomicInteger attempts = new AtomicInteger(0);
             HttpOperation<String> operation = () -> {
                 attempts.incrementAndGet();
-                throw new IOException("General IO error");
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("General IO error"),
+                                new IOException("General IO error")));
             };
 
-            RetryException exception = assertThrows(RetryException.class,
-                    () -> strategy.execute(operation, context));
+            HttpResultObject<String> result = strategy.execute(operation, context);
 
-            assertTrue(exception.getCause() instanceof IOException, "Exception cause should be original IOException");
+            assertFalse(result.isValid(), "Result should be invalid when all retry attempts fail");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertEquals(HttpErrorCategory.NETWORK_ERROR, result.getHttpErrorCategory().orElse(null));
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
             assertEquals(3, attempts.get(), "Strategy should have exhausted all 3 retry attempts for IO exception");
         }
     }
@@ -174,11 +199,16 @@ class ExponentialBackoffRetryStrategyTest {
 
             HttpOperation<String> operation = () -> {
                 attempts.incrementAndGet();
-                throw new ConnectException("Test exception");
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Test exception"),
+                                new ConnectException("Test exception")));
             };
 
-            assertThrows(RetryException.class,
-                    () -> longDelayStrategy.execute(operation, context));
+            HttpResultObject<String> result = longDelayStrategy.execute(operation, context);
+
+            assertFalse(result.isValid(), "Result should be invalid when max delay is exceeded");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
 
             long totalTime = System.currentTimeMillis() - startTime;
 
@@ -265,14 +295,17 @@ class ExponentialBackoffRetryStrategyTest {
                     // Interrupt the thread after the first failure
                     Thread.currentThread().interrupt();
                 }
-                throw new ConnectException("Test exception");
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Test exception"),
+                                new ConnectException("Test exception")));
             };
 
-            RetryException exception = assertThrows(RetryException.class,
-                    () -> interruptableStrategy.execute(operation, context));
+            HttpResultObject<String> result = interruptableStrategy.execute(operation, context);
 
-            assertEquals("Retry interrupted for test-operation", exception.getMessage(), "RetryException should indicate operation was interrupted");
-            assertTrue(exception.getCause() instanceof InterruptedException, "Exception cause should be InterruptedException");
+            assertFalse(result.isValid(), "Result should be invalid when operation is interrupted");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertEquals(HttpErrorCategory.NETWORK_ERROR, result.getHttpErrorCategory().orElse(null));
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
 
             // Should preserve interrupt status
             assertTrue(Thread.interrupted(), "Thread interrupt status should be preserved after retry interruption");
@@ -300,17 +333,19 @@ class ExponentialBackoffRetryStrategyTest {
             HttpOperation<String> operation = () -> {
                 int attempt = attempts.incrementAndGet();
                 if (attempt == 1) {
-                    throw new ConnectException("Should not retry");
+                    return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                            new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Should not retry"),
+                                    new ConnectException("Should not retry")));
                 }
-                return "should-not-reach";
+                return HttpResultObject.success("should-not-reach", null, 200);
             };
 
-            RetryException exception = assertThrows(RetryException.class,
-                    () -> noRetryStrategy.execute(operation, context));
+            HttpResultObject<String> result = noRetryStrategy.execute(operation, context);
 
-            assertEquals("Single attempt failed for test-operation", exception.getMessage(), "RetryException should contain descriptive failure message");
-            assertTrue(exception.getCause() instanceof ConnectException, "Exception cause should be original ConnectException");
-            assertEquals("Should not retry", exception.getCause().getMessage(), "Original exception message should be preserved");
+            assertFalse(result.isValid(), "Result should be invalid when single attempt fails");
+            assertEquals(ResultState.ERROR, result.getState());
+            assertEquals(HttpErrorCategory.NETWORK_ERROR, result.getHttpErrorCategory().orElse(null));
+            assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
             assertEquals(1, attempts.get(), "No-op strategy should make exactly 1 attempt without retrying");
         }
     }

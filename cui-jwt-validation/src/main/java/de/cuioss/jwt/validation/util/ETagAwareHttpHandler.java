@@ -19,7 +19,11 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.HttpStatusFamily;
-import lombok.Getter;
+import de.cuioss.tools.net.http.result.HttpErrorCategory;
+import de.cuioss.tools.net.http.result.HttpResultObject;
+import de.cuioss.uimodel.nameprovider.DisplayName;
+import de.cuioss.uimodel.result.ResultDetail;
+import de.cuioss.uimodel.result.ResultState;
 import lombok.NonNull;
 
 import java.io.IOException;
@@ -43,60 +47,6 @@ public class ETagAwareHttpHandler {
 
     private static final CuiLogger LOGGER = new CuiLogger(ETagAwareHttpHandler.class);
 
-    /**
-     * Enum representing the state of a load operation.
-     */
-    public enum LoadState {
-        /**
-         * Content was freshly loaded from the server (200 OK).
-         * Data has changed - keys should be reloaded/reevaluated.
-         */
-        LOADED_FROM_SERVER(true),
-
-        /**
-         * Server responded with 304 Not Modified based on ETag.
-         * Data has not changed - no need to reload keys.
-         */
-        CACHE_ETAG(false),
-
-        /**
-         * Content was returned from local cache without server request.
-         * Data has not changed - no need to reload keys.
-         */
-        CACHE_CONTENT(false),
-
-        /**
-         * An error occurred during loading, but cached data is still available.
-         * Data has not changed - no need to reload keys.
-         */
-        ERROR_WITH_CACHE(false),
-
-        /**
-         * An error occurred during loading and no cached data is available.
-         * Data state is unknown - keys need reevaluation.
-         */
-        ERROR_NO_CACHE(true);
-
-        /**
-         * true if data changed and keys need reevaluation, false if unchanged
-Ï        */
-        @Getter
-        private final boolean dataChanged;
-
-        LoadState(boolean dataChanged) {
-            this.dataChanged = dataChanged;
-        }
-
-    }
-
-    /**
-     * Result of a load operation containing the payload and detailed load state.
-     *
-     * @param content the HTTP content as string
-     * @param loadState the detailed state of the load operation
-     */
-    public record LoadResult(String content, LoadState loadState) {
-    }
 
     private final HttpHandler httpHandler;
     private final ReentrantLock lock = new ReentrantLock();
@@ -115,10 +65,19 @@ public class ETagAwareHttpHandler {
 
     /**
      * Loads HTTP content, using ETag-based HTTP caching when supported.
+     * 
+     * <h2>Result States</h2>
+     * <ul>
+     *   <li><strong>VALID + 200</strong>: Content freshly loaded from server (equivalent to LOADED_FROM_SERVER)</li>
+     *   <li><strong>VALID + 304</strong>: Content unchanged, using cached version (equivalent to CACHE_ETAG)</li>
+     *   <li><strong>VALID + no HTTP status</strong>: Content unchanged, using local cache (equivalent to CACHE_CONTENT)</li>
+     *   <li><strong>WARNING + cached content</strong>: Error occurred but using cached data (equivalent to ERROR_WITH_CACHE)</li>
+     *   <li><strong>ERROR + no content</strong>: Error occurred with no fallback (equivalent to ERROR_NO_CACHE)</li>
+     * </ul>
      *
-     * @return LoadResult containing content and cache status, never null
+     * @return HttpResultObject containing content and detailed state information, never null
      */
-    public LoadResult load() {
+    public HttpResultObject<String> load() {
         lock.lock();
         try {
             HttpFetchResult result = fetchJwksContentWithCache();
@@ -141,9 +100,9 @@ public class ETagAwareHttpHandler {
      * Forces a reload of HTTP content, optionally clearing cache completely.
      *
      * @param clearCache if true, clears all cached content; if false, only bypasses ETag validation
-     * @return LoadResult with fresh content or error state, never null
+     * @return HttpResultObject with fresh content or error state, never null
      */
-    public LoadResult reload(boolean clearCache) {
+    public HttpResultObject<String> reload(boolean clearCache) {
         lock.lock();
         try {
             if (clearCache) {
@@ -164,7 +123,7 @@ public class ETagAwareHttpHandler {
      * Internal load method that assumes the lock is already held.
      * Used by reload() to avoid recursive locking.
      */
-    private LoadResult loadInternal() {
+    private HttpResultObject<String> loadInternal() {
         HttpFetchResult result = fetchJwksContentWithCache();
 
         if (result.error) {
@@ -188,30 +147,52 @@ public class ETagAwareHttpHandler {
     /**
      * Handles error results by returning cached content if available.
      */
-    private LoadResult handleErrorResult() {
+    private HttpResultObject<String> handleErrorResult() {
         if (cachedContent != null) {
-            return new LoadResult(cachedContent, LoadState.ERROR_WITH_CACHE);
+            return new HttpResultObject<>(
+                    cachedContent,
+                    ResultState.WARNING, // Using cached content but with error condition
+                    new ResultDetail(
+                            new DisplayName("HTTP request failed, using cached content from " + httpHandler.getUrl()),
+                            new Exception("HTTP request failed")),
+                    HttpErrorCategory.NETWORK_ERROR,
+                    cachedETag,
+                    null // No HTTP status for error cases
+            );
         } else {
-            return new LoadResult(null, LoadState.ERROR_NO_CACHE);
+            return HttpResultObject.error(
+                    "", // Empty string as fallback when no cached content available
+                    HttpErrorCategory.NETWORK_ERROR,
+                    new ResultDetail(
+                            new DisplayName("HTTP request failed with no cached content available from " + httpHandler.getUrl()),
+                            new Exception("No cached content available"))
+            );
         }
     }
 
     /**
      * Handles 304 Not Modified response by returning cached content.
      */
-    private LoadResult handleNotModifiedResult() {
+    private HttpResultObject<String> handleNotModifiedResult() {
         LOGGER.debug("HTTP content not modified (304), using cached version");
-        return new LoadResult(cachedContent, LoadState.CACHE_ETAG);
+        return HttpResultObject.success(cachedContent, cachedETag, 304);
     }
 
     /**
      * Handles successful response by checking for content changes and updating cache.
      */
-    private LoadResult handleSuccessResult(HttpFetchResult result) {
+    private HttpResultObject<String> handleSuccessResult(HttpFetchResult result) {
         // Check if content actually changed despite new response
         if (cachedContent != null && cachedContent.equals(result.content)) {
             LOGGER.debug("HTTP content unchanged despite 200 OK response");
-            return new LoadResult(cachedContent, LoadState.CACHE_CONTENT);
+            return new HttpResultObject<>(
+                    cachedContent,
+                    ResultState.VALID,
+                    null, // No error details for successful cache hit
+                    null, // No error category
+                    cachedETag,
+                    null // No HTTP status for local cache operations
+            );
         }
 
         // Update cache with fresh content
@@ -219,7 +200,7 @@ public class ETagAwareHttpHandler {
         this.cachedETag = result.etag; // May be null if server doesn't support ETags
 
         LOGGER.info(JWTValidationLogMessages.INFO.HTTP_CONTENT_LOADED.format(httpHandler.getUrl()));
-        return new LoadResult(result.content, LoadState.LOADED_FROM_SERVER);
+        return HttpResultObject.success(result.content, result.etag, 200);
     }
 
     /**

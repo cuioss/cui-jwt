@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.util.ETagAwareHttpHandler;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.result.HttpResultObject;
 import jakarta.json.JsonObject;
 import lombok.NonNull;
 
@@ -141,14 +142,14 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         LOGGER.debug("Loading well-known endpoints from %s", wellKnownUrl);
 
         // Fetch and parse discovery document
-        ETagAwareHttpHandler.LoadResult result = etagHandler.load();
-        if (result.content() == null) {
+        HttpResultObject<String> result = etagHandler.load();
+        if (!result.isValid() || result.getResult() == null) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
 
-        Optional<JsonObject> parseResult = parser.parseJsonResponse(result.content(), wellKnownUrl);
+        Optional<JsonObject> parseResult = parser.parseJsonResponse(result.getResult(), wellKnownUrl);
         if (parseResult.isEmpty()) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
@@ -156,7 +157,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         }
 
         JsonObject discoveryDocument = parseResult.get();
-        LOGGER.debug("Discovery document load state: %s", result.loadState());
+        LOGGER.debug("Discovery document load state: %s", result.getState());
         LOGGER.debug(JWTValidationLogMessages.DEBUG.DISCOVERY_DOCUMENT_FETCHED.format(discoveryDocument));
 
         Map<String, HttpHandler> parsedEndpoints = new HashMap<>();

@@ -16,11 +16,11 @@
 package de.cuioss.tools.net.http.retry;
 
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.result.HttpResultObject;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.INFO;
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
@@ -48,81 +48,92 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private final Duration maxDelay;
     private final double jitterFactor;
     private final RetryMetrics retryMetrics;
-    private final ScheduledExecutorService scheduler;
 
     ExponentialBackoffRetryStrategy(int maxAttempts, Duration initialDelay, double backoffMultiplier,
-            Duration maxDelay, double jitterFactor, RetryMetrics retryMetrics, ScheduledExecutorService scheduler) {
+            Duration maxDelay, double jitterFactor, RetryMetrics retryMetrics) {
         this.maxAttempts = maxAttempts;
         this.initialDelay = Objects.requireNonNull(initialDelay, "initialDelay");
         this.backoffMultiplier = backoffMultiplier;
         this.maxDelay = Objects.requireNonNull(maxDelay, "maxDelay");
         this.jitterFactor = jitterFactor;
         this.retryMetrics = Objects.requireNonNull(retryMetrics, "retryMetrics");
-        this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
     }
 
     @Override
-    public <T> T execute(HttpOperation<T> operation, RetryContext context) throws RetryException, InterruptedException {
+    public <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context) {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(context, "context");
 
         long totalStartTime = System.nanoTime();
         retryMetrics.recordRetryStart(context);
 
-        IOException lastException = null;
+        HttpResultObject<T> lastResult = null;
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             long attemptStartTime = System.nanoTime();
 
             LOGGER.debug("Starting retry attempt {} for operation '{}'", attempt, context.operationName());
 
-            try {
-                T result = operation.execute();
+            // Execute operation - no exceptions to catch
+            HttpResultObject<T> result = operation.execute();
+            lastResult = result;
 
+            Duration attemptDuration = Duration.ofNanos(System.nanoTime() - attemptStartTime);
+
+            if (result.isValid()) {
                 // Success - record and return
-                Duration attemptDuration = Duration.ofNanos(System.nanoTime() - attemptStartTime);
-                retryMetrics.recordRetryAttempt(context, attempt, attemptDuration, true, null);
-
-                if (attempt > 1) {
-                    LOGGER.info(INFO.RETRY_OPERATION_SUCCEEDED_AFTER_ATTEMPTS.format(context.operationName(), attempt, maxAttempts));
-                }
+                retryMetrics.recordRetryAttempt(context, attempt, attemptDuration, true);
 
                 Duration totalDuration = Duration.ofNanos(System.nanoTime() - totalStartTime);
                 retryMetrics.recordRetryComplete(context, totalDuration, true, attempt);
 
-                return result;
-
-            } catch (IOException e) {
-                lastException = e;
-                Duration attemptDuration = Duration.ofNanos(System.nanoTime() - attemptStartTime);
-                retryMetrics.recordRetryAttempt(context, attempt, attemptDuration, false, e);
+                if (attempt > 1) {
+                    LOGGER.info(INFO.RETRY_OPERATION_SUCCEEDED_AFTER_ATTEMPTS.format(context.operationName(), attempt, maxAttempts));
+                    // This is a recovery after retries - modify state to indicate recovery
+                    return result.copyStateAndDetails(result.getResult()); // Keep original result but could modify state if needed
+                } else {
+                    // First attempt succeeded
+                    return result;
+                }
+            } else {
+                // Operation failed - record attempt
+                retryMetrics.recordRetryAttempt(context, attempt, attemptDuration, false);
 
                 if (attempt == maxAttempts) {
-                    LOGGER.warn(WARN.RETRY_MAX_ATTEMPTS_REACHED.format(context.operationName(), maxAttempts, e.getMessage()));
+                    LOGGER.warn(WARN.RETRY_MAX_ATTEMPTS_REACHED.format(context.operationName(), maxAttempts, "Final attempt failed"));
                     break;
                 }
 
-                LOGGER.debug("Retry attempt {} failed for operation '{}' after {}ms: {}",
-                        attempt, context.operationName(), attemptDuration.toMillis(), e.getMessage());
-                Duration delay = calculateDelay(attempt);
-                delayBeforeRetry(context, delay, attempt + 1);
+                // Check if this error is retryable
+                if (!result.isRetryable()) {
+                    LOGGER.debug("Operation failed with non-retryable error for '{}' after {}ms", context.operationName(), attemptDuration.toMillis());
+                    break;
+                }
 
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Duration attemptDuration = Duration.ofNanos(System.nanoTime() - attemptStartTime);
-                retryMetrics.recordRetryAttempt(context, attempt, attemptDuration, false, e);
-                Duration totalDuration = Duration.ofNanos(System.nanoTime() - totalStartTime);
-                retryMetrics.recordRetryComplete(context, totalDuration, false, attempt);
-                throw e;
+                LOGGER.debug("Retry attempt {} failed for operation '{}' after {}ms - retryable error",
+                        attempt, context.operationName(), attemptDuration.toMillis());
+
+                Duration delay = calculateDelay(attempt);
+
+                try {
+                    delayBeforeRetry(context, delay, attempt + 1);
+                } catch (RetryException delayException) {
+                    // Delay interrupted - return the actual operation failure (not synthetic result)
+                    Duration totalDuration = Duration.ofNanos(System.nanoTime() - totalStartTime);
+                    retryMetrics.recordRetryComplete(context, totalDuration, false, attempt);
+                    LOGGER.debug("Retry delay interrupted for '{}', returning last operation result", context.operationName());
+                    return lastResult; // Return real operation result, not synthetic one
+                }
             }
         }
 
-        // All attempts failed
+        // All attempts failed or non-retryable error
         Duration totalDuration = Duration.ofNanos(System.nanoTime() - totalStartTime);
         retryMetrics.recordRetryComplete(context, totalDuration, false, maxAttempts);
         LOGGER.warn(WARN.RETRY_OPERATION_FAILED.format(context.operationName(), maxAttempts, totalDuration.toMillis()));
 
-        throw new RetryException("All " + maxAttempts + " retry attempts failed for " + context.operationName(), lastException);
+        // Return the last result from the operation (which contains the error details)
+        return lastResult;
     }
 
 
@@ -136,11 +147,9 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         long delayStartTime = System.nanoTime();
 
         try {
-            // Use ScheduledExecutorService for proper non-blocking delay
-            ScheduledFuture<?> delayFuture = scheduler.schedule(() -> {
-            }, plannedDelay.toMillis(), TimeUnit.MILLISECONDS);
-            delayFuture.get(); // Block until delay completes or interruption
-            
+            // Simple blocking delay - honest about being synchronous
+            Thread.sleep(plannedDelay.toMillis());
+
             Duration actualDelay = Duration.ofNanos(System.nanoTime() - delayStartTime);
             retryMetrics.recordRetryDelay(context, nextAttemptNumber, plannedDelay, actualDelay);
 
@@ -151,10 +160,6 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
                         context.operationName(), plannedDelay.toMillis(), actualDelay.toMillis(), delayDifference);
             }
 
-        } catch (ExecutionException e) {
-            // This shouldn't happen with empty Runnable, but handle gracefully
-            Duration actualDelay = Duration.ofNanos(System.nanoTime() - delayStartTime);
-            retryMetrics.recordRetryDelay(context, nextAttemptNumber, plannedDelay, actualDelay);
         } catch (InterruptedException e) {
             Duration actualDelay = Duration.ofNanos(System.nanoTime() - delayStartTime);
             retryMetrics.recordRetryDelay(context, nextAttemptNumber, plannedDelay, actualDelay);
@@ -203,7 +208,6 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         private Duration maxDelay = Duration.ofMinutes(1);
         private double jitterFactor = 0.1; // ±10% jitter
         private RetryMetrics retryMetrics = RetryMetrics.noOp();
-        private ScheduledExecutorService scheduler;
 
         /**
          * Sets the maximum number of retry attempts.
@@ -288,32 +292,13 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         }
 
         /**
-         * Sets the scheduler for retry delays.
-         * 
-         * @param scheduler scheduled executor service for delays (must not be null)
-         * @return this builder
-         */
-        public Builder scheduler(ScheduledExecutorService scheduler) {
-            this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
-            return this;
-        }
-
-        /**
          * Builds the ExponentialBackoffRetryStrategy with the configured parameters.
          * 
          * @return configured retry strategy
          */
         public ExponentialBackoffRetryStrategy build() {
-            // Create default single-thread scheduler if none provided
-            ScheduledExecutorService effectiveScheduler = scheduler != null ?
-                    scheduler : Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "retry-delay-scheduler");
-                t.setDaemon(true);
-                return t;
-            });
-
             return new ExponentialBackoffRetryStrategy(maxAttempts, initialDelay, backoffMultiplier,
-                    maxDelay, jitterFactor, retryMetrics, effectiveScheduler);
+                    maxDelay, jitterFactor, retryMetrics);
         }
     }
 }

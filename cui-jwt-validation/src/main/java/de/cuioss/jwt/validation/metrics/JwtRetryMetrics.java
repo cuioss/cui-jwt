@@ -83,7 +83,7 @@ public class JwtRetryMetrics implements RetryMetrics {
 
     @Override
     public void recordRetryAttempt(RetryContext context, int attemptNumber, Duration attemptDuration,
-            boolean successful, Throwable exception) {
+            boolean successful) {
         if (monitor.isEnabled(MeasurementType.RETRY_ATTEMPT)) {
             monitor.recordMeasurement(MeasurementType.RETRY_ATTEMPT, attemptDuration.toNanos());
         }
@@ -91,9 +91,8 @@ public class JwtRetryMetrics implements RetryMetrics {
         if (successful) {
             LOGGER.debug("Retry attempt {} succeeded for operation '{}' in {}ms", attemptNumber, context.operationName(), attemptDuration.toMillis());
         } else {
-            LOGGER.debug("Retry attempt {} failed for operation '{}' after {}ms: {}",
-                    attemptNumber, context.operationName(), attemptDuration.toMillis(),
-                    exception != null ? exception.getMessage() : "unknown error");
+            LOGGER.debug("Retry attempt {} failed for operation '{}' after {}ms",
+                    attemptNumber, context.operationName(), attemptDuration.toMillis());
         }
     }
 

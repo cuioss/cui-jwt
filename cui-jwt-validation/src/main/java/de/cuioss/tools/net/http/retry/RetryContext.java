@@ -25,28 +25,26 @@ import java.io.Serializable;
  * 
  * @param operationName descriptive name of the operation being retried
  * @param attemptNumber current attempt number (1-based)  
- * @param lastException the exception from the previous attempt, null for first attempt
  */
-public record RetryContext(String operationName, int attemptNumber, Throwable lastException) implements Serializable {
+public record RetryContext(String operationName, int attemptNumber) implements Serializable {
 
     /**
      * Creates a new retry context for the first attempt.
      * 
      * @param operationName descriptive name of the operation
-     * @return retry context with attempt number 1 and no exception
+     * @return retry context with attempt number 1
      */
     public static RetryContext initial(String operationName) {
-        return new RetryContext(operationName, 1, null);
+        return new RetryContext(operationName, 1);
     }
 
     /**
      * Creates a new retry context for the next attempt.
      * 
-     * @param lastException the exception that caused the retry
-     * @return retry context with incremented attempt number and the exception
+     * @return retry context with incremented attempt number
      */
-    public RetryContext nextAttempt(Throwable lastException) {
-        return new RetryContext(operationName, attemptNumber + 1, lastException);
+    public RetryContext nextAttempt() {
+        return new RetryContext(operationName, attemptNumber + 1);
     }
 
     /**

@@ -34,21 +34,18 @@ class RetryContextTest implements ShouldHandleObjectContracts<RetryContext> {
 
         assertEquals("test-operation", context.operationName(), "Initial context should preserve operation name");
         assertEquals(1, context.attemptNumber(), "Initial context should start with attempt number 1");
-        assertNull(context.lastException(), "Initial context should have no previous exception");
         assertTrue(context.isFirstAttempt(), "Initial context should identify as first attempt");
     }
 
     @Test
     @DisplayName("Should create next attempt context with increment")
     void shouldCreateNextAttemptContextWithIncrementedAttemptNumber() {
-        RuntimeException exception = new RuntimeException("Test exception");
         RetryContext initialContext = RetryContext.initial("test-operation");
 
-        RetryContext nextContext = initialContext.nextAttempt(exception);
+        RetryContext nextContext = initialContext.nextAttempt();
 
         assertEquals("test-operation", nextContext.operationName(), "Next attempt context should preserve operation name");
         assertEquals(2, nextContext.attemptNumber(), "Next attempt context should increment attempt number to 2");
-        assertSame(exception, nextContext.lastException(), "Next attempt context should reference the provided exception");
         assertFalse(nextContext.isFirstAttempt(), "Next attempt context should not identify as first attempt");
     }
 
@@ -56,35 +53,29 @@ class RetryContextTest implements ShouldHandleObjectContracts<RetryContext> {
     @DisplayName("Should create multiple next attempt contexts correctly")
     void shouldCreateMultipleNextAttemptContextsCorrectly() {
         RetryContext context1 = RetryContext.initial("test-op");
-        RuntimeException exception1 = new RuntimeException("First exception");
-        RuntimeException exception2 = new RuntimeException("Second exception");
 
-        RetryContext context2 = context1.nextAttempt(exception1);
-        RetryContext context3 = context2.nextAttempt(exception2);
+        RetryContext context2 = context1.nextAttempt();
+        RetryContext context3 = context2.nextAttempt();
 
         assertEquals(1, context1.attemptNumber(), "First context should have attempt number 1");
-        assertNull(context1.lastException(), "First context should have no previous exception");
         assertTrue(context1.isFirstAttempt(), "First context should identify as first attempt");
 
         assertEquals(2, context2.attemptNumber(), "Second context should have attempt number 2");
-        assertSame(exception1, context2.lastException(), "Second context should reference first exception");
         assertFalse(context2.isFirstAttempt(), "Second context should not identify as first attempt");
 
         assertEquals(3, context3.attemptNumber(), "Third context should have attempt number 3");
-        assertSame(exception2, context3.lastException(), "Third context should reference second exception");
         assertFalse(context3.isFirstAttempt(), "Third context should not identify as first attempt");
     }
 
     @Test
-    @DisplayName("Should handle null exception in nextAttempt")
-    void shouldHandleNullExceptionInNextAttempt() {
+    @DisplayName("Should create next attempt context correctly")
+    void shouldCreateNextAttemptContextCorrectly() {
         RetryContext initialContext = RetryContext.initial("test-operation");
 
-        RetryContext nextContext = initialContext.nextAttempt(null);
+        RetryContext nextContext = initialContext.nextAttempt();
 
-        assertEquals("test-operation", nextContext.operationName(), "Context should preserve operation name when exception is null");
-        assertEquals(2, nextContext.attemptNumber(), "Context should increment attempt number even with null exception");
-        assertNull(nextContext.lastException(), "Context should preserve null exception reference");
+        assertEquals("test-operation", nextContext.operationName(), "Context should preserve operation name");
+        assertEquals(2, nextContext.attemptNumber(), "Context should increment attempt number");
         assertFalse(nextContext.isFirstAttempt(), "Context should not identify as first attempt after increment");
     }
 
@@ -93,8 +84,8 @@ class RetryContextTest implements ShouldHandleObjectContracts<RetryContext> {
     void shouldPreserveOperationNameAcrossAttempts() {
         String operationName = "complex-operation-name";
         RetryContext context1 = RetryContext.initial(operationName);
-        RetryContext context2 = context1.nextAttempt(new RuntimeException());
-        RetryContext context3 = context2.nextAttempt(new RuntimeException());
+        RetryContext context2 = context1.nextAttempt();
+        RetryContext context3 = context2.nextAttempt();
 
         assertEquals(operationName, context1.operationName(), "Initial context should preserve complex operation name");
         assertEquals(operationName, context2.operationName(), "Second context should preserve complex operation name");
@@ -104,12 +95,10 @@ class RetryContextTest implements ShouldHandleObjectContracts<RetryContext> {
     @Test
     @DisplayName("Should implement record equality correctly")
     void shouldImplementRecordEqualityCorrectly() {
-        RuntimeException exception = new RuntimeException("Test");
-
-        RetryContext context1 = new RetryContext("op", 1, exception);
-        RetryContext context2 = new RetryContext("op", 1, exception);
-        RetryContext context3 = new RetryContext("op", 2, exception);
-        RetryContext context4 = new RetryContext("different", 1, exception);
+        RetryContext context1 = new RetryContext("op", 1);
+        RetryContext context2 = new RetryContext("op", 1);
+        RetryContext context3 = new RetryContext("op", 2);
+        RetryContext context4 = new RetryContext("different", 1);
 
         assertEquals(context1, context2, "Contexts with identical fields should be equal");
         assertNotEquals(context1, context3, "Contexts with different attempt numbers should not be equal");
@@ -120,19 +109,16 @@ class RetryContextTest implements ShouldHandleObjectContracts<RetryContext> {
     @Test
     @DisplayName("Should have meaningful toString representation")
     void shouldHaveMeaningfulToStringRepresentation() {
-        RuntimeException exception = new RuntimeException("Test exception");
-        RetryContext context = new RetryContext("test-op", 3, exception);
+        RetryContext context = new RetryContext("test-op", 3);
 
         String toString = context.toString();
 
         assertTrue(toString.contains("test-op"), "toString should include operation name for debugging context");
         assertTrue(toString.contains("3"), "toString should include attempt number for debugging context");
-        assertTrue(toString.contains("RuntimeException"), "toString should include exception type for debugging context");
     }
 
     @Override
     public RetryContext getUnderTest() {
-        RuntimeException testException = new RuntimeException("Generated test exception");
-        return new RetryContext("generated-operation", 2, testException);
+        return new RetryContext("generated-operation", 2);
     }
 }

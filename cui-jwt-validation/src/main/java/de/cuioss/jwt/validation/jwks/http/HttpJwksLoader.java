@@ -25,6 +25,7 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.util.ETagAwareHttpHandler;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.result.HttpResultObject;
 import lombok.NonNull;
 
 import java.util.Optional;
@@ -171,12 +172,20 @@ public class HttpJwksLoader implements JwksLoader {
 
         ETagAwareHttpHandler cache = cacheOpt.get();
 
-        ETagAwareHttpHandler.LoadResult result = cache.load();
+        HttpResultObject<String> result = cache.load();
 
         // Only update key loader if data has changed and we have content
-        if (result.content() != null && (result.loadState().isDataChanged() || keyLoader.get() == null)) {
+        boolean dataChanged = isDataChanged(result);
+
+        // Acknowledge error details before accessing result if not valid
+        if (!result.isValid()) {
+            result.getResultDetail();
+            result.getHttpErrorCategory();
+        }
+
+        if (result.getResult() != null && (dataChanged || keyLoader.get() == null)) {
             updateKeyLoader(result);
-            LOGGER.info(INFO.JWKS_KEYS_UPDATED.format(result.loadState()));
+            LOGGER.info(INFO.JWKS_KEYS_UPDATED.format(result.getState()));
         }
 
         // Start background refresh after any load attempt (success or failure)
@@ -184,24 +193,32 @@ public class HttpJwksLoader implements JwksLoader {
         startBackgroundRefreshIfNeeded();
 
         // Log appropriate message based on load state and handle error states
-        switch (result.loadState()) {
-            case LOADED_FROM_SERVER:
+        if (result.isValid()) {
+            // Determine type of successful load
+            if (result.getHttpStatus().map(s -> s == 200).orElse(false)) {
+                // Fresh content from server
                 LOGGER.info(INFO.JWKS_HTTP_LOADED::format);
-                break;
-            case CACHE_ETAG:
+            } else if (result.getHttpStatus().map(s -> s == 304).orElse(false)) {
+                // Content validated via ETag (304 Not Modified)
                 LOGGER.debug("JWKS content validated via ETag (304 Not Modified)");
-                break;
-            case CACHE_CONTENT:
+            } else {
+                // Local cache content
                 LOGGER.debug("Using cached JWKS content");
-                break;
-            case ERROR_WITH_CACHE:
+            }
+        } else {
+            // Handle error states - acknowledge error details before accessing result
+            result.getResultDetail();
+            result.getHttpErrorCategory();
+
+            if (result.getResult() != null && !result.getResult().isEmpty()) {
+                // Error with cached content available
                 LOGGER.warn(WARN.JWKS_LOAD_FAILED_CACHED_CONTENT::format);
-                break;
-            case ERROR_NO_CACHE:
+            } else {
+                // Error with no cached content (null or empty string)
                 LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE::format);
                 this.status = LoaderStatus.ERROR;
                 LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Failed to load JWKS and no cached content available"));
-                break;
+            }
         }
     }
 
@@ -236,9 +253,9 @@ public class HttpJwksLoader implements JwksLoader {
         });
     }
 
-    private void updateKeyLoader(ETagAwareHttpHandler.LoadResult result) {
+    private void updateKeyLoader(HttpResultObject<String> result) {
         JWKSKeyLoader newLoader = JWKSKeyLoader.builder()
-                .jwksContent(result.content())
+                .jwksContent(result.getResult())
                 .jwksType(getJwksType())
                 .build();
         // Initialize the JWKSKeyLoader with the SecurityEventCounter
@@ -275,21 +292,21 @@ public class HttpJwksLoader implements JwksLoader {
 
         ETagAwareHttpHandler cache = cacheOpt.get();
 
-        ETagAwareHttpHandler.LoadResult result = cache.load();
+        HttpResultObject<String> result = cache.load();
 
         // Handle error states
-        if (result.loadState() == ETagAwareHttpHandler.LoadState.ERROR_WITH_CACHE ||
-                result.loadState() == ETagAwareHttpHandler.LoadState.ERROR_NO_CACHE) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.loadState()));
+        if (!result.isValid()) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
             return;
         }
 
         // Only update keys if data has actually changed
-        if (result.content() != null && result.loadState().isDataChanged()) {
+        boolean dataChanged = isDataChanged(result);
+        if (result.getResult() != null && dataChanged) {
             updateKeyLoader(result);
-            LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_UPDATED.format(result.loadState()));
+            LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_UPDATED.format(result.getState()));
         } else {
-            LOGGER.debug("Background refresh completed, no changes detected: %s", result.loadState());
+            LOGGER.debug("Background refresh completed, no changes detected: %s", result.getState());
         }
     }
 
@@ -362,5 +379,34 @@ public class HttpJwksLoader implements JwksLoader {
             this.securityEventCounter = securityEventCounter;
             LOGGER.debug("HttpJwksLoader initialized with SecurityEventCounter");
         }
+    }
+
+    /**
+     * Determines if data has changed based on HttpResultObject state.
+     * Data is considered changed for:
+     * - Fresh content from server (HTTP 200 status)
+     * - Error with no cached content (unknown state)
+     *
+     * @param result the HttpResultObject to check
+     * @return true if data has changed and keys need reevaluation
+     */
+    private boolean isDataChanged(HttpResultObject<String> result) {
+        // Fresh content from server - data definitely changed
+        if (result.isValid() && result.getHttpStatus().map(s -> s == 200).orElse(false)) {
+            return true;
+        }
+
+        // Error with no cached content - state unknown, assume data changed
+        if (!result.isValid()) {
+            // Acknowledge error details before accessing result
+            result.getResultDetail();
+            result.getHttpErrorCategory();
+            if (result.getResult() == null) {
+                return true;
+            }
+        }
+
+        // All other cases: cached content, 304 not modified, error with cache - no change
+        return false;
     }
 }

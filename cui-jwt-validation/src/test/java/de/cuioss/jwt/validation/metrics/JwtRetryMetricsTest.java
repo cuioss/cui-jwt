@@ -94,7 +94,7 @@ class JwtRetryMetricsTest {
         Duration attemptDuration = Duration.ofMillis(250);
         RuntimeException exception = new RuntimeException("Test exception");
 
-        retryMetrics.recordRetryAttempt(context, 1, attemptDuration, false, exception);
+        retryMetrics.recordRetryAttempt(context, 1, attemptDuration, false);
 
         // Verify that the measurement was recorded
         assertEquals(1, monitor.getSampleCount(MeasurementType.RETRY_ATTEMPT), "Should record one RETRY_ATTEMPT measurement");
@@ -135,9 +135,9 @@ class JwtRetryMetricsTest {
     @DisplayName("Should record multiple measurements correctly")
     void shouldRecordMultipleMeasurementsCorrectly() {
         // Record multiple retry attempts
-        retryMetrics.recordRetryAttempt(context, 1, Duration.ofMillis(100), false, new RuntimeException());
-        retryMetrics.recordRetryAttempt(context, 2, Duration.ofMillis(150), false, new RuntimeException());
-        retryMetrics.recordRetryAttempt(context, 3, Duration.ofMillis(200), true, null);
+        retryMetrics.recordRetryAttempt(context, 1, Duration.ofMillis(100), false);
+        retryMetrics.recordRetryAttempt(context, 2, Duration.ofMillis(150), false);
+        retryMetrics.recordRetryAttempt(context, 3, Duration.ofMillis(200), true);
 
         // Record delays
         retryMetrics.recordRetryDelay(context, 2, Duration.ofMillis(500), Duration.ofMillis(505));
@@ -161,7 +161,7 @@ class JwtRetryMetricsTest {
         JwtRetryMetrics limitedMetrics = new JwtRetryMetrics(limitedMonitor);
 
         // Record all types of measurements
-        limitedMetrics.recordRetryAttempt(context, 1, Duration.ofMillis(100), false, new RuntimeException());
+        limitedMetrics.recordRetryAttempt(context, 1, Duration.ofMillis(100), false);
         limitedMetrics.recordRetryDelay(context, 2, Duration.ofMillis(500), Duration.ofMillis(505));
         limitedMetrics.recordRetryComplete(context, Duration.ofMillis(1000), true, 2);
 

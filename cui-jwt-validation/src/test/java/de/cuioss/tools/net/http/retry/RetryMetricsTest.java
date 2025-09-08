@@ -17,6 +17,9 @@ package de.cuioss.tools.net.http.retry;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.result.HttpErrorCategory;
+import de.cuioss.tools.net.http.result.HttpResultObject;
+import de.cuioss.uimodel.result.ResultDetail;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -49,7 +52,7 @@ class RetryMetricsTest {
         // All these calls should succeed without throwing exceptions
         assertDoesNotThrow(() -> {
             metrics.recordRetryStart(context);
-            metrics.recordRetryAttempt(context, 1, Duration.ofMillis(100), false, testException);
+            metrics.recordRetryAttempt(context, 1, Duration.ofMillis(100), false);
             metrics.recordRetryDelay(context, 2, Duration.ofMillis(500), Duration.ofMillis(510));
             metrics.recordRetryComplete(context, Duration.ofMillis(1000), false, 3);
         });
@@ -70,11 +73,15 @@ class RetryMetricsTest {
 
         AtomicInteger attempts = new AtomicInteger(0);
 
-        assertThrows(RetryException.class, () ->
-                strategy.execute(() -> {
-                    attempts.incrementAndGet();
-                    throw new ConnectException("Connection failed");
-                }, context));
+        HttpResultObject<String> result = strategy.execute(() -> {
+            attempts.incrementAndGet();
+            return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                    new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Connection failed"),
+                            new ConnectException("Connection failed")));
+        }, context);
+
+        // Verify the result indicates failure
+        assertFalse(result.isValid(), "Result should be invalid when all retry attempts fail");
 
         // Verify metrics were recorded
         assertEquals(1, mockMetrics.retryStartCount, "Should record one retry operation start");
@@ -100,21 +107,18 @@ class RetryMetricsTest {
 
         AtomicInteger attempts = new AtomicInteger(0);
 
-        String result = assertDoesNotThrow(() -> {
-            try {
-                return strategy.execute(() -> {
-                    int attempt = attempts.incrementAndGet();
-                    if (attempt < 2) {
-                        throw new ConnectException("Connection failed");
-                    }
-                    return "success";
-                }, context);
-            } catch (InterruptedException | RetryException e) {
-                throw new RuntimeException(e);
+        HttpResultObject<String> result = strategy.execute(() -> {
+            int attempt = attempts.incrementAndGet();
+            if (attempt < 2) {
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Connection failed"),
+                                new ConnectException("Connection failed")));
             }
-        });
+            return HttpResultObject.success("success", null, 200);
+        }, context);
 
-        assertEquals("success", result, "Retry strategy should return successful result");
+        assertTrue(result.isValid(), "Retry strategy should return valid result");
+        assertEquals("success", result.getResult(), "Retry strategy should return successful result");
 
         // Verify metrics were recorded
         assertEquals(1, mockMetrics.retryStartCount, "Should record one retry operation start");
@@ -150,7 +154,7 @@ class RetryMetricsTest {
 
         @Override
         public void recordRetryAttempt(RetryContext context, int attemptNumber, Duration attemptDuration,
-                boolean successful, Throwable exception) {
+                boolean successful) {
             retryAttemptCount++;
         }
 

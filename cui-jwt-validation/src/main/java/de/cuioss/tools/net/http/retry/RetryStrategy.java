@@ -15,26 +15,59 @@
  */
 package de.cuioss.tools.net.http.retry;
 
-import java.io.IOException;
+import de.cuioss.tools.net.http.result.HttpResultObject;
 
 /**
- * HTTP-specific retry strategy interface.
- * Designed specifically for retrying HTTP operations that throw IOException and InterruptedException.
+ * HTTP-specific retry strategy interface using the result pattern.
+ * 
+ * <h2>Result Pattern Approach</h2>
+ * This interface has evolved from exception-based error handling to the CUI result pattern,
+ * providing several key benefits:
+ * 
+ * <ul>
+ *   <li><strong>No exceptions for flow control</strong> - All error states become result states</li>
+ *   <li><strong>Rich error context</strong> - HttpResultObject contains retry metrics, error codes, and details</li>
+ *   <li><strong>Forced error handling</strong> - Cannot access result without checking state</li>
+ *   <li><strong>Graceful degradation</strong> - Built-in fallback support with default results</li>
+ *   <li><strong>State-based flow</strong> - FRESH, CACHED, STALE, RECOVERED, ERROR states</li>
+ * </ul>
+ * 
+ * <h2>Usage Pattern</h2>
+ * <pre>
+ * RetryStrategy strategy = RetryStrategy.exponentialBackoff();
+ * HttpResultObject&lt;String&gt; result = strategy.execute(operation, context);
+ * 
+ * if (!result.isValid()) {
+ *     // Handle error cases
+ *     if (result.isRetryable()) {
+ *         // Error is retryable, but all attempts were exhausted
+ *         scheduleBackgroundRetry();
+ *     } else {
+ *         // Non-retryable error, use fallback
+ *         useFallbackContent(result.getResult());
+ *     }
+ * } else {
+ *     // Success cases - check specific states if needed
+ *     if (result.getState() == HttpResultState.RECOVERED) {
+ *         logger.info("Operation recovered after {} attempts", 
+ *             result.getRetryMetrics().getTotalAttempts());
+ *     }
+ *     processResult(result.getResult());
+ * }
+ * </pre>
  */
 @FunctionalInterface
 public interface RetryStrategy {
 
     /**
-     * Executes the given HTTP operation with retry logic.
+     * Executes the given HTTP operation with retry logic using the result pattern.
      *
      * @param <T> the type of result returned by the operation
      * @param operation the HTTP operation to retry
      * @param context retry context with operation name and attempt info
-     * @return result of successful operation
-     * @throws RetryException if all retry attempts fail or retry logic fails
-     * @throws InterruptedException if the operation is interrupted
+     * @return HttpResultObject containing the result and comprehensive error/retry information
      */
-    <T> T execute(HttpOperation<T> operation, RetryContext context) throws RetryException, InterruptedException;
+    <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context);
 
     /**
      * Creates a no-op retry strategy (single attempt only).
@@ -45,12 +78,9 @@ public interface RetryStrategy {
     static RetryStrategy none() {
         return new RetryStrategy() {
             @Override
-            public <T> T execute(HttpOperation<T> operation, RetryContext context) throws RetryException, InterruptedException {
-                try {
-                    return operation.execute();
-                } catch (IOException e) {
-                    throw new RetryException("Single attempt failed for " + context.operationName(), e);
-                }
+            public <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context) {
+                // No retry - just execute once and return result
+                return operation.execute();
             }
         };
     }

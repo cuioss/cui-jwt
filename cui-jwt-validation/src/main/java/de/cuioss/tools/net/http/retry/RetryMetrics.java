@@ -54,10 +54,9 @@ public interface RetryMetrics {
      * @param attemptNumber the attempt number (1-based)
      * @param attemptDuration duration of this specific attempt (excluding delay)
      * @param successful whether this specific attempt succeeded
-     * @param exception the exception thrown by this attempt, if any
      */
     void recordRetryAttempt(RetryContext context, int attemptNumber, Duration attemptDuration,
-            boolean successful, Throwable exception);
+            boolean successful);
 
     /**
      * Records the actual delay time between retry attempts.
@@ -101,7 +100,7 @@ public interface RetryMetrics {
 
         @Override
         public void recordRetryAttempt(RetryContext context, int attemptNumber, Duration attemptDuration,
-                boolean successful, Throwable exception) {
+                boolean successful) {
             // No-op
         }
 

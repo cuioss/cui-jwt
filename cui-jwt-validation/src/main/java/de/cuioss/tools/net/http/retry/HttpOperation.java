@@ -15,21 +15,21 @@
  */
 package de.cuioss.tools.net.http.retry;
 
-import java.io.IOException;
+import de.cuioss.tools.net.http.result.HttpResultObject;
 
 /**
- * Functional interface for HTTP operations that can be retried.
- * Declares the specific checked exceptions that HTTP operations throw.
+ * Functional interface for HTTP operations that can be retried using the result pattern.
+ * 
+ * <p>Operations return HttpResultObject which encapsulates both success and failure states,
+ * eliminating the need for exception-based error handling in the retry infrastructure.</p>
  */
 @FunctionalInterface
 public interface HttpOperation<T> {
 
     /**
-     * Executes the HTTP operation.
+     * Executes the HTTP operation using the result pattern.
      *
-     * @return the result of the operation
-     * @throws IOException if an I/O error occurs during the HTTP operation
-     * @throws InterruptedException if the operation is interrupted
+     * @return HttpResultObject containing the operation result or error details
      */
-    T execute() throws IOException, InterruptedException;
+    HttpResultObject<T> execute();
 }
