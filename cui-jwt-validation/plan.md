@@ -595,26 +595,79 @@ Background refresh with retry capability
 - **Configuration**: Builder pattern with sensible defaults (5 attempts, 1s initial delay, 2.0 multiplier, ±10% jitter)
 - **Thread Safety**: Uses `ReentrantLock` for virtual thread compatibility, `ScheduledExecutorService` for delays
 
-### Phase 2: Replace HTTP Handler (BREAKING)
-- [ ] **Replace** `ETagAwareHttpHandler` with retry-capable version
-- [ ] **Update all constructors** to require `RetryStrategy`
-- [ ] **Break existing APIs** - no backward compatibility
-- [ ] Update all tests to use new constructor signature
+### Phase 2: CUI Result Pattern Integration (NEW) ⭐ STREAMLINING ✅ COMPLETED
+- [x] **Create HTTP Result Framework** in `de.cuioss.tools.net.http.result`
+- [x] **Implement HttpResultObject<T>** - Specialized result wrapper for HTTP operations
+- [x] **Implement HttpResultState** - HTTP-specific states (integrated with CUI ResultState)
+- [x] **Remove HttpResultDetail** - Eliminated redundancy, using base CUI ResultDetail
+- [x] **Implement HttpErrorCategory** - Simplified HTTP error classifications with retry logic
+- [x] **Create comprehensive tests** - 8 test cases covering all functionality
+- [x] **Integrate with CUI pattern** - Uses base ResultState, extends ResultObject properly
 
-### Phase 3: Update All Configurations (BREAKING)
+**✨ Implementation Details:**
+- **Package**: `de.cuioss.tools.net.http.result` (ready for migration to java-tools)
+- **Core Classes**: `HttpResultObject<T>`, `HttpResultDetail`, `HttpErrorCodes`, `HttpResultState`
+- **CUI Integration**: Extends `ResultObject<T>`, uses `ResultState` (VALID/WARNING/ERROR), inherits builder pattern
+- **HTTP Semantics**: ETag support, status codes, response timing, retry metrics
+- **State Detection**: `isFresh()`, `isCached()`, `isStale()`, `isRecovered()`, `isDegraded()`
+- **Error Classification**: 20+ error codes with retryable/configuration/content classifications
+- **Factory Methods**: `fresh()`, `cached()`, `stale()`, `error()` for common scenarios
+- **Thread Safety**: Immutable design, thread-safe due to CUI ResultObject inheritance
+
+**✨ Benefits of CUI Result Pattern Integration:**
+- ✅ **Unified API** - Single result type across all HTTP operations
+- ✅ **State-based flow control** - No more exception-based error handling
+- ✅ **Rich error context** - Built-in retry metrics, status codes, and structured details
+- ✅ **Built-in fallback handling** - Default results for graceful degradation
+- ✅ **Forced error handling** - Cannot access result without checking state first
+- ✅ **Observability** - Structured logging and metrics integration
+- ✅ **HTTP semantics** - CACHED/FRESH/STALE states for ETag operations
+
+**🎯 Architecture Integration:**
+```java
+// Current Phase 1 RetryStrategy evolution
+public interface RetryStrategy {
+    <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context);
+}
+
+// Unified HTTP operations
+public class ETagAwareHttpHandler {
+    public HttpResultObject<String> load() {
+        return retryStrategy.execute(this::fetchJwksContentWithCache, context);
+    }
+}
+
+// State-based error handling
+HttpResultObject<String> content = etagHandler.load();
+if (!content.isValid()) {
+    content.getResultDetail().ifPresent(detail -> 
+        logger.warn(detail.getDetail().getDisplayName()));
+    return content.copyStateAndDetails(); // Propagate error state
+}
+```
+
+### Phase 3: Replace HTTP Handler with Result Pattern (BREAKING)
+- [ ] **Evolve RetryStrategy interface** to return `HttpResultObject<T>` instead of throwing exceptions
+- [ ] **Replace ETagAwareHttpHandler.LoadResult** with `HttpResultObject<String>`
+- [ ] **Update ExponentialBackoffRetryStrategy** to build HttpResultObject with error details
+- [ ] **Remove custom result types** - use unified HttpResultObject everywhere
+- [ ] **Update all HTTP operations** to use result pattern consistently
+
+### Phase 4: Update All Configurations (BREAKING)
 - [ ] **Make RetryStrategy mandatory** in `HttpJwksLoaderConfig`
-- [ ] **Remove optional retry patterns** entirely
-- [ ] **Update all existing code** to provide retry strategies
-- [ ] **Break configuration APIs** that don't include retry
+- [ ] **Replace LoadResult handling** with HttpResultObject state checking
+- [ ] **Update WellKnownResolver** to use result states instead of permanent error flags
+- [ ] **Remove LoaderStatus.ERROR** permanent failure pattern
+- [ ] **Break configuration APIs** that don't support result pattern
 
-### Phase 4: Quarkus CDI Integration
+### Phase 5: Quarkus CDI Integration
 - [ ] **Create RetryStrategyConfigResolver** in `cui-jwt-quarkus/src/main/java/de/cuioss/jwt/quarkus/config/RetryStrategyConfigResolver.java`
 - [ ] **Add RetryStrategy producer** to `TokenValidatorProducer.java`
 - [ ] **Update IssuerConfigResolver** to inject and use RetryStrategy
 - [ ] **Add retry property keys** to `JwtPropertyKeys.java`
 - [ ] **Update HttpJwksLoaderConfig/WellKnownConfig** constructors to accept RetryStrategy
 
-### Phase 5: Integration & Testing  
+### Phase 6: Integration & Testing  
 - [ ] Update integration tests for new behavior
 - [ ] Verify 100% test pass rate
 - [ ] Performance testing and optimization
@@ -651,6 +704,144 @@ This plan provides a **comprehensive, breaking-change approach** to implementing
 ✅ **Simplified APIs without legacy baggage**  
 
 **Expected Outcome**: 100% reliable JWKS loading with exponential backoff retry, solving the WellKnownResolver permanent failure issue completely.
+
+## 🎯 CUI Result Pattern Integration Strategy
+
+### Why CUI Result Pattern?
+
+**Analysis**: The existing cui-core-ui-model result framework provides a battle-tested, enterprise-grade approach to error handling that eliminates much of our custom result type complexity:
+
+#### **Current Complexity** (Phase 1 ✅):
+- Multiple custom result types: `LoadResult`, `HttpFetchResult`, `RetryException`  
+- Manual state management with permanent `LoaderStatus.ERROR` flags
+- Exception-based retry handling with complex propagation chains
+- Separate builders for different result types
+
+#### **With CUI Result Pattern**:  
+- **Single unified type**: `HttpResultObject<T>` for all HTTP operations
+- **State-based flow control**: `HttpResultState` enum with CACHED/FRESH/STALE/ERROR semantics
+- **Structured error details**: Built-in retry metrics, HTTP status codes, exception context
+- **Forced error handling**: Cannot access result without checking state first
+- **Built-in fallback**: Default results for graceful degradation
+
+### Implementation Architecture
+
+#### 1. **HTTP Result Framework** (`de.cuioss.tools.net.http.result`)
+
+**HttpResultObject<T>** - Specialized for HTTP operations:
+```java
+/**
+ * HTTP-specific result wrapper that combines CUI result pattern 
+ * with HTTP semantics (ETag caching, status codes, retry metrics)
+ */
+public class HttpResultObject<T> extends ResultObject<T> {
+    private final Optional<String> etag;
+    private final Optional<Integer> httpStatus;  
+    private final Optional<RetryMetrics> retryMetrics;
+    private final Duration responseTime;
+    
+    // HTTP-specific convenience methods
+    public boolean isCached() { return getState() == HttpResultState.CACHED; }
+    public boolean isFresh() { return getState() == HttpResultState.FRESH; }
+    public boolean isStale() { return getState() == HttpResultState.STALE; }
+}
+```
+
+**HttpResultState** - HTTP-specific states:
+```java
+public enum HttpResultState implements ResultState {
+    FRESH,      // Successfully loaded new content
+    CACHED,     // Using cached content (ETag not modified)
+    STALE,      // Using cached content but it may be outdated  
+    RECOVERED,  // Recovered after retry attempts
+    ERROR;      // All attempts failed
+
+    public static final Set<HttpResultState> CACHE_STATES = immutableSet(CACHED, STALE);
+    public static final Set<HttpResultState> SUCCESS_STATES = immutableSet(FRESH, CACHED, RECOVERED);
+}
+```
+
+#### 2. **RetryStrategy Evolution**
+
+**Current Phase 1 ✅**:
+```java
+public interface RetryStrategy {
+    <T> T execute(HttpOperation<T> operation, RetryContext context) 
+        throws IOException, InterruptedException;
+}
+```
+
+**Enhanced with Result Pattern**:
+```java
+public interface RetryStrategy {
+    <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context);
+}
+```
+
+**Benefits**:
+- ✅ **No exceptions** - All errors become result states
+- ✅ **Rich context** - Retry metrics embedded in result  
+- ✅ **Partial success** - WARNING/RECOVERED states for degraded operations
+- ✅ **Built-in fallback** - Default results for graceful degradation
+
+#### 3. **Core Problem Resolution**
+
+**Current WellKnownResolver Issue**:
+```java
+// BROKEN: Permanent failure state
+ETagAwareHttpHandler.LoadResult result = etagHandler.load();
+if (result.content() == null) {
+    this.status = LoaderStatus.ERROR;  // ❌ PERMANENT!
+    return;
+}
+```
+
+**With Result Pattern**:
+```java
+// FIXED: State-based flow with automatic retry capability  
+public HttpResultObject<WellKnownConfiguration> loadEndpoints() {
+    HttpResultObject<String> content = etagHandler.load();
+    
+    if (!content.isValid()) {
+        // Error propagation without permanent state corruption
+        return HttpResultObject.<WellKnownConfiguration>builder()
+            .validDefaultResult(WellKnownConfiguration.empty())
+            .extractStateAndDetailsFrom(content)  // CUI pattern convenience
+            .build();
+    }
+    
+    // Parse and return configuration
+    return parseConfiguration(content.getResult());
+}
+```
+
+### Migration Strategy
+
+#### **Phase 2 Focus**: Foundational Result Framework
+1. **Extend CUI ResultObject** for HTTP semantics (`HttpResultObject<T>`)
+2. **Create HTTP-specific states** (`HttpResultState` enum)  
+3. **Use standard error details** (base CUI `ResultDetail` with `DisplayName`)
+4. **Define error classifications** (`HttpErrorCategory` for retry decisions)
+
+#### **Phase 3 Focus**: RetryStrategy Integration  
+1. **Evolve RetryStrategy interface** to return `HttpResultObject<T>`
+2. **Update ExponentialBackoffRetryStrategy** to build rich result objects
+3. **Replace ETagAwareHttpHandler.LoadResult** with unified result type
+4. **Eliminate custom result types** across codebase
+
+#### **Phase 4 Focus**: State Management Revolution
+1. **Remove permanent error flags** (`LoaderStatus.ERROR` patterns)  
+2. **Implement state-based flow control** in WellKnownResolver
+3. **Add result state propagation** throughout HTTP operations
+4. **Enable automatic retry recovery** without permanent failures
+
+### Expected Impact
+
+- **~40% complexity reduction** - Eliminate multiple custom result types
+- **Enhanced error handling** - Rich context with retry metrics and HTTP details  
+- **Improved observability** - Structured logging and state tracking
+- **Better user experience** - Graceful degradation with default results
+- **Future-proof architecture** - Battle-tested enterprise pattern from cui-core-ui-model
 
 ---
 

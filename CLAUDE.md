@@ -44,7 +44,7 @@ Execute comprehensive quality verification and commit workflow for a specific mo
 
 1. **Quality Verification Build** (pre-commit profile):
    ```bash
-   ./mvnw -Ppre-commit clean verify -DskipTests -pl <module-name>
+   ./mvnw -Ppre-commit clean verify -pl <module-name>
    ```
    - Runs code quality checks (checkstyle, spotbugs, PMD)
    - Performs static analysis
