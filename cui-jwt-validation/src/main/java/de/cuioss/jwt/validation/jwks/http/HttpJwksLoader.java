@@ -162,7 +162,7 @@ public class HttpJwksLoader implements JwksLoader {
         if (cacheOpt.isEmpty()) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
-            
+
             // Start background refresh even when HTTP cache setup fails
             // This ensures that failed initial loads will be retried
             startBackgroundRefreshIfNeeded();
@@ -219,27 +219,20 @@ public class HttpJwksLoader implements JwksLoader {
      */
     public CompletableFuture<LoaderStatus> loadAsync() {
         return CompletableFuture.supplyAsync(() -> {
-            try {
-                if (!initialized.get()) {
-                    LOGGER.warn("HttpJwksLoader not initialized during async loading - initializing with empty SecurityEventCounter");
-                    // Handle case where async loading is called before initialization
-                    this.status = LoaderStatus.ERROR;
-                    return LoaderStatus.ERROR;
-                }
-
-                LOGGER.debug("Starting asynchronous JWKS loading");
-                loadKeys(); // Existing synchronous method
-
-                // Return the updated status
-                LoaderStatus currentStatus = this.status;
-                LOGGER.debug("Asynchronous JWKS loading completed with status: {}", currentStatus);
-                return currentStatus;
-
-            } catch (Exception e) {
-                LOGGER.error("Asynchronous JWKS loading failed: {}", e.getMessage());
+            if (!initialized.get()) {
+                LOGGER.warn("HttpJwksLoader not initialized during async loading - initializing with empty SecurityEventCounter");
+                // Handle case where async loading is called before initialization
                 this.status = LoaderStatus.ERROR;
                 return LoaderStatus.ERROR;
             }
+
+            LOGGER.debug("Starting asynchronous JWKS loading");
+            loadKeys(); // Existing synchronous method
+
+            // Return the updated status
+            LoaderStatus currentStatus = this.status;
+            LOGGER.debug("Asynchronous JWKS loading completed with status: {}", currentStatus);
+            return currentStatus;
         });
     }
 

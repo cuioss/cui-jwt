@@ -102,6 +102,7 @@ public final class JWTValidationLogMessages {
                 .identifier(508)
                 .template("Access token retrieved from cache")
                 .build();
+
     }
 
     /**
@@ -201,6 +202,19 @@ public final class JWTValidationLogMessages {
                 .identifier(214)
                 .template("Error during cache eviction")
                 .build();
+
+        // Retry operation error messages
+        public static final LogRecord RETRY_INTERRUPTED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(215)
+                .template("Retry interrupted for %s")
+                .build();
+
+        public static final LogRecord RETRY_ALL_ATTEMPTS_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(216)
+                .template("All %s retry attempts failed for %s")
+                .build();
     }
 
     /**
@@ -263,6 +277,19 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(9)
                 .template("Successfully loaded well-known endpoints from: %s")
+                .build();
+
+        // Retry operation info messages
+        public static final LogRecord RETRY_OPERATION_SUCCEEDED_AFTER_ATTEMPTS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(10)
+                .template("Operation '%s' succeeded on attempt %s/%s")
+                .build();
+
+        public static final LogRecord RETRY_OPERATION_COMPLETED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(11)
+                .template("Retry operation '%s' completed successfully after %s attempts in %sms")
                 .build();
     }
 
@@ -554,6 +581,25 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(146)
                 .template("Failed to parse EC key with ID %s: %s")
+                .build();
+
+        // Retry operation warning messages
+        public static final LogRecord RETRY_OPERATION_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(147)
+                .template("Retry operation '%s' failed after %s attempts in %sms")
+                .build();
+
+        public static final LogRecord RETRY_NON_RETRYABLE_EXCEPTION = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(148)
+                .template("Operation '%s' failed with non-retryable exception on attempt %s: %s")
+                .build();
+
+        public static final LogRecord RETRY_MAX_ATTEMPTS_REACHED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(149)
+                .template("Operation '%s' failed after %s attempts. Final exception: %s")
                 .build();
     }
 

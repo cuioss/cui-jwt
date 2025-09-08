@@ -574,11 +574,26 @@ Background refresh with retry capability
 
 ## Implementation Phases (Breaking Changes)
 
-### Phase 1: Core Retry Infrastructure
-- [ ] Implement `RetryStrategy` interface
-- [ ] Implement `ExponentialBackoffRetryStrategy` with comprehensive unit tests
-- [ ] Create `RetryContext` and supporting classes
-- [ ] Add comprehensive logging and metrics
+### Phase 1: Core Retry Infrastructure ✅ COMPLETED
+- [x] Implement `RetryStrategy` interface (HTTP-specific with proper throws clause)
+- [x] Implement `ExponentialBackoffRetryStrategy` with comprehensive unit tests (15 test cases)
+- [x] Create `RetryContext` and supporting classes (`RetryException`, `RetryMetrics`)
+- [x] Add comprehensive logging and metrics (`JwtRetryMetrics` with TokenValidatorMonitor integration)
+- [x] **BREAKING CHANGE**: Replaced generic `Supplier<T>` with HTTP-specific `HttpOperation<T>` interface
+- [x] **COMPLIANCE**: Fixed exception handling - no generic exceptions, only IOException/InterruptedException
+- [x] **COMPLIANCE**: Used CuiLogger with structured LogRecords (INFO/WARN only, DEBUG uses direct strings)
+- [x] **COMPLIANCE**: Used ScheduledExecutorService instead of Thread.sleep() for Quarkus compatibility
+- [x] **TESTING**: All 1,253 tests pass, comprehensive coverage of retry scenarios
+- [x] **QUALITY**: Pre-commit build passes with zero errors/warnings
+
+**✨ Implementation Details:**
+- **Package**: `de.cuioss.tools.net.http.retry` (ready for migration to java-tools)
+- **Core Classes**: `RetryStrategy`, `HttpOperation<T>`, `ExponentialBackoffRetryStrategy`, `RetryContext`, `RetryException`, `RetryMetrics`
+- **HTTP-Focused**: Only handles `IOException`/`InterruptedException` that HTTP operations actually throw
+- **Exception Handling**: `IOException` wrapped in `RetryException`, `InterruptedException` propagated directly
+- **Metrics Integration**: `JwtRetryMetrics` integrates with existing `TokenValidatorMonitor`
+- **Configuration**: Builder pattern with sensible defaults (5 attempts, 1s initial delay, 2.0 multiplier, ±10% jitter)
+- **Thread Safety**: Uses `ReentrantLock` for virtual thread compatibility, `ScheduledExecutorService` for delays
 
 ### Phase 2: Replace HTTP Handler (BREAKING)
 - [ ] **Replace** `ETagAwareHttpHandler` with retry-capable version

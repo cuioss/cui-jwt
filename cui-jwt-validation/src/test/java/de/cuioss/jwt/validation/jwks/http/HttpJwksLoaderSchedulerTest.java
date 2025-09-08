@@ -309,8 +309,8 @@ class HttpJwksLoaderSchedulerTest {
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isEmpty(), "Expected empty result for failed initial load");
 
-        // Scheduler should not be started after failed load
-        assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should not start after failed initial load");
+        // Scheduler should be started after failed load to enable retries
+        assertTrue(loader.isBackgroundRefreshActive(), "Background refresh should start after failed initial load to enable retries");
         assertNotEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should not be healthy after failed load");
 
         loader.shutdown();
