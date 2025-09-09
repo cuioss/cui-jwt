@@ -16,9 +16,9 @@
 package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.ToString;
@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Thread-safe resolver for issuer configurations with dual-cache optimization.
  * <p>
- * Uses a mutable ConcurrentHashMap during initialization, then switches to an 
+ * Uses a mutable ConcurrentHashMap during initialization, then switches to an
  * immutable Map for lock-free reads after all configs are processed.
  * <p>
  * The volatile immutableCache field serves as both cache and optimization state indicator.
@@ -139,7 +139,7 @@ public class IssuerConfigResolver {
 
     /**
      * Attempts to retrieve configuration from the immutable cache.
-     * 
+     *
      * @param issuer the issuer identifier to look up
      * @return Optional with cached config if found, empty if cache not optimized or issuer not found
      * @throws TokenValidationException if cache is optimized but issuer not found

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.tools.net.http;
+package de.cuioss.tools.net.http.client;
 
+import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.NonNull;
 
@@ -26,7 +27,7 @@ import lombok.NonNull;
  * implementations provide both dependencies through a single provider interface.
  * <h2>Design Benefits</h2>
  * <ul>
- *   <li><strong>Unified Constructor</strong>: {@code new ETagAwareHttpHandler(provider)} 
+ *   <li><strong>Unified Constructor</strong>: {@code new ETagAwareHttpHandler(provider)}
  *       instead of {@code new ETagAwareHttpHandler(handler, strategy)}</li>
  *   <li><strong>Consistent Pattern</strong>: All HTTP configuration classes follow the same pattern</li>
  *   <li><strong>Reduced Breaking Changes</strong>: Internal provider evolution without API changes</li>
@@ -39,8 +40,8 @@ import lombok.NonNull;
  * public class HttpJwksLoaderConfig implements HttpHandlerProvider {
  *     &#64;Override
  *     public HttpHandler getHttpHandler() { return httpHandler; }
- *     
- *     &#64;Override 
+ *
+ *     &#64;Override
  *     public RetryStrategy getRetryStrategy() { return retryStrategy; }
  * }
  * </pre>
@@ -54,7 +55,7 @@ import lombok.NonNull;
  *     }
  * }
  * </pre>
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */

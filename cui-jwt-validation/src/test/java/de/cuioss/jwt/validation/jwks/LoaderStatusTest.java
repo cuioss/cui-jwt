@@ -16,13 +16,14 @@
 package de.cuioss.jwt.validation.jwks;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for {@link LoaderStatus} enum.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableGeneratorController

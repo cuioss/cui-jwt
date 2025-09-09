@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite for {@link HttpWellKnownResolver}.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableTestLogger

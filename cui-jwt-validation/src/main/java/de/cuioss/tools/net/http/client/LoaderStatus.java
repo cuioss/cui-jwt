@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks;
+package de.cuioss.tools.net.http.client;
 
 /**
- * Enum representing the status of a JWKS loader or HTTP handler.
+ * Enum representing the status of a {@link de.cuioss.tools.net.http.HttpHandler} loader.
  * <p>
  * A loader status is:
  * <ul>

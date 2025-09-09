@@ -15,8 +15,8 @@
  */
 package de.cuioss.jwt.validation;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Unit test for {@link HealthStatusProvider} interface.
  * <p>
  * Tests the interface contract using concrete implementations.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableGeneratorController

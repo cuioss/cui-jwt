@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.util;
+package de.cuioss.tools.net.http.client;
 
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
 import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

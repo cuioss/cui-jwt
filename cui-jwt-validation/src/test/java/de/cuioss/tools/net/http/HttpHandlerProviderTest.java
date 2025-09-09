@@ -17,6 +17,7 @@ package de.cuioss.tools.net.http;
 
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
+import de.cuioss.tools.net.http.client.HttpHandlerProvider;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.Test;
 
@@ -49,18 +50,20 @@ class HttpHandlerProviderTest {
     }
 
     @Test
-    void wellKnownConfig_withoutRetryStrategy_shouldFailToBuild() {
-        // Given: A builder without RetryStrategy
-        WellKnownConfig.WellKnownConfigBuilder builder = WellKnownConfig.builder()
-                .wellKnownUrl(TEST_URL);
+    void wellKnownConfig_withoutRetryStrategy_shouldUseDefault() {
+        // Given: A builder without explicit RetryStrategy
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(TEST_URL)
+                .build();
 
-        // When/Then: Should fail to build
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                builder::build,
-                "Should throw IllegalArgumentException when RetryStrategy is missing");
+        // When: Using as HttpHandlerProvider
+        HttpHandlerProvider provider = config;
 
-        assertTrue(exception.getMessage().contains("RetryStrategy is required"),
-                "Error message should indicate RetryStrategy is required");
+        // Then: Should provide default RetryStrategy (exponentialBackoff)
+        assertNotNull(provider.getHttpHandler(), "HttpHandler should not be null");
+        assertNotNull(provider.getRetryStrategy(), "Should provide default RetryStrategy");
+        // The default is exponentialBackoff, so it should not be the no-op strategy
+        assertNotSame(RetryStrategy.none(), provider.getRetryStrategy(), "Default should not be no-op strategy");
     }
 
     @Test

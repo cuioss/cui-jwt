@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.util;
+package de.cuioss.tools.net.http.client;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.HttpStatusFamily;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
 import de.cuioss.tools.net.http.result.HttpResultObject;
@@ -350,7 +348,7 @@ public class ETagAwareHttpHandler<T> {
     /**
      * Returns the current status of this ETag-aware HTTP handler.
      * <p>
-     * Provides clients a way to determine the handler's state similar to 
+     * Provides clients a way to determine the handler's state similar to
      * {@link de.cuioss.jwt.validation.jwks.http.HttpJwksLoader#getCurrentStatus()}.
      * <p>
      * Status tracking:

@@ -17,8 +17,8 @@ package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
+import de.cuioss.tools.net.http.client.HttpHandlerProvider;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;

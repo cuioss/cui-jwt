@@ -17,7 +17,7 @@ package de.cuioss.jwt.quarkus.startup;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -117,7 +117,7 @@ public class JwksStartupService {
             return;
         }
 
-        // Use ManagedExecutor to execute individual JWKS loading tasks  
+        // Use ManagedExecutor to execute individual JWKS loading tasks
         configs.forEach(issuerConfig -> {
             String issuerId = issuerConfig.getIssuerIdentifier();
 

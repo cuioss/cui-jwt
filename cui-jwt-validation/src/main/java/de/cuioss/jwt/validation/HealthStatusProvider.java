@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 
 /**
  * Common interface for components that provide health status information.

@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,7 @@ class JwksLoaderFactoryTest {
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
         assertEquals(JwksType.WELL_KNOWN, loader.getJwksType(), "Loader should have WELL_KNOWN type");
-        // Trigger loading by attempting to get a key, then check health status  
+        // Trigger loading by attempting to get a key, then check health status
         loader.getKeyInfo("test-key-id"); // This triggers loading attempt
         assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "Well-known loader should have ERROR status when unable to load from invalid URL");
     }

@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.util;
+package de.cuioss.tools.net.http.client;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -24,7 +23,6 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
@@ -145,7 +143,7 @@ class ETagAwareHttpHandlerIntegrationTest {
 
         public enum ResponseMode {
             SUCCESS_V1,          // Returns content v1 with ETag
-            SUCCESS_V2,          // Returns content v2 with different ETag  
+            SUCCESS_V2,          // Returns content v2 with different ETag
             NOT_MODIFIED,        // Returns 304 when If-None-Match matches
             SERVER_ERROR,        // Returns 500 for retry testing
             CLIENT_ERROR,        // Returns 404 for no-retry testing

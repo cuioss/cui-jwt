@@ -16,10 +16,10 @@
 package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
-import de.cuioss.jwt.validation.util.ETagAwareHttpHandler;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import jakarta.json.JsonObject;
 import lombok.NonNull;

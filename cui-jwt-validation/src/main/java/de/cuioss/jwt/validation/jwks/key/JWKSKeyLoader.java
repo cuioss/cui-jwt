@@ -19,13 +19,13 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.parser.JwksParser;
 import de.cuioss.jwt.validation.jwks.parser.KeyProcessor;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.string.MoreStrings;
 import jakarta.json.JsonException;
 import jakarta.json.JsonObject;
@@ -44,8 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Implementation of {@link JwksLoader} that loads JWKS from string content.
  * <p>
- * This implementation processes JWKS content that is provided as a string. 
- * If file-based JWKS loading is needed, the file content is resolved to string 
+ * This implementation processes JWKS content that is provided as a string.
+ * If file-based JWKS loading is needed, the file content is resolved to string
  * at build time through the builder pattern.
  * <p>
  * This implementation supports cryptographic agility by handling multiple key types

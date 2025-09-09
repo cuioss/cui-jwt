@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.util;
+package de.cuioss.tools.net.http.client;
 
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Simple test for ETagAwareHttpHandler HttpResultObject behavior.
  * This test verifies the basic result pattern functionality without complex HTTP integration.
- * 
+ *
  * NOTE: This test has been updated from testing the removed LoadState/LoadResult types
  * to testing the new HttpResultObject result pattern implementation.
  *
@@ -47,7 +47,7 @@ class ETagAwareHttpHandlerSimpleTest {
         assertEquals("etag123", freshResult.getETag().orElse(null));
         assertEquals(200, freshResult.getHttpStatus().orElse(0));
 
-        // Test cached content via ETag (equivalent to CACHE_ETAG) 
+        // Test cached content via ETag (equivalent to CACHE_ETAG)
         HttpResultObject<String> cachedResult = HttpResultObject.success("cached-content", "etag456", 304);
 
         assertTrue(cachedResult.isValid());
@@ -114,7 +114,7 @@ class ETagAwareHttpHandlerSimpleTest {
         assertTrue(HttpErrorCategory.NETWORK_ERROR.isRetryable());
         assertTrue(HttpErrorCategory.SERVER_ERROR.isRetryable());
 
-        // Verify non-retryable error categories  
+        // Verify non-retryable error categories
         assertFalse(HttpErrorCategory.CLIENT_ERROR.isRetryable());
         assertFalse(HttpErrorCategory.INVALID_CONTENT.isRetryable());
         assertFalse(HttpErrorCategory.CONFIGURATION_ERROR.isRetryable());

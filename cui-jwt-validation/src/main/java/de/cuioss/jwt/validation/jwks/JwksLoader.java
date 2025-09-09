@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.jwks;
 import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.NonNull;
 
 import java.util.Optional;
