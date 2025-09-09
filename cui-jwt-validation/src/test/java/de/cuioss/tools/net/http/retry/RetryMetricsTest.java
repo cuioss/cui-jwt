@@ -39,7 +39,7 @@ class RetryMetricsTest {
         RetryMetrics metrics = RetryMetrics.noOp();
 
         assertNotNull(metrics, "No-op retry metrics instance should not be null");
-        assertTrue(metrics instanceof RetryMetrics.NoOpRetryMetrics, "No-op factory should return NoOpRetryMetrics implementation");
+        assertInstanceOf(RetryMetrics.NoOpRetryMetrics.class, metrics, "No-op factory should return NoOpRetryMetrics implementation");
     }
 
     @Test

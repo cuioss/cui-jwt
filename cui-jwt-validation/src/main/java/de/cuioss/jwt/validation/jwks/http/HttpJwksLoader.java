@@ -26,7 +26,7 @@ import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.HttpHandlerProvider;
 import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.client.StringContentConverter;
+import de.cuioss.tools.net.http.converter.StringContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import de.cuioss.uimodel.result.ResultState;

@@ -23,6 +23,7 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.converter.StringContentConverter;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.tools.net.http.retry.RetryStrategy;

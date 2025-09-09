@@ -61,7 +61,7 @@ class HttpResultStateTest {
     @Test
     void cacheStatesIsImmutable() {
         Set<HttpResultState> cacheStates = CACHE_STATES;
-        assertTrue(cacheStates instanceof Set);
+        assertInstanceOf(Set.class, cacheStates);
 
         assertThrows(UnsupportedOperationException.class, () ->
                 cacheStates.add(FRESH));
@@ -70,7 +70,7 @@ class HttpResultStateTest {
     @Test
     void successStatesIsImmutable() {
         Set<HttpResultState> successStates = SUCCESS_STATES;
-        assertTrue(successStates instanceof Set);
+        assertInstanceOf(Set.class, successStates);
 
         assertThrows(UnsupportedOperationException.class, () ->
                 successStates.add(ERROR));
@@ -79,7 +79,7 @@ class HttpResultStateTest {
     @Test
     void degradedStatesIsImmutable() {
         Set<HttpResultState> degradedStates = DEGRADED_STATES;
-        assertTrue(degradedStates instanceof Set);
+        assertInstanceOf(Set.class, degradedStates);
 
         assertThrows(UnsupportedOperationException.class, () ->
                 degradedStates.add(FRESH));
@@ -88,7 +88,7 @@ class HttpResultStateTest {
     @Test
     void mustBeHandledStatesIsImmutable() {
         Set<HttpResultState> mustBeHandledStates = MUST_BE_HANDLED;
-        assertTrue(mustBeHandledStates instanceof Set);
+        assertInstanceOf(Set.class, mustBeHandledStates);
 
         assertThrows(UnsupportedOperationException.class, () ->
                 mustBeHandledStates.add(CACHED));

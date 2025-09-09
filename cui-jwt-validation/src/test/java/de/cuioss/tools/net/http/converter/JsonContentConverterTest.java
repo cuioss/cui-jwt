@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.tools.net.http.client;
+package de.cuioss.tools.net.http.converter;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.test.juli.LogAsserts;
@@ -99,7 +99,7 @@ class JsonContentConverterTest {
     @DisplayName("Should handle malformed JSON")
     void shouldHandleMalformedJson() {
         String malformedJson = "{name: test, value: 123}"; // Missing quotes
-        
+
         Optional<JsonObject> result = converter.convert(malformedJson);
 
         assertFalse(result.isPresent());
@@ -190,7 +190,7 @@ class JsonContentConverterTest {
     void shouldUseParserConfigJsonReaderFactory() {
         // Test that the converter uses the same JsonReaderFactory as ParserConfig
         // by verifying consistent behavior
-        
+
         ParserConfig customConfig = ParserConfig.builder()
                 .maxDepth(2) // Very shallow depth
                 .build();

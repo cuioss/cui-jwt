@@ -212,7 +212,7 @@ class ExponentialBackoffRetryStrategyTest {
 
             long totalTime = System.currentTimeMillis() - startTime;
 
-            // With max delay of 2000ms and 4 retries (5 attempts total), 
+            // With max delay of 2000ms and 4 retries (5 attempts total),
             // total time should be less than 4 * 2000 = 8000ms
             assertTrue(totalTime < 8000, "Total retry time should respect max delay constraint (< 8000ms), was: " + totalTime);
             assertEquals(5, attempts.get(), "Strategy should have made exactly 5 attempts as configured");
@@ -321,7 +321,7 @@ class ExponentialBackoffRetryStrategyTest {
         void shouldCreateRetryStrategyWithExponentialBackoff() {
             RetryStrategy strategy = RetryStrategy.exponentialBackoff();
 
-            assertTrue(strategy instanceof ExponentialBackoffRetryStrategy, "exponentialBackoff() factory should create ExponentialBackoffRetryStrategy");
+            assertInstanceOf(ExponentialBackoffRetryStrategy.class, strategy, "exponentialBackoff() factory should create ExponentialBackoffRetryStrategy");
         }
 
         @Test

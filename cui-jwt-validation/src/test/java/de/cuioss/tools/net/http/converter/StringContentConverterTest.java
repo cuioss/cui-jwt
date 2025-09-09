@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.tools.net.http.client;
+package de.cuioss.tools.net.http.converter;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -89,9 +89,8 @@ class StringContentConverterTest {
     @Test
     @DisplayName("Should use specified charset")
     void shouldUseSpecifiedCharset() {
-        Charset iso8859_1 = StandardCharsets.ISO_8859_1;
 
-        StringContentConverter<String> converter = new StringContentConverter<String>(iso8859_1) {
+        StringContentConverter<String> converter = new StringContentConverter<String>(StandardCharsets.ISO_8859_1) {
             @Override
             protected Optional<String> convertString(String rawContent) {
                 return Optional.ofNullable(rawContent);

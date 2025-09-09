@@ -251,7 +251,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         private double backoffMultiplier = 2.0;
         private Duration maxDelay = Duration.ofMinutes(1);
         private double jitterFactor = 0.1; // ±10% jitter
-        private Predicate<Throwable> retryPredicate = ExponentialBackoffRetryStrategy::isRetryableException;
+        private final Predicate<Throwable> retryPredicate = ExponentialBackoffRetryStrategy::isRetryableException;
         
         // Builder methods...
         
