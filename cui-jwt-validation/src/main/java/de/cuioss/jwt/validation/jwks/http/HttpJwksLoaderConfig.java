@@ -22,7 +22,9 @@ import de.cuioss.jwt.validation.well_known.WellKnownResolver;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -55,7 +57,7 @@ import java.util.concurrent.ScheduledExecutorService;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode
-public class HttpJwksLoaderConfig {
+public class HttpJwksLoaderConfig implements HttpHandlerProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpJwksLoaderConfig.class);
 
@@ -81,7 +83,6 @@ public class HttpJwksLoaderConfig {
      * The non-null contract for HTTP configurations is enforced by the {@link HttpJwksLoaderConfigBuilder#build()}
      * method, which validates that the HttpHandler was successfully created before constructing the config.
      */
-    @Getter
     @EqualsAndHashCode.Exclude
     private final HttpHandler httpHandler;
 
@@ -94,6 +95,21 @@ public class HttpJwksLoaderConfig {
     private final WellKnownResolver wellKnownResolver;
 
     /**
+     * The WellKnownConfig used for well-known endpoint discovery.
+     * Will be null if using direct HttpHandler.
+     * Used to access HttpHandler in well-known mode for HttpHandlerProvider interface.
+     */
+    @Getter
+    @EqualsAndHashCode.Exclude
+    private final WellKnownConfig wellKnownConfig;
+
+    /**
+     * The retry strategy for HTTP operations.
+     */
+    @Getter
+    private final RetryStrategy retryStrategy;
+
+    /**
      * The ScheduledExecutorService used for background refresh operations.
      * Can be null if no background refresh is needed.
      */
@@ -101,6 +117,32 @@ public class HttpJwksLoaderConfig {
     @EqualsAndHashCode.Exclude
     private final ScheduledExecutorService scheduledExecutorService;
 
+
+    /**
+     * Provides the HttpHandler for HTTP operations, implementing HttpHandlerProvider interface.
+     * <p>
+     * This method handles both configuration modes:
+     * <ul>
+     *   <li><strong>Direct HTTP mode</strong>: Returns the configured HttpHandler</li>
+     *   <li><strong>WellKnown mode</strong>: Returns the HttpHandler from the WellKnownResolver's config</li>
+     * </ul>
+     *
+     * @return the HttpHandler instance, never null
+     * @throws IllegalStateException if no HttpHandler is available in either mode
+     */
+    @Override
+    @NonNull
+    public HttpHandler getHttpHandler() {
+        if (httpHandler != null) {
+            // Direct HTTP mode - return the configured HttpHandler
+            return httpHandler;
+        } else if (wellKnownConfig != null) {
+            // WellKnown mode - get HttpHandler from the WellKnownConfig
+            return wellKnownConfig.getHttpHandler();
+        } else {
+            throw new IllegalStateException("Neither HttpHandler nor WellKnownConfig is configured");
+        }
+    }
 
     /**
      * Creates a new builder for HttpJwksLoaderConfig.
@@ -131,6 +173,7 @@ public class HttpJwksLoaderConfig {
     public static class HttpJwksLoaderConfigBuilder {
         private Integer refreshIntervalSeconds = DEFAULT_REFRESH_INTERVAL_IN_SECONDS;
         private final HttpHandler.HttpHandlerBuilder httpHandlerBuilder;
+        private RetryStrategy retryStrategy;
         private ScheduledExecutorService scheduledExecutorService;
         private WellKnownConfig wellKnownConfig;
 
@@ -201,6 +244,7 @@ public class HttpJwksLoaderConfig {
             this.endpointSource = EndpointSource.WELL_KNOWN_URL;
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUrl(wellKnownUrl)
+                    .retryStrategy(RetryStrategy.exponentialBackoff())
                     .build();
             return this;
         }
@@ -226,6 +270,7 @@ public class HttpJwksLoaderConfig {
             this.endpointSource = EndpointSource.WELL_KNOWN_URI;
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUri(wellKnownUri)
+                    .retryStrategy(RetryStrategy.exponentialBackoff())
                     .build();
             return this;
         }
@@ -299,6 +344,18 @@ public class HttpJwksLoaderConfig {
         }
 
         /**
+         * Sets the retry strategy for HTTP operations.
+         *
+         * @param retryStrategy the retry strategy to use for HTTP requests
+         * @return this builder instance
+         * @throws IllegalArgumentException if retryStrategy is null
+         */
+        public HttpJwksLoaderConfigBuilder retryStrategy(@NonNull RetryStrategy retryStrategy) {
+            this.retryStrategy = retryStrategy;
+            return this;
+        }
+
+        /**
          * Sets the ScheduledExecutorService for background refresh operations.
          *
          * @param scheduledExecutorService the executor service to use
@@ -345,12 +402,19 @@ public class HttpJwksLoaderConfig {
                         "No JWKS endpoint configured. Must call one of: jwksUri(), jwksUrl(), wellKnownUrl(), or wellKnownUri()");
             }
 
+            // Ensure RetryStrategy is configured
+            if (retryStrategy == null) {
+                retryStrategy = RetryStrategy.exponentialBackoff();
+            }
+
             HttpHandler jwksHttpHandler = null;
             WellKnownResolver configuredWellKnownResolver = null;
 
+            WellKnownConfig configuredWellKnownConfig = null;
             if (endpointSource == EndpointSource.WELL_KNOWN_URL || endpointSource == EndpointSource.WELL_KNOWN_URI) {
                 // Create WellKnownResolver from WellKnownConfig
-                configuredWellKnownResolver = createWellKnownResolver(this.wellKnownConfig);
+                configuredWellKnownConfig = this.wellKnownConfig;
+                configuredWellKnownResolver = createWellKnownResolver(configuredWellKnownConfig);
             } else {
                 // Build the HttpHandler for direct URL/URI configuration
                 try {
@@ -379,6 +443,8 @@ public class HttpJwksLoaderConfig {
                     refreshIntervalSeconds,
                     jwksHttpHandler,
                     configuredWellKnownResolver,
+                    configuredWellKnownConfig,
+                    retryStrategy,
                     executor);
         }
 

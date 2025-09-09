@@ -16,20 +16,23 @@
 package de.cuioss.jwt.validation.jwks;
 
 /**
- * Enum representing the status of a JWKS loader.
+ * Enum representing the status of a JWKS loader or HTTP handler.
  * <p>
  * A loader status is:
  * <ul>
- *   <li>OK: if it can load at least one key</li>
+ *   <li>OK: if it can load at least one key or has valid content</li>
  *   <li>ERROR: if it failed to load any keys due to configuration or runtime issues</li>
+ *   <li>LOADING: if a loading operation is currently in progress</li>
  *   <li>UNDEFINED: if the status hasn't been determined yet</li>
  * </ul>
  */
 public enum LoaderStatus {
-    /** The loader is functioning properly and contains at least one key */
+    /** The loader is functioning properly and contains at least one key or valid content */
     OK("ok"),
-    /** The loader has encountered an error and couldn't load any keys */
+    /** The loader has encountered an error and couldn't load any keys or content */
     ERROR("error"),
+    /** A loading operation is currently in progress */
+    LOADING("loading"),
     /** The loader's status hasn't been determined yet */
     UNDEFINED("undefined");
 

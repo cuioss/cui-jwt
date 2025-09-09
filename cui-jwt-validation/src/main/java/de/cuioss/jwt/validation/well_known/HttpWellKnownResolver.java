@@ -60,7 +60,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     private static final String USERINFO_ENDPOINT_KEY = "userinfo_endpoint";
 
     private final URL wellKnownUrl;
-    private final ETagAwareHttpHandler etagHandler;
+    private final ETagAwareHttpHandler<String> etagHandler;
     private final WellKnownParser parser;
     private final WellKnownEndpointMapper mapper;
 
@@ -76,7 +76,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     public HttpWellKnownResolver(@NonNull WellKnownConfig config) {
         HttpHandler httpHandler = config.getHttpHandler();
         this.wellKnownUrl = httpHandler.getUrl();
-        this.etagHandler = new ETagAwareHttpHandler(httpHandler);
+        this.etagHandler = ETagAwareHttpHandler.forString(config); // Using HttpHandlerProvider pattern
         this.parser = new WellKnownParser(config.getParserConfig());
         this.mapper = new WellKnownEndpointMapper(httpHandler);
         LOGGER.debug("Created HttpWellKnownResolver for URL: %s (not yet loaded)", wellKnownUrl);

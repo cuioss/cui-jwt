@@ -25,7 +25,10 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.util.ETagAwareHttpHandler;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.result.HttpResultObject;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
+import de.cuioss.uimodel.result.ResultState;
 import lombok.NonNull;
 
 import java.util.Optional;
@@ -55,7 +58,7 @@ public class HttpJwksLoader implements JwksLoader {
     private SecurityEventCounter securityEventCounter;
     private final HttpJwksLoaderConfig config;
     private final AtomicReference<JWKSKeyLoader> keyLoader = new AtomicReference<>();
-    private final AtomicReference<ETagAwareHttpHandler> httpCache = new AtomicReference<>();
+    private final AtomicReference<ETagAwareHttpHandler<String>> httpCache = new AtomicReference<>();
     private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
     private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
     private final AtomicBoolean schedulerStarted = new AtomicBoolean(false);
@@ -159,7 +162,7 @@ public class HttpJwksLoader implements JwksLoader {
 
     private void loadKeys() {
         // Ensure we have a healthy ETagAwareHttpHandler
-        Optional<ETagAwareHttpHandler> cacheOpt = ensureHttpCache();
+        Optional<ETagAwareHttpHandler<String>> cacheOpt = ensureHttpCache();
         if (cacheOpt.isEmpty()) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
@@ -170,7 +173,7 @@ public class HttpJwksLoader implements JwksLoader {
             return;
         }
 
-        ETagAwareHttpHandler cache = cacheOpt.get();
+        ETagAwareHttpHandler<String> cache = cacheOpt.get();
 
         HttpResultObject<String> result = cache.load();
 
@@ -284,13 +287,13 @@ public class HttpJwksLoader implements JwksLoader {
 
     private void backgroundRefresh() {
         LOGGER.debug("Starting background JWKS refresh");
-        Optional<ETagAwareHttpHandler> cacheOpt = Optional.ofNullable(httpCache.get());
+        Optional<ETagAwareHttpHandler<String>> cacheOpt = Optional.ofNullable(httpCache.get());
         if (cacheOpt.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_SKIPPED::format);
             return;
         }
 
-        ETagAwareHttpHandler cache = cacheOpt.get();
+        ETagAwareHttpHandler<String> cache = cacheOpt.get();
 
         HttpResultObject<String> result = cache.load();
 
@@ -298,6 +301,12 @@ public class HttpJwksLoader implements JwksLoader {
         if (!result.isValid()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
             return;
+        }
+
+        // Handle warning states (error with cached content)
+        if (result.getState() == ResultState.WARNING) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
+            // Continue processing as we have cached content
         }
 
         // Only update keys if data has actually changed
@@ -317,9 +326,9 @@ public class HttpJwksLoader implements JwksLoader {
      *
      * @return Optional containing the ETagAwareHttpHandler if healthy, empty if sources are not healthy
      */
-    private Optional<ETagAwareHttpHandler> ensureHttpCache() {
+    private Optional<ETagAwareHttpHandler<String>> ensureHttpCache() {
         // Fast path - already have a cache
-        ETagAwareHttpHandler cache = httpCache.get();
+        ETagAwareHttpHandler<String> cache = httpCache.get();
         if (cache != null) {
             return Optional.of(cache);
         }
@@ -338,7 +347,7 @@ public class HttpJwksLoader implements JwksLoader {
                     // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
                     LOGGER.debug("Creating ETagAwareHttpHandler from direct HTTP configuration for URI: %s",
                             config.getHttpHandler().getUri());
-                    cache = new ETagAwareHttpHandler(config.getHttpHandler());
+                    cache = ETagAwareHttpHandler.forString(config); // Using HttpHandlerProvider pattern
                     httpCache.set(cache);
                     return Optional.of(cache);
 
@@ -362,7 +371,20 @@ public class HttpJwksLoader implements JwksLoader {
                     HttpHandler jwksHandler = jwksResult.get();
 
                     LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format(jwksHandler.getUri()));
-                    cache = new ETagAwareHttpHandler(jwksHandler);
+                    // Create a temporary HttpHandlerProvider for well-known resolved HttpHandler
+                    // This uses the WellKnownConfig's RetryStrategy via the config's WellKnownConfig
+                    HttpHandlerProvider jwksProvider = new HttpHandlerProvider() {
+                        @Override
+                        public HttpHandler getHttpHandler() {
+                            return jwksHandler;
+                        }
+
+                        @Override
+                        public RetryStrategy getRetryStrategy() {
+                            return config.getWellKnownConfig().getRetryStrategy();
+                        }
+                    };
+                    cache = ETagAwareHttpHandler.forString(jwksProvider);
                     httpCache.set(cache);
                     return Optional.of(cache);
 

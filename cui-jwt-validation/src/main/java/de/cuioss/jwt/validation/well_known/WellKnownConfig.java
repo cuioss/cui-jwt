@@ -17,7 +17,9 @@ package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -45,7 +47,7 @@ import java.net.URI;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode
-public class WellKnownConfig {
+public class WellKnownConfig implements HttpHandlerProvider {
 
     /**
      * Default connect timeout in seconds for well-known endpoint requests.
@@ -62,6 +64,13 @@ public class WellKnownConfig {
      */
     @Getter
     private final HttpHandler httpHandler;
+
+    /**
+     * The retry strategy for HTTP operations.
+     */
+    @Getter
+    @NonNull
+    private final RetryStrategy retryStrategy;
 
     /**
      * Parser configuration for JSON processing.
@@ -83,6 +92,7 @@ public class WellKnownConfig {
      */
     public static class WellKnownConfigBuilder {
         private final HttpHandler.HttpHandlerBuilder httpHandlerBuilder;
+        private RetryStrategy retryStrategy = RetryStrategy.exponentialBackoff();
         private ParserConfig parserConfig;
 
         /**
@@ -164,6 +174,18 @@ public class WellKnownConfig {
         }
 
         /**
+         * Sets the retry strategy for HTTP operations.
+         * Defaults to exponential backoff strategy if not explicitly set.
+         *
+         * @param retryStrategy the retry strategy to use for HTTP requests
+         * @return this builder instance
+         */
+        public WellKnownConfigBuilder retryStrategy(@NonNull RetryStrategy retryStrategy) {
+            this.retryStrategy = retryStrategy;
+            return this;
+        }
+
+        /**
          * Sets the parser configuration for JSON processing.
          *
          * @param parserConfig the parser configuration
@@ -184,7 +206,7 @@ public class WellKnownConfig {
         public WellKnownConfig build() {
             try {
                 HttpHandler httpHandler = httpHandlerBuilder.build();
-                return new WellKnownConfig(httpHandler, parserConfig);
+                return new WellKnownConfig(httpHandler, retryStrategy, parserConfig);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 throw new IllegalArgumentException("Invalid well-known endpoint configuration", e);
             }

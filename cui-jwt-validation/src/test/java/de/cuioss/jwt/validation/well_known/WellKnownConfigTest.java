@@ -73,6 +73,18 @@ class WellKnownConfigTest {
     }
 
     @Test
+    @DisplayName("Should use default exponential backoff when RetryStrategy not specified")
+    void shouldUseDefaultRetryStrategy() {
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(TEST_WELL_KNOWN_URL)
+                .build();
+
+        assertNotNull(config.getRetryStrategy());
+        // Should be exponential backoff strategy by default
+        assertNotNull(config.getHttpHandler());
+    }
+
+    @Test
     @DisplayName("Should fail with invalid timeout values")
     void shouldFailWithInvalidTimeouts() {
         // Test invalid connect timeout

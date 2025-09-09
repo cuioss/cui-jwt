@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +53,7 @@ class HttpWellKnownResolverIssuerTest {
 
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         resolver = new HttpWellKnownResolver(config);
@@ -74,6 +76,7 @@ class HttpWellKnownResolverIssuerTest {
 
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         resolver = new HttpWellKnownResolver(config);
@@ -94,6 +97,7 @@ class HttpWellKnownResolverIssuerTest {
 
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         resolver = new HttpWellKnownResolver(config);
@@ -114,6 +118,7 @@ class HttpWellKnownResolverIssuerTest {
 
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         resolver = new HttpWellKnownResolver(config);
@@ -141,6 +146,7 @@ class HttpWellKnownResolverIssuerTest {
 
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         resolver = new HttpWellKnownResolver(config);

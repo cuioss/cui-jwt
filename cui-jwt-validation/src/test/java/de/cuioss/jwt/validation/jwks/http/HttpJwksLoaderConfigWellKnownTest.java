@@ -37,7 +37,8 @@ class HttpJwksLoaderConfigWellKnownTest {
                 .build();
 
         assertNotNull(config.getWellKnownResolver());
-        assertNull(config.getHttpHandler());
+        // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
+        assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }
 
     @Test
@@ -48,7 +49,8 @@ class HttpJwksLoaderConfigWellKnownTest {
                 .build();
 
         assertNotNull(config.getWellKnownResolver());
-        assertNull(config.getHttpHandler());
+        // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
+        assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }
 
     @Test

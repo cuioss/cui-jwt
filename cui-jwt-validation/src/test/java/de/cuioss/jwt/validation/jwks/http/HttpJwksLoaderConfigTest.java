@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -275,20 +276,25 @@ class HttpJwksLoaderConfigTest {
     @Test
     @DisplayName("Should test equals and hashCode methods")
     void shouldTestEqualsAndHashCode() {
+        // Use same RetryStrategy instance for both configs since it's now part of equals/hashCode
+        RetryStrategy sharedRetryStrategy = RetryStrategy.exponentialBackoff();
 
         HttpJwksLoaderConfig config1 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
+                .retryStrategy(sharedRetryStrategy)
                 .build();
 
         HttpJwksLoaderConfig config2 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
+                .retryStrategy(sharedRetryStrategy)
                 .build();
 
         HttpJwksLoaderConfig config3 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
                 .refreshIntervalSeconds(120) // Different value
+                .retryStrategy(sharedRetryStrategy)
                 .build();
         assertEquals(config1, config2, "Configs with same values should be equal");
         assertEquals(config1.hashCode(), config2.hashCode(), "Configs with same values should have same hashCode");
@@ -387,6 +393,7 @@ class HttpJwksLoaderConfigTest {
 
         // Verify the contract: WellKnownResolver is guaranteed non-null for well-known configurations  
         assertNotNull(config.getWellKnownResolver(), "WellKnownResolver must be non-null for well-known configurations");
-        assertNull(config.getHttpHandler(), "HttpHandler should be null for well-known configurations");
+        // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
+        assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }
 }

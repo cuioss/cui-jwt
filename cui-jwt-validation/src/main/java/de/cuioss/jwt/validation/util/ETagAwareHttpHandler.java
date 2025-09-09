@@ -16,11 +16,15 @@
 package de.cuioss.jwt.validation.util;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.HttpHandlerProvider;
 import de.cuioss.tools.net.http.HttpStatusFamily;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
 import de.cuioss.tools.net.http.result.HttpResultObject;
+import de.cuioss.tools.net.http.retry.RetryContext;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import de.cuioss.uimodel.nameprovider.DisplayName;
 import de.cuioss.uimodel.result.ResultDetail;
 import de.cuioss.uimodel.result.ResultState;
@@ -30,42 +34,72 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * ETag-aware HTTP handler with stateful caching capabilities.
+ * ETag-aware HTTP handler with stateful caching capabilities and built-in retry logic.
  * <p>
- * This component provides HTTP-based caching using ETags and "If-None-Match" headers.
+ * This component provides HTTP-based caching using ETags and "If-None-Match" headers,
+ * with resilient HTTP operations through configurable retry strategies.
  * It tracks whether content was loaded from cache (304 Not Modified) or freshly fetched (200 OK).
  * <p>
- * Thread-safe implementation using volatile fields and ReentrantLock for virtual thread compatibility.
+ * Thread-safe implementation using ReentrantLock for virtual thread compatibility.
+ * <h2>Retry Integration</h2>
+ * The handler integrates with {@link RetryStrategy} to provide resilient HTTP operations,
+ * solving permanent failure issues in well-known endpoint discovery and JWKS loading.
  *
+ * @param <T> the type of content handled by this HTTP handler (String, JsonNode, byte[], etc.)
  * @author Oliver Wolff
  * @since 1.0
  */
-public class ETagAwareHttpHandler {
+public class ETagAwareHttpHandler<T> {
 
     private static final CuiLogger LOGGER = new CuiLogger(ETagAwareHttpHandler.class);
-
-
     private final HttpHandler httpHandler;
+    private final RetryStrategy retryStrategy;
+    private final HttpContentConverter<T> contentConverter;
     private final ReentrantLock lock = new ReentrantLock();
 
-    private volatile String cachedContent;
-    private volatile String cachedETag;
+    private HttpResultObject<T> cachedResult; // Guarded by lock, no volatile needed
+    private LoaderStatus status = LoaderStatus.UNDEFINED; // Explicitly tracked status
 
     /**
-     * Creates a new ETag-aware HTTP handler for cache validation.
+     * Creates a new ETag-aware HTTP handler with unified provider for HTTP operations and retry strategy.
+     * <p>
+     * This constructor implements the HttpHandlerProvider pattern for unified dependency injection,
+     * providing both HTTP handling capabilities and retry resilience in a single interface.
      *
-     * @param httpHandler the HTTP handler for making requests
+     * @param provider the HTTP handler provider containing both HttpHandler and RetryStrategy
+     * @throws IllegalArgumentException if provider is null
      */
-    public ETagAwareHttpHandler(@NonNull HttpHandler httpHandler) {
-        this.httpHandler = httpHandler;
+    public ETagAwareHttpHandler(@NonNull HttpHandlerProvider provider, @NonNull HttpContentConverter<T> contentConverter) {
+        this.httpHandler = provider.getHttpHandler();
+        this.retryStrategy = provider.getRetryStrategy();
+        this.contentConverter = contentConverter;
     }
 
     /**
-     * Loads HTTP content, using ETag-based HTTP caching when supported.
-     * 
+     * Constructor accepting HttpHandler directly.
+     * <p>
+     * This constructor creates an ETagAwareHttpHandler with no retry capability.
+     * For retry-capable HTTP operations, use {@link #ETagAwareHttpHandler(HttpHandlerProvider, HttpContentConverter)} instead.
+     *
+     * @param httpHandler the HTTP handler for making requests
+     */
+    public ETagAwareHttpHandler(@NonNull HttpHandler httpHandler, @NonNull HttpContentConverter<T> contentConverter) {
+        this.httpHandler = httpHandler;
+        this.retryStrategy = RetryStrategy.none();
+        this.contentConverter = contentConverter;
+    }
+
+    /**
+     * Loads HTTP content with resilient retry logic and ETag-based HTTP caching.
+     * <p>
+     * This method integrates {@link RetryStrategy} to provide resilient HTTP operations,
+     * automatically retrying transient failures and preventing permanent failure states
+     * that previously affected WellKnownResolver and JWKS loading.
+     *
      * <h2>Result States</h2>
      * <ul>
      *   <li><strong>VALID + 200</strong>: Content freshly loaded from server (equivalent to LOADED_FROM_SERVER)</li>
@@ -75,22 +109,32 @@ public class ETagAwareHttpHandler {
      *   <li><strong>ERROR + no content</strong>: Error occurred with no fallback (equivalent to ERROR_NO_CACHE)</li>
      * </ul>
      *
+     * <h2>Retry Integration</h2>
+     * The method uses the configured {@link RetryStrategy} to handle transient failures:
+     * <ul>
+     *   <li>Network timeouts and connection errors are retried with exponential backoff</li>
+     *   <li>HTTP 5xx server errors are retried as they're often transient</li>
+     *   <li>HTTP 4xx client errors are not retried as they're typically permanent</li>
+     *   <li>Cache responses (304 Not Modified) are not subject to retry</li>
+     * </ul>
+     *
      * @return HttpResultObject containing content and detailed state information, never null
      */
-    public HttpResultObject<String> load() {
+    public HttpResultObject<T> load() {
         lock.lock();
         try {
-            HttpFetchResult result = fetchJwksContentWithCache();
+            // Set status to LOADING before starting the operation
+            status = LoaderStatus.LOADING;
 
-            if (result.error) {
-                return handleErrorResult();
-            }
+            // Use RetryStrategy to handle transient failures
+            RetryContext retryContext = new RetryContext("ETag-HTTP-Load:" + httpHandler.getUri().toString(), 1);
 
-            if (hasCachedContentWithETag() && result.notModified) {
-                return handleNotModifiedResult();
-            }
+            HttpResultObject<T> result = retryStrategy.execute(this::fetchJwksContentWithCache, retryContext);
 
-            return handleSuccessResult(result);
+            // Update status based on the result
+            updateStatusFromResult(result);
+
+            return result;
         } finally {
             lock.unlock();
         }
@@ -102,18 +146,31 @@ public class ETagAwareHttpHandler {
      * @param clearCache if true, clears all cached content; if false, only bypasses ETag validation
      * @return HttpResultObject with fresh content or error state, never null
      */
-    public HttpResultObject<String> reload(boolean clearCache) {
+    public HttpResultObject<T> reload(boolean clearCache) {
         lock.lock();
         try {
+            // Set status to LOADING before starting the operation
+            status = LoaderStatus.LOADING;
+
             if (clearCache) {
                 LOGGER.debug("Clearing HTTP cache and reloading from %s", httpHandler.getUrl());
-                this.cachedContent = null;
+                this.cachedResult = null;
             } else {
                 LOGGER.debug("Bypassing ETag validation and reloading from %s", httpHandler.getUrl());
+                // Clear ETag but keep content for potential fallback
+                HttpResultObject<T> current = this.cachedResult;
+                if (current != null) {
+                    Integer httpStatus = current.getHttpStatus().orElse(200);
+                    this.cachedResult = HttpResultObject.success(current.getResult(), null, httpStatus);
+                }
             }
-            this.cachedETag = null;
 
-            return loadInternal();
+            HttpResultObject<T> result = loadInternal();
+
+            // Update status based on the result
+            updateStatusFromResult(result);
+
+            return result;
         } finally {
             lock.unlock();
         }
@@ -123,45 +180,31 @@ public class ETagAwareHttpHandler {
      * Internal load method that assumes the lock is already held.
      * Used by reload() to avoid recursive locking.
      */
-    private HttpResultObject<String> loadInternal() {
-        HttpFetchResult result = fetchJwksContentWithCache();
+    private HttpResultObject<T> loadInternal() {
+        // Use RetryStrategy for reload operations as well
+        RetryContext retryContext = new RetryContext("ETag-HTTP-Reload:" + httpHandler.getUri().toString(), 1);
 
-        if (result.error) {
-            return handleErrorResult();
-        }
-
-        if (hasCachedContentWithETag() && result.notModified) {
-            return handleNotModifiedResult();
-        }
-
-        return handleSuccessResult(result);
-    }
-
-    /**
-     * Checks if we have both cached content and ETag available.
-     */
-    private boolean hasCachedContentWithETag() {
-        return cachedContent != null && cachedETag != null;
+        return retryStrategy.execute(this::fetchJwksContentWithCache, retryContext);
     }
 
     /**
      * Handles error results by returning cached content if available.
      */
-    private HttpResultObject<String> handleErrorResult() {
-        if (cachedContent != null) {
+    private HttpResultObject<T> handleErrorResult() {
+        if (cachedResult != null && cachedResult.getResult() != null) {
             return new HttpResultObject<>(
-                    cachedContent,
+                    cachedResult.getResult(),
                     ResultState.WARNING, // Using cached content but with error condition
                     new ResultDetail(
                             new DisplayName("HTTP request failed, using cached content from " + httpHandler.getUrl()),
                             new Exception("HTTP request failed")),
                     HttpErrorCategory.NETWORK_ERROR,
-                    cachedETag,
-                    null // No HTTP status for error cases
+                    cachedResult.getETag().orElse(null),
+                    cachedResult.getHttpStatus().orElse(null)
             );
         } else {
             return HttpResultObject.error(
-                    "", // Empty string as fallback when no cached content available
+                    getEmptyFallback(), // Safe empty fallback
                     HttpErrorCategory.NETWORK_ERROR,
                     new ResultDetail(
                             new DisplayName("HTTP request failed with no cached content available from " + httpHandler.getUrl()),
@@ -173,55 +216,39 @@ public class ETagAwareHttpHandler {
     /**
      * Handles 304 Not Modified response by returning cached content.
      */
-    private HttpResultObject<String> handleNotModifiedResult() {
+    private HttpResultObject<T> handleNotModifiedResult() {
         LOGGER.debug("HTTP content not modified (304), using cached version");
-        return HttpResultObject.success(cachedContent, cachedETag, 304);
-    }
-
-    /**
-     * Handles successful response by checking for content changes and updating cache.
-     */
-    private HttpResultObject<String> handleSuccessResult(HttpFetchResult result) {
-        // Check if content actually changed despite new response
-        if (cachedContent != null && cachedContent.equals(result.content)) {
-            LOGGER.debug("HTTP content unchanged despite 200 OK response");
-            return new HttpResultObject<>(
-                    cachedContent,
-                    ResultState.VALID,
-                    null, // No error details for successful cache hit
-                    null, // No error category
-                    cachedETag,
-                    null // No HTTP status for local cache operations
+        if (cachedResult != null) {
+            return HttpResultObject.success(cachedResult.getResult(), cachedResult.getETag().orElse(null), 304);
+        } else {
+            return HttpResultObject.error(
+                    getEmptyFallback(), // Safe empty fallback
+                    HttpErrorCategory.NETWORK_ERROR,
+                    new ResultDetail(
+                            new DisplayName("304 Not Modified but no cached content available"),
+                            new Exception("No cached result available"))
             );
         }
-
-        // Update cache with fresh content
-        this.cachedContent = result.content;
-        this.cachedETag = result.etag; // May be null if server doesn't support ETags
-
-        LOGGER.info(JWTValidationLogMessages.INFO.HTTP_CONTENT_LOADED.format(httpHandler.getUrl()));
-        return HttpResultObject.success(result.content, result.etag, 200);
     }
 
-    /**
-     * Internal result for HTTP fetch operations.
-     */
-    private record HttpFetchResult(String content, String etag, boolean notModified, boolean error) {
-    }
 
     /**
-     * Fetches HTTP content from the endpoint with ETag support.
+     * Executes HTTP request with ETag validation support and direct HttpResultObject return.
+     * <p>
+     * This method now returns HttpResultObject directly to support RetryStrategy.execute(),
+     * implementing the HttpOperation<String> pattern for resilient HTTP operations.
      *
-     * @return HttpFetchResult with error flag set if request fails
+     * @return HttpResultObject containing content and state information, never null
      */
     @SuppressWarnings("java:S2095") // owolff False positive for HttpResponse since it is closed automatically
-    private HttpFetchResult fetchJwksContentWithCache() {
+    private HttpResultObject<T> fetchJwksContentWithCache() {
         // Build request with conditional headers
         HttpRequest.Builder requestBuilder = httpHandler.requestBuilder();
 
         // Add If-None-Match header if we have a cached ETag
-        if (cachedETag != null) {
-            requestBuilder.header("If-None-Match", cachedETag);
+        if (cachedResult != null) {
+            cachedResult.getETag().ifPresent(etag ->
+                    requestBuilder.header("If-None-Match", etag));
         }
 
         HttpRequest request = requestBuilder.build();
@@ -233,28 +260,139 @@ public class ETagAwareHttpHandler {
             HttpStatusFamily statusFamily = HttpStatusFamily.fromStatusCode(response.statusCode());
 
             if (response.statusCode() == 304) {
-                // Not Modified - content hasn't changed
+                // Not Modified - content hasn't changed, return cached content
                 LOGGER.debug("Received 304 Not Modified from %s", httpHandler.getUrl());
-                return new HttpFetchResult(null, null, true, false);
+                return handleNotModifiedResult();
             } else if (statusFamily == HttpStatusFamily.SUCCESS) {
-                // 2xx Success - fresh content
-                String content = response.body();
+                // 2xx Success - fresh content, update cache and return
+                String rawContent = response.body();
                 String etag = response.headers().firstValue("ETag").orElse(null);
 
                 LOGGER.debug("Received %s %s from %s with ETag: %s", response.statusCode(), statusFamily, httpHandler.getUrl(), etag);
-                return new HttpFetchResult(content, etag, false, false);
+
+                // Convert raw content to target type
+                Optional<T> contentOpt = contentConverter.convert(rawContent);
+
+                if (contentOpt.isPresent()) {
+                    // Successful conversion - update cache with new result
+                    T content = contentOpt.get();
+                    HttpResultObject<T> result = HttpResultObject.success(content, etag, response.statusCode());
+                    this.cachedResult = result;
+                    return result;
+                } else {
+                    // Content conversion failed - return error with no cache update
+                    LOGGER.warn("Content conversion failed for response from %s", httpHandler.getUrl());
+                    return HttpResultObject.error(
+                            getEmptyFallback(), // Safe empty fallback
+                            HttpErrorCategory.CLIENT_ERROR,
+                            new ResultDetail(
+                                    new DisplayName("Content conversion failed for %s".formatted(httpHandler.getUrl())),
+                                    new Exception("Content conversion returned empty result"))
+                    );
+                }
             } else {
+                // HTTP error - this will trigger retry if it's a 5xx server error
                 LOGGER.warn(JWTValidationLogMessages.WARN.HTTP_STATUS_WARNING.format(response.statusCode(), statusFamily, httpHandler.getUrl()));
-                return new HttpFetchResult(null, null, false, true);
+
+                // For 4xx client errors, don't retry and return error with cache fallback if available
+                if (statusFamily == HttpStatusFamily.CLIENT_ERROR) {
+                    return handleErrorResult();
+                }
+
+                // For 5xx server errors, return error result with cache fallback if available
+                // RetryStrategy will handle retry logic, but if retries are exhausted we want cached content
+                return handleErrorResult();
             }
 
         } catch (IOException e) {
             LOGGER.warn(e, JWTValidationLogMessages.WARN.HTTP_FETCH_FAILED.format(httpHandler.getUrl()));
-            return new HttpFetchResult(null, null, false, true);
+            // Return error result for IOException - RetryStrategy will handle retry logic
+            return handleErrorResult();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.warn(JWTValidationLogMessages.WARN.HTTP_FETCH_INTERRUPTED.format(httpHandler.getUrl()));
-            return new HttpFetchResult(null, null, false, true);
+            // InterruptedException should not be retried
+            return handleErrorResult();
         }
+    }
+
+    /**
+     * Provides a safe empty fallback result for error cases.
+     * Uses semantically correct empty value from content converter.
+     * If no cached result available, uses converter's empty value.
+     *
+     * @return empty fallback result, never null
+     */
+    private T getEmptyFallback() {
+        // Try to get cached result first
+        if (cachedResult != null && cachedResult.getResult() != null) {
+            return cachedResult.getResult();
+        }
+        // Use semantically correct empty value from converter
+        // This ensures CUI ResultObject never gets null result
+        return contentConverter.emptyValue();
+    }
+
+    /**
+     * Updates the status based on the HttpResultObject result.
+     * This method assumes the lock is already held.
+     *
+     * @param result the HttpResultObject to evaluate for status update
+     */
+    private void updateStatusFromResult(HttpResultObject<T> result) {
+        if (result.isValid() && result.getResult() != null) {
+            status = LoaderStatus.OK;
+        } else {
+            status = LoaderStatus.ERROR;
+        }
+    }
+
+    /**
+     * Returns the current status of this ETag-aware HTTP handler.
+     * <p>
+     * Provides clients a way to determine the handler's state similar to 
+     * {@link de.cuioss.jwt.validation.jwks.http.HttpJwksLoader#getCurrentStatus()}.
+     * <p>
+     * Status tracking:
+     * <ul>
+     *   <li>{@link LoaderStatus#UNDEFINED}: No HTTP requests attempted yet (initial state)</li>
+     *   <li>{@link LoaderStatus#LOADING}: HTTP loading operation currently in progress</li>
+     *   <li>{@link LoaderStatus#OK}: Has valid cached content (successful load or 304 Not Modified)</li>
+     *   <li>{@link LoaderStatus#ERROR}: Last operation failed with no usable content</li>
+     * </ul>
+     *
+     * @return the current status of this handler
+     */
+    public LoaderStatus getCurrentStatus() {
+        lock.lock();
+        try {
+            return status;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    // Static factory methods for backwards compatibility with String content
+
+    /**
+     * Creates a String-based ETag-aware HTTP handler with HttpHandlerProvider.
+     * This is the backwards-compatible factory method for existing String-based usage.
+     *
+     * @param provider the HTTP handler provider containing both HttpHandler and RetryStrategy
+     * @return ETagAwareHttpHandler configured for String content
+     */
+    public static ETagAwareHttpHandler<String> forString(@NonNull HttpHandlerProvider provider) {
+        return new ETagAwareHttpHandler<>(provider, HttpContentConverter.identity());
+    }
+
+    /**
+     * Creates a String-based ETag-aware HTTP handler with direct HttpHandler.
+     * This is the backwards-compatible factory method for existing String-based usage.
+     *
+     * @param httpHandler the HTTP handler for making requests
+     * @return ETagAwareHttpHandler configured for String content
+     */
+    public static ETagAwareHttpHandler<String> forString(@NonNull HttpHandler httpHandler) {
+        return new ETagAwareHttpHandler<>(httpHandler, HttpContentConverter.identity());
     }
 }

@@ -207,17 +207,17 @@ class HttpJwksLoaderSchedulerTest {
 
         // Wait for background refresh to encounter errors - scheduler runs every 1 second
         await("Scheduler to execute at least one background refresh cycle")
-                .atMost(1500, MILLISECONDS)
-                .pollDelay(1200, MILLISECONDS) // Give scheduler time to run at least once
+                .atMost(3000, MILLISECONDS)
+                .pollDelay(1500, MILLISECONDS) // Give scheduler time to run at least once
                 .until(() -> true); // Just wait for the time period
 
         // Loader should still be healthy if it has existing keys
         assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should remain healthy with cached keys even if background refresh fails");
 
-        // Verify error logging occurred
+        // Verify HTTP error logging occurred
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.WARN,
-                "Background JWKS refresh failed");
+                "HTTP 500 (Server Error (500-599))");
 
         loader.shutdown();
     }

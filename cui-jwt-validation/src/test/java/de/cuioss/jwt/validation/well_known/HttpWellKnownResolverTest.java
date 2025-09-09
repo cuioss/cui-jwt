@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.well_known;
 import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +41,7 @@ class HttpWellKnownResolverTest {
     void shouldCreateResolverAndStartWithUndefinedStatus() {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
@@ -61,6 +63,7 @@ class HttpWellKnownResolverTest {
     void shouldHandleMalformedUrlsGracefully() {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("invalid-url")
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
@@ -76,6 +79,7 @@ class HttpWellKnownResolverTest {
     void shouldTestAllGetterMethodsForCoverage() {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://nonexistent-server.example.com/.well-known/openid-configuration")
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
@@ -97,6 +101,7 @@ class HttpWellKnownResolverTest {
     void shouldHandleConcurrentAccessWithoutCrashing() throws InterruptedException {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
@@ -129,6 +134,7 @@ class HttpWellKnownResolverTest {
     void shouldReturnEmptyIssuerWhenNotAvailable() {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://nonexistent.example.com/.well-known/openid-configuration")
+                .retryStrategy(RetryStrategy.exponentialBackoff())
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
