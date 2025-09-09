@@ -601,6 +601,12 @@ public final class JWTValidationLogMessages {
                 .identifier(149)
                 .template("Operation '%s' failed after %s attempts. Final exception: %s")
                 .build();
+
+        public static final LogRecord JSON_PARSING_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(150)
+                .template("JSON parsing failed for content, returning empty result: %s")
+                .build();
     }
 
 }

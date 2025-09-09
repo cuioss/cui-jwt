@@ -17,13 +17,15 @@ package de.cuioss.tools.net.http.client;
 
 import lombok.NonNull;
 
+import java.net.http.HttpResponse;
 import java.util.Optional;
 
 /**
- * Content converter for transforming raw HTTP response strings into typed objects.
+ * Content converter for transforming HTTP response bodies into typed objects with proper BodyHandler support.
  * <p>
- * This interface allows ETagAwareHttpHandler to be generic over different content types
- * while maintaining HTTP response body handling as String internally.
+ * This interface provides both content conversion and appropriate BodyHandler selection,
+ * allowing ETagAwareHttpHandler to leverage Java HTTP Client's type-safe body handling.
+ * The raw response type is an implementation detail hidden from clients.
  * <p>
  * Implementations should handle conversion errors gracefully by returning Optional.empty()
  * when conversion fails or when there is no meaningful content to convert.
@@ -44,10 +46,28 @@ public interface HttpContentConverter<T> {
      *   <li>Content cannot be meaningfully converted</li>
      * </ul>
      *
-     * @param rawContent the raw HTTP response body as String (may be null or empty)
+     * @param rawContent the raw HTTP response body (may be null or empty)
      * @return Optional containing converted content, or empty if conversion fails
      */
-    Optional<T> convert(String rawContent);
+    Optional<T> convert(Object rawContent);
+
+    /**
+     * Provides the appropriate BodyHandler for this converter.
+     * <p>
+     * This method enables proper leveraging of Java HTTP Client's type-safe body handling,
+     * avoiding unnecessary intermediate conversions and preserving data integrity.
+     * The raw type is handled internally by the implementation.
+     * <p>
+     * Examples:
+     * <ul>
+     *   <li>For JSON/XML: HttpResponse.BodyHandlers.ofString(charset)</li>
+     *   <li>For binary data: HttpResponse.BodyHandlers.ofByteArray()</li>
+     *   <li>For large content: HttpResponse.BodyHandlers.ofInputStream()</li>
+     * </ul>
+     *
+     * @return the BodyHandler appropriate for this converter
+     */
+    HttpResponse.BodyHandler<?> getBodyHandler();
 
     /**
      * Provides a semantically correct empty value for this content type.
@@ -67,24 +87,4 @@ public interface HttpContentConverter<T> {
      */
     @NonNull
     T emptyValue();
-
-    /**
-     * Identity converter for String content (no conversion needed).
-     *
-     * @return converter that returns the input unchanged
-     */
-    static HttpContentConverter<String> identity() {
-        return new HttpContentConverter<>() {
-            @Override
-            public Optional<String> convert(String rawContent) {
-                return Optional.ofNullable(rawContent);
-            }
-
-            @Override
-            @NonNull
-            public String emptyValue() {
-                return "";
-            }
-        };
-    }
 }

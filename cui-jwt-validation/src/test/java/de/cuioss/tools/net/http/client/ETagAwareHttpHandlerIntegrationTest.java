@@ -238,7 +238,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should load fresh content on first request")
     void shouldLoadFreshContentOnFirstRequest() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
 
         // When
@@ -256,7 +256,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should use cached content with 304 Not Modified")
     void shouldUseCachedContentWith304() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
 
         // First request to establish cache
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
@@ -282,7 +282,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should detect content changes and update cache")
     void shouldDetectContentChangesAndUpdateCache() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
 
         // First request
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
@@ -308,7 +308,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should test reload method with clearCache variants")
     void shouldTestReloadMethod(boolean clearCache) {
         // Given - establish cache first
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
         HttpResultObject<String> initialResult = handler.load();
         assertTrue(initialResult.isValid());
@@ -346,7 +346,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should retry on server errors with exponential backoff")
     void shouldRetryOnServerErrorsWithExponentialBackoff() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.configureForRetryTesting(2); // Fail 2 times, then succeed
 
         long startTime = System.currentTimeMillis();
@@ -371,7 +371,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should handle client errors appropriately")
     void shouldHandleClientErrorsAppropriately() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.CLIENT_ERROR);
 
         // When
@@ -388,7 +388,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should handle malformed JSON content gracefully")
     void shouldHandleMalformedJsonContentGracefully() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.MALFORMED_JSON);
 
         // When
@@ -404,7 +404,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should handle empty responses using emptyValue()")
     void shouldHandleEmptyResponsesUsingEmptyValue() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.EMPTY_RESPONSE);
 
         // When
@@ -420,7 +420,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should be thread-safe under concurrent access")
     void shouldBeThreadSafeUnderConcurrentAccess() throws InterruptedException {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
         moduleDispatcher.setSimulateSlowResponse(true);
 
@@ -470,7 +470,7 @@ class ETagAwareHttpHandlerIntegrationTest {
             }
         };
 
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(noRetryProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(noRetryProvider, StringContentConverter.identity());
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SERVER_ERROR);
         moduleDispatcher.setFailureCount(3);
 
@@ -491,7 +491,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should handle cache state transitions correctly")
     void shouldHandleCacheStateTransitionsCorrectly() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
 
         // Phase 1: Initial successful load
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
@@ -525,7 +525,7 @@ class ETagAwareHttpHandlerIntegrationTest {
     @DisplayName("Should track status transitions correctly")
     void shouldTrackStatusTransitionsCorrectly() {
         // Given
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandlerProvider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
 
         // Initially should be UNDEFINED
         assertEquals(LoaderStatus.UNDEFINED, handler.getCurrentStatus());

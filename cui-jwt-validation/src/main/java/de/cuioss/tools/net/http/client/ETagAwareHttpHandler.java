@@ -47,7 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * The handler integrates with {@link RetryStrategy} to provide resilient HTTP operations,
  * solving permanent failure issues in well-known endpoint discovery and JWKS loading.
  *
- * @param <T> the type of content handled by this HTTP handler (String, JsonNode, byte[], etc.)
+ * @param <T> the target type for content conversion
  * @author Oliver Wolff
  * @since 1.0
  */
@@ -253,7 +253,7 @@ public class ETagAwareHttpHandler<T> {
 
         try {
             HttpClient client = httpHandler.createHttpClient();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<?> response = client.send(request, contentConverter.getBodyHandler());
 
             HttpStatusFamily statusFamily = HttpStatusFamily.fromStatusCode(response.statusCode());
 
@@ -263,7 +263,7 @@ public class ETagAwareHttpHandler<T> {
                 return handleNotModifiedResult();
             } else if (statusFamily == HttpStatusFamily.SUCCESS) {
                 // 2xx Success - fresh content, update cache and return
-                String rawContent = response.body();
+                Object rawContent = response.body();
                 String etag = response.headers().firstValue("ETag").orElse(null);
 
                 LOGGER.debug("Received %s %s from %s with ETag: %s", response.statusCode(), statusFamily, httpHandler.getUrl(), etag);
@@ -370,27 +370,4 @@ public class ETagAwareHttpHandler<T> {
         }
     }
 
-    // Static factory methods for backwards compatibility with String content
-
-    /**
-     * Creates a String-based ETag-aware HTTP handler with HttpHandlerProvider.
-     * This is the backwards-compatible factory method for existing String-based usage.
-     *
-     * @param provider the HTTP handler provider containing both HttpHandler and RetryStrategy
-     * @return ETagAwareHttpHandler configured for String content
-     */
-    public static ETagAwareHttpHandler<String> forString(@NonNull HttpHandlerProvider provider) {
-        return new ETagAwareHttpHandler<>(provider, HttpContentConverter.identity());
-    }
-
-    /**
-     * Creates a String-based ETag-aware HTTP handler with direct HttpHandler.
-     * This is the backwards-compatible factory method for existing String-based usage.
-     *
-     * @param httpHandler the HTTP handler for making requests
-     * @return ETagAwareHttpHandler configured for String content
-     */
-    public static ETagAwareHttpHandler<String> forString(@NonNull HttpHandler httpHandler) {
-        return new ETagAwareHttpHandler<>(httpHandler, HttpContentConverter.identity());
-    }
 }

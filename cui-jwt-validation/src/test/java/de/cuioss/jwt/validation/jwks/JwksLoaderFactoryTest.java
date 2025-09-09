@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,6 +66,7 @@ class JwksLoaderFactoryTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl("https://example.com/.well-known/jwks.json")
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ETagAwareHttpHandler
                 .build();
         JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
         loader.initJWKSLoader(securityEventCounter);
@@ -82,6 +84,7 @@ class JwksLoaderFactoryTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ETagAwareHttpHandler
                 .build();
         JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
         loader.initJWKSLoader(securityEventCounter);

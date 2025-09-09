@@ -43,7 +43,7 @@ class ETagAwareHttpHandlerProviderTest {
                 .build();
 
         // When: Creating ETagAwareHttpHandler with HttpHandlerProvider
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(config);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(config, StringContentConverter.identity());
 
         // Then: Should be created successfully
         assertNotNull(handler, "ETagAwareHttpHandler should be created");
@@ -68,7 +68,7 @@ class ETagAwareHttpHandlerProviderTest {
         };
 
         // When: Creating ETagAwareHttpHandler with custom provider
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(provider);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(provider, StringContentConverter.identity());
 
         // Then: Should be created successfully
         assertNotNull(handler, "ETagAwareHttpHandler should be created with custom provider");
@@ -83,7 +83,7 @@ class ETagAwareHttpHandlerProviderTest {
                 .build();
 
         // When: Creating ETagAwareHttpHandler with direct HttpHandler constructor
-        ETagAwareHttpHandler<String> handler = ETagAwareHttpHandler.forString(httpHandler);
+        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandler, StringContentConverter.identity());
 
         // Then: Should still work for backward compatibility
         assertNotNull(handler, "ETagAwareHttpHandler should maintain backward compatibility");
@@ -97,7 +97,7 @@ class ETagAwareHttpHandlerProviderTest {
 
         // When/Then: Should throw IllegalArgumentException
         assertThrows(NullPointerException.class, () -> {
-            ETagAwareHttpHandler.forString(provider);
+            new ETagAwareHttpHandler<>(provider, StringContentConverter.identity());
         }, "Should throw exception when provider is null");
     }
 }

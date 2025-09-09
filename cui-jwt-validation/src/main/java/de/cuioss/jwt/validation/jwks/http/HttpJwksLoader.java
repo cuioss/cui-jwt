@@ -26,6 +26,7 @@ import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.HttpHandlerProvider;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.client.StringContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
 import de.cuioss.uimodel.result.ResultState;
@@ -347,7 +348,7 @@ public class HttpJwksLoader implements JwksLoader {
                     // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
                     LOGGER.debug("Creating ETagAwareHttpHandler from direct HTTP configuration for URI: %s",
                             config.getHttpHandler().getUri());
-                    cache = ETagAwareHttpHandler.forString(config); // Using HttpHandlerProvider pattern
+                    cache = new ETagAwareHttpHandler<>(config, StringContentConverter.identity()); // Using HttpHandlerProvider pattern
                     httpCache.set(cache);
                     return Optional.of(cache);
 
@@ -384,7 +385,7 @@ public class HttpJwksLoader implements JwksLoader {
                             return config.getWellKnownConfig().getRetryStrategy();
                         }
                     };
-                    cache = ETagAwareHttpHandler.forString(jwksProvider);
+                    cache = new ETagAwareHttpHandler<>(jwksProvider, StringContentConverter.identity());
                     httpCache.set(cache);
                     return Optional.of(cache);
 

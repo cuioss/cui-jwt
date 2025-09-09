@@ -20,6 +20,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.client.StringContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import jakarta.json.JsonObject;
 import lombok.NonNull;
@@ -76,7 +77,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     public HttpWellKnownResolver(@NonNull WellKnownConfig config) {
         HttpHandler httpHandler = config.getHttpHandler();
         this.wellKnownUrl = httpHandler.getUrl();
-        this.etagHandler = ETagAwareHttpHandler.forString(config); // Using HttpHandlerProvider pattern
+        this.etagHandler = new ETagAwareHttpHandler<>(config, StringContentConverter.identity()); // Using HttpHandlerProvider pattern
         this.parser = new WellKnownParser(config.getParserConfig());
         this.mapper = new WellKnownEndpointMapper(httpHandler);
         LOGGER.debug("Created HttpWellKnownResolver for URL: %s (not yet loaded)", wellKnownUrl);
