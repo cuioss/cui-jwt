@@ -182,7 +182,7 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 === JSON Parser Performance
 
-**Current JSON Parser** (Jakarta JSON API):
+**Current JSON Parser** (DSL-JSON with Jakarta JSON API compatibility):
 
 * Security-first design with configurable limits
 * Native image compatible
