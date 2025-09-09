@@ -20,6 +20,7 @@ import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,12 +39,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class JsonContentConverterTest {
 
     private JsonContentConverter converter;
-    private ParserConfig parserConfig;
+    private JsonReaderFactory jsonReaderFactory;
 
     @BeforeEach
     void setUp() {
-        parserConfig = ParserConfig.builder().build();
-        converter = new JsonContentConverter(parserConfig);
+        ParserConfig parserConfig = ParserConfig.builder().build();
+        jsonReaderFactory = parserConfig.getJsonReaderFactory();
+        converter = new JsonContentConverter(jsonReaderFactory);
     }
 
     @Test
@@ -111,7 +113,8 @@ class JsonContentConverterTest {
         ParserConfig restrictiveConfig = ParserConfig.builder()
                 .maxStringSize(10) // Very small limit
                 .build();
-        JsonContentConverter restrictiveConverter = new JsonContentConverter(restrictiveConfig);
+        JsonReaderFactory restrictiveJsonReaderFactory = restrictiveConfig.getJsonReaderFactory();
+        JsonContentConverter restrictiveConverter = new JsonContentConverter(restrictiveJsonReaderFactory);
 
         String largeJsonString = "{\"name\":\"this is a very long string that exceeds the limit\"}";
 
@@ -186,15 +189,16 @@ class JsonContentConverterTest {
     }
 
     @Test
-    @DisplayName("Should use ParserConfig's JsonReaderFactory")
-    void shouldUseParserConfigJsonReaderFactory() {
-        // Test that the converter uses the same JsonReaderFactory as ParserConfig
+    @DisplayName("Should use provided JsonReaderFactory")
+    void shouldUseProvidedJsonReaderFactory() {
+        // Test that the converter uses the provided JsonReaderFactory
         // by verifying consistent behavior
 
         ParserConfig customConfig = ParserConfig.builder()
                 .maxDepth(2) // Very shallow depth
                 .build();
-        JsonContentConverter customConverter = new JsonContentConverter(customConfig);
+        JsonReaderFactory customJsonReaderFactory = customConfig.getJsonReaderFactory();
+        JsonContentConverter customConverter = new JsonContentConverter(customJsonReaderFactory);
 
         String deeplyNestedJson = """
             {
@@ -210,12 +214,9 @@ class JsonContentConverterTest {
 
         Optional<JsonObject> result = customConverter.convert(deeplyNestedJson);
 
-        // Test that the converter uses the ParserConfig's JsonReaderFactory
+        // Test that the converter uses the provided JsonReaderFactory
         // Jakarta JSON implementation may or may not enforce depth limits as expected
         assertNotNull(result, "Result should never be null - converter should handle limits gracefully");
-
-        // Verify the converter is using the same factory by checking it's not null
-        assertNotNull(customConfig.getJsonReaderFactory(), "ParserConfig should provide JsonReaderFactory");
     }
 
     @Test

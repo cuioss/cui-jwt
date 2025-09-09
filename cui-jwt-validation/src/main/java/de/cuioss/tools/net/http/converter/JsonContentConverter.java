@@ -16,24 +16,20 @@
 package de.cuioss.tools.net.http.converter;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.Json;
-import jakarta.json.JsonException;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
+import jakarta.json.*;
 import lombok.NonNull;
 
 import java.io.StringReader;
 import java.util.Optional;
 
 /**
- * JSON content converter that uses ParserConfig for secure JSON parsing.
+ * JSON content converter that uses JsonReaderFactory for secure JSON parsing.
  * <p>
  * This converter processes String-based HTTP responses as JSON using the security
- * settings from ParserConfig, including limits on string size, array size, and nesting depth.
+ * settings from the provided JsonReaderFactory, including limits on string size, array size, and nesting depth.
  * <p>
- * The converter leverages ParserConfig's JsonReaderFactory to ensure consistent
+ * The converter uses the provided JsonReaderFactory to ensure consistent
  * security settings across all JSON parsing operations in the JWT validation system.
  *
  * @author Oliver Wolff
@@ -43,15 +39,15 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> {
 
     private static final CuiLogger LOGGER = new CuiLogger(JsonContentConverter.class);
 
-    private final ParserConfig parserConfig;
+    private final JsonReaderFactory jsonReaderFactory;
 
     /**
-     * Creates a JSON content converter with the specified parser configuration.
+     * Creates a JSON content converter with the specified JSON reader factory.
      *
-     * @param parserConfig the parser configuration containing JSON security settings
+     * @param jsonReaderFactory the JSON reader factory containing JSON security settings
      */
-    public JsonContentConverter(@NonNull ParserConfig parserConfig) {
-        this.parserConfig = parserConfig;
+    public JsonContentConverter(@NonNull JsonReaderFactory jsonReaderFactory) {
+        this.jsonReaderFactory = jsonReaderFactory;
     }
 
     @Override
@@ -61,7 +57,7 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> {
         }
 
         try {
-            try (JsonReader jsonReader = parserConfig.getJsonReaderFactory().createReader(new StringReader(rawContent))) {
+            try (JsonReader jsonReader = jsonReaderFactory.createReader(new StringReader(rawContent))) {
                 JsonObject jsonObject = jsonReader.readObject();
                 return Optional.of(jsonObject);
             }
