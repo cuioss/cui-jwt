@@ -16,9 +16,6 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.test.generator.junit.EnableGeneratorController;
-import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.JsonReaderFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,73 +23,40 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Tests for {@link ParserConfig}.
+ * Basic test for {@link ParserConfig} in pipeline context.
  */
-@EnableTestLogger
-@EnableGeneratorController
-@DisplayName("Tests for ParserConfig")
+@DisplayName("Basic ParserConfig Tests")
 class ParserConfigTest {
 
     @Test
-    @DisplayName("Should create config with default values")
-    void shouldCreateConfigWithDefaultValues() {
-
+    @DisplayName("Should create default parser config")
+    void shouldCreateDefaultParserConfig() {
         ParserConfig config = ParserConfig.builder().build();
+
+        assertNotNull(config);
         assertEquals(ParserConfig.DEFAULT_MAX_TOKEN_SIZE, config.getMaxTokenSize());
         assertEquals(ParserConfig.DEFAULT_MAX_PAYLOAD_SIZE, config.getMaxPayloadSize());
-        assertEquals(ParserConfig.DEFAULT_MAX_STRING_SIZE, config.getMaxStringSize());
-        assertEquals(ParserConfig.DEFAULT_MAX_ARRAY_SIZE, config.getMaxArraySize());
-        assertEquals(ParserConfig.DEFAULT_MAX_DEPTH, config.getMaxDepth());
+        assertEquals(ParserConfig.DEFAULT_MAX_STRING_LENGTH, config.getMaxStringLength());
+        assertEquals(ParserConfig.DEFAULT_MAX_BUFFER_SIZE, config.getMaxBufferSize());
     }
 
     @Test
-    @DisplayName("Should create config with custom values")
-    void shouldCreateConfigWithCustomValues() {
-
-        int customMaxTokenSize = 4096;
-        int customMaxPayloadSize = 2048;
-        int customMaxStringSize = 1024;
-        int customMaxArraySize = 32;
-        int customMaxDepth = 5;
+    @DisplayName("Should create custom parser config")
+    void shouldCreateCustomParserConfig() {
         ParserConfig config = ParserConfig.builder()
-                .maxTokenSize(customMaxTokenSize)
-                .maxPayloadSize(customMaxPayloadSize)
-                .maxStringSize(customMaxStringSize)
-                .maxArraySize(customMaxArraySize)
-                .maxDepth(customMaxDepth)
+                .maxTokenSize(16384)
+                .maxPayloadSize(8192)
+                .maxStringLength(4096)
+                .maxBufferSize(65536)
                 .build();
-        assertEquals(customMaxTokenSize, config.getMaxTokenSize());
-        assertEquals(customMaxPayloadSize, config.getMaxPayloadSize());
-        assertEquals(customMaxStringSize, config.getMaxStringSize());
-        assertEquals(customMaxArraySize, config.getMaxArraySize());
-        assertEquals(customMaxDepth, config.getMaxDepth());
-    }
 
-    @Test
-    @DisplayName("Should create JsonReaderFactory with security settings")
-    void shouldCreateJsonReaderFactoryWithSecuritySettings() {
+        assertNotNull(config);
+        assertEquals(16384, config.getMaxTokenSize());
+        assertEquals(8192, config.getMaxPayloadSize());
+        assertEquals(4096, config.getMaxStringLength());
+        assertEquals(65536, config.getMaxBufferSize());
 
-        ParserConfig config = ParserConfig.builder().build();
-        JsonReaderFactory factory = config.getJsonReaderFactory();
-        assertNotNull(factory, "JsonReaderFactory should not be null");
-    }
-
-    @Test
-    @DisplayName("Should create JsonReaderFactory with custom security settings")
-    void shouldCreateJsonReaderFactoryWithCustomSecuritySettings() {
-
-        int customMaxStringSize = 1024;
-        int customMaxArraySize = 32;
-        int customMaxDepth = 5;
-
-        ParserConfig config = ParserConfig.builder()
-                .maxStringSize(customMaxStringSize)
-                .maxArraySize(customMaxArraySize)
-                .maxDepth(customMaxDepth)
-                .build();
-        JsonReaderFactory factory = config.getJsonReaderFactory();
-        assertNotNull(factory, "JsonReaderFactory with custom settings should not be null");
-        // Note: We can't directly verify the configuration of the factory
-        // as there's no public API to access its configuration
+        // Verify DslJson is created properly
+        assertNotNull(config.getDslJson());
     }
 }

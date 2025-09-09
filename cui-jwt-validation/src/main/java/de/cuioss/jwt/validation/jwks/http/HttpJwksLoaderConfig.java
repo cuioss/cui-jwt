@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
 import de.cuioss.jwt.validation.well_known.WellKnownResolver;
@@ -245,6 +246,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUrl(wellKnownUrl)
                     .retryStrategy(RetryStrategy.exponentialBackoff())
+                    .parserConfig(ParserConfig.builder().build())
                     .build();
             return this;
         }
@@ -271,6 +273,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUri(wellKnownUri)
                     .retryStrategy(RetryStrategy.exponentialBackoff())
+                    .parserConfig(ParserConfig.builder().build())
                     .build();
             return this;
         }

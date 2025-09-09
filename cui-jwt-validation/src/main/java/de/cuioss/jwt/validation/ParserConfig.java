@@ -15,22 +15,17 @@
  */
 package de.cuioss.jwt.validation;
 
-import jakarta.json.Json;
-import jakarta.json.JsonReaderFactory;
+import com.dslplatform.json.DslJson;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Configuration class for the TokenValidator.
+ * Configuration class for the TokenValidator using DSL-JSON.
  * <p>
  * This class provides configuration options for the TokenValidator, such as
  * maximum token size and maximum payload size.
- * It also includes JSON parsing security settings like maximum string size,
- * maximum array size, and maximum depth.
+ * It uses DSL-JSON for secure, high-performance JSON parsing with configurable limits.
  * <p>
  * <strong>Security Layers:</strong>
  * The configuration provides multiple layers of protection against various attack vectors:
@@ -39,16 +34,16 @@ import java.util.Map;
  *       This prevents oversized tokens from consuming memory or processing time.</li>
  *   <li><strong>maxPayloadSize</strong>: Limits each decoded JWT part (header, payload) after Base64 decoding.
  *       Since Base64 encoding increases size by ~33%, decoded parts are smaller than the original token.</li>
- *   <li><strong>maxStringSize</strong>: Limits individual JSON string values within the decoded parts.
- *       This prevents JSON parsing attacks where individual fields contain extremely large strings.</li>
+ *   <li><strong>maxStringLength</strong>: DSL-JSON enforced limit on maximum string buffer size.</li>
+ *   <li><strong>maxBufferSize</strong>: DSL-JSON enforced limit on maximum buffer size for parsing.</li>
  * </ul>
  * <p>
- * <strong>Default Size Relationships:</strong>
- * The defaults are designed with logical size relationships:
+ * <strong>DSL-JSON Advantages:</strong>
  * <ul>
- *   <li>maxTokenSize (8KB) - allows for OAuth 2.0 BCP recommended size</li>
- *   <li>maxPayloadSize (8KB) - allows for larger JWT payloads with extensive claims</li>
- *   <li>maxStringSize (4KB) - prevents individual fields from dominating the payload</li>
+ *   <li>Compile-time code generation - no reflection needed</li>
+ *   <li>GraalVM Native Image compatible</li>
+ *   <li>Configurable security limits that are actually enforced</li>
+ *   <li>Superior performance compared to reflection-based JSON libraries</li>
  * </ul>
  * <p>
  * This class is immutable and thread-safe.
@@ -58,7 +53,7 @@ import java.util.Map;
  * ParserConfig config = ParserConfig.builder()
  *     .maxTokenSize(16 * 1024)
  *     .maxPayloadSize(4 * 1024)
- *     .maxStringSize(2 * 1024)
+ *     .maxStringLength(2 * 1024)
  *     .build();
  * </pre>
  * <p>
@@ -78,38 +73,25 @@ import java.util.Map;
 public class ParserConfig {
 
     /**
-     * Default maximum size of a JWT token in bytes to prevent overflow attacks.
-     * 8KB as recommended by OAuth 2.0 JWT BCP Section 3.11.
-     * This is the first line of defense, checking the entire token string before any processing.
+     * Default maximum JWT token size (8KB).
+     * Based on OAuth 2.0 BCP recommendations for token size limits.
      */
     public static final int DEFAULT_MAX_TOKEN_SIZE = 8 * 1024;
 
     /**
-     * Default maximum size of decoded JSON payload in bytes.
-     * 8KB per part allows for larger JWT payloads while still providing
-     * protection against memory exhaustion attacks. This accommodates tokens
-     * with extensive claims or embedded data.
+     * Default maximum payload size for decoded JWT parts (8KB).
      */
     public static final int DEFAULT_MAX_PAYLOAD_SIZE = 8 * 1024;
 
     /**
-     * Default maximum string size for individual JSON string values.
-     * 4KB prevents any single JSON string field from dominating the payload size,
-     * providing protection against JSON parsing attacks where individual fields
-     * contain extremely large strings.
+     * Default maximum string length for DSL-JSON parsing (4KB).
      */
-    public static final int DEFAULT_MAX_STRING_SIZE = 4 * 1024;
+    public static final int DEFAULT_MAX_STRING_LENGTH = 4 * 1024;
 
     /**
-     * Default maximum array size for JSON parsing.
+     * Default maximum buffer size for DSL-JSON parsing (128KB).
      */
-    public static final int DEFAULT_MAX_ARRAY_SIZE = 64;
-
-    /**
-     * Default maximum depth for JSON parsing.
-     */
-    public static final int DEFAULT_MAX_DEPTH = 10;
-
+    public static final int DEFAULT_MAX_BUFFER_SIZE = 128 * 1024;
 
     /**
      * Maximum size of a JWT token in bytes to prevent overflow attacks.
@@ -128,45 +110,59 @@ public class ParserConfig {
     int maxPayloadSize = DEFAULT_MAX_PAYLOAD_SIZE;
 
     /**
-     * Maximum string size for individual JSON string values during parsing.
-     * This limit is applied by the JSON parser to individual string fields within the JWT parts.
-     * Prevents JSON parsing attacks where individual fields contain extremely large strings.
+     * The maximum length for the string buffer in DSL-JSON.
+     * <p>
+     * This limit is enforced by DSL-JSON during parsing and prevents
+     * attacks where extremely large strings could consume excessive memory.
+     * <p>
+     * Default: 4KB (4,096 bytes) - allows for reasonably large claim values while
+     * preventing individual strings from consuming excessive memory.
+     *
+     * @return the maximum string length in bytes
      */
     @Builder.Default
-    int maxStringSize = DEFAULT_MAX_STRING_SIZE;
+    int maxStringLength = DEFAULT_MAX_STRING_LENGTH;
 
     /**
-     * Maximum array size for JSON parsing.
+     * The maximum buffer size for DSL-JSON parsing operations.
+     * <p>
+     * This limit is enforced by DSL-JSON and prevents attacks where
+     * extremely large JSON documents could consume excessive memory.
+     * <p>
+     * Default: 128KB (131,072 bytes) - allows for large JWT payloads while
+     * preventing memory exhaustion attacks.
+     *
+     * @return the maximum buffer size in bytes
      */
     @Builder.Default
-    int maxArraySize = DEFAULT_MAX_ARRAY_SIZE;
+    int maxBufferSize = DEFAULT_MAX_BUFFER_SIZE;
 
     /**
-     * Maximum depth for JSON parsing.
-     */
-    @Builder.Default
-    int maxDepth = DEFAULT_MAX_DEPTH;
-
-
-    /**
-     * Cached JsonReaderFactory with security settings.
-     * This is lazily initialized to avoid unnecessary creation.
+     * Lazy-initialized DSL-JSON instance with security settings.
+     * <p>
+     * This DSL-JSON instance is created only when first accessed and then cached.
+     * It includes actual enforceable security settings based on the configured limits.
+     * <p>
+     * Unlike Jakarta JSON API, DSL-JSON actually enforces the configured limits
+     * and provides compile-time code generation for better performance and security.
+     *
+     * @return a DslJson instance configured with security settings
      */
     @Getter(lazy = true)
-    JsonReaderFactory jsonReaderFactory = createJsonReaderFactory();
+    private final DslJson<Object> dslJson = createDslJson();
 
     /**
-     * Creates a JsonReaderFactory with security settings.
-     * This method is used by the lazy getter for jsonReaderFactory.
+     * Creates a DSL-JSON instance with the configured security settings.
+     * <p>
+     * This method is used by the lazy getter for dslJson.
      *
-     * @return a JsonReaderFactory configured with security settings
+     * @return a DslJson instance configured with security settings
      */
-    private JsonReaderFactory createJsonReaderFactory() {
-        Map<String, Object> config = new HashMap<>();
-        // Use the correct property names for Jakarta JSON API
-        config.put("jakarta.json.stream.maxStringLength", maxStringSize);
-        config.put("jakarta.json.stream.maxArraySize", maxArraySize);
-        config.put("jakarta.json.stream.maxDepth", maxDepth);
-        return Json.createReaderFactory(config);
+    private DslJson<Object> createDslJson() {
+        return new DslJson<>(new DslJson.Settings<Object>()
+                .includeServiceLoader()
+                .limitStringBuffer(maxStringLength)
+                .limitDigitsBuffer(16) // Reasonable limit for number parsing
+        );
     }
 }

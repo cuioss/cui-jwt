@@ -20,10 +20,9 @@ import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.converter.JsonContentConverter;
 import de.cuioss.tools.string.MoreStrings;
-import jakarta.json.JsonException;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -31,7 +30,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -66,15 +64,15 @@ import java.util.Base64;
  *     jwt.getAlg().ifPresent(alg -> LOGGER.debug("Algorithm: %s", alg));
  *     jwt.getIssuer().ifPresent(issuer -> LOGGER.debug("Issuer: %s", issuer));
  *     jwt.getKid().ifPresent(kid -> LOGGER.debug("Key ID: %s", kid));
- *     
+ *
  *     // Access the raw token
  *     String rawToken = jwt.getRawToken();
- *     
+ *
  *     // For more complex operations, access the header and body JSON objects
  *     jwt.getHeader().ifPresent(header -> {
  *         // Process header fields not covered by convenience methods
  *     });
- *     
+ *
  *     jwt.getBody().ifPresent(body -> {
  *         // Process custom claims in the body
  *         if (body.containsKey("custom_claim")) {
@@ -140,6 +138,22 @@ public class NonValidatingJwtParser {
      */
     @NonNull
     private final SecurityEventCounter securityEventCounter;
+
+    /**
+     * JSON content converter that uses DSL-JSON with security settings.
+     * Initialized lazily to avoid circular dependencies during builder construction.
+     */
+    private final JsonContentConverter jsonConverter;
+
+    /**
+     * Initializes the JSON converter after construction.
+     */
+    private JsonContentConverter initJsonConverter() {
+        if (jsonConverter == null) {
+            return new JsonContentConverter(config.getDslJson());
+        }
+        return jsonConverter;
+    }
 
     /**
      * Decodes a JWT token and returns a DecodedJwt object containing the decoded parts.
@@ -221,7 +235,7 @@ public class NonValidatingJwtParser {
         try {
             // Decode token parts
             return decodeTokenParts(parts, token, logWarnings);
-        } catch (IllegalArgumentException | JsonException e) {
+        } catch (IllegalArgumentException e) {
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
@@ -259,14 +273,15 @@ public class NonValidatingJwtParser {
 
     /**
      * Decodes a Base64Url encoded JSON part of a JWT token.
-     * Implements security measures to prevent JSON parsing attacks:
+     * Implements security measures to prevent JSON parsing attacks through the JsonContentConverter:
      * - JSON depth limits
      * - JSON object size limits
+     * - JSON string size limits
      * - Protection against duplicate keys
      *
      * @param encodedPart the Base64Url encoded part
      * @param logWarnings whether to log warnings when decoding fails
-     * @return the decoded JsonObject
+     * @return the decoded JSON object as JsonObject
      * @throws TokenValidationException if decoding fails
      */
     private JsonObject decodeJsonPart(String encodedPart, boolean logWarnings) {
@@ -284,12 +299,24 @@ public class NonValidatingJwtParser {
                 );
             }
 
-            // Use the cached JsonReaderFactory with security settings
-            try (JsonReader reader = config.getJsonReaderFactory()
-                    .createReader(new StringReader(new String(decoded, StandardCharsets.UTF_8)))) {
-                return reader.readObject();
+            // Convert to string and use JsonContentConverter for secure parsing
+            String jsonString = new String(decoded, StandardCharsets.UTF_8);
+            JsonObject result = initJsonConverter().convert(jsonString);
+
+            // Check if parsing failed (empty result indicates parse failure)
+            if (result.isEmpty()) {
+                if (logWarnings) {
+                    LOGGER.warn(JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+                    securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
+                }
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
+                        "Failed to decode JWT part: JSON parsing returned empty result"
+                );
             }
-        } catch (IllegalArgumentException | JsonException e) {
+
+            return result;
+        } catch (IllegalArgumentException e) {
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);

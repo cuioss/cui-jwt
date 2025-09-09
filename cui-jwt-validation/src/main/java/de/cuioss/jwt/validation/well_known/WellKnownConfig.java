@@ -206,7 +206,8 @@ public class WellKnownConfig implements HttpHandlerProvider {
         public WellKnownConfig build() {
             try {
                 HttpHandler httpHandler = httpHandlerBuilder.build();
-                return new WellKnownConfig(httpHandler, retryStrategy, parserConfig);
+                ParserConfig finalParserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+                return new WellKnownConfig(httpHandler, retryStrategy, finalParserConfig);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 throw new IllegalArgumentException("Invalid well-known endpoint configuration", e);
             }

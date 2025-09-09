@@ -268,14 +268,14 @@ class TestTokenHolderTest {
             assertArrayEquals(parts, decodedJwt.parts(), "Token parts should match");
 
             // Verify header
-            assertTrue(decodedJwt.getHeader().isPresent(), "Header should be present");
-            assertEquals(tokenHolder.getKeyId(), decodedJwt.getHeader().get().getString("kid"), "Key ID should match");
-            assertEquals(tokenHolder.getSigningAlgorithm().name(), decodedJwt.getHeader().get().getString("alg"), "Algorithm should match");
+            assertFalse(decodedJwt.getHeader().isEmpty(), "Header should be present");
+            assertEquals(tokenHolder.getKeyId(), decodedJwt.getHeader().getString("kid"), "Key ID should match");
+            assertEquals(tokenHolder.getSigningAlgorithm().name(), decodedJwt.getHeader().getString("alg"), "Algorithm should match");
 
             // Verify body
-            assertTrue(decodedJwt.getBody().isPresent(), "Body should be present");
-            assertEquals(tokenHolder.getIssuer(), decodedJwt.getBody().get().getString(ClaimName.ISSUER.getName()), "Issuer should match");
-            assertEquals("test-subject", decodedJwt.getBody().get().getString(ClaimName.SUBJECT.getName()), "Subject should match");
+            assertFalse(decodedJwt.getBody().isEmpty(), "Body should be present");
+            assertEquals(tokenHolder.getIssuer(), decodedJwt.getBody().getString(ClaimName.ISSUER.getName()), "Issuer should match");
+            assertEquals("test-subject", decodedJwt.getBody().getString(ClaimName.SUBJECT.getName()), "Subject should match");
 
             // Verify signature
             assertTrue(decodedJwt.getSignature().isPresent(), "Signature should be present");
@@ -304,12 +304,12 @@ class TestTokenHolderTest {
             assertNotNull(decodedJwt, "DecodedJwt should not be null");
 
             // Verify custom claim
-            assertTrue(decodedJwt.getBody().isPresent(), "Body should be present");
-            assertEquals(customClaimValue, decodedJwt.getBody().get().getString(customClaimName), "Custom claim should match");
+            assertFalse(decodedJwt.getBody().isEmpty(), "Body should be present");
+            assertEquals(customClaimValue, decodedJwt.getBody().getString(customClaimName), "Custom claim should match");
 
             // Verify custom key ID
-            assertTrue(decodedJwt.getHeader().isPresent(), "Header should be present");
-            assertEquals(customKeyId, decodedJwt.getHeader().get().getString("kid"), "Custom key ID should match");
+            assertFalse(decodedJwt.getHeader().isEmpty(), "Header should be present");
+            assertEquals(customKeyId, decodedJwt.getHeader().getString("kid"), "Custom key ID should match");
             assertEquals(customKeyId, decodedJwt.getKid().orElse(null), "Custom key ID from convenience method should match");
         }
     }

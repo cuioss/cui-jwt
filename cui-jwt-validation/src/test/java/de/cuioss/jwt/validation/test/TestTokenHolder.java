@@ -33,8 +33,9 @@ import de.cuioss.test.generator.TypedGenerator;
 import de.cuioss.test.generator.domain.EmailGenerator;
 import de.cuioss.test.generator.domain.FullNameGenerator;
 import de.cuioss.test.generator.domain.UUIDStringGenerator;
+import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
 import io.jsonwebtoken.Jwts;
-import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import lombok.Getter;
 
 import java.security.PublicKey;
@@ -448,9 +449,12 @@ public class TestTokenHolder implements TokenContent {
                     .build()
                     .parseSignedClaims(signedJwt);
 
-            // Extract header and claims
-            var header = Json.createObjectBuilder(jwt.getHeader()).build();
-            var body = Json.createObjectBuilder(jwt.getPayload()).build();
+            // Extract header and claims as JsonObjects using our bridge
+            Map<String, Object> headerMap = new HashMap<>(jwt.getHeader());
+            Map<String, Object> bodyMap = new HashMap<>(jwt.getPayload());
+
+            JsonObject header = new DslJsonObjectAdapter(headerMap);
+            JsonObject body = new DslJsonObjectAdapter(bodyMap);
 
             // Split the JWT string into parts
             String[] parts = signedJwt.split("\\.");

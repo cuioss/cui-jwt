@@ -20,6 +20,7 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+import jakarta.json.JsonObject;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -102,7 +103,8 @@ public class TokenHeaderValidator {
      */
     @SuppressWarnings("java:S3655") // owolff: False Positive: isPresent is checked before calling get()
     private void validateNoEmbeddedJwk(DecodedJwt decodedJwt) {
-        if (decodedJwt.getHeader().isPresent() && decodedJwt.getHeader().get().containsKey("jwk")) {
+        JsonObject header = decodedJwt.getHeader();
+        if (!header.isEmpty() && header.containsKey("jwk")) {
             LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format("Embedded JWK"));
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
@@ -154,9 +156,10 @@ public class TokenHeaderValidator {
         if (kid.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            var headerInfo = decodedJwt.getHeader()
-                    .map(header -> "Available header claims: " + header.keySet())
-                    .orElse("Available header claims: none");
+            JsonObject header = decodedJwt.getHeader();
+            var headerInfo = !header.isEmpty()
+                    ? "Available header claims: " + header.keySet()
+                    : "Available header claims: none";
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
                     "Missing required key ID (kid) claim in token header. " + headerInfo

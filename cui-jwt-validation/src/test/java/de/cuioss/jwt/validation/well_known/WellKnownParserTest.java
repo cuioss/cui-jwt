@@ -95,7 +95,7 @@ class WellKnownParserTest {
     }
 
     @ParameterizedTest
-    @DisplayName("Should extract string values from JsonObject correctly")
+    @DisplayName("Should extract string values from Map correctly")
     @CsvSource({
             "issuer, https://example.com, true",
             "jwks_uri, https://example.com/.well-known/jwks.json, true",

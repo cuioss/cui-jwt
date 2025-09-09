@@ -17,12 +17,13 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.Json;
+import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,11 +49,18 @@ class DecodedJwtTest {
         JsonObject header = createTestHeader();
         JsonObject body = createTestBody();
         DecodedJwt jwt = new DecodedJwt(header, body, SIGNATURE, PARTS, RAW_TOKEN);
-        assertTrue(jwt.getHeader().isPresent());
-        assertEquals(header, jwt.getHeader().get());
 
-        assertTrue(jwt.getBody().isPresent());
-        assertEquals(body, jwt.getBody().get());
+        JsonObject actualHeader = jwt.getHeader();
+        assertNotNull(actualHeader);
+        assertFalse(actualHeader.isEmpty());
+        assertEquals(ALG, actualHeader.getString("alg"));
+        assertEquals(KID, actualHeader.getString("kid"));
+
+        JsonObject actualBody = jwt.getBody();
+        assertNotNull(actualBody);
+        assertFalse(actualBody.isEmpty());
+        assertEquals(ISSUER, actualBody.getString("iss"));
+        assertEquals("test-subject", actualBody.getString("sub"));
 
         assertTrue(jwt.getSignature().isPresent());
         assertEquals(SIGNATURE, jwt.getSignature().get());
@@ -75,8 +83,13 @@ class DecodedJwtTest {
     void shouldCreateDecodedJwtWithNullValues() {
 
         DecodedJwt jwt = new DecodedJwt(null, null, null, PARTS, RAW_TOKEN);
-        assertFalse(jwt.getHeader().isPresent());
-        assertFalse(jwt.getBody().isPresent());
+        JsonObject actualHeader = jwt.getHeader();
+        assertNotNull(actualHeader);
+        assertTrue(actualHeader.isEmpty());
+
+        JsonObject actualBody = jwt.getBody();
+        assertNotNull(actualBody);
+        assertTrue(actualBody.isEmpty());
         assertFalse(jwt.getSignature().isPresent());
         assertFalse(jwt.getIssuer().isPresent());
         assertFalse(jwt.getKid().isPresent());
@@ -89,14 +102,16 @@ class DecodedJwtTest {
     @DisplayName("Should create DecodedJwt with empty header and body")
     void shouldCreateDecodedJwtWithEmptyHeaderAndBody() {
 
-        JsonObject emptyHeader = Json.createObjectBuilder().build();
-        JsonObject emptyBody = Json.createObjectBuilder().build();
+        JsonObject emptyHeader = new DslJsonObjectAdapter(Map.of());
+        JsonObject emptyBody = new DslJsonObjectAdapter(Map.of());
         DecodedJwt jwt = new DecodedJwt(emptyHeader, emptyBody, SIGNATURE, PARTS, RAW_TOKEN);
-        assertTrue(jwt.getHeader().isPresent());
-        assertEquals(emptyHeader, jwt.getHeader().get());
+        JsonObject actualHeader = jwt.getHeader();
+        assertNotNull(actualHeader);
+        assertTrue(actualHeader.isEmpty());
 
-        assertTrue(jwt.getBody().isPresent());
-        assertEquals(emptyBody, jwt.getBody().get());
+        JsonObject actualBody = jwt.getBody();
+        assertNotNull(actualBody);
+        assertTrue(actualBody.isEmpty());
 
         assertTrue(jwt.getSignature().isPresent());
         assertEquals(SIGNATURE, jwt.getSignature().get());
@@ -122,11 +137,17 @@ class DecodedJwtTest {
                 .parts(PARTS)
                 .rawToken(RAW_TOKEN)
                 .build();
-        assertTrue(jwt.getHeader().isPresent());
-        assertEquals(header, jwt.getHeader().get());
+        JsonObject actualHeader = jwt.getHeader();
+        assertNotNull(actualHeader);
+        assertFalse(actualHeader.isEmpty());
+        assertEquals(ALG, actualHeader.getString("alg"));
+        assertEquals(KID, actualHeader.getString("kid"));
 
-        assertTrue(jwt.getBody().isPresent());
-        assertEquals(body, jwt.getBody().get());
+        JsonObject actualBody = jwt.getBody();
+        assertNotNull(actualBody);
+        assertFalse(actualBody.isEmpty());
+        assertEquals(ISSUER, actualBody.getString("iss"));
+        assertEquals("test-subject", actualBody.getString("sub"));
 
         assertTrue(jwt.getSignature().isPresent());
         assertEquals(SIGNATURE, jwt.getSignature().get());
@@ -295,16 +316,16 @@ class DecodedJwtTest {
     }
 
     private JsonObject createTestHeader() {
-        return Json.createObjectBuilder()
-                .add("alg", ALG)
-                .add("kid", KID)
-                .build();
+        return new DslJsonObjectAdapter(Map.of(
+                "alg", ALG,
+                "kid", KID
+        ));
     }
 
     private JsonObject createTestBody() {
-        return Json.createObjectBuilder()
-                .add("iss", ISSUER)
-                .add("sub", "test-subject")
-                .build();
+        return new DslJsonObjectAdapter(Map.of(
+                "iss", ISSUER,
+                "sub", "test-subject"
+        ));
     }
 }

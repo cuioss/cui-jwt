@@ -15,19 +15,19 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.JsonException;
+import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonString;
 import lombok.RequiredArgsConstructor;
 
-import java.io.StringReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -58,12 +58,19 @@ class WellKnownParser {
      * @param wellKnownUrl The well-known URL (used for error messages)
      * @return Optional containing the parsed JsonObject or empty on error
      */
+    @SuppressWarnings("unchecked")
     Optional<JsonObject> parseJsonResponse(String responseBody, URL wellKnownUrl) {
-        ParserConfig config = parserConfig != null ? parserConfig : ParserConfig.builder().build();
-        try (JsonReader jsonReader = config.getJsonReaderFactory().createReader(new StringReader(responseBody))) {
-            JsonObject result = jsonReader.readObject();
-            return Optional.of(result);
-        } catch (JsonException | IllegalStateException e) {
+        try {
+            // Handle null parserConfig by using default configuration
+            ParserConfig actualConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+            DslJson<Object> dslJson = actualConfig.getDslJson();
+            byte[] bytes = responseBody.getBytes();
+            Map<String, Object> result = (Map<String, Object>) dslJson.deserialize(Map.class, bytes, bytes.length);
+            if (result != null) {
+                return Optional.of(new DslJsonObjectAdapter(result));
+            }
+            return Optional.empty();
+        } catch (IOException | IllegalStateException e) {
             LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, e.getMessage()));
             return Optional.empty();
         }
@@ -77,10 +84,11 @@ class WellKnownParser {
      * @return An Optional containing the string value, or empty if not found
      */
     Optional<String> getString(JsonObject jsonObject, String key) {
-        if (jsonObject.containsKey(key) && !jsonObject.isNull(key)) {
-            JsonString jsonString = jsonObject.getJsonString(key);
-            if (jsonString != null) {
-                return Optional.of(jsonString.getString());
+        if (jsonObject.containsKey(key)) {
+            try {
+                return Optional.of(jsonObject.getString(key));
+            } catch (ClassCastException e) {
+                return Optional.empty();
             }
         }
         return Optional.empty();

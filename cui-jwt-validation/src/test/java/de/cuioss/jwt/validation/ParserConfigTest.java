@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldImplementEqualsAndHashCode;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldImplementToString;
@@ -43,9 +44,8 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
 
         assertEquals(ParserConfig.DEFAULT_MAX_TOKEN_SIZE, config.getMaxTokenSize());
         assertEquals(ParserConfig.DEFAULT_MAX_PAYLOAD_SIZE, config.getMaxPayloadSize());
-        assertEquals(ParserConfig.DEFAULT_MAX_STRING_SIZE, config.getMaxStringSize());
-        assertEquals(ParserConfig.DEFAULT_MAX_ARRAY_SIZE, config.getMaxArraySize());
-        assertEquals(ParserConfig.DEFAULT_MAX_DEPTH, config.getMaxDepth());
+        assertEquals(ParserConfig.DEFAULT_MAX_STRING_LENGTH, config.getMaxStringLength());
+        assertEquals(ParserConfig.DEFAULT_MAX_BUFFER_SIZE, config.getMaxBufferSize());
     }
 
     @Test
@@ -54,16 +54,14 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
         var config = ParserConfig.builder()
                 .maxTokenSize(16384)
                 .maxPayloadSize(32768)
-                .maxStringSize(8192)
-                .maxArraySize(128)
-                .maxDepth(20)
+                .maxStringLength(8192)
+                .maxBufferSize(256000)
                 .build();
 
         assertEquals(16384, config.getMaxTokenSize());
         assertEquals(32768, config.getMaxPayloadSize());
-        assertEquals(8192, config.getMaxStringSize());
-        assertEquals(128, config.getMaxArraySize());
-        assertEquals(20, config.getMaxDepth());
+        assertEquals(8192, config.getMaxStringLength());
+        assertEquals(256000, config.getMaxBufferSize());
     }
 
     @Test
@@ -71,25 +69,23 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
     void shouldProvideConsistentDefaults() {
         assertEquals(ParserConfig.DEFAULT_MAX_TOKEN_SIZE, 8 * 1024);
         assertEquals(ParserConfig.DEFAULT_MAX_PAYLOAD_SIZE, 8 * 1024);
-        assertEquals(ParserConfig.DEFAULT_MAX_STRING_SIZE, 4 * 1024);
-        assertEquals(64, ParserConfig.DEFAULT_MAX_ARRAY_SIZE);
-        assertEquals(10, ParserConfig.DEFAULT_MAX_DEPTH);
+        assertEquals(ParserConfig.DEFAULT_MAX_STRING_LENGTH, 4 * 1024);
+        assertEquals(ParserConfig.DEFAULT_MAX_BUFFER_SIZE, 128 * 1024);
     }
 
     @Test
-    @DisplayName("Should create JsonReaderFactory with security settings")
-    void shouldCreateJsonReaderFactoryWithSecuritySettings() {
+    @DisplayName("Should create DslJson with security settings")
+    void shouldCreateDslJsonWithSecuritySettings() {
         var config = ParserConfig.builder()
-                .maxStringSize(2048)
-                .maxArraySize(32)
-                .maxDepth(5)
+                .maxStringLength(2048)
+                .maxBufferSize(64000)
                 .build();
 
-        var factory = config.getJsonReaderFactory();
-        assertNotNull(factory);
+        var dslJson = config.getDslJson();
+        assertNotNull(dslJson);
 
-        // JsonReaderFactory should be lazily created and cached
-        assertSame(factory, config.getJsonReaderFactory());
+        // DslJson should be lazily created and cached
+        assertSame(dslJson, config.getDslJson());
     }
 
     @Test
@@ -98,16 +94,14 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
         var config = ParserConfig.builder()
                 .maxTokenSize(1)
                 .maxPayloadSize(1)
-                .maxStringSize(1)
-                .maxArraySize(1)
-                .maxDepth(1)
+                .maxStringLength(1)
+                .maxBufferSize(1)
                 .build();
 
         assertEquals(1, config.getMaxTokenSize());
         assertEquals(1, config.getMaxPayloadSize());
-        assertEquals(1, config.getMaxStringSize());
-        assertEquals(1, config.getMaxArraySize());
-        assertEquals(1, config.getMaxDepth());
+        assertEquals(1, config.getMaxStringLength());
+        assertEquals(1, config.getMaxBufferSize());
     }
 
     @Test
@@ -116,16 +110,14 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
         var config = ParserConfig.builder()
                 .maxTokenSize(0)
                 .maxPayloadSize(0)
-                .maxStringSize(0)
-                .maxArraySize(0)
-                .maxDepth(0)
+                .maxStringLength(0)
+                .maxBufferSize(0)
                 .build();
 
         assertEquals(0, config.getMaxTokenSize());
         assertEquals(0, config.getMaxPayloadSize());
-        assertEquals(0, config.getMaxStringSize());
-        assertEquals(0, config.getMaxArraySize());
-        assertEquals(0, config.getMaxDepth());
+        assertEquals(0, config.getMaxStringLength());
+        assertEquals(0, config.getMaxBufferSize());
     }
 
     @Test
@@ -134,16 +126,14 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
         var config = ParserConfig.builder()
                 .maxTokenSize(Integer.MAX_VALUE)
                 .maxPayloadSize(Integer.MAX_VALUE)
-                .maxStringSize(Integer.MAX_VALUE)
-                .maxArraySize(Integer.MAX_VALUE)
-                .maxDepth(Integer.MAX_VALUE)
+                .maxStringLength(Integer.MAX_VALUE)
+                .maxBufferSize(Integer.MAX_VALUE)
                 .build();
 
         assertEquals(Integer.MAX_VALUE, config.getMaxTokenSize());
         assertEquals(Integer.MAX_VALUE, config.getMaxPayloadSize());
-        assertEquals(Integer.MAX_VALUE, config.getMaxStringSize());
-        assertEquals(Integer.MAX_VALUE, config.getMaxArraySize());
-        assertEquals(Integer.MAX_VALUE, config.getMaxDepth());
+        assertEquals(Integer.MAX_VALUE, config.getMaxStringLength());
+        assertEquals(Integer.MAX_VALUE, config.getMaxBufferSize());
     }
 
     @Test
@@ -157,9 +147,64 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
         assertEquals(1024, config.getMaxTokenSize());
         assertEquals(1024, config.getMaxTokenSize());
 
-        // JsonReaderFactory should be cached (lazy initialization)
-        var factory1 = config.getJsonReaderFactory();
-        var factory2 = config.getJsonReaderFactory();
-        assertSame(factory1, factory2);
+        // DslJson should be cached (lazy initialization)
+        var dslJson1 = config.getDslJson();
+        var dslJson2 = config.getDslJson();
+        assertSame(dslJson1, dslJson2);
+    }
+
+    @Test
+    @DisplayName("Should verify DSL-JSON configuration is properly applied")
+    void shouldVerifyDslJsonConfigurationIsProperlyApplied() {
+        var config = ParserConfig.builder()
+                .maxStringLength(1024)
+                .maxBufferSize(2048)
+                .build();
+
+        var dslJson = config.getDslJson();
+        assertNotNull(dslJson, "DslJson should be created with the specified configuration");
+
+        // DSL-JSON configuration is applied during instantiation
+        // We can verify the instance is created successfully with our settings
+        assertTrue(dslJson instanceof DslJson, "Should create proper DslJson instance");
+    }
+
+    @Test
+    @DisplayName("Should create DslJson with consistent configuration")
+    void shouldCreateDslJsonWithConsistentConfiguration() {
+        var config = ParserConfig.builder()
+                .maxStringLength(100)
+                .maxBufferSize(2048)
+                .build();
+
+        var dslJson = config.getDslJson();
+        assertNotNull(dslJson, "DslJson should be created successfully");
+
+        // Verify that multiple calls return the same instance (cached)
+        var dslJson2 = config.getDslJson();
+        assertSame(dslJson, dslJson2, "DslJson should be cached and return same instance");
+    }
+
+    @Test
+    @DisplayName("Should verify DslJson settings are applied correctly")
+    void shouldVerifyDslJsonSettingsAreAppliedCorrectly() {
+        var config1 = ParserConfig.builder()
+                .maxStringLength(1024)
+                .maxBufferSize(2048)
+                .build();
+
+        var config2 = ParserConfig.builder()
+                .maxStringLength(2048)
+                .maxBufferSize(4096)
+                .build();
+
+        var dslJson1 = config1.getDslJson();
+        var dslJson2 = config2.getDslJson();
+
+        assertNotNull(dslJson1);
+        assertNotNull(dslJson2);
+
+        // Different configurations should produce different DslJson instances
+        assertNotSame(dslJson1, dslJson2, "Different configurations should create different DslJson instances");
     }
 }

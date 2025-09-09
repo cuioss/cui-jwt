@@ -16,13 +16,11 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
+import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
 import jakarta.json.JsonObject;
 import lombok.NonNull;
 
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Record representing a decoded JWT token.
@@ -67,19 +65,19 @@ String rawToken
     /**
      * Gets the header of the JWT token.
      *
-     * @return an Optional containing the header if present
+     * @return the header JsonObject, never null (empty if not present)
      */
-    public Optional<JsonObject> getHeader() {
-        return Optional.ofNullable(header);
+    public JsonObject getHeader() {
+        return header != null ? header : new DslJsonObjectAdapter(Map.of());
     }
 
     /**
      * Gets the body of the JWT token.
      *
-     * @return an Optional containing the body if present
+     * @return the body JsonObject, never null (empty if not present)
      */
-    public Optional<JsonObject> getBody() {
-        return Optional.ofNullable(body);
+    public JsonObject getBody() {
+        return body != null ? body : new DslJsonObjectAdapter(Map.of());
     }
 
     /**
@@ -97,9 +95,15 @@ String rawToken
      * @return an Optional containing the issuer if present
      */
     public Optional<String> getIssuer() {
-        return body != null && body.containsKey(ClaimName.ISSUER.getName())
-                ? Optional.of(body.getString(ClaimName.ISSUER.getName()))
-                : Optional.empty();
+        if (body != null && body.containsKey(ClaimName.ISSUER.getName())) {
+            try {
+                return Optional.of(body.getString(ClaimName.ISSUER.getName()));
+            } catch (Exception e) {
+                // If getting as string fails, return empty
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -108,9 +112,15 @@ String rawToken
      * @return an Optional containing the kid if present
      */
     public Optional<String> getKid() {
-        return header != null && header.containsKey("kid")
-                ? Optional.of(header.getString("kid"))
-                : Optional.empty();
+        if (header != null && header.containsKey("kid")) {
+            try {
+                return Optional.of(header.getString("kid"));
+            } catch (Exception e) {
+                // If getting as string fails, return empty
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -119,9 +129,15 @@ String rawToken
      * @return an Optional containing the algorithm if present
      */
     public Optional<String> getAlg() {
-        return header != null && header.containsKey("alg")
-                ? Optional.of(header.getString("alg"))
-                : Optional.empty();
+        if (header != null && header.containsKey("alg")) {
+            try {
+                return Optional.of(header.getString("alg"));
+            } catch (Exception e) {
+                // If getting as string fails, return empty
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     /**

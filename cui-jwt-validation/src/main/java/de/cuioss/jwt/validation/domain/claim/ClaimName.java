@@ -192,6 +192,15 @@ public enum ClaimName {
     }
 
     /**
+     * Gets the claim mapper for this claim.
+     *
+     * @return the ClaimMapper instance
+     */
+    public @NonNull ClaimMapper getClaimMapper() {
+        return claimMapper;
+    }
+
+    /**
      * Gets a ClaimName by its string name.
      * This method uses a thread-safe cache to improve performance for repeated lookups.
      *

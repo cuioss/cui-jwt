@@ -21,9 +21,7 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -75,15 +73,17 @@ class NonValidatingJwtParserTest {
             DecodedJwt jwt = parser.decode(VALID_TOKEN);
 
             // Verify header
-            assertTrue(jwt.getHeader().isPresent(), "Header should be present");
-            JsonObject header = jwt.getHeader().get();
+            JsonObject header = jwt.getHeader();
+            assertNotNull(header, "Header should be present");
+            assertFalse(header.isEmpty(), "Header should not be empty");
             assertEquals("RS256", header.getString("alg"), "Algorithm should be RS256");
             assertEquals("JWT", header.getString("typ"), "Type should be JWT");
             assertEquals("test-key-id", header.getString("kid"), "Key ID should match expected");
 
             // Verify body
-            assertTrue(jwt.getBody().isPresent(), "Body should be present");
-            JsonObject body = jwt.getBody().get();
+            JsonObject body = jwt.getBody();
+            assertNotNull(body, "Body should be present");
+            assertFalse(body.isEmpty(), "Body should not be empty");
             assertEquals("1234567890", body.getString("sub"), "Subject should match expected");
             assertEquals("John Doe", body.getString("name"), "Name should match expected");
             assertEquals("https://example.com", body.getString("iss"), "Issuer should match expected");
@@ -162,12 +162,7 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle missing issuer")
         void shouldHandleMissingIssuer() {
-            JsonObjectBuilder payloadBuilder = Json.createObjectBuilder()
-                    .add("sub", "1234567890")
-                    .add("name", "John Doe")
-                    .add("exp", 1735689600);
-
-            String payloadWithoutIssuer = payloadBuilder.build().toString();
+            String payloadWithoutIssuer = "{\"sub\":\"1234567890\",\"name\":\"John Doe\",\"exp\":1735689600}";
             String encodedPayloadWithoutIssuer = Base64.getUrlEncoder().encodeToString(payloadWithoutIssuer.getBytes(StandardCharsets.UTF_8));
             String tokenWithoutIssuer = ENCODED_HEADER + "." + encodedPayloadWithoutIssuer + "." + ENCODED_SIGNATURE;
 
@@ -182,11 +177,7 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle missing kid")
         void shouldHandleMissingKid() {
-            JsonObjectBuilder headerBuilder = Json.createObjectBuilder()
-                    .add("alg", "RS256")
-                    .add("typ", "JWT");
-
-            String headerWithoutKid = headerBuilder.build().toString();
+            String headerWithoutKid = "{\"alg\":\"RS256\",\"typ\":\"JWT\"}";
             String encodedHeaderWithoutKid = Base64.getUrlEncoder().encodeToString(headerWithoutKid.getBytes(StandardCharsets.UTF_8));
             String tokenWithoutKid = encodedHeaderWithoutKid + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;
 
@@ -368,11 +359,11 @@ class NonValidatingJwtParserTest {
         void shouldRespectJsonDepthLimits() {
             // Create a deeply nested JSON structure that exceeds the max depth
             StringBuilder nestedJson = new StringBuilder("{");
-            for (int i = 0; i < ParserConfig.DEFAULT_MAX_DEPTH + 1; i++) {
+            for (int i = 0; i < 20; i++) { // Create deep nesting
                 nestedJson.append("\"level").append(i).append("\":{");
             }
             // Close all the nested objects
-            nestedJson.append("}".repeat(ParserConfig.DEFAULT_MAX_DEPTH + 1));
+            nestedJson.append("}".repeat(20));
 
             String encodedNestedJson = Base64.getUrlEncoder().encodeToString(nestedJson.toString().getBytes(StandardCharsets.UTF_8));
             String tokenWithDeepJson = encodedNestedJson + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;
@@ -390,7 +381,7 @@ class NonValidatingJwtParserTest {
         void shouldHandleLargeJsonArrays() {
             // Create a JSON with a large array
             StringBuilder largeArrayJson = new StringBuilder("{\"array\":[");
-            for (int i = 0; i < ParserConfig.DEFAULT_MAX_ARRAY_SIZE - 1; i++) {
+            for (int i = 0; i < 99; i++) { // Create reasonably sized array
                 if (i > 0) {
                     largeArrayJson.append(",");
                 }
@@ -405,8 +396,9 @@ class NonValidatingJwtParserTest {
             DecodedJwt result = parser.decode(tokenWithLargeArray);
 
             // Verify the array was parsed correctly
-            assertTrue(result.getHeader().isPresent(), "Header should be present");
-            JsonObject header = result.getHeader().get();
+            JsonObject header = result.getHeader();
+            assertNotNull(header, "Header should be present");
+            assertFalse(header.isEmpty(), "Header should not be empty");
             assertTrue(header.containsKey("array"), "Array should be present in header");
         }
 
@@ -414,7 +406,7 @@ class NonValidatingJwtParserTest {
         @DisplayName("Should handle large JSON strings")
         void shouldHandleLargeJsonStrings() {
             // Create a JSON with a large string
-            String largeStringJson = "{\"largeString\":\"" + "a".repeat(ParserConfig.DEFAULT_MAX_STRING_SIZE - 100) + "\"}";
+            String largeStringJson = "{\"largeString\":\"" + "a".repeat(ParserConfig.DEFAULT_MAX_STRING_LENGTH - 100) + "\"}";
 
             String encodedLargeStringJson = Base64.getUrlEncoder().encodeToString(largeStringJson.getBytes(StandardCharsets.UTF_8));
             String tokenWithLargeString = encodedLargeStringJson + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;
@@ -423,8 +415,9 @@ class NonValidatingJwtParserTest {
             DecodedJwt result = parser.decode(tokenWithLargeString);
 
             // Verify the string was parsed correctly
-            assertTrue(result.getHeader().isPresent(), "Header should be present");
-            JsonObject header = result.getHeader().get();
+            JsonObject header = result.getHeader();
+            assertNotNull(header, "Header should be present");
+            assertFalse(header.isEmpty(), "Header should not be empty");
             assertTrue(header.containsKey("largeString"), "Large string should be present in header");
         }
 

@@ -15,18 +15,21 @@
  */
 package de.cuioss.tools.net.http.converter;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpResponse;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,13 +42,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class JsonContentConverterTest {
 
     private JsonContentConverter converter;
-    private JsonReaderFactory jsonReaderFactory;
 
     @BeforeEach
     void setUp() {
         ParserConfig parserConfig = ParserConfig.builder().build();
-        jsonReaderFactory = parserConfig.getJsonReaderFactory();
-        converter = new JsonContentConverter(jsonReaderFactory);
+        var dslJson = parserConfig.getDslJson();
+        converter = new JsonContentConverter(dslJson);
     }
 
     @Test
@@ -53,12 +55,12 @@ class JsonContentConverterTest {
     void shouldConvertValidJsonStringToJsonObject() {
         String jsonString = "{\"name\":\"test\",\"value\":123}";
 
-        Optional<JsonObject> result = converter.convert(jsonString);
+        JsonObject result = converter.convert(jsonString);
 
-        assertTrue(result.isPresent());
-        JsonObject jsonObject = result.get();
-        assertEquals("test", jsonObject.getString("name"));
-        assertEquals(123, jsonObject.getInt("value"));
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals("test", result.getString("name"));
+        assertEquals(123, result.getInt("value"));
     }
 
     @Test
@@ -66,35 +68,37 @@ class JsonContentConverterTest {
     void shouldHandleEmptyJsonObject() {
         String jsonString = "{}";
 
-        Optional<JsonObject> result = converter.convert(jsonString);
+        JsonObject result = converter.convert(jsonString);
 
-        assertTrue(result.isPresent());
-        JsonObject jsonObject = result.get();
-        assertTrue(jsonObject.isEmpty());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle null input")
     void shouldHandleNullInput() {
-        Optional<JsonObject> result = converter.convert(null);
+        JsonObject result = converter.convert(null);
 
-        assertFalse(result.isPresent());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle empty string input")
     void shouldHandleEmptyStringInput() {
-        Optional<JsonObject> result = converter.convert("");
+        JsonObject result = converter.convert("");
 
-        assertFalse(result.isPresent());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle whitespace-only input")
     void shouldHandleWhitespaceOnlyInput() {
-        Optional<JsonObject> result = converter.convert("   \n\t  ");
+        JsonObject result = converter.convert("   \n\t  ");
 
-        assertFalse(result.isPresent());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -102,28 +106,36 @@ class JsonContentConverterTest {
     void shouldHandleMalformedJson() {
         String malformedJson = "{name: test, value: 123}"; // Missing quotes
 
-        Optional<JsonObject> result = converter.convert(malformedJson);
+        JsonObject result = converter.convert(malformedJson);
 
-        assertFalse(result.isPresent());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    @DisplayName("Should handle JSON that exceeds security limits")
-    void shouldHandleJsonThatExceedsSecurityLimits() {
-        ParserConfig restrictiveConfig = ParserConfig.builder()
-                .maxStringSize(10) // Very small limit
-                .build();
-        JsonReaderFactory restrictiveJsonReaderFactory = restrictiveConfig.getJsonReaderFactory();
-        JsonContentConverter restrictiveConverter = new JsonContentConverter(restrictiveJsonReaderFactory);
+    @DisplayName("Should throw TokenValidationException for JSON that exceeds content size limits")
+    void shouldThrowTokenValidationExceptionForJsonThatExceedsContentSizeLimits() {
+        ParserConfig config = ParserConfig.builder().build();
+        var dslJson = config.getDslJson();
+        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
+        int maxContentSize = 10; // Very small limit - 10 bytes
+        JsonContentConverter restrictiveConverter = new JsonContentConverter(dslJson, securityEventCounter, maxContentSize);
 
-        String largeJsonString = "{\"name\":\"this is a very long string that exceeds the limit\"}";
+        // Use a JSON string that exceeds the 10-byte limit
+        String largeJsonString = "{\"key\":\"this string is definitely longer than 10 bytes\"}";
 
-        Optional<JsonObject> result = restrictiveConverter.convert(largeJsonString);
+        // Should throw TokenValidationException for content size violations
+        assertThrows(TokenValidationException.class, () -> {
+            restrictiveConverter.convert(largeJsonString);
+        }, "Should throw TokenValidationException when content size exceeds limit");
 
-        // Note: Jakarta JSON implementation may not enforce these limits in the way we expect
-        // The test verifies the converter handles the case gracefully regardless
-        // If limits are enforced, result should be empty; if not, result should be present
-        assertNotNull(result, "Result should never be null");
+        // Verify security event was recorded
+        assertTrue(securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED) > 0,
+                "Should record security event for content size violation");
+
+        // Verify WARN log message was generated
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.resolveIdentifierString());
     }
 
     @Test
@@ -161,15 +173,20 @@ class JsonContentConverterTest {
             }
             """;
 
-        Optional<JsonObject> result = converter.convert(complexJson);
+        JsonObject result = converter.convert(complexJson);
 
-        assertTrue(result.isPresent());
-        JsonObject jsonObject = result.get();
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
 
-        JsonObject user = jsonObject.getJsonObject("user");
+        JsonObject user = result.getJsonObject("user");
         assertNotNull(user);
         assertEquals(123, user.getInt("id"));
         assertEquals("John Doe", user.getString("name"));
+
+        JsonArray roles = user.getJsonArray("roles");
+        assertEquals(2, roles.size());
+        assertEquals("admin", roles.getString(0));
+        assertEquals("user", roles.getString(1));
 
         JsonObject settings = user.getJsonObject("settings");
         assertNotNull(settings);
@@ -182,23 +199,24 @@ class JsonContentConverterTest {
     void shouldHandleJsonArrayAsTopLevelElementGracefully() {
         String jsonArray = "[{\"id\": 1}, {\"id\": 2}]";
 
-        Optional<JsonObject> result = converter.convert(jsonArray);
+        JsonObject result = converter.convert(jsonArray);
 
-        // Should fail since we expect JsonObject, not JsonArray
-        assertFalse(result.isPresent());
+        // Should return empty JsonObject since we expect JsonObject, not JsonArray
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    @DisplayName("Should use provided JsonReaderFactory")
-    void shouldUseProvidedJsonReaderFactory() {
-        // Test that the converter uses the provided JsonReaderFactory
+    @DisplayName("Should use provided DslJson")
+    void shouldUseProvidedDslJson() {
+        // Test that the converter uses the provided DslJson
         // by verifying consistent behavior
 
         ParserConfig customConfig = ParserConfig.builder()
-                .maxDepth(2) // Very shallow depth
+                .maxBufferSize(1000) // Very small buffer
                 .build();
-        JsonReaderFactory customJsonReaderFactory = customConfig.getJsonReaderFactory();
-        JsonContentConverter customConverter = new JsonContentConverter(customJsonReaderFactory);
+        var customDslJson = customConfig.getDslJson();
+        JsonContentConverter customConverter = new JsonContentConverter(customDslJson);
 
         String deeplyNestedJson = """
             {
@@ -212,11 +230,11 @@ class JsonContentConverterTest {
             }
             """;
 
-        Optional<JsonObject> result = customConverter.convert(deeplyNestedJson);
+        JsonObject result = customConverter.convert(deeplyNestedJson);
 
-        // Test that the converter uses the provided JsonReaderFactory
-        // Jakarta JSON implementation may or may not enforce depth limits as expected
-        assertNotNull(result, "Result should never be null - converter should handle limits gracefully");
+        // DSL-JSON should handle buffer limits and return empty object if limits exceeded
+        assertNotNull(result);
+        // Either parses successfully or returns empty due to buffer limits
     }
 
     @Test
@@ -224,12 +242,14 @@ class JsonContentConverterTest {
     void shouldLogWarnMessageWhenJsonParsingFails() {
         String malformedJson = "{invalid json}";
 
-        Optional<JsonObject> result = converter.convert(malformedJson);
+        JsonObject result = converter.convert(malformedJson);
 
-        // Verify the conversion fails
-        assertFalse(result.isPresent(), "Conversion should fail for malformed JSON");
+        // Verify the conversion fails gracefully
+        assertNotNull(result);
+        assertTrue(result.isEmpty(), "Conversion should return empty JsonObject for malformed JSON");
 
-        // Verify WARN log message is present containing the expected pattern
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "JSON parsing failed for content, returning empty result");
+        // Verify ERROR log message is present using LogRecord identifier
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.resolveIdentifierString());
     }
 }

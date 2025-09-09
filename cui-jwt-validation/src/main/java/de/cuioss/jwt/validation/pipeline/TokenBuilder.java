@@ -23,6 +23,7 @@ import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
 import lombok.NonNull;
 
 import java.util.HashMap;
@@ -87,12 +88,11 @@ public class TokenBuilder {
      * @return an Optional containing the AccessTokenContent if it could be created, empty otherwise
      */
     public Optional<AccessTokenContent> createAccessToken(@NonNull DecodedJwt decodedJwt) {
-        Optional<JsonObject> bodyOption = decodedJwt.getBody();
-        if (bodyOption.isEmpty()) {
+        JsonObject body = decodedJwt.getBody();
+        if (body.isEmpty()) {
             return Optional.empty();
         }
 
-        JsonObject body = bodyOption.get();
         Map<String, ClaimValue> claims = extractClaims(body);
 
         return Optional.of(new AccessTokenContent(claims, decodedJwt.rawToken(), null));
@@ -105,12 +105,11 @@ public class TokenBuilder {
      * @return an Optional containing the IdTokenContent if it could be created, empty otherwise
      */
     public Optional<IdTokenContent> createIdToken(@NonNull DecodedJwt decodedJwt) {
-        Optional<JsonObject> bodyOption = decodedJwt.getBody();
-        if (bodyOption.isEmpty()) {
+        JsonObject body = decodedJwt.getBody();
+        if (body.isEmpty()) {
             return Optional.empty();
         }
 
-        JsonObject body = bodyOption.get();
         Map<String, ClaimValue> claims = extractClaims(body);
 
         return Optional.of(new IdTokenContent(claims, decodedJwt.rawToken()));
@@ -118,7 +117,7 @@ public class TokenBuilder {
 
 
     /**
-     * Extracts claims from a JSON object.
+     * Extracts claims from a JSON object using proper claim mappers.
      *
      * @param jsonObject the JSON object containing claims
      * @return a map of claim names to claim values
@@ -127,8 +126,24 @@ public class TokenBuilder {
         Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
 
         for (String key : jsonObject.keySet()) {
-            ClaimMapper mapper = allMappers.getOrDefault(key, IDENTITY_MAPPER);
-            claims.put(key, mapper.map(jsonObject, key));
+            // Try to find a configured claim mapper for this key
+            ClaimMapper mapper = allMappers.get(key);
+
+            if (mapper != null) {
+                // Use the configured mapper (either built-in or custom)
+                ClaimValue claimValue = mapper.map(jsonObject, key);
+                claims.put(key, claimValue);
+            } else {
+                // Fallback for unknown claims - use identity mapping
+                Object value = jsonObject.get(key);
+                if (value instanceof String stringValue) {
+                    claims.put(key, ClaimValue.forPlainString(stringValue));
+                } else if (value instanceof JsonString jsonString) {
+                    claims.put(key, ClaimValue.forPlainString(jsonString.getString()));
+                } else if (value != null) {
+                    claims.put(key, ClaimValue.forPlainString(value.toString()));
+                }
+            }
         }
 
         return claims;
@@ -144,7 +159,15 @@ public class TokenBuilder {
         Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
 
         for (String key : jsonObject.keySet()) {
-            claims.put(key, IDENTITY_MAPPER.map(jsonObject, key));
+            // Convert Map entry to ClaimValue - handle JsonString properly
+            Object value = jsonObject.get(key);
+            if (value instanceof String stringValue) {
+                claims.put(key, ClaimValue.forPlainString(stringValue));
+            } else if (value instanceof JsonString jsonString) {
+                claims.put(key, ClaimValue.forPlainString(jsonString.getString()));
+            } else if (value != null) {
+                claims.put(key, ClaimValue.forPlainString(value.toString()));
+            }
         }
 
         return claims;
