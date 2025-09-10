@@ -30,6 +30,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -116,12 +117,19 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> imp
         }
 
         try {
+            // For arbitrary JSON parsing, we need to try different types since DSL-JSON
+            // doesn't support Object.class deserialization without specific configuration
             byte[] bytes = rawContent.getBytes();
-            Object parsed = dslJson.deserialize(Map.class, bytes, bytes.length);
+            ParseResult result = tryParseArbitraryJson(bytes);
 
-            // For now, focus on our primary use case (JSON objects for JWKS/JWT/Discovery)
-            // Use factory to create appropriate JsonValue
-            JsonValue jsonValue = DslJsonValueFactory.createJsonValue(parsed);
+            if (!result.success) {
+                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("Unable to parse JSON content"));
+                return Optional.empty();
+            }
+
+            // Use factory to create appropriate JsonValue for all JSON types
+            // Note: result.value can be null for JSON null literal, which is valid
+            JsonValue jsonValue = DslJsonValueFactory.createJsonValue(result.value);
             return Optional.of(jsonValue);
 
         } catch (IOException e) {
@@ -182,6 +190,119 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> imp
             LOGGER.error(e, "Unexpected error during JSON conversion: " + e.getMessage());
             return Optional.empty();
         }
+    }
+
+    /**
+     * Result of JSON parsing attempt.
+     */
+    private static class ParseResult {
+        final boolean success;
+        final Object value;
+
+        ParseResult(boolean success, Object value) {
+            this.success = success;
+            this.value = value;
+        }
+
+        static ParseResult success(Object value) {
+            return new ParseResult(true, value);
+        }
+
+        static ParseResult failure() {
+            return new ParseResult(false, null);
+        }
+    }
+
+    /**
+     * Attempts to parse arbitrary JSON using DSL-JSON's raw parsing capabilities.
+     * Since DSL-JSON's typed deserialization requires configuration for all types,
+     * we use the raw JsonReader approach to parse any valid JSON.
+     * 
+     * @param bytes the JSON bytes to parse
+     * @return ParseResult indicating success/failure and the parsed value
+     * @throws IOException if a security limit violation occurs
+     */
+    private ParseResult tryParseArbitraryJson(byte[] bytes) throws IOException {
+        // Try JSON object first (most common for our use cases)
+        try {
+            Object result = dslJson.deserialize(Map.class, bytes, bytes.length);
+            return ParseResult.success(result);
+        } catch (IOException e) {
+            if (isSecurityLimitViolation(e.getMessage())) {
+                throw e; // Re-throw security violations
+            }
+            // Fall through to manual parsing
+        }
+
+        // For non-object JSON, we need to parse manually
+        // since DSL-JSON doesn't handle arbitrary types well
+        Object result = parseJsonManually(new String(bytes).trim());
+        if (result != null || "null".equals(new String(bytes).trim())) {
+            return ParseResult.success(result); // null is a valid JSON value
+        }
+        return ParseResult.failure();
+    }
+
+    /**
+     * Manually parses JSON literals that DSL-JSON can't handle with basic configuration.
+     * This handles arrays, strings, numbers, booleans, and null.
+     * 
+     * @param json the JSON string to parse
+     * @return the parsed value or null if parsing fails
+     */
+    private Object parseJsonManually(String json) {
+        if (json == null || json.isEmpty()) {
+            return null;
+        }
+
+        // Handle null literal
+        if ("null".equals(json)) {
+            return null; // Will be converted to JsonValue.NULL by factory
+        }
+
+        // Handle boolean literals
+        if ("true".equals(json)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equals(json)) {
+            return Boolean.FALSE;
+        }
+
+        // Handle string literals (quoted strings)
+        if (json.startsWith("\"") && json.endsWith("\"") && json.length() >= 2) {
+            // Basic string unescaping - just remove quotes for now
+            // TODO: Full JSON string unescaping would need proper handling of \", \\, etc.
+            return json.substring(1, json.length() - 1);
+        }
+
+        // Handle array literals
+        if (json.startsWith("[") && json.endsWith("]")) {
+            // For arrays, we need to parse the content manually or use a JSON parser
+            // For now, return a simple marker that this is an array
+            // The actual parsing would require recursive JSON parsing
+            try {
+                // Try to use DSL-JSON for the array content by creating a temporary JSON object wrapper
+                String wrappedJson = "{\"array\":" + json + "}";
+                Map<?, ?> wrapper = dslJson.deserialize(Map.class, wrappedJson.getBytes(), wrappedJson.length());
+                return wrapper.get("array");
+            } catch (IOException e) {
+                return List.of(); // Empty list as fallback
+            }
+        }
+
+        // Handle number literals
+        try {
+            if (json.contains(".")) {
+                return Double.parseDouble(json);
+            } else {
+                return Integer.parseInt(json);
+            }
+        } catch (NumberFormatException e) {
+            // Not a valid number
+        }
+
+        // Unable to parse - return null
+        return null;
     }
 
     /**

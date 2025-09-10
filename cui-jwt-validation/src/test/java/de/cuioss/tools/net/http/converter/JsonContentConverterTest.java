@@ -24,7 +24,9 @@ import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -208,15 +210,124 @@ class JsonContentConverterTest {
     }
 
     @Test
-    @DisplayName("Should handle JSON array as top-level element gracefully")
-    void shouldHandleJsonArrayAsTopLevelElementGracefully() {
+    @DisplayName("Should handle JSON array as top-level element")
+    void shouldHandleJsonArrayAsTopLevelElement() {
         String jsonArray = "[{\"id\": 1}, {\"id\": 2}]";
 
         Optional<JsonValue> result = converter.convert(jsonArray);
 
-        // Current implementation focuses on JSON objects for JWT/JWKS/Discovery use cases
-        // JSON arrays are not supported and return empty Optional
-        assertFalse(result.isPresent(), "JSON arrays are not currently supported by this converter");
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonArray);
+        JsonArray jsonArrayResult = (JsonArray) result.get();
+        assertEquals(2, jsonArrayResult.size());
+        assertEquals(1, jsonArrayResult.getJsonObject(0).getInt("id"));
+        assertEquals(2, jsonArrayResult.getJsonObject(1).getInt("id"));
+    }
+
+    @Test
+    @DisplayName("Should handle JSON string as top-level element")
+    void shouldHandleJsonStringAsTopLevelElement() {
+        String jsonString = "\"hello world\"";
+
+        Optional<JsonValue> result = converter.convert(jsonString);
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonString);
+        JsonString jsonStringResult = (JsonString) result.get();
+        assertEquals("hello world", jsonStringResult.getString());
+    }
+
+    @Test
+    @DisplayName("Should handle JSON number as top-level element")
+    void shouldHandleJsonNumberAsTopLevelElement() {
+        String jsonNumber = "42";
+
+        Optional<JsonValue> result = converter.convert(jsonNumber);
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonNumber);
+        JsonNumber jsonNumberResult = (JsonNumber) result.get();
+        assertEquals(42, jsonNumberResult.intValue());
+    }
+
+    @Test
+    @DisplayName("Should handle JSON decimal number as top-level element")
+    void shouldHandleJsonDecimalNumberAsTopLevelElement() {
+        String jsonNumber = "3.14159";
+
+        Optional<JsonValue> result = converter.convert(jsonNumber);
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonNumber);
+        JsonNumber jsonNumberResult = (JsonNumber) result.get();
+        assertEquals(3.14159, jsonNumberResult.doubleValue(), 0.00001);
+    }
+
+    @Test
+    @DisplayName("Should handle JSON boolean true as top-level element")
+    void shouldHandleJsonBooleanTrueAsTopLevelElement() {
+        String jsonBoolean = "true";
+
+        Optional<JsonValue> result = converter.convert(jsonBoolean);
+
+        assertTrue(result.isPresent());
+        assertEquals(JsonValue.TRUE, result.get());
+        assertEquals(JsonValue.ValueType.TRUE, result.get().getValueType());
+    }
+
+    @Test
+    @DisplayName("Should handle JSON boolean false as top-level element")
+    void shouldHandleJsonBooleanFalseAsTopLevelElement() {
+        String jsonBoolean = "false";
+
+        Optional<JsonValue> result = converter.convert(jsonBoolean);
+
+        assertTrue(result.isPresent());
+        assertEquals(JsonValue.FALSE, result.get());
+        assertEquals(JsonValue.ValueType.FALSE, result.get().getValueType());
+    }
+
+    @Test
+    @DisplayName("Should handle JSON null as top-level element")
+    void shouldHandleJsonNullAsTopLevelElement() {
+        String jsonNull = "null";
+
+        Optional<JsonValue> result = converter.convert(jsonNull);
+
+        assertTrue(result.isPresent());
+        assertEquals(JsonValue.NULL, result.get());
+        assertEquals(JsonValue.ValueType.NULL, result.get().getValueType());
+    }
+
+    @Test
+    @DisplayName("Should handle empty JSON array")
+    void shouldHandleEmptyJsonArray() {
+        String jsonArray = "[]";
+
+        Optional<JsonValue> result = converter.convert(jsonArray);
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonArray);
+        JsonArray jsonArrayResult = (JsonArray) result.get();
+        assertTrue(jsonArrayResult.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should handle mixed JSON array")
+    void shouldHandleMixedJsonArray() {
+        String jsonArray = "[\"string\", 42, true, null, {\"key\": \"value\"}]";
+
+        Optional<JsonValue> result = converter.convert(jsonArray);
+
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonArray);
+        JsonArray jsonArrayResult = (JsonArray) result.get();
+        assertEquals(5, jsonArrayResult.size());
+        assertEquals("string", jsonArrayResult.getString(0));
+        assertEquals(42, jsonArrayResult.getInt(1));
+        assertTrue(jsonArrayResult.getBoolean(2));
+        assertTrue(jsonArrayResult.isNull(3));
+        assertEquals("value", jsonArrayResult.getJsonObject(4).getString("key"));
     }
 
     @Test
