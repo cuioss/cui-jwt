@@ -247,8 +247,8 @@ public class AccessTokenCache {
                     LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
                     throw new InternalCacheException(
                             "Token passed validation but has no expiration time", e);
-                } catch (Exception e) {
-                    // Any other unexpected exception
+                } catch (IllegalArgumentException | SecurityException e) {
+                    // Handle specific runtime exceptions that could occur during token caching
                     LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
                     throw new InternalCacheException(
                             "Failed to cache validated token", e);
@@ -367,7 +367,7 @@ public class AccessTokenCache {
 
                 LOGGER.debug("Evicted %s expired tokens from cache", expiredKeys.size());
             }
-        } catch (Exception e) {
+        } catch (IllegalStateException | SecurityException e) {
             LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.format());
         }
     }

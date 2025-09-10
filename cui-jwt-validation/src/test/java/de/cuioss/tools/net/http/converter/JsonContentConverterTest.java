@@ -25,11 +25,13 @@ import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpResponse;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,12 +57,14 @@ class JsonContentConverterTest {
     void shouldConvertValidJsonStringToJsonObject() {
         String jsonString = "{\"name\":\"test\",\"value\":123}";
 
-        JsonObject result = converter.convert(jsonString);
+        Optional<JsonValue> result = converter.convert(jsonString);
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals("test", result.getString("name"));
-        assertEquals(123, result.getInt("value"));
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertFalse(jsonObject.isEmpty());
+        assertEquals("test", jsonObject.getString("name"));
+        assertEquals(123, jsonObject.getInt("value"));
     }
 
     @Test
@@ -68,37 +72,45 @@ class JsonContentConverterTest {
     void shouldHandleEmptyJsonObject() {
         String jsonString = "{}";
 
-        JsonObject result = converter.convert(jsonString);
+        Optional<JsonValue> result = converter.convert(jsonString);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertTrue(jsonObject.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle null input")
     void shouldHandleNullInput() {
-        JsonObject result = converter.convert(null);
+        Optional<JsonValue> result = converter.convert(null);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertTrue(jsonObject.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle empty string input")
     void shouldHandleEmptyStringInput() {
-        JsonObject result = converter.convert("");
+        Optional<JsonValue> result = converter.convert("");
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertTrue(jsonObject.isEmpty());
     }
 
     @Test
     @DisplayName("Should handle whitespace-only input")
     void shouldHandleWhitespaceOnlyInput() {
-        JsonObject result = converter.convert("   \n\t  ");
+        Optional<JsonValue> result = converter.convert("   \n\t  ");
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertTrue(jsonObject.isEmpty());
     }
 
     @Test
@@ -106,10 +118,9 @@ class JsonContentConverterTest {
     void shouldHandleMalformedJson() {
         String malformedJson = "{name: test, value: 123}"; // Missing quotes
 
-        JsonObject result = converter.convert(malformedJson);
+        Optional<JsonValue> result = converter.convert(malformedJson);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertFalse(result.isPresent()); // Malformed JSON should return empty Optional
     }
 
     @Test
@@ -173,12 +184,14 @@ class JsonContentConverterTest {
             }
             """;
 
-        JsonObject result = converter.convert(complexJson);
+        Optional<JsonValue> result = converter.convert(complexJson);
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertFalse(jsonObject.isEmpty());
 
-        JsonObject user = result.getJsonObject("user");
+        JsonObject user = jsonObject.getJsonObject("user");
         assertNotNull(user);
         assertEquals(123, user.getInt("id"));
         assertEquals("John Doe", user.getString("name"));
@@ -199,11 +212,11 @@ class JsonContentConverterTest {
     void shouldHandleJsonArrayAsTopLevelElementGracefully() {
         String jsonArray = "[{\"id\": 1}, {\"id\": 2}]";
 
-        JsonObject result = converter.convert(jsonArray);
+        Optional<JsonValue> result = converter.convert(jsonArray);
 
-        // Should return empty JsonObject since we expect JsonObject, not JsonArray
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        // Current implementation focuses on JSON objects for JWT/JWKS/Discovery use cases
+        // JSON arrays are not supported and return empty Optional
+        assertFalse(result.isPresent(), "JSON arrays are not currently supported by this converter");
     }
 
     @Test
@@ -230,7 +243,7 @@ class JsonContentConverterTest {
             }
             """;
 
-        JsonObject result = customConverter.convert(deeplyNestedJson);
+        Optional<JsonValue> result = customConverter.convert(deeplyNestedJson);
 
         // DSL-JSON should handle buffer limits and return empty object if limits exceeded
         assertNotNull(result);
@@ -242,11 +255,10 @@ class JsonContentConverterTest {
     void shouldLogWarnMessageWhenJsonParsingFails() {
         String malformedJson = "{invalid json}";
 
-        JsonObject result = converter.convert(malformedJson);
+        Optional<JsonValue> result = converter.convert(malformedJson);
 
         // Verify the conversion fails gracefully
-        assertNotNull(result);
-        assertTrue(result.isEmpty(), "Conversion should return empty JsonObject for malformed JSON");
+        assertFalse(result.isPresent(), "Conversion should return empty Optional for malformed JSON");
 
         // Verify ERROR log message is present using LogRecord identifier
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,

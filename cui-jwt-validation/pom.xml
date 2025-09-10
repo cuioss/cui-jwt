@@ -91,6 +91,11 @@
             <artifactId>dsl-json</artifactId>
             <version>2.0.2</version>
         </dependency>
+        <!-- JSpecify for nullability annotations -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>

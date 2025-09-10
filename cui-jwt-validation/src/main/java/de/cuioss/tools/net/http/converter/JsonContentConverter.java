@@ -22,8 +22,11 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
+import de.cuioss.tools.net.http.json.DslJsonValueFactory;
 import jakarta.json.JsonObject;
-import lombok.NonNull;
+import jakarta.json.JsonValue;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,11 +49,15 @@ import java.util.Optional;
  *   <li>Better performance through DSL-JSON's compile-time code generation</li>
  *   <li>Type-safe JSON access through standard Jakarta JSON API</li>
  * </ul>
+ * <p>
+ * This implementation also serves as the primary implementation of {@link JsonConverter},
+ * providing a clean interface for secure JSON processing that can be used independently
+ * of HTTP content conversion scenarios.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-public class JsonContentConverter extends StringContentConverter<JsonObject> {
+public class JsonContentConverter extends StringContentConverter<JsonObject> implements JsonConverter {
 
     private static final CuiLogger LOGGER = new CuiLogger(JsonContentConverter.class);
 
@@ -90,9 +97,10 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> {
         this.maxContentSize = maxContentSize;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Optional<JsonObject> convertString(String rawContent) {
+    /**
+     * Internal method to convert string to JsonValue (supporting all JSON types).
+     */
+    private Optional<JsonValue> convertStringToJsonValue(String rawContent) {
         if (rawContent == null || rawContent.trim().isEmpty()) {
             return Optional.of(emptyValue());
         }
@@ -111,13 +119,10 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> {
             byte[] bytes = rawContent.getBytes();
             Object parsed = dslJson.deserialize(Map.class, bytes, bytes.length);
 
-            if (parsed instanceof Map) {
-                return Optional.of(new DslJsonObjectAdapter((Map<String, Object>) parsed));
-            }
-
-            // If not a JSON object, return empty JsonObject rather than Optional.empty()
-            LOGGER.debug("Parsed JSON is not an object, returning empty JsonObject");
-            return Optional.of(emptyValue());
+            // For now, focus on our primary use case (JSON objects for JWKS/JWT/Discovery)
+            // Use factory to create appropriate JsonValue
+            JsonValue jsonValue = DslJsonValueFactory.createJsonValue(parsed);
+            return Optional.of(jsonValue);
 
         } catch (IOException e) {
             // Check if this is a security limit violation
@@ -134,8 +139,26 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> {
 
             // Regular parsing errors - malformed JSON, I/O error
             LOGGER.error(e, JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
-            return Optional.of(emptyValue());
+            return Optional.empty();
         }
+    }
+
+    @Override
+    protected Optional<JsonObject> convertString(String rawContent) {
+        // Convert to JsonValue first then extract JsonObject if possible
+        Optional<JsonValue> jsonValue = convertStringToJsonValue(rawContent);
+
+        if (jsonValue.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // If it's a JsonObject, return it
+        if (jsonValue.get() instanceof JsonObject jsonObject) {
+            return Optional.of(jsonObject);
+        }
+
+        // If it's not a JsonObject, return empty to indicate failure
+        return Optional.empty();
     }
 
     /**
@@ -146,16 +169,38 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> {
      * @return JsonObject, never null (empty JsonObject if parsing fails)
      * @throws TokenValidationException if security limits are violated
      */
-    public JsonObject convert(String rawContent) {
+    public JsonObject convertToJsonObject(String rawContent) {
         try {
             return convertString(rawContent).orElse(emptyValue());
         } catch (TokenValidationException e) {
             // Re-throw security exceptions
             throw e;
-        } catch (Exception e) {
-            // Any other unexpected exceptions - return empty
+        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
+            // Handle specific runtime exceptions that could occur during JSON conversion
             LOGGER.error(e, "Unexpected error during JSON conversion: " + e.getMessage());
             return emptyValue();
+        }
+    }
+
+    /**
+     * JsonConverter interface implementation that returns Optional for clear success/failure semantics.
+     *
+     * @param jsonString the JSON string to parse, may be null or empty
+     * @return Optional containing JsonValue if parsing succeeds, empty if parsing fails
+     * @throws TokenValidationException if security limits are violated
+     */
+    @Override
+    @NonNull
+    public Optional<JsonValue> convert(@Nullable String jsonString) {
+        try {
+            return convertStringToJsonValue(jsonString);
+        } catch (TokenValidationException e) {
+            // Re-throw security exceptions
+            throw e;
+        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
+            // Handle specific runtime exceptions that could occur during JSON conversion
+            LOGGER.error(e, "Unexpected error during JSON conversion: " + e.getMessage());
+            return Optional.empty();
         }
     }
 

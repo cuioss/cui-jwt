@@ -20,10 +20,9 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.converter.JsonContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import jakarta.json.JsonObject;
-import lombok.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.net.URL;
 import java.util.HashMap;
@@ -78,8 +77,8 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     public HttpWellKnownResolver(@NonNull WellKnownConfig config) {
         HttpHandler httpHandler = config.getHttpHandler();
         this.wellKnownUrl = httpHandler.getUrl();
-        this.discoveryEtagHandler = new ETagAwareHttpHandler<>(config, new JsonContentConverter(config.getParserConfig().getDslJson()));
-        this.jwksEtagHandler = new ETagAwareHttpHandler<>(config, new JsonContentConverter(config.getParserConfig().getDslJson()));
+        this.discoveryEtagHandler = new ETagAwareHttpHandler<>(config, config.getParserConfig().getJsonContentConverter());
+        this.jwksEtagHandler = new ETagAwareHttpHandler<>(config, config.getParserConfig().getJsonContentConverter());
         this.parser = new WellKnownParser(config.getParserConfig());
         this.mapper = new WellKnownEndpointMapper(httpHandler);
         LOGGER.debug("Created HttpWellKnownResolver for URL: %s (not yet loaded)", wellKnownUrl);

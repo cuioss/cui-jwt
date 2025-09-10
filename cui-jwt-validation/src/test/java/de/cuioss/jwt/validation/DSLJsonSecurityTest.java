@@ -18,8 +18,11 @@ package de.cuioss.jwt.validation;
 import com.dslplatform.json.DslJson;
 import de.cuioss.tools.net.http.converter.JsonContentConverter;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,13 +44,15 @@ class DSLJsonSecurityTest {
 
         String validJson = "{\"name\":\"test\",\"value\":123,\"active\":true}";
 
-        JsonObject result = converter.convert(validJson);
+        Optional<JsonValue> result = converter.convert(validJson);
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals("test", result.getString("name"));
-        assertEquals(123, result.getInt("value"));
-        assertTrue(result.getBoolean("active"));
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertFalse(jsonObject.isEmpty());
+        assertEquals("test", jsonObject.getString("name"));
+        assertEquals(123, jsonObject.getInt("value"));
+        assertTrue(jsonObject.getBoolean("active"));
     }
 
     @Test
@@ -59,10 +64,12 @@ class DSLJsonSecurityTest {
 
         String emptyJson = "{}";
 
-        JsonObject result = converter.convert(emptyJson);
+        Optional<JsonValue> result = converter.convert(emptyJson);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertTrue(result.get() instanceof JsonObject);
+        JsonObject jsonObject = (JsonObject) result.get();
+        assertTrue(jsonObject.isEmpty());
     }
 
     @Test
@@ -74,9 +81,8 @@ class DSLJsonSecurityTest {
 
         String malformedJson = "{invalid json}";
 
-        JsonObject result = converter.convert(malformedJson);
+        Optional<JsonValue> result = converter.convert(malformedJson);
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertFalse(result.isPresent()); // Malformed JSON should return empty Optional
     }
 }

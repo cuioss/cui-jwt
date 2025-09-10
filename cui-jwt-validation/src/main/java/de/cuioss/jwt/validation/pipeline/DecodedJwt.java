@@ -98,7 +98,7 @@ String rawToken
         if (body != null && body.containsKey(ClaimName.ISSUER.getName())) {
             try {
                 return Optional.of(body.getString(ClaimName.ISSUER.getName()));
-            } catch (Exception e) {
+            } catch (ClassCastException | IllegalStateException e) {
                 // If getting as string fails, return empty
                 return Optional.empty();
             }
@@ -115,7 +115,7 @@ String rawToken
         if (header != null && header.containsKey("kid")) {
             try {
                 return Optional.of(header.getString("kid"));
-            } catch (Exception e) {
+            } catch (ClassCastException | IllegalStateException e) {
                 // If getting as string fails, return empty
                 return Optional.empty();
             }
@@ -132,7 +132,7 @@ String rawToken
         if (header != null && header.containsKey("alg")) {
             try {
                 return Optional.of(header.getString("alg"));
-            } catch (Exception e) {
+            } catch (ClassCastException | IllegalStateException e) {
                 // If getting as string fails, return empty
                 return Optional.empty();
             }

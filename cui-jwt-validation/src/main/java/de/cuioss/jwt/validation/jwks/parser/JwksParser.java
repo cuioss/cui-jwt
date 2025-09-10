@@ -22,15 +22,17 @@ import de.cuioss.jwt.validation.jwks.key.JwkKeyConstants;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.converter.JsonContentConverter;
+import de.cuioss.tools.net.http.converter.JsonConverter;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import lombok.NonNull;
+import jakarta.json.JsonValue;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Parses and validates JWKS content, extracting individual JWK objects.
@@ -54,11 +56,11 @@ public class JwksParser {
     @NonNull
     private final SecurityEventCounter securityEventCounter;
 
-    private final JsonContentConverter jsonConverter;
+    private final JsonConverter jsonConverter;
 
     /**
      * Create JwksParser with ParserConfig and SecurityEventCounter.
-     * JsonContentConverter will be initialized lazily.
+     * JsonConverter will be initialized lazily.
      */
     public JwksParser(@NonNull ParserConfig parserConfig, @NonNull SecurityEventCounter securityEventCounter) {
         this.parserConfig = parserConfig;
@@ -66,9 +68,9 @@ public class JwksParser {
         this.jsonConverter = null;
     }
 
-    private JsonContentConverter initJsonConverter() {
+    private JsonConverter initJsonConverter() {
         if (jsonConverter == null) {
-            return new JsonContentConverter(parserConfig.getDslJson());
+            return parserConfig.getJsonConverter();
         }
         return jsonConverter;
     }
@@ -89,21 +91,28 @@ public class JwksParser {
 
         try {
             // Use JsonContentConverter with DSL-JSON security settings
-            JsonObject jwks = initJsonConverter().convert(jwksContent);
+            Optional<JsonValue> parseResult = initJsonConverter().convert(jwksContent);
 
-            // Check if parsing failed (null result indicates parse failure)
-            if (jwks == null) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JSON parsing returned null result"));
+            // Check if parsing failed (empty Optional indicates parse failure)
+            if (parseResult.isEmpty()) {
+                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JSON parsing returned empty result"));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 return result;
             }
 
-            return parseJsonObject(jwks);
+            // JWKS documents must be JSON objects
+            if (parseResult.get() instanceof JsonObject jsonObject) {
+                return parseJsonObject(jsonObject);
+            } else {
+                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JWKS document is not a JSON object"));
+                securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+                return result;
+            }
         } catch (TokenValidationException e) {
             // Re-throw security exceptions
             throw e;
-        } catch (Exception e) {
-            // Handle invalid JSON format
+        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
+            // Handle specific runtime exceptions that could occur during JSON parsing
             LOGGER.error(e, JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }

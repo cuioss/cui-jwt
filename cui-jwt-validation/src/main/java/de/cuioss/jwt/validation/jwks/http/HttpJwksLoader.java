@@ -25,11 +25,10 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.converter.JsonContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.uimodel.result.ResultState;
 import jakarta.json.JsonObject;
-import lombok.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -347,7 +346,7 @@ public class HttpJwksLoader implements JwksLoader {
                     // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
                     LOGGER.debug("Creating ETagAwareHttpHandler from direct HTTP configuration for URI: %s",
                             config.getHttpHandler().getUri());
-                    cache = new ETagAwareHttpHandler<>(config, new JsonContentConverter(ParserConfig.builder().build().getDslJson())); // Using JsonContentConverter for JWKS
+                    cache = new ETagAwareHttpHandler<>(config, ParserConfig.builder().build().getJsonContentConverter()); // Using JsonContentConverter for JWKS
                     httpCache.set(cache);
                     return Optional.of(cache);
 

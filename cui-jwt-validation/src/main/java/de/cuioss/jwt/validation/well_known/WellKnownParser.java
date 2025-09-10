@@ -15,19 +15,18 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
+import de.cuioss.tools.net.http.converter.JsonConverter;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import lombok.RequiredArgsConstructor;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -52,25 +51,50 @@ class WellKnownParser {
     private final ParserConfig parserConfig;
 
     /**
+     * JSON converter that uses DSL-JSON with security settings.
+     * Initialized lazily to avoid circular dependencies during construction.
+     */
+    private JsonConverter jsonConverter;
+
+    /**
+     * Initializes the JSON converter after construction.
+     */
+    private JsonConverter initJsonConverter() {
+        if (jsonConverter == null) {
+            // Handle null parserConfig by using default configuration
+            ParserConfig actualConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+            jsonConverter = actualConfig.getJsonConverter();
+        }
+        return jsonConverter;
+    }
+
+    /**
      * Parses a JSON response string into a JsonObject.
      *
      * @param responseBody The JSON response string to parse
      * @param wellKnownUrl The well-known URL (used for error messages)
      * @return Optional containing the parsed JsonObject or empty on error
      */
-    @SuppressWarnings("unchecked")
     Optional<JsonObject> parseJsonResponse(String responseBody, URL wellKnownUrl) {
         try {
-            // Handle null parserConfig by using default configuration
-            ParserConfig actualConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
-            DslJson<Object> dslJson = actualConfig.getDslJson();
-            byte[] bytes = responseBody.getBytes();
-            Map<String, Object> result = (Map<String, Object>) dslJson.deserialize(Map.class, bytes, bytes.length);
-            if (result != null) {
-                return Optional.of(new DslJsonObjectAdapter(result));
+            Optional<JsonValue> result = initJsonConverter().convert(responseBody);
+            if (result.isEmpty()) {
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "JSON parsing failed"));
+                return Optional.empty();
             }
-            return Optional.empty();
-        } catch (IOException | IllegalStateException e) {
+
+            // Well-known documents must be JSON objects
+            if (result.get() instanceof JsonObject jsonObject) {
+                return Optional.of(jsonObject);
+            } else {
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Well-known document is not a JSON object"));
+                return Optional.empty();
+            }
+        } catch (TokenValidationException e) {
+            // Re-throw security exceptions from JsonContentConverter
+            throw e;
+        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
+            // Handle specific runtime exceptions that could occur during JSON parsing
             LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, e.getMessage()));
             return Optional.empty();
         }

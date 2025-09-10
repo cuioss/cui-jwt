@@ -20,18 +20,20 @@ import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.converter.JsonContentConverter;
+import de.cuioss.tools.net.http.converter.JsonConverter;
 import de.cuioss.tools.string.MoreStrings;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Optional;
 
 /**
  * This class provides a unified way to parse JWT tokens and extract common information
@@ -140,17 +142,17 @@ public class NonValidatingJwtParser {
     private final SecurityEventCounter securityEventCounter;
 
     /**
-     * JSON content converter that uses DSL-JSON with security settings.
+     * JSON converter that uses DSL-JSON with security settings.
      * Initialized lazily to avoid circular dependencies during builder construction.
      */
-    private final JsonContentConverter jsonConverter;
+    private final JsonConverter jsonConverter;
 
     /**
      * Initializes the JSON converter after construction.
      */
-    private JsonContentConverter initJsonConverter() {
+    private JsonConverter initJsonConverter() {
         if (jsonConverter == null) {
-            return new JsonContentConverter(config.getDslJson());
+            return config.getJsonConverter();
         }
         return jsonConverter;
     }
@@ -301,10 +303,10 @@ public class NonValidatingJwtParser {
 
             // Convert to string and use JsonContentConverter for secure parsing
             String jsonString = new String(decoded, StandardCharsets.UTF_8);
-            JsonObject result = initJsonConverter().convert(jsonString);
+            Optional<JsonValue> parseResult = initJsonConverter().convert(jsonString);
 
-            // Check if parsing failed (empty result indicates parse failure)
-            if (result.isEmpty()) {
+            // Check if parsing failed (empty Optional indicates parse failure)
+            if (parseResult.isEmpty()) {
                 if (logWarnings) {
                     LOGGER.warn(JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
                     securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
@@ -315,7 +317,19 @@ public class NonValidatingJwtParser {
                 );
             }
 
-            return result;
+            // JWT payloads must be JSON objects
+            if (parseResult.get() instanceof JsonObject jsonObject) {
+                return jsonObject;
+            } else {
+                if (logWarnings) {
+                    LOGGER.warn(JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+                    securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
+                }
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
+                        "Failed to decode JWT part: payload is not a JSON object"
+                );
+            }
         } catch (IllegalArgumentException e) {
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());

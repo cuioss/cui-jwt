@@ -16,6 +16,8 @@
 package de.cuioss.jwt.validation;
 
 import com.dslplatform.json.DslJson;
+import de.cuioss.tools.net.http.converter.JsonContentConverter;
+import de.cuioss.tools.net.http.converter.JsonConverter;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
@@ -145,11 +147,38 @@ public class ParserConfig {
      * <p>
      * Unlike Jakarta JSON API, DSL-JSON actually enforces the configured limits
      * and provides compile-time code generation for better performance and security.
+     * <p>
+     * <strong>Note:</strong> Consider using {@link #getJsonConverter()} instead for a 
+     * higher-level API that provides Jakarta JSON API compatibility with DSL-JSON security.
      *
      * @return a DslJson instance configured with security settings
      */
     @Getter(lazy = true)
-    private final DslJson<Object> dslJson = createDslJson();
+    DslJson<Object> dslJson = createDslJson();
+
+    /**
+     * Lazy-initialized JSON converter with security settings and Jakarta JSON API compatibility.
+     * <p>
+     * This converter provides a secure, high-level JSON processing API that:
+     * <ul>
+     *   <li>Uses DSL-JSON internally for security and performance</li>
+     *   <li>Provides Jakarta JSON API compatibility through bridge adapters</li>
+     *   <li>Enforces all configured security limits (string length, buffer size, etc.)</li>
+     *   <li>Handles parsing errors gracefully with proper logging</li>
+     *   <li>Returns thread-safe, immutable JsonObject instances</li>
+     * </ul>
+     * <p>
+     * This is the preferred API for JSON processing in most use cases, as it provides
+     * both security and ease of use without exposing DSL-JSON implementation details.
+     * <p>
+     * The returned converter implements the {@link JsonConverter} interface, enabling
+     * architectural separation between configuration and implementation modules.
+     *
+     * @return a JsonConverter instance configured with security settings
+     * @since 1.0
+     */
+    @Getter(lazy = true)
+    JsonConverter jsonConverter = createJsonConverter();
 
     /**
      * Creates a DSL-JSON instance with the configured security settings.
@@ -159,10 +188,41 @@ public class ParserConfig {
      * @return a DslJson instance configured with security settings
      */
     private DslJson<Object> createDslJson() {
-        return new DslJson<>(new DslJson.Settings<Object>()
+        return new DslJson<>(new DslJson.Settings<>()
                 .includeServiceLoader()
                 .limitStringBuffer(maxStringLength)
                 .limitDigitsBuffer(16) // Reasonable limit for number parsing
         );
+    }
+
+    /**
+     * Gets the JSON converter as a concrete JsonContentConverter for HTTP content conversion scenarios.
+     * <p>
+     * This method provides access to the full JsonContentConverter implementation when specific
+     * HTTP content converter capabilities are needed (e.g., for use with ETagAwareHttpHandler).
+     * <p>
+     * In most cases, prefer {@link #getJsonConverter()} for the clean interface-based API.
+     * Use this method only when the concrete implementation is specifically required for
+     * HTTP content conversion integration.
+     *
+     * @return the JsonContentConverter instance configured with security settings
+     * @since 1.0
+     */
+    public JsonContentConverter getJsonContentConverter() {
+        // Cast is safe because we know the implementation is JsonContentConverter
+        return (JsonContentConverter) getJsonConverter();
+    }
+
+    /**
+     * Creates a JsonConverter instance with the configured DSL-JSON security settings.
+     * <p>
+     * This method is used by the lazy getter for jsonConverter. The converter is initialized
+     * with the DSL-JSON instance from this configuration, ensuring all security limits
+     * and settings are consistently applied.
+     *
+     * @return a JsonConverter instance configured with security settings
+     */
+    private JsonConverter createJsonConverter() {
+        return new JsonContentConverter(getDslJson());
     }
 }
