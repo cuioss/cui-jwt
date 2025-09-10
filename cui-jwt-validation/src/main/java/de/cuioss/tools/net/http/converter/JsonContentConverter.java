@@ -161,26 +161,6 @@ public class JsonContentConverter extends StringContentConverter<JsonObject> imp
         return Optional.empty();
     }
 
-    /**
-     * Direct conversion method that returns JsonObject without Optional wrapping.
-     * This eliminates the need for Optional handling in most use cases.
-     *
-     * @param rawContent the raw JSON string content
-     * @return JsonObject, never null (empty JsonObject if parsing fails)
-     * @throws TokenValidationException if security limits are violated
-     */
-    public JsonObject convertToJsonObject(String rawContent) {
-        try {
-            return convertString(rawContent).orElse(emptyValue());
-        } catch (TokenValidationException e) {
-            // Re-throw security exceptions
-            throw e;
-        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
-            // Handle specific runtime exceptions that could occur during JSON conversion
-            LOGGER.error(e, "Unexpected error during JSON conversion: " + e.getMessage());
-            return emptyValue();
-        }
-    }
 
     /**
      * JsonConverter interface implementation that returns Optional for clear success/failure semantics.
