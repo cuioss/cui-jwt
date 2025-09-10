@@ -16,20 +16,19 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
-import de.cuioss.tools.net.http.client.HttpHandlerProvider;
 import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.converter.StringContentConverter;
+import de.cuioss.tools.net.http.converter.JsonContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 import de.cuioss.uimodel.result.ResultState;
+import jakarta.json.JsonObject;
 import lombok.NonNull;
 
 import java.util.Optional;
@@ -59,7 +58,7 @@ public class HttpJwksLoader implements JwksLoader {
     private SecurityEventCounter securityEventCounter;
     private final HttpJwksLoaderConfig config;
     private final AtomicReference<JWKSKeyLoader> keyLoader = new AtomicReference<>();
-    private final AtomicReference<ETagAwareHttpHandler<String>> httpCache = new AtomicReference<>();
+    private final AtomicReference<ETagAwareHttpHandler<JsonObject>> httpCache = new AtomicReference<>();
     private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
     private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
     private final AtomicBoolean schedulerStarted = new AtomicBoolean(false);
@@ -163,7 +162,7 @@ public class HttpJwksLoader implements JwksLoader {
 
     private void loadKeys() {
         // Ensure we have a healthy ETagAwareHttpHandler
-        Optional<ETagAwareHttpHandler<String>> cacheOpt = ensureHttpCache();
+        Optional<ETagAwareHttpHandler<JsonObject>> cacheOpt = ensureHttpCache();
         if (cacheOpt.isEmpty()) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
@@ -174,9 +173,9 @@ public class HttpJwksLoader implements JwksLoader {
             return;
         }
 
-        ETagAwareHttpHandler<String> cache = cacheOpt.get();
+        ETagAwareHttpHandler<JsonObject> cache = cacheOpt.get();
 
-        HttpResultObject<String> result = cache.load();
+        HttpResultObject<JsonObject> result = cache.load();
 
         // Only update key loader if data has changed and we have content
         boolean dataChanged = isDataChanged(result);
@@ -257,7 +256,7 @@ public class HttpJwksLoader implements JwksLoader {
         });
     }
 
-    private void updateKeyLoader(HttpResultObject<String> result) {
+    private void updateKeyLoader(HttpResultObject<JsonObject> result) {
         JWKSKeyLoader newLoader = JWKSKeyLoader.builder()
                 .jwksContent(result.getResult())
                 .jwksType(getJwksType())
@@ -288,15 +287,15 @@ public class HttpJwksLoader implements JwksLoader {
 
     private void backgroundRefresh() {
         LOGGER.debug("Starting background JWKS refresh");
-        Optional<ETagAwareHttpHandler<String>> cacheOpt = Optional.ofNullable(httpCache.get());
+        Optional<ETagAwareHttpHandler<JsonObject>> cacheOpt = Optional.ofNullable(httpCache.get());
         if (cacheOpt.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_SKIPPED::format);
             return;
         }
 
-        ETagAwareHttpHandler<String> cache = cacheOpt.get();
+        ETagAwareHttpHandler<JsonObject> cache = cacheOpt.get();
 
-        HttpResultObject<String> result = cache.load();
+        HttpResultObject<JsonObject> result = cache.load();
 
         // Handle error states
         if (!result.isValid()) {
@@ -327,9 +326,9 @@ public class HttpJwksLoader implements JwksLoader {
      *
      * @return Optional containing the ETagAwareHttpHandler if healthy, empty if sources are not healthy
      */
-    private Optional<ETagAwareHttpHandler<String>> ensureHttpCache() {
+    private Optional<ETagAwareHttpHandler<JsonObject>> ensureHttpCache() {
         // Fast path - already have a cache
-        ETagAwareHttpHandler<String> cache = httpCache.get();
+        ETagAwareHttpHandler<JsonObject> cache = httpCache.get();
         if (cache != null) {
             return Optional.of(cache);
         }
@@ -348,13 +347,13 @@ public class HttpJwksLoader implements JwksLoader {
                     // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
                     LOGGER.debug("Creating ETagAwareHttpHandler from direct HTTP configuration for URI: %s",
                             config.getHttpHandler().getUri());
-                    cache = new ETagAwareHttpHandler<>(config, StringContentConverter.identity()); // Using HttpHandlerProvider pattern
+                    cache = new ETagAwareHttpHandler<>(config, new JsonContentConverter(ParserConfig.builder().build().getDslJson())); // Using JsonContentConverter for JWKS
                     httpCache.set(cache);
                     return Optional.of(cache);
 
                 case WELL_KNOWN:
-                    // Well-known resolver configuration
-                    LOGGER.debug("Creating ETagAwareHttpHandler from WellKnownResolver");
+                    // Well-known resolver configuration - use direct ETag-aware handler
+                    LOGGER.debug("Getting ETag-aware JWKS handler from WellKnownResolver");
 
                     // Check if well-known resolver is healthy
                     if (config.getWellKnownResolver().isHealthy() != LoaderStatus.OK) {
@@ -362,30 +361,15 @@ public class HttpJwksLoader implements JwksLoader {
                         return Optional.empty();
                     }
 
-                    // Extract JWKS URI from well-known resolver
-                    Optional<HttpHandler> jwksResult = config.getWellKnownResolver().getJwksUri();
-                    if (jwksResult.isEmpty()) {
+                    // Get the pre-configured ETag-aware handler directly
+                    Optional<ETagAwareHttpHandler<JsonObject>> etagResult = config.getWellKnownResolver().getJwksETagHandler();
+                    if (etagResult.isEmpty()) {
                         LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED::format);
                         return Optional.empty();
                     }
 
-                    HttpHandler jwksHandler = jwksResult.get();
-
-                    LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format(jwksHandler.getUri()));
-                    // Create a temporary HttpHandlerProvider for well-known resolved HttpHandler
-                    // This uses the WellKnownConfig's RetryStrategy via the config's WellKnownConfig
-                    HttpHandlerProvider jwksProvider = new HttpHandlerProvider() {
-                        @Override
-                        public HttpHandler getHttpHandler() {
-                            return jwksHandler;
-                        }
-
-                        @Override
-                        public RetryStrategy getRetryStrategy() {
-                            return config.getWellKnownConfig().getRetryStrategy();
-                        }
-                    };
-                    cache = new ETagAwareHttpHandler<>(jwksProvider, StringContentConverter.identity());
+                    cache = etagResult.get();
+                    LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format("ETag-aware handler from well-known resolver"));
                     httpCache.set(cache);
                     return Optional.of(cache);
 
@@ -413,7 +397,7 @@ public class HttpJwksLoader implements JwksLoader {
      * @param result the HttpResultObject to check
      * @return true if data has changed and keys need reevaluation
      */
-    private boolean isDataChanged(HttpResultObject<String> result) {
+    private boolean isDataChanged(HttpResultObject<JsonObject> result) {
         // Fresh content from server - data definitely changed
         if (result.isValid() && result.getHttpStatus().map(s -> s == 200).orElse(false)) {
             return true;

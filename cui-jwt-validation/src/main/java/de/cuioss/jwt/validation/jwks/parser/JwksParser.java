@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.jwks.parser;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.key.JwkKeyConstants;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
@@ -97,13 +98,46 @@ public class JwksParser {
                 return result;
             }
 
-            extractKeys(jwks, result);
+            return parseJsonObject(jwks);
+        } catch (TokenValidationException e) {
+            // Re-throw security exceptions
+            throw e;
         } catch (Exception e) {
             // Handle invalid JSON format
             LOGGER.error(e, JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
 
+        return result;
+    }
+
+    /**
+     * Parse JWKS content directly from JsonObject and extract individual JWK objects.
+     * <p>
+     * This method provides optimal performance for JWKS content that has already been
+     * parsed from HTTP responses using JsonContentConverter, eliminating the need
+     * for double JSON parsing.
+     * 
+     * @param jwks the JWKS content as a JsonObject
+     * @return a list of parsed JWK objects, empty if parsing fails
+     */
+    public List<JsonObject> parse(JsonObject jwks) {
+        if (jwks == null) {
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JWKS JsonObject is null"));
+            return new ArrayList<>();
+        }
+        return parseJsonObject(jwks);
+    }
+
+    /**
+     * Internal method to parse a JsonObject into individual JWK objects.
+     * 
+     * @param jwks the JWKS JsonObject to parse
+     * @return a list of parsed JWK objects
+     */
+    private List<JsonObject> parseJsonObject(JsonObject jwks) {
+        List<JsonObject> result = new ArrayList<>();
+        extractKeys(jwks, result);
         return result;
     }
 

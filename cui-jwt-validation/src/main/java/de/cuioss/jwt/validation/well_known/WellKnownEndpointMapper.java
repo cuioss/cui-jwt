@@ -33,6 +33,9 @@ import java.util.Map;
  *   <li>Validating endpoint URLs and accessibility</li>
  *   <li>Managing endpoint mappings</li>
  * </ul>
+ * <p>
+ * ETag awareness and retry capabilities are added by consumers (like HttpJwksLoader)
+ * based on their specific needs and configuration.
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -68,6 +71,7 @@ class WellKnownEndpointMapper {
                     .uri(urlString)
                     .build();
             map.put(key, handler);
+            LOGGER.debug("Created HttpHandler for endpoint %s: %s", key, urlString);
             return true;
         } catch (IllegalArgumentException e) {
             LOGGER.error(e, JWTValidationLogMessages.ERROR.MALFORMED_URL_FIELD.format(key, urlString, wellKnownUrl, e.getMessage()));

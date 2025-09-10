@@ -81,8 +81,9 @@ public class JWKSKeyLoader implements JwksLoader {
     private volatile LoaderStatus status;
     private Map<String, KeyInfo> keyInfoMap;
 
-    // Field for deferred initialization
+    // Fields for deferred initialization
     private final String jwksContent;
+    private final JsonObject jwksJsonObject;
     private volatile boolean initialized = false;
 
     /**
@@ -90,6 +91,7 @@ public class JWKSKeyLoader implements JwksLoader {
      */
     public static class JWKSKeyLoaderBuilder {
         private String jwksContent;
+        private JsonObject jwksJsonObject;
         private String jwksFilePath;
         private ParserConfig parserConfig = ParserConfig.builder().build();
         private JwkAlgorithmPreferences jwkAlgorithmPreferences = new JwkAlgorithmPreferences(); // Default instance
@@ -106,6 +108,22 @@ public class JWKSKeyLoader implements JwksLoader {
          */
         public JWKSKeyLoaderBuilder jwksContent(String jwksContent) {
             this.jwksContent = jwksContent;
+            this.jwksJsonObject = null; // Reset JsonObject when String is set
+            return this;
+        }
+
+        /**
+         * Sets the JWKS content as a JsonObject for optimal processing.
+         * <p>
+         * This method provides the most efficient way to set JWKS content that has already
+         * been parsed from HTTP responses, eliminating double JSON parsing.
+         *
+         * @param jwksJsonObject the JWKS content as a JsonObject
+         * @return this builder
+         */
+        public JWKSKeyLoaderBuilder jwksContent(JsonObject jwksJsonObject) {
+            this.jwksJsonObject = jwksJsonObject;
+            this.jwksContent = null; // Reset String when JsonObject is set
             return this;
         }
 
@@ -163,12 +181,15 @@ public class JWKSKeyLoader implements JwksLoader {
          */
         @NonNull
         public JWKSKeyLoader build() {
-            if (jwksContent == null && jwksFilePath == null) {
-                throw new IllegalArgumentException("Either jwksContent or jwksFilePath must be provided");
+            if (jwksContent == null && jwksJsonObject == null && jwksFilePath == null) {
+                throw new IllegalArgumentException("Either jwksContent, jwksJsonObject, or jwksFilePath must be provided");
             }
 
-            if (jwksContent != null) {
-                // Direct content provided
+            if (jwksJsonObject != null) {
+                // JsonObject content provided - most efficient
+                return new JWKSKeyLoader(jwksJsonObject, parserConfig, jwkAlgorithmPreferences, jwksType);
+            } else if (jwksContent != null) {
+                // String content provided
                 return new JWKSKeyLoader(jwksContent, parserConfig, jwkAlgorithmPreferences, jwksType);
             } else {
                 // File path provided - resolve at build time and fail fast if unable to read
@@ -222,6 +243,29 @@ public class JWKSKeyLoader implements JwksLoader {
             @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences,
             @NonNull JwksType jwksType) {
         this.jwksContent = jwksContent;
+        this.jwksJsonObject = null;
+        this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+        this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
+        this.jwksType = jwksType;
+        this.status = LoaderStatus.UNDEFINED;
+    }
+
+    /**
+     * Creates a new JWKSKeyLoader with deferred initialization using JsonObject content.
+     * The SecurityEventCounter must be set via initJWKSLoader() before use.
+     *
+     * @param jwksJsonObject the JWKS content as a JsonObject, must not be null
+     * @param parserConfig the configuration for parsing, may be null (defaults to a new instance)
+     * @param jwkAlgorithmPreferences the JWK algorithm preferences for parsing validation, must not be null
+     * @param jwksType the type of JWKS source, must not be null
+     */
+    public JWKSKeyLoader(
+            @NonNull JsonObject jwksJsonObject,
+            ParserConfig parserConfig,
+            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences,
+            @NonNull JwksType jwksType) {
+        this.jwksContent = null;
+        this.jwksJsonObject = jwksJsonObject;
         this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
         this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
         this.jwksType = jwksType;
@@ -316,7 +360,11 @@ public class JWKSKeyLoader implements JwksLoader {
      */
     private void initializeKeys() {
         try {
-            parseAndProcessKeys(jwksContent);
+            if (jwksJsonObject != null) {
+                parseAndProcessKeys(jwksJsonObject);
+            } else {
+                parseAndProcessKeys(jwksContent);
+            }
         } catch (JsonException | IllegalArgumentException e) {
             handleParseError(e);
         }
@@ -335,6 +383,33 @@ public class JWKSKeyLoader implements JwksLoader {
         // Parse JWKS content to get individual JWK objects (includes structure validation)
         List<JsonObject> jwkObjects = parser.parse(contentToProcess);
 
+        processKeys(jwkObjects, processor);
+    }
+
+    /**
+     * Parses and processes JWKS JsonObject into KeyInfo objects.
+     * This method provides optimal performance by avoiding double JSON parsing.
+     *
+     * @param jwksJsonObject the JWKS content as JsonObject
+     */
+    private void parseAndProcessKeys(JsonObject jwksJsonObject) {
+        // Parse JWKS JsonObject
+        JwksParser parser = new JwksParser(this.parserConfig, this.securityEventCounter);
+        KeyProcessor processor = new KeyProcessor(this.securityEventCounter, this.jwkAlgorithmPreferences);
+
+        // Parse JWKS JsonObject to get individual JWK objects (includes structure validation)
+        List<JsonObject> jwkObjects = parser.parse(jwksJsonObject);
+
+        processKeys(jwkObjects, processor);
+    }
+
+    /**
+     * Common method to process JWK objects into KeyInfo objects.
+     *
+     * @param jwkObjects the parsed JWK objects
+     * @param processor the key processor
+     */
+    private void processKeys(List<JsonObject> jwkObjects, KeyProcessor processor) {
         // Process each key (includes key parameter validation)
         Map<String, KeyInfo> keyMap = new ConcurrentHashMap<>();
         for (JsonObject jwk : jwkObjects) {
