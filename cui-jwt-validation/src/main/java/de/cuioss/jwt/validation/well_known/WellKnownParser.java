@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.JsonObject;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -145,23 +144,6 @@ class WellKnownParser {
         }
     }
 
-    /**
-     * Legacy method for backward compatibility.
-     * 
-     * @deprecated Access fields directly from {@link WellKnownConfiguration}
-     */
-    @Deprecated
-    Optional<String> getString(JsonObject jsonObject, String key) {
-        // Fallback for JsonObject implementations
-        if (jsonObject.containsKey(key)) {
-            try {
-                return Optional.of(jsonObject.getString(key));
-            } catch (ClassCastException e) {
-                return Optional.empty();
-            }
-        }
-        return Optional.empty();
-    }
 
     /**
      * Determines if an IOException is caused by a DSL-JSON security limit violation.
