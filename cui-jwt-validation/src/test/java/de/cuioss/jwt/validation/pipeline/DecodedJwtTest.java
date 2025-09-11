@@ -17,13 +17,12 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -102,8 +101,8 @@ class DecodedJwtTest {
     @DisplayName("Should create DecodedJwt with empty header and body")
     void shouldCreateDecodedJwtWithEmptyHeaderAndBody() {
 
-        JsonObject emptyHeader = new DslJsonObjectAdapter(Map.of());
-        JsonObject emptyBody = new DslJsonObjectAdapter(Map.of());
+        JsonObject emptyHeader = Json.createObjectBuilder().build();
+        JsonObject emptyBody = Json.createObjectBuilder().build();
         DecodedJwt jwt = new DecodedJwt(emptyHeader, emptyBody, SIGNATURE, PARTS, RAW_TOKEN);
         JsonObject actualHeader = jwt.getHeader();
         assertNotNull(actualHeader);
@@ -316,16 +315,16 @@ class DecodedJwtTest {
     }
 
     private JsonObject createTestHeader() {
-        return new DslJsonObjectAdapter(Map.of(
-                "alg", ALG,
-                "kid", KID
-        ));
+        return Json.createObjectBuilder()
+                .add("alg", ALG)
+                .add("kid", KID)
+                .build();
     }
 
     private JsonObject createTestBody() {
-        return new DslJsonObjectAdapter(Map.of(
-                "iss", ISSUER,
-                "sub", "test-subject"
-        ));
+        return Json.createObjectBuilder()
+                .add("iss", ISSUER)
+                .add("sub", "test-subject")
+                .build();
     }
 }

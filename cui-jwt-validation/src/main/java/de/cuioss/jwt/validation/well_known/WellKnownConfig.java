@@ -79,6 +79,33 @@ public class WellKnownConfig implements HttpHandlerProvider {
     private final ParserConfig parserConfig;
 
     /**
+     * Gets the HTTP handler for well-known endpoint requests.
+     *
+     * @return the HTTP handler
+     */
+    public HttpHandler getHttpHandler() {
+        return httpHandler;
+    }
+
+    /**
+     * Gets the retry strategy for HTTP operations.
+     *
+     * @return the retry strategy
+     */
+    public RetryStrategy getRetryStrategy() {
+        return retryStrategy;
+    }
+
+    /**
+     * Gets the parser configuration for JSON processing.
+     *
+     * @return the parser configuration
+     */
+    public ParserConfig getParserConfig() {
+        return parserConfig;
+    }
+
+    /**
      * Creates a new builder for WellKnownConfig.
      *
      * @return a new WellKnownConfigBuilder instance

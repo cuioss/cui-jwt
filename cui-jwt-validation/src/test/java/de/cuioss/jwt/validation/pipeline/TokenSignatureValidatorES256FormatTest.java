@@ -22,8 +22,9 @@ import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
-import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.security.Signature;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -142,12 +144,81 @@ class TokenSignatureValidatorES256FormatTest {
             @SuppressWarnings("unchecked") Map<String, Object> payloadJson = (Map<String, Object>) dslJson.deserialize(
                     Map.class, payload.getBytes(), payload.length());
 
-            JsonObject headerJsonObject = new DslJsonObjectAdapter(headerJson);
-            JsonObject payloadJsonObject = new DslJsonObjectAdapter(payloadJson);
+            JsonObject headerJsonObject = convertMapToJsonObject(headerJson);
+            JsonObject payloadJsonObject = convertMapToJsonObject(payloadJson);
             return new DecodedJwt(headerJsonObject, payloadJsonObject, signatureEncoded, parts, completeJwt);
 
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create IEEE P1363 format ES256 token", e);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static JsonObject convertMapToJsonObject(Map<String, Object> map) {
+        var builder = Json.createObjectBuilder();
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            addValueToBuilder(builder, entry.getKey(), entry.getValue());
+        }
+        return builder.build();
+    }
+
+    private static void addValueToBuilder(JsonObjectBuilder builder, String key, Object value) {
+        if (value == null) {
+            builder.addNull(key);
+        } else if (value instanceof String string) {
+            builder.add(key, string);
+        } else if (value instanceof Boolean boolean1) {
+            builder.add(key, boolean1);
+        } else if (value instanceof Number number) {
+            if (value instanceof Integer integer) {
+                builder.add(key, integer);
+            } else if (value instanceof Long long1) {
+                builder.add(key, long1);
+            } else {
+                builder.add(key, number.doubleValue());
+            }
+        } else if (value instanceof List list) {
+            // Convert List to JsonArray
+            var arrayBuilder = Json.createArrayBuilder();
+            for (Object item : list) {
+                if (item == null) {
+                    arrayBuilder.addNull();
+                } else if (item instanceof String string) {
+                    arrayBuilder.add(string);
+                } else if (item instanceof Boolean boolean1) {
+                    arrayBuilder.add(boolean1);
+                } else if (item instanceof Number number) {
+                    if (item instanceof Integer integer) {
+                        arrayBuilder.add(integer);
+                    } else if (item instanceof Long long1) {
+                        arrayBuilder.add(long1);
+                    } else {
+                        arrayBuilder.add(number.doubleValue());
+                    }
+                } else if (item instanceof Map map) {
+                    // Convert nested Map to JsonObject
+                    var nestedBuilder = Json.createObjectBuilder();
+                    for (Object entryObj : map.entrySet()) {
+                        var entry = (Map.Entry) entryObj;
+                        addValueToBuilder(nestedBuilder, entry.getKey().toString(), entry.getValue());
+                    }
+                    arrayBuilder.add(nestedBuilder.build());
+                } else {
+                    arrayBuilder.add(item.toString());
+                }
+            }
+            builder.add(key, arrayBuilder.build());
+        } else if (value instanceof Map map) {
+            // Convert nested Map to JsonObject
+            var nestedBuilder = Json.createObjectBuilder();
+            for (Object entryObj : map.entrySet()) {
+                var entry = (Map.Entry) entryObj;
+                addValueToBuilder(nestedBuilder, entry.getKey().toString(), entry.getValue());
+            }
+            builder.add(key, nestedBuilder.build());
+        } else {
+            // For other types, convert to string as fallback
+            builder.add(key, value.toString());
         }
     }
 

@@ -86,6 +86,7 @@
             <artifactId>jakarta.json-api</artifactId>
         </dependency>
         <!-- DSL-JSON for secure JSON parsing with configurable limits -->
+        <!-- Note: Version 2.0+ includes annotation processor in main artifact -->
         <dependency>
             <groupId>com.dslplatform</groupId>
             <artifactId>dsl-json</artifactId>
@@ -198,6 +199,22 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- Enable DSL-JSON annotation processing alongside Lombok -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${version.lombok}</version>
+                        </path>
+                        <path>
+                            <groupId>com.dslplatform</groupId>
+                            <artifactId>dsl-json</artifactId>
+                            <version>2.0.2</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <release>21</release>
+                </configuration>
                 <executions>
                     <execution>
                         <id>compile-test-sources</id>

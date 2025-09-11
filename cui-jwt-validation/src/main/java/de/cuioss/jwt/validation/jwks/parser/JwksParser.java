@@ -15,30 +15,27 @@
  */
 package de.cuioss.jwt.validation.jwks.parser;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.jwks.key.JwkKeyConstants;
+import de.cuioss.jwt.validation.json.JwkKey;
+import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.converter.JsonConverter;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Parses and validates JWKS content, extracting individual JWK objects.
+ * Parses and validates JWKS content using DSL-JSON for high-performance parsing.
  * This class is responsible for:
  * <ul>
- *   <li>Parsing JSON content with security limits</li>
+ *   <li>Parsing JSON content with security limits using DSL-JSON</li>
  *   <li>Validating JWKS structure and constraints</li>
  *   <li>Extracting keys from JWKS structure</li>
  *   <li>Handling both standard JWKS format and single key format</li>
@@ -51,28 +48,21 @@ public class JwksParser {
     private static final CuiLogger LOGGER = new CuiLogger(JwksParser.class);
 
     @NonNull
-    private final ParserConfig parserConfig;
+    private final DslJson<Object> dslJson;
 
     @NonNull
     private final SecurityEventCounter securityEventCounter;
 
-    private final JsonConverter jsonConverter;
+    @NonNull
+    private final ParserConfig parserConfig;
 
     /**
      * Create JwksParser with ParserConfig and SecurityEventCounter.
-     * JsonConverter will be initialized lazily.
      */
     public JwksParser(@NonNull ParserConfig parserConfig, @NonNull SecurityEventCounter securityEventCounter) {
-        this.parserConfig = parserConfig;
+        this.dslJson = parserConfig.getDslJson();
         this.securityEventCounter = securityEventCounter;
-        this.jsonConverter = null;
-    }
-
-    private JsonConverter initJsonConverter() {
-        if (jsonConverter == null) {
-            return parserConfig.getJsonConverter();
-        }
-        return jsonConverter;
+        this.parserConfig = parserConfig;
     }
 
     /**
@@ -81,8 +71,8 @@ public class JwksParser {
      * @param jwksContent the JWKS content as a string
      * @return a list of parsed JWK objects, empty if parsing fails
      */
-    public List<JsonObject> parse(String jwksContent) {
-        List<JsonObject> result = new ArrayList<>();
+    public List<JwkKey> parse(String jwksContent) {
+        List<JwkKey> result = new ArrayList<>();
 
         // Check content size
         if (!validateContentSize(jwksContent)) {
@@ -90,62 +80,73 @@ public class JwksParser {
         }
 
         try {
-            // Use JsonContentConverter with DSL-JSON security settings
-            Optional<JsonValue> parseResult = initJsonConverter().convert(jwksContent);
+            byte[] bytes = jwksContent.getBytes(StandardCharsets.UTF_8);
 
-            // Check if parsing failed (empty Optional indicates parse failure)
-            if (parseResult.isEmpty()) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JSON parsing returned empty result"));
+            // First, try to parse as standard JWKS with "keys" array
+            try {
+                Jwks jwks = dslJson.deserialize(Jwks.class, bytes, bytes.length);
+                if (jwks != null && jwks.keys() != null && !jwks.keys().isEmpty()) {
+                    return parseJwks(jwks);
+                }
+            } catch (IOException e) {
+                // JSON syntax error - this should be logged as ERROR
+                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 return result;
+            } catch (RuntimeException e) {
+                // Other parsing errors - continue to try single JWK
             }
 
-            // JWKS documents must be JSON objects
-            if (parseResult.get() instanceof JsonObject jsonObject) {
-                return parseJsonObject(jsonObject);
-            } else {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JWKS document is not a JSON object"));
+            // If standard JWKS parsing failed, try parsing as single JWK
+            try {
+                JwkKey singleKey = dslJson.deserialize(JwkKey.class, bytes, bytes.length);
+                if (singleKey != null && singleKey.kty() != null) {
+                    result.add(singleKey);
+                    return result;
+                }
+            } catch (IOException e) {
+                // JSON syntax error - this should be logged as ERROR
+                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 return result;
+            } catch (RuntimeException e) {
+                // Other parsing errors - fall through to WARN
             }
-        } catch (TokenValidationException e) {
-            // Re-throw security exceptions
-            throw e;
-        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
-            // Handle specific runtime exceptions that could occur during JSON parsing
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
+
+            // If both parsing attempts failed with no IOException, it's likely a structure issue
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-        }
+            return result;
 
-        return result;
+        } catch (Exception e) {
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
+            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+            return result;
+        }
     }
 
     /**
-     * Parse JWKS content directly from JsonObject and extract individual JWK objects.
-     * <p>
-     * This method provides optimal performance for JWKS content that has already been
-     * parsed from HTTP responses using JsonContentConverter, eliminating the need
-     * for double JSON parsing.
+     * Parse JWKS content that's already a Jwks object.
      * 
-     * @param jwks the JWKS content as a JsonObject
+     * @param jwks the JWKS content as a Jwks object
      * @return a list of parsed JWK objects, empty if parsing fails
      */
-    public List<JsonObject> parse(JsonObject jwks) {
+    public List<JwkKey> parse(Jwks jwks) {
         if (jwks == null) {
-            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JWKS JsonObject is null"));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JWKS object is null"));
             return new ArrayList<>();
         }
-        return parseJsonObject(jwks);
+        return parseJwks(jwks);
     }
 
     /**
-     * Internal method to parse a JsonObject into individual JWK objects.
+     * Internal method to parse a Jwks object into individual JWK objects.
      * 
-     * @param jwks the JWKS JsonObject to parse
+     * @param jwks the JWKS object to parse
      * @return a list of parsed JWK objects
      */
-    private List<JsonObject> parseJsonObject(JsonObject jwks) {
-        List<JsonObject> result = new ArrayList<>();
+    private List<JwkKey> parseJwks(Jwks jwks) {
+        List<JwkKey> result = new ArrayList<>();
         extractKeys(jwks, result);
         return result;
     }
@@ -170,26 +171,23 @@ public class JwksParser {
     }
 
     /**
-     * Extract keys from a JWKS object with validation.
+     * Extract keys from JWKS structure.
      * Handles both standard JWKS format (with "keys" array) and single key format.
      * 
      * @param jwks the JWKS object
      * @param result the list to store extracted keys
      */
-    private void extractKeys(JsonObject jwks, List<JsonObject> result) {
+    private void extractKeys(Jwks jwks, List<JwkKey> result) {
         // Validate JWKS structure first
         if (!validateJwksStructure(jwks)) {
             return;
         }
 
-        // Check if this is a JWKS with a "keys" array or a single key
-        if (JwkKeyConstants.Keys.isPresent(jwks)) {
+        // JWKS structure already contains keys array
+        if (jwks.keys() != null && !jwks.keys().isEmpty()) {
             extractKeysFromArray(jwks, result);
-        } else if (JwkKeyConstants.KeyType.isPresent(jwks)) {
-            // This is a single key object
-            result.add(jwks);
         } else {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
     }
@@ -200,7 +198,7 @@ public class JwksParser {
      * @param jwks the JWKS object to validate
      * @return true if the JWKS structure is valid, false otherwise
      */
-    private boolean validateJwksStructure(JsonObject jwks) {
+    private boolean validateJwksStructure(Jwks jwks) {
         // Basic null check
         if (jwks == null) {
             LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL::format);
@@ -208,16 +206,9 @@ public class JwksParser {
             return false;
         }
 
-        // Check for excessive number of top-level properties
-        if (jwks.size() > 10) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_EXCESSIVE_PROPERTIES.format(jwks.size()));
-            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-            return false;
-        }
-
-        // If it has a "keys" array, validate it
-        if (JwkKeyConstants.Keys.isPresent(jwks)) {
-            JsonArray keysArray = jwks.getJsonArray(JwkKeyConstants.Keys.KEY);
+        // Check if it has keys array
+        if (jwks.keys() != null) {
+            List<JwkKey> keysArray = jwks.keys();
 
             // Check array size limits
             if (keysArray.size() > 50) {
@@ -242,13 +233,13 @@ public class JwksParser {
      * @param jwks the JWKS object
      * @param result the list to store extracted keys
      */
-    private void extractKeysFromArray(JsonObject jwks, List<JsonObject> result) {
-        var keysArray = JwkKeyConstants.Keys.extract(jwks);
-        if (keysArray.isPresent()) {
-            JsonArray array = keysArray.get();
-            for (int i = 0; i < array.size(); i++) {
-                result.add(array.getJsonObject(i));
-            }
+    private void extractKeysFromArray(Jwks jwks, List<JwkKey> result) {
+        List<JwkKey> keysArray = jwks.keys();
+        if (keysArray != null && !keysArray.isEmpty()) {
+            result.addAll(keysArray);
+        } else {
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
+            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
     }
 }

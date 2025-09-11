@@ -20,11 +20,14 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.Jwks;
 import org.jspecify.annotations.NonNull;
 
 import java.net.URL;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -60,8 +63,8 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     private static final String USERINFO_ENDPOINT_KEY = "userinfo_endpoint";
 
     private final URL wellKnownUrl;
-    private final ETagAwareHttpHandler<JsonObject> discoveryEtagHandler;
-    private final ETagAwareHttpHandler<JsonObject> jwksEtagHandler;
+    private final ETagAwareHttpHandler<de.cuioss.jwt.validation.json.WellKnownConfiguration> discoveryEtagHandler;
+    private final ETagAwareHttpHandler<Jwks> jwksEtagHandler;
     private final WellKnownParser parser;
     private final WellKnownEndpointMapper mapper;
 
@@ -77,8 +80,37 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     public HttpWellKnownResolver(@NonNull WellKnownConfig config) {
         HttpHandler httpHandler = config.getHttpHandler();
         this.wellKnownUrl = httpHandler.getUrl();
-        this.discoveryEtagHandler = new ETagAwareHttpHandler<>(config, config.getParserConfig().getJsonContentConverter());
-        this.jwksEtagHandler = new ETagAwareHttpHandler<>(config, config.getParserConfig().getJsonContentConverter());
+        this.discoveryEtagHandler = new ETagAwareHttpHandler<>(config, new WellKnownConfigurationConverter(config.getParserConfig().getDslJson()));
+        // Create Jwks converter for JWKS using DSL-JSON directly
+        var dslJson = config.getParserConfig().getDslJson();
+        HttpContentConverter<Jwks> jwksHttpConverter = new HttpContentConverter<Jwks>() {
+            @Override
+            public Optional<Jwks> convert(Object rawContent) {
+                String body = (rawContent instanceof String s) ? s :
+                        (rawContent != null) ? rawContent.toString() : null;
+                if (body == null || body.trim().isEmpty()) {
+                    return Optional.of(emptyValue());
+                }
+                try {
+                    // Use DSL-JSON to parse to Jwks
+                    Jwks jwks = dslJson.deserialize(Jwks.class, body.getBytes(StandardCharsets.UTF_8));
+                    return Optional.ofNullable(jwks);
+                } catch (java.io.IOException | IllegalArgumentException e) {
+                    return Optional.empty();
+                }
+            }
+
+            @Override
+            public HttpResponse.BodyHandler<?> getBodyHandler() {
+                return HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8);
+            }
+
+            @Override
+            public Jwks emptyValue() {
+                return Jwks.empty();
+            }
+        };
+        this.jwksEtagHandler = new ETagAwareHttpHandler<>(config, jwksHttpConverter);
         this.parser = new WellKnownParser(config.getParserConfig());
         this.mapper = new WellKnownEndpointMapper(httpHandler);
         LOGGER.debug("Created HttpWellKnownResolver for URL: %s (not yet loaded)", wellKnownUrl);
@@ -92,7 +124,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
 
 
     @Override
-    public Optional<ETagAwareHttpHandler<JsonObject>> getJwksETagHandler() {
+    public Optional<ETagAwareHttpHandler<Jwks>> getJwksETagHandler() {
         ensureLoaded();
         if (endpoints.containsKey(JWKS_URI_KEY) && status == LoaderStatus.OK) {
             return Optional.of(jwksEtagHandler);
@@ -153,24 +185,23 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     private void loadEndpoints() {
         LOGGER.debug("Loading well-known endpoints from %s", wellKnownUrl);
 
-        // Fetch discovery document (already parsed as JsonObject)
-        HttpResultObject<JsonObject> result = discoveryEtagHandler.load();
+        // Fetch discovery document (directly parsed as WellKnownConfiguration)
+        HttpResultObject<de.cuioss.jwt.validation.json.WellKnownConfiguration> result = discoveryEtagHandler.load();
         if (!result.isValid() || result.getResult() == null) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
 
-        JsonObject discoveryDocument = result.getResult();
+        de.cuioss.jwt.validation.json.WellKnownConfiguration discoveryDocument = result.getResult();
         LOGGER.debug("Discovery document load state: %s", result.getState());
         LOGGER.debug(JWTValidationLogMessages.DEBUG.DISCOVERY_DOCUMENT_FETCHED.format(discoveryDocument));
 
         Map<String, HttpHandler> parsedEndpoints = new HashMap<>();
 
-        // Parse all endpoints
-        String issuerString = parser.getString(discoveryDocument, ISSUER_KEY)
-                .orElse(null);
-        if (issuerString == null) {
+        // Parse all endpoints - using direct typed access instead of JSON parsing
+        String issuerString = discoveryDocument.issuer;
+        if (issuerString == null || issuerString.trim().isEmpty()) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
@@ -184,7 +215,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
 
         // JWKS URI (Required)
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, JWKS_URI_KEY,
-                parser.getString(discoveryDocument, JWKS_URI_KEY).orElse(null), wellKnownUrl, true)) {
+                discoveryDocument.jwksUri, wellKnownUrl, true)) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
@@ -192,14 +223,14 @@ public class HttpWellKnownResolver implements WellKnownResolver {
 
         // Required endpoints
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, AUTHORIZATION_ENDPOINT_KEY,
-                parser.getString(discoveryDocument, AUTHORIZATION_ENDPOINT_KEY).orElse(null), wellKnownUrl, true)) {
+                discoveryDocument.authorizationEndpoint, wellKnownUrl, true)) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
 
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, TOKEN_ENDPOINT_KEY,
-                parser.getString(discoveryDocument, TOKEN_ENDPOINT_KEY).orElse(null), wellKnownUrl, true)) {
+                discoveryDocument.tokenEndpoint, wellKnownUrl, true)) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
@@ -207,7 +238,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
 
         // Optional endpoints
         mapper.addHttpHandlerToMap(parsedEndpoints, USERINFO_ENDPOINT_KEY,
-                parser.getString(discoveryDocument, USERINFO_ENDPOINT_KEY).orElse(null), wellKnownUrl, false);
+                discoveryDocument.userinfoEndpoint, wellKnownUrl, false);
 
         // Accessibility check for jwks_uri
         mapper.performAccessibilityCheck(JWKS_URI_KEY, parsedEndpoints.get(JWKS_URI_KEY));

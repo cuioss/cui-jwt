@@ -15,28 +15,38 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.converter.JsonConverter;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
- * Handles JSON parsing and validation for well-known endpoint discovery.
+ * Handles DSL-JSON mapping and validation for well-known endpoint discovery.
  * <p>
- * This class is responsible for:
+ * This class leverages DSL-JSON's compile-time code generation to directly
+ * map well-known discovery documents to type-safe Java records, eliminating
+ * the need for generic JSON object parsing and providing better performance.
+ * <p>
+ * Key features:
  * <ul>
- *   <li>Parsing JSON discovery documents</li>
- *   <li>Extracting string values from JSON objects</li>
- *   <li>Validating issuer consistency with well-known URLs</li>
+ *   <li>Direct mapping to {@link WellKnownConfiguration} records</li>
+ *   <li>Compile-time code generation for native compilation support</li>
+ *   <li>Enforced security limits through DSL-JSON configuration</li>
+ *   <li>Structured access to well-known discovery fields</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -49,65 +59,99 @@ class WellKnownParser {
     private static final String WELL_KNOWN_OPENID_CONFIGURATION = "/.well-known/openid-configuration";
 
     private final ParserConfig parserConfig;
+    private final SecurityEventCounter securityEventCounter;
+    private final int maxContentSize;
 
     /**
-     * JSON converter that uses DSL-JSON with security settings.
+     * DSL-JSON instance for direct mapping to WellKnownConfiguration.
      * Initialized lazily to avoid circular dependencies during construction.
      */
-    private JsonConverter jsonConverter;
+    private DslJson<Object> dslJson;
 
     /**
-     * Initializes the JSON converter after construction.
+     * Constructor with default security settings.
      */
-    private JsonConverter initJsonConverter() {
-        if (jsonConverter == null) {
-            // Handle null parserConfig by using default configuration
-            ParserConfig actualConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
-            jsonConverter = actualConfig.getJsonConverter();
-        }
-        return jsonConverter;
+    WellKnownParser(@Nullable ParserConfig parserConfig) {
+        this(parserConfig, new SecurityEventCounter(), 8 * 1024); // Default 8KB limit
     }
 
     /**
-     * Parses a JSON response string into a JsonObject.
+     * Initializes the DSL-JSON instance after construction.
+     */
+    private DslJson<Object> initDslJson() {
+        if (dslJson == null) {
+            // Handle null parserConfig by using default configuration
+            ParserConfig actualConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+            dslJson = actualConfig.getDslJson();
+        }
+        return dslJson;
+    }
+
+    /**
+     * Parses a JSON response string directly into a WellKnownConfiguration using DSL-JSON mapping.
+     * <p>
+     * This method leverages DSL-JSON's compile-time code generation to deserialize
+     * the JSON directly into a type-safe record, avoiding generic JSON object parsing.
      *
      * @param responseBody The JSON response string to parse
      * @param wellKnownUrl The well-known URL (used for error messages)
-     * @return Optional containing the parsed JsonObject or empty on error
+     * @return Optional containing the parsed WellKnownConfiguration or empty on error
+     * @throws TokenValidationException if security limits are violated
      */
-    Optional<JsonObject> parseJsonResponse(String responseBody, URL wellKnownUrl) {
+    Optional<de.cuioss.jwt.validation.json.WellKnownConfiguration> parseWellKnownResponse(@NonNull String responseBody, @NonNull URL wellKnownUrl) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
+            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Empty response body"));
+            return Optional.empty();
+        }
+
+        // Check content size limit
+        byte[] contentBytes = responseBody.getBytes(StandardCharsets.UTF_8);
+        if (contentBytes.length > maxContentSize) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format("Well-known response size exceeds maximum allowed size"));
+            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+            throw new TokenValidationException(
+                    EventType.JWKS_JSON_PARSE_FAILED,
+                    JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format("Well-known response size exceeds maximum allowed size")
+            );
+        }
+
         try {
-            Optional<JsonValue> result = initJsonConverter().convert(responseBody);
-            if (result.isEmpty()) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "JSON parsing failed"));
+            // Direct deserialization to WellKnownConfiguration using compile-time generated code
+            WellKnownConfiguration config = initDslJson().deserialize(WellKnownConfiguration.class, contentBytes, contentBytes.length);
+
+            if (config == null) {
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Failed to deserialize to WellKnownConfiguration"));
                 return Optional.empty();
             }
 
-            // Well-known documents must be JSON objects
-            if (result.get() instanceof JsonObject jsonObject) {
-                return Optional.of(jsonObject);
-            } else {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Well-known document is not a JSON object"));
-                return Optional.empty();
+            return Optional.of(config);
+
+        } catch (IOException e) {
+            // Check if this is a security limit violation
+            String errorMessage = e.getMessage();
+            if (isSecurityLimitViolation(errorMessage)) {
+                LOGGER.warn(JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format(errorMessage));
+                securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+                throw new TokenValidationException(
+                        EventType.JWKS_JSON_PARSE_FAILED,
+                        JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format(errorMessage)
+                );
             }
-        } catch (TokenValidationException e) {
-            // Re-throw security exceptions from JsonContentConverter
-            throw e;
-        } catch (IllegalStateException | IllegalArgumentException | SecurityException e) {
-            // Handle specific runtime exceptions that could occur during JSON parsing
+
+            // Regular parsing errors
             LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, e.getMessage()));
             return Optional.empty();
         }
     }
 
     /**
-     * Extracts a string value from a JsonObject.
-     *
-     * @param jsonObject The JsonObject to extract from
-     * @param key The key to extract
-     * @return An Optional containing the string value, or empty if not found
+     * Legacy method for backward compatibility.
+     * 
+     * @deprecated Access fields directly from {@link WellKnownConfiguration}
      */
+    @Deprecated
     Optional<String> getString(JsonObject jsonObject, String key) {
+        // Fallback for JsonObject implementations
         if (jsonObject.containsKey(key)) {
             try {
                 return Optional.of(jsonObject.getString(key));
@@ -116,6 +160,19 @@ class WellKnownParser {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Determines if an IOException is caused by a DSL-JSON security limit violation.
+     */
+    private boolean isSecurityLimitViolation(@Nullable String errorMessage) {
+        if (errorMessage == null) {
+            return false;
+        }
+        return errorMessage.contains("buffer") ||
+                errorMessage.contains("limit") ||
+                errorMessage.contains("too large") ||
+                errorMessage.contains("exceeded");
     }
 
     /**

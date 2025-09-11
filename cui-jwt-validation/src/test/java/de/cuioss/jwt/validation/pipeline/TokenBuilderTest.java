@@ -29,7 +29,7 @@ import de.cuioss.test.generator.TypedGenerator;
 import de.cuioss.test.generator.impl.CollectionGenerator;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -147,7 +147,11 @@ class TokenBuilderTest {
                     "iss", "test-issuer",
                     "custom-claim", "custom-value"
             );
-            JsonObject jsonObject = new DslJsonObjectAdapter(data);
+            JsonObject jsonObject = Json.createObjectBuilder()
+                    .add("sub", "test-subject")
+                    .add("iss", "test-issuer")
+                    .add("custom-claim", "custom-value")
+                    .build();
 
             Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
             assertNotNull(claims, "Claims should not be null");
@@ -167,7 +171,7 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should handle empty JsonObject")
         void extractClaimsForRefreshTokenShouldHandleEmptyJsonObject() {
-            JsonObject jsonObject = new DslJsonObjectAdapter(Map.of());
+            JsonObject jsonObject = Json.createObjectBuilder().build();
 
             Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
             assertNotNull(claims, "Claims should not be null");

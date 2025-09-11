@@ -16,11 +16,10 @@
 package de.cuioss.jwt.validation;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.tools.net.http.converter.JsonContentConverter;
-import de.cuioss.tools.net.http.converter.JsonConverter;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Value;
+
 
 /**
  * Configuration class for the TokenValidator using DSL-JSON.
@@ -71,8 +70,9 @@ import lombok.Value;
  * @since 1.0
  */
 @Builder
-@Value
-public class ParserConfig {
+@Getter
+@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+public final class ParserConfig {
 
     /**
      * Default maximum JWT token size (8KB).
@@ -148,8 +148,7 @@ public class ParserConfig {
      * Unlike Jakarta JSON API, DSL-JSON actually enforces the configured limits
      * and provides compile-time code generation for better performance and security.
      * <p>
-     * <strong>Note:</strong> Consider using {@link #getJsonConverter()} instead for a 
-     * higher-level API that provides Jakarta JSON API compatibility with DSL-JSON security.
+     * This DSL-JSON instance provides compile-time code generation for better performance and security.
      *
      * @return a DslJson instance configured with security settings
      */
@@ -157,72 +156,130 @@ public class ParserConfig {
     DslJson<Object> dslJson = createDslJson();
 
     /**
-     * Lazy-initialized JSON converter with security settings and Jakarta JSON API compatibility.
-     * <p>
-     * This converter provides a secure, high-level JSON processing API that:
-     * <ul>
-     *   <li>Uses DSL-JSON internally for security and performance</li>
-     *   <li>Provides Jakarta JSON API compatibility through bridge adapters</li>
-     *   <li>Enforces all configured security limits (string length, buffer size, etc.)</li>
-     *   <li>Handles parsing errors gracefully with proper logging</li>
-     *   <li>Returns thread-safe, immutable JsonObject instances</li>
-     * </ul>
-     * <p>
-     * This is the preferred API for JSON processing in most use cases, as it provides
-     * both security and ease of use without exposing DSL-JSON implementation details.
-     * <p>
-     * The returned converter implements the {@link JsonConverter} interface, enabling
-     * architectural separation between configuration and implementation modules.
+     * Private constructor for ParserConfig.
      *
-     * @return a JsonConverter instance configured with security settings
-     * @since 1.0
+     * @param maxTokenSize the maximum token size
+     * @param maxPayloadSize the maximum payload size
+     * @param maxStringLength the maximum string length
+     * @param maxBufferSize the maximum buffer size
      */
-    @Getter(lazy = true)
-    JsonConverter jsonConverter = createJsonConverter();
+    private ParserConfig(int maxTokenSize, int maxPayloadSize, int maxStringLength, int maxBufferSize) {
+        this.maxTokenSize = maxTokenSize;
+        this.maxPayloadSize = maxPayloadSize;
+        this.maxStringLength = maxStringLength;
+        this.maxBufferSize = maxBufferSize;
+        this.dslJson = createDslJson();
+    }
 
     /**
      * Creates a DSL-JSON instance with the configured security settings.
      * <p>
      * This method is used by the lazy getter for dslJson.
+     * The configuration includes:
+     * <ul>
+     *   <li>Service loader for compile-time generated converters</li>
+     *   <li>Security limits for string and digits buffers</li>
+     *   <li>Support for our domain-specific record types (JWKS, WellKnownConfiguration)</li>
+     * </ul>
      *
-     * @return a DslJson instance configured with security settings
+     * @return a DslJson instance configured with security settings and compile-time mapping
      */
     private DslJson<Object> createDslJson() {
         return new DslJson<>(new DslJson.Settings<>()
-                .includeServiceLoader()
+                .includeServiceLoader() // Enable compile-time generated converters
                 .limitStringBuffer(maxStringLength)
                 .limitDigitsBuffer(16) // Reasonable limit for number parsing
+                .allowArrayFormat(true) // Enable proper JSON array handling
+                .skipDefaultValues(false) // Include null values in output for completeness
         );
     }
 
     /**
-     * Gets the JSON converter as a concrete JsonContentConverter for HTTP content conversion scenarios.
-     * <p>
-     * This method provides access to the full JsonContentConverter implementation when specific
-     * HTTP content converter capabilities are needed (e.g., for use with ETagAwareHttpHandler).
-     * <p>
-     * In most cases, prefer {@link #getJsonConverter()} for the clean interface-based API.
-     * Use this method only when the concrete implementation is specifically required for
-     * HTTP content conversion integration.
+     * Gets the maximum token size.
      *
-     * @return the JsonContentConverter instance configured with security settings
-     * @since 1.0
+     * @return the maximum token size in bytes
      */
-    public JsonContentConverter getJsonContentConverter() {
-        // Cast is safe because we know the implementation is JsonContentConverter
-        return (JsonContentConverter) getJsonConverter();
+    public int getMaxTokenSize() {
+        return maxTokenSize;
     }
 
     /**
-     * Creates a JsonConverter instance with the configured DSL-JSON security settings.
-     * <p>
-     * This method is used by the lazy getter for jsonConverter. The converter is initialized
-     * with the DSL-JSON instance from this configuration, ensuring all security limits
-     * and settings are consistently applied.
+     * Gets the maximum payload size.
      *
-     * @return a JsonConverter instance configured with security settings
+     * @return the maximum payload size in bytes
      */
-    private JsonConverter createJsonConverter() {
-        return new JsonContentConverter(getDslJson());
+    public int getMaxPayloadSize() {
+        return maxPayloadSize;
     }
+
+    /**
+     * Gets the maximum string length.
+     *
+     * @return the maximum string length in bytes
+     */
+    public int getMaxStringLength() {
+        return maxStringLength;
+    }
+
+    /**
+     * Gets the maximum buffer size.
+     *
+     * @return the maximum buffer size in bytes
+     */
+    public int getMaxBufferSize() {
+        return maxBufferSize;
+    }
+
+    /**
+     * Gets the DSL-JSON instance.
+     *
+     * @return the DSL-JSON instance
+     */
+    public DslJson<Object> getDslJson() {
+        return dslJson;
+    }
+
+    /**
+     * Creates a new builder for ParserConfig.
+     *
+     * @return a new ParserConfigBuilder
+     */
+    public static ParserConfigBuilder builder() {
+        return new ParserConfigBuilder();
+    }
+
+    /**
+     * Builder for ParserConfig.
+     */
+    public static class ParserConfigBuilder {
+        private int maxTokenSize = DEFAULT_MAX_TOKEN_SIZE;
+        private int maxPayloadSize = DEFAULT_MAX_PAYLOAD_SIZE;
+        private int maxStringLength = DEFAULT_MAX_STRING_LENGTH;
+        private int maxBufferSize = DEFAULT_MAX_BUFFER_SIZE;
+
+        public ParserConfigBuilder maxTokenSize(int maxTokenSize) {
+            this.maxTokenSize = maxTokenSize;
+            return this;
+        }
+
+        public ParserConfigBuilder maxPayloadSize(int maxPayloadSize) {
+            this.maxPayloadSize = maxPayloadSize;
+            return this;
+        }
+
+        public ParserConfigBuilder maxStringLength(int maxStringLength) {
+            this.maxStringLength = maxStringLength;
+            return this;
+        }
+
+        public ParserConfigBuilder maxBufferSize(int maxBufferSize) {
+            this.maxBufferSize = maxBufferSize;
+            return this;
+        }
+
+        public ParserConfig build() {
+            return new ParserConfig(maxTokenSize, maxPayloadSize, maxStringLength, maxBufferSize);
+        }
+    }
+
 }

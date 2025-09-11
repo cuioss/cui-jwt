@@ -16,73 +16,82 @@
 package de.cuioss.jwt.validation;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.tools.net.http.converter.JsonContentConverter;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import de.cuioss.jwt.validation.json.Jwks;
+import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test to verify DSL-JSON behavior with security configurations.
+ * Integration test to verify DSL-JSON behavior with our @CompiledJson mapped classes.
  */
 class DSLJsonSecurityTest {
 
     @Test
-    @DisplayName("Should parse valid JSON successfully")
-    void shouldParseValidJsonSuccessfully() {
+    @DisplayName("Should parse valid JWKS JSON successfully")
+    void shouldParseValidJwksSuccessfully() {
         ParserConfig config = ParserConfig.builder()
                 .maxStringLength(1000)
                 .maxBufferSize(2048)
                 .build();
 
         DslJson<Object> dslJson = config.getDslJson();
-        JsonContentConverter converter = new JsonContentConverter(dslJson);
 
-        String validJson = "{\"name\":\"test\",\"value\":123,\"active\":true}";
+        String validJwks = """
+            {
+                "keys": [
+                    {
+                        "kty": "RSA",
+                        "kid": "test-key-1",
+                        "alg": "RS256",
+                        "n": "test-modulus",
+                        "e": "AQAB"
+                    }
+                ]
+            }
+            """;
 
-        Optional<JsonValue> result = converter.convert(validJson);
-
-        assertTrue(result.isPresent());
-        assertTrue(result.get() instanceof JsonObject);
-        JsonObject jsonObject = (JsonObject) result.get();
-        assertFalse(jsonObject.isEmpty());
-        assertEquals("test", jsonObject.getString("name"));
-        assertEquals(123, jsonObject.getInt("value"));
-        assertTrue(jsonObject.getBoolean("active"));
+        Jwks result = assertDoesNotThrow(() -> 
+            dslJson.deserialize(Jwks.class, validJwks.getBytes(), validJwks.getBytes().length)
+        );
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
     }
 
     @Test
-    @DisplayName("Should handle empty JSON object")
-    void shouldHandleEmptyJsonObject() {
+    @DisplayName("Should parse valid WellKnownConfiguration JSON successfully")
+    void shouldParseValidWellKnownConfigurationSuccessfully() {
         ParserConfig config = ParserConfig.builder().build();
         DslJson<Object> dslJson = config.getDslJson();
-        JsonContentConverter converter = new JsonContentConverter(dslJson);
 
-        String emptyJson = "{}";
+        String validConfig = """
+            {
+                "issuer": "https://example.com",
+                "jwks_uri": "https://example.com/.well-known/jwks.json",
+                "authorization_endpoint": "https://example.com/auth",
+                "token_endpoint": "https://example.com/token"
+            }
+            """;
 
-        Optional<JsonValue> result = converter.convert(emptyJson);
-
-        assertTrue(result.isPresent());
-        assertTrue(result.get() instanceof JsonObject);
-        JsonObject jsonObject = (JsonObject) result.get();
-        assertTrue(jsonObject.isEmpty());
+        WellKnownConfiguration result = assertDoesNotThrow(() -> 
+            dslJson.deserialize(WellKnownConfiguration.class, validConfig.getBytes(), validConfig.getBytes().length)
+        );
+        assertFalse(result.isEmpty());
+        assertEquals("https://example.com", result.issuer());
+        assertEquals("https://example.com/.well-known/jwks.json", result.jwksUri());
     }
 
     @Test
-    @DisplayName("Should handle malformed JSON gracefully")
-    void shouldHandleMalformedJsonGracefully() {
+    @DisplayName("Should throw exception for malformed JWKS JSON")
+    void shouldThrowExceptionForMalformedJwks() {
         ParserConfig config = ParserConfig.builder().build();
         DslJson<Object> dslJson = config.getDslJson();
-        JsonContentConverter converter = new JsonContentConverter(dslJson);
 
-        String malformedJson = "{invalid json}";
+        String malformedJwks = "{invalid json}";
 
-        Optional<JsonValue> result = converter.convert(malformedJson);
-
-        assertFalse(result.isPresent()); // Malformed JSON should return empty Optional
+        assertThrows(java.io.IOException.class, () -> {
+            dslJson.deserialize(Jwks.class, malformedJwks.getBytes(), malformedJwks.getBytes().length);
+        });
     }
 }

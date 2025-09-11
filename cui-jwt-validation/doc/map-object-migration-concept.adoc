@@ -1,0 +1,467 @@
+= Map<String, Object> Migration Concept for DSL-JSON
+:toc:
+:toclevels: 4
+:sectnums:
+
+== Implementation Tasks
+
+=== Phase 1: Foundation  
+* [ ] Remove Lombok from all mapper classes to prevent annotation processing issues
+* [ ] Fix remaining compilation errors to achieve clean build state
+* [ ] Create `MapRepresentation` type to encapsulate Map<String, Object> access
+* [ ] Unit test `MapRepresentation` with existing test data for all ClaimMapper use cases
+
+=== Phase 2: Integration
+* [ ] Add `MapRepresentation` field to token representation classes  
+* [ ] Update ClaimMapper interface to use `MapRepresentation` instead of `JsonObject`
+* [ ] Replace all ClaimMapper implementations with new `MapRepresentation` structure
+* [ ] Verify end-to-end token parsing works with new approach
+
+=== Phase 3: Validation
+* [ ] Run comprehensive integration tests
+* [ ] Performance benchmarking vs. JsonObject approach
+* [ ] Security validation of DSL-JSON limits enforcement
+
+== Executive Summary
+
+Based on comprehensive analysis of the current ClaimMapper implementations and JsonObject usage patterns, this document defines the concept for migrating from `JsonObject` to `Map<String, Object>` as part of the DSL-JSON integration.
+
+**Key Finding**: The current codebase has 8 different ClaimMapper implementations with sophisticated JSON navigation patterns, deep error handling, and strong type safety requirements. The migration must preserve these patterns while enabling DSL-JSON integration.
+
+== Current State Analysis
+
+=== ClaimMapper Ecosystem
+[cols="3,2,4"]
+|===
+|ClaimMapper |Use Case |JsonObject Pattern
+
+|**IdentityMapper**
+|Direct conversion
+|`jsonObject.getString(claimName)`
+
+|**JsonCollectionMapper** 
+|Array/single value handling
+|`jsonObject.getJsonArray()` + type checking
+
+|**OffsetDateTimeMapper**
+|Timestamp conversion  
+|`jsonObject.getJsonNumber().longValue()`
+
+|**ScopeMapper**
+|OAuth scopes (space-delimited)
+|String extraction + split processing
+
+|**KeycloakDefaultRolesMapper**
+|Complex navigation
+|`jsonObject.realm_access.roles[]` - 3-level deep
+
+|**KeycloakDefaultGroupsMapper**
+|Simple array extraction
+|`jsonObject.getJsonArray("groups")`
+
+|**StringSplitterMapper**
+|Custom delimiter splitting
+|String extraction + custom split logic
+|===
+
+=== Critical Navigation Patterns
+
+==== Pattern 1: Safe Deep Navigation
+```java
+// Current JsonObject approach
+Optional<JsonValue> realmAccessValue = ClaimMapperUtils.getJsonValue(jsonObject, "realm_access");
+if (realmAccessValue.isEmpty()) return empty;
+
+JsonValue realmAccess = realmAccessValue.get();
+if (realmAccess.getValueType() != JsonValue.ValueType.OBJECT) return empty;
+
+JsonObject realmAccessObject = realmAccess.asJsonObject();
+Optional<JsonValue> rolesValue = ClaimMapperUtils.getJsonValue(realmAccessObject, "roles");
+// Continue navigation...
+```
+
+==== Pattern 2: Type-Safe Value Extraction  
+```java
+// Current type switching
+switch (jsonValue.getValueType()) {
+    case STRING -> jsonObject.getString(claimName);
+    case NUMBER -> jsonObject.getJsonNumber(claimName).longValue();
+    case ARRAY -> processJsonArray(jsonObject.getJsonArray(claimName));
+    case OBJECT -> /* handle nested object */;
+}
+```
+
+==== Pattern 3: Defensive Error Handling
+```java
+// Exception boundaries at every level
+try {
+    return Optional.of(body.getString(ClaimName.ISSUER.getName()));
+} catch (ClassCastException | IllegalStateException e) {
+    return Optional.empty(); // Graceful degradation
+}
+```
+
+== Map<String, Object> Design Concept
+
+=== Core Design Principles
+
+1. **Behavioral Preservation**: Zero changes to existing ClaimMapper contracts
+2. **Type Safety First**: Defensive casting with instanceof checks at every level  
+3. **Performance Neutral**: No performance degradation vs. current JsonObject approach
+4. **Error Boundary Preservation**: Maintain current graceful degradation patterns
+
+=== Type Mapping Strategy
+
+[cols="3,3,4"]
+|===
+|JsonValue Type |DSL-JSON Map Type |Casting Strategy
+
+|`JsonObject`
+|`Map<String, Object>`  
+|`instanceof Map && safe cast`
+
+|`JsonArray`
+|`List<Object>`
+|`instanceof List && safe cast`
+
+|`JsonString`
+|`String`
+|`instanceof String && direct cast`
+
+|`JsonNumber`
+|`Number` (Long/Double)
+|`instanceof Number && extract value`
+
+|`JsonValue.TRUE/FALSE`
+|`Boolean`
+|`instanceof Boolean && direct cast`
+
+|`JsonValue.NULL`
+|`null`
+|`== null check`
+|===
+
+=== MapRepresentation Wrapper Design
+
+==== Core MapRepresentation Class
+
+`MapRepresentation` encapsulates all Map<String, Object> access patterns based on actual ClaimMapper needs:
+
+```java
+public final class MapRepresentation {
+    private final Map<String, Object> data;
+    
+    public MapRepresentation(@NonNull Map<String, Object> data) {
+        this.data = Map.copyOf(data); // Defensive copy for immutability
+    }
+    
+    /**
+     * Equivalent to ClaimMapperUtils.getJsonValue() - core access pattern
+     * Used by: ALL ClaimMapper implementations
+     */
+    public Optional<Object> getValue(@NonNull String key) {
+        return Optional.ofNullable(data.get(key));
+    }
+    
+    /**
+     * Deep navigation for nested structures
+     * Used by: KeycloakDefaultRolesMapper (realm_access.roles)
+     * Used by: KeycloakDefaultGroupsMapper patterns
+     */
+    public Optional<Object> getNestedValue(@NonNull String... keyPath) {
+        Object current = data;
+        for (String key : keyPath) {
+            if (!(current instanceof Map)) {
+                return Optional.empty();
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> currentMap = (Map<String, Object>) current;
+            if (!currentMap.containsKey(key)) {
+                return Optional.empty();
+            }
+            current = currentMap.get(key);
+        }
+        return Optional.ofNullable(current);
+    }
+    
+    /**
+     * String extraction with fallback to toString()
+     * Used by: IdentityMapper, ScopeMapper, StringSplitterMapper
+     */
+    public Optional<String> getStringValue(@NonNull String key) {
+        return getValue(key).map(value -> 
+            value instanceof String ? (String) value : value.toString()
+        );
+    }
+    
+    /**
+     * Number extraction for timestamps and numeric claims
+     * Used by: OffsetDateTimeMapper
+     */
+    public Optional<Number> getNumberValue(@NonNull String key) {
+        return getValue(key).filter(Number.class::isInstance).map(Number.class::cast);
+    }
+    
+    /**
+     * Array/List extraction for collection claims
+     * Used by: JsonCollectionMapper, KeycloakDefaultRolesMapper, KeycloakDefaultGroupsMapper
+     */
+    public Optional<List<Object>> getListValue(@NonNull String key) {
+        return getValue(key).filter(List.class::isInstance).map(value -> {
+            @SuppressWarnings("unchecked")
+            List<Object> list = (List<Object>) value;
+            return list;
+        });
+    }
+    
+    /**
+     * Nested map extraction for complex structures
+     * Used by: KeycloakDefaultRolesMapper (realm_access object)
+     */
+    public Optional<MapRepresentation> getMapValue(@NonNull String key) {
+        return getValue(key).filter(Map.class::isInstance).map(value -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) value;
+            return new MapRepresentation(map);
+        });
+    }
+    
+    /**
+     * Extract strings from list - common pattern in ClaimMappers
+     * Used by: All collection-based mappers
+     */
+    public List<String> extractStringsFromList(@NonNull List<Object> list) {
+        return list.stream()
+            .filter(Objects::nonNull)
+            .map(obj -> obj instanceof String ? (String) obj : obj.toString())
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Check existence without extracting value
+     * Used by: Conditional processing in ClaimMappers
+     */
+    public boolean containsKey(@NonNull String key) {
+        return data.containsKey(key);
+    }
+}
+```
+
+=== Migration Pattern Examples
+
+==== Example 1: KeycloakDefaultRolesMapper Migration
+
+```java
+// BEFORE: JsonObject approach
+@Override  
+public Optional<ClaimValue> map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+    Optional<JsonValue> realmAccessValue = ClaimMapperUtils.getJsonValue(jsonObject, "realm_access");
+    if (realmAccessValue.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST));
+    }
+
+    JsonValue realmAccess = realmAccessValue.get();
+    if (realmAccess.getValueType() != JsonValue.ValueType.OBJECT) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST));
+    }
+
+    JsonObject realmAccessObject = realmAccess.asJsonObject();
+    Optional<JsonValue> rolesValue = ClaimMapperUtils.getJsonValue(realmAccessObject, "roles");
+    // ... continue processing
+}
+
+// AFTER: MapRepresentation approach - MUCH CLEANER  
+@Override
+public Optional<ClaimValue> map(@NonNull MapRepresentation tokenData, @NonNull String claimName) {
+    // Single method call for deep navigation - replaces 10+ lines above
+    Optional<Object> rolesValue = tokenData.getNestedValue("realm_access", "roles");
+    if (rolesValue.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST));
+    }
+
+    // Direct list processing
+    Optional<List<Object>> rolesList = tokenData.getListValue(rolesValue.get());
+    if (rolesList.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST));
+    }
+
+    List<String> roles = tokenData.extractStringsFromList(rolesList.get());
+    return Optional.of(ClaimValue.createStringList(roles));
+}
+```
+
+==== Example 2: IdentityMapper Migration
+
+```java
+// BEFORE: JsonObject approach
+public Optional<ClaimValue> map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+    Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
+    if (optionalJsonValue.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.STRING));
+    }
+    
+    JsonValue jsonValue = optionalJsonValue.get();
+    return Optional.of(ClaimValue.createString(jsonValue.toString()));
+}
+
+// AFTER: MapRepresentation approach - SIMPLER
+public Optional<ClaimValue> map(@NonNull MapRepresentation tokenData, @NonNull String claimName) {
+    Optional<String> stringValue = tokenData.getStringValue(claimName);
+    if (stringValue.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.STRING));
+    }
+    
+    return Optional.of(ClaimValue.createString(stringValue.get()));
+}
+```
+
+==== Example 3: OffsetDateTimeMapper Migration
+
+```java
+// BEFORE: JsonObject approach  
+public Optional<ClaimValue> map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+    Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
+    if (optionalJsonValue.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.DATETIME));
+    }
+    
+    try {
+        long timestamp = jsonObject.getJsonNumber(claimName).longValue();
+        OffsetDateTime dateTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneOffset.UTC);
+        return Optional.of(ClaimValue.createDateTime(dateTime));
+    } catch (Exception e) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.DATETIME));
+    }
+}
+
+// AFTER: MapRepresentation approach - TYPE SAFE
+public Optional<ClaimValue> map(@NonNull MapRepresentation tokenData, @NonNull String claimName) {
+    Optional<Number> numberValue = tokenData.getNumberValue(claimName);
+    if (numberValue.isEmpty()) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.DATETIME));
+    }
+    
+    try {
+        long timestamp = numberValue.get().longValue();
+        OffsetDateTime dateTime = OffsetDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneOffset.UTC);
+        return Optional.of(ClaimValue.createDateTime(dateTime));
+    } catch (Exception e) {
+        return Optional.of(ClaimValue.createEmptyClaimValue(ClaimValueType.DATETIME));
+    }
+}
+```
+
+=== Interface Evolution Strategy
+
+==== Current ClaimMapper Interface
+```java
+public interface ClaimMapper {
+    Optional<ClaimValue> map(@NonNull JsonObject jsonObject, @NonNull String claimName);
+}
+```
+
+==== New ClaimMapper Interface (Clean Evolution)
+```java
+public interface ClaimMapper {
+    Optional<ClaimValue> map(@NonNull MapRepresentation tokenData, @NonNull String claimName);
+}
+```
+
+**Migration Strategy**: Direct replacement - all ClaimMapper implementations will be updated simultaneously to use MapRepresentation instead of JsonObject. No bridge pattern needed as this is a focused, single-step migration.
+
+=== Token Content Integration
+
+==== Current Token Building Flow
+```java
+// NonValidatingJwtParser.java
+JsonObject body = dslJson.deserialize(JsonObject.class, decodedPayload, decodedPayload.length);
+
+// TokenBuilder.extractClaims()
+for (ClaimName claimName : tokenType.getMandatoryClaims()) {
+    Optional<ClaimValue> claimValue = claimName.getClaimMapper().map(body, claimName.getName());
+    // ...
+}
+```
+
+==== New Token Building Flow
+```java
+// NonValidatingJwtParser.java  
+Map<String, Object> rawBody = dslJson.deserialize(Map.class, decodedPayload, decodedPayload.length);
+MapRepresentation body = new MapRepresentation(rawBody);
+
+// TokenBuilder.extractClaims()
+for (ClaimName claimName : tokenType.getMandatoryClaims()) {
+    Optional<ClaimValue> claimValue = claimName.getClaimMapper().map(body, claimName.getName());
+    // ...
+}
+```
+
+==== Token Content Classes - Where to Add MapRepresentation
+
+Based on research, the token content classes that need MapRepresentation field:
+- `BaseTokenContent` - Base class for all token types
+- `AccessTokenContent` - OAuth access tokens  
+- `IdTokenContent` - OIDC ID tokens
+- `RefreshTokenContent` - OAuth refresh tokens
+
+**Integration Point**: Add MapRepresentation to BaseTokenContent constructor and make it available to all ClaimMappers.
+
+== Implementation Phases
+
+=== Phase 1: Foundation Layer
+* Create `MapClaimMapperUtils` with all navigation utilities
+* Create `MapClaimMapper` interface  
+* Build comprehensive unit tests for utility functions
+* **Success Criteria**: All utilities handle edge cases correctly
+
+=== Phase 2: ClaimMapper Migration
+* Migrate each ClaimMapper implementation to use Map<String, Object>
+* Implement bridge pattern for backward compatibility during migration
+* **Success Criteria**: All existing tests pass with new implementations
+
+=== Phase 3: Integration Testing
+* Update `NonValidatingJwtParser` to deserialize to Map instead of JsonObject
+* Update `TokenBuilder` to use new ClaimMapper interface
+* **Success Criteria**: End-to-end JWT validation works identically
+
+=== Phase 4: Cleanup
+* Remove deprecated JsonObject-based methods
+* Remove bridge utilities
+* Performance testing and optimization
+* **Success Criteria**: Performance neutral or better vs. JsonObject approach
+
+== Risk Mitigation
+
+=== Type Safety Risks
+**Risk**: ClassCastException during Map navigation
+**Mitigation**: Comprehensive instanceof checks in all utility methods
+
+=== Performance Risks  
+**Risk**: Performance degradation vs. JsonObject
+**Mitigation**: Benchmarking at each phase, optimize hot paths
+
+=== Behavioral Risks
+**Risk**: Subtle differences in claim processing behavior
+**Mitigation**: Preserve exact same error handling and fallback patterns
+
+=== Migration Risks
+**Risk**: Breaking existing functionality during transition
+**Mitigation**: Bridge pattern allows gradual migration with rollback capability
+
+== Success Metrics
+
+1. **Functional**: All existing ClaimMapper tests pass unchanged
+2. **Performance**: No more than 5% performance degradation in claim processing
+3. **Type Safety**: Zero ClassCastException in normal operation  
+4. **Code Quality**: Reduced complexity compared to JsonObject navigation
+5. **Memory**: Similar or better memory footprint vs. JsonObject approach
+
+== Conclusion
+
+The Map<String, Object> migration is feasible and will provide the foundation for DSL-JSON integration. The key is preserving the sophisticated error handling and type safety patterns while providing cleaner navigation utilities.
+
+**Critical Success Factor**: The `MapClaimMapperUtils` utility layer must handle all the complexity, allowing ClaimMapper implementations to remain clean and focused on their business logic.
+
+---
+_Document created: 2025-09-11_  
+_Status: Concept definition complete_

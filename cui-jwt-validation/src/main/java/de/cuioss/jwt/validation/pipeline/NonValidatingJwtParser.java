@@ -20,7 +20,7 @@ import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.converter.JsonConverter;
+import com.dslplatform.json.DslJson;
 import de.cuioss.tools.string.MoreStrings;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
@@ -141,21 +141,6 @@ public class NonValidatingJwtParser {
     @NonNull
     private final SecurityEventCounter securityEventCounter;
 
-    /**
-     * JSON converter that uses DSL-JSON with security settings.
-     * Initialized lazily to avoid circular dependencies during builder construction.
-     */
-    private final JsonConverter jsonConverter;
-
-    /**
-     * Initializes the JSON converter after construction.
-     */
-    private JsonConverter initJsonConverter() {
-        if (jsonConverter == null) {
-            return config.getJsonConverter();
-        }
-        return jsonConverter;
-    }
 
     /**
      * Decodes a JWT token and returns a DecodedJwt object containing the decoded parts.
@@ -301,9 +286,9 @@ public class NonValidatingJwtParser {
                 );
             }
 
-            // Convert to string and use JsonContentConverter for secure parsing
+            // Convert to string and use DSL-JSON for secure parsing
             String jsonString = new String(decoded, StandardCharsets.UTF_8);
-            Optional<JsonValue> parseResult = initJsonConverter().convert(jsonString);
+            Optional<JsonValue> parseResult = parseDslJson(jsonString);
 
             // Check if parsing failed (empty Optional indicates parse failure)
             if (parseResult.isEmpty()) {
@@ -340,6 +325,22 @@ public class NonValidatingJwtParser {
                     "Failed to decode JWT part: %s".formatted(e.getMessage()),
                     e
             );
+        }
+    }
+
+    /**
+     * Parses JSON using DSL-JSON with security settings.
+     *
+     * @param jsonString the JSON string to parse
+     * @return Optional containing JsonValue if parsing succeeds, empty otherwise
+     */
+    private Optional<JsonValue> parseDslJson(String jsonString) {
+        try {
+            // Use DSL-JSON to parse to JsonObject
+            JsonObject jsonObject = config.getDslJson().deserialize(JsonObject.class, jsonString.getBytes(StandardCharsets.UTF_8));
+            return Optional.ofNullable(jsonObject);
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            return Optional.empty();
         }
     }
 

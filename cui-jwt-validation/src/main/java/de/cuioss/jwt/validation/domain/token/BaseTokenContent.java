@@ -69,6 +69,39 @@ public abstract class BaseTokenContent implements TokenContent {
     private final TokenType tokenType;
 
     /**
+     * Gets the token claims.
+     *
+     * @return the token claims map
+     */
+    @Override
+    @NonNull
+    public Map<String, ClaimValue> getClaims() {
+        return claims;
+    }
+
+    /**
+     * Gets the raw token string.
+     *
+     * @return the raw token string
+     */
+    @Override
+    @NonNull
+    public String getRawToken() {
+        return rawToken;
+    }
+
+    /**
+     * Gets the token type.
+     *
+     * @return the token type
+     */
+    @Override
+    @NonNull
+    public TokenType getTokenType() {
+        return tokenType;
+    }
+
+    /**
      * Constructor for BaseTokenContent.
      *
      * @param claims    the token claims

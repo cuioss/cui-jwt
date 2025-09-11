@@ -16,12 +16,12 @@
 package de.cuioss.jwt.validation.jwks.parser;
 
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.JwkKey;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,15 +55,15 @@ class JwksParserTest {
             String jwksContent = InMemoryJWKSFactory.createDefaultJwks();
 
             // When parsing
-            List<JsonObject> result = parser.parse(jwksContent);
+            List<JwkKey> result = parser.parse(jwksContent);
 
             // Then parsing should succeed
             assertFalse(result.isEmpty(), "Should parse at least one key");
             assertEquals(1, result.size(), "Should parse exactly one key from default JWKS");
 
-            JsonObject jwk = result.getFirst();
-            assertTrue(jwk.containsKey("kty"), "Parsed JWK should contain key type");
-            assertTrue(jwk.containsKey("kid"), "Parsed JWK should contain key ID");
+            JwkKey jwk = result.getFirst();
+            assertNotNull(jwk.kty(), "Parsed JWK should contain key type");
+            assertNotNull(jwk.kid(), "Parsed JWK should contain key ID");
         }
 
         @Test
@@ -82,13 +82,13 @@ class JwksParserTest {
                 """;
 
             // When parsing
-            List<JsonObject> result = parser.parse(singleJwk);
+            List<JwkKey> result = parser.parse(singleJwk);
 
             // Then parsing should succeed
             assertEquals(1, result.size(), "Should parse single JWK");
-            JsonObject jwk = result.getFirst();
-            assertEquals("RSA", jwk.getString("kty"));
-            assertEquals("test-key", jwk.getString("kid"));
+            JwkKey jwk = result.getFirst();
+            assertEquals("RSA", jwk.kty());
+            assertEquals("test-key", jwk.kid());
         }
 
         @Test
@@ -120,12 +120,12 @@ class JwksParserTest {
                 """;
 
             // When parsing
-            List<JsonObject> result = parser.parse(multiKeyJwks);
+            List<JwkKey> result = parser.parse(multiKeyJwks);
 
             // Then should parse all keys
             assertEquals(2, result.size(), "Should parse both keys");
-            assertTrue(result.stream().anyMatch(jwk -> "key1".equals(jwk.getString("kid"))));
-            assertTrue(result.stream().anyMatch(jwk -> "key2".equals(jwk.getString("kid"))));
+            assertTrue(result.stream().anyMatch(jwk -> "key1".equals(jwk.kid())));
+            assertTrue(result.stream().anyMatch(jwk -> "key2".equals(jwk.kid())));
         }
     }
 
@@ -140,7 +140,7 @@ class JwksParserTest {
             String invalidJson = "{ invalid json }";
 
             // When parsing
-            List<JsonObject> result = parser.parse(invalidJson);
+            List<JwkKey> result = parser.parse(invalidJson);
 
             // Then should return empty list and log error
             assertTrue(result.isEmpty(), "Should return empty list for invalid JSON");
@@ -154,7 +154,7 @@ class JwksParserTest {
             String emptyJwks = "{}";
 
             // When parsing
-            List<JsonObject> result = parser.parse(emptyJwks);
+            List<JwkKey> result = parser.parse(emptyJwks);
 
             // Then should return empty list and log warning
             assertTrue(result.isEmpty(), "Should return empty list for empty JWKS");
@@ -172,7 +172,7 @@ class JwksParserTest {
                 """;
 
             // When parsing
-            List<JsonObject> result = parser.parse(emptyKeysJwks);
+            List<JwkKey> result = parser.parse(emptyKeysJwks);
 
             // Then should return empty list
             assertTrue(result.isEmpty(), "Should return empty list for empty keys array");
@@ -194,7 +194,7 @@ class JwksParserTest {
             String largeContent = "{ \"keys\": [" + "x".repeat(200) + "] }";
 
             // When parsing
-            List<JsonObject> result = smallParser.parse(largeContent);
+            List<JwkKey> result = smallParser.parse(largeContent);
 
             // Then should reject and return empty list
             assertTrue(result.isEmpty(), "Should return empty list for oversized content");

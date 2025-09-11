@@ -18,7 +18,7 @@ package de.cuioss.jwt.validation.well_known;
 import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.Jwks;
 
 import java.util.Optional;
 
@@ -60,13 +60,13 @@ public interface WellKnownResolver extends HealthStatusProvider {
      * <ul>
      *   <li>ETag-based HTTP caching (304 Not Modified support)</li>
      *   <li>Retry logic with exponential backoff</li>
-     *   <li>JsonObject content conversion for optimal JWKS processing</li>
+     *   <li>Jwks content conversion for optimal JWKS processing</li>
      *   <li>Security event tracking and validation</li>
      * </ul>
      *
      * @return Optional containing the ETag-aware JWKS handler, empty if not available or unhealthy
      */
-    Optional<ETagAwareHttpHandler<JsonObject>> getJwksETagHandler();
+    Optional<ETagAwareHttpHandler<Jwks>> getJwksETagHandler();
 
     /**
      * Gets the authorization endpoint handler.

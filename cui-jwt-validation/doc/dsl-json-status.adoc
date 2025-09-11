@@ -1,0 +1,180 @@
+= DSL-JSON Migration Status and Analysis
+:toc:
+:toclevels: 3
+:sectnums:
+
+== Implementation Tasks
+
+=== Phase 1: Foundation
+* [ ] Remove Lombok from all mapper classes to prevent annotation processing issues
+* [ ] Fix remaining compilation errors to achieve clean build state
+* [ ] Create `MapRepresentation` type to encapsulate Map<String, Object> access
+* [ ] Unit test `MapRepresentation` with existing test data for all ClaimMapper use cases
+
+=== Phase 2: Integration  
+* [ ] Add `MapRepresentation` field to token representation classes
+* [ ] Update ClaimMapper interface to use `MapRepresentation` instead of `JsonObject`
+* [ ] Replace all ClaimMapper implementations with new `MapRepresentation` structure
+* [ ] Verify end-to-end token parsing works with new approach
+
+=== Phase 3: Validation
+* [ ] Run comprehensive integration tests
+* [ ] Performance benchmarking vs. JsonObject approach  
+* [ ] Security validation of DSL-JSON limits enforcement
+
+== Overview
+
+This document captures the analysis and decision-making process for migrating from Jakarta JSON API to DSL-JSON for high-performance JWT parsing in the cui-jwt-validation module.
+
+== Background
+
+The cui-jwt-validation module originally used Jakarta JSON API (JsonObject, JsonValue) for parsing JWT tokens and related JSON structures. During pre-1.0 cleanup, we identified an opportunity to migrate to DSL-JSON for better performance and reduced code complexity.
+
+== Migration Progress
+
+=== Completed ✅
+
+* **Core @CompiledJson mappers**: Created for structured data
+** `Jwks.java` - JWKS structure mapping
+** `JwkKey.java` - Individual JWK key mapping with RSA/EC support
+** `WellKnownConfiguration.java` - OIDC Discovery document mapping
+
+* **Parser infrastructure**: Updated core parsing logic
+** `JwksParser` now uses DSL-JSON directly instead of Jakarta JSON API
+** `ParserConfig` with DSL-JSON configuration and security limits
+** Moved all JSON mappers to `cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/json/`
+
+* **Compilation fixes**: Resolved major structural issues
+** Fixed Lombok annotation processing conflicts
+** Added manual getters where needed
+** Resolved abstract method implementation issues
+** Fixed builder pattern issues
+
+=== In Progress 🔄
+
+* **Token content mapping**: Converting JWT payload parsing from JsonObject to Map<String, Object>
+* **Claim mappers**: Updating polymorphic JSON handling in classes like `KeycloakDefaultRolesMapper`
+* **Remaining compilation errors**: Primarily constructor and getter method issues
+
+=== Not Started ⏳
+
+* **Performance testing**: Quantitative comparison between Jakarta JSON API and DSL-JSON
+* **Integration testing**: Full end-to-end validation of the new parsing pipeline
+
+== Technical Analysis
+
+=== Initial Assessment vs. Reality
+
+[cols="2,3,3"]
+|===
+|Factor |Initial Assessment |Revised Assessment
+
+|**Scope**
+|Entire codebase needs refactoring (~15-20 classes)
+|Limited scope - only token content parsing, Keys/WellKnown already working
+
+|**GraalVM Benefits**
+|Major advantage for native compilation
+|No advantage - Jakarta JSON API already GraalVM compatible
+
+|**Performance Impact**
+|Nice-to-have improvement
+|Critical - every millisecond matters in JWT validation
+
+|**Code Complexity**
+|Increases complexity due to Map<String, Object>
+|Should reduce complexity by eliminating manual mapping code
+
+|**Risk Level**
+|High due to extensive changes
+|Moderate - focused on specific parsing logic
+|===
+
+=== DSL-JSON Advantages in JWT Context
+
+1. **Performance**: Compile-time code generation eliminates reflection overhead
+2. **Security**: Actually enforces configured buffer limits (maxStringLength, maxBufferSize)
+3. **Code Reduction**: Eliminates verbose manual JSON mapping code
+4. **Type Safety**: Compile-time validation of JSON structure mapping
+
+=== Implementation Strategy
+
+==== Phase 1: Core Mappings ✅
+* Create @CompiledJson record classes for structured JSON data
+* Configure DSL-JSON with security limits in ParserConfig
+* Update core parsing infrastructure
+
+==== Phase 2: Token Content (Current)
+* Add `Map<String, Object> additionalProperties` to token content classes for polymorphic data
+* Update claim mappers from `JsonObject` to `Map<String, Object>`
+* Remove Lombok from problematic classes if necessary
+
+==== Phase 3: Validation & Testing
+* Comprehensive performance testing
+* Integration testing across all JWT validation scenarios
+* Security testing of configured limits
+
+== Decision Rationale
+
+=== Why Continue with DSL-JSON Migration
+
+1. **Performance Critical Context**: JWT validation happens on every authenticated request - milliseconds matter
+2. **Limited Actual Scope**: Only token content parsing needs complex changes, not entire codebase
+3. **Long-term Benefits**: Reduced maintenance burden from eliminating manual mapping code
+4. **Security Advantages**: Proper enforcement of security limits vs. Jakarta JSON API's often-ignored limits
+5. **No External Constraints**: Team capacity and timeline allow for proper implementation
+
+=== Key Technical Decisions
+
+* **Hybrid Approach**: Keep @CompiledJson for structured data (JWKS, WellKnown), use Map<String, Object> for dynamic token content
+* **Lombok Removal**: Remove from classes with annotation processing conflicts rather than fight tooling issues
+* **Security First**: Leverage DSL-JSON's actual enforcement of buffer limits for DoS protection
+
+== Current Implementation Challenges
+
+=== Lombok Annotation Processing
+* **Issue**: Conflicts between Lombok @Getter/@Builder and DSL-JSON @CompiledJson
+* **Solution**: Remove Lombok from affected classes, use manual getters/builders where needed
+
+=== Polymorphic JSON Handling
+* **Challenge**: Dynamic JSON structures like Keycloak role mappings
+* **Approach**: Use `Map<String, Object> additionalProperties` pattern for unknown/dynamic content
+
+=== Constructor Generation
+* **Issue**: Enum and record classes with complex constructors failing compilation
+* **Solution**: Manual constructor definition where Lombok generation fails
+
+== Next Steps
+
+1. **Complete token content mapping**: Finish converting claim mappers from JsonObject to Map<String, Object>
+2. **Resolve remaining compilation errors**: Focus on constructor and getter issues
+3. **Performance benchmarking**: Quantify actual performance improvements
+4. **Security testing**: Validate that DSL-JSON security limits are properly enforced
+5. **Integration testing**: End-to-end validation scenarios
+
+== Performance Expectations
+
+Based on DSL-JSON benchmarks, expected improvements:
+* **Parsing speed**: 2-5x faster than reflection-based Jakarta JSON API
+* **Memory allocation**: Reduced object allocation and GC pressure
+* **Security**: Actual enforcement of configured limits vs. often-ignored Jakarta JSON API limits
+
+== Risk Mitigation
+
+* **Rollback Plan**: Git history allows clean revert to Jakarta JSON API if issues arise
+* **Incremental Approach**: Phase-based migration allows validation at each step
+* **Testing Strategy**: Comprehensive testing before considering migration complete
+
+== Conclusion
+
+The DSL-JSON migration is technically sound and aligns with performance requirements. The revised scope assessment shows this is a focused change rather than a massive refactoring, making the risk/benefit ratio favorable for continuation.
+
+Key success metrics:
+* All compilation errors resolved
+* Performance improvement quantified
+* Security limits properly enforced
+* Code complexity reduced through elimination of manual mapping
+
+---
+_Document created: 2025-09-11_
+_Status: Migration in progress_

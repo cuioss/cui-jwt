@@ -1,0 +1,3 @@
+de.cuioss.jwt.validation.well_known._WellKnownConfiguration_DslJsonConverter
+de.cuioss.jwt.validation.jwks._Jwks_DslJsonConverter
+de.cuioss.jwt.validation.jwks._JwkKey_DslJsonConverter

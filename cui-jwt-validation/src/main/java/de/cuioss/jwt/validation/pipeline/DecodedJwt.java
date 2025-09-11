@@ -16,11 +16,14 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.tools.net.http.json.DslJsonObjectAdapter;
+import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import lombok.NonNull;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Record representing a decoded JWT token.
@@ -68,7 +71,7 @@ String rawToken
      * @return the header JsonObject, never null (empty if not present)
      */
     public JsonObject getHeader() {
-        return header != null ? header : new DslJsonObjectAdapter(Map.of());
+        return header != null ? header : Json.createObjectBuilder().build();
     }
 
     /**
@@ -77,7 +80,7 @@ String rawToken
      * @return the body JsonObject, never null (empty if not present)
      */
     public JsonObject getBody() {
-        return body != null ? body : new DslJsonObjectAdapter(Map.of());
+        return body != null ? body : Json.createObjectBuilder().build();
     }
 
     /**
