@@ -16,9 +16,6 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.DslJson;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
-import lombok.ToString;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -33,11 +30,11 @@ import java.util.stream.Collectors;
  * A type-safe wrapper for Map<String, Object> that provides convenient access methods
  * for JWT claim processing.
  * <p>
- * This class encapsulates access to the underlying Map<String, Object> representation
+ * This record encapsulates access to the underlying Map<String, Object> representation
  * of JWT claims, providing type-safe methods for extracting common claim types such as
  * strings, numbers, lists, and nested objects.
  * <p>
- * The class follows the same access patterns as the previous JsonObject-based approach
+ * The record follows the same access patterns as the previous JsonObject-based approach
  * but works with the DSL-JSON deserialized Map<String, Object> structure.
  * <p>
  * Key features:
@@ -51,24 +48,11 @@ import java.util.stream.Collectors;
  * @author Oliver Wolff
  * @since 1.0
  */
-@EqualsAndHashCode
-@ToString
-public class MapRepresentation implements Serializable {
+public record MapRepresentation(Map<String, Object> data) implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, Object> data;
-
-    /**
-     * Creates a new MapRepresentation wrapping the given immutable map.
-     * Package-private constructor - use factory methods for creation.
-     *
-     * @param data the underlying immutable map data, must not be null
-     */
-    MapRepresentation(@NonNull Map<String, Object> data) {
-        this.data = data; // Assume data is already immutable
-    }
 
     /**
      * Factory method to create MapRepresentation from JSON string using DSL-JSON.
@@ -82,8 +66,7 @@ public class MapRepresentation implements Serializable {
      * @return a new MapRepresentation containing the parsed data
      * @throws IOException if the JSON content cannot be parsed
      */
-    @NonNull
-    public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, @NonNull String jsonContent) throws IOException {
+    public static MapRepresentation fromJson(DslJson<Object> dslJson, String jsonContent) throws IOException {
         byte[] jsonBytes = jsonContent.getBytes();
         @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
@@ -114,8 +97,7 @@ public class MapRepresentation implements Serializable {
      * @return a new MapRepresentation containing the parsed data
      * @throws IOException if the JSON content cannot be parsed
      */
-    @NonNull
-    public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, byte @NonNull [] jsonBytes) throws IOException {
+    public static MapRepresentation fromJson(DslJson<Object> dslJson, byte[] jsonBytes) throws IOException {
         @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
         if (parsedData == null) {
@@ -139,7 +121,6 @@ public class MapRepresentation implements Serializable {
      *
      * @return an empty MapRepresentation
      */
-    @NonNull
     public static MapRepresentation empty() {
         return new MapRepresentation(Map.of());
     }
@@ -151,8 +132,8 @@ public class MapRepresentation implements Serializable {
      * @param key the key to check
      * @return true if the key exists, false otherwise
      */
-    public boolean containsKey(@NonNull String key) {
-        return data.containsKey(key);
+    public boolean containsKey(String key) {
+        return data != null && data.containsKey(key);
     }
 
     /**
@@ -161,8 +142,8 @@ public class MapRepresentation implements Serializable {
      * @param key the key to look up
      * @return Optional containing the value, or empty if not found
      */
-    public Optional<Object> getValue(@NonNull String key) {
-        return Optional.ofNullable(data.get(key));
+    public Optional<Object> getValue(String key) {
+        return data != null ? Optional.ofNullable(data.get(key)) : Optional.empty();
     }
 
     /**
@@ -171,7 +152,8 @@ public class MapRepresentation implements Serializable {
      * @param key the key to look up
      * @return Optional containing the string value, or empty if not found or not a string
      */
-    public Optional<String> getString(@NonNull String key) {
+    public Optional<String> getString(String key) {
+        if (data == null) return Optional.empty();
         Object value = data.get(key);
         if (value instanceof String string) {
             return Optional.of(string);
@@ -185,7 +167,8 @@ public class MapRepresentation implements Serializable {
      * @param key the key to look up
      * @return Optional containing the number value, or empty if not found or not a number
      */
-    public Optional<Number> getNumber(@NonNull String key) {
+    public Optional<Number> getNumber(String key) {
+        if (data == null) return Optional.empty();
         Object value = data.get(key);
         if (value instanceof Number number) {
             return Optional.of(number);
@@ -199,7 +182,8 @@ public class MapRepresentation implements Serializable {
      * @param key the key to look up
      * @return Optional containing the boolean value, or empty if not found or not a boolean
      */
-    public Optional<Boolean> getBoolean(@NonNull String key) {
+    public Optional<Boolean> getBoolean(String key) {
+        if (data == null) return Optional.empty();
         Object value = data.get(key);
         if (value instanceof Boolean boolean1) {
             return Optional.of(boolean1);
@@ -214,7 +198,8 @@ public class MapRepresentation implements Serializable {
      * @return Optional containing the list value, or empty if not found or not a list
      */
     @SuppressWarnings("unchecked")
-    public Optional<List<Object>> getList(@NonNull String key) {
+    public Optional<List<Object>> getList(String key) {
+        if (data == null) return Optional.empty();
         Object value = data.get(key);
         if (value instanceof List) {
             return Optional.of((List<Object>) value);
@@ -229,7 +214,8 @@ public class MapRepresentation implements Serializable {
      * @return Optional containing the nested map, or empty if not found or not a map
      */
     @SuppressWarnings("unchecked")
-    public Optional<Map<String, Object>> getMap(@NonNull String key) {
+    public Optional<Map<String, Object>> getMap(String key) {
+        if (data == null) return Optional.empty();
         Object value = data.get(key);
         if (value instanceof Map) {
             return Optional.of((Map<String, Object>) value);
@@ -243,7 +229,7 @@ public class MapRepresentation implements Serializable {
      * @param key the key to look up
      * @return Optional containing the nested MapRepresentation, or empty if not found or not a map
      */
-    public Optional<MapRepresentation> getNestedMap(@NonNull String key) {
+    public Optional<MapRepresentation> getNestedMap(String key) {
         return getMap(key).map(MapRepresentation::new);
     }
 
@@ -253,7 +239,7 @@ public class MapRepresentation implements Serializable {
      * @param key the key to look up
      * @return Optional containing the string list, or empty if not found or not convertible
      */
-    public Optional<List<String>> getStringList(@NonNull String key) {
+    public Optional<List<String>> getStringList(String key) {
         return getList(key).map(list ->
                 list.stream()
                         .filter(item -> item instanceof String)
@@ -268,7 +254,7 @@ public class MapRepresentation implements Serializable {
      * @return true if the map is empty, false otherwise
      */
     public boolean isEmpty() {
-        return data.isEmpty();
+        return data == null || data.isEmpty();
     }
 
     /**
@@ -277,7 +263,7 @@ public class MapRepresentation implements Serializable {
      * @return the number of key-value pairs
      */
     public int size() {
-        return data.size();
+        return data == null ? 0 : data.size();
     }
 
     /**
@@ -285,15 +271,14 @@ public class MapRepresentation implements Serializable {
      *
      * @return the set of keys in the map
      */
-    @NonNull
     public Set<String> keySet() {
-        return data.keySet();
+        return data == null ? Set.of() : data.keySet();
     }
 
     /**
      * Gets the underlying map data (for advanced use cases).
      *
-     * @return the underlying map, never null
+     * @return the underlying map, may be null
      */
     public Map<String, Object> getUnderlyingMap() {
         return data;

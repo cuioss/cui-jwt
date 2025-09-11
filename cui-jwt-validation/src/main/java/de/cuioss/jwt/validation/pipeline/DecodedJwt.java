@@ -71,7 +71,7 @@ String rawToken
      * @return the JwtHeader, never null (minimal header with empty algorithm if not present)
      */
     public JwtHeader getHeader() {
-        return header != null ? header : JwtHeader.of("");
+        return header != null ? header : new JwtHeader("", null, null, null, null, null, null, null, null, null, null);
     }
 
     /**
@@ -107,7 +107,7 @@ String rawToken
      * @return an Optional containing the kid if present
      */
     public Optional<String> getKid() {
-        return header != null ? header.kid() : Optional.empty();
+        return header != null ? header.getKid() : Optional.empty();
     }
 
     /**

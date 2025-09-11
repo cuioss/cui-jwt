@@ -16,7 +16,6 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
-import lombok.NonNull;
 
 import java.util.Optional;
 
@@ -76,105 +75,114 @@ import java.util.Optional;
 @CompiledJson
 public record JwtHeader(
 String alg,
-@NonNull Optional<String> typ,
-@NonNull Optional<String> kid,
-@NonNull Optional<String> jku,
-@NonNull Optional<String> jwk,
-@NonNull Optional<String> x5u,
-@NonNull Optional<String> x5c,
-@NonNull Optional<String> x5t,
-@NonNull Optional<String> x5tS256,
-@NonNull Optional<String> cty,
-@NonNull Optional<String> crit
+String typ,
+String kid,
+String jku,
+String jwk,
+String x5u,
+String x5c,
+String x5t,
+String x5tS256,
+String cty,
+String crit
 ) {
 
     /**
-     * Creates a JwtHeader with only the required algorithm parameter.
-     * All optional parameters are set to empty Optional values.
-     *
-     * @param alg the algorithm parameter (required)
-     * @return a JwtHeader with minimal required information
-     */
-    public static JwtHeader of(@NonNull String alg) {
-        return new JwtHeader(
-                alg,
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
-        );
-    }
-
-    /**
-     * Creates a JwtHeader with algorithm and key ID.
-     * This is the most common combination for JWT headers.
-     *
-     * @param alg the algorithm parameter (required)
-     * @param kid the key ID parameter
-     * @return a JwtHeader with algorithm and key ID
-     */
-    public static JwtHeader of(@NonNull String alg, @NonNull String kid) {
-        return new JwtHeader(
-                alg,
-                Optional.empty(),
-                Optional.of(kid),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
-        );
-    }
-
-    /**
-     * Creates a JwtHeader with algorithm, type, and key ID.
-     * This is a common combination for standard JWT tokens.
-     *
-     * @param alg the algorithm parameter (required)
-     * @param typ the type parameter (usually "JWT")
-     * @param kid the key ID parameter
-     * @return a JwtHeader with algorithm, type, and key ID
-     */
-    public static JwtHeader of(@NonNull String alg, @NonNull String typ, @NonNull String kid) {
-        return new JwtHeader(
-                alg,
-                Optional.of(typ),
-                Optional.of(kid),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
-        );
-    }
-
-    /**
-     * Checks if this header contains the minimum required information for JWT validation.
+     * Gets the algorithm parameter as Optional.
      * 
-     * @return true if the header has at least the algorithm parameter
+     * @return Optional containing the algorithm, empty if null or empty
      */
-    public boolean isValid() {
-        return alg != null && !alg.trim().isEmpty();
+    public Optional<String> getAlg() {
+        return Optional.ofNullable(alg).filter(s -> !s.trim().isEmpty());
     }
 
     /**
-     * Checks if this header indicates a JWT token type.
+     * Gets the type parameter as Optional.
      * 
-     * @return true if typ is present and equals "JWT" (case insensitive)
+     * @return Optional containing the type, empty if null
      */
-    public boolean isJwtType() {
-        return typ.isPresent() && "JWT".equalsIgnoreCase(typ.get());
+    public Optional<String> getTyp() {
+        return Optional.ofNullable(typ);
+    }
+
+    /**
+     * Gets the key ID parameter as Optional.
+     * 
+     * @return Optional containing the key ID, empty if null
+     */
+    public Optional<String> getKid() {
+        return Optional.ofNullable(kid);
+    }
+
+    /**
+     * Gets the JWK Set URL parameter as Optional.
+     * 
+     * @return Optional containing the JWK Set URL, empty if null
+     */
+    public Optional<String> getJku() {
+        return Optional.ofNullable(jku);
+    }
+
+    /**
+     * Gets the JSON Web Key parameter as Optional.
+     * 
+     * @return Optional containing the JWK, empty if null
+     */
+    public Optional<String> getJwk() {
+        return Optional.ofNullable(jwk);
+    }
+
+    /**
+     * Gets the X.509 URL parameter as Optional.
+     * 
+     * @return Optional containing the X.509 URL, empty if null
+     */
+    public Optional<String> getX5u() {
+        return Optional.ofNullable(x5u);
+    }
+
+    /**
+     * Gets the X.509 Certificate Chain parameter as Optional.
+     * 
+     * @return Optional containing the X.509 certificate chain, empty if null
+     */
+    public Optional<String> getX5c() {
+        return Optional.ofNullable(x5c);
+    }
+
+    /**
+     * Gets the X.509 Certificate SHA-1 Thumbprint parameter as Optional.
+     * 
+     * @return Optional containing the thumbprint, empty if null
+     */
+    public Optional<String> getX5t() {
+        return Optional.ofNullable(x5t);
+    }
+
+    /**
+     * Gets the X.509 Certificate SHA-256 Thumbprint parameter as Optional.
+     * 
+     * @return Optional containing the SHA-256 thumbprint, empty if null
+     */
+    public Optional<String> getX5tS256() {
+        return Optional.ofNullable(x5tS256);
+    }
+
+    /**
+     * Gets the content type parameter as Optional.
+     * 
+     * @return Optional containing the content type, empty if null
+     */
+    public Optional<String> getCty() {
+        return Optional.ofNullable(cty);
+    }
+
+    /**
+     * Gets the critical parameter as Optional.
+     * 
+     * @return Optional containing the critical parameter, empty if null
+     */
+    public Optional<String> getCrit() {
+        return Optional.ofNullable(crit);
     }
 }

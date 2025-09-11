@@ -269,7 +269,7 @@ class TestTokenHolderTest {
 
             // Verify header
             assertNotNull(decodedJwt.getHeader(), "Header should be present");
-            assertEquals(tokenHolder.getKeyId(), decodedJwt.getHeader().kid().orElse(""), "Key ID should match");
+            assertEquals(tokenHolder.getKeyId(), decodedJwt.getHeader().getKid().orElse(""), "Key ID should match");
             assertEquals(tokenHolder.getSigningAlgorithm().name(), decodedJwt.getHeader().alg(), "Algorithm should match");
 
             // Verify body
@@ -309,7 +309,7 @@ class TestTokenHolderTest {
 
             // Verify custom key ID
             assertNotNull(decodedJwt.getHeader(), "Header should be present");
-            assertEquals(customKeyId, decodedJwt.getHeader().kid().orElse(""), "Custom key ID should match");
+            assertEquals(customKeyId, decodedJwt.getHeader().getKid().orElse(""), "Custom key ID should match");
             assertEquals(customKeyId, decodedJwt.getKid().orElse(null), "Custom key ID from convenience method should match");
         }
     }

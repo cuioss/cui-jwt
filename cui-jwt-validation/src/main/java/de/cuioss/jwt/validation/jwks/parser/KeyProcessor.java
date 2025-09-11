@@ -76,7 +76,7 @@ public class KeyProcessor {
             return Optional.empty();
         }
 
-        String kid = jwk.hasKeyId() ? jwk.kid() : "default-key-id";
+        String kid = jwk.getKid().isPresent() ? jwk.kid() : "default-key-id";
 
         KeyInfo keyInfo = switch (kty) {
             case RSA_KEY_TYPE -> processRsaKey(jwk, kid);
@@ -114,7 +114,7 @@ public class KeyProcessor {
         }
 
         // Validate key ID if present (length check)
-        if (jwkKey.hasKeyId()) {
+        if (jwkKey.getKid().isPresent()) {
             String keyId = jwkKey.kid();
             if (keyId.length() > 100) {
                 LOGGER.warn(WARN.JWK_KEY_ID_TOO_LONG.format(keyId.length()));
@@ -185,7 +185,7 @@ public class KeyProcessor {
      * @return the algorithm
      */
     private String determineEcAlgorithm(JwkKey jwk) {
-        if (jwk.hasAlgorithm()) {
+        if (jwk.getAlg().isPresent()) {
             return jwk.alg();
         }
 

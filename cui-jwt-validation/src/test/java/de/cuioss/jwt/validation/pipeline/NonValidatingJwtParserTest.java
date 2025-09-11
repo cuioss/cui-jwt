@@ -76,8 +76,8 @@ class NonValidatingJwtParserTest {
             assertNotNull(header, "Header should be present");
             assertNotNull(header.alg(), "Algorithm should be present");
             assertEquals("RS256", header.alg(), "Algorithm should be RS256");
-            assertEquals("JWT", header.typ().orElse(""), "Type should be JWT");
-            assertEquals("test-key-id", header.kid().orElse(""), "Key ID should match expected");
+            assertEquals("JWT", header.getTyp().orElse(""), "Type should be JWT");
+            assertEquals("test-key-id", header.getKid().orElse(""), "Key ID should match expected");
 
             // Verify body
             var body = jwt.getBody();

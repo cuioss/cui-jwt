@@ -81,8 +81,8 @@ class WellKnownConfigurationMappingTest {
         assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
         assertEquals("https://example.com/auth", config.authorizationEndpoint());
         assertEquals("https://example.com/token", config.tokenEndpoint());
-        assertTrue(config.supportsFullOAuthFlows());
-        assertFalse(config.isMinimal());
+        assertTrue(config.authorizationEndpoint() != null && config.tokenEndpoint() != null);
+        assertFalse(config.authorizationEndpoint() == null && config.tokenEndpoint() == null);
     }
 
     @Test
@@ -104,8 +104,8 @@ class WellKnownConfigurationMappingTest {
         assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
         assertNull(config.authorizationEndpoint());
         assertNull(config.tokenEndpoint());
-        assertFalse(config.supportsFullOAuthFlows());
-        assertTrue(config.isMinimal());
+        assertFalse(config.authorizationEndpoint() != null && config.tokenEndpoint() != null);
+        assertTrue(config.authorizationEndpoint() == null && config.tokenEndpoint() == null);
     }
 
     @Test
@@ -176,6 +176,6 @@ class WellKnownConfigurationMappingTest {
             throw new IllegalArgumentException("Missing required field: jwks_uri");
         }
 
-        return new WellKnownConfiguration(issuer, jwksUri, authorizationEndpoint, tokenEndpoint);
+        return new WellKnownConfiguration(issuer, jwksUri, authorizationEndpoint, tokenEndpoint, null);
     }
 }

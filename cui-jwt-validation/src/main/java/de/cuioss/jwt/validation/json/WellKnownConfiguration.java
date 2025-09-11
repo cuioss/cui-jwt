@@ -17,8 +17,8 @@ package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
 import com.dslplatform.json.JsonAttribute;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+
+import java.util.Optional;
 
 /**
  * Java representation of OpenID Connect Well-Known Configuration response.
@@ -46,74 +46,52 @@ import org.jspecify.annotations.Nullable;
 @CompiledJson
 public class WellKnownConfiguration {
 
-    /**
-     * The authorization server's issuer identifier.
-     * <p>
-     * This is a URL that the authorization server uses as its identifier.
-     * The issuer identifier is used to prevent authorization server mix-up attacks.
-     * <p>
-     * <strong>Required:</strong> Yes (per OpenID Connect Discovery spec)
-     */
     @JsonAttribute(name = "issuer")
     public String issuer;
 
-    /**
-     * URL of the authorization server's JWK Set document.
-     * <p>
-     * This document contains the signing key(s) the authorization server uses
-     * to sign JWTs. This URL MUST use the https scheme and MAY contain port,
-     * path and query parameter components.
-     * <p>
-     * <strong>Required:</strong> Yes (per OpenID Connect Discovery spec)
-     */
     @JsonAttribute(name = "jwks_uri")
     public String jwksUri;
 
-    /**
-     * URL of the authorization server's authorization endpoint.
-     * <p>
-     * This is where clients direct users for authentication and authorization.
-     * May be null if the authorization server doesn't support the authorization endpoint.
-     * <p>
-     * <strong>Required:</strong> No (optional for client_credentials flow)
-     */
     @JsonAttribute(name = "authorization_endpoint")
-    @Nullable
     public String authorizationEndpoint;
 
-    /**
-     * URL of the authorization server's token endpoint.
-     * <p>
-     * This is where clients exchange authorization codes for tokens,
-     * or where they directly obtain tokens via client credentials flow.
-     * <p>
-     * <strong>Required:</strong> No (but recommended for most OAuth 2.0 flows)
-     */
     @JsonAttribute(name = "token_endpoint")
-    @Nullable
     public String tokenEndpoint;
 
-    /**
-     * The userinfo endpoint URL.
-     * This is optional according to OpenID Connect specifications.
-     */
     @JsonAttribute(name = "userinfo_endpoint")
-    @Nullable
     public String userinfoEndpoint;
 
     // Default constructor for DSL-JSON
     public WellKnownConfiguration() {
     }
 
-    public WellKnownConfiguration(@NonNull String issuer, @NonNull String jwksUri,
-            @Nullable String authorizationEndpoint, @Nullable String tokenEndpoint) {
+    public WellKnownConfiguration(String issuer, String jwksUri,
+            String authorizationEndpoint, String tokenEndpoint, String userinfoEndpoint) {
         this.issuer = issuer;
         this.jwksUri = jwksUri;
         this.authorizationEndpoint = authorizationEndpoint;
         this.tokenEndpoint = tokenEndpoint;
+        this.userinfoEndpoint = userinfoEndpoint;
     }
 
-    // Getters
+    /**
+     * Sentinel value representing an empty/invalid well-known configuration.
+     * <p>
+     * This special value is used when HttpContentConverter needs to provide a non-null
+     * empty value but no valid configuration can be created. It uses a recognizable
+     * placeholder that clearly indicates this is not a real configuration.
+     * <p>
+     * <strong>This should never be used for actual OpenID Connect operations.</strong>
+     */
+    public static final WellKnownConfiguration EMPTY = new WellKnownConfiguration(
+            "about:empty", // RFC 6694 - special URI for empty content
+            "about:empty",
+            null,
+            null,
+            null
+    );
+
+    // Getters for compatibility
     public String issuer() {
         return issuer;
     }
@@ -130,34 +108,53 @@ public class WellKnownConfiguration {
         return tokenEndpoint;
     }
 
-    /**
-     * Sentinel value representing an empty/invalid well-known configuration.
-     * <p>
-     * This special value is used when HttpContentConverter needs to provide a non-null
-     * empty value but no valid configuration can be created. It uses a recognizable
-     * placeholder that clearly indicates this is not a real configuration.
-     * <p>
-     * <strong>This should never be used for actual OpenID Connect operations.</strong>
-     */
-    public static final WellKnownConfiguration EMPTY = new WellKnownConfiguration(
-            "about:empty", // RFC 6694 - special URI for empty content
-            "about:empty",
-            null,
-            null
-    );
+    public String userinfoEndpoint() {
+        return userinfoEndpoint;
+    }
 
     /**
-     * Creates a minimal Well-Known Configuration with only required fields.
-     * <p>
-     * This factory method creates a configuration with only the issuer and jwks_uri,
-     * which are the minimum required fields for JWT validation scenarios.
-     *
-     * @param issuer the authorization server's issuer identifier
-     * @param jwksUri the URL of the JWK Set document
-     * @return a WellKnownConfiguration with minimal required fields
+     * Gets the issuer as Optional.
+     * 
+     * @return Optional containing the issuer, empty if null
      */
-    public static WellKnownConfiguration minimal(@NonNull String issuer, @NonNull String jwksUri) {
-        return new WellKnownConfiguration(issuer, jwksUri, null, null);
+    public Optional<String> getIssuer() {
+        return Optional.ofNullable(issuer);
+    }
+
+    /**
+     * Gets the JWKS URI as Optional.
+     * 
+     * @return Optional containing the JWKS URI, empty if null
+     */
+    public Optional<String> getJwksUri() {
+        return Optional.ofNullable(jwksUri);
+    }
+
+    /**
+     * Gets the authorization endpoint as Optional.
+     * 
+     * @return Optional containing the authorization endpoint, empty if null
+     */
+    public Optional<String> getAuthorizationEndpoint() {
+        return Optional.ofNullable(authorizationEndpoint);
+    }
+
+    /**
+     * Gets the token endpoint as Optional.
+     * 
+     * @return Optional containing the token endpoint, empty if null
+     */
+    public Optional<String> getTokenEndpoint() {
+        return Optional.ofNullable(tokenEndpoint);
+    }
+
+    /**
+     * Gets the userinfo endpoint as Optional.
+     * 
+     * @return Optional containing the userinfo endpoint, empty if null
+     */
+    public Optional<String> getUserinfoEndpoint() {
+        return Optional.ofNullable(userinfoEndpoint);
     }
 
     /**

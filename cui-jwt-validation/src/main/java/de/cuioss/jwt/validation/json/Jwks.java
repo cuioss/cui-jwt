@@ -16,9 +16,9 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
-import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents a JSON Web Key Set (JWKS) structure for DSL-JSON mapping.
@@ -34,7 +34,16 @@ import java.util.List;
  * @since 1.0
  */
 @CompiledJson
-public record Jwks(@Nullable List<JwkKey> keys) {
+public record Jwks(List<JwkKey> keys) {
+
+    /**
+     * Gets the keys list as Optional.
+     * 
+     * @return Optional containing the keys list, empty if null
+     */
+    public Optional<List<JwkKey>> getKeys() {
+        return Optional.ofNullable(keys);
+    }
 
     /**
      * Creates an empty JWKS with no keys.

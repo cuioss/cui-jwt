@@ -16,7 +16,8 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
-import org.jspecify.annotations.Nullable;
+
+import java.util.Optional;
 
 /**
  * Represents a JSON Web Key (JWK) for DSL-JSON mapping.
@@ -35,49 +36,85 @@ import org.jspecify.annotations.Nullable;
  */
 @CompiledJson
 public record JwkKey(
-@Nullable String kty,    // Key type: "RSA", "EC"
-@Nullable String kid,   // Key ID (optional)
-@Nullable String alg,   // Algorithm: "RS256", "ES256", etc. (optional)
-@Nullable String n,     // RSA modulus (Base64url-encoded, RSA only)
-@Nullable String e,     // RSA exponent (Base64url-encoded, RSA only)
-@Nullable String crv,   // EC curve: "P-256", "P-384", "P-521" (EC only)
-@Nullable String x,     // EC x coordinate (Base64url-encoded, EC only)
-@Nullable String y      // EC y coordinate (Base64url-encoded, EC only)
+String kty,    // Key type: "RSA", "EC"
+String kid,   // Key ID (optional)
+String alg,   // Algorithm: "RS256", "ES256", etc. (optional)
+String n,     // RSA modulus (Base64url-encoded, RSA only)
+String e,     // RSA exponent (Base64url-encoded, RSA only)
+String crv,   // EC curve: "P-256", "P-384", "P-521" (EC only)
+String x,     // EC x coordinate (Base64url-encoded, EC only)
+String y      // EC y coordinate (Base64url-encoded, EC only)
 ) {
 
     /**
-     * Checks if this is an RSA key.
+     * Gets the key type as Optional.
      * 
-     * @return true if key type is "RSA", false if kty is null or different
+     * @return Optional containing the key type, empty if null
      */
-    public boolean isRsa() {
-        return "RSA".equals(kty);
+    public Optional<String> getKty() {
+        return Optional.ofNullable(kty);
     }
 
     /**
-     * Checks if this is an EC key.
+     * Gets the key ID as Optional.
      * 
-     * @return true if key type is "EC", false if kty is null or different
+     * @return Optional containing the key ID, empty if null
      */
-    public boolean isEc() {
-        return "EC".equals(kty);
+    public Optional<String> getKid() {
+        return Optional.ofNullable(kid);
     }
 
     /**
-     * Checks if this key has a key ID.
+     * Gets the algorithm as Optional.
      * 
-     * @return true if kid is not null and not empty
+     * @return Optional containing the algorithm, empty if null
      */
-    public boolean hasKeyId() {
-        return kid != null && !kid.trim().isEmpty();
+    public Optional<String> getAlg() {
+        return Optional.ofNullable(alg);
     }
 
     /**
-     * Checks if this key has an algorithm specified.
+     * Gets the RSA modulus as Optional.
      * 
-     * @return true if alg is not null and not empty
+     * @return Optional containing the RSA modulus, empty if null
      */
-    public boolean hasAlgorithm() {
-        return alg != null && !alg.trim().isEmpty();
+    public Optional<String> getN() {
+        return Optional.ofNullable(n);
+    }
+
+    /**
+     * Gets the RSA exponent as Optional.
+     * 
+     * @return Optional containing the RSA exponent, empty if null
+     */
+    public Optional<String> getE() {
+        return Optional.ofNullable(e);
+    }
+
+    /**
+     * Gets the EC curve as Optional.
+     * 
+     * @return Optional containing the EC curve, empty if null
+     */
+    public Optional<String> getCrv() {
+        return Optional.ofNullable(crv);
+    }
+
+    /**
+     * Gets the EC x coordinate as Optional.
+     * 
+     * @return Optional containing the x coordinate, empty if null
+     */
+    public Optional<String> getX() {
+        return Optional.ofNullable(x);
+    }
+
+    /**
+     * Gets the EC y coordinate as Optional.
+     * 
+     * @return Optional containing the y coordinate, empty if null
+     */
+    public Optional<String> getY() {
+        return Optional.ofNullable(y);
     }
 }

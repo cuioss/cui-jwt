@@ -104,7 +104,7 @@ public class TokenHeaderValidator {
     @SuppressWarnings("java:S3655") // owolff: False Positive: isPresent is checked before calling get()
     private void validateNoEmbeddedJwk(DecodedJwt decodedJwt) {
         JwtHeader header = decodedJwt.getHeader();
-        if (header.jwk().isPresent()) {
+        if (header.getJwk().isPresent()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format("Embedded JWK"));
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
@@ -157,8 +157,8 @@ public class TokenHeaderValidator {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             JwtHeader header = decodedJwt.getHeader();
-            var headerInfo = header.isValid()
-                    ? "Available header claims: alg=" + header.alg() + (header.kid().isPresent() ? ", kid=" + header.kid().get() : "") + (header.typ().isPresent() ? ", typ=" + header.typ().get() : "")
+            var headerInfo = header.getAlg().isPresent()
+                    ? "Available header claims: alg=" + header.alg() + (header.getKid().isPresent() ? ", kid=" + header.getKid().get() : "") + (header.getTyp().isPresent() ? ", typ=" + header.getTyp().get() : "")
                     : "Available header claims: none";
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,

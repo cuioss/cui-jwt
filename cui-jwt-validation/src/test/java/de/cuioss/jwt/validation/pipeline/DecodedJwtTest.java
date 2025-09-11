@@ -55,7 +55,7 @@ class DecodedJwtTest {
         JwtHeader actualHeader = jwt.header();
         assertNotNull(actualHeader);
         assertEquals(ALG, actualHeader.alg());
-        assertEquals(KID, actualHeader.kid().orElse(null));
+        assertEquals(KID, actualHeader.getKid().orElse(null));
 
         MapRepresentation actualBody = jwt.body();
         assertNotNull(actualBody);
@@ -135,7 +135,7 @@ class DecodedJwtTest {
         JwtHeader actualHeader = jwt.header();
         assertNotNull(actualHeader);
         assertEquals(ALG, actualHeader.alg());
-        assertEquals(KID, actualHeader.kid().orElse(null));
+        assertEquals(KID, actualHeader.getKid().orElse(null));
 
         MapRepresentation actualBody = jwt.body();
         assertNotNull(actualBody);
