@@ -104,8 +104,22 @@ class WellKnownParserTest {
     void shouldExtractStringValuesFromJsonObject(String key, String expectedValue, boolean shouldBePresent) {
         Optional<WellKnownConfiguration> result = parser.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
         assertTrue(result.isPresent());
-        // TODO: Update test for mapper approach - direct field access instead of getString
-        Optional<String> value = Optional.empty(); // parser.getString(result.get(), key);
+
+        // Test that the parser actually extracted the expected values
+        WellKnownConfiguration config = result.get();
+
+        Optional<String> value = switch (key) {
+            case "issuer" -> {
+                assertEquals("https://example.com", config.issuer());
+                yield Optional.ofNullable(config.issuer());
+            }
+            case "jwks_uri" -> {
+                assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
+                yield Optional.ofNullable(config.jwksUri());
+            }
+            case "non_existent_key" -> Optional.empty();
+            default -> throw new IllegalArgumentException("Unexpected key: " + key);
+        };
 
         assertEquals(shouldBePresent, value.isPresent());
         if (shouldBePresent) {

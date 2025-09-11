@@ -35,10 +35,19 @@ import java.util.Optional;
 public class OffsetDateTimeMapper implements ClaimMapper {
     @Override
     public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
-        Optional<Number> optionalNumber = mapRepresentation.getNumber(claimName);
-        if (optionalNumber.isEmpty()) {
+        Optional<Object> claimValue = mapRepresentation.getValue(claimName);
+
+        // If claim doesn't exist, return empty
+        if (claimValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.DATETIME);
         }
+
+        // Check if the claim value is a number
+        Optional<Number> optionalNumber = mapRepresentation.getNumber(claimName);
+        if (optionalNumber.isEmpty()) {
+            throw new IllegalArgumentException("Claim '" + claimName + "' exists but is not a numeric value");
+        }
+
         Number numberValue = optionalNumber.get();
 
         // According to JWT specification (RFC 7519), date-time values are represented as NumericDate,

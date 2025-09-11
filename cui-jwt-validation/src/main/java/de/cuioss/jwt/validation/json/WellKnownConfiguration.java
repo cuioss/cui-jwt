@@ -166,7 +166,9 @@ public class WellKnownConfiguration {
      * @return true if this is the EMPTY sentinel value
      */
     public boolean isEmpty() {
-        return this == EMPTY || "about:empty".equals(issuer);
+        return this == EMPTY ||
+                "about:empty".equals(issuer) ||
+                (issuer == null && jwksUri == null);
     }
 
     /**

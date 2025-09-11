@@ -16,7 +16,7 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -26,12 +26,15 @@ import java.util.List;
  * This class uses DSL-JSON's compile-time code generation for high-performance
  * JSON parsing without reflection. It replaces manual JSON parsing with direct
  * object mapping.
+ * <p>
+ * The keys field is nullable to support permissive JSON parsing - business rule
+ * validation should happen later in the validation chain.
  * 
  * @author Generated
  * @since 1.0
  */
 @CompiledJson
-public record Jwks(@NonNull List<JwkKey> keys) {
+public record Jwks(@Nullable List<JwkKey> keys) {
 
     /**
      * Creates an empty JWKS with no keys.
@@ -45,18 +48,18 @@ public record Jwks(@NonNull List<JwkKey> keys) {
     /**
      * Checks if this JWKS contains any keys.
      * 
-     * @return true if keys list is empty, false otherwise
+     * @return true if keys list is null or empty, false otherwise
      */
     public boolean isEmpty() {
-        return keys.isEmpty();
+        return keys == null || keys.isEmpty();
     }
 
     /**
      * Gets the number of keys in this JWKS.
      * 
-     * @return the number of keys
+     * @return the number of keys, or 0 if keys is null
      */
     public int size() {
-        return keys.size();
+        return keys == null ? 0 : keys.size();
     }
 }

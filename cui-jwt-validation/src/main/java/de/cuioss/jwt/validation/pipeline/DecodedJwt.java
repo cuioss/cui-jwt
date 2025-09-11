@@ -116,7 +116,7 @@ String rawToken
      * @return an Optional containing the algorithm if present
      */
     public Optional<String> getAlg() {
-        return header != null ? Optional.of(header.alg()) : Optional.empty();
+        return header != null ? Optional.ofNullable(header.alg()) : Optional.empty();
     }
 
     /**

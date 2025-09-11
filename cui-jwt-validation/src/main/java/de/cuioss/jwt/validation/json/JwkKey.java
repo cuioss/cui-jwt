@@ -16,7 +16,6 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -27,13 +26,16 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * RSA keys have: kty, kid, alg, n (modulus), e (exponent)
  * EC keys have: kty, kid, alg, crv (curve), x, y (coordinates)
+ * <p>
+ * The kty field is nullable to support permissive JSON parsing - business rule
+ * validation should happen later in the validation chain.
  * 
  * @author Generated
  * @since 1.0
  */
 @CompiledJson
 public record JwkKey(
-@NonNull String kty,    // Key type: "RSA", "EC"
+@Nullable String kty,    // Key type: "RSA", "EC"
 @Nullable String kid,   // Key ID (optional)
 @Nullable String alg,   // Algorithm: "RS256", "ES256", etc. (optional)
 @Nullable String n,     // RSA modulus (Base64url-encoded, RSA only)
@@ -46,7 +48,7 @@ public record JwkKey(
     /**
      * Checks if this is an RSA key.
      * 
-     * @return true if key type is "RSA"
+     * @return true if key type is "RSA", false if kty is null or different
      */
     public boolean isRsa() {
         return "RSA".equals(kty);
@@ -55,7 +57,7 @@ public record JwkKey(
     /**
      * Checks if this is an EC key.
      * 
-     * @return true if key type is "EC"
+     * @return true if key type is "EC", false if kty is null or different
      */
     public boolean isEc() {
         return "EC".equals(kty);

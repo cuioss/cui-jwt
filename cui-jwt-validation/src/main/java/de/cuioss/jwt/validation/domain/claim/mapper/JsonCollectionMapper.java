@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * A {@link ClaimMapper} implementation for mapping JSON values to collections.
@@ -50,8 +51,11 @@ public class JsonCollectionMapper implements ClaimMapper {
         List<String> values;
 
         if (value instanceof List<?> list) {
-            // Handle List (array)
-            originalValue = list.toString();
+            // Handle List (array) - create JSON array representation
+            originalValue = list.stream()
+                    .map(Object::toString)
+                    .map(s -> "\"" + s + "\"")
+                    .collect(Collectors.joining(",", "[", "]"));
             values = list.stream()
                     .map(Object::toString)
                     .toList();

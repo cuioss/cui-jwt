@@ -30,6 +30,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.jspecify.annotations.NonNull;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
@@ -280,7 +281,11 @@ public class NonValidatingJwtParser {
             String signature = parts[2];
 
             return new DecodedJwt(header, body, signature, parts, token);
-        } catch (Exception e) {
+        } catch (TokenValidationException e) {
+            // TokenValidationException already has proper event type, just re-throw
+            throw e;
+        } catch (IOException e) {
+            // IOException from DSL-JSON deserialization
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
             }
@@ -300,7 +305,7 @@ public class NonValidatingJwtParser {
      * @return the decoded JwtHeader
      * @throws Exception if decoding fails
      */
-    private JwtHeader decodeJwtHeader(String encodedHeader) throws Exception {
+    private JwtHeader decodeJwtHeader(String encodedHeader) throws IOException {
         String decodedJson = decodeBase64UrlPart(encodedHeader);
         DslJson<Object> dslJson = config.getDslJson();
 
@@ -324,7 +329,7 @@ public class NonValidatingJwtParser {
      * @return the decoded MapRepresentation
      * @throws Exception if decoding fails
      */
-    private MapRepresentation decodePayload(String encodedPayload) throws Exception {
+    private MapRepresentation decodePayload(String encodedPayload) throws IOException {
         String decodedJson = decodeBase64UrlPart(encodedPayload);
         DslJson<Object> dslJson = config.getDslJson();
 
@@ -338,9 +343,20 @@ public class NonValidatingJwtParser {
      * @return the decoded JSON string
      * @throws Exception if decoding fails
      */
-    private String decodeBase64UrlPart(String encodedPart) throws Exception {
+    private String decodeBase64UrlPart(String encodedPart) {
         try {
             byte[] decodedBytes = Base64.getUrlDecoder().decode(encodedPart);
+
+            // Check payload size limit to prevent memory exhaustion attacks
+            if (decodedBytes.length > config.getMaxPayloadSize()) {
+                LOGGER.warn(JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize()));
+                securityEventCounter.increment(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED);
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED,
+                        JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize())
+                );
+            }
+
             return new String(decodedBytes, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
             throw new TokenValidationException(

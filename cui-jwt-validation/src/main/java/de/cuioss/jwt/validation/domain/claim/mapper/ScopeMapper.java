@@ -24,6 +24,7 @@ import lombok.NonNull;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * A {@link ClaimMapper} implementation for mapping scope claims.
@@ -65,7 +66,7 @@ public class ScopeMapper implements ClaimMapper {
                             return "\"" + item.toString() + "\"";
                         }
                     })
-                    .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+                    .collect(Collectors.joining(",", "[", "]"));
             scopes = listValue.stream()
                     .map(Object::toString)
                     .toList();

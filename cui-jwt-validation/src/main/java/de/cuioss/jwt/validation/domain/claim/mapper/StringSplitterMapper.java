@@ -60,14 +60,21 @@ public class StringSplitterMapper implements ClaimMapper {
 
     @Override
     public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
-        Optional<String> optionalStringValue = mapRepresentation.getString(claimName);
-        if (optionalStringValue.isEmpty()) {
+        Optional<Object> claimValue = mapRepresentation.getValue(claimName);
+
+        // If claim doesn't exist, return empty
+        if (claimValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
+
+        // Check if the claim value is a string
+        Optional<String> optionalStringValue = mapRepresentation.getString(claimName);
+        if (optionalStringValue.isEmpty()) {
+            throw new IllegalArgumentException("Claim '" + claimName + "' exists but is not a string value");
+        }
+
         String originalValue = optionalStringValue.get();
-
         List<String> values = Splitter.on(splitChar).trimResults().omitEmptyStrings().splitToList(originalValue);
-
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(values));
     }
 }

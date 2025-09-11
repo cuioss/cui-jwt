@@ -97,12 +97,11 @@ class DecodedJwtTest {
     }
 
     @Test
-    @DisplayName("Should create DecodedJwt with empty header and body")
-    void shouldCreateDecodedJwtWithEmptyHeaderAndBody() {
+    @DisplayName("Should create DecodedJwt with null header and body")
+    void shouldCreateDecodedJwtWithNullHeaderAndBody() {
 
-        JwtHeader emptyHeader = createEmptyHeader();
-        MapRepresentation emptyBody = createEmptyBody();
-        DecodedJwt jwt = new DecodedJwt(emptyHeader, emptyBody, SIGNATURE, PARTS, RAW_TOKEN);
+        // Use actual null values, not "empty" objects
+        DecodedJwt jwt = new DecodedJwt(null, null, SIGNATURE, PARTS, RAW_TOKEN);
         JwtHeader actualHeader = jwt.header();
         assertNull(actualHeader);
 

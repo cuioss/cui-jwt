@@ -16,13 +16,18 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.DslJson;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.io.IOException;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A type-safe wrapper for Map<String, Object> that provides convenient access methods
@@ -46,7 +51,12 @@ import java.util.Set;
  * @author Oliver Wolff
  * @since 1.0
  */
-public class MapRepresentation {
+@EqualsAndHashCode
+@ToString
+public class MapRepresentation implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Map<String, Object> data;
 
@@ -86,8 +96,8 @@ public class MapRepresentation {
         // Map.copyOf() doesn't allow null values, so we need to filter them out
         Map<String, Object> filteredData = parsedData.entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
-                .collect(java.util.stream.Collectors.toUnmodifiableMap(
-                        Map.Entry::getKey, 
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
                         Map.Entry::getValue
                 ));
         return new MapRepresentation(filteredData);
@@ -117,8 +127,8 @@ public class MapRepresentation {
         // Map.copyOf() doesn't allow null values, so we need to filter them out
         Map<String, Object> filteredData = parsedData.entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
-                .collect(java.util.stream.Collectors.toUnmodifiableMap(
-                        Map.Entry::getKey, 
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
                         Map.Entry::getValue
                 ));
         return new MapRepresentation(filteredData);
@@ -289,8 +299,4 @@ public class MapRepresentation {
         return data;
     }
 
-    @Override
-    public String toString() {
-        return "MapRepresentation{size=" + data.size() + "}";
-    }
 }
