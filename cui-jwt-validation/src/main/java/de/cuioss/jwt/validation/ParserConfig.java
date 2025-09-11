@@ -71,7 +71,6 @@ import lombok.Getter;
  */
 @Builder
 @Getter
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class ParserConfig {
 
     /**
@@ -153,7 +152,7 @@ public final class ParserConfig {
      * @return a DslJson instance configured with security settings
      */
     @Getter(lazy = true)
-    DslJson<Object> dslJson = createDslJson();
+    private final DslJson<Object> dslJson = createDslJson();
 
     /**
      * Private constructor for ParserConfig.
@@ -168,7 +167,6 @@ public final class ParserConfig {
         this.maxPayloadSize = maxPayloadSize;
         this.maxStringLength = maxStringLength;
         this.maxBufferSize = maxBufferSize;
-        this.dslJson = createDslJson();
     }
 
     /**

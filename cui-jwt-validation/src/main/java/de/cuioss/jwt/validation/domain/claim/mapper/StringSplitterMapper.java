@@ -17,11 +17,9 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.string.Splitter;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +46,6 @@ import java.util.Optional;
  *
  * @since 1.0
  */
-@RequiredArgsConstructor
 public class StringSplitterMapper implements ClaimMapper {
 
     /**
@@ -57,21 +54,18 @@ public class StringSplitterMapper implements ClaimMapper {
     @NonNull
     private final Character splitChar;
 
+    public StringSplitterMapper(@NonNull Character splitChar) {
+        this.splitChar = splitChar;
+    }
+
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
-        Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
-        if (optionalJsonValue.isEmpty()) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+        Optional<String> optionalStringValue = mapRepresentation.getString(claimName);
+        if (optionalStringValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
-        JsonValue jsonValue = optionalJsonValue.get();
+        String originalValue = optionalStringValue.get();
 
-        // Only handle STRING value types
-        if (jsonValue.getValueType() != JsonValue.ValueType.STRING) {
-            throw new IllegalArgumentException("Unsupported JSON value type for StringSplitterMapper: " +
-                    jsonValue.getValueType() + ". Only STRING values are supported.");
-        }
-
-        String originalValue = ClaimMapperUtils.extractStringFromJsonValue(jsonObject, claimName, jsonValue);
         List<String> values = Splitter.on(splitChar).trimResults().omitEmptyStrings().splitToList(originalValue);
 
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(values));

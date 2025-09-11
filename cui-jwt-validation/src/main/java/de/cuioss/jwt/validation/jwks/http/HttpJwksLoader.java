@@ -362,7 +362,8 @@ public class HttpJwksLoader implements JwksLoader {
                             }
                             try {
                                 // Use DSL-JSON to parse to Jwks
-                                Jwks jwks = dslJson.deserialize(Jwks.class, body.getBytes(StandardCharsets.UTF_8));
+                                byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+                                Jwks jwks = dslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
                                 return Optional.ofNullable(jwks);
                             } catch (java.io.IOException | IllegalArgumentException e) {
                                 return Optional.empty();

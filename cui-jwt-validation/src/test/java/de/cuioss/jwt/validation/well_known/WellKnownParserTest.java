@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;

@@ -39,7 +39,7 @@ import de.cuioss.jwt.validation.pipeline.TokenSignatureValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -369,7 +369,7 @@ public class TokenValidator {
         Map<String, ClaimValue> claims = Map.of();
         try {
             DecodedJwt decoded = jwtParser.decode(tokenString, false);
-            JsonObject body = decoded.getBody();
+            MapRepresentation body = decoded.getBody();
             if (!body.isEmpty()) {
                 LOGGER.debug("Adding claims, because of being a JWT");
                 claims = TokenBuilder.extractClaimsForRefreshToken(body);

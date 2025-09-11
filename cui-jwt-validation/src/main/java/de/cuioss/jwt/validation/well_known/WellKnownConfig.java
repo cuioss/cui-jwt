@@ -44,7 +44,6 @@ import java.net.URI;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode
 public class WellKnownConfig implements HttpHandlerProvider {
@@ -77,6 +76,12 @@ public class WellKnownConfig implements HttpHandlerProvider {
      */
     @Getter
     private final ParserConfig parserConfig;
+
+    private WellKnownConfig(HttpHandler httpHandler, RetryStrategy retryStrategy, ParserConfig parserConfig) {
+        this.httpHandler = httpHandler;
+        this.retryStrategy = retryStrategy;
+        this.parserConfig = parserConfig;
+    }
 
     /**
      * Gets the HTTP handler for well-known endpoint requests.

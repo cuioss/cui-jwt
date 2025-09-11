@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.CollectionClaimHandler;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
@@ -75,12 +76,14 @@ public class AccessTokenContent extends BaseTokenContent {
     /**
      * Constructs a new AccessTokenContent with the given claims, raw token, and email.
      *
-     * @param claims   the token claims
-     * @param rawToken the raw token string
-     * @param email    the user's email address
+     * @param claims     the token claims
+     * @param rawToken   the raw token string
+     * @param email      the user's email address
+     * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
-    public AccessTokenContent(Map<String, ClaimValue> claims, String rawToken, String email) {
-        super(claims, rawToken, TokenType.ACCESS_TOKEN);
+    public AccessTokenContent(Map<String, ClaimValue> claims, String rawToken, String email, 
+                             MapRepresentation rawPayload) {
+        super(claims, rawToken, TokenType.ACCESS_TOKEN, rawPayload);
         this.email = email;
     }
 

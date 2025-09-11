@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
+import java.util.Base64;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -78,6 +79,31 @@ public final class JwkKeyHandler {
     }
 
     /**
+     * Parses an RSA public key from a JwkKey record.
+     *
+     * @param jwk the JwkKey record containing RSA parameters
+     * @return the parsed RSA public key
+     * @throws InvalidKeySpecException if the key specification is invalid
+     */
+    public static PublicKey parseRsaKey(de.cuioss.jwt.validation.json.JwkKey jwk) throws InvalidKeySpecException {
+        if (jwk.e() == null) {
+            throw new InvalidKeySpecException("Missing required RSA parameter: e (exponent)");
+        }
+        if (jwk.n() == null) {
+            throw new InvalidKeySpecException("Missing required RSA parameter: n (modulus)");
+        }
+        
+        // Decode Base64url-encoded values
+        BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.e()));
+        BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.n()));
+        
+        // Create RSA public key
+        RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
+        KeyFactory factory = getKeyFactory(RSA_KEY_TYPE);
+        return factory.generatePublic(spec);
+    }
+
+    /**
      * Parse an EC key from a JWK.
      *
      * @param jwk the JWK object
@@ -94,6 +120,40 @@ public final class JwkKeyHandler {
                 .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("x")));
         BigInteger y = JwkKeyConstants.YCoordinate.from(jwk)
                 .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("y")));
+
+        // Create EC point
+        ECPoint point = new ECPoint(x, y);
+
+        // Get EC parameter spec for the curve
+        ECParameterSpec params = getEcParameterSpec(curve);
+
+        // Create EC public key
+        ECPublicKeySpec spec = new ECPublicKeySpec(point, params);
+        KeyFactory factory = getKeyFactory(EC_KEY_TYPE);
+        return factory.generatePublic(spec);
+    }
+
+    /**
+     * Parse an EC key from a JwkKey record.
+     *
+     * @param jwk the JwkKey record containing EC parameters
+     * @return the EC public key
+     * @throws InvalidKeySpecException if the key specification is invalid
+     */
+    public static PublicKey parseEcKey(de.cuioss.jwt.validation.json.JwkKey jwk) throws InvalidKeySpecException {
+        if (jwk.crv() == null) {
+            throw new InvalidKeySpecException("Missing required EC parameter: crv (curve)");
+        }
+        if (jwk.x() == null) {
+            throw new InvalidKeySpecException("Missing required EC parameter: x (x coordinate)");
+        }
+        if (jwk.y() == null) {
+            throw new InvalidKeySpecException("Missing required EC parameter: y (y coordinate)");
+        }
+        
+        String curve = jwk.crv();
+        BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.x()));
+        BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.y()));
 
         // Create EC point
         ECPoint point = new ECPoint(x, y);

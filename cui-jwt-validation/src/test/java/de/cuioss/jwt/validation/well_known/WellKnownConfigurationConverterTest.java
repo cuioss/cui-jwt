@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

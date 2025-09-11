@@ -17,10 +17,8 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.NonNull;
 
 import java.util.Collections;
@@ -63,40 +61,27 @@ public class KeycloakDefaultRolesMapper implements ClaimMapper {
     private static final String ROLES_CLAIM = "roles";
 
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
         LOGGER.debug("KeycloakDefaultRolesMapper.map called for claim: %s", claimName);
-        LOGGER.debug("Input JSON: %s", jsonObject.toString());
+        LOGGER.debug("Input MapRepresentation: %s", mapRepresentation.toString());
 
-        Optional<JsonValue> realmAccessValue = ClaimMapperUtils.getJsonValue(jsonObject, REALM_ACCESS_CLAIM);
+        Optional<MapRepresentation> realmAccessValue = mapRepresentation.getNestedMap(REALM_ACCESS_CLAIM);
         if (realmAccessValue.isEmpty()) {
             LOGGER.debug("No realm_access claim found in token");
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
-        JsonValue realmAccess = realmAccessValue.get();
-        if (realmAccess.getValueType() != JsonValue.ValueType.OBJECT) {
-            LOGGER.debug("realm_access claim is not an object: %s", realmAccess.getValueType());
-            return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
-        }
-
-        JsonObject realmAccessObject = realmAccess.asJsonObject();
+        MapRepresentation realmAccessObject = realmAccessValue.get();
         LOGGER.debug("realm_access object: %s", realmAccessObject.toString());
 
-        Optional<JsonValue> rolesValue = ClaimMapperUtils.getJsonValue(realmAccessObject, ROLES_CLAIM);
+        Optional<List<String>> rolesValue = realmAccessObject.getStringList(ROLES_CLAIM);
         if (rolesValue.isEmpty()) {
             LOGGER.debug("No roles claim found in realm_access");
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
-        JsonValue roles = rolesValue.get();
-        if (roles.getValueType() != JsonValue.ValueType.ARRAY) {
-            LOGGER.debug("roles claim is not an array: %s", roles.getValueType());
-            return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
-        }
-
-        JsonArray rolesArray = roles.asJsonArray();
-        String originalValue = rolesArray.toString();
-        List<String> rolesList = ClaimMapperUtils.extractStringsFromJsonArray(rolesArray);
+        List<String> rolesList = rolesValue.get();
+        String originalValue = rolesList.toString();
 
         LOGGER.debug("Successfully mapped roles: %s", rolesList);
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(rolesList));

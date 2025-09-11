@@ -17,9 +17,7 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.NonNull;
 
 import java.util.ArrayList;
@@ -41,30 +39,29 @@ import java.util.Optional;
  */
 public class JsonCollectionMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
-        Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
-        if (optionalJsonValue.isEmpty()) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+        Optional<Object> optionalValue = mapRepresentation.getValue(claimName);
+        if (optionalValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
-        JsonValue jsonValue = optionalJsonValue.get();
+        Object value = optionalValue.get();
 
         String originalValue;
         List<String> values;
 
-        if (jsonValue.getValueType() == JsonValue.ValueType.ARRAY) {
-            // Handle JSON array
-            JsonArray arrayValue = jsonObject.getJsonArray(claimName);
-            originalValue = arrayValue.toString();
-            values = ClaimMapperUtils.extractStringsFromJsonArray(arrayValue);
+        if (value instanceof List<?> list) {
+            // Handle List (array)
+            originalValue = list.toString();
+            values = list.stream()
+                    .map(Object::toString)
+                    .toList();
         } else {
             // Handle all other types by wrapping them in a single-element list
-            originalValue = ClaimMapperUtils.extractStringFromJsonValue(jsonObject, claimName, jsonValue);
+            originalValue = value.toString();
 
-            // Add the single value to the list if it's not null
+            // Add the single value to the list
             values = new ArrayList<>();
-            if (originalValue != null) {
-                values.add(originalValue);
-            }
+            values.add(originalValue);
         }
 
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(values));

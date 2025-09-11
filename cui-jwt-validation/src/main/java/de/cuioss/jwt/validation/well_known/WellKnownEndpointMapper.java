@@ -40,12 +40,15 @@ import java.util.Map;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor
 class WellKnownEndpointMapper {
 
     private static final CuiLogger LOGGER = new CuiLogger(WellKnownEndpointMapper.class);
 
     private final HttpHandler baseHandler;
+
+    WellKnownEndpointMapper(HttpHandler baseHandler) {
+        this.baseHandler = baseHandler;
+    }
 
     /**
      * Adds an HttpHandler to the map of endpoints.

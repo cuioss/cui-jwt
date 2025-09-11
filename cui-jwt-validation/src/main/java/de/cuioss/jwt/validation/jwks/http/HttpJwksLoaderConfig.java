@@ -55,7 +55,6 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode
 public class HttpJwksLoaderConfig implements HttpHandlerProvider {
@@ -118,6 +117,19 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
     @EqualsAndHashCode.Exclude
     private final ScheduledExecutorService scheduledExecutorService;
 
+    private HttpJwksLoaderConfig(int refreshIntervalSeconds,
+                                HttpHandler httpHandler,
+                                WellKnownResolver wellKnownResolver,
+                                WellKnownConfig wellKnownConfig,
+                                RetryStrategy retryStrategy,
+                                ScheduledExecutorService scheduledExecutorService) {
+        this.refreshIntervalSeconds = refreshIntervalSeconds;
+        this.httpHandler = httpHandler;
+        this.wellKnownResolver = wellKnownResolver;
+        this.wellKnownConfig = wellKnownConfig;
+        this.retryStrategy = retryStrategy;
+        this.scheduledExecutorService = scheduledExecutorService;
+    }
 
     /**
      * Provides the HttpHandler for HTTP operations, implementing HttpHandlerProvider interface.
@@ -473,5 +485,17 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
         private WellKnownResolver createWellKnownResolver(WellKnownConfig config) {
             return new HttpWellKnownResolver(config);
         }
+    }
+
+    public WellKnownResolver getWellKnownResolver() {
+        return wellKnownResolver;
+    }
+
+    public ScheduledExecutorService getScheduledExecutorService() {
+        return scheduledExecutorService;
+    }
+
+    public int getRefreshIntervalSeconds() {
+        return refreshIntervalSeconds;
     }
 }

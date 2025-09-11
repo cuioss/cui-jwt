@@ -16,14 +16,14 @@
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.NonNull;
 
 /***
- * A functional interface for mapping a claim from a {@link JsonObject} to a {@link ClaimValue}.
+ * A functional interface for mapping a claim from a {@link MapRepresentation} to a {@link ClaimValue}.
  * <p>
  * This interface is responsible for extracting and converting JWT claim values from their
- * JSON representation into strongly-typed {@link ClaimValue} objects. It provides the
+ * map representation into strongly-typed {@link ClaimValue} objects. It provides the
  * foundational mapping capability for claim extraction in the JWT validation process.
  * <p>
  * The interface supports various claim types:
@@ -50,11 +50,11 @@ import lombok.NonNull;
 public interface ClaimMapper {
 
     /**
-     * Maps a claim from a {@link JsonObject} to a {@link ClaimValue}.
+     * Maps a claim from a {@link MapRepresentation} to a {@link ClaimValue}.
      *
-     * @param jsonObject the JSON object containing the claim
-     * @param claimName the name of the claim in the JSON object
+     * @param mapRepresentation the map representation containing the claim
+     * @param claimName the name of the claim in the map
      * @return the mapped claim as a ClaimValue
      */
-    ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName);
+    ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName);
 }

@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.pipeline;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -88,14 +89,14 @@ public class TokenBuilder {
      * @return an Optional containing the AccessTokenContent if it could be created, empty otherwise
      */
     public Optional<AccessTokenContent> createAccessToken(@NonNull DecodedJwt decodedJwt) {
-        JsonObject body = decodedJwt.getBody();
+        MapRepresentation body = decodedJwt.getBody();
         if (body.isEmpty()) {
             return Optional.empty();
         }
 
         Map<String, ClaimValue> claims = extractClaims(body);
 
-        return Optional.of(new AccessTokenContent(claims, decodedJwt.rawToken(), null));
+        return Optional.of(new AccessTokenContent(claims, decodedJwt.rawToken(), null, body));
     }
 
     /**
@@ -105,43 +106,45 @@ public class TokenBuilder {
      * @return an Optional containing the IdTokenContent if it could be created, empty otherwise
      */
     public Optional<IdTokenContent> createIdToken(@NonNull DecodedJwt decodedJwt) {
-        JsonObject body = decodedJwt.getBody();
+        MapRepresentation body = decodedJwt.getBody();
         if (body.isEmpty()) {
             return Optional.empty();
         }
 
         Map<String, ClaimValue> claims = extractClaims(body);
 
-        return Optional.of(new IdTokenContent(claims, decodedJwt.rawToken()));
+        return Optional.of(new IdTokenContent(claims, decodedJwt.rawToken(), body));
     }
 
 
     /**
-     * Extracts claims from a JSON object using proper claim mappers.
+     * Extracts claims from a MapRepresentation using proper claim mappers.
      *
-     * @param jsonObject the JSON object containing claims
+     * @param mapRepresentation the MapRepresentation containing claims
      * @return a map of claim names to claim values
      */
-    private Map<String, ClaimValue> extractClaims(JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
+    private Map<String, ClaimValue> extractClaims(MapRepresentation mapRepresentation) {
+        Map<String, ClaimValue> claims = HashMap.newHashMap(mapRepresentation.size());
 
-        for (String key : jsonObject.keySet()) {
+        for (String key : mapRepresentation.keySet()) {
             // Try to find a configured claim mapper for this key
             ClaimMapper mapper = allMappers.get(key);
 
             if (mapper != null) {
                 // Use the configured mapper (either built-in or custom)
-                ClaimValue claimValue = mapper.map(jsonObject, key);
+                ClaimValue claimValue = mapper.map(mapRepresentation, key);
                 claims.put(key, claimValue);
             } else {
                 // Fallback for unknown claims - use identity mapping
-                Object value = jsonObject.get(key);
-                if (value instanceof String stringValue) {
-                    claims.put(key, ClaimValue.forPlainString(stringValue));
-                } else if (value instanceof JsonString jsonString) {
-                    claims.put(key, ClaimValue.forPlainString(jsonString.getString()));
-                } else if (value != null) {
-                    claims.put(key, ClaimValue.forPlainString(value.toString()));
+                Optional<String> stringValue = mapRepresentation.getString(key);
+                if (stringValue.isPresent()) {
+                    claims.put(key, ClaimValue.forPlainString(stringValue.get()));
+                } else {
+                    // Handle non-string values by converting to string
+                    Optional<Object> value = mapRepresentation.getValue(key);
+                    if (value.isPresent()) {
+                        claims.put(key, ClaimValue.forPlainString(value.get().toString()));
+                    }
                 }
             }
         }
@@ -149,24 +152,26 @@ public class TokenBuilder {
         return claims;
     }
 
+
     /**
-     * Extracts claims for a Refresh-Token from a JSON object.
+     * Extracts claims for a Refresh-Token from a MapRepresentation.
      *
-     * @param jsonObject the JSON object containing claims
+     * @param mapRepresentation the MapRepresentation containing claims
      * @return a map of claim names to claim values
      */
-    public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
+    public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull MapRepresentation mapRepresentation) {
+        Map<String, ClaimValue> claims = HashMap.newHashMap(mapRepresentation.size());
 
-        for (String key : jsonObject.keySet()) {
-            // Convert Map entry to ClaimValue - handle JsonString properly
-            Object value = jsonObject.get(key);
-            if (value instanceof String stringValue) {
-                claims.put(key, ClaimValue.forPlainString(stringValue));
-            } else if (value instanceof JsonString jsonString) {
-                claims.put(key, ClaimValue.forPlainString(jsonString.getString()));
-            } else if (value != null) {
-                claims.put(key, ClaimValue.forPlainString(value.toString()));
+        for (String key : mapRepresentation.keySet()) {
+            // Convert Map entry to ClaimValue
+            Optional<Object> value = mapRepresentation.getValue(key);
+            if (value.isPresent()) {
+                Object valueObj = value.get();
+                if (valueObj instanceof String stringValue) {
+                    claims.put(key, ClaimValue.forPlainString(stringValue));
+                } else {
+                    claims.put(key, ClaimValue.forPlainString(valueObj.toString()));
+                }
             }
         }
 

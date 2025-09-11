@@ -53,13 +53,16 @@ class KeyProcessorTest {
         @DisplayName("Should process valid RSA key")
         void shouldProcessValidRsaKey() {
             // Given a valid RSA JWK with actual Base64-encoded values
-            JsonObject rsaJwk = Json.createObjectBuilder()
-                    .add("kty", "RSA")
-                    .add("kid", "test-key")
-                    .add("alg", "RS256")
-                    .add("n", "0vx7agoebGcQSuuPiLJXZptN9nndrQmbPFRP_gdHPfP7ZjwuvUAqW3AJTEqiVjjpX0yCbZE6krXrOu8n4EJhZjJWgPUQJkIFJTzN6vkF7Oij_7Vo5w8VjL-Aq2eCKr6w")
-                    .add("e", "AQAB")
-                    .build();
+            de.cuioss.jwt.validation.json.JwkKey rsaJwk = new de.cuioss.jwt.validation.json.JwkKey(
+                    "RSA", // kty
+                    "test-key", // kid
+                    "RS256", // alg
+                    "0vx7agoebGcQSuuPiLJXZptN9nndrQmbPFRP_gdHPfP7ZjwuvUAqW3AJTEqiVjjpX0yCbZE6krXrOu8n4EJhZjJWgPUQJkIFJTzN6vkF7Oij_7Vo5w8VjL-Aq2eCKr6w", // n
+                    "AQAB", // e
+                    null, // crv
+                    null, // x
+                    null  // y
+            );
 
             // When processing
             Optional<KeyInfo> result = processor.processKey(rsaJwk);
@@ -76,12 +79,16 @@ class KeyProcessorTest {
         @DisplayName("Should use default algorithm for RSA key without alg")
         void shouldUseDefaultAlgorithmForRsaKey() {
             // Given an RSA JWK without algorithm
-            JsonObject rsaJwk = Json.createObjectBuilder()
-                    .add("kty", "RSA")
-                    .add("kid", "test-key")
-                    .add("n", "0vx7agoebGcQSuuPiLJXZptN9nndrQmbPFRP_gdHPfP7ZjwuvUAqW3AJTEqiVjjpX0yCbZE6krXrOu8n4EJhZjJWgPUQJkIFJTzN6vkF7Oij_7Vo5w8VjL-Aq2eCKr6w")
-                    .add("e", "AQAB")
-                    .build();
+            de.cuioss.jwt.validation.json.JwkKey rsaJwk = new de.cuioss.jwt.validation.json.JwkKey(
+                    "RSA", // kty
+                    "test-key", // kid
+                    null, // alg (no algorithm specified)
+                    "0vx7agoebGcQSuuPiLJXZptN9nndrQmbPFRP_gdHPfP7ZjwuvUAqW3AJTEqiVjjpX0yCbZE6krXrOu8n4EJhZjJWgPUQJkIFJTzN6vkF7Oij_7Vo5w8VjL-Aq2eCKr6w", // n
+                    "AQAB", // e
+                    null, // crv
+                    null, // x
+                    null  // y
+            );
 
             // When processing
             Optional<KeyInfo> result = processor.processKey(rsaJwk);

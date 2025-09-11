@@ -17,10 +17,8 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.NonNull;
 
 import java.util.Collections;
@@ -64,25 +62,18 @@ public class KeycloakDefaultGroupsMapper implements ClaimMapper {
     private static final String GROUPS_CLAIM = "groups";
 
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
         LOGGER.debug("KeycloakDefaultGroupsMapper.map called for claim: %s", claimName);
-        LOGGER.debug("Input JSON: %s", jsonObject.toString());
+        LOGGER.debug("Input MapRepresentation: %s", mapRepresentation.toString());
 
-        Optional<JsonValue> groupsValue = ClaimMapperUtils.getJsonValue(jsonObject, GROUPS_CLAIM);
+        Optional<List<String>> groupsValue = mapRepresentation.getStringList(GROUPS_CLAIM);
         if (groupsValue.isEmpty()) {
             LOGGER.debug("No groups claim found in token");
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
 
-        JsonValue groups = groupsValue.get();
-        if (groups.getValueType() != JsonValue.ValueType.ARRAY) {
-            LOGGER.debug("groups claim is not an array: %s", groups.getValueType());
-            return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
-        }
-
-        JsonArray groupsArray = groups.asJsonArray();
-        String originalValue = groupsArray.toString();
-        List<String> groupsList = ClaimMapperUtils.extractStringsFromJsonArray(groupsArray);
+        List<String> groupsList = groupsValue.get();
+        String originalValue = groupsList.toString();
 
         LOGGER.debug("Successfully mapped groups: %s", groupsList);
         return ClaimValue.forList(originalValue, Collections.unmodifiableList(groupsList));

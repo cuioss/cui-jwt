@@ -17,10 +17,8 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.string.Splitter;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.NonNull;
 
 import java.util.List;
@@ -38,31 +36,32 @@ import java.util.TreeSet;
  */
 public class ScopeMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
-        Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
-        if (optionalJsonValue.isEmpty()) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+        Optional<Object> optionalValue = mapRepresentation.getValue(claimName);
+        if (optionalValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);
         }
-        JsonValue jsonValue = optionalJsonValue.get();
+        Object value = optionalValue.get();
 
         String originalValue;
         List<String> scopes;
 
         // According to OAuth 2.0 specification (RFC 6749), the scope parameter is a space-delimited string.
         // However, some implementations use arrays for scopes, so we handle both formats.
-        if (jsonValue.getValueType() == JsonValue.ValueType.STRING) {
+        if (value instanceof String stringValue) {
             // Handle space-separated string of scopes (standard format per RFC 6749)
-            originalValue = ClaimMapperUtils.extractStringFromJsonValue(jsonObject, claimName, jsonValue);
+            originalValue = stringValue;
             scopes = Splitter.on(' ').trimResults().omitEmptyStrings().splitToList(originalValue);
-        } else if (jsonValue.getValueType() == JsonValue.ValueType.ARRAY) {
-            // Handle JSON array of scopes (non-standard but common)
-            JsonArray arrayValue = jsonObject.getJsonArray(claimName);
-            originalValue = arrayValue.toString();
-            scopes = ClaimMapperUtils.extractStringsFromJsonArray(arrayValue);
+        } else if (value instanceof List<?> listValue) {
+            // Handle List of scopes (non-standard but common)
+            originalValue = listValue.toString();
+            scopes = listValue.stream()
+                    .map(Object::toString)
+                    .toList();
         } else {
             // Reject other types as non-compliant with OAuth 2.0 specification
-            throw new IllegalArgumentException("Unsupported JSON value type for scope: " +
-                    jsonValue.getValueType() + ". According to OAuth 2.0 specification, scope should be a space-delimited string.");
+            throw new IllegalArgumentException("Unsupported value type for scope: " +
+                    value.getClass().getSimpleName() + ". According to OAuth 2.0 specification, scope should be a space-delimited string.");
         }
 
         return ClaimValue.forList(originalValue, new TreeSet<>(scopes).stream().toList());

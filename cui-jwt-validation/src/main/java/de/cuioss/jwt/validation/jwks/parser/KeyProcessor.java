@@ -40,7 +40,6 @@ import java.util.Optional;
  *   <li>Error handling and logging</li>
  * </ul>
  */
-@RequiredArgsConstructor
 public class KeyProcessor {
 
     private static final CuiLogger LOGGER = new CuiLogger(KeyProcessor.class);
@@ -52,6 +51,12 @@ public class KeyProcessor {
 
     @NonNull
     private final JwkAlgorithmPreferences jwkAlgorithmPreferences;
+
+    public KeyProcessor(@NonNull SecurityEventCounter securityEventCounter, 
+                       @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences) {
+        this.securityEventCounter = securityEventCounter;
+        this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
+    }
 
     /**
      * Process a JWK object and create a KeyInfo with validation.
@@ -120,9 +125,9 @@ public class KeyProcessor {
             }
         }
 
-        // Validate algorithm if present
-        if (keyObject.containsKey(JwkKeyConstants.Algorithm.KEY)) {
-            String algorithm = keyObject.getString(JwkKeyConstants.Algorithm.KEY);
+        // Validate algorithm if present  
+        if (jwkKey.alg() != null) {
+            String algorithm = jwkKey.alg();
             if (!jwkAlgorithmPreferences.isSupported(algorithm)) {
                 LOGGER.warn(WARN.JWK_INVALID_ALGORITHM.format(algorithm));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
@@ -144,7 +149,7 @@ public class KeyProcessor {
         try {
             var publicKey = JwkKeyHandler.parseRsaKey(jwk);
             // Determine algorithm if not specified
-            String alg = jwk.hasAlgorithm() ? jwk.alg() : "RS256"; // Default to RS256
+            String alg = jwk.alg() != null ? jwk.alg() : "RS256"; // Default to RS256
             LOGGER.debug("Parsed RSA key with ID: %s and algorithm: %s", kid, alg);
             return new KeyInfo(publicKey, alg, kid);
         } catch (InvalidKeySpecException | IllegalStateException e) {

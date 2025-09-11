@@ -17,14 +17,13 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.NonNull;
 
 import java.util.Optional;
 
 /**
- * A {@link ClaimMapper} implementation that maps a claim from a {@link JsonObject} to a
+ * A {@link ClaimMapper} implementation that maps a claim from a {@link MapRepresentation} to a
  * {@link ClaimValue} without any transformation.
  * This is useful for claims that are already in the desired format.
  *
@@ -32,30 +31,23 @@ import java.util.Optional;
  */
 public class IdentityMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
 
-        Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
-        if (optionalJsonValue.isEmpty()) {
+        Optional<Object> optionalValue = mapRepresentation.getValue(claimName);
+        if (optionalValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING);
         }
-        JsonValue jsonValue = optionalJsonValue.get();
+        Object value = optionalValue.get();
 
-        // According to JWT specification, we should only handle the following value types:
-        // STRING, NUMBER, BOOLEAN, ARRAY, OBJECT
         // For IdentityMapper, we convert all types to string representation
-        String value;
-        switch (jsonValue.getValueType()) {
-            case STRING:
-                value = jsonObject.getString(claimName);
-                break;
-            case NUMBER, TRUE, FALSE, ARRAY, OBJECT:
-                value = jsonValue.toString();
-                break;
-            default:
-                // This should never happen as we've already checked for NULL
-                return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING);
+        String stringValue;
+        if (value instanceof String str) {
+            stringValue = str;
+        } else {
+            // Convert other types (numbers, booleans, arrays, objects) to string
+            stringValue = value.toString();
         }
 
-        return ClaimValue.forPlainString(value);
+        return ClaimValue.forPlainString(stringValue);
     }
 }

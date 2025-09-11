@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.well_known;
 
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

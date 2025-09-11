@@ -802,4 +802,16 @@ public class IssuerConfig implements HealthStatusProvider {
         this.jwksLoader = jwksLoader;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public JwksLoader getJwksLoader() {
+        return jwksLoader;
+    }
+
+    public SignatureAlgorithmPreferences getAlgorithmPreferences() {
+        return algorithmPreferences;
+    }
+
 }

@@ -17,9 +17,7 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.NonNull;
 
 import java.time.Instant;
@@ -36,31 +34,23 @@ import java.util.Optional;
  */
 public class OffsetDateTimeMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull JsonObject jsonObject, @NonNull String claimName) {
-        Optional<JsonValue> optionalJsonValue = ClaimMapperUtils.getJsonValue(jsonObject, claimName);
-        if (optionalJsonValue.isEmpty()) {
+    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+        Optional<Number> optionalNumber = mapRepresentation.getNumber(claimName);
+        if (optionalNumber.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.DATETIME);
         }
-        JsonValue jsonValue = optionalJsonValue.get();
+        Number numberValue = optionalNumber.get();
 
         // According to JWT specification (RFC 7519), date-time values are represented as NumericDate,
         // which is the number of seconds from 1970-01-01T00:00:00Z UTC until the specified UTC date/time.
-        // We only accept NUMBER type for date-time claims as per the JWT specification.
-        if (jsonValue.getValueType() == JsonValue.ValueType.NUMBER) {
-            // Handle numeric timestamp (seconds since epoch) - this is the standard format
-            JsonNumber numberValue = jsonObject.getJsonNumber(claimName);
-            long epochSeconds = numberValue.longValue();
-            String originalValue = String.valueOf(epochSeconds);
+        // Handle numeric timestamp (seconds since epoch) - this is the standard format
+        long epochSeconds = numberValue.longValue();
+        String originalValue = String.valueOf(epochSeconds);
 
-            OffsetDateTime offsetDateTime = OffsetDateTime.ofInstant(
-                    Instant.ofEpochSecond(epochSeconds),
-                    ZoneId.systemDefault()
-            );
-            return ClaimValue.forDateTime(originalValue, offsetDateTime);
-        }
-
-        // Reject all other types as non-compliant with JWT spec
-        throw new IllegalArgumentException("Unsupported JSON value type for date-time: " +
-                jsonValue.getValueType() + ". According to JWT specification, date-time values must be numeric (seconds since epoch).");
+        OffsetDateTime offsetDateTime = OffsetDateTime.ofInstant(
+                Instant.ofEpochSecond(epochSeconds),
+                ZoneId.systemDefault()
+        );
+        return ClaimValue.forDateTime(originalValue, offsetDateTime);
     }
 }

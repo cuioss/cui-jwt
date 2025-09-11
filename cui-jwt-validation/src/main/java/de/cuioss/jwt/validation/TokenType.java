@@ -51,7 +51,6 @@ import static de.cuioss.jwt.validation.domain.claim.ClaimName.*;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum TokenType {
 
     ACCESS_TOKEN("Bearer", new TreeSet<>(List.of(ISSUER, EXPIRATION, ISSUED_AT, SUBJECT, SCOPE))),
@@ -65,6 +64,35 @@ public enum TokenType {
     private final String typeClaimName;
     @Getter
     private final SortedSet<ClaimName> mandatoryClaims;
+
+    /**
+     * Constructor for TokenType.
+     *
+     * @param typeClaimName the type claim name
+     * @param mandatoryClaims the mandatory claims
+     */
+    TokenType(String typeClaimName, SortedSet<ClaimName> mandatoryClaims) {
+        this.typeClaimName = typeClaimName;
+        this.mandatoryClaims = mandatoryClaims;
+    }
+
+    /**
+     * Gets the type claim name.
+     *
+     * @return the type claim name
+     */
+    public String getTypeClaimName() {
+        return typeClaimName;
+    }
+
+    /**
+     * Gets the mandatory claims.
+     *
+     * @return the mandatory claims
+     */
+    public SortedSet<ClaimName> getMandatoryClaims() {
+        return mandatoryClaims;
+    }
 
     /**
      * Resolves a TokenType from a type claim string value.
