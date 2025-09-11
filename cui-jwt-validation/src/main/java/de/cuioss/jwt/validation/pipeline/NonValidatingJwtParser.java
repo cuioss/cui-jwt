@@ -24,8 +24,6 @@ import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.jspecify.annotations.NonNull;
@@ -367,90 +365,5 @@ public class NonValidatingJwtParser {
         }
     }
 
-    /**
-     * Decodes a Base64Url encoded JSON part of a JWT token.
-     * Implements security measures to prevent JSON parsing attacks through the JsonContentConverter:
-     * - JSON depth limits
-     * - JSON object size limits
-     * - JSON string size limits
-     * - Protection against duplicate keys
-     *
-     * @param encodedPart the Base64Url encoded part
-     * @param logWarnings whether to log warnings when decoding fails
-     * @return the decoded JSON object as JsonObject
-     * @throws TokenValidationException if decoding fails
-     */
-    private JsonObject decodeJsonPart(String encodedPart, boolean logWarnings) {
-        try {
-            byte[] decoded = Base64.getUrlDecoder().decode(encodedPart);
-
-            if (decoded.length > config.getMaxPayloadSize()) {
-                if (logWarnings) {
-                    LOGGER.warn(JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize()));
-                    securityEventCounter.increment(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED);
-                }
-                throw new TokenValidationException(
-                        SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED,
-                        JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize())
-                );
-            }
-
-            // Convert to string and use DSL-JSON for secure parsing
-            String jsonString = new String(decoded, StandardCharsets.UTF_8);
-            Optional<JsonValue> parseResult = parseDslJson(jsonString);
-
-            // Check if parsing failed (empty Optional indicates parse failure)
-            if (parseResult.isEmpty()) {
-                if (logWarnings) {
-                    LOGGER.warn(JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
-                    securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
-                }
-                throw new TokenValidationException(
-                        SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
-                        "Failed to decode JWT part: JSON parsing returned empty result"
-                );
-            }
-
-            // JWT payloads must be JSON objects
-            if (parseResult.get() instanceof JsonObject jsonObject) {
-                return jsonObject;
-            } else {
-                if (logWarnings) {
-                    LOGGER.warn(JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
-                    securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
-                }
-                throw new TokenValidationException(
-                        SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
-                        "Failed to decode JWT part: payload is not a JSON object"
-                );
-            }
-        } catch (IllegalArgumentException e) {
-            if (logWarnings) {
-                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
-                securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
-            }
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
-                    "Failed to decode JWT part: %s".formatted(e.getMessage()),
-                    e
-            );
-        }
-    }
-
-    /**
-     * Parses JSON using DSL-JSON with security settings.
-     *
-     * @param jsonString the JSON string to parse
-     * @return Optional containing JsonValue if parsing succeeds, empty otherwise
-     */
-    private Optional<JsonValue> parseDslJson(String jsonString) {
-        try {
-            // TODO: This is temporary - needs to be part of Map<String,Object> migration
-            // For now, return empty to make compilation pass
-            return Optional.empty();
-        } catch (IllegalArgumentException e) {
-            return Optional.empty();
-        }
-    }
 
 }
