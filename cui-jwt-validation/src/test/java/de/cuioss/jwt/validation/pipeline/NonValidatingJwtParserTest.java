@@ -378,8 +378,8 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle large JSON arrays")
         void shouldHandleLargeJsonArrays() {
-            // Create a JSON with a large array
-            StringBuilder largeArrayJson = new StringBuilder("{\"array\":[");
+            // Create a JSON with a large array and required alg field
+            StringBuilder largeArrayJson = new StringBuilder("{\"alg\":\"RS256\",\"array\":[");
             for (int i = 0; i < 99; i++) { // Create reasonably sized array
                 if (i > 0) {
                     largeArrayJson.append(",");
@@ -404,8 +404,8 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle large JSON strings")
         void shouldHandleLargeJsonStrings() {
-            // Create a JSON with a large string
-            String largeStringJson = "{\"largeString\":\"" + "a".repeat(ParserConfig.DEFAULT_MAX_STRING_LENGTH - 100) + "\"}";
+            // Create a JSON with a large string and required alg field
+            String largeStringJson = "{\"alg\":\"RS256\",\"largeString\":\"" + "a".repeat(ParserConfig.DEFAULT_MAX_STRING_LENGTH - 100) + "\"}";
 
             String encodedLargeStringJson = Base64.getUrlEncoder().encodeToString(largeStringJson.getBytes(StandardCharsets.UTF_8));
             String tokenWithLargeString = encodedLargeStringJson + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;

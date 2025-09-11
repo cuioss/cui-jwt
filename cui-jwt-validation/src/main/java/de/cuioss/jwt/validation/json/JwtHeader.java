@@ -75,7 +75,7 @@ import java.util.Optional;
  */
 @CompiledJson
 public record JwtHeader(
-@NonNull String alg,
+String alg,
 @NonNull Optional<String> typ,
 @NonNull Optional<String> kid,
 @NonNull Optional<String> jku,

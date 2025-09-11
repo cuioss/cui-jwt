@@ -54,7 +54,18 @@ public class ScopeMapper implements ClaimMapper {
             scopes = Splitter.on(' ').trimResults().omitEmptyStrings().splitToList(originalValue);
         } else if (value instanceof List<?> listValue) {
             // Handle List of scopes (non-standard but common)
-            originalValue = listValue.toString();
+            // Convert to JSON format to maintain compatibility with previous behavior
+            originalValue = listValue.stream()
+                    .map(item -> {
+                        if (item instanceof String) {
+                            return "\"" + item + "\"";
+                        } else if (item instanceof Boolean || item instanceof Number) {
+                            return item.toString();
+                        } else {
+                            return "\"" + item.toString() + "\"";
+                        }
+                    })
+                    .collect(java.util.stream.Collectors.joining(",", "[", "]"));
             scopes = listValue.stream()
                     .map(Object::toString)
                     .toList();

@@ -82,8 +82,15 @@ public class MapRepresentation {
             return new MapRepresentation(Map.of());
         }
 
-        // Create immutable copy to ensure immutability
-        return new MapRepresentation(Map.copyOf(parsedData));
+        // Create immutable copy to ensure immutability, filtering out null values
+        // Map.copyOf() doesn't allow null values, so we need to filter them out
+        Map<String, Object> filteredData = parsedData.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey, 
+                        Map.Entry::getValue
+                ));
+        return new MapRepresentation(filteredData);
     }
 
     /**
@@ -106,8 +113,15 @@ public class MapRepresentation {
             return new MapRepresentation(Map.of());
         }
 
-        // Create immutable copy to ensure immutability
-        return new MapRepresentation(Map.copyOf(parsedData));
+        // Create immutable copy to ensure immutability, filtering out null values
+        // Map.copyOf() doesn't allow null values, so we need to filter them out
+        Map<String, Object> filteredData = parsedData.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey, 
+                        Map.Entry::getValue
+                ));
+        return new MapRepresentation(filteredData);
     }
 
     /**
