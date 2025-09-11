@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
@@ -28,9 +29,9 @@ import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.uimodel.result.ResultState;
-import de.cuioss.jwt.validation.json.Jwks;
 import org.jspecify.annotations.NonNull;
 
+import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -365,7 +366,7 @@ public class HttpJwksLoader implements JwksLoader {
                                 byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
                                 Jwks jwks = dslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
                                 return Optional.ofNullable(jwks);
-                            } catch (java.io.IOException | IllegalArgumentException e) {
+                            } catch (IOException | IllegalArgumentException e) {
                                 return Optional.empty();
                             }
                         }

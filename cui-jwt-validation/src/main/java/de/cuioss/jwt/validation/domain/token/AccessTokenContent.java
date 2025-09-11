@@ -81,8 +81,8 @@ public class AccessTokenContent extends BaseTokenContent {
      * @param email      the user's email address
      * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
-    public AccessTokenContent(Map<String, ClaimValue> claims, String rawToken, String email, 
-                             MapRepresentation rawPayload) {
+    public AccessTokenContent(Map<String, ClaimValue> claims, String rawToken, String email,
+            MapRepresentation rawPayload) {
         super(claims, rawToken, TokenType.ACCESS_TOKEN, rawPayload);
         this.email = email;
     }

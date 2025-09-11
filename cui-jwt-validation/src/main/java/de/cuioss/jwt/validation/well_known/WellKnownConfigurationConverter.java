@@ -42,7 +42,7 @@ import java.util.Optional;
  * @author Oliver Wolff
  * @since 1.0
  */
-public class WellKnownConfigurationConverter implements HttpContentConverter<de.cuioss.jwt.validation.json.WellKnownConfiguration> {
+public class WellKnownConfigurationConverter implements HttpContentConverter<WellKnownConfiguration> {
 
     private static final CuiLogger LOGGER = new CuiLogger(WellKnownConfigurationConverter.class);
 
@@ -75,7 +75,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<de.
     }
 
     @Override
-    public Optional<de.cuioss.jwt.validation.json.WellKnownConfiguration> convert(Object rawContent) {
+    public Optional<WellKnownConfiguration> convert(Object rawContent) {
         if (!(rawContent instanceof String stringContent)) {
             LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Expected String content, got: " +
                     (rawContent != null ? rawContent.getClass().getSimpleName() : "null")));
@@ -100,7 +100,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<de.
 
         try {
             // TRUE MAPPER APPROACH: JSON → DSL-JSON → WellKnownConfiguration (NO intermediates!)
-            de.cuioss.jwt.validation.json.WellKnownConfiguration config = dslJson.deserialize(de.cuioss.jwt.validation.json.WellKnownConfiguration.class, contentBytes, contentBytes.length);
+            WellKnownConfiguration config = dslJson.deserialize(WellKnownConfiguration.class, contentBytes, contentBytes.length);
 
             if (config == null) {
                 LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Failed to deserialize well-known configuration"));
@@ -162,6 +162,6 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<de.
 
     @Override
     public @NonNull WellKnownConfiguration emptyValue() {
-        return de.cuioss.jwt.validation.json.WellKnownConfiguration.EMPTY;
+        return WellKnownConfiguration.EMPTY;
     }
 }

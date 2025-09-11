@@ -75,19 +75,19 @@ import java.util.Optional;
  */
 @CompiledJson
 public record JwtHeader(
-    @NonNull String alg,
-    @NonNull Optional<String> typ,
-    @NonNull Optional<String> kid,
-    @NonNull Optional<String> jku,
-    @NonNull Optional<String> jwk,
-    @NonNull Optional<String> x5u,
-    @NonNull Optional<String> x5c,
-    @NonNull Optional<String> x5t,
-    @NonNull Optional<String> x5tS256,
-    @NonNull Optional<String> cty,
-    @NonNull Optional<String> crit
+@NonNull String alg,
+@NonNull Optional<String> typ,
+@NonNull Optional<String> kid,
+@NonNull Optional<String> jku,
+@NonNull Optional<String> jwk,
+@NonNull Optional<String> x5u,
+@NonNull Optional<String> x5c,
+@NonNull Optional<String> x5t,
+@NonNull Optional<String> x5tS256,
+@NonNull Optional<String> cty,
+@NonNull Optional<String> crit
 ) {
-    
+
     /**
      * Creates a JwtHeader with only the required algorithm parameter.
      * All optional parameters are set to empty Optional values.
@@ -97,20 +97,20 @@ public record JwtHeader(
      */
     public static JwtHeader of(@NonNull String alg) {
         return new JwtHeader(
-            alg,
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty()
+                alg,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
         );
     }
-    
+
     /**
      * Creates a JwtHeader with algorithm and key ID.
      * This is the most common combination for JWT headers.
@@ -121,20 +121,20 @@ public record JwtHeader(
      */
     public static JwtHeader of(@NonNull String alg, @NonNull String kid) {
         return new JwtHeader(
-            alg,
-            Optional.empty(),
-            Optional.of(kid),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty()
+                alg,
+                Optional.empty(),
+                Optional.of(kid),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
         );
     }
-    
+
     /**
      * Creates a JwtHeader with algorithm, type, and key ID.
      * This is a common combination for standard JWT tokens.
@@ -146,20 +146,20 @@ public record JwtHeader(
      */
     public static JwtHeader of(@NonNull String alg, @NonNull String typ, @NonNull String kid) {
         return new JwtHeader(
-            alg,
-            Optional.of(typ),
-            Optional.of(kid),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty()
+                alg,
+                Optional.of(typ),
+                Optional.of(kid),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
         );
     }
-    
+
     /**
      * Checks if this header contains the minimum required information for JWT validation.
      * 
@@ -168,7 +168,7 @@ public record JwtHeader(
     public boolean isValid() {
         return alg != null && !alg.trim().isEmpty();
     }
-    
+
     /**
      * Checks if this header indicates a JWT token type.
      * 

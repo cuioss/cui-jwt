@@ -21,6 +21,8 @@ import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -52,8 +54,8 @@ class DSLJsonSecurityTest {
             }
             """;
 
-        Jwks result = assertDoesNotThrow(() -> 
-            dslJson.deserialize(Jwks.class, validJwks.getBytes(), validJwks.getBytes().length)
+        Jwks result = assertDoesNotThrow(() ->
+                dslJson.deserialize(Jwks.class, validJwks.getBytes(), validJwks.getBytes().length)
         );
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
@@ -74,8 +76,8 @@ class DSLJsonSecurityTest {
             }
             """;
 
-        WellKnownConfiguration result = assertDoesNotThrow(() -> 
-            dslJson.deserialize(WellKnownConfiguration.class, validConfig.getBytes(), validConfig.getBytes().length)
+        WellKnownConfiguration result = assertDoesNotThrow(() ->
+                dslJson.deserialize(WellKnownConfiguration.class, validConfig.getBytes(), validConfig.getBytes().length)
         );
         assertFalse(result.isEmpty());
         assertEquals("https://example.com", result.issuer());
@@ -90,8 +92,7 @@ class DSLJsonSecurityTest {
 
         String malformedJwks = "{invalid json}";
 
-        assertThrows(java.io.IOException.class, () -> {
-            dslJson.deserialize(Jwks.class, malformedJwks.getBytes(), malformedJwks.getBytes().length);
-        });
+        assertThrows(IOException.class, () ->
+                dslJson.deserialize(Jwks.class, malformedJwks.getBytes(), malformedJwks.getBytes().length));
     }
 }

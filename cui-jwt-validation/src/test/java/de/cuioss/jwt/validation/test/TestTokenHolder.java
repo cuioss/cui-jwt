@@ -15,12 +15,16 @@
  */
 package de.cuioss.jwt.validation.test;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -39,6 +43,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import lombok.Getter;
 
+import java.io.IOException;
 import java.security.PublicKey;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -442,33 +447,38 @@ public class TestTokenHolder implements TokenContent {
             // Get the raw token
             String signedJwt = getRawToken();
 
-            // Parse the JWT string to create a DecodedJwt
-            // Skip validation of expiration to handle expired tokens
-            var jwt = Jwts.parser()
-                    .verifyWith(getPublicKey())
-                    .clockSkewSeconds(Integer.MAX_VALUE) // Allow large clock skew to handle expired tokens
-                    .build()
-                    .parseSignedClaims(signedJwt);
-
-            // Extract header and claims as JsonObjects using our bridge
-            Map<String, Object> headerMap = new HashMap<>(jwt.getHeader());
-            Map<String, Object> bodyMap = new HashMap<>(jwt.getPayload());
-
-            JsonObject header = convertMapToJsonObject(headerMap);
-            JsonObject body = convertMapToJsonObject(bodyMap);
-
-            // Split the JWT string into parts
+            // Split the JWT string into parts to get JSON directly
             String[] parts = signedJwt.split("\\.");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid JWT format: missing header or payload");
+            }
+
+            // Decode the header and payload JSON strings directly
+            String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
+            String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]));
+
+            // Parse using DSL-JSON directly from JSON strings
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            byte[] headerBytes = headerJson.getBytes();
+            JwtHeader header = dslJson.deserialize(JwtHeader.class, headerBytes, headerBytes.length);
+            MapRepresentation body = MapRepresentation.fromJson(dslJson, payloadJson);
 
             // Get the signature from the parts
             var signature = parts.length > 2 ? parts[2] : "";
 
+            if (header == null) {
+                throw new IllegalStateException("Failed to parse JWT header from: " + headerJson);
+            }
+
             // Create and return the DecodedJwt
             return new DecodedJwt(header, body, signature, parts, signedJwt);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to convert TestTokenHolder to DecodedJwt", e);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to parse JWT with DSL-JSON", e);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid JWT format", e);
         }
     }
+
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static JsonObject convertMapToJsonObject(Map<String, Object> map) {
@@ -559,7 +569,50 @@ public class TestTokenHolder implements TokenContent {
             email = claims.get(ClaimName.EMAIL.getName()).getOriginalString();
         }
 
-        return new AccessTokenContent(claims, getRawToken(), email);
+        return new AccessTokenContent(claims, getRawToken(), email, createMapRepresentationFromClaims());
+    }
+
+    /**
+     * Creates a MapRepresentation from the current claims using DSL-JSON parsing.
+     * This converts claims to JSON and then parses with DSL-JSON for proper validation.
+     *
+     * @return a MapRepresentation containing the claims data
+     */
+    private MapRepresentation createMapRepresentationFromClaims() {
+        try {
+            // Build JSON from claims
+            StringBuilder jsonBuilder = new StringBuilder("{");
+            boolean first = true;
+            for (Map.Entry<String, ClaimValue> entry : claims.entrySet()) {
+                if (!first) {
+                    jsonBuilder.append(",");
+                }
+                jsonBuilder.append("\"").append(entry.getKey()).append("\":");
+                ClaimValue value = entry.getValue();
+                if (value.getOriginalString() != null) {
+                    jsonBuilder.append("\"").append(value.getOriginalString().replace("\"", "\\\"")).append("\"");
+                } else if (value.getAsList() != null) {
+                    jsonBuilder.append("[");
+                    boolean firstItem = true;
+                    for (String item : value.getAsList()) {
+                        if (!firstItem) jsonBuilder.append(",");
+                        jsonBuilder.append("\"").append(item.replace("\"", "\\\"")).append("\"");
+                        firstItem = false;
+                    }
+                    jsonBuilder.append("]");
+                } else {
+                    jsonBuilder.append("null");
+                }
+                first = false;
+            }
+            jsonBuilder.append("}");
+
+            // Parse with DSL-JSON
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, jsonBuilder.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create MapRepresentation from claims", e);
+        }
     }
 
     private Map<String, ClaimValue> generateClaims() {

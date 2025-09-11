@@ -16,9 +16,9 @@
 package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.HealthStatusProvider;
+import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
-import de.cuioss.jwt.validation.json.Jwks;
 
 import java.util.Optional;
 

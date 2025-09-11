@@ -15,13 +15,16 @@
  */
 package de.cuioss.jwt.validation.cache;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -46,6 +49,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger
 class AccessTokenCacheTest {
+
+    /**
+     * Creates an empty MapRepresentation for tests that don't need specific payload data.
+     */
+    private static MapRepresentation createEmptyMapRepresentation() {
+        try {
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, "{}");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        }
+    }
 
     private AccessTokenCache cache;
     private SecurityEventCounter securityEventCounter;
@@ -249,7 +264,7 @@ class AccessTokenCacheTest {
         AccessTokenContent generated = tokenHolder.asAccessTokenContent();
 
         // Create a new instance with our specified raw token
-        return new AccessTokenContent(generated.getClaims(), rawToken, TokenType.ACCESS_TOKEN.getTypeClaimName());
+        return new AccessTokenContent(generated.getClaims(), rawToken, TokenType.ACCESS_TOKEN.getTypeClaimName(), createEmptyMapRepresentation());
     }
 
     @Test

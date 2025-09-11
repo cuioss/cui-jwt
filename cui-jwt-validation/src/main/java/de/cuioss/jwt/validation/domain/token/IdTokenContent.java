@@ -75,7 +75,7 @@ public class IdTokenContent extends BaseTokenContent {
      * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
     public IdTokenContent(Map<String, ClaimValue> claims, String rawToken,
-                         MapRepresentation rawPayload) {
+            MapRepresentation rawPayload) {
         super(claims, rawToken, TokenType.ID_TOKEN, rawPayload);
     }
 

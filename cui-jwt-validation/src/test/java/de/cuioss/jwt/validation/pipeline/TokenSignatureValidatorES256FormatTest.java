@@ -17,6 +17,8 @@ package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
@@ -144,9 +146,9 @@ class TokenSignatureValidatorES256FormatTest {
             @SuppressWarnings("unchecked") Map<String, Object> payloadJson = (Map<String, Object>) dslJson.deserialize(
                     Map.class, payload.getBytes(), payload.length());
 
-            JsonObject headerJsonObject = convertMapToJsonObject(headerJson);
-            JsonObject payloadJsonObject = convertMapToJsonObject(payloadJson);
-            return new DecodedJwt(headerJsonObject, payloadJsonObject, signatureEncoded, parts, completeJwt);
+            var jwtHeader = dslJson.deserialize(JwtHeader.class, header.getBytes(), header.length());
+            var mapRepresentation = MapRepresentation.fromJson(dslJson, payload);
+            return new DecodedJwt(jwtHeader, mapRepresentation, signatureEncoded, parts, completeJwt);
 
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create IEEE P1363 format ES256 token", e);

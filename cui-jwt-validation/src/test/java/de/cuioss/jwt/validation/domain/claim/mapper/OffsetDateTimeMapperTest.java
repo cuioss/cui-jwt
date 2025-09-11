@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -41,6 +45,20 @@ class OffsetDateTimeMapperTest {
     private static final String CLAIM_NAME = "testDateTimeClaim";
     private final OffsetDateTimeMapper underTest = new OffsetDateTimeMapper();
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @Test
     @DisplayName("Map valid numeric timestamp as number (JWT NumericDate)")
     void shouldMapValidNumericTimestampAsNumber() {
@@ -54,7 +72,7 @@ class OffsetDateTimeMapperTest {
                 .add(CLAIM_NAME, epochSeconds)
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(String.valueOf(epochSeconds), result.getOriginalString(), "Original string should be preserved");
@@ -70,7 +88,7 @@ class OffsetDateTimeMapperTest {
 
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, validTimestamp);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(jsonObject, CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
                 "Should throw IllegalArgumentException for string value (even if it's a valid numeric timestamp)");
     }
 
@@ -81,7 +99,7 @@ class OffsetDateTimeMapperTest {
 
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, validDateTime);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(jsonObject, CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
                 "Should throw IllegalArgumentException for string value (even if it's a valid ISO-8601 date-time)");
     }
 
@@ -90,7 +108,7 @@ class OffsetDateTimeMapperTest {
     void shouldHandleNullClaimValue() {
         JsonObject jsonObject = createJsonObjectWithNullClaim(CLAIM_NAME);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertNull(result.getOriginalString(), "Original string should be null");
@@ -104,7 +122,7 @@ class OffsetDateTimeMapperTest {
     void shouldThrowExceptionForBlankStringInputs(String blankInput) {
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, blankInput);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(jsonObject, CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
                 "Should throw IllegalArgumentException for string value (even if it's blank)");
     }
 
@@ -124,7 +142,7 @@ class OffsetDateTimeMapperTest {
     void shouldThrowExceptionForInvalidFormats(String invalidDateTime) {
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, invalidDateTime);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(jsonObject, CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
                 "Should throw IllegalArgumentException for invalid date-time format");
     }
 
@@ -133,7 +151,7 @@ class OffsetDateTimeMapperTest {
     void shouldHandleMissingClaim() {
         JsonObject jsonObject = Json.createObjectBuilder().build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertNull(result.getOriginalString(), "Original string should be null");
@@ -146,7 +164,7 @@ class OffsetDateTimeMapperTest {
     void shouldHandleEmptyJsonObject() {
         JsonObject emptyJsonObject = Json.createObjectBuilder().build();
 
-        ClaimValue result = underTest.map(emptyJsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(emptyJsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertNull(result.getOriginalString(), "Original string should be null");
@@ -161,7 +179,7 @@ class OffsetDateTimeMapperTest {
                 .add(CLAIM_NAME, Json.createObjectBuilder().build())
                 .build();
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(jsonObject, CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
                 "Should throw IllegalArgumentException for unsupported JSON value type");
     }
 

@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
@@ -30,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -43,6 +47,20 @@ class StringSplitterMapperTest {
     private static final String CLAIM_NAME = "roles";
     private final StringSplitterMapper commaMapper = new StringSplitterMapper(',');
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("provideSeparatorTestCases")
     @DisplayName("Map values with different separators")
@@ -50,7 +68,7 @@ class StringSplitterMapperTest {
         StringSplitterMapper mapper = new StringSplitterMapper(separator);
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        ClaimValue result = mapper.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = mapper.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");
@@ -74,7 +92,7 @@ class StringSplitterMapperTest {
     void shouldHandleDifferentInputFormats(String input, List<String> expected, String testDescription) {
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        ClaimValue result = commaMapper.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = commaMapper.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");
@@ -106,7 +124,7 @@ class StringSplitterMapperTest {
                 ? createJsonObjectWithNullClaim(CLAIM_NAME)
                 : createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        ClaimValue result = commaMapper.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = commaMapper.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");
@@ -119,7 +137,7 @@ class StringSplitterMapperTest {
     void shouldHandleMissingClaim() {
         JsonObject jsonObject = Json.createObjectBuilder().build();
 
-        ClaimValue result = commaMapper.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = commaMapper.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertNull(result.getOriginalString(), "Original string should be null");
@@ -131,7 +149,7 @@ class StringSplitterMapperTest {
     @MethodSource("provideUnsupportedValueTypes")
     @DisplayName("Throw exception for unsupported value types")
     void shouldThrowExceptionForUnsupportedValueTypes(JsonObject jsonObject, String valueTypeName) {
-        assertThrows(IllegalArgumentException.class, () -> commaMapper.map(jsonObject, CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> commaMapper.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
                 "Should throw IllegalArgumentException for " + valueTypeName + " value type");
     }
 

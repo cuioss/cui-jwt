@@ -20,7 +20,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.io.Serial;

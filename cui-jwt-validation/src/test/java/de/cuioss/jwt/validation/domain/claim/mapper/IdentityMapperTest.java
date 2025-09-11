@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
@@ -27,6 +30,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger
@@ -36,13 +41,27 @@ class IdentityMapperTest {
     private static final String CLAIM_NAME = "testClaim";
     private final IdentityMapper underTest = new IdentityMapper();
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @Test
     @DisplayName("Should correctly map a regular string")
     void shouldMapRegularString() {
 
         String input = "some-regular-string";
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -57,7 +76,7 @@ class IdentityMapperTest {
         JsonObject jsonObject = input == null
                 ? createJsonObjectWithNullClaim(CLAIM_NAME)
                 : createJsonObjectWithStringClaim(CLAIM_NAME, input);
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -69,7 +88,7 @@ class IdentityMapperTest {
 
         String input = "!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(input, result.getOriginalString(), "Original string should be preserved");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -81,7 +100,7 @@ class IdentityMapperTest {
 
         String longString = "a".repeat(1000);
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, longString);
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(longString, result.getOriginalString(), "Original string should be preserved");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -95,7 +114,7 @@ class IdentityMapperTest {
         JsonObject jsonObject = Json.createObjectBuilder()
                 .add(CLAIM_NAME, input)
                 .build();
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(String.valueOf(input), result.getOriginalString(), "Original string should be the string representation of the number");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -109,7 +128,7 @@ class IdentityMapperTest {
         JsonObject jsonObject = Json.createObjectBuilder()
                 .add(CLAIM_NAME, input)
                 .build();
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertEquals(String.valueOf(input), result.getOriginalString(), "Original string should be the string representation of the boolean");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -120,7 +139,7 @@ class IdentityMapperTest {
     void shouldHandleMissingClaim() {
 
         JsonObject jsonObject = Json.createObjectBuilder().build();
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertNull(result.getOriginalString(), "Original string should be null");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");
@@ -131,7 +150,7 @@ class IdentityMapperTest {
     void shouldHandleEmptyJsonObject() {
 
         JsonObject emptyJsonObject = Json.createObjectBuilder().build();
-        ClaimValue result = underTest.map(emptyJsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(emptyJsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
         assertNull(result.getOriginalString(), "Original string should be null");
         assertEquals(ClaimValueType.STRING, result.getType(), "Type should be STRING");

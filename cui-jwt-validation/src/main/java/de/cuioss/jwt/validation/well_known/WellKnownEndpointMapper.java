@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.HttpStatusFamily;
-import lombok.RequiredArgsConstructor;
 
 import java.net.URL;
 import java.util.Map;

@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
@@ -22,14 +23,10 @@ import de.cuioss.jwt.validation.json.JwtHeader;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import com.dslplatform.json.DslJson;
 import de.cuioss.tools.string.MoreStrings;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.jspecify.annotations.NonNull;
 
@@ -289,8 +286,8 @@ public class NonValidatingJwtParser {
             }
             securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
             throw new TokenValidationException(
-                    SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT, 
-                    "Failed to decode JWT parts: " + e.getMessage(), 
+                    SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
+                    "Failed to decode JWT parts: " + e.getMessage(),
                     e
             );
         }
@@ -306,17 +303,17 @@ public class NonValidatingJwtParser {
     private JwtHeader decodeJwtHeader(String encodedHeader) throws Exception {
         String decodedJson = decodeBase64UrlPart(encodedHeader);
         DslJson<Object> dslJson = config.getDslJson();
-        
+
         byte[] jsonBytes = decodedJson.getBytes();
         JwtHeader header = dslJson.deserialize(JwtHeader.class, jsonBytes, jsonBytes.length);
-        
+
         if (header == null) {
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
                     "Failed to deserialize JWT header: null result"
             );
         }
-        
+
         return header;
     }
 
@@ -330,7 +327,7 @@ public class NonValidatingJwtParser {
     private MapRepresentation decodePayload(String encodedPayload) throws Exception {
         String decodedJson = decodeBase64UrlPart(encodedPayload);
         DslJson<Object> dslJson = config.getDslJson();
-        
+
         return MapRepresentation.fromJson(dslJson, decodedJson);
     }
 
@@ -343,8 +340,8 @@ public class NonValidatingJwtParser {
      */
     private String decodeBase64UrlPart(String encodedPart) throws Exception {
         try {
-            byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(encodedPart);
-            return new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(encodedPart);
+            return new String(decodedBytes, StandardCharsets.UTF_8);
         } catch (IllegalArgumentException e) {
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,

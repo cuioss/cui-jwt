@@ -17,12 +17,12 @@ package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.DslJson;
 import lombok.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A type-safe wrapper for Map<String, Object> that provides convenient access methods
@@ -75,8 +75,7 @@ public class MapRepresentation {
     @NonNull
     public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, @NonNull String jsonContent) throws IOException {
         byte[] jsonBytes = jsonContent.getBytes();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
+        @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
         if (parsedData == null) {
             // Return empty MapRepresentation for null/empty JSON
@@ -100,8 +99,7 @@ public class MapRepresentation {
      */
     @NonNull
     public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, byte @NonNull [] jsonBytes) throws IOException {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
+        @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
         if (parsedData == null) {
             // Return empty MapRepresentation for null/empty JSON
@@ -151,8 +149,8 @@ public class MapRepresentation {
      */
     public Optional<String> getString(@NonNull String key) {
         Object value = data.get(key);
-        if (value instanceof String) {
-            return Optional.of((String) value);
+        if (value instanceof String string) {
+            return Optional.of(string);
         }
         return Optional.empty();
     }
@@ -165,8 +163,8 @@ public class MapRepresentation {
      */
     public Optional<Number> getNumber(@NonNull String key) {
         Object value = data.get(key);
-        if (value instanceof Number) {
-            return Optional.of((Number) value);
+        if (value instanceof Number number) {
+            return Optional.of(number);
         }
         return Optional.empty();
     }
@@ -179,8 +177,8 @@ public class MapRepresentation {
      */
     public Optional<Boolean> getBoolean(@NonNull String key) {
         Object value = data.get(key);
-        if (value instanceof Boolean) {
-            return Optional.of((Boolean) value);
+        if (value instanceof Boolean boolean1) {
+            return Optional.of(boolean1);
         }
         return Optional.empty();
     }
@@ -233,10 +231,10 @@ public class MapRepresentation {
      */
     public Optional<List<String>> getStringList(@NonNull String key) {
         return getList(key).map(list ->
-            list.stream()
-                .filter(item -> item instanceof String)
-                .map(String.class::cast)
-                .toList()
+                list.stream()
+                        .filter(item -> item instanceof String)
+                        .map(String.class::cast)
+                        .toList()
         );
     }
 
@@ -264,7 +262,7 @@ public class MapRepresentation {
      * @return the set of keys in the map
      */
     @NonNull
-    public java.util.Set<String> keySet() {
+    public Set<String> keySet() {
         return data.keySet();
     }
 

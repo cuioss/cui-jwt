@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
@@ -48,7 +49,7 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
     @TestTokenSource(value = TokenType.ACCESS_TOKEN, count = 3)
     @DisplayName("Create BaseTokenContent with valid parameters")
     void shouldCreateBaseTokenContentWithValidParameters(TestTokenHolder tokenHolder) {
-        var baseTokenContent = new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN);
+        var baseTokenContent = new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN, MapRepresentation.empty());
 
         assertNotNull(baseTokenContent, "BaseTokenContent should not be null");
         assertEquals(tokenHolder.getClaims(), baseTokenContent.getClaims(), "Claims should match");
@@ -60,7 +61,7 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
     @DisplayName("Throw NullPointerException when claims is null")
     void shouldThrowExceptionWhenClaimsIsNull() {
         assertThrows(NullPointerException.class,
-                () -> new TestBaseTokenContent(null, SAMPLE_TOKEN, TokenType.ACCESS_TOKEN),
+                () -> new TestBaseTokenContent(null, SAMPLE_TOKEN, TokenType.ACCESS_TOKEN, MapRepresentation.empty()),
                 "Should throw NullPointerException for null claims");
     }
 
@@ -70,7 +71,7 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
     void shouldReturnClaimOptionCorrectly(TestTokenHolder tokenHolder) {
         ClaimValue claimValue = ClaimValue.forPlainString("test-value");
         tokenHolder.withClaim(ClaimName.ISSUER.getName(), claimValue);
-        var baseTokenContent = new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN);
+        var baseTokenContent = new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN, MapRepresentation.empty());
 
         Optional<ClaimValue> claimOption = baseTokenContent.getClaimOption(ClaimName.ISSUER);
 
@@ -83,7 +84,7 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
     @DisplayName("Return empty claim option when claim is not present")
     void shouldReturnEmptyClaimOptionWhenClaimIsNotPresent(TestTokenHolder tokenHolder) {
         tokenHolder.withoutClaim(ClaimName.ISSUER.getName());
-        var baseTokenContent = new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN);
+        var baseTokenContent = new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN, MapRepresentation.empty());
 
         Optional<ClaimValue> claimOption = baseTokenContent.getClaimOption(ClaimName.ISSUER);
 
@@ -93,7 +94,7 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
     @Override
     public TestBaseTokenContent getUnderTest() {
         var tokenHolder = TestTokenGenerators.accessTokens().next();
-        return new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN);
+        return new TestBaseTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), TokenType.ACCESS_TOKEN, MapRepresentation.empty());
     }
 
     /**
@@ -103,8 +104,8 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
         @Serial
         private static final long serialVersionUID = 1L;
 
-        TestBaseTokenContent(Map<String, ClaimValue> claims, String rawToken, TokenType tokenType) {
-            super(claims, rawToken, tokenType);
+        TestBaseTokenContent(Map<String, ClaimValue> claims, String rawToken, TokenType tokenType, MapRepresentation rawPayload) {
+            super(claims, rawToken, tokenType, rawPayload);
         }
     }
 }

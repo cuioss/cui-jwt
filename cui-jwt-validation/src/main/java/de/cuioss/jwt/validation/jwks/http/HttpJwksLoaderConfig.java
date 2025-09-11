@@ -26,11 +26,9 @@ import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
 import de.cuioss.tools.net.http.client.HttpHandlerProvider;
 import de.cuioss.tools.net.http.retry.RetryStrategy;
-import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import javax.net.ssl.SSLContext;
@@ -118,11 +116,11 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
     private final ScheduledExecutorService scheduledExecutorService;
 
     private HttpJwksLoaderConfig(int refreshIntervalSeconds,
-                                HttpHandler httpHandler,
-                                WellKnownResolver wellKnownResolver,
-                                WellKnownConfig wellKnownConfig,
-                                RetryStrategy retryStrategy,
-                                ScheduledExecutorService scheduledExecutorService) {
+            HttpHandler httpHandler,
+            WellKnownResolver wellKnownResolver,
+            WellKnownConfig wellKnownConfig,
+            RetryStrategy retryStrategy,
+            ScheduledExecutorService scheduledExecutorService) {
         this.refreshIntervalSeconds = refreshIntervalSeconds;
         this.httpHandler = httpHandler;
         this.wellKnownResolver = wellKnownResolver;

@@ -99,7 +99,7 @@ class WellKnownParser {
      * @return Optional containing the parsed WellKnownConfiguration or empty on error
      * @throws TokenValidationException if security limits are violated
      */
-    Optional<de.cuioss.jwt.validation.json.WellKnownConfiguration> parseWellKnownResponse(@NonNull String responseBody, @NonNull URL wellKnownUrl) {
+    Optional<WellKnownConfiguration> parseWellKnownResponse(@NonNull String responseBody, @NonNull URL wellKnownUrl) {
         if (responseBody == null || responseBody.trim().isEmpty()) {
             LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Empty response body"));
             return Optional.empty();

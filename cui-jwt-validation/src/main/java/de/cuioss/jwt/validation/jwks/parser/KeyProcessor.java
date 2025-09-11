@@ -16,16 +16,14 @@
 package de.cuioss.jwt.validation.jwks.parser;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
-import de.cuioss.jwt.validation.jwks.key.JwkKeyConstants;
+import de.cuioss.jwt.validation.json.JwkKey;
 import de.cuioss.jwt.validation.jwks.key.JwkKeyHandler;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.jwt.validation.json.JwkKey;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.security.spec.InvalidKeySpecException;
 import java.util.Optional;
@@ -52,8 +50,8 @@ public class KeyProcessor {
     @NonNull
     private final JwkAlgorithmPreferences jwkAlgorithmPreferences;
 
-    public KeyProcessor(@NonNull SecurityEventCounter securityEventCounter, 
-                       @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences) {
+    public KeyProcessor(@NonNull SecurityEventCounter securityEventCounter,
+            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences) {
         this.securityEventCounter = securityEventCounter;
         this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
     }

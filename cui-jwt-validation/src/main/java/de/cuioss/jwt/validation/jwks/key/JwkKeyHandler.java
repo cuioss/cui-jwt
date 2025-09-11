@@ -15,17 +15,18 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
+import de.cuioss.jwt.validation.json.JwkKey;
 import jakarta.json.JsonObject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
-import java.util.Base64;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.*;
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -85,18 +86,18 @@ public final class JwkKeyHandler {
      * @return the parsed RSA public key
      * @throws InvalidKeySpecException if the key specification is invalid
      */
-    public static PublicKey parseRsaKey(de.cuioss.jwt.validation.json.JwkKey jwk) throws InvalidKeySpecException {
+    public static PublicKey parseRsaKey(JwkKey jwk) throws InvalidKeySpecException {
         if (jwk.e() == null) {
             throw new InvalidKeySpecException("Missing required RSA parameter: e (exponent)");
         }
         if (jwk.n() == null) {
             throw new InvalidKeySpecException("Missing required RSA parameter: n (modulus)");
         }
-        
+
         // Decode Base64url-encoded values
         BigInteger exponent = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.e()));
         BigInteger modulus = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.n()));
-        
+
         // Create RSA public key
         RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, exponent);
         KeyFactory factory = getKeyFactory(RSA_KEY_TYPE);
@@ -140,7 +141,7 @@ public final class JwkKeyHandler {
      * @return the EC public key
      * @throws InvalidKeySpecException if the key specification is invalid
      */
-    public static PublicKey parseEcKey(de.cuioss.jwt.validation.json.JwkKey jwk) throws InvalidKeySpecException {
+    public static PublicKey parseEcKey(JwkKey jwk) throws InvalidKeySpecException {
         if (jwk.crv() == null) {
             throw new InvalidKeySpecException("Missing required EC parameter: crv (curve)");
         }
@@ -150,7 +151,7 @@ public final class JwkKeyHandler {
         if (jwk.y() == null) {
             throw new InvalidKeySpecException("Missing required EC parameter: y (y coordinate)");
         }
-        
+
         String curve = jwk.crv();
         BigInteger x = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.x()));
         BigInteger y = new BigInteger(1, Base64.getUrlDecoder().decode(jwk.y()));

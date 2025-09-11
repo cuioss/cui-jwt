@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
@@ -25,6 +28,7 @@ import jakarta.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,13 +41,27 @@ class KeycloakDefaultRolesMapperTest {
     private static final String CLAIM_NAME = "roles";
     private final KeycloakDefaultRolesMapper underTest = new KeycloakDefaultRolesMapper();
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @Test
     @DisplayName("Map realm_access.roles to roles claim")
     void shouldMapRealmAccessRoles() {
         List<String> expectedRoles = List.of("user", "admin", "read-only");
         JsonObject jsonObject = createKeycloakTokenWithRealmRoles(expectedRoles);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -60,7 +78,7 @@ class KeycloakDefaultRolesMapperTest {
                 .add("iss", "https://keycloak.example.com")
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -78,7 +96,7 @@ class KeycloakDefaultRolesMapperTest {
                         .build())
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -96,7 +114,7 @@ class KeycloakDefaultRolesMapperTest {
                         .build())
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -113,7 +131,7 @@ class KeycloakDefaultRolesMapperTest {
                 .add("realm_access", "invalid")
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -131,7 +149,7 @@ class KeycloakDefaultRolesMapperTest {
                         .build())
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -147,7 +165,7 @@ class KeycloakDefaultRolesMapperTest {
                 .addNull("realm_access")
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -161,7 +179,7 @@ class KeycloakDefaultRolesMapperTest {
         List<String> expectedRoles = List.of("user");
         JsonObject jsonObject = createKeycloakTokenWithRealmRoles(expectedRoles);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -177,7 +195,7 @@ class KeycloakDefaultRolesMapperTest {
         List<String> expectedRoles = List.of("realm-admin", "account-view-profile", "offline_access");
         JsonObject jsonObject = createKeycloakTokenWithRealmRoles(expectedRoles);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());

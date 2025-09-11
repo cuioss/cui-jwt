@@ -16,9 +16,10 @@
 package de.cuioss.jwt.validation;
 
 import com.dslplatform.json.DslJson;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 
 /**
@@ -71,6 +72,8 @@ import lombok.Getter;
  */
 @Builder
 @Getter
+@EqualsAndHashCode
+@ToString
 public final class ParserConfig {
 
     /**
@@ -190,51 +193,6 @@ public final class ParserConfig {
                 .allowArrayFormat(true) // Enable proper JSON array handling
                 .skipDefaultValues(false) // Include null values in output for completeness
         );
-    }
-
-    /**
-     * Gets the maximum token size.
-     *
-     * @return the maximum token size in bytes
-     */
-    public int getMaxTokenSize() {
-        return maxTokenSize;
-    }
-
-    /**
-     * Gets the maximum payload size.
-     *
-     * @return the maximum payload size in bytes
-     */
-    public int getMaxPayloadSize() {
-        return maxPayloadSize;
-    }
-
-    /**
-     * Gets the maximum string length.
-     *
-     * @return the maximum string length in bytes
-     */
-    public int getMaxStringLength() {
-        return maxStringLength;
-    }
-
-    /**
-     * Gets the maximum buffer size.
-     *
-     * @return the maximum buffer size in bytes
-     */
-    public int getMaxBufferSize() {
-        return maxBufferSize;
-    }
-
-    /**
-     * Gets the DSL-JSON instance.
-     *
-     * @return the DSL-JSON instance
-     */
-    public DslJson<Object> getDslJson() {
-        return dslJson;
     }
 
     /**

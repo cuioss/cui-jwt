@@ -16,15 +16,17 @@
 package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.json.Jwks;
+import de.cuioss.jwt.validation.json.WellKnownConfiguration;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
-import de.cuioss.jwt.validation.json.Jwks;
 import org.jspecify.annotations.NonNull;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -63,7 +65,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
     private static final String USERINFO_ENDPOINT_KEY = "userinfo_endpoint";
 
     private final URL wellKnownUrl;
-    private final ETagAwareHttpHandler<de.cuioss.jwt.validation.json.WellKnownConfiguration> discoveryEtagHandler;
+    private final ETagAwareHttpHandler<WellKnownConfiguration> discoveryEtagHandler;
     private final ETagAwareHttpHandler<Jwks> jwksEtagHandler;
     private final WellKnownParser parser;
     private final WellKnownEndpointMapper mapper;
@@ -96,7 +98,7 @@ public class HttpWellKnownResolver implements WellKnownResolver {
                     byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
                     Jwks jwks = dslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
                     return Optional.ofNullable(jwks);
-                } catch (java.io.IOException | IllegalArgumentException e) {
+                } catch (IOException | IllegalArgumentException e) {
                     return Optional.empty();
                 }
             }
@@ -187,14 +189,14 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         LOGGER.debug("Loading well-known endpoints from %s", wellKnownUrl);
 
         // Fetch discovery document (directly parsed as WellKnownConfiguration)
-        HttpResultObject<de.cuioss.jwt.validation.json.WellKnownConfiguration> result = discoveryEtagHandler.load();
+        HttpResultObject<WellKnownConfiguration> result = discoveryEtagHandler.load();
         if (!result.isValid() || result.getResult() == null) {
             this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
 
-        de.cuioss.jwt.validation.json.WellKnownConfiguration discoveryDocument = result.getResult();
+        WellKnownConfiguration discoveryDocument = result.getResult();
         LOGGER.debug("Discovery document load state: %s", result.getState());
         LOGGER.debug(JWTValidationLogMessages.DEBUG.DISCOVERY_DOCUMENT_FETCHED.format(discoveryDocument));
 

@@ -120,7 +120,7 @@ class MapRepresentationTest {
 
         Optional<MapRepresentation> nestedMap = map.getNestedMap("realm_access");
         assertTrue(nestedMap.isPresent());
-        
+
         Optional<List<String>> groups = nestedMap.get().getStringList("groups");
         assertTrue(groups.isPresent());
         assertEquals(List.of("/administrators", "/users", "/guests"), groups.get());
@@ -223,7 +223,7 @@ class MapRepresentationTest {
 
         // Test direct access
         assertEquals(Optional.of("user123"), map.getString("sub"));
-        
+
         // Test nested map access
         Optional<MapRepresentation> addressMap = map.getNestedMap("address");
         assertTrue(addressMap.isPresent());
@@ -250,13 +250,13 @@ class MapRepresentationTest {
 
         // String value accessed as number should return empty
         assertEquals(Optional.empty(), map.getNumber("number_as_string"));
-        
+
         // Number value accessed as string should return empty
         assertEquals(Optional.empty(), map.getString("string_as_number"));
-        
+
         // List value accessed as string should return empty
         assertEquals(Optional.empty(), map.getString("list_as_string"));
-        
+
         // String value accessed as boolean should return empty
         assertEquals(Optional.empty(), map.getBoolean("boolean_as_string"));
 
@@ -324,7 +324,7 @@ class MapRepresentationTest {
         Map<String, Object> data = new HashMap<>();
         data.put("null_value", null);
         data.put("non_null", "value");
-        
+
         MapRepresentation map = new MapRepresentation(data);
 
         assertEquals(Optional.empty(), map.getString("null_value"));
@@ -340,7 +340,7 @@ class MapRepresentationTest {
 
         // Non-null values should work normally
         assertEquals(Optional.of("value"), map.getString("non_null"));
-        
+
         // Key should still be reported as present even with null value
         assertTrue(map.containsKey("null_value"));
         assertTrue(map.containsKey("non_null"));

@@ -129,8 +129,8 @@ public abstract class BaseTokenContent implements TokenContent {
      * @param tokenType  the token type
      * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
-    protected BaseTokenContent(@NonNull Map<String, ClaimValue> claims, @NonNull String rawToken, 
-                              @NonNull TokenType tokenType, @NonNull MapRepresentation rawPayload) {
+    protected BaseTokenContent(@NonNull Map<String, ClaimValue> claims, @NonNull String rawToken,
+            @NonNull TokenType tokenType, @NonNull MapRepresentation rawPayload) {
         this.claims = claims;
         this.rawToken = rawToken;
         this.tokenType = tokenType;
