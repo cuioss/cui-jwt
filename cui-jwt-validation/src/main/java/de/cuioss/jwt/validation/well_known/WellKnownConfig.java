@@ -82,6 +82,15 @@ public class WellKnownConfig implements HttpHandlerProvider {
     }
 
     /**
+     * Creates a new HttpWellKnownResolver using this configuration.
+     *
+     * @return a configured HttpWellKnownResolver instance
+     */
+    public HttpWellKnownResolver createResolver() {
+        return new HttpWellKnownResolver(this);
+    }
+
+    /**
      * Creates a new builder for WellKnownConfig.
      *
      * @return a new WellKnownConfigBuilder instance

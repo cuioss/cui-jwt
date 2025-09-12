@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.well_known.WellKnownConfigurationConverter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
@@ -111,16 +110,9 @@ public class HttpJwksLoader implements JwksLoader {
         // Return issuer identifier from WellKnownConfig if configured
         if (config.getWellKnownConfig() != null) {
             try {
-                // Create ResilientHttpHandler to load WellKnownResult
-                var converter = new WellKnownConfigurationConverter(config.getWellKnownConfig().getParserConfig().getDslJson());
-                var wellKnownHandler = new ResilientHttpHandler<>(config.getWellKnownConfig().getHttpHandler(), converter);
-                var result = wellKnownHandler.load();
-
-                if (result.isValid() && result.getResult() != null) {
-                    return result.getResult().getIssuer();
-                } else {
-                    LOGGER.debug("Failed to retrieve issuer identifier from well-known config: configuration not available or unhealthy");
-                }
+                // Use HttpWellKnownResolver to load issuer
+                var resolver = config.getWellKnownConfig().createResolver();
+                return resolver.getIssuer();
             } catch (Exception e) {
                 LOGGER.debug("Error retrieving issuer identifier from well-known config", e);
             }
@@ -399,14 +391,9 @@ public class HttpJwksLoader implements JwksLoader {
                     // Load the well-known configuration to get JWKS URI
                     Optional<String> jwksUriResult = Optional.empty();
                     try {
-                        // Create ResilientHttpHandler to load WellKnownResult
-                        var converter = new WellKnownConfigurationConverter(config.getWellKnownConfig().getParserConfig().getDslJson());
-                        var wellKnownHandler = new ResilientHttpHandler<>(config.getWellKnownConfig().getHttpHandler(), converter);
-                        var result = wellKnownHandler.load();
-
-                        if (result.isValid() && result.getResult() != null) {
-                            jwksUriResult = result.getResult().getJwksUri();
-                        }
+                        // Use HttpWellKnownResolver to load JWKS URI
+                        var resolver = config.getWellKnownConfig().createResolver();
+                        jwksUriResult = resolver.getJwksUri();
                     } catch (Exception e) {
                         LOGGER.debug("Error loading well-known configuration", e);
                     }
