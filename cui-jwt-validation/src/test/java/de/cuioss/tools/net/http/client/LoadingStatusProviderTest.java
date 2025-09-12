@@ -20,7 +20,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for {@link LoadingStatusProvider} interface.
@@ -120,6 +122,22 @@ class LoadingStatusProviderTest {
         // Transition back to healthy
         provider.transitionToHealthy();
         assertEquals(LoaderStatus.OK, provider.getLoaderStatus());
+    }
+
+    @Test
+    @DisplayName("Should correctly implement isLoaderStatusOK convenience method")
+    void shouldCorrectlyImplementIsLoaderStatusOK() {
+        // Test OK status
+        LoadingStatusProvider okProvider = new TestHealthyProvider();
+        assertTrue(okProvider.isLoaderStatusOK(), "Should return true for OK status");
+
+        // Test ERROR status
+        LoadingStatusProvider errorProvider = new TestErrorProvider();
+        assertFalse(errorProvider.isLoaderStatusOK(), "Should return false for ERROR status");
+
+        // Test UNDEFINED status
+        LoadingStatusProvider undefinedProvider = new TestUndefinedProvider();
+        assertFalse(undefinedProvider.isLoaderStatusOK(), "Should return false for UNDEFINED status");
     }
 
     // Test implementations for interface testing
