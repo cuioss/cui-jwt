@@ -362,7 +362,7 @@ class JwksEndpointHealthCheckTest {
             }
 
             @Override
-            public LoaderStatus isHealthy() {
+            public LoaderStatus getLoaderStatus() {
                 // This would be the blocking method (not used by health check anymore)
                 return LoaderStatus.ERROR;
             }
@@ -446,7 +446,7 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.ERROR;
         }
 
@@ -481,7 +481,7 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.OK;
         }
 
@@ -516,7 +516,7 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.ERROR;
         }
 

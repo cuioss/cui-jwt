@@ -15,10 +15,10 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
-import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.client.LoadingStatusProvider;
 import lombok.NonNull;
 
 import java.util.Optional;
@@ -85,7 +85,7 @@ import java.util.Optional;
  * @since 1.0
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
-public interface JwksLoader extends HealthStatusProvider {
+public interface JwksLoader extends LoadingStatusProvider {
 
     /**
      * Gets a key by its ID.

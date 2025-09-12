@@ -27,6 +27,7 @@ import de.cuioss.tools.net.http.retry.RetryStrategy;
 import de.cuioss.uimodel.nameprovider.DisplayName;
 import de.cuioss.uimodel.result.ResultDetail;
 import de.cuioss.uimodel.result.ResultState;
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.io.IOException;
@@ -61,7 +62,8 @@ public class ResilientHttpHandler<T> {
     private final ReentrantLock lock = new ReentrantLock();
 
     private HttpResultObject<T> cachedResult; // Guarded by lock, no volatile needed
-    private LoaderStatus status = LoaderStatus.UNDEFINED; // Explicitly tracked status
+    @Getter
+    private LoaderStatus loaderStatus = LoaderStatus.UNDEFINED; // Explicitly tracked status
 
     /**
      * Creates a new ETag-aware HTTP handler with unified provider for HTTP operations and retry strategy.
@@ -123,7 +125,7 @@ public class ResilientHttpHandler<T> {
         lock.lock();
         try {
             // Set status to LOADING before starting the operation
-            status = LoaderStatus.LOADING;
+            loaderStatus = LoaderStatus.LOADING;
 
             // Use RetryStrategy to handle transient failures
             RetryContext retryContext = new RetryContext("ETag-HTTP-Load:" + httpHandler.getUri().toString(), 1);
@@ -149,7 +151,7 @@ public class ResilientHttpHandler<T> {
         lock.lock();
         try {
             // Set status to LOADING before starting the operation
-            status = LoaderStatus.LOADING;
+            loaderStatus = LoaderStatus.LOADING;
 
             if (clearCache) {
                 LOGGER.debug("Clearing HTTP cache and reloading from %s", httpHandler.getUrl());
@@ -340,34 +342,9 @@ public class ResilientHttpHandler<T> {
      */
     private void updateStatusFromResult(HttpResultObject<T> result) {
         if (result.isValid() && result.getResult() != null) {
-            status = LoaderStatus.OK;
+            loaderStatus = LoaderStatus.OK;
         } else {
-            status = LoaderStatus.ERROR;
-        }
-    }
-
-    /**
-     * Returns the current status of this ETag-aware HTTP handler.
-     * <p>
-     * Provides clients a way to determine the handler's state similar to
-     * {@link de.cuioss.jwt.validation.jwks.http.HttpJwksLoader#getCurrentStatus()}.
-     * <p>
-     * Status tracking:
-     * <ul>
-     *   <li>{@link LoaderStatus#UNDEFINED}: No HTTP requests attempted yet (initial state)</li>
-     *   <li>{@link LoaderStatus#LOADING}: HTTP loading operation currently in progress</li>
-     *   <li>{@link LoaderStatus#OK}: Has valid cached content (successful load or 304 Not Modified)</li>
-     *   <li>{@link LoaderStatus#ERROR}: Last operation failed with no usable content</li>
-     * </ul>
-     *
-     * @return the current status of this handler
-     */
-    public LoaderStatus getCurrentStatus() {
-        lock.lock();
-        try {
-            return status;
-        } finally {
-            lock.unlock();
+            loaderStatus = LoaderStatus.ERROR;
         }
     }
 

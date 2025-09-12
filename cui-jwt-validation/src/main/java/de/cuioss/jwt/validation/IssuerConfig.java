@@ -24,6 +24,7 @@ import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.client.LoadingStatusProvider;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -79,7 +80,7 @@ import java.util.*;
 @Getter
 @EqualsAndHashCode
 @ToString
-public class IssuerConfig implements HealthStatusProvider {
+public class IssuerConfig implements LoadingStatusProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(IssuerConfig.class);
 
@@ -214,7 +215,7 @@ public class IssuerConfig implements HealthStatusProvider {
     @NonNull
     public String getIssuerIdentifier() {
         // First try to get issuer identifier from JwksLoader (for well-known discovery)
-        if (jwksLoader.isHealthy() == LoaderStatus.OK) {
+        if (jwksLoader.getLoaderStatus() == LoaderStatus.OK) {
             Optional<String> jwksLoaderIssuer = jwksLoader.getIssuerIdentifier();
             if (jwksLoaderIssuer.isPresent()) {
                 return jwksLoaderIssuer.get();
@@ -236,7 +237,7 @@ public class IssuerConfig implements HealthStatusProvider {
      * <ol>
      *   <li>Returns {@link LoaderStatus#UNDEFINED} immediately if the issuer is disabled</li>
      *   <li>Returns {@link LoaderStatus#UNDEFINED} if the JwksLoader is not initialized</li>
-     *   <li>Delegates to the underlying {@link JwksLoader#isHealthy()} method</li>
+     *   <li>Delegates to the underlying {@link JwksLoader#getLoaderStatus()} method</li>
      * </ol>
      * <p>
      * For HTTP-based loaders, this may trigger lazy loading of JWKS content if not already loaded.
@@ -253,13 +254,13 @@ public class IssuerConfig implements HealthStatusProvider {
      * @since 1.0
      */
     @Override
-    public LoaderStatus isHealthy() {
+    public LoaderStatus getLoaderStatus() {
         // Return UNDEFINED if the issuer is disabled
         if (!enabled) {
             return LoaderStatus.UNDEFINED;
         }
         // Delegate to the underlying JwksLoader
-        return jwksLoader.isHealthy();
+        return jwksLoader.getLoaderStatus();
     }
 
     /**

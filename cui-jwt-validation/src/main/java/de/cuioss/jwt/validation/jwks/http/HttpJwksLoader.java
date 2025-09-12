@@ -101,7 +101,7 @@ public class HttpJwksLoader implements JwksLoader {
     }
 
     @Override
-    public LoaderStatus isHealthy() {
+    public LoaderStatus getLoaderStatus() {
         return getCurrentStatus();
     }
 

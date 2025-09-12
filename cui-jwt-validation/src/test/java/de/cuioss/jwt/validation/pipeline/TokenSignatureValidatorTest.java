@@ -278,7 +278,7 @@ class TokenSignatureValidatorTest {
             }
 
             @Override
-            public LoaderStatus isHealthy() {
+            public LoaderStatus getLoaderStatus() {
                 return LoaderStatus.OK;
             }
 

@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.tools.net.http.client;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -24,21 +23,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Unit test for {@link HealthStatusProvider} interface.
+ * Unit test for {@link LoadingStatusProvider} interface.
  * <p>
  * Tests the interface contract using concrete implementations.
  *
  * @author Oliver Wolff
  */
 @EnableGeneratorController
-class HealthStatusProviderTest {
+class LoadingStatusProviderTest {
 
     @Test
     @DisplayName("Should return non-null status from healthy implementation")
     void shouldReturnNonNullStatusFromHealthyImplementation() {
-        HealthStatusProvider provider = new TestHealthyProvider();
+        LoadingStatusProvider provider = new TestHealthyProvider();
 
-        LoaderStatus status = provider.isHealthy();
+        LoaderStatus status = provider.getLoaderStatus();
         assertNotNull(status);
         assertEquals(LoaderStatus.OK, status);
     }
@@ -46,9 +45,9 @@ class HealthStatusProviderTest {
     @Test
     @DisplayName("Should return non-null status from error implementation")
     void shouldReturnNonNullStatusFromErrorImplementation() {
-        HealthStatusProvider provider = new TestErrorProvider();
+        LoadingStatusProvider provider = new TestErrorProvider();
 
-        LoaderStatus status = provider.isHealthy();
+        LoaderStatus status = provider.getLoaderStatus();
         assertNotNull(status);
         assertEquals(LoaderStatus.ERROR, status);
     }
@@ -56,9 +55,9 @@ class HealthStatusProviderTest {
     @Test
     @DisplayName("Should return non-null status from undefined implementation")
     void shouldReturnNonNullStatusFromUndefinedImplementation() {
-        HealthStatusProvider provider = new TestUndefinedProvider();
+        LoadingStatusProvider provider = new TestUndefinedProvider();
 
-        LoaderStatus status = provider.isHealthy();
+        LoaderStatus status = provider.getLoaderStatus();
         assertNotNull(status);
         assertEquals(LoaderStatus.UNDEFINED, status);
     }
@@ -66,10 +65,10 @@ class HealthStatusProviderTest {
     @Test
     @DisplayName("Should be consistent across multiple calls")
     void shouldBeConsistentAcrossMultipleCalls() {
-        HealthStatusProvider provider = new TestHealthyProvider();
+        LoadingStatusProvider provider = new TestHealthyProvider();
 
-        LoaderStatus firstCall = provider.isHealthy();
-        LoaderStatus secondCall = provider.isHealthy();
+        LoaderStatus firstCall = provider.getLoaderStatus();
+        LoaderStatus secondCall = provider.getLoaderStatus();
 
         assertEquals(firstCall, secondCall);
     }
@@ -77,14 +76,14 @@ class HealthStatusProviderTest {
     @Test
     @DisplayName("Should handle thread safety")
     void shouldHandleThreadSafety() throws InterruptedException {
-        HealthStatusProvider provider = new TestHealthyProvider();
+        LoadingStatusProvider provider = new TestHealthyProvider();
 
         Thread[] threads = new Thread[10];
         LoaderStatus[] results = new LoaderStatus[10];
 
         for (int i = 0; i < threads.length; i++) {
             final int index = i;
-            threads[i] = new Thread(() -> results[index] = provider.isHealthy());
+            threads[i] = new Thread(() -> results[index] = provider.getLoaderStatus());
         }
 
         for (Thread thread : threads) {
@@ -108,49 +107,49 @@ class HealthStatusProviderTest {
         TestTransitionProvider provider = new TestTransitionProvider();
 
         // Initially undefined
-        assertEquals(LoaderStatus.UNDEFINED, provider.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, provider.getLoaderStatus());
 
         // Transition to healthy
         provider.transitionToHealthy();
-        assertEquals(LoaderStatus.OK, provider.isHealthy());
+        assertEquals(LoaderStatus.OK, provider.getLoaderStatus());
 
         // Transition to error
         provider.transitionToError();
-        assertEquals(LoaderStatus.ERROR, provider.isHealthy());
+        assertEquals(LoaderStatus.ERROR, provider.getLoaderStatus());
 
         // Transition back to healthy
         provider.transitionToHealthy();
-        assertEquals(LoaderStatus.OK, provider.isHealthy());
+        assertEquals(LoaderStatus.OK, provider.getLoaderStatus());
     }
 
     // Test implementations for interface testing
 
-    private static class TestHealthyProvider implements HealthStatusProvider {
+    private static class TestHealthyProvider implements LoadingStatusProvider {
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.OK;
         }
     }
 
-    private static class TestErrorProvider implements HealthStatusProvider {
+    private static class TestErrorProvider implements LoadingStatusProvider {
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.ERROR;
         }
     }
 
-    private static class TestUndefinedProvider implements HealthStatusProvider {
+    private static class TestUndefinedProvider implements LoadingStatusProvider {
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.UNDEFINED;
         }
     }
 
-    private static class TestTransitionProvider implements HealthStatusProvider {
+    private static class TestTransitionProvider implements LoadingStatusProvider {
         private LoaderStatus currentStatus = LoaderStatus.UNDEFINED;
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return currentStatus;
         }
 

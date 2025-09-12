@@ -39,7 +39,7 @@ JwksStartupService.initializeJwks() (immediate)
 │ │ ↓                                                            ││
 │ │ HttpJwksLoader.ensureHttpCache()                             ││
 │ │ ↓                                                            ││
-│ │ WellKnownResolver.isHealthy()                                ││
+│ │ WellKnownResolver.getLoaderStatus()                                ││
 │ │ ↓                                                            ││
 │ │ WellKnownResolver.loadEndpoints()                            ││
 │ │ ↓                                                            ││
@@ -140,11 +140,11 @@ if (cacheOpt.isEmpty()) {
 
 // Required fix - retry WellKnownResolver in background:
 private void retryWellKnownIfNeeded() {
-    if (wellKnownResolver != null && !wellKnownResolver.isHealthy()) {
+    if (wellKnownResolver != null && !wellKnownResolver.getLoaderStatus()) {
         // Retry well-known discovery on background thread
         backgroundExecutor.schedule(() -> {
             wellKnownResolver.retryLoad();
-            if (wellKnownResolver.isHealthy()) {
+            if (wellKnownResolver.getLoaderStatus()) {
                 startBackgroundRefreshIfNeeded();
             }
         }, retryInterval, TimeUnit.SECONDS);

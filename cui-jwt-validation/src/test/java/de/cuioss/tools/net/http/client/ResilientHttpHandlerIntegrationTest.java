@@ -529,7 +529,7 @@ class ResilientHttpHandlerIntegrationTest {
         ResilientHttpHandler<String> handler = new ResilientHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
 
         // Initially should be UNDEFINED
-        assertEquals(LoaderStatus.UNDEFINED, handler.getCurrentStatus());
+        assertEquals(LoaderStatus.UNDEFINED, handler.getLoaderStatus());
 
         // Configure for successful response
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
@@ -539,7 +539,7 @@ class ResilientHttpHandlerIntegrationTest {
 
         // Then status should be OK after successful load
         assertTrue(result.isValid());
-        assertEquals(LoaderStatus.OK, handler.getCurrentStatus());
+        assertEquals(LoaderStatus.OK, handler.getLoaderStatus());
 
         // When error occurs
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.CLIENT_ERROR);
@@ -547,7 +547,7 @@ class ResilientHttpHandlerIntegrationTest {
 
         // Then status should be ERROR
         assertFalse(errorResult.isValid());
-        assertEquals(LoaderStatus.ERROR, handler.getCurrentStatus());
+        assertEquals(LoaderStatus.ERROR, handler.getLoaderStatus());
 
         // When successful again
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V2);
@@ -555,6 +555,6 @@ class ResilientHttpHandlerIntegrationTest {
 
         // Then status should be OK again
         assertTrue(successResult.isValid());
-        assertEquals(LoaderStatus.OK, handler.getCurrentStatus());
+        assertEquals(LoaderStatus.OK, handler.getLoaderStatus());
     }
 }

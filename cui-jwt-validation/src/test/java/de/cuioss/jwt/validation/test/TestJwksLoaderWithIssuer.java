@@ -62,18 +62,18 @@ public class TestJwksLoaderWithIssuer implements JwksLoader {
 
     @Override
     public LoaderStatus getCurrentStatus() {
-        return delegate.getCurrentStatus();
+        return delegate.getLoaderStatus();
     }
 
     @Override
-    public LoaderStatus isHealthy() {
-        return delegate.isHealthy();
+    public LoaderStatus getLoaderStatus() {
+        return delegate.getLoaderStatus();
     }
 
     @Override
     public Optional<String> getIssuerIdentifier() {
         // Return the configured issuer if the loader is healthy
-        if (isHealthy() == LoaderStatus.OK) {
+        if (getLoaderStatus() == LoaderStatus.OK) {
             return Optional.of(issuer);
         }
         return Optional.empty();

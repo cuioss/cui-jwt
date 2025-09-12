@@ -15,10 +15,10 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.client.LoadingStatusProvider;
 import de.cuioss.tools.net.http.client.ResilientHttpHandler;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 
@@ -38,7 +38,7 @@ import java.util.Optional;
  * @author Oliver Wolff
  * @since 1.0
  */
-public class HttpWellKnownResolver implements HealthStatusProvider {
+public class HttpWellKnownResolver implements LoadingStatusProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpWellKnownResolver.class);
 
@@ -131,7 +131,7 @@ public class HttpWellKnownResolver implements HealthStatusProvider {
      * @return the current LoaderStatus indicating health state
      */
     @Override
-    public LoaderStatus isHealthy() {
-        return wellKnownHandler.getCurrentStatus();
+    public LoaderStatus getLoaderStatus() {
+        return wellKnownHandler.getLoaderStatus();
     }
 }

@@ -57,15 +57,15 @@ class SimpleHttpJwksLoaderTest {
 
     @Test
     void basicKeyLoading() {
-        // isHealthy() no longer triggers loading, it just returns current status
+        // getLoaderStatus() no longer triggers loading, it just returns current status
         // Status starts as UNDEFINED until loading is triggered
-        assertEquals(LoaderStatus.UNDEFINED, httpJwksLoader.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, httpJwksLoader.getLoaderStatus());
 
         // Trigger loading by attempting to get a key
         httpJwksLoader.getKeyInfo("test-key-id");
 
         // After loading attempt, status should be OK (for valid JWKS)
-        assertEquals(LoaderStatus.OK, httpJwksLoader.isHealthy());
+        assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus());
 
         // Should have called endpoint once during health check
         assertEquals(1, moduleDispatcher.getCallCounter());
@@ -85,7 +85,7 @@ class SimpleHttpJwksLoaderTest {
         httpJwksLoader.getKeyInfo("default-key-id");
         httpJwksLoader.getKeyInfo("default-key-id");
         httpJwksLoader.getKeyInfo("another-key-id");
-        httpJwksLoader.isHealthy();
+        httpJwksLoader.getLoaderStatus();
 
         assertEquals(1, moduleDispatcher.getCallCounter());
     }

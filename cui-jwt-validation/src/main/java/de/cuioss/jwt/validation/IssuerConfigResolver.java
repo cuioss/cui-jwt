@@ -208,7 +208,7 @@ public class IssuerConfigResolver {
         Iterator<IssuerConfig> iterator = pendingConfigs.iterator();
         while (iterator.hasNext()) {
             IssuerConfig issuerConfig = iterator.next();
-            if (LoaderStatus.OK.equals(issuerConfig.isHealthy())) {
+            if (LoaderStatus.OK.equals(issuerConfig.getLoaderStatus())) {
                 mutableCache.putIfAbsent(issuerConfig.getIssuerIdentifier(), issuerConfig);
                 iterator.remove();
                 LOGGER.debug("Cached issuer config for: %s", issuerConfig.getIssuerIdentifier());

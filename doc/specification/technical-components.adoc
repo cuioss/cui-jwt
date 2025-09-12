@@ -160,7 +160,7 @@ The resolution logic prioritizes dynamic identification over static configuratio
 ----
 public Optional<String> getIssuerIdentifier() {
     // First try to get issuer identifier from JwksLoader (for well-known discovery)
-    if (jwksLoader != null && jwksLoader.isHealthy() == LoaderStatus.OK) {
+    if (jwksLoader != null && jwksLoader.getLoaderStatus() == LoaderStatus.OK) {
         Optional<String> jwksLoaderIssuer = jwksLoader.getIssuerIdentifier();
         if (jwksLoaderIssuer.isPresent()) {
             return jwksLoaderIssuer;
@@ -264,7 +264,7 @@ The `JwksLoader` interface handles the retrieval, caching, and rotation of crypt
 The JwksLoader interface provides the following core methods:
 
 * **Key Management**: `getKeyInfo()`, `getFirstKeyInfo()`, `getAllKeyInfos()`, `keySet()`
-* **Health Monitoring**: `isHealthy()`
+* **Health Monitoring**: `getLoaderStatus()`
 * **Type Information**: `getJwksType()`
 * **Issuer Identification**: `getIssuerIdentifier()` - NEW: Returns the issuer identifier when available
 

@@ -69,7 +69,7 @@ class HttpJwksLoaderTest {
     void shouldCreateLoaderWithConstructor() {
         assertNotNull(httpJwksLoader, "HttpJwksLoader should not be null");
         // Simplified loader doesn't expose config - just verify it was created
-        assertNotNull(httpJwksLoader.isHealthy(), "Status should be available");
+        assertNotNull(httpJwksLoader.getLoaderStatus(), "Status should be available");
     }
 
     @Test
@@ -146,11 +146,11 @@ class HttpJwksLoaderTest {
     @DisplayName("Should handle health checks")
     void shouldHandleHealthChecks() {
         // Initially undefined status
-        assertNotNull(httpJwksLoader.isHealthy(), "Status should not be null");
+        assertNotNull(httpJwksLoader.getLoaderStatus(), "Status should not be null");
 
         // After loading, should be healthy
         httpJwksLoader.getKeyInfo(TEST_KID);
-        assertEquals(LoaderStatus.OK, httpJwksLoader.isHealthy(), "Should be healthy after successful load");
+        assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus(), "Should be healthy after successful load");
     }
 
     @Test
@@ -204,7 +204,7 @@ class HttpJwksLoaderTest {
         newLoader.initJWKSLoader(securityEventCounter);
 
         // Verify the new loader works independently
-        assertNotNull(newLoader.isHealthy(), "Health check should work for new loader");
+        assertNotNull(newLoader.getLoaderStatus(), "Health check should work for new loader");
 
         // Both loaders should be functional - test with getKeyInfo
         Optional<KeyInfo> originalLoaderKey = httpJwksLoader.getKeyInfo(TEST_KID);

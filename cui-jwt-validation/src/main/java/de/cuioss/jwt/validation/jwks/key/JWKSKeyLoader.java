@@ -326,7 +326,7 @@ public class JWKSKeyLoader implements JwksLoader {
     }
 
     @Override
-    public @NonNull LoaderStatus isHealthy() {
+    public @NonNull LoaderStatus getLoaderStatus() {
         if (!initialized || keyInfoMap == null) {
             return LoaderStatus.UNDEFINED;
         }

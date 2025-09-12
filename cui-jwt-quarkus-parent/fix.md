@@ -24,7 +24,7 @@ According to the MicroProfile Health specification:
 
 ### Evidence Chain
 
-1. **Health Check Chain**: `JwksEndpointHealthCheck.call()` → `JwksLoader.isHealthy()` → `HttpJwksLoader.ensureLoaded()` → `WellKnownResolver.isHealthy()` → `ETagAwareHttpHandler.load()`
+1. **Health Check Chain**: `JwksEndpointHealthCheck.call()` → `JwksLoader.getLoaderStatus()` → `HttpJwksLoader.ensureLoaded()` → `WellKnownResolver.getLoaderStatus()` → `ETagAwareHttpHandler.load()`
 
 2. **Synchronous Blocking**: **Readiness checks** perform **synchronous HTTP requests** to Keycloak during health check execution
 
@@ -112,7 +112,7 @@ public class JwksEndpointHealthCheck implements HealthCheck {
 ```java
 // Health checks only read state, never trigger loading
 @Override
-public LoaderStatus isHealthy() {
+public LoaderStatus getLoaderStatus() {
     return currentStatus.get(); // Just read cached state
     // Never call ensureLoaded() or perform I/O
 }
@@ -341,9 +341,9 @@ public class JwksEndpointHealthCheck implements HealthCheck {
 ### Blocking Call Chain Identified
 ```
 JwksEndpointHealthCheck.call() [Line 83]
-  → JwksLoader.isHealthy() [Line 152] 
+  → JwksLoader.getLoaderStatus() [Line 152] 
     → HttpJwksLoader.ensureLoaded() [Line 94]
-      → WellKnownResolver.isHealthy() [Line 300]
+      → WellKnownResolver.getLoaderStatus() [Line 300]
         → HttpWellKnownResolver.ensureLoaded() [Line 117]
           → ETagAwareHttpHandler.load() [Line 144] ⚠️ BLOCKS ON HTTP I/O
 ```
@@ -411,7 +411,7 @@ public LoaderStatus getCurrentStatus() {
 }
 
 @Override  
-public LoaderStatus isHealthy() {
+public LoaderStatus getLoaderStatus() {
     // REMOVE: ensureLoaded() call - this violates MicroProfile spec
     // REPLACE: return getCurrentStatus()
     return getCurrentStatus();
@@ -555,7 +555,7 @@ public HealthCheckResponse call() {
         .map(config -> checkIssuerStatus(config)) // Non-blocking
         .toList();
     
-    boolean allReady = results.stream().allMatch(EndpointResult::isHealthy);
+    boolean allReady = results.stream().allMatch(EndpointResult::getLoaderStatus);
     boolean anyLoading = results.stream().anyMatch(r -> r.status() == LoaderStatus.LOADING);
     
     responseBuilder
@@ -659,7 +659,7 @@ void shouldHaveNonBlockingReadinessChecks() {
 2. **Modified HttpJwksLoader to use non-blocking health checks**
    ```java
    @Override
-   public LoaderStatus isHealthy() {
+   public LoaderStatus getLoaderStatus() {
        return getCurrentStatus(); // No more blocking ensureLoaded() call
    }
    ```

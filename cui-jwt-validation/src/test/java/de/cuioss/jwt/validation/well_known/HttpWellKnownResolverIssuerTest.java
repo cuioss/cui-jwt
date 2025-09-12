@@ -74,7 +74,7 @@ class HttpWellKnownResolverIssuerTest {
         assertEquals(baseUrl, issuer.get(), "Issuer should match expected URL");
 
         // Verify health status is OK after successful discovery
-        assertEquals(LoaderStatus.OK, resolver.isHealthy());
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
 
         // Verify well-known endpoint was called once
         assertEquals(1, moduleDispatcher.getCallCounter(), "Well-known endpoint should be called once");
@@ -101,7 +101,7 @@ class HttpWellKnownResolverIssuerTest {
         assertFalse(issuer.isPresent(), "Issuer should not be available when discovery fails");
 
         // Health status should reflect error
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
 
         // Well-known endpoint should be called
         assertTrue(moduleDispatcher.getCallCounter() >= 1, "Well-known endpoint should be called at least once");
@@ -128,7 +128,7 @@ class HttpWellKnownResolverIssuerTest {
         assertFalse(issuer.isPresent(), "Issuer should not be available when missing from response");
 
         // Health status should be ERROR since issuer is required
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
     }
 
     @Test
@@ -185,7 +185,7 @@ class HttpWellKnownResolverIssuerTest {
         assertTrue(issuer.get().contains("invalid-"), "Should contain the invalid issuer");
 
         // Health status should be OK for successful HTTP response (content validation is separate)
-        assertEquals(LoaderStatus.OK, resolver.isHealthy());
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
     }
 
     @Test

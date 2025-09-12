@@ -78,7 +78,7 @@ class HttpWellKnownResolverTest {
         assertEquals(expectedJwksUri, jwksUri.get(), "JWKS URI should match expected URL");
 
         // Verify health status is OK after successful resolution
-        assertEquals(LoaderStatus.OK, resolver.isHealthy());
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
 
         // Verify well-known endpoint was called once
         assertEquals(1, moduleDispatcher.getCallCounter(), "Well-known endpoint should be called once");
@@ -107,7 +107,7 @@ class HttpWellKnownResolverTest {
         assertEquals(baseUrl, issuer.get(), "Issuer should match base URL");
 
         // Verify health status is OK
-        assertEquals(LoaderStatus.OK, resolver.isHealthy());
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
     }
 
     @Test
@@ -174,7 +174,7 @@ class HttpWellKnownResolverTest {
         assertFalse(resolver.getAuthorizationEndpoint().isPresent(), "Authorization endpoint should not be available on error");
 
         // Health status should reflect error
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
 
         // Well-known endpoint should be called
         assertTrue(moduleDispatcher.getCallCounter() >= 1, "Well-known endpoint should be called at least once");
@@ -203,7 +203,7 @@ class HttpWellKnownResolverTest {
         assertFalse(resolver.getIssuer().isPresent(), "Issuer should not be available when JWKS URI is missing (invalid config)");
 
         // Health status should be ERROR since JWKS URI is required for JWT validation
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
     }
 
     @Test

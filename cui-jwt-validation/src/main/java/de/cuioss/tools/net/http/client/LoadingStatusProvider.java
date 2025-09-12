@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
-
-import de.cuioss.tools.net.http.client.LoaderStatus;
+package de.cuioss.tools.net.http.client;
 
 /**
  * Common interface for components that provide health status information.
@@ -27,13 +25,13 @@ import de.cuioss.tools.net.http.client.LoaderStatus;
  * <ul>
  *   <li>Implementations must be thread-safe for concurrent access</li>
  *   <li>Health checks should be fail-fast to avoid blocking callers</li>
- *   <li>For lazy-loading implementations, {@link #isHealthy()} may trigger initial loading</li>
+ *   <li>For lazy-loading implementations, {@link #getLoaderStatus()} may trigger initial loading</li>
  * </ul>
  * <p>
  * Usage example:
  * <pre>
- * HealthStatusProvider provider = someComponent;
- * LoaderStatus status = provider.isHealthy();
+ * LoadingStatusProvider provider = someComponent;
+ * LoaderStatus status = provider.getLoaderStatus();
  * if (status == LoaderStatus.OK) {
  *     // Component is healthy and ready to use
  * } else if (status == LoaderStatus.ERROR) {
@@ -46,7 +44,7 @@ import de.cuioss.tools.net.http.client.LoaderStatus;
  * @author Oliver Wolff
  * @since 1.0
  */
-public interface HealthStatusProvider {
+public interface LoadingStatusProvider {
 
     /**
      * Checks the component's health status and returns detailed status information.
@@ -56,6 +54,7 @@ public interface HealthStatusProvider {
      * <ul>
      *   <li>{@link LoaderStatus#OK} - Component is operational and healthy</li>
      *   <li>{@link LoaderStatus#ERROR} - Component encountered an error</li>
+     *   <li>{@link LoaderStatus#LOADING} - Component is in the process of loading or initializing</li>
      *   <li>{@link LoaderStatus#UNDEFINED} - Initial state, not yet initialized</li>
      * </ul>
      * <p>
@@ -71,5 +70,5 @@ public interface HealthStatusProvider {
      *
      * @return the current health status of the component, never {@code null}
      */
-    LoaderStatus isHealthy();
+    LoaderStatus getLoaderStatus();
 }

@@ -200,7 +200,7 @@ class HttpJwksLoaderSchedulerTest {
         // Trigger initial successful load
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Initial load should work");
-        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should be healthy after initial load");
+        assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should be healthy after initial load");
 
         // Make subsequent requests fail
         moduleDispatcher.returnError();
@@ -212,7 +212,7 @@ class HttpJwksLoaderSchedulerTest {
                 .until(() -> true); // Just wait for the time period
 
         // Loader should still be healthy if it has existing keys
-        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should remain healthy with cached keys even if background refresh fails");
+        assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should remain healthy with cached keys even if background refresh fails");
 
         // Verify HTTP error logging occurred
         LogAsserts.assertLogMessagePresentContaining(
@@ -312,7 +312,7 @@ class HttpJwksLoaderSchedulerTest {
         // Scheduler should be started after failed load to enable retries
         assertTrue(loader.isBackgroundRefreshActive(), "Background refresh should start after failed initial load to enable retries");
         // With retry capability, failed loads should not permanently corrupt status
-        LoaderStatus status = loader.isHealthy();
+        LoaderStatus status = loader.getLoaderStatus();
         assertTrue(status == LoaderStatus.UNDEFINED || status == LoaderStatus.OK,
                 "Loader should have UNDEFINED or OK status (not permanent ERROR) after failed load to enable retry");
 
