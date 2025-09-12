@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.well_known;
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.json.WellKnownResult;
+import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DisplayName("Direct Deserialization Test")
 class DirectDeserializationTest {
+
+    private static final CuiLogger LOGGER = new CuiLogger(DirectDeserializationTest.class);
 
     private static final String VALID_JSON = """
             {
@@ -75,12 +78,12 @@ class DirectDeserializationTest {
             assertEquals("https://example.com/auth", config.authorizationEndpoint());
             assertEquals("https://example.com/token", config.tokenEndpoint());
 
-            System.out.println("✅ SUCCESS: Direct deserialization to record works!");
+            LOGGER.info("✅ SUCCESS: Direct deserialization to record works!");
 
         } catch (IOException e) {
             // If this fails, we need to understand WHY
-            System.err.println("❌ FAILED: Direct deserialization failed with: " + e.getMessage());
-            System.err.println("Error type: " + e.getClass().getSimpleName());
+            LOGGER.error("❌ FAILED: Direct deserialization failed with: " + e.getMessage());
+            LOGGER.error("Error type: " + e.getClass().getSimpleName());
 
             fail("Direct deserialization failed: " + e.getMessage() +
                     ". This means the true mapper approach doesn't work with records.");
@@ -127,12 +130,12 @@ class DirectDeserializationTest {
             // This will either work (return a config with nulls) or fail (return null)
             // Either way, we need to document the behavior
             if (config == null) {
-                System.out.println("ℹ️  INFO: Empty JSON returns null during direct deserialization");
+                LOGGER.info("ℹ️  INFO: Empty JSON returns null during direct deserialization");
             } else {
-                System.out.println("ℹ️  INFO: Empty JSON creates config with values: " + config);
+                LOGGER.info("ℹ️  INFO: Empty JSON creates config with values: " + config);
             }
         } catch (IOException e) {
-            System.out.println("ℹ️  INFO: Empty JSON fails with: " + e.getMessage());
+            LOGGER.info("ℹ️  INFO: Empty JSON fails with: " + e.getMessage());
         }
     }
 

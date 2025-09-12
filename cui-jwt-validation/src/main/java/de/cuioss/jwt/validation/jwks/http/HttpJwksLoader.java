@@ -116,13 +116,9 @@ public class HttpJwksLoader implements JwksLoader {
     public Optional<String> getIssuerIdentifier() {
         // Return issuer identifier from WellKnownConfig if configured
         if (config.getWellKnownConfig() != null) {
-            try {
-                // Use HttpWellKnownResolver to load issuer
-                var resolver = config.getWellKnownConfig().createResolver();
-                return resolver.getIssuer();
-            } catch (Exception e) {
-                LOGGER.debug("Error retrieving issuer identifier from well-known config", e);
-            }
+            // Use HttpWellKnownResolver to load issuer
+            var resolver = config.getWellKnownConfig().createResolver();
+            return resolver.getIssuer();
         }
 
         return Optional.empty();
@@ -342,14 +338,8 @@ public class HttpJwksLoader implements JwksLoader {
                     // Well-known configuration - create handler from discovered JWKS URI
                     LOGGER.debug("Getting JWKS URI from WellKnownConfig");
 
-                    Optional<String> jwksUriResult;
-                    try {
-                        var resolver = config.getWellKnownConfig().createResolver();
-                        jwksUriResult = resolver.getJwksUri();
-                    } catch (Exception e) {
-                        LOGGER.debug("Error loading well-known configuration", e);
-                        return Optional.empty();
-                    }
+                    var resolver = config.getWellKnownConfig().createResolver();
+                    Optional<String> jwksUriResult = resolver.getJwksUri();
 
                     if (jwksUriResult.isEmpty()) {
                         LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED::format);

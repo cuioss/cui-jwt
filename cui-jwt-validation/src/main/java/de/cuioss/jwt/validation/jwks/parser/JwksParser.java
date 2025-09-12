@@ -79,50 +79,39 @@ public class JwksParser {
             return result;
         }
 
+        byte[] bytes = jwksContent.getBytes(StandardCharsets.UTF_8);
+
+        // First, try to parse as standard JWKS with "keys" array
         try {
-            byte[] bytes = jwksContent.getBytes(StandardCharsets.UTF_8);
-
-            // First, try to parse as standard JWKS with "keys" array
-            try {
-                Jwks jwks = dslJson.deserialize(Jwks.class, bytes, bytes.length);
-                if (jwks != null && jwks.keys() != null && !jwks.keys().isEmpty()) {
-                    return parseJwks(jwks);
-                }
-            } catch (IOException e) {
-                // JSON syntax error - this should be logged as ERROR
-                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
-                securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-                return result;
-            } catch (RuntimeException e) {
-                // Other parsing errors - continue to try single JWK
+            Jwks jwks = dslJson.deserialize(Jwks.class, bytes, bytes.length);
+            if (jwks != null && jwks.keys() != null && !jwks.keys().isEmpty()) {
+                return parseJwks(jwks);
             }
-
-            // If standard JWKS parsing failed, try parsing as single JWK
-            try {
-                JwkKey singleKey = dslJson.deserialize(JwkKey.class, bytes, bytes.length);
-                if (singleKey != null && singleKey.kty() != null) {
-                    result.add(singleKey);
-                    return result;
-                }
-            } catch (IOException e) {
-                // JSON syntax error - this should be logged as ERROR
-                LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
-                securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-                return result;
-            } catch (RuntimeException e) {
-                // Other parsing errors - fall through to WARN
-            }
-
-            // If both parsing attempts failed with no IOException, it's likely a structure issue
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
-            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-            return result;
-
-        } catch (Exception e) {
+        } catch (IOException e) {
+            // JSON syntax error - this should be logged as ERROR
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return result;
         }
+
+        // If standard JWKS parsing failed, try parsing as single JWK
+        try {
+            JwkKey singleKey = dslJson.deserialize(JwkKey.class, bytes, bytes.length);
+            if (singleKey != null && singleKey.kty() != null) {
+                result.add(singleKey);
+                return result;
+            }
+        } catch (IOException e) {
+            // JSON syntax error - this should be logged as ERROR
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
+            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+            return result;
+        }
+
+        // If both parsing attempts failed with no IOException, it's likely a structure issue
+        LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
+        securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+        return result;
     }
 
     /**
