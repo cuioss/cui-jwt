@@ -71,4 +71,16 @@ public interface LoadingStatusProvider {
      * @return the current health status of the component, never {@code null}
      */
     LoaderStatus getLoaderStatus();
+
+    /**
+     * Convenience method to check if the loader status is OK.
+     * <p>
+     * This method provides a simplified way to check if the component is healthy
+     * without directly comparing the status enum.
+     *
+     * @return {@code true} if the component status is {@link LoaderStatus#OK}, {@code false} otherwise
+     */
+    default boolean isLoaderStatusOK() {
+        return getLoaderStatus() == LoaderStatus.OK;
+    }
 }

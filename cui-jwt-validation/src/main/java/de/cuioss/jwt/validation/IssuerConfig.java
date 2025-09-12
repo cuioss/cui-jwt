@@ -215,7 +215,7 @@ public class IssuerConfig implements LoadingStatusProvider {
     @NonNull
     public String getIssuerIdentifier() {
         // First try to get issuer identifier from JwksLoader (for well-known discovery)
-        if (jwksLoader.getLoaderStatus() == LoaderStatus.OK) {
+        if (jwksLoader.isLoaderStatusOK()) {
             Optional<String> jwksLoaderIssuer = jwksLoader.getIssuerIdentifier();
             if (jwksLoaderIssuer.isPresent()) {
                 return jwksLoaderIssuer.get();
