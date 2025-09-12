@@ -17,7 +17,7 @@ package de.cuioss.jwt.validation.well_known;
 
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for DIRECT deserialization from JSON to WellKnownConfiguration.
+ * Test for DIRECT deserialization from JSON to WellKnownResult.
  * This is the true mapper approach test - no intermediate steps allowed!
  *
  * @author Oliver Wolff
@@ -60,13 +60,13 @@ class DirectDeserializationTest {
     }
 
     @Test
-    @DisplayName("Should deserialize directly to WellKnownConfiguration record - THE TRUE TEST")
+    @DisplayName("Should deserialize directly to WellKnownResult record - THE TRUE TEST")
     void shouldDeserializeDirectlyToWellKnownConfigurationRecord() {
         byte[] bytes = VALID_JSON.getBytes();
 
         try {
             // THIS IS THE TRUE MAPPER APPROACH - direct deserialization!
-            WellKnownConfiguration config = dslJson.deserialize(WellKnownConfiguration.class, bytes, bytes.length);
+            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
 
             // If this works, the mapper approach is successful
             assertNotNull(config, "Direct deserialization should work");
@@ -88,12 +88,12 @@ class DirectDeserializationTest {
     }
 
     @Test
-    @DisplayName("Should deserialize minimal JSON directly to WellKnownConfiguration record")
+    @DisplayName("Should deserialize minimal JSON directly to WellKnownResult record")
     void shouldDeserializeMinimalJsonDirectly() {
         byte[] bytes = MINIMAL_JSON.getBytes();
 
         assertDoesNotThrow(() -> {
-            WellKnownConfiguration config = dslJson.deserialize(WellKnownConfiguration.class, bytes, bytes.length);
+            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
 
             assertNotNull(config, "Direct deserialization of minimal JSON should work");
             assertEquals("https://example.com", config.issuer());
@@ -111,7 +111,7 @@ class DirectDeserializationTest {
         byte[] bytes = malformedJson.getBytes();
 
         assertThrows(IOException.class, () -> {
-            dslJson.deserialize(WellKnownConfiguration.class, bytes, bytes.length);
+            dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
         }, "Malformed JSON should throw IOException during direct deserialization");
     }
 
@@ -122,7 +122,7 @@ class DirectDeserializationTest {
         byte[] bytes = emptyJson.getBytes();
 
         try {
-            WellKnownConfiguration config = dslJson.deserialize(WellKnownConfiguration.class, bytes, bytes.length);
+            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
 
             // This will either work (return a config with nulls) or fail (return null)
             // Either way, we need to document the behavior

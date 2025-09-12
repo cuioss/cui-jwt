@@ -180,7 +180,7 @@ public final class ParserConfig {
      * <ul>
      *   <li>Service loader for compile-time generated converters</li>
      *   <li>Security limits for string and digits buffers</li>
-     *   <li>Support for our domain-specific record types (JWKS, WellKnownConfiguration)</li>
+     *   <li>Support for our domain-specific record types (JWKS, WellKnownResult)</li>
      * </ul>
      *
      * @return a DslJson instance configured with security settings and compile-time mapping

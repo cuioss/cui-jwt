@@ -17,9 +17,7 @@ package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
-import de.cuioss.jwt.validation.well_known.WellKnownResolver;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
@@ -42,7 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * This class encapsulates configuration options for the HttpJwksLoader,
  * including JWKS endpoint URL, refresh interval, SSL context, and
  * background refresh parameters. The JWKS endpoint URL can be configured
- * directly or discovered via a {@link WellKnownResolver}.
+ * directly or discovered via a {@link WellKnownConfig}.
  * <p>
  * Complex caching parameters (maxCacheSize, adaptiveWindowSize) have been
  * removed for simplification while keeping essential refresh functionality.
@@ -75,8 +73,8 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
     /**
      * The HttpHandler used for HTTP requests.
      * <p>
-     * This field is guaranteed to be non-null when {@code getJwksType() == JwksType.HTTP}.
-     * It will be null only when using WellKnownResolver (i.e., {@code getJwksType() == JwksType.WELL_KNOWN}).
+     * This field is guaranteed to be non-null when using direct JWKS URI configuration.
+     * It will be null only when using WellKnownConfig for discovery.
      * <p>
      * The non-null contract for HTTP configurations is enforced by the {@link HttpJwksLoaderConfigBuilder#build()}
      * method, which validates that the HttpHandler was successfully created before constructing the config.
@@ -85,17 +83,9 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
     private final HttpHandler httpHandler;
 
     /**
-     * The WellKnownResolver used for well-known endpoint discovery.
-     * Will be null if using direct HttpHandler.
-     */
-    @Getter
-    @EqualsAndHashCode.Exclude
-    private final WellKnownResolver wellKnownResolver;
-
-    /**
      * The WellKnownConfig used for well-known endpoint discovery.
      * Will be null if using direct HttpHandler.
-     * Used to access HttpHandler in well-known mode for HttpHandlerProvider interface.
+     * Contains all configuration needed to load well-known configuration.
      */
     @Getter
     @EqualsAndHashCode.Exclude
@@ -117,13 +107,11 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
 
     private HttpJwksLoaderConfig(int refreshIntervalSeconds,
             HttpHandler httpHandler,
-            WellKnownResolver wellKnownResolver,
             WellKnownConfig wellKnownConfig,
             RetryStrategy retryStrategy,
             ScheduledExecutorService scheduledExecutorService) {
         this.refreshIntervalSeconds = refreshIntervalSeconds;
         this.httpHandler = httpHandler;
-        this.wellKnownResolver = wellKnownResolver;
         this.wellKnownConfig = wellKnownConfig;
         this.retryStrategy = retryStrategy;
         this.scheduledExecutorService = scheduledExecutorService;
@@ -135,7 +123,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
      * This method handles both configuration modes:
      * <ul>
      *   <li><strong>Direct HTTP mode</strong>: Returns the configured HttpHandler</li>
-     *   <li><strong>WellKnown mode</strong>: Returns the HttpHandler from the WellKnownResolver's config</li>
+     *   <li><strong>WellKnown mode</strong>: Returns the HttpHandler from the WellKnownConfig</li>
      * </ul>
      *
      * @return the HttpHandler instance, never null
@@ -432,13 +420,10 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             }
 
             HttpHandler jwksHttpHandler = null;
-            WellKnownResolver configuredWellKnownResolver = null;
-
             WellKnownConfig configuredWellKnownConfig = null;
             if (endpointSource == EndpointSource.WELL_KNOWN_URL || endpointSource == EndpointSource.WELL_KNOWN_URI) {
-                // Create WellKnownResolver from WellKnownConfig
+                // Use WellKnownConfig directly
                 configuredWellKnownConfig = this.wellKnownConfig;
-                configuredWellKnownResolver = createWellKnownResolver(configuredWellKnownConfig);
             } else {
                 // Build the HttpHandler for direct URL/URI configuration
                 try {
@@ -466,34 +451,11 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             return new HttpJwksLoaderConfig(
                     refreshIntervalSeconds,
                     jwksHttpHandler,
-                    configuredWellKnownResolver,
                     configuredWellKnownConfig,
                     retryStrategy,
                     executor);
         }
 
-        /**
-         * Creates a WellKnownResolver from the given WellKnownConfig.
-         * Uses the WellKnownConfig which internally manages HttpHandler creation.
-         *
-         * @param config the WellKnownConfig to create the resolver from
-         * @return a configured WellKnownResolver instance
-         * @throws IllegalArgumentException if the configuration is invalid
-         */
-        private WellKnownResolver createWellKnownResolver(WellKnownConfig config) {
-            return new HttpWellKnownResolver(config);
-        }
     }
 
-    public WellKnownResolver getWellKnownResolver() {
-        return wellKnownResolver;
-    }
-
-    public ScheduledExecutorService getScheduledExecutorService() {
-        return scheduledExecutorService;
-    }
-
-    public int getRefreshIntervalSeconds() {
-        return refreshIntervalSeconds;
-    }
 }

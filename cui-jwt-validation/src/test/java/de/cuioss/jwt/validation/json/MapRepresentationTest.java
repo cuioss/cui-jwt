@@ -306,17 +306,6 @@ class MapRepresentationTest {
         assertEquals(Optional.empty(), map.getValue("nonexistent"));
     }
 
-    @Test
-    @DisplayName("Underlying map access")
-    void shouldProvideUnderlyingMapAccess() {
-        Map<String, Object> originalData = Map.of("key", "value");
-        MapRepresentation map = new MapRepresentation(originalData);
-
-        Map<String, Object> underlyingMap = map.getUnderlyingMap();
-        assertNotNull(underlyingMap);
-        assertEquals(originalData, underlyingMap);
-        assertSame(originalData, underlyingMap);
-    }
 
     @Test
     @DisplayName("Null safety")

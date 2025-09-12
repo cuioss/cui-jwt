@@ -17,7 +17,7 @@ package de.cuioss.jwt.validation.well_known;
 
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,12 +29,12 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Isolated test to verify DSL-JSON mapping to WellKnownConfiguration.
+ * Isolated test to verify DSL-JSON mapping to WellKnownResult.
  *
  * @author Oliver Wolff
  */
-@DisplayName("WellKnownConfiguration DSL-JSON Mapping")
-class WellKnownConfigurationMappingTest {
+@DisplayName("WellKnownResult DSL-JSON Mapping")
+class WellKnownResultMappingTest {
 
     private static final String VALID_JSON = """
             {
@@ -61,7 +61,7 @@ class WellKnownConfigurationMappingTest {
     }
 
     @Test
-    @DisplayName("Should map full JSON to WellKnownConfiguration via Map deserialization")
+    @DisplayName("Should map full JSON to WellKnownResult via Map deserialization")
     void shouldMapFullJsonToWellKnownConfigurationViaMap() throws IOException {
         // First: Parse JSON to Map using DSL-JSON
         byte[] bytes = VALID_JSON.getBytes();
@@ -73,8 +73,8 @@ class WellKnownConfigurationMappingTest {
         assertEquals("https://example.com/auth", jsonMap.get("authorization_endpoint"));
         assertEquals("https://example.com/token", jsonMap.get("token_endpoint"));
 
-        // Second: Map to WellKnownConfiguration
-        WellKnownConfiguration config = mapToWellKnownConfiguration(jsonMap);
+        // Second: Map to WellKnownResult
+        WellKnownResult config = mapToWellKnownConfiguration(jsonMap);
 
         assertNotNull(config);
         assertEquals("https://example.com", config.issuer());
@@ -86,7 +86,7 @@ class WellKnownConfigurationMappingTest {
     }
 
     @Test
-    @DisplayName("Should map minimal JSON to WellKnownConfiguration")
+    @DisplayName("Should map minimal JSON to WellKnownResult")
     void shouldMapMinimalJsonToWellKnownConfiguration() throws IOException {
         byte[] bytes = MINIMAL_JSON.getBytes();
         Map<String, Object> jsonMap = dslJson.deserialize(Map.class, bytes, bytes.length);
@@ -97,7 +97,7 @@ class WellKnownConfigurationMappingTest {
         assertNull(jsonMap.get("authorization_endpoint"));
         assertNull(jsonMap.get("token_endpoint"));
 
-        WellKnownConfiguration config = mapToWellKnownConfiguration(jsonMap);
+        WellKnownResult config = mapToWellKnownConfiguration(jsonMap);
 
         assertNotNull(config);
         assertEquals("https://example.com", config.issuer());
@@ -131,10 +131,10 @@ class WellKnownConfigurationMappingTest {
     @Test
     @DisplayName("Should create direct string-to-configuration mapper")
     void shouldCreateDirectStringToConfigurationMapper() {
-        Optional<WellKnownConfiguration> result = parseWellKnownConfiguration(VALID_JSON);
+        Optional<WellKnownResult> result = parseWellKnownConfiguration(VALID_JSON);
 
         assertTrue(result.isPresent());
-        WellKnownConfiguration config = result.get();
+        WellKnownResult config = result.get();
         assertEquals("https://example.com", config.issuer());
         assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
         assertEquals("https://example.com/auth", config.authorizationEndpoint());
@@ -142,9 +142,9 @@ class WellKnownConfigurationMappingTest {
     }
 
     /**
-     * Direct String → WellKnownConfiguration mapper (what we want to achieve)
+     * Direct String → WellKnownResult mapper (what we want to achieve)
      */
-    private Optional<WellKnownConfiguration> parseWellKnownConfiguration(String json) {
+    private Optional<WellKnownResult> parseWellKnownConfiguration(String json) {
         try {
             byte[] bytes = json.getBytes();
             Map<String, Object> jsonMap = dslJson.deserialize(Map.class, bytes, bytes.length);
@@ -160,9 +160,9 @@ class WellKnownConfigurationMappingTest {
     }
 
     /**
-     * Maps a JSON Map to WellKnownConfiguration with validation
+     * Maps a JSON Map to WellKnownResult with validation
      */
-    private WellKnownConfiguration mapToWellKnownConfiguration(Map<String, Object> jsonMap) {
+    private WellKnownResult mapToWellKnownConfiguration(Map<String, Object> jsonMap) {
         String issuer = (String) jsonMap.get("issuer");
         String jwksUri = (String) jsonMap.get("jwks_uri");
         String authorizationEndpoint = (String) jsonMap.get("authorization_endpoint");
@@ -176,6 +176,6 @@ class WellKnownConfigurationMappingTest {
             throw new IllegalArgumentException("Missing required field: jwks_uri");
         }
 
-        return new WellKnownConfiguration(issuer, jwksUri, authorizationEndpoint, tokenEndpoint, null);
+        return new WellKnownResult(issuer, jwksUri, authorizationEndpoint, tokenEndpoint, null);
     }
 }

@@ -23,7 +23,9 @@ import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.jwt.validation.well_known.WellKnownConfigurationConverter;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.net.http.client.ResilientHttpHandler;
 import de.cuioss.tools.net.http.converter.HttpContentConverter;
@@ -69,7 +71,7 @@ public class HttpJwksLoader implements JwksLoader {
 
     /**
      * Constructor using HttpJwksLoaderConfig.
-     * Supports both direct HTTP handlers and WellKnownResolver configurations.
+     * Supports both direct HTTP handlers and WellKnownConfig configurations.
      * The SecurityEventCounter must be set via initJWKSLoader() before use.
      */
     public HttpJwksLoader(@NonNull HttpJwksLoaderConfig config) {
@@ -87,7 +89,7 @@ public class HttpJwksLoader implements JwksLoader {
     @Override
     public JwksType getJwksType() {
         // Distinguish between direct HTTP and well-known discovery based on configuration
-        if (config.getWellKnownResolver() != null) {
+        if (config.getWellKnownConfig() != null) {
             return JwksType.WELL_KNOWN;
         } else {
             return JwksType.HTTP;
@@ -106,13 +108,21 @@ public class HttpJwksLoader implements JwksLoader {
 
     @Override
     public Optional<String> getIssuerIdentifier() {
-        // Return issuer identifier from well-known resolver if configured
-        if (config.getWellKnownResolver() != null && config.getWellKnownResolver().isHealthy() == LoaderStatus.OK) {
-            Optional<String> issuerResult = config.getWellKnownResolver().getIssuer();
-            if (issuerResult.isPresent()) {
-                return issuerResult;
-            } else {
-                LOGGER.debug("Failed to retrieve issuer identifier from well-known resolver: issuer not available");
+        // Return issuer identifier from WellKnownConfig if configured
+        if (config.getWellKnownConfig() != null) {
+            try {
+                // Create ResilientHttpHandler to load WellKnownResult
+                var converter = new WellKnownConfigurationConverter(config.getWellKnownConfig().getParserConfig().getDslJson());
+                var wellKnownHandler = new ResilientHttpHandler<>(config.getWellKnownConfig().getHttpHandler(), converter);
+                var result = wellKnownHandler.load();
+
+                if (result.isValid() && result.getResult() != null) {
+                    return result.getResult().getIssuer();
+                } else {
+                    LOGGER.debug("Failed to retrieve issuer identifier from well-known config: configuration not available or unhealthy");
+                }
+            } catch (Exception e) {
+                LOGGER.debug("Error retrieving issuer identifier from well-known config", e);
             }
         }
 
@@ -322,7 +332,7 @@ public class HttpJwksLoader implements JwksLoader {
     /**
      * Ensures that we have a healthy ResilientHttpHandler based on configuration.
      * Creates the handler dynamically based on whether we have a direct HTTP handler
-     * or need to resolve via WellKnownResolver.
+     * or need to resolve via WellKnownConfig.
      *
      * @return Optional containing the ResilientHttpHandler if healthy, empty if sources are not healthy
      */
@@ -383,26 +393,81 @@ public class HttpJwksLoader implements JwksLoader {
                     return Optional.of(cache);
 
                 case WELL_KNOWN:
-                    // Well-known resolver configuration - use direct ETag-aware handler
-                    LOGGER.debug("Getting ETag-aware JWKS handler from WellKnownResolver");
+                    // Well-known configuration - create handler from discovered JWKS URI
+                    LOGGER.debug("Getting JWKS URI from WellKnownConfig");
 
-                    // Check if well-known resolver is healthy
-                    if (config.getWellKnownResolver().isHealthy() != LoaderStatus.OK) {
-                        LOGGER.debug("WellKnownResolver is not healthy, cannot create HTTP cache");
-                        return Optional.empty();
+                    // Load the well-known configuration to get JWKS URI
+                    Optional<String> jwksUriResult = Optional.empty();
+                    try {
+                        // Create ResilientHttpHandler to load WellKnownResult
+                        var converter = new WellKnownConfigurationConverter(config.getWellKnownConfig().getParserConfig().getDslJson());
+                        var wellKnownHandler = new ResilientHttpHandler<>(config.getWellKnownConfig().getHttpHandler(), converter);
+                        var result = wellKnownHandler.load();
+
+                        if (result.isValid() && result.getResult() != null) {
+                            jwksUriResult = result.getResult().getJwksUri();
+                        }
+                    } catch (Exception e) {
+                        LOGGER.debug("Error loading well-known configuration", e);
                     }
 
-                    // Get the pre-configured ETag-aware handler directly
-                    Optional<ResilientHttpHandler<Jwks>> etagResult = config.getWellKnownResolver().getJwksETagHandler();
-                    if (etagResult.isEmpty()) {
+                    if (jwksUriResult.isEmpty()) {
                         LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED::format);
                         return Optional.empty();
                     }
 
-                    cache = etagResult.get();
-                    LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format("ETag-aware handler from well-known resolver"));
-                    httpCache.set(cache);
-                    return Optional.of(cache);
+                    String jwksUri = jwksUriResult.get();
+                    LOGGER.debug("Creating ResilientHttpHandler from discovered JWKS URI: %s", jwksUri);
+
+                    // Create HTTP handler for the discovered JWKS URI
+                    try {
+                        HttpHandler jwksHttpHandler = HttpHandler.builder()
+                                .url(jwksUri)
+                                .connectionTimeoutSeconds(config.getWellKnownConfig() != null ? 5 : 2) // Use slightly longer timeout for well-known discovered endpoints
+                                .readTimeoutSeconds(config.getWellKnownConfig() != null ? 10 : 5)
+                                .build();
+
+                        // Create HttpContentConverter for Jwks (same pattern as HTTP case)
+                        ParserConfig jwksParserConfig = ParserConfig.builder().build();
+                        var jwksDslJson = jwksParserConfig.getDslJson();
+                        HttpContentConverter<Jwks> jwksHttpContentConverter = new HttpContentConverter<Jwks>() {
+                            @Override
+                            public Optional<Jwks> convert(Object rawContent) {
+                                String body = (rawContent instanceof String s) ? s :
+                                        (rawContent != null) ? rawContent.toString() : null;
+                                if (body == null || body.trim().isEmpty()) {
+                                    return Optional.of(emptyValue());
+                                }
+                                try {
+                                    // Use DSL-JSON to parse to Jwks
+                                    byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+                                    Jwks jwks = jwksDslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
+                                    return Optional.ofNullable(jwks);
+                                } catch (IOException | IllegalArgumentException e) {
+                                    return Optional.empty();
+                                }
+                            }
+
+                            @Override
+                            public HttpResponse.BodyHandler<?> getBodyHandler() {
+                                return HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8);
+                            }
+
+                            @Override
+                            public Jwks emptyValue() {
+                                return Jwks.empty();
+                            }
+                        };
+
+                        cache = new ResilientHttpHandler<>(jwksHttpHandler, jwksHttpContentConverter);
+                        LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format("discovered URI: " + jwksUri));
+                        httpCache.set(cache);
+                        return Optional.of(cache);
+
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.error("Invalid JWKS URI discovered from well-known config: %s", jwksUri, e);
+                        return Optional.empty();
+                    }
 
                 default:
                     LOGGER.error(JWTValidationLogMessages.ERROR.UNSUPPORTED_JWKS_TYPE.format(getJwksType()));

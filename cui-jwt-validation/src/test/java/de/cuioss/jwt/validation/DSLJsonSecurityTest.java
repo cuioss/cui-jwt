@@ -17,7 +17,7 @@ package de.cuioss.jwt.validation;
 
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.json.Jwks;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +62,7 @@ class DSLJsonSecurityTest {
     }
 
     @Test
-    @DisplayName("Should parse valid WellKnownConfiguration JSON successfully")
+    @DisplayName("Should parse valid WellKnownResult JSON successfully")
     void shouldParseValidWellKnownConfigurationSuccessfully() {
         ParserConfig config = ParserConfig.builder().build();
         DslJson<Object> dslJson = config.getDslJson();
@@ -76,8 +76,8 @@ class DSLJsonSecurityTest {
             }
             """;
 
-        WellKnownConfiguration result = assertDoesNotThrow(() ->
-                dslJson.deserialize(WellKnownConfiguration.class, validConfig.getBytes(), validConfig.getBytes().length)
+        WellKnownResult result = assertDoesNotThrow(() ->
+                dslJson.deserialize(WellKnownResult.class, validConfig.getBytes(), validConfig.getBytes().length)
         );
         assertFalse(result.isEmpty());
         assertEquals("https://example.com", result.issuer());

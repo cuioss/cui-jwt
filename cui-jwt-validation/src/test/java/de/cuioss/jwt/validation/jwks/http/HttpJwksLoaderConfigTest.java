@@ -380,19 +380,19 @@ class HttpJwksLoaderConfigTest {
 
         // Verify the contract: HttpHandler is guaranteed non-null for HTTP configurations
         assertNotNull(config.getHttpHandler(), "HttpHandler must be non-null for HTTP configurations");
-        assertNull(config.getWellKnownResolver(), "WellKnownResolver should be null for HTTP configurations");
+        assertNull(config.getWellKnownConfig(), "WellKnownConfig should be null for HTTP configurations");
     }
 
     @Test
-    @DisplayName("Should guarantee WellKnownResolver is non-null for well-known configurations")
-    void shouldGuaranteeWellKnownResolverNonNullForWellKnownConfigurations() {
+    @DisplayName("Should guarantee WellKnownConfig is non-null for well-known configurations")
+    void shouldGuaranteeWellKnownConfigNonNullForWellKnownConfigurations() {
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
 
-        // Verify the contract: WellKnownResolver is guaranteed non-null for well-known configurations  
-        assertNotNull(config.getWellKnownResolver(), "WellKnownResolver must be non-null for well-known configurations");
+        // Verify the contract: WellKnownConfig is guaranteed non-null for well-known configurations  
+        assertNotNull(config.getWellKnownConfig(), "WellKnownConfig must be non-null for well-known configurations");
         // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
         assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }

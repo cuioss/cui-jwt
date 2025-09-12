@@ -18,7 +18,7 @@ package de.cuioss.jwt.validation.well_known;
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
@@ -31,18 +31,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
- * Direct HTTP content converter for WellKnownConfiguration using DSL-JSON mapping.
+ * Direct HTTP content converter for WellKnownResult using DSL-JSON mapping.
  * <p>
- * This converter directly maps HTTP response bodies to type-safe {@link WellKnownConfiguration}
+ * This converter directly maps HTTP response bodies to type-safe {@link WellKnownResult}
  * records, eliminating intermediate JsonObject representations and providing optimal performance
  * for ResilientHttpHandler integration.
  * <p>
- * Path: HttpResponse.BodyHandler → DSL-JSON → WellKnownConfiguration
+ * Path: HttpResponse.BodyHandler → DSL-JSON → WellKnownResult
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-public class WellKnownConfigurationConverter implements HttpContentConverter<WellKnownConfiguration> {
+public class WellKnownConfigurationConverter implements HttpContentConverter<WellKnownResult> {
 
     private static final CuiLogger LOGGER = new CuiLogger(WellKnownConfigurationConverter.class);
 
@@ -51,7 +51,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     private final int maxContentSize;
 
     /**
-     * Creates a WellKnownConfiguration content converter with the specified DSL-JSON instance.
+     * Creates a WellKnownResult content converter with the specified DSL-JSON instance.
      *
      * @param dslJson the DSL-JSON instance containing JSON security settings
      */
@@ -60,7 +60,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     }
 
     /**
-     * Creates a WellKnownConfiguration content converter with full configuration.
+     * Creates a WellKnownResult content converter with full configuration.
      *
      * @param dslJson the DSL-JSON instance containing JSON security settings
      * @param securityEventCounter the security event counter for tracking violations
@@ -75,7 +75,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     }
 
     @Override
-    public Optional<WellKnownConfiguration> convert(Object rawContent) {
+    public Optional<WellKnownResult> convert(Object rawContent) {
         if (!(rawContent instanceof String stringContent)) {
             LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Expected String content, got: " +
                     (rawContent != null ? rawContent.getClass().getSimpleName() : "null")));
@@ -99,8 +99,8 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
         }
 
         try {
-            // TRUE MAPPER APPROACH: JSON → DSL-JSON → WellKnownConfiguration (NO intermediates!)
-            WellKnownConfiguration config = dslJson.deserialize(WellKnownConfiguration.class, contentBytes, contentBytes.length);
+            // TRUE MAPPER APPROACH: JSON → DSL-JSON → WellKnownResult (NO intermediates!)
+            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, contentBytes, contentBytes.length);
 
             if (config == null) {
                 LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Failed to deserialize well-known configuration"));
@@ -161,7 +161,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     }
 
     @Override
-    public @NonNull WellKnownConfiguration emptyValue() {
-        return WellKnownConfiguration.EMPTY;
+    public @NonNull WellKnownResult emptyValue() {
+        return WellKnownResult.EMPTY;
     }
 }

@@ -16,7 +16,7 @@
 package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +65,7 @@ class WellKnownParserTest {
     @Test
     @DisplayName("Should parse valid JSON response successfully")
     void shouldParseValidJsonResponseSuccessfully() {
-        Optional<WellKnownConfiguration> result = parser.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
+        Optional<WellKnownResult> result = parser.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
 
         assertTrue(result.isPresent());
         assertNotNull(result.get());
@@ -78,7 +78,7 @@ class WellKnownParserTest {
     @Test
     @DisplayName("Should return error result for invalid JSON")
     void shouldReturnErrorResultForInvalidJson() {
-        Optional<WellKnownConfiguration> result = parser.parseWellKnownResponse(INVALID_JSON, wellKnownUrl);
+        Optional<WellKnownResult> result = parser.parseWellKnownResponse(INVALID_JSON, wellKnownUrl);
 
         assertTrue(result.isEmpty());
     }
@@ -87,7 +87,7 @@ class WellKnownParserTest {
     @DisplayName("Should handle empty JSON response")
     void shouldHandleEmptyJsonResponse() {
         String emptyJson = "{}";
-        Optional<WellKnownConfiguration> result = parser.parseWellKnownResponse(emptyJson, wellKnownUrl);
+        Optional<WellKnownResult> result = parser.parseWellKnownResponse(emptyJson, wellKnownUrl);
 
         assertTrue(result.isPresent());
         assertNotNull(result.get());
@@ -102,11 +102,11 @@ class WellKnownParserTest {
             "non_existent_key, , false"
     })
     void shouldExtractStringValuesFromJsonObject(String key, String expectedValue, boolean shouldBePresent) {
-        Optional<WellKnownConfiguration> result = parser.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
+        Optional<WellKnownResult> result = parser.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
         assertTrue(result.isPresent());
 
         // Test that the parser actually extracted the expected values
-        WellKnownConfiguration config = result.get();
+        WellKnownResult config = result.get();
 
         Optional<String> value = switch (key) {
             case "issuer" -> {
@@ -136,7 +136,7 @@ class WellKnownParserTest {
                     "nullable_field": null
                 }
                 """;
-        Optional<WellKnownConfiguration> result = parser.parseWellKnownResponse(jsonWithNull, wellKnownUrl);
+        Optional<WellKnownResult> result = parser.parseWellKnownResponse(jsonWithNull, wellKnownUrl);
         assertTrue(result.isPresent());
 
         // TODO: Update test for mapper approach - direct field access instead of getString
@@ -190,7 +190,7 @@ class WellKnownParserTest {
     void shouldHandleNullParserConfig() {
         WellKnownParser parserWithNullConfig = new WellKnownParser(null);
 
-        Optional<WellKnownConfiguration> result = parserWithNullConfig.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
+        Optional<WellKnownResult> result = parserWithNullConfig.parseWellKnownResponse(VALID_JSON, wellKnownUrl);
 
         assertTrue(result.isPresent());
         assertNotNull(result.get());

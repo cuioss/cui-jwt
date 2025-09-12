@@ -44,7 +44,7 @@ import java.util.Optional;
  * @see <a href="https://tools.ietf.org/html/rfc8414">RFC 8414 - OAuth 2.0 Authorization Server Metadata</a>
  */
 @CompiledJson
-public class WellKnownConfiguration {
+public class WellKnownResult {
 
     @JsonAttribute(name = "issuer")
     public String issuer;
@@ -62,10 +62,10 @@ public class WellKnownConfiguration {
     public String userinfoEndpoint;
 
     // Default constructor for DSL-JSON
-    public WellKnownConfiguration() {
+    public WellKnownResult() {
     }
 
-    public WellKnownConfiguration(String issuer, String jwksUri,
+    public WellKnownResult(String issuer, String jwksUri,
             String authorizationEndpoint, String tokenEndpoint, String userinfoEndpoint) {
         this.issuer = issuer;
         this.jwksUri = jwksUri;
@@ -74,6 +74,7 @@ public class WellKnownConfiguration {
         this.userinfoEndpoint = userinfoEndpoint;
     }
 
+    public static final String ABOUT_EMPTY = "about:empty";
     /**
      * Sentinel value representing an empty/invalid well-known configuration.
      * <p>
@@ -83,9 +84,9 @@ public class WellKnownConfiguration {
      * <p>
      * <strong>This should never be used for actual OpenID Connect operations.</strong>
      */
-    public static final WellKnownConfiguration EMPTY = new WellKnownConfiguration(
-            "about:empty", // RFC 6694 - special URI for empty content
-            "about:empty",
+    public static final WellKnownResult EMPTY = new WellKnownResult(
+            ABOUT_EMPTY, // RFC 6694 - special URI for empty content
+            ABOUT_EMPTY,
             null,
             null,
             null
@@ -114,7 +115,7 @@ public class WellKnownConfiguration {
 
     /**
      * Gets the issuer as Optional.
-     * 
+     *
      * @return Optional containing the issuer, empty if null
      */
     public Optional<String> getIssuer() {
@@ -123,7 +124,7 @@ public class WellKnownConfiguration {
 
     /**
      * Gets the JWKS URI as Optional.
-     * 
+     *
      * @return Optional containing the JWKS URI, empty if null
      */
     public Optional<String> getJwksUri() {
@@ -132,7 +133,7 @@ public class WellKnownConfiguration {
 
     /**
      * Gets the authorization endpoint as Optional.
-     * 
+     *
      * @return Optional containing the authorization endpoint, empty if null
      */
     public Optional<String> getAuthorizationEndpoint() {
@@ -141,7 +142,7 @@ public class WellKnownConfiguration {
 
     /**
      * Gets the token endpoint as Optional.
-     * 
+     *
      * @return Optional containing the token endpoint, empty if null
      */
     public Optional<String> getTokenEndpoint() {
@@ -150,7 +151,7 @@ public class WellKnownConfiguration {
 
     /**
      * Gets the userinfo endpoint as Optional.
-     * 
+     *
      * @return Optional containing the userinfo endpoint, empty if null
      */
     public Optional<String> getUserinfoEndpoint() {
@@ -164,7 +165,7 @@ public class WellKnownConfiguration {
      */
     public boolean isEmpty() {
         return this == EMPTY ||
-                "about:empty".equals(issuer) ||
+                ABOUT_EMPTY.equals(issuer) ||
                 (issuer == null && jwksUri == null);
     }
 

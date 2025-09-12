@@ -20,17 +20,17 @@
  * <p>
  * The main components include:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.well_known.WellKnownResolver} - Interface for well-known endpoint resolution</li>
- *   <li>{@link de.cuioss.jwt.validation.well_known.HttpWellKnownResolver} - HTTP-based implementation with health checking</li>
- *   <li>Support classes for HTTP operations, JSON parsing, and endpoint mapping</li>
+ *   <li>{@link de.cuioss.jwt.validation.well_known.WellKnownConfig} - Configuration for well-known endpoint discovery</li>
+ *   <li>{@link de.cuioss.jwt.validation.json.WellKnownResult} - Data structure for OIDC discovery document</li>
+ *   <li>Support classes for HTTP operations, JSON parsing, and endpoint resolution</li>
  * </ul>
  * <p>
- * This package follows the same design patterns as the JWKS loader system, providing:
+ * This package provides:
  * <ul>
- *   <li>Lazy loading with thread-safe initialization</li>
- *   <li>Health checking and status reporting</li>
- *   <li>Simple, direct endpoint loading without retry mechanisms</li>
- *   <li>Configurable timeouts and SSL settings</li>
+ *   <li>Simple well-known configuration loading</li>
+ *   <li>Configurable HTTP timeouts and SSL settings</li>
+ *   <li>Direct integration with ResilientHttpHandler for caching</li>
+ *   <li>DSL-JSON based parsing for optimal performance</li>
  * </ul>
  */
 package de.cuioss.jwt.validation.well_known;

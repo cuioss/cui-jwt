@@ -32,7 +32,7 @@ import java.net.URI;
  * Configuration for well-known endpoint discovery.
  * <p>
  * This class encapsulates all configuration parameters needed to create a
- * {@link de.cuioss.jwt.validation.well_known.WellKnownResolver} for OIDC endpoint discovery.
+ * WellKnownConfig for OIDC endpoint discovery.
  * It uses an internal {@link HttpHandler} built with sensible defaults while allowing
  * customization of timeouts, SSL context, and parser configuration.
  * <p>
@@ -79,33 +79,6 @@ public class WellKnownConfig implements HttpHandlerProvider {
         this.httpHandler = httpHandler;
         this.retryStrategy = retryStrategy;
         this.parserConfig = parserConfig;
-    }
-
-    /**
-     * Gets the HTTP handler for well-known endpoint requests.
-     *
-     * @return the HTTP handler
-     */
-    public HttpHandler getHttpHandler() {
-        return httpHandler;
-    }
-
-    /**
-     * Gets the retry strategy for HTTP operations.
-     *
-     * @return the retry strategy
-     */
-    public RetryStrategy getRetryStrategy() {
-        return retryStrategy;
-    }
-
-    /**
-     * Gets the parser configuration for JSON processing.
-     *
-     * @return the parser configuration
-     */
-    public ParserConfig getParserConfig() {
-        return parserConfig;
     }
 
     /**

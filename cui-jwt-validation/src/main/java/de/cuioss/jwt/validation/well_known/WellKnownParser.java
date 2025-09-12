@@ -19,7 +19,7 @@ import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
@@ -43,7 +43,7 @@ import java.util.Optional;
  * <p>
  * Key features:
  * <ul>
- *   <li>Direct mapping to {@link WellKnownConfiguration} records</li>
+ *   <li>Direct mapping to {@link WellKnownResult} records</li>
  *   <li>Compile-time code generation for native compilation support</li>
  *   <li>Enforced security limits through DSL-JSON configuration</li>
  *   <li>Structured access to well-known discovery fields</li>
@@ -63,7 +63,7 @@ class WellKnownParser {
     private final int maxContentSize;
 
     /**
-     * DSL-JSON instance for direct mapping to WellKnownConfiguration.
+     * DSL-JSON instance for direct mapping to WellKnownResult.
      * Initialized lazily to avoid circular dependencies during construction.
      */
     private DslJson<Object> dslJson;
@@ -88,17 +88,17 @@ class WellKnownParser {
     }
 
     /**
-     * Parses a JSON response string directly into a WellKnownConfiguration using DSL-JSON mapping.
+     * Parses a JSON response string directly into a WellKnownResult using DSL-JSON mapping.
      * <p>
      * This method leverages DSL-JSON's compile-time code generation to deserialize
      * the JSON directly into a type-safe record, avoiding generic JSON object parsing.
      *
      * @param responseBody The JSON response string to parse
      * @param wellKnownUrl The well-known URL (used for error messages)
-     * @return Optional containing the parsed WellKnownConfiguration or empty on error
+     * @return Optional containing the parsed WellKnownResult or empty on error
      * @throws TokenValidationException if security limits are violated
      */
-    Optional<WellKnownConfiguration> parseWellKnownResponse(@NonNull String responseBody, @NonNull URL wellKnownUrl) {
+    Optional<WellKnownResult> parseWellKnownResponse(@NonNull String responseBody, @NonNull URL wellKnownUrl) {
         if (responseBody == null || responseBody.trim().isEmpty()) {
             LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Empty response body"));
             return Optional.empty();
@@ -116,11 +116,11 @@ class WellKnownParser {
         }
 
         try {
-            // Direct deserialization to WellKnownConfiguration using compile-time generated code
-            WellKnownConfiguration config = initDslJson().deserialize(WellKnownConfiguration.class, contentBytes, contentBytes.length);
+            // Direct deserialization to WellKnownResult using compile-time generated code
+            WellKnownResult config = initDslJson().deserialize(WellKnownResult.class, contentBytes, contentBytes.length);
 
             if (config == null) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Failed to deserialize to WellKnownConfiguration"));
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(wellKnownUrl, "Failed to deserialize to WellKnownResult"));
                 return Optional.empty();
             }
 

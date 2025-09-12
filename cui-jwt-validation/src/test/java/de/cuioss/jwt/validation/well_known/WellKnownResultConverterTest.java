@@ -17,7 +17,7 @@ package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.json.WellKnownConfiguration;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,12 +30,12 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for direct String → WellKnownConfiguration converter.
+ * Test for direct String → WellKnownResult converter.
  *
  * @author Oliver Wolff
  */
 @DisplayName("WellKnownConfigurationConverter")
-class WellKnownConfigurationConverterTest {
+class WellKnownResultConverterTest {
 
     private static final String VALID_JSON = """
             {
@@ -62,12 +62,12 @@ class WellKnownConfigurationConverterTest {
     }
 
     @Test
-    @DisplayName("Should convert valid JSON string to WellKnownConfiguration")
+    @DisplayName("Should convert valid JSON string to WellKnownResult")
     void shouldConvertValidJsonStringToWellKnownConfiguration() {
-        Optional<WellKnownConfiguration> result = converter.convert(VALID_JSON);
+        Optional<WellKnownResult> result = converter.convert(VALID_JSON);
 
         assertTrue(result.isPresent());
-        WellKnownConfiguration config = result.get();
+        WellKnownResult config = result.get();
         assertEquals("https://example.com", config.issuer());
         assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
         assertEquals("https://example.com/auth", config.authorizationEndpoint());
@@ -78,12 +78,12 @@ class WellKnownConfigurationConverterTest {
     }
 
     @Test
-    @DisplayName("Should convert minimal JSON to WellKnownConfiguration")
+    @DisplayName("Should convert minimal JSON to WellKnownResult")
     void shouldConvertMinimalJsonToWellKnownConfiguration() {
-        Optional<WellKnownConfiguration> result = converter.convert(MINIMAL_JSON);
+        Optional<WellKnownResult> result = converter.convert(MINIMAL_JSON);
 
         assertTrue(result.isPresent());
-        WellKnownConfiguration config = result.get();
+        WellKnownResult config = result.get();
         assertEquals("https://example.com", config.issuer());
         assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
         assertNull(config.authorizationEndpoint());
@@ -96,7 +96,7 @@ class WellKnownConfigurationConverterTest {
     @Test
     @DisplayName("Should handle empty JSON response")
     void shouldHandleEmptyJsonResponse() {
-        Optional<WellKnownConfiguration> result = converter.convert("");
+        Optional<WellKnownResult> result = converter.convert("");
 
         assertFalse(result.isPresent());
     }
@@ -104,7 +104,7 @@ class WellKnownConfigurationConverterTest {
     @Test
     @DisplayName("Should handle null input")
     void shouldHandleNullInput() {
-        Optional<WellKnownConfiguration> result = converter.convert(null);
+        Optional<WellKnownResult> result = converter.convert(null);
 
         assertFalse(result.isPresent());
     }
@@ -112,7 +112,7 @@ class WellKnownConfigurationConverterTest {
     @Test
     @DisplayName("Should handle non-String input")
     void shouldHandleNonStringInput() {
-        Optional<WellKnownConfiguration> result = converter.convert(12345);
+        Optional<WellKnownResult> result = converter.convert(12345);
 
         assertFalse(result.isPresent());
     }
@@ -122,7 +122,7 @@ class WellKnownConfigurationConverterTest {
     void shouldHandleMalformedJson() {
         String malformedJson = "{invalid json}";
 
-        Optional<WellKnownConfiguration> result = converter.convert(malformedJson);
+        Optional<WellKnownResult> result = converter.convert(malformedJson);
 
         assertFalse(result.isPresent());
     }
@@ -136,7 +136,7 @@ class WellKnownConfigurationConverterTest {
             }
             """;
 
-        Optional<WellKnownConfiguration> result = converter.convert(invalidJson);
+        Optional<WellKnownResult> result = converter.convert(invalidJson);
 
         assertFalse(result.isPresent());
     }
@@ -150,7 +150,7 @@ class WellKnownConfigurationConverterTest {
             }
             """;
 
-        Optional<WellKnownConfiguration> result = converter.convert(invalidJson);
+        Optional<WellKnownResult> result = converter.convert(invalidJson);
 
         assertFalse(result.isPresent());
     }
@@ -192,10 +192,10 @@ class WellKnownConfigurationConverterTest {
     @Test
     @DisplayName("Should provide empty value sentinel")
     void shouldProvideEmptyValueSentinel() {
-        WellKnownConfiguration emptyValue = converter.emptyValue();
+        WellKnownResult emptyValue = converter.emptyValue();
 
         assertNotNull(emptyValue);
-        assertSame(WellKnownConfiguration.EMPTY, emptyValue);
+        assertSame(WellKnownResult.EMPTY, emptyValue);
         assertTrue(emptyValue.isEmpty());
         assertEquals("about:empty", emptyValue.issuer());
         assertEquals("about:empty", emptyValue.jwksUri());

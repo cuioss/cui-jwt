@@ -47,12 +47,12 @@ class HttpJwksLoaderIssuerTest {
     }
 
     @Test
-    @DisplayName("Should return issuer identifier from well-known resolver when available")
-    void shouldReturnIssuerFromWellKnownResolver(URIBuilder uriBuilder) {
+    @DisplayName("Should return issuer identifier from well-known config when available")
+    void shouldReturnIssuerFromWellKnownConfig(URIBuilder uriBuilder) {
         // Setup dispatcher with valid response
         moduleDispatcher.returnDefault();
 
-        // Create HttpJwksLoader with well-known resolver
+        // Create HttpJwksLoader with well-known config
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
                 .build();
@@ -68,9 +68,9 @@ class HttpJwksLoaderIssuerTest {
     }
 
     @Test
-    @DisplayName("Should return empty when well-known resolver is not configured")
-    void shouldReturnEmptyWhenNoWellKnownResolver(URIBuilder uriBuilder) {
-        // Create HttpJwksLoader with direct JWKS URL (no well-known resolver)
+    @DisplayName("Should return empty when well-known config is not configured")
+    void shouldReturnEmptyWhenNoWellKnownConfig(URIBuilder uriBuilder) {
+        // Create HttpJwksLoader with direct JWKS URL (no well-known config)
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(uriBuilder.addPathSegment("jwks").buildAsString())
                 .build();
@@ -80,16 +80,16 @@ class HttpJwksLoaderIssuerTest {
 
         // Get issuer identifier
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
-        assertFalse(issuer.isPresent(), "Issuer should not be present without well-known resolver");
+        assertFalse(issuer.isPresent(), "Issuer should not be present without well-known config");
     }
 
     @Test
-    @DisplayName("Should return empty when well-known resolver is unhealthy")
-    void shouldReturnEmptyWhenWellKnownResolverUnhealthy(URIBuilder uriBuilder) {
+    @DisplayName("Should return empty when well-known config fails to load")
+    void shouldReturnEmptyWhenWellKnownConfigUnhealthy(URIBuilder uriBuilder) {
         // Setup dispatcher to return error
         moduleDispatcher.returnError();
 
-        // Create HttpJwksLoader with well-known resolver
+        // Create HttpJwksLoader with well-known config
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
                 .build();
@@ -97,9 +97,9 @@ class HttpJwksLoaderIssuerTest {
         jwksLoader = new HttpJwksLoader(config);
         jwksLoader.initJWKSLoader(securityEventCounter);
 
-        // Try to get issuer identifier - should return empty since resolver is unhealthy
+        // Try to get issuer identifier - should return empty since config fails to load
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
-        assertFalse(issuer.isPresent(), "Issuer should not be present when resolver is unhealthy");
+        assertFalse(issuer.isPresent(), "Issuer should not be present when config fails to load");
     }
 
     @Test
@@ -108,7 +108,7 @@ class HttpJwksLoaderIssuerTest {
         // Setup dispatcher with response missing issuer
         moduleDispatcher.returnMissingIssuer();
 
-        // Create HttpJwksLoader with well-known resolver
+        // Create HttpJwksLoader with well-known config
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
                 .build();
@@ -127,7 +127,7 @@ class HttpJwksLoaderIssuerTest {
         // Setup dispatcher with valid response
         moduleDispatcher.returnDefault();
 
-        // Create HttpJwksLoader with well-known resolver
+        // Create HttpJwksLoader with well-known config
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
                 .build();
@@ -156,7 +156,7 @@ class HttpJwksLoaderIssuerTest {
         // Setup dispatcher with valid response
         moduleDispatcher.returnDefault();
 
-        // Create HttpJwksLoader with well-known resolver
+        // Create HttpJwksLoader with well-known config
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
                 .build();
@@ -195,10 +195,10 @@ class HttpJwksLoaderIssuerTest {
     }
 
     @Test
-    @DisplayName("Should return empty when well-known resolver returns empty issuer")
-    void shouldReturnEmptyWhenResolverReturnsEmptyIssuer() {
+    @DisplayName("Should return empty when well-known config returns empty issuer")
+    void shouldReturnEmptyWhenConfigReturnsEmptyIssuer() {
         // Create HttpJwksLoader with an invalid well-known URL
-        // This will cause the resolver to fail and return empty issuer
+        // This will cause the config to fail and return empty issuer
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://invalid.example.com/.well-known/openid-configuration")
                 .build();
@@ -208,6 +208,6 @@ class HttpJwksLoaderIssuerTest {
 
         // Get issuer identifier - should return empty
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
-        assertFalse(issuer.isPresent(), "Issuer should not be present when resolver returns empty");
+        assertFalse(issuer.isPresent(), "Issuer should not be present when config returns empty");
     }
 }

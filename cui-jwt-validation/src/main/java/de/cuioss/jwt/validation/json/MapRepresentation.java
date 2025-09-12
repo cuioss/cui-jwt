@@ -16,6 +16,8 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.DslJson;
+import de.cuioss.tools.string.MoreStrings;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -66,24 +68,8 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
      * @return a new MapRepresentation containing the parsed data
      * @throws IOException if the JSON content cannot be parsed
      */
-    public static MapRepresentation fromJson(DslJson<Object> dslJson, String jsonContent) throws IOException {
-        byte[] jsonBytes = jsonContent.getBytes();
-        @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
-
-        if (parsedData == null) {
-            // Return empty MapRepresentation for null/empty JSON
-            return new MapRepresentation(Map.of());
-        }
-
-        // Create immutable copy to ensure immutability, filtering out null values
-        // Map.copyOf() doesn't allow null values, so we need to filter them out
-        Map<String, Object> filteredData = parsedData.entrySet().stream()
-                .filter(entry -> entry.getValue() != null)
-                .collect(Collectors.toUnmodifiableMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-        return new MapRepresentation(filteredData);
+    public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, String jsonContent) throws IOException {
+        return fromJson(dslJson, MoreStrings.nullToEmpty(jsonContent).getBytes());
     }
 
     /**
@@ -97,7 +83,11 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
      * @return a new MapRepresentation containing the parsed data
      * @throws IOException if the JSON content cannot be parsed
      */
-    public static MapRepresentation fromJson(DslJson<Object> dslJson, byte[] jsonBytes) throws IOException {
+    public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, byte [] jsonBytes) throws IOException {
+        if (null == jsonBytes || jsonBytes.length == 0) {
+            // Return empty MapRepresentation for null/empty JSON
+            return new MapRepresentation(Map.of());
+        }
         @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
         if (parsedData == null) {
@@ -242,7 +232,7 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
     public Optional<List<String>> getStringList(String key) {
         return getList(key).map(list ->
                 list.stream()
-                        .filter(item -> item instanceof String)
+                        .filter(String.class::isInstance)
                         .map(String.class::cast)
                         .toList()
         );
@@ -273,15 +263,6 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
      */
     public Set<String> keySet() {
         return data == null ? Set.of() : data.keySet();
-    }
-
-    /**
-     * Gets the underlying map data (for advanced use cases).
-     *
-     * @return the underlying map, may be null
-     */
-    public Map<String, Object> getUnderlyingMap() {
-        return data;
     }
 
 }
