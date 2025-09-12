@@ -233,13 +233,13 @@ public class CuiJwtProcessor {
     public void registerDslJsonServiceProviders(BuildProducer<ServiceProviderBuildItem> serviceProvider) {
         // Register all DSL-JSON configurations from classpath
         serviceProvider.produce(ServiceProviderBuildItem.allProvidersFromClassPath("com.dslplatform.json.Configuration"));
-        
+
         // Explicitly register our generated converters as service providers
-        serviceProvider.produce(new ServiceProviderBuildItem("com.dslplatform.json.Configuration", 
-            "de.cuioss.jwt.validation.json._WellKnownConfiguration_DslJsonConverter",
-            "de.cuioss.jwt.validation.json._Jwks_DslJsonConverter",
-            "de.cuioss.jwt.validation.json._JwkKey_DslJsonConverter", 
-            "de.cuioss.jwt.validation.json._JwtHeader_DslJsonConverter"));
+        serviceProvider.produce(new ServiceProviderBuildItem("com.dslplatform.json.Configuration",
+                "de.cuioss.jwt.validation.json._WellKnownConfiguration_DslJsonConverter",
+                "de.cuioss.jwt.validation.json._Jwks_DslJsonConverter",
+                "de.cuioss.jwt.validation.json._JwkKey_DslJsonConverter",
+                "de.cuioss.jwt.validation.json._JwtHeader_DslJsonConverter"));
     }
 
 
