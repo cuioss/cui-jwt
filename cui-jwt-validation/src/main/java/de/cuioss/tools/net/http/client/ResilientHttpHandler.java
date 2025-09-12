@@ -141,52 +141,6 @@ public class ResilientHttpHandler<T> {
         }
     }
 
-    /**
-     * Forces a reload of HTTP content, optionally clearing cache completely.
-     *
-     * @param clearCache if true, clears all cached content; if false, only bypasses ETag validation
-     * @return HttpResultObject with fresh content or error state, never null
-     */
-    public HttpResultObject<T> reload(boolean clearCache) {
-        lock.lock();
-        try {
-            // Set status to LOADING before starting the operation
-            loaderStatus = LoaderStatus.LOADING;
-
-            if (clearCache) {
-                LOGGER.debug("Clearing HTTP cache and reloading from %s", httpHandler.getUrl());
-                this.cachedResult = null;
-            } else {
-                LOGGER.debug("Bypassing ETag validation and reloading from %s", httpHandler.getUrl());
-                // Clear ETag but keep content for potential fallback
-                HttpResultObject<T> current = this.cachedResult;
-                if (current != null) {
-                    Integer httpStatus = current.getHttpStatus().orElse(200);
-                    this.cachedResult = HttpResultObject.success(current.getResult(), null, httpStatus);
-                }
-            }
-
-            HttpResultObject<T> result = loadInternal();
-
-            // Update status based on the result
-            updateStatusFromResult(result);
-
-            return result;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Internal load method that assumes the lock is already held.
-     * Used by reload() to avoid recursive locking.
-     */
-    private HttpResultObject<T> loadInternal() {
-        // Use RetryStrategy for reload operations as well
-        RetryContext retryContext = new RetryContext("ETag-HTTP-Reload:" + httpHandler.getUri().toString(), 1);
-
-        return retryStrategy.execute(this::fetchJwksContentWithCache, retryContext);
-    }
 
     /**
      * Handles error results by returning cached content if available.

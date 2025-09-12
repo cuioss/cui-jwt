@@ -36,8 +36,6 @@ import okhttp3.Headers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.net.ssl.SSLContext;
 import java.time.Duration;
@@ -304,44 +302,6 @@ class ResilientHttpHandlerIntegrationTest {
         assertEquals(2, moduleDispatcher.getCallCounter());
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    @DisplayName("Should test reload method with clearCache variants")
-    void shouldTestReloadMethod(boolean clearCache) {
-        // Given - establish cache first
-        ResilientHttpHandler<String> handler = new ResilientHttpHandler<>(httpHandlerProvider, StringContentConverter.identity());
-        moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
-        HttpResultObject<String> initialResult = handler.load();
-        assertTrue(initialResult.isValid());
-        assertEquals(1, moduleDispatcher.getCallCounter());
-
-        // Change server response
-        moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V2);
-
-        // When
-        HttpResultObject<String> reloadResult = handler.reload(clearCache);
-
-        // Then
-        assertTrue(reloadResult.isValid());
-        assertEquals(TEST_CONTENT_V2, reloadResult.getResult());
-        assertEquals(ETAG_V2, reloadResult.getETag().orElse(null));
-        assertEquals(200, reloadResult.getHttpStatus().orElse(0));
-
-        // Should make new HTTP call regardless of clearCache value
-        assertEquals(2, moduleDispatcher.getCallCounter());
-
-        // Verify subsequent load behavior depends on clearCache
-        moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.NOT_MODIFIED);
-        HttpResultObject<String> nextResult = handler.load();
-
-        if (clearCache) {
-            // Cache was cleared, so If-None-Match should work
-            assertEquals(304, nextResult.getHttpStatus().orElse(0));
-        } else {
-            // ETag was cleared but content preserved, new request should work
-            assertTrue(nextResult.isValid());
-        }
-    }
 
     @Test
     @DisplayName("Should retry on server errors with exponential backoff")
@@ -515,10 +475,11 @@ class ResilientHttpHandlerIntegrationTest {
             assertNotNull(result2.getResult());
         }
 
-        // Phase 3: Clear cache and retry
+        // Phase 3: Server recovery with new content
         moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V2);
-        HttpResultObject<String> result3 = handler.reload(true);
+        HttpResultObject<String> result3 = handler.load();
         assertTrue(result3.isValid());
+        // Should get new content from server
         assertEquals(TEST_CONTENT_V2, result3.getResult());
     }
 
