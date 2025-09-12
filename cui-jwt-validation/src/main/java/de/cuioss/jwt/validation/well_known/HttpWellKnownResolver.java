@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.client.LoaderStatus;
@@ -26,18 +27,18 @@ import java.util.Optional;
 /**
  * HTTP-based implementation for resolving OpenID Connect well-known configuration endpoints.
  * <p>
- * This class provides a thin wrapper around {@link ResilientHttpHandler} for loading and 
- * parsing well-known OIDC discovery documents. It handles HTTP operations, caching, 
+ * This class provides a thin wrapper around {@link ResilientHttpHandler} for loading and
+ * parsing well-known OIDC discovery documents. It handles HTTP operations, caching,
  * and provides convenient access to discovered endpoints.
  * <p>
- * The resolver loads the well-known configuration once and caches the result for 
- * subsequent endpoint lookups. It provides methods to access common OIDC endpoints 
+ * The resolver loads the well-known configuration once and caches the result for
+ * subsequent endpoint lookups. It provides methods to access common OIDC endpoints
  * like JWKS URI, issuer, authorization endpoint, etc.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-public class HttpWellKnownResolver {
+public class HttpWellKnownResolver implements HealthStatusProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpWellKnownResolver.class);
 
@@ -58,13 +59,16 @@ public class HttpWellKnownResolver {
     /**
      * Ensures the well-known configuration is loaded and cached.
      *
-     * @return the cached result object
+     * @return Optional containing the WellKnownResult if available and valid, empty otherwise
      */
-    private HttpResultObject<WellKnownResult> ensureLoaded() {
+    private Optional<WellKnownResult> ensureLoaded() {
         if (cachedResult == null) {
             cachedResult = wellKnownHandler.load();
         }
-        return cachedResult;
+        if (cachedResult.isValid() && cachedResult.getResult() != null) {
+            return Optional.of(cachedResult.getResult());
+        }
+        return Optional.empty();
     }
 
     /**
@@ -73,12 +77,7 @@ public class HttpWellKnownResolver {
      * @return Optional containing the JWKS URI if available, empty otherwise
      */
     public Optional<String> getJwksUri() {
-        var result = ensureLoaded();
-        if (result.isValid() && result.getResult() != null) {
-            return result.getResult().getJwksUri();
-        }
-        LOGGER.debug("JWKS URI not available from well-known configuration");
-        return Optional.empty();
+        return ensureLoaded().flatMap(WellKnownResult::getJwksUri);
     }
 
     /**
@@ -87,12 +86,7 @@ public class HttpWellKnownResolver {
      * @return Optional containing the issuer if available, empty otherwise
      */
     public Optional<String> getIssuer() {
-        var result = ensureLoaded();
-        if (result.isValid() && result.getResult() != null) {
-            return result.getResult().getIssuer();
-        }
-        LOGGER.debug("Issuer not available from well-known configuration");
-        return Optional.empty();
+        return ensureLoaded().flatMap(WellKnownResult::getIssuer);
     }
 
     /**
@@ -101,12 +95,7 @@ public class HttpWellKnownResolver {
      * @return Optional containing the authorization endpoint if available, empty otherwise
      */
     public Optional<String> getAuthorizationEndpoint() {
-        var result = ensureLoaded();
-        if (result.isValid() && result.getResult() != null) {
-            return result.getResult().getAuthorizationEndpoint();
-        }
-        LOGGER.debug("Authorization endpoint not available from well-known configuration");
-        return Optional.empty();
+        return ensureLoaded().flatMap(WellKnownResult::getAuthorizationEndpoint);
     }
 
     /**
@@ -115,12 +104,7 @@ public class HttpWellKnownResolver {
      * @return Optional containing the token endpoint if available, empty otherwise
      */
     public Optional<String> getTokenEndpoint() {
-        var result = ensureLoaded();
-        if (result.isValid() && result.getResult() != null) {
-            return result.getResult().getTokenEndpoint();
-        }
-        LOGGER.debug("Token endpoint not available from well-known configuration");
-        return Optional.empty();
+        return ensureLoaded().flatMap(WellKnownResult::getTokenEndpoint);
     }
 
     /**
@@ -129,12 +113,7 @@ public class HttpWellKnownResolver {
      * @return Optional containing the userinfo endpoint if available, empty otherwise
      */
     public Optional<String> getUserinfoEndpoint() {
-        var result = ensureLoaded();
-        if (result.isValid() && result.getResult() != null) {
-            return result.getResult().getUserinfoEndpoint();
-        }
-        LOGGER.debug("Userinfo endpoint not available from well-known configuration");
-        return Optional.empty();
+        return ensureLoaded().flatMap(WellKnownResult::getUserinfoEndpoint);
     }
 
     /**
@@ -143,12 +122,7 @@ public class HttpWellKnownResolver {
      * @return Optional containing the WellKnownResult if available, empty otherwise
      */
     public Optional<WellKnownResult> getWellKnownResult() {
-        var result = ensureLoaded();
-        if (result.isValid() && result.getResult() != null) {
-            return Optional.of(result.getResult());
-        }
-        LOGGER.debug("Well-known configuration not available");
-        return Optional.empty();
+        return ensureLoaded();
     }
 
     /**
@@ -156,6 +130,7 @@ public class HttpWellKnownResolver {
      *
      * @return the current LoaderStatus indicating health state
      */
+    @Override
     public LoaderStatus isHealthy() {
         return wellKnownHandler.getCurrentStatus();
     }
