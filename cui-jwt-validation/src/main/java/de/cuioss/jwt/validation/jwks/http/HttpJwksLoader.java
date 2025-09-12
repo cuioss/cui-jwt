@@ -16,7 +16,6 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
@@ -27,14 +26,10 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.net.http.client.ResilientHttpHandler;
-import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.uimodel.result.ResultState;
 import org.jspecify.annotations.NonNull;
 
-import java.io.IOException;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -63,10 +58,10 @@ public class HttpJwksLoader implements JwksLoader {
     private final HttpJwksLoaderConfig config;
     private final AtomicReference<JWKSKeyLoader> keyLoader = new AtomicReference<>();
     private final AtomicReference<ResilientHttpHandler<Jwks>> httpCache = new AtomicReference<>();
-    private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
     private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
     private final AtomicBoolean schedulerStarted = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final JwksHttpContentConverter contentConverter = new JwksHttpContentConverter();
 
     /**
      * Constructor using HttpJwksLoaderConfig.
@@ -97,7 +92,19 @@ public class HttpJwksLoader implements JwksLoader {
 
     @Override
     public LoaderStatus getCurrentStatus() {
-        return status;
+        ResilientHttpHandler<Jwks> cache = httpCache.get();
+        if (cache == null) {
+            return LoaderStatus.UNDEFINED;
+        }
+
+        LoaderStatus cacheStatus = cache.getLoaderStatus();
+        // Override ERROR status to OK if we have cached keys
+        // This maintains service availability even when refresh fails
+        if (cacheStatus == LoaderStatus.ERROR && keyLoader.get() != null) {
+            return LoaderStatus.OK;
+        }
+
+        return cacheStatus;
     }
 
     @Override
@@ -170,58 +177,46 @@ public class HttpJwksLoader implements JwksLoader {
         Optional<ResilientHttpHandler<Jwks>> cacheOpt = ensureHttpCache();
         if (cacheOpt.isEmpty()) {
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
-
-            // Start background refresh even when HTTP cache setup fails
-            // This ensures that failed initial loads will be retried
             startBackgroundRefreshIfNeeded();
             return;
         }
 
         ResilientHttpHandler<Jwks> cache = cacheOpt.get();
-
         HttpResultObject<Jwks> result = cache.load();
 
-        // Only update key loader if data has changed and we have content
-        boolean dataChanged = isDataChanged(result);
-
-        // Acknowledge error details before accessing result if not valid
+        // Acknowledge error details if result is not valid
         if (!result.isValid()) {
             result.getResultDetail();
             result.getHttpErrorCategory();
         }
 
-        if (result.getResult() != null && (dataChanged || keyLoader.get() == null)) {
+        // Update key loader if we have valid content and either:
+        // 1. Fresh data from server (200 status)
+        // 2. We don't have a key loader yet
+        boolean shouldUpdateKeys = result.getResult() != null &&
+                (result.getHttpStatus().map(s -> s == 200).orElse(false) || keyLoader.get() == null);
+
+        if (shouldUpdateKeys) {
             updateKeyLoader(result);
             LOGGER.info(INFO.JWKS_KEYS_UPDATED.format(result.getState()));
         }
 
-        // Start background refresh after any load attempt (success or failure)
-        // This ensures that failed initial loads will be retried
+        // Start background refresh after any load attempt
         startBackgroundRefreshIfNeeded();
 
-        // Log appropriate message based on load state and handle error states
+        // Log appropriate message based on load state
         if (result.isValid()) {
-            // Determine type of successful load
             if (result.getHttpStatus().map(s -> s == 200).orElse(false)) {
-                // Fresh content from server
                 LOGGER.info(INFO.JWKS_HTTP_LOADED::format);
             } else if (result.getHttpStatus().map(s -> s == 304).orElse(false)) {
-                // Content validated via ETag (304 Not Modified)
                 LOGGER.debug("JWKS content validated via ETag (304 Not Modified)");
             } else {
-                // Local cache content
                 LOGGER.debug("Using cached JWKS content");
             }
         } else {
-            // Handle error states - acknowledge error details before accessing result
-            result.getResultDetail();
-            result.getHttpErrorCategory();
-
             if (result.getResult() != null && !result.getResult().isEmpty()) {
-                // Error with cached content available
                 LOGGER.warn(WARN.JWKS_LOAD_FAILED_CACHED_CONTENT::format);
             } else {
-                // Error with no cached content (null or empty string)
                 LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE::format);
                 LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Failed to load JWKS and no cached content available"));
             }
@@ -252,7 +247,7 @@ public class HttpJwksLoader implements JwksLoader {
             loadKeys(); // Existing synchronous method
 
             // Return the updated status
-            LoaderStatus currentStatus = this.status;
+            LoaderStatus currentStatus = getCurrentStatus();
             LOGGER.debug("Asynchronous JWKS loading completed with status: {}", currentStatus);
             return currentStatus;
         });
@@ -266,7 +261,6 @@ public class HttpJwksLoader implements JwksLoader {
         // Initialize the JWKSKeyLoader with the SecurityEventCounter
         newLoader.initJWKSLoader(securityEventCounter);
         keyLoader.set(newLoader);
-        this.status = LoaderStatus.OK;
     }
 
     private void startBackgroundRefreshIfNeeded() {
@@ -289,31 +283,22 @@ public class HttpJwksLoader implements JwksLoader {
 
     private void backgroundRefresh() {
         LOGGER.debug("Starting background JWKS refresh");
-        Optional<ResilientHttpHandler<Jwks>> cacheOpt = Optional.ofNullable(httpCache.get());
-        if (cacheOpt.isEmpty()) {
+        ResilientHttpHandler<Jwks> cache = httpCache.get();
+        if (cache == null) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_SKIPPED::format);
             return;
         }
 
-        ResilientHttpHandler<Jwks> cache = cacheOpt.get();
-
         HttpResultObject<Jwks> result = cache.load();
 
         // Handle error states
-        if (!result.isValid()) {
+        if (!result.isValid() && result.getState() != ResultState.WARNING) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
             return;
         }
 
-        // Handle warning states (error with cached content)
-        if (result.getState() == ResultState.WARNING) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
-            // Continue processing as we have cached content
-        }
-
-        // Only update keys if data has actually changed
-        boolean dataChanged = isDataChanged(result);
-        if (result.getResult() != null && dataChanged) {
+        // Update keys only if we got fresh data from server (200 status)
+        if (result.getResult() != null && result.getHttpStatus().map(s -> s == 200).orElse(false)) {
             updateKeyLoader(result);
             LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_UPDATED.format(result.getState()));
         } else {
@@ -343,59 +328,27 @@ public class HttpJwksLoader implements JwksLoader {
                 return Optional.of(cache);
             }
 
+            HttpHandler httpHandler;
+
             switch (getJwksType()) {
                 case HTTP:
                     // Direct HTTP handler configuration
-                    // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
+                    httpHandler = config.getHttpHandler();
                     LOGGER.debug("Creating ResilientHttpHandler from direct HTTP configuration for URI: %s",
-                            config.getHttpHandler().getUri());
-                    // Create a simple HttpContentConverter for Jwks using DSL-JSON directly
-                    ParserConfig parserConfig = ParserConfig.builder().build();
-                    var dslJson = parserConfig.getDslJson();
-                    HttpContentConverter<Jwks> httpContentConverter = new HttpContentConverter<Jwks>() {
-                        @Override
-                        public Optional<Jwks> convert(Object rawContent) {
-                            String body = (rawContent instanceof String s) ? s :
-                                    (rawContent != null) ? rawContent.toString() : null;
-                            if (body == null || body.trim().isEmpty()) {
-                                return Optional.of(emptyValue());
-                            }
-                            try {
-                                // Use DSL-JSON to parse to Jwks
-                                byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
-                                Jwks jwks = dslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
-                                return Optional.ofNullable(jwks);
-                            } catch (IOException | IllegalArgumentException e) {
-                                return Optional.empty();
-                            }
-                        }
-
-                        @Override
-                        public HttpResponse.BodyHandler<?> getBodyHandler() {
-                            return HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8);
-                        }
-
-                        @Override
-                        public Jwks emptyValue() {
-                            return Jwks.empty();
-                        }
-                    };
-                    cache = new ResilientHttpHandler<>(config.getHttpHandler(), httpContentConverter);
-                    httpCache.set(cache);
-                    return Optional.of(cache);
+                            httpHandler.getUri());
+                    break;
 
                 case WELL_KNOWN:
                     // Well-known configuration - create handler from discovered JWKS URI
                     LOGGER.debug("Getting JWKS URI from WellKnownConfig");
 
-                    // Load the well-known configuration to get JWKS URI
-                    Optional<String> jwksUriResult = Optional.empty();
+                    Optional<String> jwksUriResult;
                     try {
-                        // Use HttpWellKnownResolver to load JWKS URI
                         var resolver = config.getWellKnownConfig().createResolver();
                         jwksUriResult = resolver.getJwksUri();
                     } catch (Exception e) {
                         LOGGER.debug("Error loading well-known configuration", e);
+                        return Optional.empty();
                     }
 
                     if (jwksUriResult.isEmpty()) {
@@ -406,60 +359,32 @@ public class HttpJwksLoader implements JwksLoader {
                     String jwksUri = jwksUriResult.get();
                     LOGGER.debug("Creating ResilientHttpHandler from discovered JWKS URI: %s", jwksUri);
 
-                    // Create HTTP handler for the discovered JWKS URI
                     try {
-                        HttpHandler jwksHttpHandler = HttpHandler.builder()
+                        httpHandler = HttpHandler.builder()
                                 .url(jwksUri)
-                                .connectionTimeoutSeconds(config.getWellKnownConfig() != null ? 5 : 2) // Use slightly longer timeout for well-known discovered endpoints
-                                .readTimeoutSeconds(config.getWellKnownConfig() != null ? 10 : 5)
+                                .connectionTimeoutSeconds(5)
+                                .readTimeoutSeconds(10)
                                 .build();
-
-                        // Create HttpContentConverter for Jwks (same pattern as HTTP case)
-                        ParserConfig jwksParserConfig = ParserConfig.builder().build();
-                        var jwksDslJson = jwksParserConfig.getDslJson();
-                        HttpContentConverter<Jwks> jwksHttpContentConverter = new HttpContentConverter<Jwks>() {
-                            @Override
-                            public Optional<Jwks> convert(Object rawContent) {
-                                String body = (rawContent instanceof String s) ? s :
-                                        (rawContent != null) ? rawContent.toString() : null;
-                                if (body == null || body.trim().isEmpty()) {
-                                    return Optional.of(emptyValue());
-                                }
-                                try {
-                                    // Use DSL-JSON to parse to Jwks
-                                    byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
-                                    Jwks jwks = jwksDslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
-                                    return Optional.ofNullable(jwks);
-                                } catch (IOException | IllegalArgumentException e) {
-                                    return Optional.empty();
-                                }
-                            }
-
-                            @Override
-                            public HttpResponse.BodyHandler<?> getBodyHandler() {
-                                return HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8);
-                            }
-
-                            @Override
-                            public Jwks emptyValue() {
-                                return Jwks.empty();
-                            }
-                        };
-
-                        cache = new ResilientHttpHandler<>(jwksHttpHandler, jwksHttpContentConverter);
                         LOGGER.info(JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.format("discovered URI: " + jwksUri));
-                        httpCache.set(cache);
-                        return Optional.of(cache);
-
                     } catch (IllegalArgumentException e) {
                         LOGGER.error("Invalid JWKS URI discovered from well-known config: %s", jwksUri, e);
                         return Optional.empty();
                     }
+                    break;
 
                 default:
                     LOGGER.error(JWTValidationLogMessages.ERROR.UNSUPPORTED_JWKS_TYPE.format(getJwksType()));
                     return Optional.empty();
             }
+
+            // Create ResilientHttpHandler with the unified JwksHttpContentConverter
+            if (httpHandler != null) {
+                cache = new ResilientHttpHandler<>(httpHandler, contentConverter);
+                httpCache.set(cache);
+                return Optional.of(cache);
+            }
+
+            return Optional.empty();
         }
     }
 
@@ -471,32 +396,4 @@ public class HttpJwksLoader implements JwksLoader {
         }
     }
 
-    /**
-     * Determines if data has changed based on HttpResultObject state.
-     * Data is considered changed for:
-     * - Fresh content from server (HTTP 200 status)
-     * - Error with no cached content (unknown state)
-     *
-     * @param result the HttpResultObject to check
-     * @return true if data has changed and keys need reevaluation
-     */
-    private boolean isDataChanged(HttpResultObject<Jwks> result) {
-        // Fresh content from server - data definitely changed
-        if (result.isValid() && result.getHttpStatus().map(s -> s == 200).orElse(false)) {
-            return true;
-        }
-
-        // Error with no cached content - state unknown, assume data changed
-        if (!result.isValid()) {
-            // Acknowledge error details before accessing result
-            result.getResultDetail();
-            result.getHttpErrorCategory();
-            if (result.getResult() == null) {
-                return true;
-            }
-        }
-
-        // All other cases: cached content, 304 not modified, error with cache - no change
-        return false;
-    }
 }
