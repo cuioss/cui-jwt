@@ -63,7 +63,7 @@ public class ResilientHttpHandler<T> {
 
     private HttpResultObject<T> cachedResult; // Guarded by lock, no volatile needed
     @Getter
-    private LoaderStatus loaderStatus = LoaderStatus.UNDEFINED; // Explicitly tracked status
+    private volatile LoaderStatus loaderStatus = LoaderStatus.UNDEFINED; // Explicitly tracked status
 
     /**
      * Creates a new ETag-aware HTTP handler with unified provider for HTTP operations and retry strategy.
