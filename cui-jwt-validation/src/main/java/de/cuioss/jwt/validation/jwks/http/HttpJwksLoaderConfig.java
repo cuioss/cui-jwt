@@ -143,16 +143,6 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
         }
     }
 
-    /**
-     * Gets the retry strategy for HTTP operations.
-     *
-     * @return the retry strategy
-     */
-    @Override
-    @NonNull
-    public RetryStrategy getRetryStrategy() {
-        return retryStrategy;
-    }
 
     /**
      * Creates a new builder for HttpJwksLoaderConfig.

@@ -74,23 +74,6 @@ public enum TokenType {
         this.mandatoryClaims = mandatoryClaims;
     }
 
-    /**
-     * Gets the type claim name.
-     *
-     * @return the type claim name
-     */
-    public String getTypeClaimName() {
-        return typeClaimName;
-    }
-
-    /**
-     * Gets the mandatory claims.
-     *
-     * @return the mandatory claims
-     */
-    public SortedSet<ClaimName> getMandatoryClaims() {
-        return mandatoryClaims;
-    }
 
     /**
      * Resolves a TokenType from a type claim string value.

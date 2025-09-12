@@ -117,43 +117,6 @@ public class ClaimValue implements Serializable {
         return null != originalString;
     }
 
-    /**
-     * Gets the original string representation of this claim value.
-     *
-     * @return the original string
-     */
-    public String getOriginalString() {
-        return originalString;
-    }
-
-    /**
-     * Gets the type of this claim value.
-     *
-     * @return the claim value type
-     */
-    @NonNull
-    public ClaimValueType getType() {
-        return type;
-    }
-
-    /**
-     * Gets the list of string values (only relevant for STRING_LIST).
-     *
-     * @return the list of string values
-     */
-    @NonNull
-    public List<String> getAsList() {
-        return asList;
-    }
-
-    /**
-     * Gets the date/time value (only relevant for DATETIME).
-     *
-     * @return the date/time value
-     */
-    public OffsetDateTime getDateTime() {
-        return dateTime;
-    }
 
     /**
      * Checks if the value is empty (null).
