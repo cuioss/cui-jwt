@@ -41,7 +41,7 @@ class HttpWellKnownResolverTest {
     void shouldCreateResolverAndStartWithUndefinedStatus() {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
-                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - retry functionality tested in ETagAwareHttpHandler
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - retry functionality tested in ResilientHttpHandler
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
@@ -79,7 +79,7 @@ class HttpWellKnownResolverTest {
     void shouldTestAllGetterMethodsForCoverage() {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://nonexistent-server.example.com/.well-known/openid-configuration")
-                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ETagAwareHttpHandler
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ResilientHttpHandler
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
@@ -101,7 +101,7 @@ class HttpWellKnownResolverTest {
     void shouldHandleConcurrentAccessWithoutCrashing() throws InterruptedException {
         WellKnownConfig config = WellKnownConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
-                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - concurrency tested in ETagAwareHttpHandler
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - concurrency tested in ResilientHttpHandler
                 .build();
 
         HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);

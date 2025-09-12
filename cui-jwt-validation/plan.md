@@ -279,7 +279,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
 package de.cuioss.tools.net.http.resilient;
 
 /**
- * BREAKING CHANGE: Replace existing ETagAwareHttpHandler with retry-capable version.
+ * BREAKING CHANGE: Replace existing ResilientHttpHandler with retry-capable version.
  * All existing code will be updated to use this implementation.
  */
 public class ETagAwareHttpHandler {

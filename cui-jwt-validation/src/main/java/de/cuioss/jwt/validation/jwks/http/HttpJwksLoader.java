@@ -24,8 +24,8 @@ import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
 import de.cuioss.tools.net.http.client.LoaderStatus;
+import de.cuioss.tools.net.http.client.ResilientHttpHandler;
 import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.uimodel.result.ResultState;
@@ -48,7 +48,7 @@ import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 /**
  * JWKS loader that loads from HTTP endpoint with caching and background refresh support.
  * Supports both direct HTTP endpoints and well-known discovery.
- * Uses ETagAwareHttpHandler for stateful HTTP caching with optional scheduled background refresh.
+ * Uses ResilientHttpHandler for stateful HTTP caching with optional scheduled background refresh.
  * Background refresh is automatically started after the first successful key load.
  *
  * @author Oliver Wolff
@@ -61,7 +61,7 @@ public class HttpJwksLoader implements JwksLoader {
     private SecurityEventCounter securityEventCounter;
     private final HttpJwksLoaderConfig config;
     private final AtomicReference<JWKSKeyLoader> keyLoader = new AtomicReference<>();
-    private final AtomicReference<ETagAwareHttpHandler<Jwks>> httpCache = new AtomicReference<>();
+    private final AtomicReference<ResilientHttpHandler<Jwks>> httpCache = new AtomicReference<>();
     private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
     private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
     private final AtomicBoolean schedulerStarted = new AtomicBoolean(false);
@@ -164,8 +164,8 @@ public class HttpJwksLoader implements JwksLoader {
     }
 
     private void loadKeys() {
-        // Ensure we have a healthy ETagAwareHttpHandler
-        Optional<ETagAwareHttpHandler<Jwks>> cacheOpt = ensureHttpCache();
+        // Ensure we have a healthy ResilientHttpHandler
+        Optional<ResilientHttpHandler<Jwks>> cacheOpt = ensureHttpCache();
         if (cacheOpt.isEmpty()) {
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
 
@@ -175,7 +175,7 @@ public class HttpJwksLoader implements JwksLoader {
             return;
         }
 
-        ETagAwareHttpHandler<Jwks> cache = cacheOpt.get();
+        ResilientHttpHandler<Jwks> cache = cacheOpt.get();
 
         HttpResultObject<Jwks> result = cache.load();
 
@@ -287,13 +287,13 @@ public class HttpJwksLoader implements JwksLoader {
 
     private void backgroundRefresh() {
         LOGGER.debug("Starting background JWKS refresh");
-        Optional<ETagAwareHttpHandler<Jwks>> cacheOpt = Optional.ofNullable(httpCache.get());
+        Optional<ResilientHttpHandler<Jwks>> cacheOpt = Optional.ofNullable(httpCache.get());
         if (cacheOpt.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_SKIPPED::format);
             return;
         }
 
-        ETagAwareHttpHandler<Jwks> cache = cacheOpt.get();
+        ResilientHttpHandler<Jwks> cache = cacheOpt.get();
 
         HttpResultObject<Jwks> result = cache.load();
 
@@ -320,15 +320,15 @@ public class HttpJwksLoader implements JwksLoader {
     }
 
     /**
-     * Ensures that we have a healthy ETagAwareHttpHandler based on configuration.
+     * Ensures that we have a healthy ResilientHttpHandler based on configuration.
      * Creates the handler dynamically based on whether we have a direct HTTP handler
      * or need to resolve via WellKnownResolver.
      *
-     * @return Optional containing the ETagAwareHttpHandler if healthy, empty if sources are not healthy
+     * @return Optional containing the ResilientHttpHandler if healthy, empty if sources are not healthy
      */
-    private Optional<ETagAwareHttpHandler<Jwks>> ensureHttpCache() {
+    private Optional<ResilientHttpHandler<Jwks>> ensureHttpCache() {
         // Fast path - already have a cache
-        ETagAwareHttpHandler<Jwks> cache = httpCache.get();
+        ResilientHttpHandler<Jwks> cache = httpCache.get();
         if (cache != null) {
             return Optional.of(cache);
         }
@@ -345,7 +345,7 @@ public class HttpJwksLoader implements JwksLoader {
                 case HTTP:
                     // Direct HTTP handler configuration
                     // HttpHandler is guaranteed non-null by HttpJwksLoaderConfig.build() validation
-                    LOGGER.debug("Creating ETagAwareHttpHandler from direct HTTP configuration for URI: %s",
+                    LOGGER.debug("Creating ResilientHttpHandler from direct HTTP configuration for URI: %s",
                             config.getHttpHandler().getUri());
                     // Create a simple HttpContentConverter for Jwks using DSL-JSON directly
                     ParserConfig parserConfig = ParserConfig.builder().build();
@@ -378,7 +378,7 @@ public class HttpJwksLoader implements JwksLoader {
                             return Jwks.empty();
                         }
                     };
-                    cache = new ETagAwareHttpHandler<>(config.getHttpHandler(), httpContentConverter);
+                    cache = new ResilientHttpHandler<>(config.getHttpHandler(), httpContentConverter);
                     httpCache.set(cache);
                     return Optional.of(cache);
 
@@ -393,7 +393,7 @@ public class HttpJwksLoader implements JwksLoader {
                     }
 
                     // Get the pre-configured ETag-aware handler directly
-                    Optional<ETagAwareHttpHandler<Jwks>> etagResult = config.getWellKnownResolver().getJwksETagHandler();
+                    Optional<ResilientHttpHandler<Jwks>> etagResult = config.getWellKnownResolver().getJwksETagHandler();
                     if (etagResult.isEmpty()) {
                         LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED::format);
                         return Optional.empty();

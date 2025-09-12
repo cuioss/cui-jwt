@@ -66,7 +66,7 @@ class JwksLoaderFactoryTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl("https://example.com/.well-known/jwks.json")
-                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ETagAwareHttpHandler
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ResilientHttpHandler
                 .build();
         JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
         loader.initJWKSLoader(securityEventCounter);
@@ -85,7 +85,7 @@ class JwksLoaderFactoryTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
-                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ETagAwareHttpHandler
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ResilientHttpHandler
                 .build();
         JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
         loader.initJWKSLoader(securityEventCounter);

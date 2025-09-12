@@ -27,8 +27,8 @@ import lombok.NonNull;
  * implementations provide both dependencies through a single provider interface.
  * <h2>Design Benefits</h2>
  * <ul>
- *   <li><strong>Unified Constructor</strong>: {@code new ETagAwareHttpHandler(provider)}
- *       instead of {@code new ETagAwareHttpHandler(handler, strategy)}</li>
+ *   <li><strong>Unified Constructor</strong>: {@code new ResilientHttpHandler(provider)}
+ *       instead of {@code new ResilientHttpHandler(handler, strategy)}</li>
  *   <li><strong>Consistent Pattern</strong>: All HTTP configuration classes follow the same pattern</li>
  *   <li><strong>Reduced Breaking Changes</strong>: Internal provider evolution without API changes</li>
  *   <li><strong>Better Testability</strong>: Single interface to mock</li>
@@ -48,8 +48,8 @@ import lombok.NonNull;
  * <h2>Consumer Pattern</h2>
  * HTTP handler implementations consume this interface for unified dependency injection:
  * <pre>
- * public class ETagAwareHttpHandler {
- *     public ETagAwareHttpHandler(HttpHandlerProvider provider) {
+ * public class ResilientHttpHandler {
+ *     public ResilientHttpHandler(HttpHandlerProvider provider) {
  *         this.httpHandler = provider.getHttpHandler();
  *         this.retryStrategy = provider.getRetryStrategy();
  *     }

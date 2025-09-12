@@ -52,9 +52,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Oliver Wolff
  * @since 1.0
  */
-public class ETagAwareHttpHandler<T> {
+public class ResilientHttpHandler<T> {
 
-    private static final CuiLogger LOGGER = new CuiLogger(ETagAwareHttpHandler.class);
+    private static final CuiLogger LOGGER = new CuiLogger(ResilientHttpHandler.class);
     private final HttpHandler httpHandler;
     private final RetryStrategy retryStrategy;
     private final HttpContentConverter<T> contentConverter;
@@ -72,7 +72,7 @@ public class ETagAwareHttpHandler<T> {
      * @param provider the HTTP handler provider containing both HttpHandler and RetryStrategy
      * @throws IllegalArgumentException if provider is null
      */
-    public ETagAwareHttpHandler(@NonNull HttpHandlerProvider provider, @NonNull HttpContentConverter<T> contentConverter) {
+    public ResilientHttpHandler(@NonNull HttpHandlerProvider provider, @NonNull HttpContentConverter<T> contentConverter) {
         this.httpHandler = provider.getHttpHandler();
         this.retryStrategy = provider.getRetryStrategy();
         this.contentConverter = contentConverter;
@@ -81,12 +81,12 @@ public class ETagAwareHttpHandler<T> {
     /**
      * Constructor accepting HttpHandler directly.
      * <p>
-     * This constructor creates an ETagAwareHttpHandler with no retry capability.
-     * For retry-capable HTTP operations, use {@link #ETagAwareHttpHandler(HttpHandlerProvider, HttpContentConverter)} instead.
+     * This constructor creates an ResilientHttpHandler with no retry capability.
+     * For retry-capable HTTP operations, use {@link #ResilientHttpHandler(HttpHandlerProvider, HttpContentConverter)} instead.
      *
      * @param httpHandler the HTTP handler for making requests
      */
-    public ETagAwareHttpHandler(@NonNull HttpHandler httpHandler, @NonNull HttpContentConverter<T> contentConverter) {
+    public ResilientHttpHandler(@NonNull HttpHandler httpHandler, @NonNull HttpContentConverter<T> contentConverter) {
         this.httpHandler = httpHandler;
         this.retryStrategy = RetryStrategy.none();
         this.contentConverter = contentConverter;

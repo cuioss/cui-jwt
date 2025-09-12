@@ -26,15 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Test for ETagAwareHttpHandler with HttpHandlerProvider pattern.
+ * Test for ResilientHttpHandler with HttpHandlerProvider pattern.
  */
-@DisplayName("ETagAwareHttpHandler HttpHandlerProvider Integration Tests")
-class ETagAwareHttpHandlerProviderTest {
+@DisplayName("ResilientHttpHandler HttpHandlerProvider Integration Tests")
+class ResilientHttpHandlerProviderTest {
 
     private static final String TEST_URL = "https://test.example.com/.well-known/openid_configuration";
 
     @Test
-    @DisplayName("Should create ETagAwareHttpHandler with HttpHandlerProvider")
+    @DisplayName("Should create ResilientHttpHandler with HttpHandlerProvider")
     void shouldCreateWithHttpHandlerProvider() {
         // Given: A WellKnownConfig that implements HttpHandlerProvider
         RetryStrategy retryStrategy = RetryStrategy.exponentialBackoff();
@@ -43,15 +43,15 @@ class ETagAwareHttpHandlerProviderTest {
                 .retryStrategy(retryStrategy)
                 .build();
 
-        // When: Creating ETagAwareHttpHandler with HttpHandlerProvider
-        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(config, StringContentConverter.identity());
+        // When: Creating ResilientHttpHandler with HttpHandlerProvider
+        ResilientHttpHandler<String> handler = new ResilientHttpHandler<>(config, StringContentConverter.identity());
 
         // Then: Should be created successfully
-        assertNotNull(handler, "ETagAwareHttpHandler should be created");
+        assertNotNull(handler, "ResilientHttpHandler should be created");
     }
 
     @Test
-    @DisplayName("Should create ETagAwareHttpHandler with custom HttpHandlerProvider")
+    @DisplayName("Should create ResilientHttpHandler with custom HttpHandlerProvider")
     void shouldCreateWithCustomProvider() {
         // Given: A custom HttpHandlerProvider implementation
         HttpHandlerProvider provider = new HttpHandlerProvider() {
@@ -68,11 +68,11 @@ class ETagAwareHttpHandlerProviderTest {
             }
         };
 
-        // When: Creating ETagAwareHttpHandler with custom provider
-        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(provider, StringContentConverter.identity());
+        // When: Creating ResilientHttpHandler with custom provider
+        ResilientHttpHandler<String> handler = new ResilientHttpHandler<>(provider, StringContentConverter.identity());
 
         // Then: Should be created successfully
-        assertNotNull(handler, "ETagAwareHttpHandler should be created with custom provider");
+        assertNotNull(handler, "ResilientHttpHandler should be created with custom provider");
     }
 
     @Test
@@ -83,11 +83,11 @@ class ETagAwareHttpHandlerProviderTest {
                 .url(TEST_URL)
                 .build();
 
-        // When: Creating ETagAwareHttpHandler with direct HttpHandler constructor
-        ETagAwareHttpHandler<String> handler = new ETagAwareHttpHandler<>(httpHandler, StringContentConverter.identity());
+        // When: Creating ResilientHttpHandler with direct HttpHandler constructor
+        ResilientHttpHandler<String> handler = new ResilientHttpHandler<>(httpHandler, StringContentConverter.identity());
 
         // Then: Should still work for backward compatibility
-        assertNotNull(handler, "ETagAwareHttpHandler should maintain backward compatibility");
+        assertNotNull(handler, "ResilientHttpHandler should maintain backward compatibility");
     }
 
     @Test
@@ -98,7 +98,7 @@ class ETagAwareHttpHandlerProviderTest {
 
         // When/Then: Should throw IllegalArgumentException
         assertThrows(NullPointerException.class, () -> {
-            new ETagAwareHttpHandler<>(provider, StringContentConverter.identity());
+            new ResilientHttpHandler<>(provider, StringContentConverter.identity());
         }, "Should throw exception when provider is null");
     }
 }

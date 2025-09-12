@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Simple test for ETagAwareHttpHandler HttpResultObject behavior.
+ * Simple test for ResilientHttpHandler HttpResultObject behavior.
  * This test verifies the basic result pattern functionality without complex HTTP integration.
  *
  * NOTE: This test has been updated from testing the removed LoadState/LoadResult types
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Oliver Wolff
  */
 @EnableTestLogger
-class ETagAwareHttpHandlerSimpleTest {
+class ResilientHttpHandlerSimpleTest {
 
     @Test
     void httpResultObjectSuccessStates() {

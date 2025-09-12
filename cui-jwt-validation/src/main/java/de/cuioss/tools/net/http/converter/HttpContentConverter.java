@@ -24,7 +24,7 @@ import java.util.Optional;
  * Content converter for transforming HTTP response bodies into typed objects with proper BodyHandler support.
  * <p>
  * This interface provides both content conversion and appropriate BodyHandler selection,
- * allowing ETagAwareHttpHandler to leverage Java HTTP Client's type-safe body handling.
+ * allowing ResilientHttpHandler to leverage Java HTTP Client's type-safe body handling.
  * The raw response type is an implementation detail hidden from clients.
  * <p>
  * Implementations should handle conversion errors gracefully by returning Optional.empty()

@@ -17,8 +17,7 @@ package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.jwt.validation.HealthStatusProvider;
 import de.cuioss.jwt.validation.json.Jwks;
-import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.client.ETagAwareHttpHandler;
+import de.cuioss.tools.net.http.client.ResilientHttpHandler;
 
 import java.util.Optional;
 
@@ -46,14 +45,16 @@ public interface WellKnownResolver extends HealthStatusProvider {
      * Gets the JWKS URI endpoint handler.
      * This endpoint is required by the OpenID Connect Discovery specification.
      *
-     * @return Optional containing the JWKS URI HttpHandler, empty if not available
+     * @return Optional containing the JWKS URI ResilientHttpHandler, empty if not available
+     * @deprecated Use {@link #getJwksETagHandler()} instead for optimized JWKS loading
      */
-    Optional<HttpHandler> getJwksUri();
+    @Deprecated
+    Optional<ResilientHttpHandler<String>> getJwksUri();
 
     /**
      * Gets the JWKS URI endpoint as an ETag-aware handler with retry capabilities.
      * <p>
-     * This method provides direct access to an optimized ETagAwareHttpHandler for JWKS loading,
+     * This method provides direct access to an optimized ResilientHttpHandler for JWKS loading,
      * eliminating the need for HttpJwksLoader to wrap the handler again.
      * <p>
      * The returned handler includes:
@@ -66,31 +67,52 @@ public interface WellKnownResolver extends HealthStatusProvider {
      *
      * @return Optional containing the ETag-aware JWKS handler, empty if not available or unhealthy
      */
-    Optional<ETagAwareHttpHandler<Jwks>> getJwksETagHandler();
+    Optional<ResilientHttpHandler<Jwks>> getJwksETagHandler();
 
     /**
-     * Gets the authorization endpoint handler.
+     * Gets the authorization endpoint handler with resilient retry and caching capabilities.
      * This endpoint is required by the OpenID Connect Discovery specification.
+     * <p>
+     * The returned handler includes:
+     * <ul>
+     *   <li>ETag-based HTTP caching (304 Not Modified support)</li>
+     *   <li>Retry logic with exponential backoff</li>
+     *   <li>Status tracking for health monitoring</li>
+     * </ul>
      *
-     * @return Optional containing the authorization endpoint HttpHandler, empty if not available
+     * @return Optional containing the authorization endpoint ResilientHttpHandler, empty if not available
      */
-    Optional<HttpHandler> getAuthorizationEndpoint();
+    Optional<ResilientHttpHandler<String>> getAuthorizationEndpoint();
 
     /**
-     * Gets the token endpoint handler.
+     * Gets the token endpoint handler with resilient retry and caching capabilities.
      * This endpoint is required by the OpenID Connect Discovery specification.
+     * <p>
+     * The returned handler includes:
+     * <ul>
+     *   <li>ETag-based HTTP caching (304 Not Modified support)</li>
+     *   <li>Retry logic with exponential backoff</li>
+     *   <li>Status tracking for health monitoring</li>
+     * </ul>
      *
-     * @return Optional containing the token endpoint HttpHandler, empty if not available
+     * @return Optional containing the token endpoint ResilientHttpHandler, empty if not available
      */
-    Optional<HttpHandler> getTokenEndpoint();
+    Optional<ResilientHttpHandler<String>> getTokenEndpoint();
 
     /**
-     * Gets the userinfo endpoint handler.
+     * Gets the userinfo endpoint handler with resilient retry and caching capabilities.
      * This endpoint is optional according to the OpenID Connect Discovery specification.
+     * <p>
+     * The returned handler includes:
+     * <ul>
+     *   <li>ETag-based HTTP caching (304 Not Modified support)</li>
+     *   <li>Retry logic with exponential backoff</li>
+     *   <li>Status tracking for health monitoring</li>
+     * </ul>
      *
-     * @return Optional containing the userinfo endpoint HttpHandler, empty if not available
+     * @return Optional containing the userinfo endpoint ResilientHttpHandler, empty if not available
      */
-    Optional<HttpHandler> getUserinfoEndpoint();
+    Optional<ResilientHttpHandler<String>> getUserinfoEndpoint();
 
     /**
      * Gets the issuer identifier.

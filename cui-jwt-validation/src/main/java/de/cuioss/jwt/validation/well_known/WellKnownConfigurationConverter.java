@@ -33,9 +33,9 @@ import java.util.Optional;
 /**
  * Direct HTTP content converter for WellKnownConfiguration using DSL-JSON mapping.
  * <p>
- * This converter directly maps HTTP response bodies to type-safe {@link WellKnownConfiguration} 
+ * This converter directly maps HTTP response bodies to type-safe {@link WellKnownConfiguration}
  * records, eliminating intermediate JsonObject representations and providing optimal performance
- * for ETagAwareHttpHandler integration.
+ * for ResilientHttpHandler integration.
  * <p>
  * Path: HttpResponse.BodyHandler → DSL-JSON → WellKnownConfiguration
  *
