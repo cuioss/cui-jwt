@@ -191,7 +191,6 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         // Fetch discovery document (directly parsed as WellKnownConfiguration)
         HttpResultObject<WellKnownConfiguration> result = discoveryEtagHandler.load();
         if (!result.isValid() || result.getResult() == null) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
@@ -205,13 +204,11 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         // Parse all endpoints - using direct typed access instead of JSON parsing
         String issuerString = discoveryDocument.issuer;
         if (issuerString == null || issuerString.trim().isEmpty()) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
 
         if (!parser.validateIssuer(issuerString, wellKnownUrl)) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
@@ -219,7 +216,6 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         // JWKS URI (Required)
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, JWKS_URI_KEY,
                 discoveryDocument.jwksUri, wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
@@ -227,14 +223,12 @@ public class HttpWellKnownResolver implements WellKnownResolver {
         // Required endpoints
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, AUTHORIZATION_ENDPOINT_KEY,
                 discoveryDocument.authorizationEndpoint, wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }
 
         if (!mapper.addHttpHandlerToMap(parsedEndpoints, TOKEN_ENDPOINT_KEY,
                 discoveryDocument.tokenEndpoint, wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
             return;
         }

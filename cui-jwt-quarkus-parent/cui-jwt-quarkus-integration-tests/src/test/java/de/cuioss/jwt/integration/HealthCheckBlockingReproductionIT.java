@@ -68,13 +68,13 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
                 try {
                     HealthCheckTimingResult result = futures.get(i).get(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                     results.add(result);
-                    LOGGER.info("Health check %d completed: %s", i + 1, result);
+                    LOGGER.info("Health check %s completed: %s", i + 1, result);
                 } catch (TimeoutException e) {
-                    LOGGER.error("Health check %d TIMED OUT after %d seconds", i + 1, HEALTH_CHECK_TIMEOUT_SECONDS);
+                    LOGGER.error("Health check %s TIMED OUT after %s seconds", i + 1, HEALTH_CHECK_TIMEOUT_SECONDS);
                     results.add(new HealthCheckTimingResult(i + 1, "readiness", Duration.ofSeconds(HEALTH_CHECK_TIMEOUT_SECONDS),
                             false, true, "TIMEOUT", null));
                 } catch (Exception e) {
-                    LOGGER.error(e, "Health check %d failed with exception", i + 1);
+                    LOGGER.error(e, "Health check %s failed with exception", i + 1);
                     results.add(new HealthCheckTimingResult(i + 1, "readiness", Duration.ZERO,
                             false, false, "EXCEPTION", e.getMessage()));
                 }
@@ -138,7 +138,7 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
         String errorMessage = null;
 
         try {
-            LOGGER.debug("Starting %s health check %d at %s", type, checkId, url);
+            LOGGER.debug("Starting %s health check %s at %s", type, checkId, url);
 
             String responseStatus = given()
                     .when()
@@ -149,14 +149,14 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
             status = responseStatus;
             success = "UP".equals(responseStatus);
 
-            LOGGER.debug("Health check %s %d completed with status: %s", type, checkId, status);
+            LOGGER.debug("Health check %s %s completed with status: %s", type, checkId, status);
 
         } catch (Exception e) {
             errorMessage = e.getMessage();
             if (errorMessage != null && (errorMessage.contains("timeout") || errorMessage.contains("timed out"))) {
                 timedOut = true;
             }
-            LOGGER.debug("Health check %s %d failed: %s", type, checkId, errorMessage);
+            LOGGER.debug("Health check %s %s failed: %s", type, checkId, errorMessage);
         }
 
         Duration responseTime = Duration.between(startTime, Instant.now());
@@ -167,7 +167,7 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
      * Analyzes results to identify blocking patterns.
      */
     private void analyzeBlockingBehavior(List<HealthCheckTimingResult> results) {
-        LOGGER.info("Analyzing blocking behavior from %d health check attempts", results.size());
+        LOGGER.info("Analyzing blocking behavior from %s health check attempts", results.size());
 
         long timeouts = results.stream().mapToLong(r -> r.timedOut ? 1 : 0).sum();
         long successes = results.stream().mapToLong(r -> r.success ? 1 : 0).sum();
@@ -185,15 +185,15 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
                 .orElse(Duration.ZERO);
 
         LOGGER.info("BLOCKING BEHAVIOR ANALYSIS:");
-        LOGGER.info("- Timeouts: %d/%d (%.1f%%)", timeouts, results.size(), (100.0 * timeouts / results.size()));
-        LOGGER.info("- Successes: %d/%d (%.1f%%)", successes, results.size(), (100.0 * successes / results.size()));
+        LOGGER.info("- Timeouts: %s/%s (%.1f%%)", timeouts, results.size(), (100.0 * timeouts / results.size()));
+        LOGGER.info("- Successes: %s/%s (%.1f%%)", successes, results.size(), (100.0 * successes / results.size()));
         LOGGER.info("- Average response time: %s", avgResponseTime);
         LOGGER.info("- Maximum response time: %s", maxResponseTime);
 
         // Since we fixed the blocking issues, we now expect fast responses
         // This test validates that health checks are NOT blocking anymore
         boolean hasBlockingBehavior = timeouts > 0 || maxResponseTime.compareTo(Duration.ofSeconds(5)) > 0;
-        
+
         if (hasBlockingBehavior) {
             LOGGER.warn("Health checks are still showing blocking behavior - this indicates remaining issues");
             fail("Health checks should be responsive after our fixes, but found blocking behavior");
@@ -203,7 +203,7 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
         }
 
         if (timeouts > 0) {
-            LOGGER.info("✅ BLOCKING BEHAVIOR CONFIRMED: %d health checks timed out", timeouts);
+            LOGGER.info("✅ BLOCKING BEHAVIOR CONFIRMED: %s health checks timed out", timeouts);
         }
 
         if (maxResponseTime.compareTo(Duration.ofSeconds(5)) > 0) {
@@ -221,7 +221,7 @@ class HealthCheckBlockingReproductionIT extends BaseIntegrationTest {
             String blockingStatus = result.timedOut ? "BLOCKED" :
                     result.responseTime.compareTo(Duration.ofSeconds(2)) > 0 ? "SLOW" : "FAST";
 
-            LOGGER.info("- %s: %s (%s, %dms)",
+            LOGGER.info("- %s: %s (%s, %sms)",
                     result.type.toUpperCase(),
                     blockingStatus,
                     result.success ? "UP" : "DOWN/ERROR",

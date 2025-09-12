@@ -28,8 +28,7 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Abstract base test class for testing JwtValidationEndpoint endpoints.
@@ -180,7 +179,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
 
             if (endpoint.contains("scopes")) {
-                LOGGER.info("bearerTokenWithScopes:" + tokenResponse.accessToken());
+                LOGGER.info("bearerTokenWithScopes:%s", tokenResponse.accessToken());
             }
 
             given()
@@ -276,7 +275,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         } else {
             LOGGER.warn("Success metrics not found - this indicates SecurityEventCounter success events are not being published");
             // For now, just verify that we at least have the error metrics structure
-            assertTrue(parsedMetrics.size() > 0, "Should have some metrics available");
+            assertFalse(parsedMetrics.isEmpty(), "Should have some metrics available");
         }
     }
 

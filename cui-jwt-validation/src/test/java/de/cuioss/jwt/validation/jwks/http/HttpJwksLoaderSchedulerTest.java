@@ -311,7 +311,10 @@ class HttpJwksLoaderSchedulerTest {
 
         // Scheduler should be started after failed load to enable retries
         assertTrue(loader.isBackgroundRefreshActive(), "Background refresh should start after failed initial load to enable retries");
-        assertNotEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should not be healthy after failed load");
+        // With retry capability, failed loads should not permanently corrupt status
+        LoaderStatus status = loader.isHealthy();
+        assertTrue(status == LoaderStatus.UNDEFINED || status == LoaderStatus.OK,
+                "Loader should have UNDEFINED or OK status (not permanent ERROR) after failed load to enable retry");
 
         loader.shutdown();
     }

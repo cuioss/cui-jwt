@@ -31,7 +31,6 @@ import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Optional;
 
 /**
  * This class provides a unified way to parse JWT tokens and extract common information

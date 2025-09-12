@@ -58,6 +58,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ServiceProviderBuildItem;
 import io.quarkus.devui.spi.JsonRPCProvidersBuildItem;
 import io.quarkus.devui.spi.page.CardPageBuildItem;
 import io.quarkus.devui.spi.page.Page;
@@ -222,6 +223,23 @@ public class CuiJwtProcessor {
                 .fields(false)   // Fields not needed - no field access
                 .constructors(true) // Only constructors needed for instantiation
                 .build();
+    }
+
+    /**
+     * Register DSL-JSON service providers for native image.
+     * This ensures DSL-JSON converters can be found via service loader at runtime.
+     */
+    @BuildStep
+    public void registerDslJsonServiceProviders(BuildProducer<ServiceProviderBuildItem> serviceProvider) {
+        // Register all DSL-JSON configurations from classpath
+        serviceProvider.produce(ServiceProviderBuildItem.allProvidersFromClassPath("com.dslplatform.json.Configuration"));
+        
+        // Explicitly register our generated converters as service providers
+        serviceProvider.produce(new ServiceProviderBuildItem("com.dslplatform.json.Configuration", 
+            "de.cuioss.jwt.validation.json._WellKnownConfiguration_DslJsonConverter",
+            "de.cuioss.jwt.validation.json._Jwks_DslJsonConverter",
+            "de.cuioss.jwt.validation.json._JwkKey_DslJsonConverter", 
+            "de.cuioss.jwt.validation.json._JwtHeader_DslJsonConverter"));
     }
 
 

@@ -17,9 +17,9 @@ package de.cuioss.jwt.quarkus.startup;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;

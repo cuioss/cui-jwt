@@ -16,6 +16,7 @@
 package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
+import org.hamcrest.Matchers;
 
 import org.junit.jupiter.api.Test;
 
@@ -165,9 +166,9 @@ class StartupTimingIssueReproductionIT extends BaseIntegrationTest {
                     .when()
                     .post("/jwt/validate")
                     .then()
-                    .statusCode(org.hamcrest.Matchers.anyOf(
-                        org.hamcrest.Matchers.is(400),
-                        org.hamcrest.Matchers.is(401)
+                    .statusCode(Matchers.anyOf(
+                            Matchers.is(400),
+                            Matchers.is(401)
                     )); // Expect 400 or 401, but not timeout
                     
             responseTime = (int) (System.currentTimeMillis() - startTime);

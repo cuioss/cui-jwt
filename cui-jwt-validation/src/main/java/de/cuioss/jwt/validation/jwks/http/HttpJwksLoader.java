@@ -167,7 +167,6 @@ public class HttpJwksLoader implements JwksLoader {
         // Ensure we have a healthy ETagAwareHttpHandler
         Optional<ETagAwareHttpHandler<Jwks>> cacheOpt = ensureHttpCache();
         if (cacheOpt.isEmpty()) {
-            this.status = LoaderStatus.ERROR;
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
 
             // Start background refresh even when HTTP cache setup fails
@@ -222,7 +221,6 @@ public class HttpJwksLoader implements JwksLoader {
             } else {
                 // Error with no cached content (null or empty string)
                 LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE::format);
-                this.status = LoaderStatus.ERROR;
                 LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Failed to load JWKS and no cached content available"));
             }
         }
@@ -245,7 +243,6 @@ public class HttpJwksLoader implements JwksLoader {
             if (!initialized.get()) {
                 LOGGER.warn("HttpJwksLoader not initialized during async loading - initializing with empty SecurityEventCounter");
                 // Handle case where async loading is called before initialization
-                this.status = LoaderStatus.ERROR;
                 return LoaderStatus.ERROR;
             }
 

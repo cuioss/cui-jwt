@@ -38,6 +38,14 @@ services:
       - QUARKUS_HTTP_ACCESS_LOG_CATEGORY=io.quarkus.http.access-log
     networks:
       - jwt-integration
+    
+    # Health check to ensure Keycloak is ready before dependent services start
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && exec 3<&-"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
 
   cui-jwt-integration-tests:
     # Use separate Dockerfiles for different variants
@@ -62,7 +70,8 @@ services:
       - QUARKUS_LOG_LEVEL=INFO
 
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
 
     volumes:
       # Read-only certificate mount (production pattern)

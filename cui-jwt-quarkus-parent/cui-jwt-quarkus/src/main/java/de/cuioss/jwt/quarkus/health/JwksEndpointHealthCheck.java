@@ -19,8 +19,8 @@ import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;

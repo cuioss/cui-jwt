@@ -503,7 +503,7 @@ public final class JwtPropertyKeys {
          * Maximum HTTP status code to log.
          * Template: "cui.http.access-log.filter.max-status-code"
          * <p>
-         * Only responses with status codes <= this value will be logged.
+         * Only responses with status codes {@code <=} this value will be logged.
          * Set to 599 to include all error codes.
          * </p>
          * <p>
@@ -584,6 +584,50 @@ public final class JwtPropertyKeys {
          * </p>
          */
         public static final String ENABLED = BASE + ".enabled";
+    }
+
+    /**
+     * Properties related to HTTP retry configuration.
+     */
+    @UtilityClass
+    public static final class RETRY {
+        private static final String PREFIX_RETRY = PREFIX + ".retry";
+
+        /**
+         * Whether retry is enabled globally.
+         * Default: true
+         */
+        public static final String ENABLED = PREFIX_RETRY + ".enabled";
+
+        /**
+         * Maximum number of retry attempts.
+         * Default: 5
+         */
+        public static final String MAX_ATTEMPTS = PREFIX_RETRY + ".max-attempts";
+
+        /**
+         * Initial retry delay in milliseconds.
+         * Default: 1000
+         */
+        public static final String INITIAL_DELAY_MS = PREFIX_RETRY + ".initial-delay-ms";
+
+        /**
+         * Maximum retry delay in milliseconds.
+         * Default: 30000
+         */
+        public static final String MAX_DELAY_MS = PREFIX_RETRY + ".max-delay-ms";
+
+        /**
+         * Exponential backoff multiplier.
+         * Default: 2.0
+         */
+        public static final String BACKOFF_MULTIPLIER = PREFIX_RETRY + ".backoff-multiplier";
+
+        /**
+         * Jitter factor for randomization.
+         * Default: 0.1
+         */
+        public static final String JITTER_FACTOR = PREFIX_RETRY + ".jitter-factor";
     }
 
     /**

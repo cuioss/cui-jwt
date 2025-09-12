@@ -71,7 +71,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
         public static final LogRecord RESOLVED_PARSER_CONFIG = LogRecordModel.builder()
-                .template("Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringSize=%s, maxArraySize=%s, maxDepth=%s")
+                .template("Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s")
                 .prefix(PREFIX)
                 .identifier(4)
                 .build();

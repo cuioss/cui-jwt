@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
@@ -57,6 +58,7 @@ public class IssuerConfigResolver {
     private static final CuiLogger LOGGER = new CuiLogger(IssuerConfigResolver.class);
 
     private final Config config;
+    private final RetryStrategy retryStrategy;
 
     /**
      * Creates a new IssuerConfigResolver with the specified configuration.
@@ -64,7 +66,18 @@ public class IssuerConfigResolver {
      * @param config the configuration instance to use for property resolution
      */
     public IssuerConfigResolver(@NonNull Config config) {
+        this(config, RetryStrategy.exponentialBackoff());
+    }
+
+    /**
+     * Creates a new IssuerConfigResolver with the specified configuration and retry strategy.
+     *
+     * @param config the configuration instance to use for property resolution
+     * @param retryStrategy the retry strategy to use for HTTP operations
+     */
+    public IssuerConfigResolver(@NonNull Config config, @NonNull RetryStrategy retryStrategy) {
         this.config = config;
+        this.retryStrategy = retryStrategy;
     }
 
     /**
@@ -365,6 +378,9 @@ public class IssuerConfigResolver {
                 JwtPropertyKeys.ISSUERS.READ_TIMEOUT_SECONDS.formatted(issuerName),
                 Integer.class
         ).ifPresent(builder::readTimeoutSeconds);
+
+        // Set the retry strategy
+        builder.retryStrategy(retryStrategy);
 
         // Let the builder validate and create the instance
         return builder.build();

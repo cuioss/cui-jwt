@@ -18,12 +18,14 @@ package de.cuioss.jwt.quarkus.producer;
 import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.config.RetryStrategyConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.net.http.retry.RetryStrategy;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
@@ -53,6 +55,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * <ul>
  *   <li>{@link TokenValidator} - Main JWT validation component (includes SecurityEventCounter)</li>
  *   <li>{@link List}&lt;{@link IssuerConfig}&gt; - Resolved issuer configurations</li>
+ *   <li>{@link RetryStrategy} - HTTP retry strategy for resilient operations</li>
  * </ul>
  *
  * @since 1.0
@@ -80,6 +83,11 @@ public class TokenValidatorProducer {
     @NonNull
     SecurityEventCounter securityEventCounter;
 
+    @Produces
+    @ApplicationScoped
+    @NonNull
+    RetryStrategy retryStrategy;
+
     @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
         this.config = config;
@@ -96,9 +104,13 @@ public class TokenValidatorProducer {
     void init() {
         LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS::format);
 
+        // Create RetryStrategy from configuration
+        RetryStrategyConfigResolver retryResolver = new RetryStrategyConfigResolver(config);
+        retryStrategy = retryResolver.resolveRetryStrategy();
+
         // Resolve issuer configurations using the dedicated resolver
         // (Keycloak mappers are now configured per-issuer in IssuerConfigResolver)
-        IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(config);
+        IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(config, retryStrategy);
         issuerConfigs = issuerConfigResolver.resolveIssuerConfigs();
 
         // Create SecurityEventCounter for proper initialization

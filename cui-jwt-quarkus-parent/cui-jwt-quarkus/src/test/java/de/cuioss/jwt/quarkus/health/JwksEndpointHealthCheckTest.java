@@ -19,10 +19,10 @@ import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.client.LoaderStatus;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;

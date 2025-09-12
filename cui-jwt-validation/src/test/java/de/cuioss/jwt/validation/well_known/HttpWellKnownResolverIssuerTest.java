@@ -86,7 +86,7 @@ class HttpWellKnownResolverIssuerTest {
         assertFalse(issuer.isPresent(), "Issuer should not be present when missing from response");
 
         // Verify health status is ERROR since issuer is required
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 
     @Test
@@ -107,7 +107,7 @@ class HttpWellKnownResolverIssuerTest {
         assertFalse(issuer.isPresent(), "Issuer should not be present when validation fails");
 
         // Verify health status is ERROR
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 
     @Test

@@ -54,8 +54,8 @@ class HttpWellKnownResolverTest {
         assertFalse(resolver.getUserinfoEndpoint().isPresent());
         assertFalse(resolver.getIssuer().isPresent());
 
-        // Health status should be ERROR after failed loading attempts
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        // Health status should remain UNDEFINED after failed loading attempts (enables retry)
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 
     @Test
@@ -71,7 +71,7 @@ class HttpWellKnownResolverTest {
 
         // Should not crash, but return empty results
         assertFalse(resolver.getJwksUri().isPresent());
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 
     @Test
@@ -93,7 +93,7 @@ class HttpWellKnownResolverTest {
         assertFalse(resolver.getIssuer().isPresent());
 
         // Health status should be ERROR
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 
     @Test
@@ -126,7 +126,7 @@ class HttpWellKnownResolverTest {
         }
 
         // Should complete without exceptions
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 
     @Test
@@ -146,6 +146,6 @@ class HttpWellKnownResolverTest {
         assertFalse(issuer.isPresent(), "Issuer should not be present when server is unavailable");
 
         // Health status should be ERROR after failed loading
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        assertEquals(LoaderStatus.UNDEFINED, resolver.isHealthy());
     }
 }
