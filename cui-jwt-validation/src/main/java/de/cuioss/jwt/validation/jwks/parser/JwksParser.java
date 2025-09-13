@@ -82,19 +82,19 @@ public class JwksParser {
         byte[] bytes = jwksContent.getBytes(StandardCharsets.UTF_8);
 
         // First, try to parse as standard JWKS with "keys" array
+        boolean jwksParsed = false;
         try {
             Jwks jwks = dslJson.deserialize(Jwks.class, bytes, bytes.length);
-            if (jwks != null && jwks.keys() != null && !jwks.keys().isEmpty()) {
+            if (jwks != null && jwks.keys() != null) {
+                // We have a valid JWKS with keys field, let parseJwks handle validation and logging
                 return parseJwks(jwks);
             }
+            jwksParsed = (jwks != null);  // Remember if we parsed a JWKS structure
         } catch (IOException e) {
-            // JSON syntax error - this should be logged as ERROR
-            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
-            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-            return result;
+            // JSON syntax error - continue to try single JWK parsing
         }
 
-        // If standard JWKS parsing failed, try parsing as single JWK
+        // If standard JWKS parsing failed or had no keys, try parsing as single JWK
         try {
             JwkKey singleKey = dslJson.deserialize(JwkKey.class, bytes, bytes.length);
             if (singleKey != null && singleKey.kty() != null) {
@@ -102,15 +102,21 @@ public class JwksParser {
                 return result;
             }
         } catch (IOException e) {
-            // JSON syntax error - this should be logged as ERROR
+            // If both parsers threw IOException, it's invalid JSON
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return result;
         }
 
-        // If both parsing attempts failed with no IOException, it's likely a structure issue
-        LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
-        securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+        // If we successfully parsed a JWKS but it had no keys field
+        if (jwksParsed) {
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL::format);
+            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+        } else {
+            // If both parsing attempts failed with no IOException, it's likely a structure issue
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
+            securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+        }
         return result;
     }
 
@@ -176,6 +182,7 @@ public class JwksParser {
         if (jwks.keys() != null && !jwks.keys().isEmpty()) {
             extractKeysFromArray(jwks, result);
         } else {
+            // Keys field present but empty
             LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
@@ -206,11 +213,7 @@ public class JwksParser {
                 return false;
             }
 
-            if (keysArray.isEmpty()) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
-                securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-                return false;
-            }
+            // Don't log here for empty arrays - let extractKeys handle the logging
         }
 
         return true;
@@ -225,7 +228,16 @@ public class JwksParser {
     private void extractKeysFromArray(Jwks jwks, List<JwkKey> result) {
         List<JwkKey> keysArray = jwks.keys();
         if (keysArray != null && !keysArray.isEmpty()) {
-            result.addAll(keysArray);
+            // Validate each key before adding
+            for (JwkKey key : keysArray) {
+                if (key != null && key.kty() != null) {
+                    result.add(key);
+                } else if (key != null) {
+                    // Key exists but missing kty field
+                    LOGGER.warn(JWTValidationLogMessages.WARN.JWK_MISSING_KTY.format(key.kid()));
+                    securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
+                }
+            }
         } else {
             LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);

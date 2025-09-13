@@ -16,12 +16,12 @@
 package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.test.juli.LogAsserts;
-import de.cuioss.test.juli.TestLogLevel;
-import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -211,7 +211,7 @@ class IssuerConfigResolverTest {
             } catch (TokenValidationException ignored) {
                 // Expected - unhealthy issuer may cause validation exception
             }
-            
+
             // Verify ISSUER_CONFIG_UNHEALTHY was logged
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                     JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.resolveIdentifierString());
