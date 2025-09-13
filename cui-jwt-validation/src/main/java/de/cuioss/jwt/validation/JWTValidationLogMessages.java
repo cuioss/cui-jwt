@@ -41,71 +41,6 @@ public final class JWTValidationLogMessages {
     private static final String PREFIX = "JWTValidation";
 
     /**
-     * Contains debug-level log messages for informational and diagnostic purposes.
-     * These messages are typically used for tracing program pipeline and providing
-     * detailed information about normal operations.
-     */
-    @UtilityClass
-    public static final class DEBUG {
-        // Token creation success events
-        public static final LogRecord ACCESS_TOKEN_CREATED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(500)
-                .template("Successfully created access token")
-                .build();
-
-        public static final LogRecord ID_TOKEN_CREATED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(501)
-                .template("Successfully created ID-Token")
-                .build();
-
-        public static final LogRecord REFRESH_TOKEN_CREATED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(502)
-                .template("Successfully created Refresh-Token")
-                .build();
-
-        // WellKnownHandler debug messages
-        public static final LogRecord OPTIONAL_URL_FIELD_MISSING = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(503)
-                .template("Optional URL field '%s' is missing in discovery document from %s")
-                .build();
-
-        public static final LogRecord VALIDATING_ISSUER = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(504)
-                .template("Validating issuer: Document issuer='%s', WellKnown URL='%s'")
-                .build();
-
-        public static final LogRecord ISSUER_VALIDATION_SUCCESSFUL = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(505)
-                .template("Issuer validation successful for %s")
-                .build();
-
-        public static final LogRecord ACCESSIBILITY_CHECK_SUCCESSFUL = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(506)
-                .template("Accessibility check for %s URL '%s' successful (HTTP %s)")
-                .build();
-
-        public static final LogRecord DISCOVERY_DOCUMENT_FETCHED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(507)
-                .template("Successfully fetched discovery document: %s")
-                .build();
-
-        public static final LogRecord ACCESS_TOKEN_CACHE_HIT = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(508)
-                .template("Access token retrieved from cache")
-                .build();
-
-    }
-
-    /**
      * Contains error-level log messages for significant problems that require attention.
      * These messages indicate failures that impact functionality but don't necessarily
      * prevent the application from continuing to run.
@@ -142,29 +77,11 @@ public final class JWTValidationLogMessages {
                 .template("Failed to load JWKS")
                 .build();
 
-        public static final LogRecord WELL_KNOWN_LOAD_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(205)
-                .template("Failed to load well-known endpoints from: %s after %s attempts")
-                .build();
-
         // New entries for direct logging conversions
         public static final LogRecord UNSUPPORTED_JWKS_TYPE = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(206)
                 .template("Unsupported JwksType for HttpJwksLoader: %s")
-                .build();
-
-        public static final LogRecord REQUIRED_URL_FIELD_MISSING = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(207)
-                .template("Required URL field '%s' is missing in discovery document from %s")
-                .build();
-
-        public static final LogRecord MALFORMED_URL_FIELD = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(208)
-                .template("Malformed URL for field '%s': %s from %s - %s")
                 .build();
 
         public static final LogRecord JSON_PARSE_FAILED = LogRecordModel.builder()
@@ -261,22 +178,10 @@ public final class JWTValidationLogMessages {
                 .template("Skipping disabled issuer configuration %s")
                 .build();
 
-        public static final LogRecord HTTP_CONTENT_LOADED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(7)
-                .template("Loaded fresh HTTP content from %s")
-                .build();
-
         public static final LogRecord JWKS_URI_RESOLVED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(8)
                 .template("Successfully resolved JWKS URI from well-known endpoint: %s")
-                .build();
-
-        public static final LogRecord WELL_KNOWN_ENDPOINTS_LOADED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(9)
-                .template("Successfully loaded well-known endpoints from: %s")
                 .build();
 
         // Retry operation info messages
@@ -450,12 +355,6 @@ public final class JWTValidationLogMessages {
                 .template("Key rotation detected: JWKS content has changed")
                 .build();
 
-        public static final LogRecord ACCESSIBILITY_CHECK_HTTP_ERROR = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(125)
-                .template("Accessibility check for %s URL '%s' returned HTTP status %s. It might be inaccessible.")
-                .build();
-
         public static final LogRecord INVALID_JWKS_URI = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(126)
@@ -547,12 +446,6 @@ public final class JWTValidationLogMessages {
                 .template("JWKS object is null")
                 .build();
 
-        public static final LogRecord JWKS_EXCESSIVE_PROPERTIES = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(141)
-                .template("JWKS object has excessive number of properties: %s")
-                .build();
-
         public static final LogRecord JWKS_KEYS_ARRAY_TOO_LARGE = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(142)
@@ -590,12 +483,6 @@ public final class JWTValidationLogMessages {
                 .template("Retry operation '%s' failed after %s attempts in %sms")
                 .build();
 
-        public static final LogRecord RETRY_NON_RETRYABLE_EXCEPTION = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(148)
-                .template("Operation '%s' failed with non-retryable exception on attempt %s: %s")
-                .build();
-
         public static final LogRecord RETRY_MAX_ATTEMPTS_REACHED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(149)
@@ -606,6 +493,12 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(150)
                 .template("JSON parsing failed for content, returning empty result: %s")
+                .build();
+
+        public static final LogRecord CLAIM_SUB_OPTIONAL_WARNING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(151)
+                .template("IssuerConfig for issuer '%s' has claimSubOptional=true. This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. Use this setting only when necessary and ensure appropriate alternative validation mechanisms.")
                 .build();
     }
 

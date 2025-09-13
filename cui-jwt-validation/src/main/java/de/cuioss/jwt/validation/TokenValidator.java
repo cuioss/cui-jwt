@@ -308,7 +308,7 @@ public class TokenValidator {
             // Use cache-aware processing for access tokens
             AccessTokenContent result = processAccessTokenWithCache(tokenString);
 
-            LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED::format);
+            LOGGER.debug("Successfully created access token");
             securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
 
             return result;
@@ -340,7 +340,7 @@ public class TokenValidator {
         IdTokenContent token = buildIdToken(decodedJwt, cachedBuilder);
         IdTokenContent validatedToken = validateTokenClaims(token, issuerConfig, NoOpMetricsTicker.INSTANCE);
 
-        LOGGER.debug(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED::format);
+        LOGGER.debug("Successfully created ID-Token");
         securityEventCounter.increment(SecurityEventCounter.EventType.ID_TOKEN_CREATED);
 
         return validatedToken;
@@ -379,7 +379,7 @@ public class TokenValidator {
             LOGGER.debug("Ignoring validation exception for refresh token: %s", e.getMessage());
         }
         var refreshToken = new RefreshTokenContent(tokenString, claims);
-        LOGGER.debug(JWTValidationLogMessages.DEBUG.REFRESH_TOKEN_CREATED::format);
+        LOGGER.debug("Successfully created Refresh-Token");
         securityEventCounter.increment(SecurityEventCounter.EventType.REFRESH_TOKEN_CREATED);
         return refreshToken;
     }

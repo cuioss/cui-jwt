@@ -737,10 +737,8 @@ public class IssuerConfig implements LoadingStatusProvider {
 
             // Warn about RFC compliance when subject claim is made optional
             if (claimSubOptional) {
-                LOGGER.warn("IssuerConfig for issuer '%s' has claimSubOptional=true. " +
-                        "This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. " +
-                        "Use this setting only when necessary and ensure appropriate alternative validation mechanisms.",
-                        issuerIdentifier != null ? issuerIdentifier : "unknown");
+                LOGGER.warn(JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING.format(
+                        issuerIdentifier != null ? issuerIdentifier : "unknown"));
             }
 
             return new IssuerConfig(enabled, issuerIdentifier, expectedAudience, expectedClientId,

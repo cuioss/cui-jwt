@@ -224,7 +224,7 @@ class TokenValidatorTest {
             assertThrows(TokenValidationException.class,
                     () -> tokenValidator.createAccessToken(EMPTY_TOKEN));
 
-            LogAsserts.assertLogMessagePresent(TestLogLevel.WARN, JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY.format());
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY.resolveIdentifierString());
         }
 
         @Test
@@ -233,7 +233,7 @@ class TokenValidatorTest {
             assertThrows(TokenValidationException.class,
                     () -> tokenValidator.createAccessToken(INVALID_TOKEN));
 
-            LogAsserts.assertLogMessagePresent(TestLogLevel.WARN, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.resolveIdentifierString());
         }
 
         @ParameterizedTest

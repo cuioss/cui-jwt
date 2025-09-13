@@ -96,11 +96,11 @@ public class SecurityEventCounter {
         FAILED_TO_READ_JWKS_FILE(JWTValidationLogMessages.WARN.FAILED_TO_READ_JWKS_FILE, EventCategory.INVALID_SIGNATURE),
         KEY_ROTATION_DETECTED(JWTValidationLogMessages.WARN.KEY_ROTATION_DETECTED, EventCategory.INVALID_SIGNATURE),
 
-        // Successful operations
-        ACCESS_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED, null),
-        ID_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED, null),
-        REFRESH_TOKEN_CREATED(JWTValidationLogMessages.DEBUG.REFRESH_TOKEN_CREATED, null),
-        ACCESS_TOKEN_CACHE_HIT(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT, null);
+        // Successful operations (no LogRecord for DEBUG level per CUI standards)
+        ACCESS_TOKEN_CREATED(null, null),
+        ID_TOKEN_CREATED(null, null),
+        REFRESH_TOKEN_CREATED(null, null),
+        ACCESS_TOKEN_CACHE_HIT(null, null);
 
         private final LogRecord logRecord;
         private final EventCategory category;

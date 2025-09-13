@@ -30,18 +30,15 @@ import static org.junit.jupiter.api.Assertions.*;
 class JWTValidationLogMessagesTest {
 
     @Test
-    void shouldProvideDebugLogRecords() {
-        assertNotNull(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED);
-        assertLogRecordProperties(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED,
-                "JWTValidation", 500, "Successfully created access token");
-
-        assertNotNull(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED);
-        assertLogRecordProperties(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED,
-                "JWTValidation", 501, "Successfully created ID-Token");
-
-        assertNotNull(JWTValidationLogMessages.DEBUG.OPTIONAL_URL_FIELD_MISSING);
-        assertLogRecordProperties(JWTValidationLogMessages.DEBUG.OPTIONAL_URL_FIELD_MISSING,
-                "JWTValidation", 503, "Optional URL field '%s' is missing in discovery document from %s");
+    void shouldNotProvideDebugLogRecords() {
+        // Per CUI logging standards, DEBUG and TRACE must NOT use LogRecord
+        // This test verifies compliance with the standard
+        try {
+            Class<?> debugClass = Class.forName("de.cuioss.jwt.validation.JWTValidationLogMessages$DEBUG");
+            fail("DEBUG class should not exist - violates CUI logging standards");
+        } catch (ClassNotFoundException e) {
+            // Expected - DEBUG class should not exist
+        }
     }
 
     @Test
@@ -89,10 +86,6 @@ class JWTValidationLogMessagesTest {
 
     @Test
     void shouldUseConsistentIdentifierRanges() {
-        // DEBUG: 500-599
-        assertTrue(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getIdentifier() >= 500);
-        assertTrue(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getIdentifier() < 600);
-
         // INFO: 1-99
         assertTrue(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.getIdentifier() >= 1);
         assertTrue(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.getIdentifier() < 100);
@@ -108,7 +101,6 @@ class JWTValidationLogMessagesTest {
 
     @Test
     void shouldHaveConsistentPrefixAcrossAllRecords() {
-        assertEquals("JWTValidation", JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getPrefix());
         assertEquals("JWTValidation", JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.getPrefix());
         assertEquals("JWTValidation", JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.getPrefix());
         assertEquals("JWTValidation", JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.getPrefix());
@@ -116,7 +108,6 @@ class JWTValidationLogMessagesTest {
 
     @Test
     void shouldProvideNonEmptyTemplatesForAllRecords() {
-        assertFalse(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getTemplate().isEmpty());
         assertFalse(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.getTemplate().isEmpty());
         assertFalse(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.getTemplate().isEmpty());
         assertFalse(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.getTemplate().isEmpty());
@@ -125,9 +116,6 @@ class JWTValidationLogMessagesTest {
     @Test
     void shouldHaveUniqueIdentifiersWithinCategory() {
         // Test a few key identifiers to ensure they're unique within their range
-        assertNotEquals(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED.getIdentifier(),
-                JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED.getIdentifier());
-
         assertNotEquals(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.getIdentifier(),
                 JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY.getIdentifier());
 

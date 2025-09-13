@@ -18,6 +18,7 @@ package de.cuioss.tools.net.http.client;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.HttpLogMessages;
 import de.cuioss.tools.net.http.HttpStatusFamily;
 import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
@@ -236,7 +237,7 @@ public class ResilientHttpHandler<T> {
                     return result;
                 } else {
                     // Content conversion failed - return error with no cache update
-                    LOGGER.warn("Content conversion failed for response from %s", httpHandler.getUrl());
+                    LOGGER.warn(HttpLogMessages.WARN.CONTENT_CONVERSION_FAILED.format(httpHandler.getUrl()));
                     return HttpResultObject.error(
                             getEmptyFallback(), // Safe empty fallback
                             HttpErrorCategory.CLIENT_ERROR,

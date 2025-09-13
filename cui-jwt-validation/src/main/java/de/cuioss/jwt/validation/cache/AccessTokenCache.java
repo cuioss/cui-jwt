@@ -196,7 +196,7 @@ public class AccessTokenCache {
             OffsetDateTime now = OffsetDateTime.now();
             if (existing.verifyToken(tokenString) && !existing.isExpired(now)) {
                 // True cache hit - valid cached token
-                LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT::format);
+                LOGGER.debug("Access token retrieved from cache");
                 securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT);
                 updateLru(cacheKey);
                 return existing.getContent();

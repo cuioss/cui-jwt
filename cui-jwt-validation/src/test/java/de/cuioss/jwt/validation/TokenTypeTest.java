@@ -16,6 +16,9 @@
 package de.cuioss.jwt.validation;
 
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -26,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @EnableGeneratorController
+@EnableTestLogger
 @DisplayName("Tests the TokenType enum functionality")
 class TokenTypeTest {
 
@@ -40,9 +44,18 @@ class TokenTypeTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"invalid", "unknown", "not_a_token_type"})
-    @DisplayName("Should return UNKNOWN for invalid type claims")
-    void shouldDefaultToUnknown(String invalidType) {
+    @DisplayName("Should return UNKNOWN for null or empty type claims without logging")
+    void shouldDefaultToUnknownForNullOrEmpty(String invalidType) {
         assertEquals(TokenType.UNKNOWN, TokenType.fromTypClaim(invalidType), "Invalid type should return UNKNOWN");
+        // No warning expected for null or empty
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"invalid", "not_a_token_type", "custom_token"})
+    @DisplayName("Should return UNKNOWN for invalid type claims and log warning")
+    void shouldDefaultToUnknownAndLogWarning(String invalidType) {
+        assertEquals(TokenType.UNKNOWN, TokenType.fromTypClaim(invalidType), "Invalid type should return UNKNOWN");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.UNKNOWN_TOKEN_TYPE.resolveIdentifierString());
     }
 }

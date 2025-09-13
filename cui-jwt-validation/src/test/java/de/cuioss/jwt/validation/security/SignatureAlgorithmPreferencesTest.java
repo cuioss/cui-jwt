@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.security;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
@@ -114,7 +115,7 @@ class SignatureAlgorithmPreferencesTest {
             var preferences = new SignatureAlgorithmPreferences();
             assertFalse(preferences.isSupported(algorithm), "Algorithm " + algorithm + " should be rejected");
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    "Algorithm " + algorithm + " is explicitly rejected for security reasons");
+                    JWTValidationLogMessages.WARN.ALGORITHM_REJECTED.resolveIdentifierString());
         }
 
         @ParameterizedTest

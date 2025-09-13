@@ -277,8 +277,8 @@ class AccessTokenCacheTest {
                 cache.computeIfAbsent(token, t -> null, performanceMonitor));
 
         assertEquals("Validation function returned null - expected exception on failure", exception.getMessage());
-        LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR,
-                JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.resolveIdentifierString());
     }
 
     @Test
@@ -460,6 +460,5 @@ class AccessTokenCacheTest {
         assertNotNull(result);
         assertEquals(1, cache.size());
     }
-
 
 }

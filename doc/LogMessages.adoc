@@ -50,6 +50,8 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-007 |HTTP |Loaded fresh HTTP content from %s |Logged when fresh HTTP content is successfully loaded from an endpoint
 |JWTValidation-008 |JWKS |Successfully resolved JWKS URI from well-known endpoint: %s |Logged when JWKS URI is successfully resolved via well-known discovery
 |JWTValidation-009 |WELLKNOWN |Successfully loaded well-known endpoints from: %s |Logged when well-known endpoints are successfully loaded from discovery document
+|JWTValidation-010 |RETRY |Operation '%s' succeeded on attempt %s/%s |Logged when a retry operation succeeds after one or more attempts
+|JWTValidation-011 |RETRY |Retry operation '%s' completed successfully after %s attempts in %sms |Logged when a retry operation completes successfully with timing information
 |===
 
 == WARN Level (100-199)
@@ -82,7 +84,6 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-122 |JWKS |Given contentKey '%s' does not resolve to a non base64 encoded String, actual content = %s |Logged when a content key does not resolve to a base64 encoded string
 |JWTValidation-123 |TOKEN |Algorithm %s is explicitly rejected for security reasons |Logged when an algorithm is explicitly rejected for security reasons
 |JWTValidation-124 |JWKS |Key rotation detected: JWKS content has changed |Logged when key rotation is detected in the JWKS content
-|JWTValidation-125 |WELLKNOWN |Accessibility check for %s URL '%s' returned HTTP status %s. It might be inaccessible. |Logged when an accessibility check for a URL returns a non-successful HTTP status code
 |JWTValidation-126 |JWKS |Creating HttpJwksLoaderConfig with invalid JWKS URI. The loader will return empty results. |Logged when an invalid JWKS URI is provided to HttpJwksLoaderConfig
 |JWTValidation-127 |JWKS |Load operation failed but using cached content |Logged when JWKS load operation fails but cached content is available and used
 |JWTValidation-128 |JWKS |Load operation failed with no cached content available |Logged when JWKS load operation fails and no cached content is available
@@ -98,12 +99,15 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-138 |HTTP |Failed to fetch HTTP content from %s |Logged when HTTP content fetching fails due to IOException
 |JWTValidation-139 |HTTP |Interrupted while fetching HTTP content from %s |Logged when HTTP content fetching is interrupted
 |JWTValidation-140 |JWKS |JWKS object is null |Logged when JWKS object validation fails due to null object
-|JWTValidation-141 |JWKS |JWKS object has excessive number of properties: %s |Logged when JWKS object has too many top-level properties
 |JWTValidation-142 |JWKS |JWKS keys array exceeds maximum size: %s |Logged when JWKS keys array exceeds the maximum allowed size
 |JWTValidation-143 |JWKS |JWKS keys array is empty |Logged when JWKS keys array is empty
 |JWTValidation-144 |JWKS |JWK is missing required field 'kty' |Logged when a JWK entry is missing the required 'kty' field
 |JWTValidation-145 |JWKS |Failed to parse RSA key with ID %s: %s |Logged when RSA key parsing fails for a specific key ID
 |JWTValidation-146 |JWKS |Failed to parse EC key with ID %s: %s |Logged when EC key parsing fails for a specific key ID
+|JWTValidation-147 |RETRY |Retry operation '%s' failed after %s attempts in %sms |Logged when a retry operation fails after exhausting all attempts
+|JWTValidation-149 |RETRY |Operation '%s' failed after %s attempts. Final exception: %s |Logged when a retry operation reaches maximum attempts with final exception details
+|JWTValidation-150 |JSON |JSON parsing failed for content, returning empty result: %s |Logged when JSON parsing fails and an empty result is returned as fallback
+|JWTValidation-151 |ISSUER |IssuerConfig for issuer '%s' has claimSubOptional=true. This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. Use this setting only when necessary and ensure appropriate alternative validation mechanisms. |Logged when an issuer configuration has the subject claim marked as optional, which violates RFC 7519 requirements
 |===
 
 == ERROR Level (200-299)
@@ -116,14 +120,24 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-202 |JWKS |Failed to parse JWKS JSON: %s |Logged when there is an error parsing the JWKS JSON
 |JWTValidation-203 |WELLKNOWN |Issuer validation failed. Document issuer '%s' (normalized to base URL for .well-known: %s://%s%s%s) does not match the .well-known URL '%s'. Expected path for .well-known: '%s'. SchemeMatch=%s, HostMatch=%s, PortMatch=%s (IssuerPort=%s, WellKnownPort=%s), PathMatch=%s (WellKnownPath='%s') |Logged when the issuer validation fails because the issuer in the discovery document does not match the well-known URL
 |JWTValidation-204 |JWKS |Failed to load JWKS |Logged when a JWKS load operation fails
-|JWTValidation-205 |WELLKNOWN |Failed to load well-known endpoints from: %s after %s attempts |Logged when loading well-known endpoints fails after multiple retry attempts
 |JWTValidation-206 |JWKS |Unsupported JwksType for HttpJwksLoader: %s |Logged when an unsupported JWKS type is encountered in HttpJwksLoader
-|JWTValidation-207 |WELLKNOWN |Required URL field '%s' is missing in discovery document from %s |Logged when a required URL field is missing from the well-known discovery document
-|JWTValidation-208 |WELLKNOWN |Malformed URL for field '%s': %s from %s - %s |Logged when a URL field in the discovery document is malformed
 |JWTValidation-209 |WELLKNOWN |Failed to parse JSON from %s: %s |Logged when JSON parsing fails for a well-known discovery document
-|JWTValidation-210 |WELLKNOWN |Issuer URL from discovery document is malformed: %s - %s |Logged when the issuer URL in the discovery document is malformed
 |JWTValidation-211 |CACHE |Token passed validation but has no expiration time - this indicates a validation bug |Logged when a validated token unexpectedly has no expiration time, indicating a validation pipeline bug
 |JWTValidation-212 |CACHE |Unexpected error while caching token |Logged when an unexpected error occurs while storing a validated token in the cache
 |JWTValidation-213 |CACHE |Validation function returned null instead of throwing exception |Logged when a validation function unexpectedly returns null instead of throwing an exception on failure
 |JWTValidation-214 |CACHE |Error during cache eviction |Logged when an error occurs during background cache eviction operations
+|JWTValidation-215 |RETRY |Retry interrupted for %s |Logged when a retry operation is interrupted before completion
+|JWTValidation-216 |RETRY |All %s retry attempts failed for %s |Logged when all retry attempts for an operation have failed
+|===
+
+== HTTP Package Messages
+
+The following messages are specific to the de.cuioss.tools.net.http package and use the HTTP prefix.
+
+=== HTTP WARN Level (100-199)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|HTTP-100 |CLIENT |Content conversion failed for response from %s |Logged when HTTP response content conversion fails
 |===
