@@ -16,6 +16,7 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -147,7 +148,8 @@ class TokenHeaderValidatorTest {
             assertEquals(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM, exception.getEventType());
 
             // And a warning should be logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Unsupported algorithm: RS256");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, 
+                    JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.resolveIdentifierString());
 
             // Verify security event was recorded
             assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM));

@@ -65,12 +65,6 @@ public final class JWTValidationLogMessages {
                 .template("Failed to parse JWKS JSON: %s")
                 .build();
 
-        public static final LogRecord ISSUER_VALIDATION_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(203)
-                .template("Issuer validation failed. Document issuer '%s' (normalized to base URL for .well-known: %s://%s%s%s) does not match the .well-known URL '%s'. Expected path for .well-known: '%s'. SchemeMatch=%s, HostMatch=%s, PortMatch=%s (IssuerPort=%s, WellKnownPort=%s), PathMatch=%s (WellKnownPath='%s')")
-                .build();
-
         public static final LogRecord JWKS_LOAD_FAILED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(204)
@@ -88,12 +82,6 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(209)
                 .template("Failed to parse JSON from %s: %s")
-                .build();
-
-        public static final LogRecord ISSUER_URL_MALFORMED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(210)
-                .template("Issuer URL from discovery document is malformed: %s - %s")
                 .build();
 
         public static final LogRecord CACHE_TOKEN_NO_EXPIRATION = LogRecordModel.builder()
@@ -120,18 +108,7 @@ public final class JWTValidationLogMessages {
                 .template("Error during cache eviction")
                 .build();
 
-        // Retry operation error messages
-        public static final LogRecord RETRY_INTERRUPTED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(215)
-                .template("Retry interrupted for %s")
-                .build();
-
-        public static final LogRecord RETRY_ALL_ATTEMPTS_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(216)
-                .template("All %s retry attempts failed for %s")
-                .build();
+        // Retry operation error messages are handled at WARN level
     }
 
     /**

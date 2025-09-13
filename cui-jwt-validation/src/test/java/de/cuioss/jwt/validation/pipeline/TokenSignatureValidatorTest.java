@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
@@ -139,7 +140,8 @@ class TokenSignatureValidatorTest {
         assertEquals(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED, exception.getEventType());
 
         // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Invalid signature");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, 
+                JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.resolveIdentifierString());
 
         // Verify security event was recorded
         assertTrue(securityEventCounter.getCount(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED) > initialCount);
@@ -174,7 +176,8 @@ class TokenSignatureValidatorTest {
         assertEquals(SecurityEventCounter.EventType.KEY_NOT_FOUND, exception.getEventType());
 
         // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "No key found with ID");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, 
+                JWTValidationLogMessages.WARN.KEY_NOT_FOUND.resolveIdentifierString());
 
         // Verify security event was recorded
         assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.KEY_NOT_FOUND));
