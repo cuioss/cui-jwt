@@ -15,11 +15,14 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -137,6 +140,11 @@ class NonValidatingJwtParserTest {
 
             // Verify the exception has a valid event type
             assertNotNull(exception.getEventType(), "Exception should have an event type");
+            assertEquals(EventType.INVALID_JWT_FORMAT, exception.getEventType());
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.resolveIdentifierString());
         }
 
         @Test
@@ -206,6 +214,10 @@ class NonValidatingJwtParserTest {
             // Verify the exception has the correct event type
             assertEquals(EventType.TOKEN_SIZE_EXCEEDED, exception.getEventType(),
                     "Exception should have TOKEN_SIZE_EXCEEDED event type");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.resolveIdentifierString());
         }
 
         @Test
@@ -230,6 +242,10 @@ class NonValidatingJwtParserTest {
             // Verify the exception has the correct event type
             assertEquals(EventType.TOKEN_SIZE_EXCEEDED, exception.getEventType(),
                     "Exception should have TOKEN_SIZE_EXCEEDED event type");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.resolveIdentifierString());
         }
 
         @Test
@@ -266,9 +282,12 @@ class NonValidatingJwtParserTest {
                     "Exception should have DECODED_PART_SIZE_EXCEEDED event type");
 
             // Check the event count
-
             assertEquals(1, counter.getCount(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED),
                     "Should count DECODED_PART_SIZE_EXCEEDED event");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.resolveIdentifierString());
         }
     }
 
@@ -342,6 +361,10 @@ class NonValidatingJwtParserTest {
             // Verify the exception has the correct event type
             assertEquals(EventType.TOKEN_SIZE_EXCEEDED, exception.getEventType(),
                     "Exception should have TOKEN_SIZE_EXCEEDED event type");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.resolveIdentifierString());
 
             // Verify the counter was incremented
             assertEquals(1, counter.getCount(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED),

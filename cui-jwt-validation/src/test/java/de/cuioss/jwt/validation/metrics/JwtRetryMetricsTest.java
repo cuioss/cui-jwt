@@ -15,7 +15,10 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.retry.RetryContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +73,10 @@ class JwtRetryMetricsTest {
 
         // Verify that the measurement was recorded
         assertEquals(1, monitor.getSampleCount(MeasurementType.RETRY_COMPLETE), "Should record one RETRY_COMPLETE measurement");
+
+        // Verify the info log for successful completion
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.RETRY_OPERATION_COMPLETED.resolveIdentifierString());
 
         // Verify the recorded value matches the duration in nanoseconds
         var metricsOpt = monitor.getValidationMetrics(MeasurementType.RETRY_COMPLETE);
@@ -169,5 +176,21 @@ class JwtRetryMetricsTest {
         assertEquals(0, limitedMonitor.getSampleCount(MeasurementType.RETRY_ATTEMPT), "Disabled RETRY_ATTEMPT should not be recorded");
         assertEquals(0, limitedMonitor.getSampleCount(MeasurementType.RETRY_DELAY), "Disabled RETRY_DELAY should not be recorded");
         assertEquals(1, limitedMonitor.getSampleCount(MeasurementType.RETRY_COMPLETE), "Enabled RETRY_COMPLETE should be recorded");
+    }
+
+    @Test
+    @DisplayName("Should log failure on unsuccessful retry completion")
+    void shouldLogFailureOnUnsuccessfulRetryCompletion() {
+        Duration totalDuration = Duration.ofMillis(2500);
+
+        retryMetrics.recordRetryComplete(context, totalDuration, false, 3);
+
+        // Verify that the measurement was recorded
+        assertEquals(1, monitor.getSampleCount(MeasurementType.RETRY_COMPLETE),
+                "Should record one RETRY_COMPLETE measurement even for failure");
+
+        // Verify the warning log for failed completion
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.RETRY_OPERATION_FAILED.resolveIdentifierString());
     }
 }

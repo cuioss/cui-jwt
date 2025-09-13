@@ -74,6 +74,18 @@ class TokenValidatorTest {
         tokenValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
     }
 
+    @Test
+    @DisplayName("Should log TOKEN_FACTORY_INITIALIZED when creating TokenValidator")
+    void shouldLogTokenFactoryInitialized() {
+        // Given/When - create a new TokenValidator
+        TokenValidator newValidator = TokenValidator.builder().issuerConfig(issuerConfig).build();
+
+        // Then
+        assertNotNull(newValidator);
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.resolveIdentifierString());
+    }
+
     @Nested
     class TokenCreationTests {
 
@@ -210,6 +222,8 @@ class TokenValidatorTest {
 
             assertEquals(SecurityEventCounter.EventType.NO_ISSUER_CONFIG, exception.getEventType(),
                     "Should indicate no issuer config");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.NO_ISSUER_CONFIG.resolveIdentifierString());
         }
     }
 

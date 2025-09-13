@@ -15,10 +15,14 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Oliver Wolff
  */
+@EnableTestLogger
 @DisplayName("WellKnownConfigurationConverter")
 class WellKnownResultConverterTest {
 
@@ -125,6 +130,25 @@ class WellKnownResultConverterTest {
         Optional<WellKnownResult> result = converter.convert(malformedJson);
 
         assertFalse(result.isPresent());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.resolveIdentifierString());
+    }
+
+    @Test
+    @DisplayName("Should log JSON_PARSING_FAILED for oversized content")
+    void shouldLogJsonParsingFailedForOversizedContent() {
+        // Create a large JSON that exceeds the max allowed size
+        ParserConfig restrictedConfig = ParserConfig.builder()
+                .maxPayloadSize(50) // Very small size to trigger the error
+                .build();
+        WellKnownConfigurationConverter restrictedConverter = new WellKnownConfigurationConverter(restrictedConfig.getDslJson());
+        
+        String largeJson = "{\"issuer\": \"" + "x".repeat(100) + "\"}";
+        Optional<WellKnownResult> result = restrictedConverter.convert(largeJson);
+        
+        assertFalse(result.isPresent());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.resolveIdentifierString());
     }
 
     @Test

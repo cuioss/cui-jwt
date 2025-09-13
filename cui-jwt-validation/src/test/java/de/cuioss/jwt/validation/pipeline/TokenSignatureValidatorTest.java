@@ -140,7 +140,7 @@ class TokenSignatureValidatorTest {
         assertEquals(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED, exception.getEventType());
 
         // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, 
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                 JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.resolveIdentifierString());
 
         // Verify security event was recorded
@@ -176,7 +176,7 @@ class TokenSignatureValidatorTest {
         assertEquals(SecurityEventCounter.EventType.KEY_NOT_FOUND, exception.getEventType());
 
         // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, 
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                 JWTValidationLogMessages.WARN.KEY_NOT_FOUND.resolveIdentifierString());
 
         // Verify security event was recorded

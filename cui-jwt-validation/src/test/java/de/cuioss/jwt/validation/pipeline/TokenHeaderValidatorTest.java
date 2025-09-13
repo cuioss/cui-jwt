@@ -148,7 +148,7 @@ class TokenHeaderValidatorTest {
             assertEquals(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM, exception.getEventType());
 
             // And a warning should be logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, 
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                     JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.resolveIdentifierString());
 
             // Verify security event was recorded

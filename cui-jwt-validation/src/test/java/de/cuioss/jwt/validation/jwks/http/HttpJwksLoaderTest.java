@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -27,8 +28,10 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.Getter;
+import mockwebserver3.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -227,5 +230,65 @@ class HttpJwksLoaderTest {
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.INFO,
                 "Successfully loaded JWKS");
+    }
+
+    @Nested
+    @DisplayName("JWKS Load Failure Tests")
+    class JwksLoadFailureTests {
+        @Test
+        @DisplayName("Should log JWKS_LOAD_FAILED when HTTP connection cannot be established")
+        void shouldLogJwksLoadFailedWhenHttpConnectionFails(URIBuilder uriBuilder) {
+            // Create loader with invalid URL to simulate connection failure
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("http://invalid-host-that-does-not-exist:9999/jwks")
+                    .build();
+
+            HttpJwksLoader failingLoader = new HttpJwksLoader(config);
+            failingLoader.initJWKSLoader(securityEventCounter);
+            
+            // Try to get a key, which should fail
+            Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
+            assertFalse(keyInfo.isPresent(), "Key info should not be present when connection fails");
+            
+            // Verify the appropriate error was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                    JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should log JWKS_URI_RESOLVED when JWKS URI is resolved")
+        void shouldLogJwksUriResolvedWhenJwksUriIsResolved() {
+            // Load a key to trigger URI resolution
+            Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+            assertTrue(keyInfo.isPresent(), "Key info should be present");
+            
+            // Verify the info message was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                    JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should log JWKS_HTTP_LOADED when JWKS is loaded via HTTP")
+        void shouldLogJwksHttpLoadedWhenJwksIsLoadedViaHttp() {
+            // Load a key to trigger HTTP loading
+            Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+            assertTrue(keyInfo.isPresent(), "Key info should be present");
+            
+            // Verify the info message was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                    JWTValidationLogMessages.INFO.JWKS_HTTP_LOADED.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should log JWKS_KEYS_UPDATED when keys are updated")
+        void shouldLogJwksKeysUpdatedWhenKeysAreUpdated() {
+            // Load a key to trigger keys update
+            Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+            assertTrue(keyInfo.isPresent(), "Key info should be present");
+            
+            // Verify the info message was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                    JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED.resolveIdentifierString());
+        }
     }
 }
