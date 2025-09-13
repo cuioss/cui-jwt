@@ -15,8 +15,6 @@
  */
 package de.cuioss.tools.net.http.client;
 
-import de.cuioss.test.juli.LogAsserts;
-import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.HttpLogMessages;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
@@ -144,11 +142,11 @@ class ResilientHttpHandlerSimpleTest {
         assertNotNull(HttpLogMessages.WARN.CONTENT_CONVERSION_FAILED);
         assertEquals("HTTP", HttpLogMessages.WARN.CONTENT_CONVERSION_FAILED.getPrefix());
         assertEquals(100, HttpLogMessages.WARN.CONTENT_CONVERSION_FAILED.getIdentifier());
-        
+
         // Verify the LogRecord can be resolved to identifier string
         String identifierString = HttpLogMessages.WARN.CONTENT_CONVERSION_FAILED.resolveIdentifierString();
         assertTrue(identifierString.contains("HTTP-100"));
-        
+
         // This LogRecord is used when content conversion fails in ResilientHttpHandler
         // The actual logging happens during HTTP response processing when converter.convert() fails
     }

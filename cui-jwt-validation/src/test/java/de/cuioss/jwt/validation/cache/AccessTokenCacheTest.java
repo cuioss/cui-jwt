@@ -305,7 +305,7 @@ class AccessTokenCacheTest {
         assertNotNull(JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED);
         assertEquals("JWT", JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.getPrefix());
         assertEquals(212, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.getIdentifier());
-        
+
         // Since actual storage failure is hard to simulate without mocking internals,
         // we verify the LogRecord is properly defined and accessible
         String message = JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.resolveIdentifierString();
@@ -318,7 +318,7 @@ class AccessTokenCacheTest {
         assertNotNull(JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED);
         assertEquals("JWT", JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.getPrefix());
         assertEquals(214, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.getIdentifier());
-        
+
         // Since actual eviction failure is hard to simulate without mocking internals,
         // we verify the LogRecord is properly defined and accessible
         String message = JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.resolveIdentifierString();

@@ -200,18 +200,6 @@ public final class JWTValidationLogMessages {
                 .template("No key found with ID: %s")
                 .build();
 
-        public static final LogRecord ISSUER_MISMATCH = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(103)
-                .template("Token issuer '%s' does not match expected issuer '%s'")
-                .build();
-
-        public static final LogRecord JWKS_FETCH_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(104)
-                .template("Failed to fetch JWKS: HTTP %s")
-                .build();
-
         public static final LogRecord JWKS_JSON_PARSE_FAILED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(105)
@@ -228,18 +216,6 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(107)
                 .template("Invalid JWT Token format: expected 3 parts but got %s")
-                .build();
-
-        public static final LogRecord FAILED_TO_DECODE_HEADER = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(108)
-                .template("Failed to decode header part")
-                .build();
-
-        public static final LogRecord FAILED_TO_DECODE_PAYLOAD = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(109)
-                .template("Failed to decode payload part")
                 .build();
 
         public static final LogRecord DECODED_PART_SIZE_EXCEEDED = LogRecordModel.builder()
@@ -270,12 +246,6 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(114)
                 .template("Unknown validation type: %s")
-                .build();
-
-        public static final LogRecord FAILED_TO_READ_JWKS_FILE = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(115)
-                .template("Failed to read JWKS from file: %s")
                 .build();
 
         public static final LogRecord MISSING_CLAIM = LogRecordModel.builder()
@@ -314,22 +284,10 @@ public final class JWTValidationLogMessages {
                 .template("No configuration found for issuer: %s")
                 .build();
 
-        public static final LogRecord INVALID_BASE64_CONTENT = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(122)
-                .template("Given contentKey '%s' does not resolve to a non base64 encoded String, actual content = %s")
-                .build();
-
         public static final LogRecord ALGORITHM_REJECTED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(123)
                 .template("Algorithm %s is explicitly rejected for security reasons")
-                .build();
-
-        public static final LogRecord KEY_ROTATION_DETECTED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(124)
-                .template("Key rotation detected: JWKS content has changed")
                 .build();
 
         public static final LogRecord INVALID_JWKS_URI = LogRecordModel.builder()

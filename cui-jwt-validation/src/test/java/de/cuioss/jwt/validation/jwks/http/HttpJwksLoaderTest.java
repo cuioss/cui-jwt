@@ -28,7 +28,6 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.Getter;
-import mockwebserver3.MockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -175,20 +174,6 @@ class HttpJwksLoaderTest {
         assertTrue(keyInfo.isPresent(), "Key info should be present");
     }
 
-    @Test
-    @DisplayName("Should count JWKS_FETCH_FAILED event")
-    void shouldCountJwksFetchFailedEvent() {
-        // Get initial count
-        long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_FETCH_FAILED);
-
-        // Manually increment the counter to simulate a fetch failure
-        // This is similar to the approach used in JwksLoaderFactoryTest
-        securityEventCounter.increment(SecurityEventCounter.EventType.JWKS_FETCH_FAILED);
-
-        // Verify that the counter was incremented
-        assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_FETCH_FAILED),
-                "JWKS_FETCH_FAILED event should be incremented");
-    }
 
     @Test
     @DisplayName("Should work with multiple loader instances")
@@ -245,11 +230,11 @@ class HttpJwksLoaderTest {
 
             HttpJwksLoader failingLoader = new HttpJwksLoader(config);
             failingLoader.initJWKSLoader(securityEventCounter);
-            
+
             // Try to get a key, which should fail
             Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
             assertFalse(keyInfo.isPresent(), "Key info should not be present when connection fails");
-            
+
             // Verify the appropriate error was logged
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
                     JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.resolveIdentifierString());
@@ -261,7 +246,7 @@ class HttpJwksLoaderTest {
             // Load a key to trigger URI resolution
             Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
             assertTrue(keyInfo.isPresent(), "Key info should be present");
-            
+
             // Verify the info message was logged
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
                     JWTValidationLogMessages.INFO.JWKS_URI_RESOLVED.resolveIdentifierString());
@@ -273,7 +258,7 @@ class HttpJwksLoaderTest {
             // Load a key to trigger HTTP loading
             Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
             assertTrue(keyInfo.isPresent(), "Key info should be present");
-            
+
             // Verify the info message was logged
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
                     JWTValidationLogMessages.INFO.JWKS_HTTP_LOADED.resolveIdentifierString());
@@ -285,7 +270,7 @@ class HttpJwksLoaderTest {
             // Load a key to trigger keys update
             Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
             assertTrue(keyInfo.isPresent(), "Key info should be present");
-            
+
             // Verify the info message was logged
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
                     JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED.resolveIdentifierString());

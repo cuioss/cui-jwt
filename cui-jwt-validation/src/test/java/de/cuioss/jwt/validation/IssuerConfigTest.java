@@ -20,6 +20,9 @@ import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldImplementEqualsAndHashCode;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldImplementToString;
 import de.cuioss.tools.logging.CuiLogger;
@@ -43,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Oliver Wolff
  * @see <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#multi-issuer">Multi-Issuer Specification</a>
  */
+@EnableTestLogger
 @DisplayName("Tests for IssuerConfig")
 class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldImplementEqualsAndHashCode<IssuerConfig> {
 
@@ -238,6 +242,21 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
                         .enabled(false)
                         .build();
             });
+        }
+
+        @Test
+        @DisplayName("Should log warning when claimSubOptional is true")
+        void shouldLogWarningWhenClaimSubOptionalIsTrue() {
+            // Build config with claimSubOptional set to true
+            var config = IssuerConfig.builder()
+                    .issuerIdentifier(TEST_ISSUER)
+                    .jwksContent(TEST_JWKS_CONTENT)
+                    .claimSubOptional(true)
+                    .build();
+
+            // Verify the warning was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING.resolveIdentifierString());
         }
     }
 }

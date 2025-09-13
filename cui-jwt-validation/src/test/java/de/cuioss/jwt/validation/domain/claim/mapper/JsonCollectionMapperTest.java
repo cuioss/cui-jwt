@@ -16,14 +16,11 @@
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
-import de.cuioss.test.juli.LogAsserts;
-import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;

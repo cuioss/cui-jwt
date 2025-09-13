@@ -16,6 +16,9 @@
 package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
@@ -39,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - Health checking and pending queue management
  * - Error handling for missing/unhealthy issuers
  */
+@EnableTestLogger
 class IssuerConfigResolverTest {
 
     private SecurityEventCounter securityEventCounter;
@@ -162,6 +166,55 @@ class IssuerConfigResolverTest {
 
             assertEquals(initialCount + 1,
                     securityEventCounter.getCount(SecurityEventCounter.EventType.NO_ISSUER_CONFIG));
+        }
+
+        @Test
+        @DisplayName("Should log info for skipped disabled issuer")
+        void shouldLogInfoForSkippedDisabledIssuer() {
+            IssuerConfig enabledConfig = tokenHolder1.getIssuerConfig();
+            IssuerConfig disabledConfig = IssuerConfig.builder()
+                    .enabled(false)
+                    .build();
+
+            IssuerConfigResolver resolver = new IssuerConfigResolver(
+                    List.of(enabledConfig, disabledConfig),
+                    securityEventCounter
+            );
+
+            // The log message is triggered during constructor when processing configs
+            // Verify ISSUER_CONFIG_SKIPPED was logged for disabled issuer
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                    JWTValidationLogMessages.INFO.ISSUER_CONFIG_SKIPPED.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should log warning for unhealthy issuer config")
+        void shouldLogWarningForUnhealthyIssuer() {
+            // Create a config that will be considered unhealthy
+            // An issuer is unhealthy when its JwksLoader status is not OK
+            IssuerConfig config = IssuerConfig.builder()
+                    .issuerIdentifier("https://test-unhealthy-issuer.com")
+                    .jwksContent("invalid-jwks-content") // This will cause loader to be unhealthy
+                    .build();
+
+            // Initialize the config to make it unhealthy
+            config.initSecurityEventCounter(securityEventCounter);
+
+            IssuerConfigResolver resolver = new IssuerConfigResolver(
+                    List.of(config),
+                    securityEventCounter
+            );
+
+            // Try to resolve - this should trigger the unhealthy issuer warning
+            try {
+                resolver.resolveConfig("https://test-unhealthy-issuer.com");
+            } catch (TokenValidationException ignored) {
+                // Expected - unhealthy issuer may cause validation exception
+            }
+            
+            // Verify ISSUER_CONFIG_UNHEALTHY was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.resolveIdentifierString());
         }
     }
 

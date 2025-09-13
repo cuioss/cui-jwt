@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -141,6 +142,9 @@ class HttpJwksLoaderSchedulerTest {
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.INFO,
                 "Background JWKS refresh started with interval: 1");
+        LogAsserts.assertLogMessagePresentContaining(
+                TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.JWKS_BACKGROUND_REFRESH_STARTED.resolveIdentifierString());
 
         loader.shutdown();
 
@@ -177,6 +181,11 @@ class HttpJwksLoaderSchedulerTest {
         await("Background refresh to detect key changes and make additional HTTP call")
                 .atMost(2, SECONDS)
                 .until(() -> moduleDispatcher.getCallCounter() > initialCallCount);
+
+        // Verify background refresh update was logged
+        LogAsserts.assertLogMessagePresentContaining(
+                TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.JWKS_BACKGROUND_REFRESH_UPDATED.resolveIdentifierString());
 
         loader.shutdown();
     }

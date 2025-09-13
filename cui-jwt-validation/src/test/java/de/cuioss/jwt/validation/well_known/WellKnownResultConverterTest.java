@@ -142,10 +142,10 @@ class WellKnownResultConverterTest {
                 .maxPayloadSize(50) // Very small size to trigger the error
                 .build();
         WellKnownConfigurationConverter restrictedConverter = new WellKnownConfigurationConverter(restrictedConfig.getDslJson());
-        
+
         String largeJson = "{\"issuer\": \"" + "x".repeat(100) + "\"}";
         Optional<WellKnownResult> result = restrictedConverter.convert(largeJson);
-        
+
         assertFalse(result.isPresent());
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                 JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.resolveIdentifierString());
