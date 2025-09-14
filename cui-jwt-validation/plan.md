@@ -92,10 +92,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in HttpJwksLoaderSchedulerTest
   - **Action**: VERIFIED - Proper business logic test exists
 
-- [ ] **ISSUER_CONFIG_SKIPPED** (6)
+- [x] **ISSUER_CONFIG_SKIPPED** (6)
   - Production: IssuerConfigResolver.java
-  - Test Status: MISSING
-  - **Action**: Add test with disabled issuer config and verify log
+  - Test Status: Tested in IssuerConfigResolverTest (shouldLogInfoForSkippedDisabledIssuer)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **JWKS_URI_RESOLVED** (8)
   - Production: HttpJwksLoader.java
@@ -154,10 +154,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in TokenClaimValidatorEdgeCaseTest
   - **Action**: VERIFIED - Proper business logic test exists
 
-- [ ] **UNKNOWN_TOKEN_TYPE** (114)
-  - Production: TokenClaimValidator.java
-  - Test Status: MISSING
-  - **Action**: Add test with unknown token type
+- [x] **UNKNOWN_TOKEN_TYPE** (114)
+  - Production: TokenType.java
+  - Test Status: Tested in TokenTypeTest (shouldDefaultToUnknownAndLogWarning)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **MISSING_CLAIM** (116)
   - Production: MandatoryClaimsValidator.java
