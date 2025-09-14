@@ -244,10 +244,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in HttpJwksLoaderSchedulerTest
   - **Action**: VERIFIED - Fixed test expectations
 
-- [ ] **JWKS_URI_RESOLUTION_FAILED** (136)
-  - Production: WellKnownJwksResolver.java
-  - Test Status: MISSING
-  - **Action**: Add test where well-known resolution fails
+- [x] **JWKS_URI_RESOLUTION_FAILED** (136)
+  - Production: HttpJwksLoader.java (line 345)
+  - Test Status: Tested in HttpJwksLoaderTest (shouldLogJwksUriResolutionFailedWhenWellKnownResolverFails)
+  - **Action**: VERIFIED - Added test where well-known resolution fails
 
 - [x] **HTTP_STATUS_WARNING** (137)
   - Production: HttpContentFetcher.java
@@ -334,18 +334,17 @@ These LogRecords cannot be properly tested without complex mocking or thread man
 ## Summary Statistics
 
 - Total LogRecords: 59 (58 JWTValidationLogMessages + 1 HttpLogMessages)
-- Properly Tested: 53 (90%)
-- Missing Tests: 3 (5%)
+- Properly Tested: 54 (91.5%)
+- Missing Tests: 2 (3.5%)
 - Not Feasible: 3 (5%)
 
 ## Status Update (2025-09-14)
 
 ✅ **Completed**: Comprehensive LogRecord test verification
-- Verified 53 out of 59 LogRecords have proper tests with LogAsserts
+- Verified 54 out of 59 LogRecords have proper tests with LogAsserts
 - All verified tests use resolveIdentifierString() pattern
 - 3 LogRecords marked as not feasible to test (require internal mocking)
-- Only 3 LogRecords need tests added:
-  - JWKS_URI_RESOLUTION_FAILED
+- Only 2 LogRecords need tests added:
   - JWKS_JSON_PARSE_FAILED
   - CONTENT_CONVERSION_FAILED
 

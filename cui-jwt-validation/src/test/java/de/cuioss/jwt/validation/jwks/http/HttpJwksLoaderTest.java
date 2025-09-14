@@ -329,5 +329,28 @@ class HttpJwksLoaderTest {
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                     JWTValidationLogMessages.WARN.HTTP_FETCH_FAILED.resolveIdentifierString());
         }
+
+        @Test
+        @DisplayName("Should log JWKS_URI_RESOLUTION_FAILED when well-known resolver cannot resolve JWKS URI")
+        void shouldLogJwksUriResolutionFailedWhenWellKnownResolverFails(URIBuilder uriBuilder) {
+            // Create a well-known config that will fail to resolve JWKS URI
+            // Using an invalid well-known endpoint that returns 404
+            String invalidWellKnownUrl = uriBuilder.addPathSegment("invalid-well-known").buildAsString();
+
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .wellKnownUrl(invalidWellKnownUrl)
+                    .build();
+
+            HttpJwksLoader failingLoader = new HttpJwksLoader(config);
+            failingLoader.initJWKSLoader(securityEventCounter);
+
+            // Try to get a key, which should fail because JWKS URI cannot be resolved
+            Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
+            assertFalse(keyInfo.isPresent(), "Key info should not be present when JWKS URI resolution fails");
+
+            // Verify JWKS_URI_RESOLUTION_FAILED was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED.resolveIdentifierString());
+        }
     }
 }
