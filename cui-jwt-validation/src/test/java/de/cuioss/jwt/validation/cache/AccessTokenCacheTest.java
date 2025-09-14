@@ -300,29 +300,15 @@ class AccessTokenCacheTest {
     }
 
     @Test
-    void shouldLogCacheTokenStoreFailedWhenTokenStorageFails() {
-        // Verify the LogRecord exists
-        assertNotNull(JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED);
-        assertEquals("JWT", JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.getPrefix());
-        assertEquals(212, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.getIdentifier());
-
-        // Since actual storage failure is hard to simulate without mocking internals,
-        // we verify the LogRecord is properly defined and accessible
-        String message = JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.resolveIdentifierString();
-        assertTrue(message.contains("JWT-212"));
-    }
-
-    @Test
-    void shouldLogCacheEvictionFailedWhenCacheEvictionFails() {
-        // Verify the LogRecord exists
-        assertNotNull(JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED);
-        assertEquals("JWT", JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.getPrefix());
-        assertEquals(214, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.getIdentifier());
-
-        // Since actual eviction failure is hard to simulate without mocking internals,
-        // we verify the LogRecord is properly defined and accessible
-        String message = JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.resolveIdentifierString();
-        assertTrue(message.contains("JWT-214"));
+    void shouldHandleCacheEvictionProperly() {
+        // Given - fill cache to capacity first
+        for (int i = 0; i < 10; i++) {
+            String token = "token-" + i;
+            AccessTokenContent content = createAccessToken("https://example.com",
+                    OffsetDateTime.now().plusHours(1));
+            cache.computeIfAbsent(token, t -> content, performanceMonitor);
+        }
+        assertEquals(10, cache.size());
 
         // When - add 11th token to trigger eviction
         String overflowToken = "token-10";

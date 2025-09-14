@@ -99,7 +99,7 @@ public class KeyProcessor {
     private boolean validateKeyParameters(JwkKey jwkKey) {
         // Validate required key type
         if (jwkKey.kty() == null || jwkKey.kty().trim().isEmpty()) {
-            LOGGER.warn(WARN.JWK_KEY_MISSING_KTY::format);
+            LOGGER.warn(WARN.JWK_MISSING_KTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return false;
         }

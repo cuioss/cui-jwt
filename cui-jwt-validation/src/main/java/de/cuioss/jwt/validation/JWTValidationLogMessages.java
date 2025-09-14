@@ -200,12 +200,6 @@ public final class JWTValidationLogMessages {
                 .template("No key found with ID: %s")
                 .build();
 
-        public static final LogRecord JWKS_JSON_PARSE_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(105)
-                .template("Failed to parse JWKS JSON: %s")
-                .build();
-
         public static final LogRecord FAILED_TO_DECODE_JWT = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(106)
@@ -228,12 +222,6 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(111)
                 .template("Unsupported algorithm: %s")
-                .build();
-
-        public static final LogRecord JWKS_MISSING_KEYS = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(112)
-                .template("JWKS JSON does not contain 'keys' array or 'kty' field")
                 .build();
 
         public static final LogRecord TOKEN_NBF_FUTURE = LogRecordModel.builder()
@@ -306,12 +294,6 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(128)
                 .template("Load operation failed with no cached content available")
-                .build();
-
-        public static final LogRecord JWK_KEY_MISSING_KTY = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(129)
-                .template("Key missing required 'kty' parameter")
                 .build();
 
         public static final LogRecord JWK_UNSUPPORTED_KEY_TYPE = LogRecordModel.builder()
@@ -395,7 +377,7 @@ public final class JWTValidationLogMessages {
 
         public static final LogRecord JWK_MISSING_KTY = LogRecordModel.builder()
                 .prefix(PREFIX)
-                .identifier(144)
+                .identifier(129)
                 .template("JWK is missing required field 'kty'")
                 .build();
 
@@ -424,10 +406,10 @@ public final class JWTValidationLogMessages {
                 .template("Operation '%s' failed after %s attempts. Final exception: %s")
                 .build();
 
-        public static final LogRecord JSON_PARSING_FAILED = LogRecordModel.builder()
+        public static final LogRecord JWKS_JSON_PARSE_FAILED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(150)
-                .template("JSON parsing failed for content, returning empty result: %s")
+                .template("Failed to parse JWKS JSON: %s")
                 .build();
 
         public static final LogRecord CLAIM_SUB_OPTIONAL_WARNING = LogRecordModel.builder()

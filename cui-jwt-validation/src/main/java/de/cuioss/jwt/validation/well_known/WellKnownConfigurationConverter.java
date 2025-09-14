@@ -90,11 +90,11 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
         // Check content size limit
         byte[] contentBytes = stringContent.getBytes(StandardCharsets.UTF_8);
         if (contentBytes.length > maxContentSize) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format("Well-known response size exceeds maximum allowed size"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format("Well-known response size exceeds maximum allowed size"));
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             throw new TokenValidationException(
                     EventType.JWKS_JSON_PARSE_FAILED,
-                    JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format("Well-known response size exceeds maximum allowed size")
+                    JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format("Well-known response size exceeds maximum allowed size")
             );
         }
 
@@ -123,11 +123,11 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
             // Check if this is a security limit violation
             String errorMessage = e.getMessage();
             if (isSecurityLimitViolation(errorMessage)) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format(errorMessage));
+                LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format(errorMessage));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 throw new TokenValidationException(
                         EventType.JWKS_JSON_PARSE_FAILED,
-                        JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.format(errorMessage)
+                        JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format(errorMessage)
                 );
             }
 

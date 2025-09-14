@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED;
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import static org.junit.jupiter.api.Assertions.*;
@@ -116,8 +117,8 @@ class JWKSKeyLoaderTest {
             invalidLoader.initJWKSLoader(new SecurityEventCounter());
             Optional<KeyInfo> keyInfo = invalidLoader.getKeyInfo(TEST_KID);
             assertFalse(keyInfo.isPresent(), "Key info should not be present when JWKS is invalid");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    WARN.JWKS_JSON_PARSE_FAILED.resolveIdentifierString());
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                    ERROR.JWKS_INVALID_JSON.resolveIdentifierString());
         }
 
         @Test
@@ -304,7 +305,7 @@ class JWKSKeyLoaderTest {
             Optional<KeyInfo> keyInfo = loader.getKeyInfo("test-kid");
             assertFalse(keyInfo.isPresent(), "Key should not be loaded without kty field");
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    WARN.JWK_KEY_MISSING_KTY.resolveIdentifierString());
+                    WARN.JWK_MISSING_KTY.resolveIdentifierString());
         }
 
         @Test

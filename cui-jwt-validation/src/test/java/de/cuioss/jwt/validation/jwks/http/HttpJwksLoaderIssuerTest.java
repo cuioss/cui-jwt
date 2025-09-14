@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
@@ -100,6 +103,10 @@ class HttpJwksLoaderIssuerTest {
         // Try to get issuer identifier - should return empty since config fails to load
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
         assertFalse(issuer.isPresent(), "Issuer should not be present when config fails to load");
+
+        // Verify the JWKS URI resolution failure was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED.resolveIdentifierString());
     }
 
     @Test

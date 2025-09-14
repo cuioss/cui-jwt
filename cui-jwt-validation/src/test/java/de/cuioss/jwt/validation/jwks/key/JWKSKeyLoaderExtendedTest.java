@@ -127,7 +127,7 @@ class JWKSKeyLoaderExtendedTest {
             keyLoader.initJWKSLoader(securityEventCounter);
 
             assertFalse(keyLoader.isNotEmpty(), "Loader should reject JWKS with empty keys array");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS.resolveIdentifierString());
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY.resolveIdentifierString());
         }
 
         @Test
@@ -148,7 +148,7 @@ class JWKSKeyLoaderExtendedTest {
             keyLoader.initJWKSLoader(securityEventCounter);
 
             assertFalse(keyLoader.isNotEmpty(), "Loader should reject JWKS with excessive keys");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "JWKS keys array exceeds maximum size");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_TOO_LARGE.resolveIdentifierString());
         }
     }
 

@@ -130,8 +130,8 @@ class WellKnownResultConverterTest {
         Optional<WellKnownResult> result = converter.convert(malformedJson);
 
         assertFalse(result.isPresent());
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.resolveIdentifierString());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.resolveIdentifierString());
     }
 
     @Test
@@ -147,8 +147,8 @@ class WellKnownResultConverterTest {
         Optional<WellKnownResult> result = restrictedConverter.convert(largeJson);
 
         assertFalse(result.isPresent());
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                JWTValidationLogMessages.WARN.JSON_PARSING_FAILED.resolveIdentifierString());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.resolveIdentifierString());
     }
 
     @Test

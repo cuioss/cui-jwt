@@ -114,7 +114,7 @@ public class JwksParser {
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         } else {
             // If both parsing attempts failed with no IOException, it's likely a structure issue
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_MISSING_KEYS::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
         return result;

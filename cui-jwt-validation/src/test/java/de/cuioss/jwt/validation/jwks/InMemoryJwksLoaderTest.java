@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -90,7 +91,8 @@ class InMemoryJwksLoaderTest {
         invalidJwksLoader.initJWKSLoader(securityEventCounter);
         Optional<Key> key = invalidJwksLoader.getKeyInfo(InMemoryJWKSFactory.DEFAULT_KEY_ID).map(KeyInfo::key);
         assertFalse(key.isPresent(), "Key should not be present for invalid JWKS");
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR, "Failed to parse JWKS JSON");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.resolveIdentifierString());
 
     }
 

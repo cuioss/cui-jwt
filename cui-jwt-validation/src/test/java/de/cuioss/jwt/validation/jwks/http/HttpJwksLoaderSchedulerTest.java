@@ -107,6 +107,10 @@ class HttpJwksLoaderSchedulerTest {
         // Scheduler should not be active with zero interval
         assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should not be active with zero interval");
 
+        // Verify the warning was logged about skipping background refresh
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_SKIPPED.resolveIdentifierString());
+
         loader.shutdown();
     }
 
@@ -227,6 +231,11 @@ class HttpJwksLoaderSchedulerTest {
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.WARN,
                 "HTTP 500 (Server Error (500-599))");
+
+        // Verify background refresh failure was logged
+        LogAsserts.assertLogMessagePresentContaining(
+                TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.resolveIdentifierString());
 
         loader.shutdown();
     }

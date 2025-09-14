@@ -55,7 +55,7 @@ class JwksParserLargeArrayTest {
         StringBuilder jwksBuilder = new StringBuilder("{\"keys\":[");
         for (int i = 0; i < 51; i++) {
             if (i > 0) jwksBuilder.append(",");
-            jwksBuilder.append(String.format("""
+            jwksBuilder.append("""
                 {
                     "kty": "RSA",
                     "kid": "key-%d",
@@ -63,22 +63,22 @@ class JwksParserLargeArrayTest {
                     "alg": "RS256",
                     "n": "test-modulus-%d",
                     "e": "AQAB"
-                }""", i, i));
+                }""".formatted(i, i));
         }
         jwksBuilder.append("]}");
-        
+
         String oversizedJwks = jwksBuilder.toString();
-        
+
         // Parse the oversized JWKS
         List<JwkKey> result = parser.parse(oversizedJwks);
-        
+
         // Should reject the entire JWKS for security
         assertTrue(result.isEmpty(), "Should reject oversized JWKS for DoS protection");
-        
+
         // Verify the warning was logged
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                 JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_TOO_LARGE.resolveIdentifierString());
-        
+
         // Verify the security event was counted
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED),
                 "Should count as security event");
@@ -91,7 +91,7 @@ class JwksParserLargeArrayTest {
         StringBuilder jwksBuilder = new StringBuilder("{\"keys\":[");
         for (int i = 0; i < 50; i++) {
             if (i > 0) jwksBuilder.append(",");
-            jwksBuilder.append(String.format("""
+            jwksBuilder.append("""
                 {
                     "kty": "RSA",
                     "kid": "key-%d",
@@ -99,18 +99,18 @@ class JwksParserLargeArrayTest {
                     "alg": "RS256",
                     "n": "test-modulus-%d",
                     "e": "AQAB"
-                }""", i, i));
+                }""".formatted(i, i));
         }
         jwksBuilder.append("]}");
-        
+
         String maxSizeJwks = jwksBuilder.toString();
-        
+
         // Parse the max-size JWKS
         List<JwkKey> result = parser.parse(maxSizeJwks);
-        
+
         // Should accept exactly 50 keys
         assertEquals(50, result.size(), "Should accept all 50 keys (at limit)");
-        
+
         // No security event should be counted
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED),
                 "Should not count as error for exactly 50 keys");

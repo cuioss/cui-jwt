@@ -371,7 +371,7 @@ class HttpJwksLoaderConfigTest {
                         .jwksUrl("not-a-valid-url://invalid")
                         .refreshIntervalSeconds(REFRESH_INTERVAL)
                         .build());
-        
+
         // Verify the warning was logged
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
                 JWTValidationLogMessages.WARN.INVALID_JWKS_URI.resolveIdentifierString());
