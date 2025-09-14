@@ -104,9 +104,9 @@ class HttpJwksLoaderIssuerTest {
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
         assertFalse(issuer.isPresent(), "Issuer should not be present when config fails to load");
 
-        // Verify the JWKS URI resolution failure was logged
+        // Verify the HTTP status warning was logged (when well-known config fails to load with 500 error)
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED.resolveIdentifierString());
+                JWTValidationLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
     }
 
     @Test
