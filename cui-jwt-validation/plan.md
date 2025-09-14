@@ -55,10 +55,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: REMOVED (was nonsense test)
   - **Action**: Cannot be properly tested without mocking internals - document as "not feasible"
 
-- [ ] **CACHE_VALIDATION_FUNCTION_NULL** (213)
+- [x] **CACHE_VALIDATION_FUNCTION_NULL** (213)
   - Production: AccessTokenCache.java
-  - Test Status: MISSING
-  - **Action**: Add test that triggers null validation function scenario
+  - Test Status: Tested in AccessTokenCacheTest (validationFunctionReturnsNull)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **CACHE_EVICTION_FAILED** (214)
   - Production: AccessTokenCache.java
@@ -82,15 +82,15 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in HttpJwksLoaderTest
   - **Action**: VERIFIED - Fixed test expectations
 
-- [ ] **JWKS_BACKGROUND_REFRESH_STARTED** (4)
+- [x] **JWKS_BACKGROUND_REFRESH_STARTED** (4)
   - Production: HttpJwksLoader scheduler
-  - Test Status: Tested in HttpJwksLoaderSchedulerTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in HttpJwksLoaderSchedulerTest (shouldStartSchedulerWhenRequested)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWKS_BACKGROUND_REFRESH_UPDATED** (5)
+- [x] **JWKS_BACKGROUND_REFRESH_UPDATED** (5)
   - Production: HttpJwksLoader scheduler
-  - Test Status: Tested in HttpJwksLoaderSchedulerTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in HttpJwksLoaderSchedulerTest (shouldPerformBackgroundRefresh)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **ISSUER_CONFIG_SKIPPED** (6)
   - Production: IssuerConfigResolver.java
@@ -114,35 +114,35 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
 
 ### WARN Level LogRecords
 
-- [ ] **TOKEN_SIZE_EXCEEDED** (100)
+- [x] **TOKEN_SIZE_EXCEEDED** (100)
   - Production: NonValidatingJwtParser.java
-  - Test Status: Tested in NonValidatingJwtParserTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in NonValidatingJwtParserTest (multiple tests)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **TOKEN_IS_EMPTY** (101)
+- [x] **TOKEN_IS_EMPTY** (101)
   - Production: NonValidatingJwtParser.java
-  - Test Status: Tested in NonValidatingJwtParserTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in TokenValidatorTest (shouldLogWarningWhenTokenIsEmpty)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **KEY_NOT_FOUND** (102)
   - Production: TokenSignatureValidator.java
   - Test Status: Tested in TokenSignatureValidatorTest (shouldRejectTokenWhenKeyNotFound)
   - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **FAILED_TO_DECODE_JWT** (106)
+- [x] **FAILED_TO_DECODE_JWT** (106)
   - Production: NonValidatingJwtParser.java
-  - Test Status: Tested in NonValidatingJwtParserTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in NonValidatingJwtParserTest and TokenValidatorTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **INVALID_JWT_FORMAT** (107)
+- [x] **INVALID_JWT_FORMAT** (107)
   - Production: NonValidatingJwtParser.java
-  - Test Status: Tested in NonValidatingJwtParserTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in NonValidatingJwtParserTest (shouldHandleInvalidToken)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **DECODED_PART_SIZE_EXCEEDED** (110)
+- [x] **DECODED_PART_SIZE_EXCEEDED** (110)
   - Production: NonValidatingJwtParser.java
   - Test Status: Tested in NonValidatingJwtParserTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **UNSUPPORTED_ALGORITHM** (111)
   - Production: TokenHeaderValidator.java
