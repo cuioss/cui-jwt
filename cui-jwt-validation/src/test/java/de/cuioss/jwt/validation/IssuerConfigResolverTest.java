@@ -147,6 +147,10 @@ class IssuerConfigResolverTest {
 
             assertTrue(exception.getMessage().contains("unknown-issuer.com"));
             assertEquals(SecurityEventCounter.EventType.NO_ISSUER_CONFIG, exception.getEventType());
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.NO_ISSUER_CONFIG.resolveIdentifierString());
         }
 
         @Test

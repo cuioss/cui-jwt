@@ -45,10 +45,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in WellKnownResultConverterTest
   - **Action**: VERIFIED - Proper business logic test exists
 
-- [ ] **CACHE_TOKEN_NO_EXPIRATION** (211)
+- [x] **CACHE_TOKEN_NO_EXPIRATION** (211)
   - Production: AccessTokenCache.java
-  - Test Status: MISSING
-  - **Action**: Add test in AccessTokenCacheTest that passes a token without expiration to cache and verifies the error log
+  - Test Status: Tested in AccessTokenCacheTest (tokenWithoutExpirationThrowsException)
+  - **Action**: VERIFIED - Proper business logic test exists
 
 - [ ] **CACHE_TOKEN_STORE_FAILED** (212)
   - Production: AccessTokenCache.java
@@ -124,10 +124,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in NonValidatingJwtParserTest
   - **Action**: VERIFIED - Proper business logic test exists
 
-- [ ] **KEY_NOT_FOUND** (102)
-  - Production: JWKSKeyLoader.java
-  - Test Status: MISSING
-  - **Action**: Add test that requests non-existent key and verifies warning
+- [x] **KEY_NOT_FOUND** (102)
+  - Production: TokenSignatureValidator.java
+  - Test Status: Tested in TokenSignatureValidatorTest (shouldRejectTokenWhenKeyNotFound)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **FAILED_TO_DECODE_JWT** (106)
   - Production: NonValidatingJwtParser.java
@@ -184,10 +184,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in AudienceValidatorTest
   - **Action**: VERIFIED - Proper business logic test exists
 
-- [ ] **NO_ISSUER_CONFIG** (121)
+- [x] **NO_ISSUER_CONFIG** (121)
   - Production: IssuerConfigResolver.java
-  - Test Status: MISSING
-  - **Action**: Add test with unknown issuer
+  - Test Status: Tested in IssuerConfigResolverTest (throwsTokenValidationExceptionForMissingIssuer)
+  - **Action**: VERIFIED - Added LogAsserts verification
 
 - [ ] **ALGORITHM_REJECTED** (123)
   - Production: SignatureAlgorithmPreferences.java
