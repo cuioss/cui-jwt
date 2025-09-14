@@ -144,55 +144,55 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in NonValidatingJwtParserTest
   - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **UNSUPPORTED_ALGORITHM** (111)
+- [x] **UNSUPPORTED_ALGORITHM** (111)
   - Production: TokenHeaderValidator.java
-  - Test Status: Tested in TokenHeaderValidatorTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in TokenHeaderValidatorTest (shouldRejectTokenWithUnsupportedAlgorithm)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **TOKEN_NBF_FUTURE** (113)
+- [x] **TOKEN_NBF_FUTURE** (113)
   - Production: ExpirationValidator.java
   - Test Status: Tested in TokenClaimValidatorEdgeCaseTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **UNKNOWN_TOKEN_TYPE** (114)
   - Production: TokenType.java
   - Test Status: Tested in TokenTypeTest (shouldDefaultToUnknownAndLogWarning)
   - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **MISSING_CLAIM** (116)
+- [x] **MISSING_CLAIM** (116)
   - Production: MandatoryClaimsValidator.java
-  - Test Status: Tested in MandatoryClaimsValidatorTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in MandatoryClaimsValidatorTest (shouldFailValidationWhenSubjectClaimIsMissing)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **TOKEN_EXPIRED** (117)
+- [x] **TOKEN_EXPIRED** (117)
   - Production: ExpirationValidator.java
-  - Test Status: Tested in ExpirationValidatorTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in TokenClaimValidatorEdgeCaseTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **AZP_MISMATCH** (118)
+- [x] **AZP_MISMATCH** (118)
   - Production: AuthorizedPartyValidator.java
-  - Test Status: Tested in AuthorizedPartyValidatorTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in AuthorizedPartyValidatorTest (multiple tests)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **MISSING_RECOMMENDED_ELEMENT** (119)
   - Production: TokenClaimValidator.java
   - Test Status: Tested in TokenClaimValidatorTest$ConstructorTests (3 test methods)
   - **Action**: VERIFIED - Proper business logic tests exist with LogAsserts
 
-- [ ] **AUDIENCE_MISMATCH** (120)
+- [x] **AUDIENCE_MISMATCH** (120)
   - Production: AudienceValidator.java
-  - Test Status: Tested in AudienceValidatorTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in AudienceValidatorTest (multiple tests)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **NO_ISSUER_CONFIG** (121)
   - Production: IssuerConfigResolver.java
   - Test Status: Tested in IssuerConfigResolverTest (throwsTokenValidationExceptionForMissingIssuer)
   - **Action**: VERIFIED - Added LogAsserts verification
 
-- [ ] **ALGORITHM_REJECTED** (123)
+- [x] **ALGORITHM_REJECTED** (123)
   - Production: SignatureAlgorithmPreferences.java
-  - Test Status: Tested in SignatureAlgorithmPreferencesTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in SignatureAlgorithmPreferencesTest (shouldReturnFalseForRejected)
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **INVALID_JWKS_URI** (126)
   - Production: HttpJwksLoaderConfig.java
@@ -209,10 +209,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in HttpJwksLoaderTest
   - **Action**: VERIFIED - Proper business logic test exists
 
-- [ ] **JWK_MISSING_KTY** (129)
+- [x] **JWK_MISSING_KTY** (129)
   - Production: JwksParser.java, KeyProcessor.java
-  - Test Status: Tested in JwksParserTest, JWKSKeyLoaderTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in JwksParserTest and JWKSKeyLoaderTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **JWK_UNSUPPORTED_KEY_TYPE** (130)
   - Production: KeyProcessor.java
@@ -254,10 +254,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in HttpJwksLoaderIssuerTest and HttpJwksLoaderSchedulerTest
   - **Action**: VERIFIED - Fixed test expectations
 
-- [ ] **HTTP_FETCH_FAILED** (138)
+- [x] **HTTP_FETCH_FAILED** (138)
   - Production: HttpContentFetcher.java
   - Test Status: Tested in HttpJwksLoaderTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **HTTP_FETCH_INTERRUPTED** (139)
   - Production: HttpContentFetcher.java
