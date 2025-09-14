@@ -194,45 +194,45 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: Tested in SignatureAlgorithmPreferencesTest (shouldReturnFalseForRejected)
   - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **INVALID_JWKS_URI** (126)
+- [x] **INVALID_JWKS_URI** (126)
   - Production: HttpJwksLoaderConfig.java
-  - Test Status: MISSING
-  - **Action**: Add test with invalid URI in config
+  - Test Status: Tested in HttpJwksLoaderConfigTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWKS_LOAD_FAILED_CACHED_CONTENT** (127)
+- [x] **JWKS_LOAD_FAILED_CACHED_CONTENT** (127)
   - Production: HttpJwksLoader.java
-  - Test Status: MISSING
-  - **Action**: Add test that fails loading but has cached content
+  - Test Status: Tested in ResilientHttpHandlerIntegrationTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWKS_LOAD_FAILED_NO_CACHE** (128)
+- [x] **JWKS_LOAD_FAILED_NO_CACHE** (128)
   - Production: HttpJwksLoader.java
   - Test Status: Tested in HttpJwksLoaderTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **JWK_MISSING_KTY** (129)
   - Production: JwksParser.java, KeyProcessor.java
   - Test Status: Tested in JwksParserTest and JWKSKeyLoaderTest
   - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWK_UNSUPPORTED_KEY_TYPE** (130)
+- [x] **JWK_UNSUPPORTED_KEY_TYPE** (130)
   - Production: KeyProcessor.java
-  - Test Status: MISSING
-  - **Action**: Add test with unsupported key type (not RSA/EC)
+  - Test Status: Tested in JWKSKeyLoaderTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWK_KEY_ID_TOO_LONG** (131)
+- [x] **JWK_KEY_ID_TOO_LONG** (131)
   - Production: KeyProcessor.java
-  - Test Status: MISSING
-  - **Action**: Add test with key ID exceeding 100 characters
+  - Test Status: Tested in JWKSKeyLoaderTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWK_INVALID_ALGORITHM** (132)
+- [x] **JWK_INVALID_ALGORITHM** (132)
   - Production: KeyProcessor.java
-  - Test Status: MISSING
-  - **Action**: Add test with invalid algorithm in JWK
+  - Test Status: Tested in JWKSKeyLoaderTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **ISSUER_CONFIG_UNHEALTHY** (133)
+- [x] **ISSUER_CONFIG_UNHEALTHY** (133)
   - Production: IssuerConfigResolver.java
-  - Test Status: MISSING
-  - **Action**: Add test with unhealthy issuer config
+  - Test Status: Tested in IssuerConfigResolverTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [x] **BACKGROUND_REFRESH_SKIPPED** (134)
   - Production: HttpJwksLoader.java
@@ -264,50 +264,50 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - Test Status: MISSING (Thread interruption not feasible to test)
   - **Action**: Document as "not feasible - requires thread interruption"
 
-- [ ] **JWKS_OBJECT_NULL** (140)
+- [x] **JWKS_OBJECT_NULL** (140)
   - Production: JwksParser.java
-  - Test Status: MISSING
-  - **Action**: Add test that triggers null JWKS object scenario
+  - Test Status: Tested in JwksParserTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWKS_KEYS_ARRAY_TOO_LARGE** (142)
+- [x] **JWKS_KEYS_ARRAY_TOO_LARGE** (142)
   - Production: JwksParser.java
-  - Test Status: Tested in JwksParserLargeArrayTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in JwksParserLargeArrayTest and JWKSKeyLoaderExtendedTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **JWKS_KEYS_ARRAY_EMPTY** (143)
+- [x] **JWKS_KEYS_ARRAY_EMPTY** (143)
   - Production: JwksParser.java
-  - Test Status: MISSING
-  - **Action**: Add test with empty keys array
+  - Test Status: Tested in JwksParserTest and JWKSKeyLoaderExtendedTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **RSA_KEY_PARSE_FAILED** (145)
+- [x] **RSA_KEY_PARSE_FAILED** (145)
   - Production: KeyProcessor.java
-  - Test Status: MISSING
-  - **Action**: Add test with malformed RSA key
+  - Test Status: Tested in JWKSKeyLoaderTest and JWKSKeyLoaderExtendedTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **EC_KEY_PARSE_FAILED** (146)
+- [x] **EC_KEY_PARSE_FAILED** (146)
   - Production: KeyProcessor.java
-  - Test Status: MISSING
-  - **Action**: Add test with malformed EC key
+  - Test Status: Tested in JWKSKeyLoaderTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **RETRY_OPERATION_FAILED** (147)
+- [x] **RETRY_OPERATION_FAILED** (147)
   - Production: RetryableOperation.java
-  - Test Status: MISSING
-  - **Action**: Add test where retry operation fails after all attempts
+  - Test Status: Tested in ExponentialBackoffRetryStrategyTest and JwtRetryMetricsTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
-- [ ] **RETRY_MAX_ATTEMPTS_REACHED** (149)
+- [x] **RETRY_MAX_ATTEMPTS_REACHED** (149)
   - Production: RetryableOperation.java
-  - Test Status: MISSING
-  - **Action**: Add test reaching max retry attempts
+  - Test Status: Tested in ExponentialBackoffRetryStrategyTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **JWKS_JSON_PARSE_FAILED** (150)
   - Production: JWKSKeyLoader.java
   - Test Status: MISSING
   - **Action**: Add test with unparseable JWKS JSON
 
-- [ ] **CLAIM_SUB_OPTIONAL_WARNING** (151)
+- [x] **CLAIM_SUB_OPTIONAL_WARNING** (151)
   - Production: IssuerConfig.java
-  - Test Status: Tested in IssuerConfigClaimSubOptionalTest
-  - **Action**: VERIFIED - Proper business logic test exists
+  - Test Status: Tested in IssuerConfigTest and IssuerConfigClaimSubOptionalTest
+  - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 ## HttpLogMessages Analysis
 
