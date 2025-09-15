@@ -184,6 +184,20 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(64)
                 .build();
+
+        // Access Log Filter Messages (065-070)
+
+        public static final LogRecord CUSTOM_ACCESS_LOG_FILTER_INITIALIZED = LogRecordModel.builder()
+                .template("CustomAccessLogFilter initialized: %s")
+                .prefix(PREFIX)
+                .identifier(65)
+                .build();
+
+        public static final LogRecord ACCESS_LOG_ENTRY = LogRecordModel.builder()
+                .template("%s")
+                .prefix(PREFIX)
+                .identifier(66)
+                .build();
     }
 
     /**
@@ -277,6 +291,26 @@ public final class CuiJwtQuarkusLogMessages {
                 .template("JWKS background loading completed with errors or timeout: %s")
                 .prefix(PREFIX)
                 .identifier(132)
+                .build();
+
+        // Metrics Warnings (133-140)
+
+        public static final LogRecord NO_MICROMETER_COUNTER_FOUND = LogRecordModel.builder()
+                .template("No Micrometer counter found for event type %s, delta %s lost")
+                .prefix(PREFIX)
+                .identifier(133)
+                .build();
+
+        public static final LogRecord JWKS_LOADING_RETRY_WARNING = LogRecordModel.builder()
+                .template("JWKS loading failed for issuer %s: %s - will retry via background refresh")
+                .prefix(PREFIX)
+                .identifier(134)
+                .build();
+
+        public static final LogRecord BACKGROUND_JWKS_ISSUES_WARNING = LogRecordModel.builder()
+                .template("Background JWKS initialization encountered issues: %s - on-demand loading will handle this")
+                .prefix(PREFIX)
+                .identifier(135)
                 .build();
     }
 

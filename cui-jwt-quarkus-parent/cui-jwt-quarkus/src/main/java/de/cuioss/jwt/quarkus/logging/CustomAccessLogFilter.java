@@ -34,6 +34,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+
 /**
  * Custom HTTP access log filter with configurable status code and path filtering.
  * This filter provides more granular control than Quarkus built-in access logging,
@@ -74,7 +76,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
         this.includePathMatchers = config.getIncludePathMatchers();
         this.excludePathMatchers = config.getExcludePathMatchers();
 
-        LOGGER.info("CustomAccessLogFilter initialized: %s", config);
+        LOGGER.info(INFO.CUSTOM_ACCESS_LOG_FILTER_INITIALIZED.format(config));
     }
 
     @Override
@@ -110,7 +112,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
 
         // Format and log the access entry
         String logEntry = formatLogEntry(requestContext, responseContext, duration);
-        LOGGER.info(logEntry);
+        LOGGER.info(INFO.ACCESS_LOG_ENTRY.format(logEntry));
     }
 
     /**

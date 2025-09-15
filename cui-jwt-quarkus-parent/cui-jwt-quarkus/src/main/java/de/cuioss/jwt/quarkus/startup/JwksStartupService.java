@@ -95,7 +95,7 @@ public class JwksStartupService {
         managedExecutor.runAsync(() -> loadAllJwksAsync(issuerConfigs))
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
-                        LOGGER.warn("Background JWKS initialization encountered issues: " + throwable.getMessage() + " - on-demand loading will handle this");
+                        LOGGER.warn(WARN.BACKGROUND_JWKS_ISSUES_WARNING.format(throwable.getMessage()));
                     } else {
                         LOGGER.info(INFO.BACKGROUND_JWKS_INITIALIZATION_COMPLETED.format());
                     }
@@ -158,7 +158,7 @@ public class JwksStartupService {
                     LOGGER.debug("JWKS loading returned status %s for issuer: %s - will retry via background refresh", status, issuerId);
                 }
             } catch (Exception e) {
-                LOGGER.warn("JWKS loading failed for issuer %s: %s - will retry via background refresh", issuerId, e.getMessage());
+                LOGGER.warn(WARN.JWKS_LOADING_RETRY_WARNING.format(issuerId, e.getMessage()));
                 // Don't re-throw - let background refresh handle retries
             }
         } else {
