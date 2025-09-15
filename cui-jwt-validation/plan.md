@@ -300,9 +300,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
   - **Action**: VERIFIED - Proper business logic test exists with LogAsserts
 
 - [ ] **JWKS_JSON_PARSE_FAILED** (150)
-  - Production: JWKSKeyLoader.java
-  - Test Status: MISSING
-  - **Action**: Add test with unparseable JWKS JSON
+  - Production: JWKSKeyLoader.java handleParseError() method
+  - Test Status: UNREACHABLE CODE - handleParseError() is never called
+  - **Action**: Dead code - the catch(IllegalArgumentException) in initializeKeys() is unreachable
+  - **Note**: JwksParser.parse() never throws IllegalArgumentException, it handles all errors internally
 
 - [x] **CLAIM_SUB_OPTIONAL_WARNING** (151)
   - Production: IssuerConfig.java
@@ -311,10 +312,10 @@ Complete analysis of all LogRecords in cui-jwt-validation module to identify:
 
 ## HttpLogMessages Analysis
 
-- [ ] **CONTENT_CONVERSION_FAILED** (HTTP-100)
-  - Production: ResilientHttpHandler.java
-  - Test Status: REMOVED (was nonsense test)
-  - **Action**: Add test where HTTP response conversion fails
+- [x] **CONTENT_CONVERSION_FAILED** (HTTP-100)
+  - Production: ResilientHttpHandler.java line 240
+  - Test Status: Tested in ResilientHttpHandlerIntegrationTest.shouldLogContentConversionFailedWhenConverterReturnsEmpty
+  - **Action**: VERIFIED - Added test with HttpContentConverter that returns empty Optional
 
 ## Improper Testing Patterns Found
 
@@ -334,19 +335,18 @@ These LogRecords cannot be properly tested without complex mocking or thread man
 ## Summary Statistics
 
 - Total LogRecords: 59 (58 JWTValidationLogMessages + 1 HttpLogMessages)
-- Properly Tested: 54 (91.5%)
-- Missing Tests: 2 (3.5%)
-- Not Feasible: 3 (5%)
+- Properly Tested: 55 (93.2%)
+- Unreachable Code: 1 (1.7%) - JWKS_JSON_PARSE_FAILED
+- Not Feasible: 3 (5.1%) - require internal mocking or thread manipulation
 
-## Status Update (2025-09-14)
+## Status Update (2025-09-15)
 
 ✅ **Completed**: Comprehensive LogRecord test verification
-- Verified 54 out of 59 LogRecords have proper tests with LogAsserts
+- Verified 55 out of 59 LogRecords have proper tests with LogAsserts
 - All verified tests use resolveIdentifierString() pattern
+- 1 LogRecord identified as unreachable/dead code (JWKS_JSON_PARSE_FAILED in JWKSKeyLoader)
 - 3 LogRecords marked as not feasible to test (require internal mocking)
-- Only 2 LogRecords need tests added:
-  - JWKS_JSON_PARSE_FAILED
-  - CONTENT_CONVERSION_FAILED
+- Added test for CONTENT_CONVERSION_FAILED in ResilientHttpHandlerIntegrationTest
 
 ## Priority Actions
 

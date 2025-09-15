@@ -24,6 +24,7 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import de.cuioss.tools.net.http.HttpHandler;
+import de.cuioss.tools.net.http.converter.HttpContentConverter;
 import de.cuioss.tools.net.http.converter.StringContentConverter;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
 import de.cuioss.tools.net.http.result.HttpResultObject;
@@ -525,5 +526,44 @@ class ResilientHttpHandlerIntegrationTest {
         // Then status should be OK again
         assertTrue(successResult.isValid());
         assertEquals(LoaderStatus.OK, handler.getLoaderStatus());
+    }
+
+    @Test
+    @DisplayName("Should log CONTENT_CONVERSION_FAILED when content converter returns empty Optional")
+    void shouldLogContentConversionFailedWhenConverterReturnsEmpty() {
+        // Given a content converter that always returns empty Optional
+        HttpContentConverter<String> failingConverter = new HttpContentConverter<String>() {
+            @Override
+            public Optional<String> convert(Object rawContent) {
+                // Always return empty to trigger CONTENT_CONVERSION_FAILED
+                return Optional.empty();
+            }
+            
+            @Override
+            public java.net.http.HttpResponse.BodyHandler<?> getBodyHandler() {
+                return java.net.http.HttpResponse.BodyHandlers.ofString();
+            }
+            
+            @Override
+            public String emptyValue() {
+                return "";
+            }
+        };
+        
+        // Setup handler with the failing converter
+        ResilientHttpHandler<String> handler = new ResilientHttpHandler<>(httpHandlerProvider, failingConverter);
+
+        // When loading content with successful HTTP response but failing conversion
+        moduleDispatcher.setResponseMode(TestContentDispatcher.ResponseMode.SUCCESS_V1);
+        HttpResultObject<String> result = handler.load();
+
+        // Then result should be invalid
+        assertFalse(result.isValid());
+        assertTrue(result.getHttpErrorCategory().isPresent());
+        assertEquals(HttpErrorCategory.CLIENT_ERROR, result.getHttpErrorCategory().get());
+        
+        // Verify CONTENT_CONVERSION_FAILED was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                de.cuioss.tools.net.http.HttpLogMessages.WARN.CONTENT_CONVERSION_FAILED.resolveIdentifierString());
     }
 }
