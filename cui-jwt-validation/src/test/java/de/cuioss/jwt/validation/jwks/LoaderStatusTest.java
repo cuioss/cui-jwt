@@ -15,8 +15,8 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

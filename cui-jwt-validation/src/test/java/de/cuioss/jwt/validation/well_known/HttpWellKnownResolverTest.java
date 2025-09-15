@@ -15,13 +15,13 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
-import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

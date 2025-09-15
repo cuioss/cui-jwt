@@ -15,10 +15,10 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.client.LoadingStatusProvider;
 import lombok.NonNull;
 
 import java.util.Optional;

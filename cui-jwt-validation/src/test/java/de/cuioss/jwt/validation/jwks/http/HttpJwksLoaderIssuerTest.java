@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.HttpLogMessages;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.test.juli.LogAsserts;
@@ -22,7 +23,6 @@ import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
-import de.cuioss.tools.net.http.HttpLogMessages;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

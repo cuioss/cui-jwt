@@ -15,11 +15,11 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.http.client.HttpHandlerProvider;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
-import de.cuioss.tools.net.http.client.HttpHandlerProvider;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;

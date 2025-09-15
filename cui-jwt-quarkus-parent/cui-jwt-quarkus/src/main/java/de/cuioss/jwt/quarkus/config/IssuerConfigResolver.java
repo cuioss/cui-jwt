@@ -15,13 +15,13 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;

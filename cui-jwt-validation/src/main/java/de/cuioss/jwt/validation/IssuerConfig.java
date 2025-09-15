@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
@@ -23,8 +25,6 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.client.LoadingStatusProvider;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;

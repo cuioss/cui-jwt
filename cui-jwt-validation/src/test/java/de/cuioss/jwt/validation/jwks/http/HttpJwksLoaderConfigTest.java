@@ -15,12 +15,12 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -398,7 +398,7 @@ class HttpJwksLoaderConfigTest {
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
 
-        // Verify the contract: WellKnownConfig is guaranteed non-null for well-known configurations  
+        // Verify the contract: WellKnownConfig is guaranteed non-null for well-known configurations
         assertNotNull(config.getWellKnownConfig(), "WellKnownConfig must be non-null for well-known configurations");
         // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
         assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");

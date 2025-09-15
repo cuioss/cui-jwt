@@ -16,10 +16,10 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import com.dslplatform.json.DslJson;
+import de.cuioss.http.client.converter.StringContentConverter;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.converter.StringContentConverter;
 import lombok.NonNull;
 
 import java.io.IOException;

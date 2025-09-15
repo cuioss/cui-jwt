@@ -15,6 +15,9 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.ResilientHttpHandler;
+import de.cuioss.http.client.result.HttpResultObject;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
@@ -24,9 +27,6 @@ import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.client.ResilientHttpHandler;
-import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.uimodel.result.ResultState;
 import org.jspecify.annotations.NonNull;
 

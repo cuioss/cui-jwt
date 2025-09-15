@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.producer;
 
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
@@ -25,7 +26,6 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;

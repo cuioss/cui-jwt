@@ -15,12 +15,12 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
+import de.cuioss.http.client.retry.RetryContext;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import de.cuioss.tools.net.http.retry.RetryContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

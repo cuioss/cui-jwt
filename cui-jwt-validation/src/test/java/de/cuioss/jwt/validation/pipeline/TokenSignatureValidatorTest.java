@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
@@ -32,7 +33,6 @@ import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
+import de.cuioss.http.client.retry.RetryContext;
+import de.cuioss.http.client.retry.RetryMetrics;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.retry.RetryContext;
-import de.cuioss.tools.net.http.retry.RetryMetrics;
 import lombok.NonNull;
 
 import java.time.Duration;
@@ -28,22 +28,22 @@ import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 /**
  * JWT-specific implementation of {@link RetryMetrics} that integrates with the
  * existing {@link TokenValidatorMonitor} metrics infrastructure.
- * 
+ *
  * This implementation records retry metrics using the established JWT validation
  * measurement types and provides detailed observability into retry behavior for
  * HTTP operations related to JWT validation (primarily JWKS loading).
- * 
+ *
  * <p><strong>Recorded Metrics:</strong></p>
  * <ul>
  *   <li>{@link MeasurementType#RETRY_ATTEMPT} - Individual attempt durations</li>
  *   <li>{@link MeasurementType#RETRY_COMPLETE} - Complete retry operation durations</li>
  *   <li>{@link MeasurementType#RETRY_DELAY} - Actual delay times between attempts</li>
  * </ul>
- * 
+ *
  * <p><strong>Thread Safety:</strong></p>
  * This implementation is thread-safe as it delegates to the thread-safe
  * {@link TokenValidatorMonitor}.
- * 
+ *
  * @author Oliver Wolff
  * @since 1.0
  */
@@ -55,7 +55,7 @@ public class JwtRetryMetrics implements RetryMetrics {
 
     /**
      * Creates a new JWT retry metrics recorder with the specified monitor.
-     * 
+     *
      * @param monitor the token validator monitor to record metrics to (must not be null)
      */
     public JwtRetryMetrics(@NonNull TokenValidatorMonitor monitor) {

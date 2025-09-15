@@ -15,10 +15,10 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.ToString;

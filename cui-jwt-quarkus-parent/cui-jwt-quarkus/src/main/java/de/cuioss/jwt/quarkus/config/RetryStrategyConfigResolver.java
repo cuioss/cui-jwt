@@ -15,8 +15,8 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
-import de.cuioss.tools.net.http.retry.ExponentialBackoffRetryStrategy;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
+import de.cuioss.http.client.retry.ExponentialBackoffRetryStrategy;
+import de.cuioss.http.client.retry.RetryStrategy;
 
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;

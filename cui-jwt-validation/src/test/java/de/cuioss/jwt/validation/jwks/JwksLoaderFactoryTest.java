@@ -15,14 +15,14 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

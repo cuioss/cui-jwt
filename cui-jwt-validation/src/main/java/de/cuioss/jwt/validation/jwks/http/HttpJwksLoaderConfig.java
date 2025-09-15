@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.HttpHandlerProvider;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
@@ -22,8 +24,6 @@ import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
-import de.cuioss.tools.net.http.client.HttpHandlerProvider;
-import de.cuioss.tools.net.http.retry.RetryStrategy;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;

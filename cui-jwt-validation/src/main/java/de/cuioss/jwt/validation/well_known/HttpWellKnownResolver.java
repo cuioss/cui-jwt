@@ -15,12 +15,12 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.LoadingStatusProvider;
+import de.cuioss.http.client.ResilientHttpHandler;
+import de.cuioss.http.client.result.HttpResultObject;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.client.LoaderStatus;
-import de.cuioss.tools.net.http.client.LoadingStatusProvider;
-import de.cuioss.tools.net.http.client.ResilientHttpHandler;
-import de.cuioss.tools.net.http.result.HttpResultObject;
 
 import java.util.Optional;
 
