@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.metrics;
 
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.test.juli.TestLogLevel;
@@ -30,7 +29,8 @@ import org.junit.jupiter.api.Test;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
 import static de.cuioss.test.juli.LogAsserts.assertSingleLogMessagePresent;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit tests for {@link JwtMetricsCollector} focusing on initialization logging.
@@ -55,7 +55,7 @@ class JwtMetricsCollectorUnitTest {
         // When - initialize collector
         JwtMetricsCollector collector = new JwtMetricsCollector(registry, tokenValidator);
 
-        assertDoesNotThrow(collector::init, "Initialization should not throw");
+        assertDoesNotThrow(collector::initialize, "Initialization should not throw");
 
         // Then - verify logging occurred
         assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.INITIALIZING_JWT_METRICS_COLLECTOR.resolveIdentifierString());
@@ -76,7 +76,7 @@ class JwtMetricsCollectorUnitTest {
                 .build();
 
         JwtMetricsCollector collector = new JwtMetricsCollector(registry, tokenValidator);
-        collector.init();
+        collector.initialize();
 
         // When - clear metrics
         assertDoesNotThrow(collector::clear, "Clear should not throw");
