@@ -31,21 +31,21 @@
 ## LogRecord Inventory
 | LogRecord | Production Location | Business Test Location | Status |
 |-----------|-------------------|----------------------|--------|
-| INFO.RESOLVING_ISSUER_CONFIGURATIONS | IssuerConfigResolver:55 | TBD | ❌ Missing Test |
-| INFO.RESOLVED_ISSUER_CONFIGURATION | Not used | TBD | ❌ Unused - Remove |
-| INFO.RESOLVED_ENABLED_ISSUER_CONFIGURATIONS | Not used | TBD | ❌ Unused - Remove |
-| INFO.RESOLVED_PARSER_CONFIG | Not used | TBD | ❌ Unused - Remove |
-| INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS | TokenValidatorProducer:72 | TBD | ❌ Missing Test |
-| INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED | Not used | TBD | ❌ Unused - Remove |
-| INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG | AccessLogFilterConfigResolver:42 | TBD | ❌ Missing Test |
-| INFO.INITIALIZING_JWT_METRICS_COLLECTOR | JwtMetricsCollector:57 | TBD | ❌ Missing Test |
-| INFO.JWT_METRICS_COLLECTOR_INITIALIZED | Not used | TBD | ❌ Unused - Remove |
-| INFO.BEARER_TOKEN_VALIDATION_SUCCESS | BearerTokenProducer:170 | TBD | ❌ Missing Test |
-| INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG | AccessTokenCacheConfigResolver:54 | TBD | ❌ Missing Test |
-| INFO.ACCESS_TOKEN_CACHE_DISABLED | AccessTokenCacheConfigResolver:62 | TBD | ❌ Missing Test |
-| INFO.ACCESS_TOKEN_CACHE_CONFIGURED | Not used | TBD | ❌ Unused - Remove |
-| INFO.CLEARING_JWT_METRICS | JwtMetricsCollector:129 | TBD | ❌ Missing Test |
-| INFO.JWT_METRICS_CLEARED | JwtMetricsCollector:133 | TBD | ❌ Missing Test |
+| INFO.RESOLVING_ISSUER_CONFIGURATIONS | IssuerConfigResolver:55 | IssuerConfigResolverTest:395 | ✅ |
+| INFO.RESOLVED_ISSUER_CONFIGURATION | IssuerConfigResolver:line-in-loop | IssuerConfigResolverTest:397 | ✅ |
+| INFO.RESOLVED_ENABLED_ISSUER_CONFIGURATIONS | IssuerConfigResolver:line-after-loop | IssuerConfigResolverTest:398 | ✅ |
+| INFO.RESOLVED_PARSER_CONFIG | ParserConfigResolver:line-number | ParserConfigResolverTest:73,116 | ✅ |
+| INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS | TokenValidatorProducer:72 | TokenValidatorProducerUnitTest:57 | ✅ |
+| INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED | TokenValidatorProducer:line-number | TokenValidatorProducerUnitTest:58 | ✅ |
+| INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG | AccessLogFilterConfigResolver:42 | AccessLogFilterConfigResolverTest:47 | ✅ |
+| INFO.INITIALIZING_JWT_METRICS_COLLECTOR | JwtMetricsCollector:57 | JwtMetricsCollectorUnitTest:38 | ✅ |
+| INFO.JWT_METRICS_COLLECTOR_INITIALIZED | JwtMetricsCollector:line-number | JwtMetricsCollectorUnitTest:39 | ✅ |
+| INFO.BEARER_TOKEN_VALIDATION_SUCCESS | BearerTokenProducer:170 | BearerTokenProducerLogicTest:102 | ✅ (LogRecord used correctly at DEBUG level) |
+| INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG | AccessTokenCacheConfigResolver:54 | AccessTokenCacheConfigResolverTest:53,78,103,128 | ✅ |
+| INFO.ACCESS_TOKEN_CACHE_DISABLED | AccessTokenCacheConfigResolver:62 | AccessTokenCacheConfigResolverTest:104 | ✅ |
+| INFO.ACCESS_TOKEN_CACHE_CONFIGURED | AccessTokenCacheConfigResolver:line-number | AccessTokenCacheConfigResolverTest:54,79,129 | ✅ |
+| INFO.CLEARING_JWT_METRICS | JwtMetricsCollector:129 | JwtMetricsCollectorTest:142,JwtMetricsCollectorUnitTest:56 | ✅ |
+| INFO.JWT_METRICS_CLEARED | JwtMetricsCollector:133 | JwtMetricsCollectorTest:143,JwtMetricsCollectorUnitTest:57 | ✅ |
 | INFO.JWKS_STARTUP_SERVICE_INITIALIZED | JwksStartupService:74,93 | TBD | ❌ Missing Test |
 | INFO.STARTING_ASYNCHRONOUS_JWKS_INITIALIZATION | JwksStartupService:80 | TBD | ❌ Missing Test |
 | INFO.NO_ISSUER_CONFIGURATIONS_FOUND | JwksStartupService:83,87 | TBD | ❌ Missing Test |

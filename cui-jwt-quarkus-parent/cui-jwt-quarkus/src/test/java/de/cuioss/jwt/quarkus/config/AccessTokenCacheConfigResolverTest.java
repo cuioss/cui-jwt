@@ -16,6 +16,8 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.Config;
@@ -23,10 +25,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
 import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.CACHE;
+import static de.cuioss.test.juli.LogAsserts.assertSingleLogMessagePresent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@EnableTestLogger
 class AccessTokenCacheConfigResolverTest {
 
     @Test
@@ -43,6 +48,10 @@ class AccessTokenCacheConfigResolverTest {
         assertNotNull(cacheConfig);
         assertEquals(1000, cacheConfig.getMaxSize());
         assertEquals(10L, cacheConfig.getEvictionIntervalSeconds());
+
+        // Verify logging
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG.resolveIdentifierString());
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.ACCESS_TOKEN_CACHE_CONFIGURED.format(1000, 10L));
     }
 
     @Test
@@ -64,6 +73,10 @@ class AccessTokenCacheConfigResolverTest {
         assertNotNull(cacheConfig);
         assertEquals(500, cacheConfig.getMaxSize());
         assertEquals(60L, cacheConfig.getEvictionIntervalSeconds());
+
+        // Verify logging
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG.resolveIdentifierString());
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.ACCESS_TOKEN_CACHE_CONFIGURED.format(500, 60L));
     }
 
     @Test
@@ -85,6 +98,10 @@ class AccessTokenCacheConfigResolverTest {
         assertEquals(0, cacheConfig.getMaxSize());
         // When disabled, evictionIntervalSeconds should be the disabled config default
         assertEquals(10L, cacheConfig.getEvictionIntervalSeconds());
+
+        // Verify logging
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG.resolveIdentifierString());
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.ACCESS_TOKEN_CACHE_DISABLED.resolveIdentifierString());
     }
 
     @Test
@@ -106,5 +123,9 @@ class AccessTokenCacheConfigResolverTest {
         assertNotNull(cacheConfig);
         assertEquals(250, cacheConfig.getMaxSize());
         assertEquals(30L, cacheConfig.getEvictionIntervalSeconds());
+
+        // Verify logging
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG.resolveIdentifierString());
+        assertSingleLogMessagePresent(TestLogLevel.INFO, INFO.ACCESS_TOKEN_CACHE_CONFIGURED.format(250, 30L));
     }
 }

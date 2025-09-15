@@ -16,6 +16,8 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.quarkus.test.TestConfig;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,8 +25,11 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresent;
 import static org.junit.jupiter.api.Assertions.*;
 
+@EnableTestLogger
 class AccessLogFilterConfigResolverTest {
 
     @Test
@@ -39,6 +44,7 @@ class AccessLogFilterConfigResolverTest {
 
         // Then
         assertNotNull(result);
+        assertLogMessagePresent(TestLogLevel.INFO, INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG.format());
         assertEquals(400, result.getMinStatusCode());
         assertEquals(599, result.getMaxStatusCode());
         assertTrue(result.getIncludeStatusCodes() == null || result.getIncludeStatusCodes().isEmpty());

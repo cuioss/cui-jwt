@@ -43,6 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.*;
 
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO.BEARER_TOKEN_VALIDATION_SUCCESS;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -92,6 +93,14 @@ class BearerTokenProducerLogicTest {
 
             var resolved = underTest.getAccessTokenContent();
             assertTrue(resolved.isPresent());
+
+            // Test the produceBearerTokenResult with no requirements to trigger success logging
+            var result = underTest.produceBearerTokenResult(new MockInjectionPoint(Set.of(), Set.of(), Set.of()));
+            assertEquals(BearerTokenStatus.FULLY_VERIFIED, result.getStatus());
+
+            // Verify success logging occurred (DEBUG level)
+            LogAsserts.assertLogMessagePresent(TestLogLevel.DEBUG, BEARER_TOKEN_VALIDATION_SUCCESS.format());
+
             // Compare the actual claim values instead of the entire object
             var actual = resolved.get();
             assertEquals(expected.getRawToken(), actual.getRawToken());
