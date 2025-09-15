@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.tools.logging.LogRecord;
 import de.cuioss.tools.logging.LogRecordModel;
-
 import lombok.experimental.UtilityClass;
 
 /**
@@ -51,7 +50,7 @@ public final class CuiJwtQuarkusDeploymentLogMessages {
     public static final class INFO {
 
         // Deployment Messages (001-010)
-        
+
         public static final LogRecord CUI_JWT_FEATURE_REGISTERED = LogRecordModel.builder()
                 .template("CUI JWT feature registered")
                 .prefix(PREFIX)
@@ -59,21 +58,4 @@ public final class CuiJwtQuarkusDeploymentLogMessages {
                 .build();
     }
 
-    /**
-     * WARN level log messages (100-199).
-     * Currently no WARN level messages are used in the deployment module.
-     */
-    @UtilityClass
-    public static final class WARN {
-        // Reserved for future WARN level messages
-    }
-
-    /**
-     * ERROR level log messages (200-299).
-     * Currently no ERROR level messages are used in the deployment module.
-     */
-    @UtilityClass
-    public static final class ERROR {
-        // Reserved for future ERROR level messages
-    }
 }

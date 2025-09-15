@@ -18,12 +18,7 @@ package de.cuioss.benchmarking.common.test;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

@@ -47,7 +47,6 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 // Security and algorithm classes
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
