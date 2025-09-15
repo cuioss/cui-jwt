@@ -278,9 +278,6 @@ public class NonValidatingJwtParser {
             String signature = parts[2];
 
             return new DecodedJwt(header, body, signature, parts, token);
-        } catch (TokenValidationException e) {
-            // TokenValidationException already has proper event type, just re-throw
-            throw e;
         } catch (IOException e) {
             // IOException from DSL-JSON deserialization
             if (logWarnings) {
@@ -297,10 +294,10 @@ public class NonValidatingJwtParser {
 
     /**
      * Decodes a Base64Url encoded JWT header using DSL-JSON.
-     * 
+     *
      * @param encodedHeader the Base64Url encoded header part
      * @return the decoded JwtHeader
-     * @throws Exception if decoding fails
+     * @throws IOException if decoding fails
      */
     private JwtHeader decodeJwtHeader(String encodedHeader) throws IOException {
         String decodedJson = decodeBase64UrlPart(encodedHeader);
@@ -321,10 +318,10 @@ public class NonValidatingJwtParser {
 
     /**
      * Decodes a Base64Url encoded JWT payload using DSL-JSON.
-     * 
+     *
      * @param encodedPayload the Base64Url encoded payload part
      * @return the decoded MapRepresentation
-     * @throws Exception if decoding fails
+     * @throws IOException if decoding fails
      */
     private MapRepresentation decodePayload(String encodedPayload) throws IOException {
         String decodedJson = decodeBase64UrlPart(encodedPayload);
@@ -335,10 +332,9 @@ public class NonValidatingJwtParser {
 
     /**
      * Decodes a Base64Url encoded part to JSON string.
-     * 
+     *
      * @param encodedPart the Base64Url encoded part
      * @return the decoded JSON string
-     * @throws Exception if decoding fails
      */
     private String decodeBase64UrlPart(String encodedPart) {
         try {

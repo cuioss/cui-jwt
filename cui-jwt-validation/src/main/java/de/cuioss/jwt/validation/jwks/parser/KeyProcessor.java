@@ -58,7 +58,7 @@ public class KeyProcessor {
 
     /**
      * Process a JWK object and create a KeyInfo with validation.
-     * 
+     *
      * @param jwk the JWK object to process
      * @return an Optional containing the KeyInfo if processing succeeded, empty otherwise
      */
@@ -92,8 +92,8 @@ public class KeyProcessor {
 
     /**
      * Validates individual key parameters and algorithms.
-     * 
-     * @param keyObject the individual key object to validate
+     *
+     * @param jwkKey the individual key object to validate
      * @return true if the key is valid, false otherwise
      */
     private boolean validateKeyParameters(JwkKey jwkKey) {
@@ -123,7 +123,7 @@ public class KeyProcessor {
             }
         }
 
-        // Validate algorithm if present  
+        // Validate algorithm if present
         if (jwkKey.alg() != null) {
             String algorithm = jwkKey.alg();
             if (!jwkAlgorithmPreferences.isSupported(algorithm)) {
@@ -180,7 +180,7 @@ public class KeyProcessor {
 
     /**
      * Determine the EC algorithm from the JWK.
-     * 
+     *
      * @param jwk the JWK object
      * @return the algorithm
      */

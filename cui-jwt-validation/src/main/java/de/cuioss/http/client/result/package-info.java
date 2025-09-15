@@ -165,7 +165,7 @@
  *
  * @author Implementation for JWT HTTP operations
  * @see de.cuioss.uimodel.result.ResultObject
- * @see de.cuioss.tools.net.http.retry
+ * @see de.cuioss.http.client.retry
  * @since 1.0
  */
 package de.cuioss.http.client.result;
