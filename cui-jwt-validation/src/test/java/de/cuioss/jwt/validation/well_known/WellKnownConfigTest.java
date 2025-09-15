@@ -15,10 +15,13 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.tools.net.http.SecureSSLContextProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLContext;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -100,5 +103,80 @@ class WellKnownConfigTest {
                 .readTimeoutSeconds(-1);
 
         assertThrows(IllegalArgumentException.class, builderWithInvalidReadTimeout::build);
+    }
+
+    @Test
+    @DisplayName("Should create config with custom SSL context")
+    void shouldCreateConfigWithCustomSslContext() throws NoSuchAlgorithmException {
+        // Create a custom SSL context
+        SSLContext customSslContext = SSLContext.getDefault();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(TEST_WELL_KNOWN_URL)
+                .sslContext(customSslContext)
+                .build();
+
+        assertNotNull(config.getHttpHandler());
+        // The SSL context is set on the underlying HTTP handler
+        // We can't directly verify it but the builder method should work without exceptions
+    }
+
+    @Test
+    @DisplayName("Should support sslContext() method in builder API")
+    void shouldSupportSslContextBuilderMethod() throws NoSuchAlgorithmException {
+        // API test: verify sslContext() method exists and returns builder for chaining
+        SSLContext sslContext = SSLContext.getDefault();
+
+        WellKnownConfig.WellKnownConfigBuilder builder = WellKnownConfig.builder()
+                .wellKnownUrl(TEST_WELL_KNOWN_URL)
+                .sslContext(sslContext);
+
+        // Verify the method returns the builder instance for chaining
+        assertNotNull(builder);
+        assertInstanceOf(WellKnownConfig.WellKnownConfigBuilder.class, builder);
+
+        // Verify the builder can still build successfully
+        WellKnownConfig config = builder.build();
+        assertNotNull(config);
+    }
+
+    @Test
+    @DisplayName("Should support tlsVersions() method in builder API")
+    void shouldSupportTlsVersionsBuilderMethod() {
+        // API test: verify tlsVersions() method exists and returns builder for chaining
+        // Using the existing SecureSSLContextProvider with its constants
+        SecureSSLContextProvider tlsProvider = new SecureSSLContextProvider(SecureSSLContextProvider.TLS_V1_3);
+
+        WellKnownConfig.WellKnownConfigBuilder builder = WellKnownConfig.builder()
+                .wellKnownUrl(TEST_WELL_KNOWN_URL)
+                .tlsVersions(tlsProvider);
+
+        // Verify the method returns the builder instance for chaining
+        assertNotNull(builder);
+        assertInstanceOf(WellKnownConfig.WellKnownConfigBuilder.class, builder);
+
+        // Verify the builder can still build successfully
+        WellKnownConfig config = builder.build();
+        assertNotNull(config);
+    }
+
+    @Test
+    @DisplayName("Should allow chaining of sslContext() and tlsVersions() methods")
+    void shouldAllowChainingOfSslContextAndTlsVersionsMethods() throws NoSuchAlgorithmException {
+        // API test: verify both methods can be chained together
+        SSLContext sslContext = SSLContext.getDefault();
+        SecureSSLContextProvider tlsProvider = new SecureSSLContextProvider(SecureSSLContextProvider.TLS_V1_2);
+
+        // Test method chaining
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(TEST_WELL_KNOWN_URL)
+                .sslContext(sslContext)           // First method
+                .tlsVersions(tlsProvider)         // Second method
+                .connectTimeoutSeconds(10)        // Other methods still work
+                .readTimeoutSeconds(20)
+                .build();
+
+        assertNotNull(config);
+        assertNotNull(config.getHttpHandler());
     }
 }

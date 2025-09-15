@@ -160,11 +160,7 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should extract claims from JsonObject")
         void extractClaimsForRefreshTokenShouldExtractClaims() {
-            Map<String, Object> data = Map.of(
-                    "sub", "test-subject",
-                    "iss", "test-issuer",
-                    "custom-claim", "custom-value"
-            );
+
             JsonObject jsonObject = Json.createObjectBuilder()
                     .add("sub", "test-subject")
                     .add("iss", "test-issuer")

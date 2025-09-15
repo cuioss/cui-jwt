@@ -120,7 +120,7 @@ class DirectDeserializationTest {
 
     @Test
     @DisplayName("Should return null for empty JSON during direct deserialization")
-    void shouldReturnNullForEmptyJsonDuringDirectDeserialization() throws IOException {
+    void shouldReturnNullForEmptyJsonDuringDirectDeserialization() {
         String emptyJson = "{}";
         byte[] bytes = emptyJson.getBytes();
 

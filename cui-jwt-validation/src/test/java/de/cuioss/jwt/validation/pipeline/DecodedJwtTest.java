@@ -329,24 +329,4 @@ class DecodedJwtTest {
         }
     }
 
-    private JwtHeader createEmptyHeader() {
-        try {
-            String headerJson = "{\"alg\":\"none\"}";
-            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
-            byte[] headerBytes = headerJson.getBytes();
-            return dslJson.deserialize(JwtHeader.class, headerBytes, headerBytes.length);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create empty header", e);
-        }
-    }
-
-    private MapRepresentation createEmptyBody() {
-        try {
-            String bodyJson = "{}";
-            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
-            return MapRepresentation.fromJson(dslJson, bodyJson);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create empty body", e);
-        }
-    }
 }

@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.json.MapRepresentation;
@@ -51,9 +50,6 @@ import java.util.Optional;
  * @since 1.0
  */
 public class TokenBuilder {
-
-    // Singleton mapper for unknown claims
-    private static final IdentityMapper IDENTITY_MAPPER = new IdentityMapper();
 
     // Combined mapper lookup to avoid runtime checks
     private final Map<String, ClaimMapper> allMappers;

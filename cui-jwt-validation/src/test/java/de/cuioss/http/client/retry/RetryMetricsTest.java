@@ -38,7 +38,7 @@ class RetryMetricsTest {
     void noOpImplementationShouldHandleAllCallsWithoutErrors() {
         RetryMetrics metrics = RetryMetrics.noOp();
         RetryContext context = RetryContext.initial("test-op");
-        RuntimeException testException = new RuntimeException("test");
+
 
         // All these calls should succeed without throwing exceptions
         assertDoesNotThrow(() -> {
