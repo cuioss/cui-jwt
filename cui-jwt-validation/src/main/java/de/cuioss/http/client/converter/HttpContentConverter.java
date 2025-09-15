@@ -67,6 +67,7 @@ public interface HttpContentConverter<T> {
      *
      * @return the BodyHandler appropriate for this converter
      */
+    @SuppressWarnings("java:S1452") // Wildcard is necessary as different implementations use different raw types
     HttpResponse.BodyHandler<?> getBodyHandler();
 
     /**

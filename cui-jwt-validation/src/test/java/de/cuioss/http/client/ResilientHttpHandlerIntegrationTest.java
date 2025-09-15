@@ -34,6 +34,7 @@ import lombok.Setter;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 import okhttp3.Headers;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -542,6 +543,7 @@ class ResilientHttpHandlerIntegrationTest {
                 return HttpResponse.BodyHandlers.ofString();
             }
 
+            @NotNull
             @Override
             public String emptyValue() {
                 return "";

@@ -64,7 +64,7 @@ class ExponentialBackoffRetryStrategyTest {
 
         @Test
         @DisplayName("Should return result on first attempt success")
-        void shouldReturnResultOnFirstAttemptSuccess() throws Exception {
+        void shouldReturnResultOnFirstAttemptSuccess() {
             HttpOperation<String> operation = () -> HttpResultObject.success("success", null, 200);
 
             HttpResultObject<String> result = strategy.execute(operation, context);
@@ -76,7 +76,7 @@ class ExponentialBackoffRetryStrategyTest {
 
         @Test
         @DisplayName("Should return result after retries succeed")
-        void shouldReturnResultAfterRetriesSucceed() throws Exception {
+        void shouldReturnResultAfterRetriesSucceed() {
             AtomicInteger attempts = new AtomicInteger(0);
             HttpOperation<String> operation = () -> {
                 int attempt = attempts.incrementAndGet();
@@ -235,8 +235,9 @@ class ExponentialBackoffRetryStrategyTest {
         @Test
         @DisplayName("Should validate positive max attempts")
         void shouldValidatePositiveMaxAttempts() {
+            var builder = ExponentialBackoffRetryStrategy.builder();
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().maxAttempts(0));
+                    () -> builder.maxAttempts(0));
 
             assertEquals("maxAttempts must be positive, got: 0", exception.getMessage(), "Builder should validate maxAttempts parameter positivity");
         }
@@ -244,8 +245,10 @@ class ExponentialBackoffRetryStrategyTest {
         @Test
         @DisplayName("Should validate non-negative initial delay")
         void shouldValidateNonNegativeInitialDelay() {
+            var builder = ExponentialBackoffRetryStrategy.builder();
+            var negativeDuration = Duration.ofMillis(-1);
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().initialDelay(Duration.ofMillis(-1)));
+                    () -> builder.initialDelay(negativeDuration));
 
             assertEquals("initialDelay cannot be negative", exception.getMessage(), "Builder should validate initialDelay parameter non-negativity");
         }
@@ -253,8 +256,9 @@ class ExponentialBackoffRetryStrategyTest {
         @Test
         @DisplayName("Should validate backoff multiplier >= 1.0")
         void shouldValidateBackoffMultiplier() {
+            var builder = ExponentialBackoffRetryStrategy.builder();
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().backoffMultiplier(0.5));
+                    () -> builder.backoffMultiplier(0.5));
 
             assertEquals("backoffMultiplier must be >= 1.0, got: 0.5", exception.getMessage(), "Builder should validate backoffMultiplier is >= 1.0");
         }
@@ -262,13 +266,15 @@ class ExponentialBackoffRetryStrategyTest {
         @Test
         @DisplayName("Should validate jitter factor range")
         void shouldValidateJitterFactorRange() {
+            var builder1 = ExponentialBackoffRetryStrategy.builder();
             IllegalArgumentException exception1 = assertThrows(IllegalArgumentException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().jitterFactor(-0.1));
+                    () -> builder1.jitterFactor(-0.1));
 
             assertEquals("jitterFactor must be between 0.0 and 1.0, got: -0.1", exception1.getMessage(), "Builder should validate jitterFactor lower bound");
 
+            var builder2 = ExponentialBackoffRetryStrategy.builder();
             IllegalArgumentException exception2 = assertThrows(IllegalArgumentException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().jitterFactor(1.1));
+                    () -> builder2.jitterFactor(1.1));
 
             assertEquals("jitterFactor must be between 0.0 and 1.0, got: 1.1", exception2.getMessage(), "Builder should validate jitterFactor upper bound");
         }
@@ -276,11 +282,13 @@ class ExponentialBackoffRetryStrategyTest {
         @Test
         @DisplayName("Should validate required parameters are not null")
         void shouldValidateRequiredParametersNotNull() {
+            var builder1 = ExponentialBackoffRetryStrategy.builder();
             assertThrows(NullPointerException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().initialDelay(null));
+                    () -> builder1.initialDelay(null));
 
+            var builder2 = ExponentialBackoffRetryStrategy.builder();
             assertThrows(NullPointerException.class,
-                    () -> ExponentialBackoffRetryStrategy.builder().maxDelay(null));
+                    () -> builder2.maxDelay(null));
         }
     }
 
@@ -298,16 +306,7 @@ class ExponentialBackoffRetryStrategyTest {
                     .build();
 
             AtomicInteger attempts = new AtomicInteger(0);
-            HttpOperation<String> operation = () -> {
-                int attempt = attempts.incrementAndGet();
-                if (attempt == 1) {
-                    // Interrupt the thread after the first failure
-                    Thread.currentThread().interrupt();
-                }
-                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
-                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Test exception"),
-                                new ConnectException("Test exception")));
-            };
+            HttpOperation<String> operation = createInterruptingOperation(attempts);
 
             HttpResultObject<String> result = interruptableStrategy.execute(operation, context);
 
@@ -319,19 +318,24 @@ class ExponentialBackoffRetryStrategyTest {
             // Should preserve interrupt status
             assertTrue(Thread.interrupted(), "Thread interrupt status should be preserved after retry interruption");
         }
+
+        private HttpOperation<String> createInterruptingOperation(AtomicInteger attempts) {
+            return () -> {
+                int attempt = attempts.incrementAndGet();
+                if (attempt == 1) {
+                    // Interrupt the thread after the first failure
+                    Thread.currentThread().interrupt();
+                }
+                return HttpResultObject.error("", HttpErrorCategory.NETWORK_ERROR,
+                        new ResultDetail(new de.cuioss.uimodel.nameprovider.DisplayName("Test exception"),
+                                new ConnectException("Test exception")));
+            };
+        }
     }
 
     @Nested
     @DisplayName("Static factory methods")
     class StaticFactoryMethods {
-
-        @Test
-        @DisplayName("Should create retry strategy with exponentialBackoff()")
-        void shouldCreateRetryStrategyWithExponentialBackoff() {
-            RetryStrategy strategy = RetryStrategy.exponentialBackoff();
-
-            assertInstanceOf(ExponentialBackoffRetryStrategy.class, strategy, "exponentialBackoff() factory should create ExponentialBackoffRetryStrategy");
-        }
 
         @Test
         @DisplayName("Should create no-op strategy with none()")

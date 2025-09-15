@@ -19,11 +19,11 @@ import java.time.Duration;
 
 /**
  * Interface for recording retry operation metrics.
- *
+ * <p>
  * This interface provides a clean abstraction for metrics recording that can be
  * implemented by different metrics systems (Micrometer, custom metrics, etc.)
  * without creating dependencies in the core retry infrastructure.
- *
+ * <p>
  * All methods in this interface should be implemented to be non-blocking and
  * should handle any internal exceptions gracefully to avoid impacting retry logic.
  */
@@ -81,11 +81,11 @@ public interface RetryMetrics {
     /**
      * No-op implementation for when metrics are disabled.
      */
+    @SuppressWarnings("java:S6548") // Singleton pattern is appropriate for stateless no-op implementation
     final class NoOpRetryMetrics implements RetryMetrics {
         static final NoOpRetryMetrics INSTANCE = new NoOpRetryMetrics();
 
         private NoOpRetryMetrics() {
-            // Singleton
         }
 
         @Override

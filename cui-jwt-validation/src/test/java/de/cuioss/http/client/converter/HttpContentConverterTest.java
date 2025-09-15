@@ -15,6 +15,7 @@
  */
 package de.cuioss.http.client.converter;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +88,7 @@ class HttpContentConverterTest {
                 return HttpResponse.BodyHandlers.ofString();
             }
 
+            @NotNull
             @Override
             public Integer emptyValue() {
                 return 0;
@@ -125,6 +127,7 @@ class HttpContentConverterTest {
                 return HttpResponse.BodyHandlers.ofString();
             }
 
+            @NotNull
             @Override
             public Integer emptyValue() {
                 return -1;
@@ -162,6 +165,7 @@ class HttpContentConverterTest {
                 return HttpResponse.BodyHandlers.ofByteArray();
             }
 
+            @NotNull
             @Override
             public String emptyValue() {
                 return "";
@@ -197,6 +201,7 @@ class HttpContentConverterTest {
                 return HttpResponse.BodyHandlers.ofString();
             }
 
+            @NotNull
             @Override
             public Integer emptyValue() {
                 return 0; // Semantically correct empty value for Integer
@@ -220,6 +225,7 @@ class HttpContentConverterTest {
                 return HttpResponse.BodyHandlers.ofString();
             }
 
+            @NotNull
             @Override
             public String emptyValue() {
                 return "";

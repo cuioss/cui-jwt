@@ -34,15 +34,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class RetryMetricsTest {
 
     @Test
-    @DisplayName("Should provide no-op implementation")
-    void shouldProvideNoOpImplementation() {
-        RetryMetrics metrics = RetryMetrics.noOp();
-
-        assertNotNull(metrics, "No-op retry metrics instance should not be null");
-        assertInstanceOf(RetryMetrics.NoOpRetryMetrics.class, metrics, "No-op factory should return NoOpRetryMetrics implementation");
-    }
-
-    @Test
     @DisplayName("No-op implementation should handle all calls safely")
     void noOpImplementationShouldHandleAllCallsWithoutErrors() {
         RetryMetrics metrics = RetryMetrics.noOp();

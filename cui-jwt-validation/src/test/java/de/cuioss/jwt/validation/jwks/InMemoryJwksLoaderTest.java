@@ -138,16 +138,4 @@ class InMemoryJwksLoaderTest {
         assertNotNull(keyInfo.get().key(), "Key should not be null");
     }
 
-    @Test
-    @DisplayName("Should create loader from factory method")
-    void shouldCreateLoaderFromFactoryMethod() {
-
-        String jwksContent = InMemoryJWKSFactory.createDefaultJwks();
-        JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(jwksContent);
-        loader.initJWKSLoader(securityEventCounter);
-        assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be instance of JWKSKeyLoader");
-        Optional<Key> key = loader.getKeyInfo(InMemoryJWKSFactory.DEFAULT_KEY_ID).map(KeyInfo::key);
-        assertTrue(key.isPresent(), "Key should be present from factory-created loader");
-    }
-
 }

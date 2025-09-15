@@ -15,6 +15,7 @@
  */
 package de.cuioss.http.client.converter;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -72,6 +73,7 @@ class StringContentConverterTest {
                 return Optional.ofNullable(rawContent);
             }
 
+            @NotNull
             @Override
             public String emptyValue() {
                 return "";
@@ -95,6 +97,7 @@ class StringContentConverterTest {
                 return Optional.ofNullable(rawContent);
             }
 
+            @NotNull
             @Override
             public String emptyValue() {
                 return "";
@@ -123,6 +126,7 @@ class StringContentConverterTest {
                 }
             }
 
+            @NotNull
             @Override
             public Integer emptyValue() {
                 return 0;

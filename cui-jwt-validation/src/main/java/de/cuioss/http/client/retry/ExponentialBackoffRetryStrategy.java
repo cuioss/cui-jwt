@@ -27,14 +27,14 @@ import static de.cuioss.http.client.HttpLogMessages.WARN;
 
 /**
  * Exponential backoff retry strategy with jitter to prevent thundering herd.
- *
+ * <p>
  * Algorithm based on AWS Architecture Blog recommendations:
  * - Base delay starts at initialDelay
  * - Each retry multiplies by backoffMultiplier
  * - Random jitter applied: delay * (1 ± jitterFactor)
  * - Maximum delay capped at maxDelay
  * - Total attempts limited by maxAttempts
- *
+ * <p>
  * The strategy includes intelligent exception classification to determine
  * which exceptions should trigger retries versus immediate failure.
  */
@@ -60,6 +60,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     }
 
     @Override
+    @SuppressWarnings({"java:S3776", "java:S135"}) // Complexity is inherent to retry logic; multiple breaks needed for different failure scenarios
     public <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context) {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(context, "context");
@@ -174,9 +175,10 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      * @param attemptNumber the current attempt number (1-based)
      * @return the calculated delay duration
      */
+    @SuppressWarnings("java:S2245") // ThreadLocalRandom is safe for jitter calculation (not security-sensitive)
     private Duration calculateDelay(int attemptNumber) {
         // Exponential backoff: initialDelay * (backoffMultiplier ^ (attempt - 1))
-        double exponentialDelay = initialDelay.toMillis() * Math.pow(backoffMultiplier, attemptNumber - 1);
+        double exponentialDelay = initialDelay.toMillis() * Math.pow(backoffMultiplier, (double) attemptNumber - 1);
 
         // Apply jitter: delay * (1 ± jitterFactor)
         // Random value between -1.0 and 1.0

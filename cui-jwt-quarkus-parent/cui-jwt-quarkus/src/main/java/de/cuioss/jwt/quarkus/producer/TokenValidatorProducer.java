@@ -61,7 +61,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * @since 1.0
  */
 @ApplicationScoped
-@RegisterForReflection(fields = true, methods = false)
+@RegisterForReflection(methods = false)
 public class TokenValidatorProducer {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorProducer.class);
@@ -114,11 +114,11 @@ public class TokenValidatorProducer {
         issuerConfigs = issuerConfigResolver.resolveIssuerConfigs();
 
         // Create SecurityEventCounter for proper initialization
-        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
+        SecurityEventCounter eventCounter = new SecurityEventCounter();
 
         // Initialize each IssuerConfig with SecurityEventCounter so JwksLoader can be used
         for (IssuerConfig issuerConfig : issuerConfigs) {
-            issuerConfig.initSecurityEventCounter(securityEventCounter);
+            issuerConfig.initSecurityEventCounter(eventCounter);
         }
 
         // Resolve parser config using the dedicated resolver
@@ -144,7 +144,7 @@ public class TokenValidatorProducer {
 
         // Use the same SecurityEventCounter instance we used for initialization
         // Note: tokenValidator.getSecurityEventCounter() returns the same instance
-        this.securityEventCounter = securityEventCounter;
+        this.securityEventCounter = eventCounter;
 
         LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
     }

@@ -19,6 +19,7 @@ import de.cuioss.http.client.converter.StringContentConverter;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
 import de.cuioss.tools.net.http.HttpHandler;
+import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -56,14 +57,14 @@ class ResilientHttpHandlerProviderTest {
         // Given: A custom HttpHandlerProvider implementation
         HttpHandlerProvider provider = new HttpHandlerProvider() {
             @Override
-            public HttpHandler getHttpHandler() {
+            public @NonNull HttpHandler getHttpHandler() {
                 return HttpHandler.builder()
                         .url(TEST_URL)
                         .build();
             }
 
             @Override
-            public RetryStrategy getRetryStrategy() {
+            public @NonNull RetryStrategy getRetryStrategy() {
                 return RetryStrategy.none();
             }
         };
@@ -92,13 +93,14 @@ class ResilientHttpHandlerProviderTest {
 
     @Test
     @DisplayName("Should fail when HttpHandlerProvider is null")
+    @SuppressWarnings("ConstantConditions") // Intentionally passing null to test null handling
     void shouldFailWhenProviderIsNull() {
-        // Given: A null HttpHandlerProvider
-        HttpHandlerProvider provider = null;
+        // Given: A converter for the test
+        var converter = StringContentConverter.identity();
 
-        // When/Then: Should throw IllegalArgumentException
-        assertThrows(NullPointerException.class, () -> {
-            new ResilientHttpHandler<>(provider, StringContentConverter.identity());
-        }, "Should throw exception when provider is null");
+        // When/Then: Should throw NullPointerException
+        assertThrows(NullPointerException.class,
+                () -> new ResilientHttpHandler<>((HttpHandlerProvider) null, converter),
+                "Should throw exception when provider is null");
     }
 }

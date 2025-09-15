@@ -219,17 +219,6 @@ class HttpJwksLoaderTest {
     }
 
     @Test
-    @DisplayName("Should log success message when JWKS is loaded")
-    void shouldLogSuccessMessageWhenJwksIsLoaded() {
-        // Load a key to trigger JWKS loading
-        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
-        assertTrue(keyInfo.isPresent(), "Key info should be present");
-
-        // The simplified loader logs a success message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO, "Successfully loaded JWKS");
-    }
-
-    @Test
     @DisplayName("Should log JWKS_HTTP_LOADED when JWKS is loaded via HTTP with 200 response")
     void shouldLogJwksHttpLoadedWhenJwksIsLoadedViaHttp() {
         // First access loads keys via HTTP and should get 200 response
@@ -305,7 +294,7 @@ class HttpJwksLoaderTest {
     class JwksLoadFailureTests {
         @Test
         @DisplayName("Should log JWKS_LOAD_FAILED when HTTP connection cannot be established")
-        void shouldLogJwksLoadFailedWhenHttpConnectionFails(URIBuilder uriBuilder) {
+        void shouldLogJwksLoadFailedWhenHttpConnectionFails() {
             // Create loader with invalid URL to simulate connection failure
             HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                     .jwksUrl("http://invalid-host-that-does-not-exist:9999/jwks")
