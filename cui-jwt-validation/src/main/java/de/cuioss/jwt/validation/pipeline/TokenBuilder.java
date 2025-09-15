@@ -140,9 +140,7 @@ public class TokenBuilder {
                 } else {
                     // Handle non-string values by converting to string
                     Optional<Object> value = mapRepresentation.getValue(key);
-                    if (value.isPresent()) {
-                        claims.put(key, ClaimValue.forPlainString(value.get().toString()));
-                    }
+                    value.ifPresent(o -> claims.put(key, ClaimValue.forPlainString(o.toString())));
                 }
             }
         }

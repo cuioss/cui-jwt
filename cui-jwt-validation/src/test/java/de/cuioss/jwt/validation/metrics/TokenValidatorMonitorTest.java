@@ -100,6 +100,7 @@ class TokenValidatorMonitorTest {
                 "Should reject negative window size");
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private TokenValidatorMonitor createMonitorWithWindowSize(int windowSize) {
         return TokenValidatorMonitorConfig.builder()
                 .windowSize(windowSize)
@@ -557,7 +558,7 @@ class TokenValidatorMonitorTest {
         var measurementType = MeasurementType.CLAIMS_VALIDATION;
 
         monitor.recordMeasurement(measurementType, 5_000_000); // 5ms
-        
+
         StripedRingBufferStatistics metrics = monitor.getValidationMetrics(measurementType)
                 .orElseThrow(() -> new AssertionError("Metrics should be present"));
         assertEquals(1, metrics.sampleCount());

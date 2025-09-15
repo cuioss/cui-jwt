@@ -166,7 +166,7 @@ class ParserConfigTest implements ShouldImplementEqualsAndHashCode<ParserConfig>
 
         // DSL-JSON configuration is applied during instantiation
         // We can verify the instance is created successfully with our settings
-        assertTrue(dslJson instanceof DslJson, "Should create proper DslJson instance");
+        assertInstanceOf(DslJson.class, dslJson, "Should create proper DslJson instance");
     }
 
     @Test

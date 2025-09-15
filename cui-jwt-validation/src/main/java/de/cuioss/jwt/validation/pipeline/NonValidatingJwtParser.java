@@ -135,7 +135,7 @@ public class NonValidatingJwtParser {
     @NonNull
     private final SecurityEventCounter securityEventCounter;
 
-    private NonValidatingJwtParser(ParserConfig config, SecurityEventCounter securityEventCounter) {
+    private NonValidatingJwtParser(ParserConfig config, @NonNull SecurityEventCounter securityEventCounter) {
         this.config = config != null ? config : ParserConfig.builder().build();
         this.securityEventCounter = securityEventCounter;
     }

@@ -81,21 +81,14 @@ class ResilientHttpHandlerIntegrationTest {
     private static final String ETAG_V1 = "\"v1-etag-123\"";
     private static final String ETAG_V2 = "\"v2-etag-456\"";
 
+    @Getter
     private final TestContentDispatcher moduleDispatcher = new TestContentDispatcher();
 
-    /**
-     * Required by @EnableMockWebServer to configure the dispatcher.
-     */
-    public TestContentDispatcher getModuleDispatcher() {
-        return moduleDispatcher;
-    }
-
-    private String testEndpoint;
     private HttpHandlerProvider httpHandlerProvider;
 
     @BeforeEach
     void setUp(URIBuilder uriBuilder, SSLContext sslContext) {
-        testEndpoint = uriBuilder.addPathSegment(TestContentDispatcher.LOCAL_PATH.substring(1)).buildAsString();
+        String testEndpoint = uriBuilder.addPathSegment(TestContentDispatcher.LOCAL_PATH.substring(1)).buildAsString();
 
         // Create HttpHandler with SSL context for HTTPS testing
         HttpHandler httpHandler = HttpHandler.builder()

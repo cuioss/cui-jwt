@@ -38,9 +38,6 @@ import de.cuioss.test.generator.domain.EmailGenerator;
 import de.cuioss.test.generator.domain.FullNameGenerator;
 import de.cuioss.test.generator.domain.UUIDStringGenerator;
 import io.jsonwebtoken.Jwts;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -235,32 +232,6 @@ public class TestTokenHolder implements TokenContent {
     }
 
     /**
-     * Sets the signing algorithm to ES384 for testing ECDSA signature format issues.
-     * 
-     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
-     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
-     * This causes signature validation failures until format conversion is implemented.</p>
-     * 
-     * @return this instance for method chaining
-     */
-    public TestTokenHolder withES384IeeeP1363Format() {
-        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES384);
-    }
-
-    /**
-     * Sets the signing algorithm to ES512 for testing ECDSA signature format issues.
-     * 
-     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
-     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
-     * This causes signature validation failures until format conversion is implemented.</p>
-     * 
-     * @return this instance for method chaining
-     */
-    public TestTokenHolder withES512IeeeP1363Format() {
-        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES512);
-    }
-
-    /**
      * Gets the public key material associated with the current key ID and signing algorithm.
      *
      * @return the public key
@@ -304,7 +275,6 @@ public class TestTokenHolder implements TokenContent {
 
         // Always use the fixed TEST_CLIENT_ID as expected client ID to avoid circular dependency
         // Tests that need different expected client IDs should create their own IssuerConfig
-        String clientId = TEST_CLIENT_ID;
 
         // Create the JWKS content
         String jwksContent = InMemoryKeyMaterialHandler.createJwks(signingAlgorithm, keyId);
@@ -319,7 +289,7 @@ public class TestTokenHolder implements TokenContent {
         for (String aud : audience) {
             config.expectedAudience(aud);
         }
-        config.expectedClientId(clientId);
+        config.expectedClientId(TEST_CLIENT_ID);
 
         // Build the config
         return config.build();
@@ -480,75 +450,6 @@ public class TestTokenHolder implements TokenContent {
     }
 
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static JsonObject convertMapToJsonObject(Map<String, Object> map) {
-        var builder = Json.createObjectBuilder();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            addValueToBuilder(builder, entry.getKey(), entry.getValue());
-        }
-        return builder.build();
-    }
-
-    private static void addValueToBuilder(JsonObjectBuilder builder, String key, Object value) {
-        if (value == null) {
-            builder.addNull(key);
-        } else if (value instanceof String string) {
-            builder.add(key, string);
-        } else if (value instanceof Boolean boolean1) {
-            builder.add(key, boolean1);
-        } else if (value instanceof Number number) {
-            if (value instanceof Integer integer) {
-                builder.add(key, integer);
-            } else if (value instanceof Long long1) {
-                builder.add(key, long1);
-            } else {
-                builder.add(key, number.doubleValue());
-            }
-        } else if (value instanceof List list) {
-            // Convert List to JsonArray
-            var arrayBuilder = Json.createArrayBuilder();
-            for (Object item : list) {
-                if (item == null) {
-                    arrayBuilder.addNull();
-                } else if (item instanceof String string) {
-                    arrayBuilder.add(string);
-                } else if (item instanceof Boolean boolean1) {
-                    arrayBuilder.add(boolean1);
-                } else if (item instanceof Number number) {
-                    if (item instanceof Integer integer) {
-                        arrayBuilder.add(integer);
-                    } else if (item instanceof Long long1) {
-                        arrayBuilder.add(long1);
-                    } else {
-                        arrayBuilder.add(number.doubleValue());
-                    }
-                } else if (item instanceof Map map) {
-                    // Convert nested Map to JsonObject
-                    var nestedBuilder = Json.createObjectBuilder();
-                    for (Object entryObj : map.entrySet()) {
-                        var entry = (Map.Entry) entryObj;
-                        addValueToBuilder(nestedBuilder, entry.getKey().toString(), entry.getValue());
-                    }
-                    arrayBuilder.add(nestedBuilder.build());
-                } else {
-                    arrayBuilder.add(item.toString());
-                }
-            }
-            builder.add(key, arrayBuilder.build());
-        } else if (value instanceof Map map) {
-            // Convert nested Map to JsonObject
-            var nestedBuilder = Json.createObjectBuilder();
-            for (Object entryObj : map.entrySet()) {
-                var entry = (Map.Entry) entryObj;
-                addValueToBuilder(nestedBuilder, entry.getKey().toString(), entry.getValue());
-            }
-            builder.add(key, nestedBuilder.build());
-        } else {
-            // For other types, convert to string as fallback
-            builder.add(key, value.toString());
-        }
-    }
-
     /**
      * Converts this TestTokenHolder to an AccessTokenContent.
      * <p>
@@ -591,7 +492,8 @@ public class TestTokenHolder implements TokenContent {
                 ClaimValue value = entry.getValue();
                 if (value.getOriginalString() != null) {
                     jsonBuilder.append("\"").append(value.getOriginalString().replace("\"", "\\\"")).append("\"");
-                } else if (value.getAsList() != null) {
+                } else {
+                    // ClaimValue always has a list if it doesn't have a string
                     jsonBuilder.append("[");
                     boolean firstItem = true;
                     for (String item : value.getAsList()) {
@@ -600,8 +502,6 @@ public class TestTokenHolder implements TokenContent {
                         firstItem = false;
                     }
                     jsonBuilder.append("]");
-                } else {
-                    jsonBuilder.append("null");
                 }
                 first = false;
             }

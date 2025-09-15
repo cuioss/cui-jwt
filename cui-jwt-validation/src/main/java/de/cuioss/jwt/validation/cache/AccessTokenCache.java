@@ -65,13 +65,6 @@ public class AccessTokenCache {
 
     private static final CuiLogger LOGGER = new CuiLogger(AccessTokenCache.class);
 
-
-    /**
-     * The configuration for this cache.
-     */
-    @NonNull
-    private final AccessTokenCacheConfig config;
-
     /**
      * The maximum number of tokens to cache.
      */
@@ -116,7 +109,6 @@ public class AccessTokenCache {
             @NonNull AccessTokenCacheConfig config,
             @NonNull SecurityEventCounter securityEventCounter) {
 
-        this.config = config;
         this.maxSize = config.getMaxSize();
         this.securityEventCounter = securityEventCounter;
 

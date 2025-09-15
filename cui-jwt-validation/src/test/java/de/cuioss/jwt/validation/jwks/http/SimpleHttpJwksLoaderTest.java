@@ -38,14 +38,13 @@ class SimpleHttpJwksLoaderTest {
     private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
 
     private HttpJwksLoader httpJwksLoader;
-    private SecurityEventCounter securityEventCounter;
 
     @BeforeEach
     void setUp(URIBuilder uriBuilder) {
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         moduleDispatcher.setCallCounter(0);
 
-        securityEventCounter = new SecurityEventCounter();
+        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
