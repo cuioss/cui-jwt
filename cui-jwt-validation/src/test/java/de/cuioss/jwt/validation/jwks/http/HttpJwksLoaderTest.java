@@ -26,6 +26,7 @@ import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
+import de.cuioss.tools.net.http.HttpLogMessages;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
@@ -327,7 +328,7 @@ class HttpJwksLoaderTest {
 
             // And the HTTP fetch failure
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.HTTP_FETCH_FAILED.resolveIdentifierString());
+                    HttpLogMessages.WARN.HTTP_FETCH_FAILED.resolveIdentifierString());
         }
 
         @Test

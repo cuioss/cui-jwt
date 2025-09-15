@@ -162,12 +162,6 @@ public final class JWTValidationLogMessages {
                 .build();
 
         // Retry operation info messages
-        public static final LogRecord RETRY_OPERATION_SUCCEEDED_AFTER_ATTEMPTS = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(10)
-                .template("Operation '%s' succeeded on attempt %s/%s")
-                .build();
-
         public static final LogRecord RETRY_OPERATION_COMPLETED = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(11)
@@ -339,24 +333,6 @@ public final class JWTValidationLogMessages {
                 .template("Failed to resolve JWKS URI from well-known resolver")
                 .build();
 
-        public static final LogRecord HTTP_STATUS_WARNING = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(137)
-                .template("HTTP %s (%s) from %s")
-                .build();
-
-        public static final LogRecord HTTP_FETCH_FAILED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(138)
-                .template("Failed to fetch HTTP content from %s")
-                .build();
-
-        public static final LogRecord HTTP_FETCH_INTERRUPTED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(139)
-                .template("Interrupted while fetching HTTP content from %s")
-                .build();
-
         public static final LogRecord JWKS_OBJECT_NULL = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(140)
@@ -398,12 +374,6 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(147)
                 .template("Retry operation '%s' failed after %s attempts in %sms")
-                .build();
-
-        public static final LogRecord RETRY_MAX_ATTEMPTS_REACHED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(149)
-                .template("Operation '%s' failed after %s attempts. Final exception: %s")
                 .build();
 
         public static final LogRecord JWKS_JSON_PARSE_FAILED = LogRecordModel.builder()

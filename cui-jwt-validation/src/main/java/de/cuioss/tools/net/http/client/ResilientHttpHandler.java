@@ -15,7 +15,6 @@
  */
 package de.cuioss.tools.net.http.client;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.HttpLogMessages;
@@ -248,7 +247,7 @@ public class ResilientHttpHandler<T> {
                 }
             } else {
                 // HTTP error - this will trigger retry if it's a 5xx server error
-                LOGGER.warn(JWTValidationLogMessages.WARN.HTTP_STATUS_WARNING.format(response.statusCode(), statusFamily, httpHandler.getUrl()));
+                LOGGER.warn(HttpLogMessages.WARN.HTTP_STATUS_WARNING.format(response.statusCode(), statusFamily, httpHandler.getUrl()));
 
                 // For 4xx client errors, don't retry and return error with cache fallback if available
                 if (statusFamily == HttpStatusFamily.CLIENT_ERROR) {
@@ -261,12 +260,12 @@ public class ResilientHttpHandler<T> {
             }
 
         } catch (IOException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.WARN.HTTP_FETCH_FAILED.format(httpHandler.getUrl()));
+            LOGGER.warn(e, HttpLogMessages.WARN.HTTP_FETCH_FAILED.format(httpHandler.getUrl()));
             // Return error result for IOException - RetryStrategy will handle retry logic
             return handleErrorResult();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOGGER.warn(JWTValidationLogMessages.WARN.HTTP_FETCH_INTERRUPTED.format(httpHandler.getUrl()));
+            LOGGER.warn(HttpLogMessages.WARN.HTTP_FETCH_INTERRUPTED.format(httpHandler.getUrl()));
             // InterruptedException should not be retried
             return handleErrorResult();
         }

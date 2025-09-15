@@ -25,6 +25,7 @@ import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
+import de.cuioss.tools.net.http.HttpLogMessages;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
@@ -243,7 +244,7 @@ class HttpJwksLoaderSchedulerTest {
             // Might log HTTP_STATUS_WARNING instead when connection fails with 500 error
             LogAsserts.assertLogMessagePresentContaining(
                     TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
+                    HttpLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
         }
 
         loader.shutdown();

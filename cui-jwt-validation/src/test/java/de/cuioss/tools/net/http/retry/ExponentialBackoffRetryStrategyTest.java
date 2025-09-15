@@ -15,11 +15,11 @@
  */
 package de.cuioss.tools.net.http.retry;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.tools.net.http.HttpLogMessages;
 import de.cuioss.tools.net.http.result.HttpErrorCategory;
 import de.cuioss.tools.net.http.result.HttpResultObject;
 import de.cuioss.uimodel.result.ResultDetail;
@@ -95,7 +95,7 @@ class ExponentialBackoffRetryStrategyTest {
             assertEquals(ResultState.VALID, result.getState(), "Should indicate successful recovery");
             assertEquals(3, attempts.get(), "Strategy should have made exactly 3 attempts before success");
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
-                    JWTValidationLogMessages.INFO.RETRY_OPERATION_SUCCEEDED_AFTER_ATTEMPTS.resolveIdentifierString());
+                    HttpLogMessages.INFO.RETRY_OPERATION_SUCCEEDED_AFTER_ATTEMPTS.resolveIdentifierString());
         }
     }
 
@@ -122,9 +122,9 @@ class ExponentialBackoffRetryStrategyTest {
             assertTrue(result.getResultDetail().isPresent(), "Error details should be present");
             assertEquals(3, attempts.get(), "Strategy should have exhausted all 3 retry attempts");
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.RETRY_MAX_ATTEMPTS_REACHED.resolveIdentifierString());
+                    HttpLogMessages.WARN.RETRY_MAX_ATTEMPTS_REACHED.resolveIdentifierString());
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.RETRY_OPERATION_FAILED.resolveIdentifierString());
+                    HttpLogMessages.WARN.RETRY_OPERATION_FAILED.resolveIdentifierString());
         }
 
         @Test

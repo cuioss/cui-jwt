@@ -22,8 +22,8 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.INFO;
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.tools.net.http.HttpLogMessages.INFO;
+import static de.cuioss.tools.net.http.HttpLogMessages.WARN;
 
 /**
  * Exponential backoff retry strategy with jitter to prevent thundering herd.

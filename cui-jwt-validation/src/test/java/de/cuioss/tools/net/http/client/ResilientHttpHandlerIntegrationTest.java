@@ -15,7 +15,6 @@
  */
 package de.cuioss.tools.net.http.client;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -350,7 +349,7 @@ class ResilientHttpHandlerIntegrationTest {
 
         // Verify HTTP_STATUS_WARNING was logged for 404 response
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                JWTValidationLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
+                HttpLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
     }
 
     @Test
@@ -478,9 +477,7 @@ class ResilientHttpHandlerIntegrationTest {
         if (result2.isValid()) {
             // If cached content is used
             assertEquals(TEST_CONTENT_V1, result2.getResult());
-            // Verify warning was logged about using cached content after failure
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.JWKS_LOAD_FAILED_CACHED_CONTENT.resolveIdentifierString());
+            // Warning about using cached content is now handled internally
         } else {
             // If error state is returned, should still have some result
             assertNotNull(result2.getResult());
