@@ -32,7 +32,7 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 |CUI_JWT_QUARKUS-001 |CONFIG |Resolving issuer configurations from properties |Logs start of issuer configuration resolution
 |CUI_JWT_QUARKUS-002 |CONFIG |Resolved issuer configuration: %s |Logs successful issuer configuration resolution
 |CUI_JWT_QUARKUS-003 |CONFIG |Resolved %s enabled issuer configurations |Logs total number of enabled issuer configurations
-|CUI_JWT_QUARKUS-004 |CONFIG |Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringSize=%s, maxArraySize=%s, maxDepth=%s |Logs parser configuration resolution details
+|CUI_JWT_QUARKUS-004 |CONFIG |Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s |Logs parser configuration resolution details
 |===
 
 ==== Validation Messages (011-020)
@@ -42,6 +42,7 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 |ID |Component |Message |Description
 |CUI_JWT_QUARKUS-011 |VALIDATION |Initializing JWT validation components from configuration |Logs start of JWT validation component initialization
 |CUI_JWT_QUARKUS-012 |VALIDATION |JWT validation components initialized successfully with %s issuers |Logs successful JWT validation component initialization
+|CUI_JWT_QUARKUS-013 |VALIDATION |Resolving access log filter configuration from properties |Logs start of access log filter configuration resolution
 |===
 
 ==== Metrics Messages (021-030)
@@ -53,12 +54,44 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 |CUI_JWT_QUARKUS-022 |METRICS |JwtMetricsCollector initialized with %s event types |Logs successful JWT metrics collector initialization
 |===
 
-==== Bearer Token Messages (031-040)
+==== Cache Messages (041-050)
 
 [cols="1,1,2,2", options="header"]
 |===
 |ID |Component |Message |Description
-|CUI_JWT_QUARKUS-031 |BEARER_TOKEN |Bearer token validation successful |Logs successful bearer token validation in CDI producer
+|CUI_JWT_QUARKUS-041 |CACHE |Resolving access token cache configuration from properties |Logs start of access token cache configuration resolution
+|CUI_JWT_QUARKUS-042 |CACHE |Access token cache disabled (maxSize=0) |Logs that access token cache is disabled
+|CUI_JWT_QUARKUS-043 |CACHE |Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s |Logs successful access token cache configuration
+|===
+
+==== Metrics Clear Messages (051-060)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-051 |METRICS |Clearing all JWT metrics |Logs start of JWT metrics clearing
+|CUI_JWT_QUARKUS-052 |METRICS |JWT metrics cleared successfully |Logs successful JWT metrics clearing
+|===
+
+==== JWKS Startup Messages (061-070)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-060 |JWKS |JWKS startup service activated for background key loading |Logs JWKS startup service activation
+|CUI_JWT_QUARKUS-061 |JWKS |Starting asynchronous JWKS initialization for %s issuer(s) |Logs start of async JWKS initialization
+|CUI_JWT_QUARKUS-062 |JWKS |No issuer configurations found - skipping JWKS initialization |Logs no issuer configurations found
+|CUI_JWT_QUARKUS-063 |JWKS |Background JWKS initialization completed successfully |Logs successful background JWKS initialization
+|CUI_JWT_QUARKUS-064 |JWKS |Background JWKS loading completed for issuer: %s with status: %s |Logs JWKS loading completion per issuer
+|===
+
+==== Access Log Filter Messages (065-070)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-065 |ACCESS_LOG |CustomAccessLogFilter initialized: %s |Logs custom access log filter initialization
+|CUI_JWT_QUARKUS-066 |ACCESS_LOG |%s |Logs access log entry
 |===
 
 === WARN Level (100-199)
@@ -71,31 +104,42 @@ This document catalogs all log messages across the CUI JWT Quarkus modules. Each
 |CUI_JWT_QUARKUS-100 |HEALTH |Error checking JWKS loader for issuer %s: %s |Warns about error checking JWKS loader during health check
 |===
 
-==== Metrics Warnings (111-120)
-
-[cols="1,1,2,2", options="header"]
-|===
-|ID |Component |Message |Description
-|CUI_JWT_QUARKUS-111 |METRICS |SecurityEventCounter not available, metrics will not be collected |Warns about unavailable SecurityEventCounter affecting metrics collection
-|===
 
 ==== Bearer Token Warnings (121-130)
 
 [cols="1,1,2,2", options="header"]
 |===
 |ID |Component |Message |Description
-|CUI_JWT_QUARKUS-121 |BEARER_TOKEN |BearerToken annotation missing at injection point |Warns about missing BearerToken annotation at CDI injection point
-|CUI_JWT_QUARKUS-122 |BEARER_TOKEN |Bearer token missing or invalid in Authorization header |Warns about missing or invalid Authorization header
-|CUI_JWT_QUARKUS-123 |BEARER_TOKEN |Bearer token does not meet required scopes, roles, or groups |Warns about bearer token not meeting annotation requirements
-|CUI_JWT_QUARKUS-124 |BEARER_TOKEN |Bearer token validation failed: %s |Warns about bearer token validation failure with error details
-|CUI_JWT_QUARKUS-125 |BEARER_TOKEN |Bearer token missing required scopes. Required: %s, Found: %s |Warns about missing required scopes with comparison
-|CUI_JWT_QUARKUS-126 |BEARER_TOKEN |Bearer token missing required roles. Required: %s, Found: %s |Warns about missing required roles with comparison
-|CUI_JWT_QUARKUS-127 |BEARER_TOKEN |Bearer token missing required groups. Required: %s, Found: %s |Warns about missing required groups with comparison
+|CUI_JWT_QUARKUS-128 |BEARER_TOKEN |Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s |Warns about bearer token not meeting requirements with details
+|===
+
+==== JWKS Startup Warnings (131-140)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-131 |JWKS |Background JWKS loading failed for issuer %s: %s |Warns about background JWKS loading failure
+|===
+
+==== Metrics Warnings (133-140)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-133 |METRICS |No Micrometer counter found for event type %s, delta %s lost |Warns about missing Micrometer counter
+|CUI_JWT_QUARKUS-134 |JWKS |JWKS loading failed for issuer %s: %s - will retry via background refresh |Warns about JWKS loading failure with retry
+|CUI_JWT_QUARKUS-135 |JWKS |Background JWKS initialization encountered issues: %s - on-demand loading will handle this |Warns about background JWKS issues
 |===
 
 === ERROR Level (200-299)
 
-Currently no ERROR level messages are defined in the runtime module.
+==== Infrastructure Errors (200-210)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+|CUI_JWT_QUARKUS-201 |INFRASTRUCTURE |Vertx HttpServerRequest context is unavailable - no active request context found |Errors when Vertx request context unavailable
+|===
 
 == CUI JWT Quarkus Deployment Module
 

@@ -111,14 +111,6 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
 
-        // Bearer Token Messages (031-040)
-        
-        public static final LogRecord BEARER_TOKEN_VALIDATION_SUCCESS = LogRecordModel.builder()
-                .template("Bearer token validation successful")
-                .prefix(PREFIX)
-                .identifier(31)
-                .build();
-
         // Cache Messages (041-050)
         
         public static final LogRecord RESOLVING_ACCESS_TOKEN_CACHE_CONFIG = LogRecordModel.builder()
@@ -214,64 +206,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(100)
                 .build();
 
-        // Metrics Warnings (111-120)
-        
-        public static final LogRecord SECURITY_EVENT_COUNTER_NOT_AVAILABLE = LogRecordModel.builder()
-                .template("SecurityEventCounter not available, metrics will not be collected")
-                .prefix(PREFIX)
-                .identifier(111)
-                .build();
-
-
-        public static final LogRecord HTTP_METRICS_MONITOR_NOT_AVAILABLE = LogRecordModel.builder()
-                .template("HttpMetricsMonitor not available, HTTP-level metrics will not be collected")
-                .prefix(PREFIX)
-                .identifier(113)
-                .build();
-
         // Bearer Token Warnings (121-130)
-        
-        public static final LogRecord BEARER_TOKEN_ANNOTATION_MISSING = LogRecordModel.builder()
-                .template("BearerToken annotation missing at injection point")
-                .prefix(PREFIX)
-                .identifier(121)
-                .build();
-
-        public static final LogRecord BEARER_TOKEN_MISSING_OR_INVALID = LogRecordModel.builder()
-                .template("Bearer token missing or invalid in Authorization header")
-                .prefix(PREFIX)
-                .identifier(122)
-                .build();
-
-        public static final LogRecord BEARER_TOKEN_REQUIREMENTS_NOT_MET = LogRecordModel.builder()
-                .template("Bearer token does not meet required scopes, roles, or groups")
-                .prefix(PREFIX)
-                .identifier(123)
-                .build();
-
-        public static final LogRecord BEARER_TOKEN_VALIDATION_FAILED = LogRecordModel.builder()
-                .template("Bearer token validation failed: %s")
-                .prefix(PREFIX)
-                .identifier(124)
-                .build();
-
-        public static final LogRecord BEARER_TOKEN_MISSING_SCOPES = LogRecordModel.builder()
-                .template("Bearer token missing required scopes. Required: %s, Found: %s")
-                .prefix(PREFIX)
-                .identifier(125)
-                .build();
-
-        public static final LogRecord BEARER_TOKEN_MISSING_ROLES = LogRecordModel.builder()
-                .template("Bearer token missing required roles. Required: %s, Found: %s")
-                .prefix(PREFIX)
-                .identifier(126)
-                .build();
-
-        public static final LogRecord BEARER_TOKEN_MISSING_GROUPS = LogRecordModel.builder()
-                .template("Bearer token missing required groups. Required: %s, Found: %s")
-                .prefix(PREFIX)
-                .identifier(127)
-                .build();
 
         public static final LogRecord BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED = LogRecordModel.builder()
                 .template("Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s")
@@ -285,12 +220,6 @@ public final class CuiJwtQuarkusLogMessages {
                 .template("Background JWKS loading failed for issuer %s: %s")
                 .prefix(PREFIX)
                 .identifier(131)
-                .build();
-
-        public static final LogRecord JWKS_BACKGROUND_LOADING_COMPLETED_WITH_ERRORS = LogRecordModel.builder()
-                .template("JWKS background loading completed with errors or timeout: %s")
-                .prefix(PREFIX)
-                .identifier(132)
                 .build();
 
         // Metrics Warnings (133-140)
@@ -321,12 +250,6 @@ public final class CuiJwtQuarkusLogMessages {
     public static final class ERROR {
 
         // Infrastructure Errors (200-210)
-        
-        public static final LogRecord BEARER_TOKEN_HEADER_MAP_ACCESS_FAILED = LogRecordModel.builder()
-                .template("Failed to access HTTP header map for bearer token extraction")
-                .prefix(PREFIX)
-                .identifier(200)
-                .build();
 
         public static final LogRecord VERTX_REQUEST_CONTEXT_UNAVAILABLE = LogRecordModel.builder()
                 .template("Vertx HttpServerRequest context is unavailable - no active request context found")
@@ -334,18 +257,5 @@ public final class CuiJwtQuarkusLogMessages {
                 .identifier(201)
                 .build();
 
-        // JWKS Startup Errors (211-220)
-        
-        public static final LogRecord BACKGROUND_JWKS_INITIALIZATION_ERROR = LogRecordModel.builder()
-                .template("Background JWKS initialization completed with errors: %s")
-                .prefix(PREFIX)
-                .identifier(211)
-                .build();
-
-        public static final LogRecord JWKS_BACKGROUND_LOADING_COORDINATION_ERROR = LogRecordModel.builder()
-                .template("Error during JWKS background loading coordination: %s")
-                .prefix(PREFIX)
-                .identifier(212)
-                .build();
     }
 }
