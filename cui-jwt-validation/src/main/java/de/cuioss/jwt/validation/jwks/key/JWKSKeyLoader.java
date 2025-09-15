@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.json.JwkKey;
 import de.cuioss.jwt.validation.json.Jwks;
@@ -25,7 +24,6 @@ import de.cuioss.jwt.validation.jwks.parser.JwksParser;
 import de.cuioss.jwt.validation.jwks.parser.KeyProcessor;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.client.LoaderStatus;
 import de.cuioss.tools.string.MoreStrings;
@@ -359,14 +357,10 @@ public class JWKSKeyLoader implements JwksLoader {
      * Initializes the JWKS keys by parsing the content.
      */
     private void initializeKeys() {
-        try {
-            if (jwks != null) {
-                parseAndProcessKeys(jwks);
-            } else {
-                parseAndProcessKeys(jwksContent);
-            }
-        } catch (IllegalArgumentException e) {
-            handleParseError(e);
+        if (jwks != null) {
+            parseAndProcessKeys(jwks);
+        } else {
+            parseAndProcessKeys(jwksContent);
         }
     }
 
@@ -422,16 +416,4 @@ public class JWKSKeyLoader implements JwksLoader {
         LOGGER.debug("Successfully loaded %s key(s)", keyMap.size());
     }
 
-
-    /**
-     * Handles parse errors by logging and setting error state.
-     *
-     * @param e the exception that occurred during parsing
-     */
-    private void handleParseError(Exception e) {
-        LOGGER.warn(e, WARN.JWKS_JSON_PARSE_FAILED.format(e.getMessage()));
-        securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-        this.keyInfoMap = new ConcurrentHashMap<>();
-        this.status = LoaderStatus.ERROR;
-    }
 }
