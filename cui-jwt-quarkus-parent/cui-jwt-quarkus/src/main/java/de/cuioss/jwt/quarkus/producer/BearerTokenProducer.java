@@ -156,6 +156,13 @@ public class BearerTokenProducer {
 
         String bearerToken = tokenResult.get();
 
+        // Check for empty bearer token (RFC 6750 violation - should return 400 Bad Request)
+        if (bearerToken.trim().isEmpty()) {
+            LOGGER.debug("Bearer token is empty - invalid request per RFC 6750");
+            return BearerTokenResult.invalidRequest(
+                    "Bearer token is empty", requiredScopes, requiredRoles, requiredGroups);
+        }
+
         try {
             LOGGER.trace("Validating bearer token: %s", bearerToken);
             AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);

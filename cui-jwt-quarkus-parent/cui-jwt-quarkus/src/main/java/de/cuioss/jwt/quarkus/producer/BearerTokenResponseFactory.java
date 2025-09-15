@@ -91,6 +91,7 @@ public class BearerTokenResponseFactory {
             case NO_TOKEN_GIVEN -> createNoTokenResponse();
             case PARSING_ERROR -> createParsingErrorResponse();
             case CONSTRAINT_VIOLATION -> createConstraintViolationResponse(result);
+            case INVALID_REQUEST -> createInvalidRequestResponse(result);
         };
     }
 
@@ -145,6 +146,23 @@ public class BearerTokenResponseFactory {
     }
 
     /**
+     * Creates a bad request response for invalid bearer token format (RFC 6750 violation).
+     * <p>
+     * According to RFC 6750, malformed bearer token requests (e.g., empty token)
+     * should return 400 Bad Request with error code "invalid_request".
+     */
+    private static Response createInvalidRequestResponse(BearerTokenResult result) {
+        String wwwAuthenticate = buildInvalidRequestHeader(result.getErrorMessage().orElse("Invalid bearer token format"));
+        return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.APPLICATION_JSON)
+                .header(HEADER_WWW_AUTHENTICATE, wwwAuthenticate)
+                .header(HEADER_CACHE_CONTROL, CACHE_CONTROL_VALUE)
+                .header(HEADER_PRAGMA, PRAGMA_VALUE)
+                .entity(createErrorEntity(result.getErrorMessage().orElse("Invalid bearer token format")))
+                .build();
+    }
+
+    /**
      * Creates a response for constraint violations (missing scopes, roles, or groups).
      */
     private static Response createConstraintViolationResponse(BearerTokenResult result) {
@@ -183,6 +201,19 @@ public class BearerTokenResponseFactory {
         return "%s %s, %s=\"%s\", %s=\"%s\"".formatted(
                 BEARER_SCHEME, REALM_PARAMETER, PARAM_ERROR, ERROR_INVALID_TOKEN,
                 PARAM_ERROR_DESCRIPTION, ERROR_MSG_INVALID_TOKEN);
+    }
+
+    /**
+     * Builds a WWW-Authenticate header for invalid request errors (RFC 6750).
+     * Used when the bearer token format is invalid (e.g., empty token).
+     *
+     * @param errorDescription The error description
+     * @return Formatted WWW-Authenticate header value for invalid requests
+     */
+    private static String buildInvalidRequestHeader(String errorDescription) {
+        return "%s %s, %s=\"%s\", %s=\"%s\"".formatted(
+                BEARER_SCHEME, REALM_PARAMETER, PARAM_ERROR, "invalid_request",
+                PARAM_ERROR_DESCRIPTION, errorDescription);
     }
 
     /**

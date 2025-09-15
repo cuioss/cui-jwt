@@ -339,6 +339,7 @@ class BearerTokenResultTest {
                     new TokenValidationException(EventType.INVALID_JWT_FORMAT, "test"), Set.of(), Set.of(), Set.of());
             case CONSTRAINT_VIOLATION -> BearerTokenResult.constraintViolation(Set.of(), Set.of(), Set.of());
             case COULD_NOT_ACCESS_REQUEST -> BearerTokenResult.couldNotAccessRequest(Set.of(), Set.of(), Set.of());
+            case INVALID_REQUEST -> BearerTokenResult.invalidRequest("Invalid token format", Set.of(), Set.of(), Set.of());
         };
     }
 }
