@@ -28,25 +28,22 @@ import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
-// Claim handling classes
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
-// Claim mappers
 import de.cuioss.jwt.validation.domain.claim.mapper.*;
-// Domain token classes
 import de.cuioss.jwt.validation.domain.token.*;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-// JWKS classes
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.jwks.parser.JwksParser;
 import de.cuioss.jwt.validation.pipeline.*;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-// Security and algorithm classes
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
+import de.cuioss.tools.logging.LogRecord;
+import de.cuioss.tools.logging.LogRecordModel;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -64,8 +61,6 @@ import io.quarkus.devui.spi.page.Page;
 import io.quarkus.resteasy.common.spi.ResteasyJaxrsProviderBuildItem;
 import lombok.NonNull;
 import org.jboss.jandex.DotName;
-
-import static de.cuioss.jwt.quarkus.deployment.CuiJwtQuarkusDeploymentLogMessages.INFO;
 
 /**
  * Processor for the CUI JWT Quarkus extension.
@@ -88,6 +83,15 @@ public class CuiJwtProcessor {
     private static final CuiLogger LOGGER = new CuiLogger(CuiJwtProcessor.class);
 
     /**
+     * LogRecord for feature registration.
+     */
+    private static final LogRecord CUI_JWT_FEATURE_REGISTERED = LogRecordModel.builder()
+            .template("CUI JWT feature registered")
+            .prefix("CUI_JWT_QUARKUS_DEPLOYMENT")
+            .identifier(1)
+            .build();
+
+    /**
      * Register the CUI JWT feature.
      *
      * @return A {@link FeatureBuildItem} for the CUI JWT feature
@@ -95,7 +99,7 @@ public class CuiJwtProcessor {
     @BuildStep
     @NonNull
     public FeatureBuildItem feature() {
-        LOGGER.info(INFO.CUI_JWT_FEATURE_REGISTERED::format);
+        LOGGER.info(CUI_JWT_FEATURE_REGISTERED::format);
         return new FeatureBuildItem(FEATURE);
     }
 
