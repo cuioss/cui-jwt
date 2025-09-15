@@ -199,6 +199,10 @@ class WellKnownResultConverterTest {
                 restrictiveConverter.convert(largeJson));
 
         assertTrue(securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED) > 0);
+        
+        // Verify the log message was written
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.resolveIdentifierString());
     }
 
     @Test
