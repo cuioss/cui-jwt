@@ -15,7 +15,11 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.json.JwkKey;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -28,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link JwkKeyHandler} with a focus on security aspects and potential attacks.
  */
+@EnableTestLogger
 class JwkKeyHandlerTest {
 
     private JwkKey createRsaJwk() {
@@ -96,6 +101,11 @@ class JwkKeyHandlerTest {
                 () -> JwkKeyHandler.parseRsaKey(jwk)
         );
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'n'"), exception.getMessage());
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test
@@ -107,6 +117,11 @@ class JwkKeyHandlerTest {
                 () -> JwkKeyHandler.parseRsaKey(jwk)
         );
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'e'"));
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test
@@ -142,6 +157,11 @@ class JwkKeyHandlerTest {
         );
 
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'x'"), "Actual message: " + exception.getMessage());
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test
@@ -154,6 +174,11 @@ class JwkKeyHandlerTest {
         );
 
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'y'"), exception.getMessage());
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @ParameterizedTest
@@ -176,6 +201,44 @@ class JwkKeyHandlerTest {
             default:
                 fail("Unexpected curve: " + curve);
         }
+    }
+
+    @Test
+    void shouldRejectRsaKeyWithBase64Padding() {
+        // This tests the specific case where Base64 URL should NOT have padding
+        // Base64 URL (RFC 4648) explicitly forbids padding characters
+        // Testing with "abc==" which has padding characters
+        JwkKey jwk = createRsaJwk("abc==", "AQAB");  // Double padding - definitely invalid for Base64 URL
+
+        InvalidKeySpecException exception = assertThrows(
+                InvalidKeySpecException.class,
+                () -> JwkKeyHandler.parseRsaKey(jwk)
+        );
+        assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'n'"),
+                "Should reject Base64 with padding, actual message: " + exception.getMessage());
+
+        // Verify that the warning was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "abc==");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
+    }
+
+    @Test
+    void shouldRejectEcKeyWithBase64Padding() {
+        // Test EC key with Base64 padding in coordinates
+        JwkKey jwk = createEcJwk("validX", "abc==");  // Double padding - definitely invalid for Base64 URL
+
+        InvalidKeySpecException exception = assertThrows(
+                InvalidKeySpecException.class,
+                () -> JwkKeyHandler.parseEcKey(jwk)
+        );
+        assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'y'"),
+                "Should reject Base64 with padding, actual message: " + exception.getMessage());
+
+        // Verify that the warning was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "abc==");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test

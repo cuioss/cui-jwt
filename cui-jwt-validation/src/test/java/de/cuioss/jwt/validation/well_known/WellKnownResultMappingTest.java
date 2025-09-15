@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Oliver Wolff
  */
+@SuppressWarnings("unchecked")
 @DisplayName("WellKnownResult DSL-JSON Mapping")
 class WellKnownResultMappingTest {
 

@@ -39,13 +39,10 @@ class HttpHandlerProviderTest {
                 .retryStrategy(retryStrategy)
                 .build();
 
-        // When: Casting to HttpHandlerProvider interface
-        HttpHandlerProvider provider = config;
-
         // Then: Should provide both HttpHandler and RetryStrategy
-        assertNotNull(provider.getHttpHandler(), "HttpHandler should not be null");
-        assertNotNull(provider.getRetryStrategy(), "RetryStrategy should not be null");
-        assertSame(retryStrategy, provider.getRetryStrategy(), "Should return the same RetryStrategy instance");
+        assertNotNull(config.getHttpHandler(), "HttpHandler should not be null");
+        assertNotNull(config.getRetryStrategy(), "RetryStrategy should not be null");
+        assertSame(retryStrategy, config.getRetryStrategy(), "Should return the same RetryStrategy instance");
     }
 
     @Test
@@ -55,14 +52,11 @@ class HttpHandlerProviderTest {
                 .wellKnownUrl(TEST_URL)
                 .build();
 
-        // When: Using as HttpHandlerProvider
-        HttpHandlerProvider provider = config;
-
         // Then: Should provide default RetryStrategy (exponentialBackoff)
-        assertNotNull(provider.getHttpHandler(), "HttpHandler should not be null");
-        assertNotNull(provider.getRetryStrategy(), "Should provide default RetryStrategy");
+        assertNotNull(config.getHttpHandler(), "HttpHandler should not be null");
+        assertNotNull(config.getRetryStrategy(), "Should provide default RetryStrategy");
         // The default is exponentialBackoff, so it should not be the no-op strategy
-        assertNotSame(RetryStrategy.none(), provider.getRetryStrategy(), "Default should not be no-op strategy");
+        assertNotSame(RetryStrategy.none(), config.getRetryStrategy(), "Default should not be no-op strategy");
     }
 
     @Test
@@ -75,12 +69,9 @@ class HttpHandlerProviderTest {
                 .retryStrategy(noOpStrategy)
                 .build();
 
-        // When: Using as HttpHandlerProvider
-        HttpHandlerProvider provider = config;
-
         // Then: Should work correctly
-        assertNotNull(provider.getHttpHandler());
-        assertSame(noOpStrategy, provider.getRetryStrategy());
+        assertNotNull(config.getHttpHandler());
+        assertSame(noOpStrategy, config.getRetryStrategy());
     }
 
     @Test
@@ -93,13 +84,10 @@ class HttpHandlerProviderTest {
                 .retryStrategy(retryStrategy)
                 .build();
 
-        // When: Casting to HttpHandlerProvider interface
-        HttpHandlerProvider provider = config;
-
         // Then: Should provide both HttpHandler and RetryStrategy
-        assertNotNull(provider.getHttpHandler(), "HttpHandler should not be null in direct mode");
-        assertNotNull(provider.getRetryStrategy(), "RetryStrategy should not be null");
-        assertSame(retryStrategy, provider.getRetryStrategy(), "Should return the same RetryStrategy instance");
+        assertNotNull(config.getHttpHandler(), "HttpHandler should not be null in direct mode");
+        assertNotNull(config.getRetryStrategy(), "RetryStrategy should not be null");
+        assertSame(retryStrategy, config.getRetryStrategy(), "Should return the same RetryStrategy instance");
     }
 
     @Test
@@ -112,13 +100,10 @@ class HttpHandlerProviderTest {
                 .retryStrategy(retryStrategy)
                 .build();
 
-        // When: Casting to HttpHandlerProvider interface
-        HttpHandlerProvider provider = config;
-
         // Then: Should provide both HttpHandler and RetryStrategy
-        assertNotNull(provider.getHttpHandler(), "HttpHandler should not be null in well-known mode");
-        assertNotNull(provider.getRetryStrategy(), "RetryStrategy should not be null");
-        assertSame(retryStrategy, provider.getRetryStrategy(), "Should return the same RetryStrategy instance");
+        assertNotNull(config.getHttpHandler(), "HttpHandler should not be null in well-known mode");
+        assertNotNull(config.getRetryStrategy(), "RetryStrategy should not be null");
+        assertSame(retryStrategy, config.getRetryStrategy(), "Should return the same RetryStrategy instance");
     }
 
     @Test
@@ -128,11 +113,8 @@ class HttpHandlerProviderTest {
                 .jwksUrl(TEST_URL.replace("/.well-known/openid_configuration", "/jwks"))
                 .build();
 
-        // When: Using as HttpHandlerProvider
-        HttpHandlerProvider provider = config;
-
         // Then: Should provide default RetryStrategy
-        assertNotNull(provider.getHttpHandler(), "HttpHandler should not be null");
-        assertNotNull(provider.getRetryStrategy(), "Should provide default RetryStrategy");
+        assertNotNull(config.getHttpHandler(), "HttpHandler should not be null");
+        assertNotNull(config.getRetryStrategy(), "Should provide default RetryStrategy");
     }
 }

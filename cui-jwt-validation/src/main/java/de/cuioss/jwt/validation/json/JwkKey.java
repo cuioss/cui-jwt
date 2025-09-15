@@ -16,11 +16,14 @@
 package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.CompiledJson;
+import de.cuioss.tools.logging.CuiLogger;
 
 import java.math.BigInteger;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.regex.Pattern;
+
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 
 /**
  * Represents a JSON Web Key (JWK) for DSL-JSON mapping.
@@ -50,6 +53,7 @@ String y      // EC y coordinate (Base64url-encoded, EC only)
 ) {
 
     private static final Pattern BASE64_URL_PATTERN = Pattern.compile("^[A-Za-z0-9\\-_]*=*$");
+    private static final CuiLogger LOGGER = new CuiLogger(JwkKey.class);
 
     /**
      * Gets the key type as Optional.
@@ -172,6 +176,7 @@ String y      // EC y coordinate (Base64url-encoded, EC only)
 
         // Validate Base64 URL format
         if (!BASE64_URL_PATTERN.matcher(base64String).matches()) {
+            LOGGER.warn(WARN.INVALID_BASE64_URL_ENCODING.format(base64String));
             return Optional.empty();
         }
 
@@ -179,7 +184,8 @@ String y      // EC y coordinate (Base64url-encoded, EC only)
             byte[] decoded = Base64.getUrlDecoder().decode(base64String);
             return Optional.of(new BigInteger(1, decoded));
         } catch (IllegalArgumentException e) {
-            // Invalid Base64 encoding
+            // Invalid Base64 URL encoding (e.g., contains padding or invalid characters)
+            LOGGER.warn(WARN.INVALID_BASE64_URL_ENCODING.format(base64String));
             return Optional.empty();
         }
     }

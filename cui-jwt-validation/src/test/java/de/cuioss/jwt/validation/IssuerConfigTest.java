@@ -167,6 +167,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             assertTrue(exception.getMessage().contains("No JwksLoader configuration is present"));
         }
 
+        @SuppressWarnings("DataFlowIssue")
         @Test
         @DisplayName("Should throw exception when securityEventCounter is null")
         void shouldThrowExceptionWhenSecurityEventCounterIsNull() {
@@ -248,7 +249,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
         @DisplayName("Should log warning when claimSubOptional is true")
         void shouldLogWarningWhenClaimSubOptionalIsTrue() {
             // Build config with claimSubOptional set to true
-            var config = IssuerConfig.builder()
+            IssuerConfig.builder()
                     .issuerIdentifier(TEST_ISSUER)
                     .jwksContent(TEST_JWKS_CONTENT)
                     .claimSubOptional(true)

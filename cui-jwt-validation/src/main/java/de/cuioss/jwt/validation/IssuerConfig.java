@@ -286,6 +286,7 @@ public class IssuerConfig implements LoadingStatusProvider {
      *   <li>Algorithm preferences and claim mappers are properly initialized</li>
      * </ul>
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     public static class IssuerConfigBuilder {
         // Lombok-generated fields
         private boolean enabled = true;
@@ -799,18 +800,6 @@ public class IssuerConfig implements LoadingStatusProvider {
         this.algorithmPreferences = algorithmPreferences != null ? algorithmPreferences : new SignatureAlgorithmPreferences();
         this.claimMappers = claimMappers != null ? claimMappers : Map.of();
         this.jwksLoader = jwksLoader;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public JwksLoader getJwksLoader() {
-        return jwksLoader;
-    }
-
-    public SignatureAlgorithmPreferences getAlgorithmPreferences() {
-        return algorithmPreferences;
     }
 
 }

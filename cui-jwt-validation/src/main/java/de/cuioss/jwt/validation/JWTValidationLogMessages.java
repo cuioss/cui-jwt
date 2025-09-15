@@ -387,6 +387,12 @@ public final class JWTValidationLogMessages {
                 .identifier(134)
                 .template("IssuerConfig for issuer '%s' has claimSubOptional=true. This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. Use this setting only when necessary and ensure appropriate alternative validation mechanisms.")
                 .build();
+
+        public static final LogRecord INVALID_BASE64_URL_ENCODING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(135)
+                .template("Invalid Base64 URL encoding detected for JWK field: %s")
+                .build();
     }
 
 }

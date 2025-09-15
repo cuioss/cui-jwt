@@ -180,7 +180,7 @@ class IssuerConfigResolverTest {
                     .enabled(false)
                     .build();
 
-            IssuerConfigResolver resolver = new IssuerConfigResolver(
+            new IssuerConfigResolver(
                     List.of(enabledConfig, disabledConfig),
                     securityEventCounter
             );
