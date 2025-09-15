@@ -22,7 +22,6 @@
  * Key components:
  * <ul>
  *   <li>{@link de.cuioss.jwt.validation.jwks.key.KeyInfo} - Holds information about a key, including the key itself and its algorithm</li>
- *   <li>{@link de.cuioss.jwt.validation.jwks.key.JwkKeyConstants} - Constants for JWK key properties</li>
  *   <li>{@link de.cuioss.jwt.validation.jwks.key.JwkKeyHandler} - Handles parsing and conversion of JWK keys</li>
  *   <li>{@link de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader} - Loads and manages keys from a JWKS</li>
  * </ul>

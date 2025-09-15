@@ -22,7 +22,7 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.tools.net.http.converter.JsonContentConverter} - Secure JSON content converter using DSL-JSON</li>
+ *   <li>Secure JSON content converters using DSL-JSON</li>
  * </ul>
  * <p>
  * The converters use DSL-JSON with configurable security limits to prevent

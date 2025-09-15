@@ -28,7 +28,7 @@ import java.util.Optional;
 /**
  * A {@link ClaimMapper} implementation for splitting string claims by a specified character.
  * <p>
- * This mapper only works with {@link JsonValue.ValueType#STRING} values and splits the string
+ * This mapper only works with string values and splits the string
  * using the provided split character. It trims the results and omits empty strings.
  * <p>
  * This is particularly useful for claims that contain multiple values in a single string

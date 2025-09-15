@@ -29,15 +29,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A type-safe wrapper for Map<String, Object> that provides convenient access methods
+ * A type-safe wrapper for Map&lt;String, Object&gt; that provides convenient access methods
  * for JWT claim processing.
  * <p>
- * This record encapsulates access to the underlying Map<String, Object> representation
+ * This record encapsulates access to the underlying Map&lt;String, Object&gt; representation
  * of JWT claims, providing type-safe methods for extracting common claim types such as
  * strings, numbers, lists, and nested objects.
  * <p>
  * The record follows the same access patterns as the previous JsonObject-based approach
- * but works with the DSL-JSON deserialized Map<String, Object> structure.
+ * but works with the DSL-JSON deserialized Map&lt;String, Object&gt; structure.
  * <p>
  * Key features:
  * <ul>
