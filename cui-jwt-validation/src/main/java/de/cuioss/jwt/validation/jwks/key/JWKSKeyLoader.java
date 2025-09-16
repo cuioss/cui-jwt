@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -344,13 +345,17 @@ public class JWKSKeyLoader implements JwksLoader {
     }
 
     @Override
-    public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+    public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
         if (!initialized) {
             this.securityEventCounter = securityEventCounter;
             this.initialized = true;
             initializeKeys();
             LOGGER.debug("JWKSKeyLoader initialized with SecurityEventCounter");
+            // Return completed future with current status after initialization
+            return CompletableFuture.completedFuture(status);
         }
+        // Already initialized, return current status immediately
+        return CompletableFuture.completedFuture(status);
     }
 
     /**

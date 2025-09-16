@@ -255,7 +255,8 @@ public class HttpJwksLoader implements JwksLoader {
                 .jwksType(getJwksType())
                 .build();
         // Initialize the JWKSKeyLoader with the SecurityEventCounter
-        newLoader.initJWKSLoader(securityEventCounter);
+        // Since JWKSKeyLoader initialization is synchronous, we can safely call join()
+        newLoader.initJWKSLoader(securityEventCounter).join();
         keyLoader.set(newLoader);
     }
 
@@ -379,11 +380,19 @@ public class HttpJwksLoader implements JwksLoader {
     }
 
     @Override
-    public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+    public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
         if (initialized.compareAndSet(false, true)) {
             this.securityEventCounter = securityEventCounter;
             LOGGER.debug("HttpJwksLoader initialized with SecurityEventCounter");
+
+            // Trigger async loading and return a CompletableFuture
+            return CompletableFuture.supplyAsync(() -> {
+                loadKeysIfNeeded();
+                return getCurrentStatus();
+            });
         }
+        // Already initialized, return current status immediately
+        return CompletableFuture.completedFuture(getCurrentStatus());
     }
 
 }

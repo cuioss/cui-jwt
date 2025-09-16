@@ -22,6 +22,7 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import lombok.NonNull;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Interface for loading JSON Web Keys (JWK) from a JWKS source.
@@ -133,18 +134,21 @@ public interface JwksLoader extends LoadingStatusProvider {
     LoaderStatus getCurrentStatus();
 
     /**
-     * Initializes the JwksLoader with the provided SecurityEventCounter.
+     * Initializes the JwksLoader with the provided SecurityEventCounter and triggers
+     * asynchronous loading of key material.
      * <p>
      * This method should be called after construction to complete the initialization
-     * of the JWKS loader with the security event counter for tracking security events.
+     * of the JWKS loader with the security event counter for tracking security events
+     * and to begin loading the JWKS content asynchronously.
      * </p>
      * <p>
-     * This method is not thread-safe and should be called before the object is shared
-     * between threads.
+     * The returned CompletableFuture will complete when the initial loading of keys
+     * is finished, with a LoaderStatus indicating the result of the loading operation.
      * </p>
      *
      * @param securityEventCounter the counter for security events, must not be null
+     * @return a CompletableFuture that completes when keys are loaded, with the final LoaderStatus
      * @throws NullPointerException if securityEventCounter is null
      */
-    void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter);
+    CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter);
 }

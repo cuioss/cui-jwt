@@ -190,7 +190,8 @@ public class IssuerConfig implements LoadingStatusProvider {
         }
 
         // Initialize the JwksLoader with the SecurityEventCounter
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // For now, we block on completion - proper async handling will be in C6
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
     }
 
 

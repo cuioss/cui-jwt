@@ -51,22 +51,23 @@ class SimpleHttpJwksLoaderTest {
                 .build();
 
         httpJwksLoader = new HttpJwksLoader(config);
-        httpJwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        httpJwksLoader.initJWKSLoader(securityEventCounter).join();
     }
 
     @Test
     void basicKeyLoading() {
-        // getLoaderStatus() no longer triggers loading, it just returns current status
-        // Status starts as UNDEFINED until loading is triggered
-        assertEquals(LoaderStatus.UNDEFINED, httpJwksLoader.getLoaderStatus());
-
-        // Trigger loading by attempting to get a key
-        httpJwksLoader.getKeyInfo("test-key-id");
-
-        // After loading attempt, status should be OK (for valid JWKS)
+        // With async initialization, loading happens during initJWKSLoader
+        // Since we wait for it to complete in setUp, status should be OK
         assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus());
 
-        // Should have called endpoint once during health check
+        // Get a key - loading already happened during initialization
+        httpJwksLoader.getKeyInfo("test-key-id");
+
+        // Status should still be OK
+        assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus());
+
+        // Should have called endpoint once during initialization
         assertEquals(1, moduleDispatcher.getCallCounter());
 
         // Load a key - should use already loaded keys

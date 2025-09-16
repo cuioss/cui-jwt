@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -291,8 +292,9 @@ class TokenSignatureValidatorTest {
             }
 
             @Override
-            public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+            public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
                 // This is a test implementation, no initialization needed
+                return CompletableFuture.completedFuture(LoaderStatus.OK);
             }
         };
 

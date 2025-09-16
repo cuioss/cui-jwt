@@ -27,7 +27,7 @@ After implementing any task, **strictly follow this completion process**:
 ## Code Structure and Design Tasks
 
 ### C1. Update JwksLoader Interface for Async Initialization
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Modify the JwksLoader interface to return CompletableFuture from initJWKSLoader method, enabling unified async loading pattern for all loader types.
 
