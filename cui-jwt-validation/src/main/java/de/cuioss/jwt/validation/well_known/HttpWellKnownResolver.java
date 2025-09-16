@@ -65,7 +65,7 @@ public class HttpWellKnownResolver implements LoadingStatusProvider {
         if (cachedResult == null) {
             cachedResult = wellKnownHandler.load();
         }
-        if (cachedResult.isValid() && cachedResult.getResult() != null) {
+        if (cachedResult.isValid()) {
             return Optional.of(cachedResult.getResult());
         }
         return Optional.empty();

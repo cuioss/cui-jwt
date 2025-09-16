@@ -61,10 +61,12 @@ class HttpJwksLoaderTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
 
         httpJwksLoader = new HttpJwksLoader(config);
-        httpJwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        httpJwksLoader.initJWKSLoader(securityEventCounter).join();
     }
 
     @Test
@@ -164,10 +166,12 @@ class HttpJwksLoaderTest {
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
 
         HttpJwksLoader customLoader = new HttpJwksLoader(config);
-        customLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        customLoader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(customLoader);
 
         // Verify it works
@@ -188,9 +192,11 @@ class HttpJwksLoaderTest {
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
         HttpJwksLoader newLoader = new HttpJwksLoader(config);
-        newLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        newLoader.initJWKSLoader(securityEventCounter).join();
 
         // Verify the new loader works independently
         assertNotNull(newLoader.getLoaderStatus(), "Health check should work for new loader");
@@ -211,30 +217,22 @@ class HttpJwksLoaderTest {
         // Then the key should be found
         assertTrue(keyInfo.isPresent(), "Key info should be present");
 
-        // Verify that some info logging occurred during JWKS loading
-        // The simplified loader logs success messages
+        // Verify that JWKS loaded message is logged with issuer information
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.INFO,
-                "Successfully loaded JWKS");
+                "JWKS loaded successfully for issuer");
     }
 
     @Test
-    @DisplayName("Should log JWKS_HTTP_LOADED when JWKS is loaded via HTTP with 200 response")
-    void shouldLogJwksHttpLoadedWhenJwksIsLoadedViaHttp() {
-        // First access loads keys via HTTP and should get 200 response
+    @DisplayName("Should log JWKS_LOADED when JWKS is loaded via HTTP")
+    void shouldLogJwksLoadedWhenJwksIsLoadedViaHttp() {
+        // First access loads keys via HTTP
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Key info should be present");
 
-        // Verify either JWKS_HTTP_LOADED or JWKS_KEYS_UPDATED was logged
-        // Both indicate successful HTTP loading
-        try {
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
-                    JWTValidationLogMessages.INFO.JWKS_HTTP_LOADED.resolveIdentifierString());
-        } catch (AssertionError e) {
-            // If not JWKS_HTTP_LOADED, at least JWKS_KEYS_UPDATED should be present
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
-                    JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED.resolveIdentifierString());
-        }
+        // Verify JWKS_LOADED was logged (includes issuer information)
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.JWKS_LOADED.resolveIdentifierString());
     }
 
     @Test
@@ -272,10 +270,12 @@ class HttpJwksLoaderTest {
             String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
             HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                     .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
                     .build();
 
             HttpJwksLoader loader = new HttpJwksLoader(config);
-            loader.initJWKSLoader(securityEventCounter);
+            // Wait for async initialization to complete
+            loader.initJWKSLoader(securityEventCounter).join();
 
             // Try to get the symmetric key - should not be found as oct keys are filtered out
             Optional<KeyInfo> keyInfo = loader.getKeyInfo("symmetric-key-1");
@@ -298,10 +298,12 @@ class HttpJwksLoaderTest {
             // Create loader with invalid URL to simulate connection failure
             HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                     .jwksUrl("http://invalid-host-that-does-not-exist:9999/jwks")
+                    .issuerIdentifier("test-issuer")
                     .build();
 
             HttpJwksLoader failingLoader = new HttpJwksLoader(config);
-            failingLoader.initJWKSLoader(securityEventCounter);
+            // Wait for async initialization to complete (even if it fails)
+            failingLoader.initJWKSLoader(securityEventCounter).join();
 
             // Try to get a key, which should fail
             Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
@@ -332,7 +334,8 @@ class HttpJwksLoaderTest {
                     .build();
 
             HttpJwksLoader failingLoader = new HttpJwksLoader(config);
-            failingLoader.initJWKSLoader(securityEventCounter);
+            // Wait for async initialization to complete (even if it fails)
+            failingLoader.initJWKSLoader(securityEventCounter).join();
 
             // Try to get a key, which should fail because JWKS URI cannot be resolved
             Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);

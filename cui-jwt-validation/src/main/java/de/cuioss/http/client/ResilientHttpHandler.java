@@ -294,7 +294,7 @@ public class ResilientHttpHandler<T> {
      * @param result the HttpResultObject to evaluate for status update
      */
     private void updateStatusFromResult(HttpResultObject<T> result) {
-        if (result.isValid() && result.getResult() != null) {
+        if (result.isValid()) {
             loaderStatus = LoaderStatus.OK;
         } else {
             loaderStatus = LoaderStatus.ERROR;

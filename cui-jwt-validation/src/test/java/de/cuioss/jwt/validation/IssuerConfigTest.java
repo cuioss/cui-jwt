@@ -92,6 +92,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             var claimMapper = new IdentityMapper();
             var httpConfig = HttpJwksLoaderConfig.builder()
                     .jwksUrl(TEST_JWKS_URL)
+                    .issuerIdentifier("test-issuer")
                     .build();
 
             var config = IssuerConfig.builder()
@@ -119,6 +120,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             var config = IssuerConfig.builder()
                     .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
                             .jwksUrl(TEST_JWKS_URL)
+                            .issuerIdentifier("test-issuer")
                             .build())
                     .build();
             var securityEventCounter = new SecurityEventCounter();
@@ -200,6 +202,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
         void shouldBuildSuccessfulConfigurationWithHttpJwks() {
             var httpConfig = HttpJwksLoaderConfig.builder()
                     .jwksUrl("https://example.com/.well-known/jwks.json")
+                    .issuerIdentifier("test-issuer")
                     .build();
             assertDoesNotThrow(() -> {
                 IssuerConfig.builder()

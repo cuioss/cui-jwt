@@ -19,6 +19,7 @@ import de.cuioss.http.client.HttpHandlerProvider;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
@@ -31,6 +32,7 @@ import lombok.ToString;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -61,6 +63,16 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
      * A Default of 10 minutes (600 seconds).
      */
     private static final int DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 60 * 10;
+
+    /**
+     * Default key rotation grace period of 5 minutes (as per Issue #110).
+     */
+    private static final Duration DEFAULT_KEY_ROTATION_GRACE_PERIOD = Duration.ofMinutes(5);
+
+    /**
+     * Default maximum number of retired key sets to keep.
+     */
+    private static final int DEFAULT_MAX_RETIRED_KEY_SETS = 3;
 
     /**
      * The interval in seconds at which to refresh the keys.
@@ -105,16 +117,41 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
     @EqualsAndHashCode.Exclude
     private final ScheduledExecutorService scheduledExecutorService;
 
+    /**
+     * The issuer identifier for this JWKS configuration.
+     * Used for logging and identification purposes.
+     */
+    @Getter
+    private final String issuerIdentifier;
+
+    /**
+     * The grace period for keeping retired key sets after rotation.
+     */
+    @Getter
+    private final Duration keyRotationGracePeriod;
+
+    /**
+     * Maximum number of retired key sets to keep.
+     */
+    @Getter
+    private final int maxRetiredKeySets;
+
     private HttpJwksLoaderConfig(int refreshIntervalSeconds,
             HttpHandler httpHandler,
             WellKnownConfig wellKnownConfig,
             RetryStrategy retryStrategy,
-            ScheduledExecutorService scheduledExecutorService) {
+            ScheduledExecutorService scheduledExecutorService,
+            String issuerIdentifier,
+            Duration keyRotationGracePeriod,
+            int maxRetiredKeySets) {
         this.refreshIntervalSeconds = refreshIntervalSeconds;
         this.httpHandler = httpHandler;
         this.wellKnownConfig = wellKnownConfig;
         this.retryStrategy = retryStrategy;
         this.scheduledExecutorService = scheduledExecutorService;
+        this.issuerIdentifier = issuerIdentifier;
+        this.keyRotationGracePeriod = keyRotationGracePeriod;
+        this.maxRetiredKeySets = maxRetiredKeySets;
     }
 
     /**
@@ -143,6 +180,47 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
         }
     }
 
+
+    /**
+     * Creates a new HttpHandler for the given URL using configured values.
+     * This overloaded method centralizes HttpHandler creation with consistent settings
+     * based on the current configuration instance.
+     *
+     * @param url the URL to create a handler for
+     * @return a new HttpHandler instance with configured settings
+     */
+    @NonNull
+    public HttpHandler getHttpHandler(@NonNull String url) {
+        // Reuse existing HttpHandler configuration as base
+        HttpHandler baseHandler = getHttpHandler();
+
+        // Create a new handler with the same configuration but different URL
+        return baseHandler.asBuilder()
+                .url(url)
+                .build();
+    }
+
+    /**
+     * Determines if background refresh is enabled based on configuration.
+     * Background refresh is enabled when both a ScheduledExecutorService is configured
+     * and the refresh interval is greater than 0.
+     *
+     * @return true if background refresh should be enabled, false otherwise
+     */
+    public boolean isBackgroundRefreshEnabled() {
+        return scheduledExecutorService != null && refreshIntervalSeconds > 0;
+    }
+
+    /**
+     * Gets the JWKS type based on configuration.
+     * Returns WELL_KNOWN if using well-known discovery, HTTP if using direct endpoint.
+     *
+     * @return the JwksType for this configuration
+     */
+    @NonNull
+    public JwksType getJwksType() {
+        return wellKnownConfig != null ? JwksType.WELL_KNOWN : JwksType.HTTP;
+    }
 
     /**
      * Creates a new builder for HttpJwksLoaderConfig.
@@ -176,6 +254,9 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
         private RetryStrategy retryStrategy;
         private ScheduledExecutorService scheduledExecutorService;
         private WellKnownConfig wellKnownConfig;
+        private String issuerIdentifier;
+        private Duration keyRotationGracePeriod = DEFAULT_KEY_ROTATION_GRACE_PERIOD;
+        private int maxRetiredKeySets = DEFAULT_MAX_RETIRED_KEY_SETS;
 
         // Track which endpoint configuration method was used to ensure mutual exclusivity
         private EndpointSource endpointSource = null;
@@ -185,6 +266,44 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          */
         public HttpJwksLoaderConfigBuilder() {
             this.httpHandlerBuilder = HttpHandler.builder();
+        }
+
+        /**
+         * Sets the issuer identifier for this JWKS configuration.
+         * Used for logging and identification purposes.
+         *
+         * @param issuerIdentifier the issuer identifier
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder issuerIdentifier(@NonNull String issuerIdentifier) {
+            this.issuerIdentifier = issuerIdentifier;
+            return this;
+        }
+
+        /**
+         * Sets the key rotation grace period.
+         * Defaults to 1 hour if not specified.
+         *
+         * @param keyRotationGracePeriod the grace period duration
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder keyRotationGracePeriod(@NonNull Duration keyRotationGracePeriod) {
+            Preconditions.checkArgument(!keyRotationGracePeriod.isNegative(), "keyRotationGracePeriod must not be negative");
+            this.keyRotationGracePeriod = keyRotationGracePeriod;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of retired key sets to keep.
+         * Defaults to 3 if not specified.
+         *
+         * @param maxRetiredKeySets the maximum number of retired key sets
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder maxRetiredKeySets(int maxRetiredKeySets) {
+            Preconditions.checkArgument(maxRetiredKeySets > 0, "maxRetiredKeySets must be positive");
+            this.maxRetiredKeySets = maxRetiredKeySets;
+            return this;
         }
 
         /**
@@ -438,12 +557,24 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
                 });
             }
 
+            // Validate issuer requirement
+            if (configuredWellKnownConfig == null && jwksHttpHandler != null) {
+                // For direct JWKS, issuer is MANDATORY
+                if (issuerIdentifier == null) {
+                    throw new IllegalArgumentException("Issuer identifier is mandatory when using direct JWKS configuration");
+                }
+            }
+            // For well-known, issuer will be discovered dynamically during resolution (optional in config)
+
             return new HttpJwksLoaderConfig(
                     refreshIntervalSeconds,
                     jwksHttpHandler,
                     configuredWellKnownConfig,
                     retryStrategy,
-                    executor);
+                    executor,
+                    issuerIdentifier,
+                    keyRotationGracePeriod,
+                    maxRetiredKeySets);
         }
 
     }

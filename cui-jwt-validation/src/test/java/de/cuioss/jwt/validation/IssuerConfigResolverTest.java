@@ -216,9 +216,9 @@ class IssuerConfigResolverTest {
                 // Expected - unhealthy issuer may cause validation exception
             }
 
-            // Verify ISSUER_CONFIG_UNHEALTHY was logged
+            // Verify ISSUER_CONFIG_LOAD_FAILED was logged for unhealthy issuer
             LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.ISSUER_CONFIG_UNHEALTHY.resolveIdentifierString());
+                    JWTValidationLogMessages.WARN.ISSUER_CONFIG_LOAD_FAILED.resolveIdentifierString());
         }
     }
 

@@ -81,6 +81,7 @@ class HttpHandlerProviderTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(TEST_URL.replace("/.well-known/openid_configuration", "/jwks"))
+                .issuerIdentifier("test-issuer")
                 .retryStrategy(retryStrategy)
                 .build();
 
@@ -111,6 +112,7 @@ class HttpHandlerProviderTest {
         // Given: HttpJwksLoaderConfig without explicit RetryStrategy
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(TEST_URL.replace("/.well-known/openid_configuration", "/jwks"))
+                .issuerIdentifier("test-issuer")
                 .build();
 
         // Then: Should provide default RetryStrategy

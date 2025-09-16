@@ -61,7 +61,8 @@ class HttpJwksLoaderIssuerTest {
                 .build();
 
         jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
 
         // Get issuer identifier
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
@@ -71,19 +72,14 @@ class HttpJwksLoaderIssuerTest {
     }
 
     @Test
-    @DisplayName("Should return empty when well-known config is not configured")
-    void shouldReturnEmptyWhenNoWellKnownConfig(URIBuilder uriBuilder) {
-        // Create HttpJwksLoader with direct JWKS URL (no well-known config)
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl(uriBuilder.addPathSegment("jwks").buildAsString())
-                .build();
-
-        jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
-
-        // Get issuer identifier
-        Optional<String> issuer = jwksLoader.getIssuerIdentifier();
-        assertFalse(issuer.isPresent(), "Issuer should not be present without well-known config");
+    @DisplayName("Should require issuer identifier for direct JWKS configuration")
+    void shouldRequireIssuerForDirectJwks(URIBuilder uriBuilder) {
+        // Attempt to create HttpJwksLoader with direct JWKS URL but no issuer - should fail
+        assertThrows(IllegalArgumentException.class, () -> {
+            HttpJwksLoaderConfig.builder()
+                    .jwksUrl(uriBuilder.addPathSegment("jwks").buildAsString())
+                    .build();
+        }, "Should throw exception when issuer is missing for direct JWKS configuration");
     }
 
     @Test
@@ -98,7 +94,8 @@ class HttpJwksLoaderIssuerTest {
                 .build();
 
         jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
 
         // Try to get issuer identifier - should return empty since config fails to load
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
@@ -121,7 +118,8 @@ class HttpJwksLoaderIssuerTest {
                 .build();
 
         jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
 
         // Get issuer identifier - should return empty since issuer is missing
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();
@@ -140,7 +138,8 @@ class HttpJwksLoaderIssuerTest {
                 .build();
 
         jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
 
         // First call - should load from server
         Optional<String> issuer1 = jwksLoader.getIssuerIdentifier();
@@ -169,7 +168,8 @@ class HttpJwksLoaderIssuerTest {
                 .build();
 
         jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
 
         int threadCount = 10;
         Thread[] threads = new Thread[threadCount];
@@ -211,7 +211,8 @@ class HttpJwksLoaderIssuerTest {
                 .build();
 
         jwksLoader = new HttpJwksLoader(config);
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
 
         // Get issuer identifier - should return empty
         Optional<String> issuer = jwksLoader.getIssuerIdentifier();

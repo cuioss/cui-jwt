@@ -48,6 +48,7 @@ class SimpleHttpJwksLoaderTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
 
         httpJwksLoader = new HttpJwksLoader(config);

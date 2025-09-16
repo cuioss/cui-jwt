@@ -55,7 +55,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### C3. Implement HttpJwksLoader Complete Redesign
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Replace existing HttpJwksLoader with clean implementation: simple constructor, async initialization, Optional return types, leverages ResilientHttpHandler.
 
@@ -69,7 +69,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### C4. Implement Key Rotation Grace Period (Issue #110)
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Add RetiredKeySet management in HttpJwksLoader to maintain old keys during grace period, preventing immediate validation failures during key rotation.
 
@@ -83,7 +83,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### C5. Enhance HttpJwksLoaderConfig with Overloaded Methods
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Add getHttpHandler(String url) overload and isBackgroundRefreshEnabled() method to centralize configuration logic and eliminate duplication.
 
@@ -96,7 +96,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### C6. Enhance IssuerConfigResolver with Async Loading Management
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Modify IssuerConfigResolver constructor to trigger async loading for all enabled configs and manage CompletableFuture lifecycle. Only return configs with LoaderStatus.OK.
 

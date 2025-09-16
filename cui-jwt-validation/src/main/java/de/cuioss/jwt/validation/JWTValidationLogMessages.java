@@ -108,6 +108,18 @@ public final class JWTValidationLogMessages {
                 .template("Error during cache eviction")
                 .build();
 
+        public static final LogRecord JWKS_INITIALIZATION_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(210)
+                .template("JWKS initialization failed: %s for issuer: %s")
+                .build();
+
+        public static final LogRecord JWKS_LOAD_EXECUTION_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(211)
+                .template("JWKS load execution failed: %s for issuer: %s")
+                .build();
+
         // Retry operation error messages are handled at WARN level
     }
 
@@ -166,6 +178,18 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(8)
                 .template("Retry operation '%s' completed successfully after %s attempts in %sms")
+                .build();
+
+        public static final LogRecord JWKS_LOADED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(9)
+                .template("JWKS loaded successfully for issuer: %s")
+                .build();
+
+        public static final LogRecord ISSUER_CONFIG_LOADED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(10)
+                .template("Issuer configuration loaded successfully: %s")
                 .build();
     }
 
@@ -392,6 +416,54 @@ public final class JWTValidationLogMessages {
                 .prefix(PREFIX)
                 .identifier(135)
                 .template("Invalid Base64 URL encoding detected for JWK field: %s")
+                .build();
+
+        public static final LogRecord BACKGROUND_REFRESH_NO_HANDLER = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(136)
+                .template("Background refresh skipped - no HTTP handler available")
+                .build();
+
+        public static final LogRecord BACKGROUND_REFRESH_IO_ERROR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(137)
+                .template("Background refresh IO error: %s for issuer: %s")
+                .build();
+
+        public static final LogRecord BACKGROUND_REFRESH_PARSE_ERROR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(138)
+                .template("Background refresh parse error: %s for issuer: %s")
+                .build();
+
+        public static final LogRecord BACKGROUND_REFRESH_KEY_ERROR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(139)
+                .template("Background refresh key processing error: %s for issuer: %s")
+                .build();
+
+        public static final LogRecord ISSUER_CONFIG_LOAD_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(140)
+                .template("Failed to load issuer configuration for %s, status: %s")
+                .build();
+
+        public static final LogRecord JWKS_LOAD_TIMEOUT = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(141)
+                .template("Timeout waiting for JWKS to load for issuer: %s")
+                .build();
+
+        public static final LogRecord JWKS_LOAD_INTERRUPTED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(142)
+                .template("Interrupted while waiting for JWKS to load for issuer: %s")
+                .build();
+
+        public static final LogRecord ISSUER_MISMATCH = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(143)
+                .template("Configured issuer '%s' does not match discovered issuer '%s' from well-known document")
                 .build();
     }
 
