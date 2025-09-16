@@ -56,6 +56,7 @@ public class HttpJwksLoader implements JwksLoader {
 
     private SecurityEventCounter securityEventCounter;
     private final HttpJwksLoaderConfig config;
+    private final AtomicReference<LoaderStatus> status = new AtomicReference<>(LoaderStatus.UNDEFINED);
     private final AtomicReference<JWKSKeyLoader> keyLoader = new AtomicReference<>();
     private final AtomicReference<ResilientHttpHandler<Jwks>> httpCache = new AtomicReference<>();
     private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
@@ -92,24 +93,12 @@ public class HttpJwksLoader implements JwksLoader {
 
     @Override
     public LoaderStatus getCurrentStatus() {
-        ResilientHttpHandler<Jwks> cache = httpCache.get();
-        if (cache == null) {
-            return LoaderStatus.UNDEFINED;
-        }
-
-        LoaderStatus cacheStatus = cache.getLoaderStatus();
-        // Override ERROR status to OK if we have cached keys
-        // This maintains service availability even when refresh fails
-        if (cacheStatus == LoaderStatus.ERROR && keyLoader.get() != null) {
-            return LoaderStatus.OK;
-        }
-
-        return cacheStatus;
+        return status.get(); // Pure atomic read - lock-free
     }
 
     @Override
     public LoaderStatus getLoaderStatus() {
-        return getCurrentStatus();
+        return status.get(); // Pure atomic read - lock-free
     }
 
     @Override
@@ -169,9 +158,14 @@ public class HttpJwksLoader implements JwksLoader {
     }
 
     private void loadKeys() {
+        status.set(LoaderStatus.LOADING);
+
         // Ensure we have a healthy ResilientHttpHandler
         Optional<ResilientHttpHandler<Jwks>> cacheOpt = ensureHttpCache();
         if (cacheOpt.isEmpty()) {
+            // Revert to UNDEFINED to enable retry capability
+            // Don't set to ERROR permanently for initial connection failures
+            status.set(LoaderStatus.UNDEFINED);
             LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.format("Unable to establish healthy HTTP connection for JWKS loading"));
             startBackgroundRefreshIfNeeded();
             return;
@@ -199,6 +193,14 @@ public class HttpJwksLoader implements JwksLoader {
 
         // Start background refresh after any load attempt
         startBackgroundRefreshIfNeeded();
+
+        // Set final status based on result and whether we have keys
+        if (result.isValid() || keyLoader.get() != null) {
+            // We have valid result OR cached keys are available
+            status.set(LoaderStatus.OK);
+        } else {
+            status.set(LoaderStatus.ERROR);
+        }
 
         // Log appropriate message based on load state
         if (result.isValid()) {
@@ -243,7 +245,7 @@ public class HttpJwksLoader implements JwksLoader {
             loadKeys(); // Existing synchronous method
 
             // Return the updated status
-            LoaderStatus currentStatus = getCurrentStatus();
+            LoaderStatus currentStatus = status.get();
             LOGGER.debug("Asynchronous JWKS loading completed with status: {}", currentStatus);
             return currentStatus;
         });
@@ -291,6 +293,10 @@ public class HttpJwksLoader implements JwksLoader {
         // Handle error states
         if (!result.isValid() && result.getState() != ResultState.WARNING) {
             LOGGER.warn(JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
+            // Don't change status during background refresh failures if we have cached keys
+            if (keyLoader.get() == null) {
+                status.set(LoaderStatus.ERROR);
+            }
             return;
         }
 
@@ -300,6 +306,11 @@ public class HttpJwksLoader implements JwksLoader {
             LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_UPDATED.format(result.getState()));
         } else {
             LOGGER.debug("Background refresh completed, no changes detected: %s", result.getState());
+        }
+
+        // Update status - maintain OK status if we have keys available
+        if (keyLoader.get() != null) {
+            status.set(LoaderStatus.OK);
         }
     }
 
@@ -388,11 +399,11 @@ public class HttpJwksLoader implements JwksLoader {
             // Trigger async loading and return a CompletableFuture
             return CompletableFuture.supplyAsync(() -> {
                 loadKeysIfNeeded();
-                return getCurrentStatus();
+                return status.get();
             });
         }
         // Already initialized, return current status immediately
-        return CompletableFuture.completedFuture(getCurrentStatus());
+        return CompletableFuture.completedFuture(status.get());
     }
 
 }
