@@ -148,6 +148,14 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 |`cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy`
 |boolean (default: false)
 |Whether to use HTTP proxy settings from the system properties.
+
+|`cui.jwt.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
+|int (default: 300)
+|The grace period in seconds for retired keys during rotation. During this period, tokens signed with recently rotated keys can still be validated, preventing service disruptions for in-flight requests. Set to 0 to immediately invalidate old keys upon rotation. This implements Issue #110 for seamless key rotation.
+
+|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
+|int (default: 10)
+|The maximum number of retired key sets to retain in memory during the grace period. This prevents unbounded memory growth when keys rotate frequently. Older retired key sets beyond this limit are removed even if still within the grace period.
 |===
 
 == Keycloak Integration
@@ -320,6 +328,12 @@ For quick reference, here are all the default values in one place:
 |`cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy`
 |false
 
+|`cui.jwt.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
+|300
+
+|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
+|10
+
 |`cui.jwt.health.jwks.cache-seconds`
 |30
 
@@ -355,6 +369,10 @@ cui.jwt.issuers.keycloak.jwks.http.connection-timeout-seconds=3
 cui.jwt.issuers.keycloak.jwks.http.read-timeout-seconds=3
 cui.jwt.issuers.keycloak.jwks.http.max-retries=5
 cui.jwt.issuers.keycloak.jwks.http.use-system-proxy=true
+
+# Key rotation grace period configuration (Issue #110)
+cui.jwt.issuers.keycloak.jwks.http.key-rotation-grace-period-seconds=300  # 5 minute grace period
+cui.jwt.issuers.keycloak.jwks.http.max-retired-key-sets=10               # Keep max 10 old key sets
 ----
 
 === Example 2: OpenID Connect Discovery Configuration (Recommended)

@@ -379,6 +379,25 @@ public class IssuerConfigResolver {
                 Integer.class
         ).ifPresent(builder::readTimeoutSeconds);
 
+        // Configure key rotation grace period (Issue #110)
+        Optional<Integer> gracePeriodSeconds = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.KEY_ROTATION_GRACE_PERIOD_SECONDS.formatted(issuerName),
+                Integer.class
+        );
+        if (gracePeriodSeconds.isPresent()) {
+            builder.keyRotationGracePeriod(java.time.Duration.ofSeconds(gracePeriodSeconds.get()));
+            LOGGER.debug("Set key rotation grace period for %s: %s seconds", issuerName, gracePeriodSeconds.get());
+        }
+
+        Optional<Integer> maxRetiredSets = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.MAX_RETIRED_KEY_SETS.formatted(issuerName),
+                Integer.class
+        );
+        if (maxRetiredSets.isPresent()) {
+            builder.maxRetiredKeySets(maxRetiredSets.get());
+            LOGGER.debug("Set max retired key sets for %s: %s", issuerName, maxRetiredSets.get());
+        }
+
         // Set the retry strategy
         builder.retryStrategy(retryStrategy);
 

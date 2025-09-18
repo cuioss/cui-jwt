@@ -327,6 +327,49 @@ public final class JwtPropertyKeys {
          */
         public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
 
+        /**
+         * The grace period in seconds for retired keys during rotation.
+         * Template: "cui.jwt.issuers.%s.jwks.http.key-rotation-grace-period-seconds"
+         * <p>
+         * Sets the grace period for which retired keys remain valid after key rotation.
+         * During this period, tokens signed with recently rotated keys can still be validated,
+         * preventing service disruptions for in-flight requests. Set to 0 to immediately
+         * invalidate old keys upon rotation.
+         * </p>
+         * <p>
+         * Default value is {@code 300} (5 minutes).
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#keyRotationGracePeriod
+         * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
+         * @since 1.1
+         */
+        public static final String KEY_ROTATION_GRACE_PERIOD_SECONDS = HTTP_BASE + "key-rotation-grace-period-seconds";
+
+        /**
+         * The maximum number of retired key sets to retain.
+         * Template: "cui.jwt.issuers.%s.jwks.http.max-retired-key-sets"
+         * <p>
+         * Sets the maximum number of retired key sets to keep in memory during the grace period.
+         * This prevents unbounded memory growth when keys rotate frequently. Older retired
+         * key sets beyond this limit are removed even if still within the grace period.
+         * </p>
+         * <p>
+         * Default value is {@code 10}.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#maxRetiredKeySets
+         * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
+         * @since 1.1
+         */
+        public static final String MAX_RETIRED_KEY_SETS = HTTP_BASE + "max-retired-key-sets";
+
         // === Keycloak Configuration ===
 
         /**
