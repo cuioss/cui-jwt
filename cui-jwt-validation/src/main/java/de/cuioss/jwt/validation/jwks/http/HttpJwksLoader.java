@@ -74,6 +74,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
     private final AtomicReference<ScheduledFuture<?>> refreshTask = new AtomicReference<>();
     private SecurityEventCounter securityEventCounter;
     private final AtomicReference<String> resolvedIssuerIdentifier = new AtomicReference<>();
+    private final AtomicReference<Jwks> currentJwksContent = new AtomicReference<>();
 
     /**
      * Constructor using HttpJwksLoaderConfig.
@@ -224,11 +225,14 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
         }
 
         // Check retired keys (grace period for Issue #110)
-        Instant cutoff = Instant.now().minus(config.getKeyRotationGracePeriod());
-        for (RetiredKeySet retired : retiredKeys) {
-            if (retired.retiredAt.isAfter(cutoff)) {
-                Optional<KeyInfo> key = retired.loader.getKeyInfo(kid);
-                if (key.isPresent()) return key;
+        // Skip checking retired keys if grace period is zero
+        if (!config.getKeyRotationGracePeriod().isZero()) {
+            Instant cutoff = Instant.now().minus(config.getKeyRotationGracePeriod());
+            for (RetiredKeySet retired : retiredKeys) {
+                if (retired.retiredAt.isAfter(cutoff)) {
+                    Optional<KeyInfo> key = retired.loader.getKeyInfo(kid);
+                    if (key.isPresent()) return key;
+                }
             }
         }
 
@@ -261,6 +265,16 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
     }
 
     private void updateKeys(Jwks newJwks) {
+        // Check if content has actually changed (Issue #110)
+        Jwks currentJwks = currentJwksContent.get();
+        if (currentJwks != null && currentJwks.equals(newJwks)) {
+            LOGGER.debug("JWKS content unchanged, skipping key rotation");
+            return; // Content unchanged, no need to update
+        }
+
+        // Content has changed, update the reference
+        currentJwksContent.set(newJwks);
+
         JWKSKeyLoader newLoader = JWKSKeyLoader.builder()
                 .jwksContent(newJwks)
                 .jwksType(config.getJwksType())
@@ -273,15 +287,21 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
         // Retire old keys with grace period
         JWKSKeyLoader oldLoader = currentKeys.getAndSet(newLoader);
         if (oldLoader != null) {
-            retiredKeys.addFirst(new RetiredKeySet(oldLoader, now));
+            // Special handling for zero grace period - don't retain retired keys
+            if (config.getKeyRotationGracePeriod().isZero()) {
+                // With zero grace period, immediately discard old keys
+                // Don't add to retiredKeys at all
+            } else {
+                retiredKeys.addFirst(new RetiredKeySet(oldLoader, now));
 
-            // Clean up expired retired keys
-            Instant cutoff = now.minus(config.getKeyRotationGracePeriod());
-            retiredKeys.removeIf(retired -> retired.retiredAt.isBefore(cutoff));
+                // Clean up expired retired keys
+                Instant cutoff = now.minus(config.getKeyRotationGracePeriod());
+                retiredKeys.removeIf(retired -> retired.retiredAt.isBefore(cutoff));
 
-            // Keep max N retired sets
-            while (retiredKeys.size() > config.getMaxRetiredKeySets()) {
-                retiredKeys.removeLast();
+                // Keep max N retired sets
+                while (retiredKeys.size() > config.getMaxRetiredKeySets()) {
+                    retiredKeys.removeLast();
+                }
             }
         }
 
@@ -332,6 +352,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
         currentKeys.set(null);
         retiredKeys.clear();
         httpHandler.set(null);
+        currentJwksContent.set(null);
         status.set(LoaderStatus.UNDEFINED);
     }
 

@@ -15,22 +15,37 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.TokenType;
+import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
+import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
+import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
+import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.dispatcher.JwksResolveDispatcher;
+import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,191 +64,502 @@ class HttpJwksLoaderGracePeriodTest {
     private static final String ORIGINAL_KEY_ID = InMemoryJWKSFactory.DEFAULT_KEY_ID;
     private static final String ROTATED_KEY_ID = "alternative-key-id";
 
-    @Getter
-    private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
 
-    private SecurityEventCounter securityEventCounter;
+    @Nested
+    @DisplayName("Configuration Tests")
+    class ConfigurationTests {
+        @Getter
+        private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
 
-    @BeforeEach
-    void setUp() {
-        moduleDispatcher.setCallCounter(0);
-        moduleDispatcher.returnDefault();
-        securityEventCounter = new SecurityEventCounter();
+        @BeforeEach
+        void setUp() {
+            moduleDispatcher.setCallCounter(0);
+            moduleDispatcher.returnDefault();
+        }
+
+        @Test
+        @DisplayName("Should use default grace period of 5 minutes")
+        void shouldUseDefaultGracePeriodOf5Minutes() {
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("https://example.com/jwks")
+                    .issuerIdentifier("test-issuer")
+                    .build(); // No explicit grace period - should use default
+
+            assertEquals(Duration.ofMinutes(5), config.getKeyRotationGracePeriod(),
+                    "Default grace period should be 5 minutes as per Issue #110");
+            assertEquals(3, config.getMaxRetiredKeySets(),
+                    "Default max retired key sets should be 3");
+        }
+
+        @Test
+        @DisplayName("Should allow custom grace period configuration")
+        void shouldAllowCustomGracePeriodConfiguration() {
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("https://example.com/jwks")
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ofMinutes(10))
+                    .maxRetiredKeySets(5)
+                    .build();
+
+            assertEquals(Duration.ofMinutes(10), config.getKeyRotationGracePeriod(),
+                    "Custom grace period should be configurable");
+            assertEquals(5, config.getMaxRetiredKeySets(),
+                    "Custom max retired key sets should be configurable");
+        }
+
+        @Test
+        @DisplayName("Should allow zero grace period to disable feature")
+        void shouldAllowZeroGracePeriodToDisableFeature() {
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("https://example.com/jwks")
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ZERO)
+                    .build();
+
+            assertEquals(Duration.ZERO, config.getKeyRotationGracePeriod(),
+                    "Zero grace period should be allowed to disable the feature");
+        }
+
+        @Test
+        @DisplayName("Configuration should be accessible via getters")
+        void configurationShouldBeAccessibleViaGetters() {
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("https://example.com/jwks")
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ofMinutes(5))
+                    .maxRetiredKeySets(3)
+                    .build();
+
+            // Test that the getters work (they should be generated by Lombok)
+            assertEquals(Duration.ofMinutes(5), config.getKeyRotationGracePeriod());
+            assertEquals(3, config.getMaxRetiredKeySets());
+        }
+
+        @Test
+        @DisplayName("Should validate negative grace period is not allowed")
+        @SuppressWarnings("java:S5778") // Single lambda invocation - validation happens in setter
+        void shouldValidateNegativeGracePeriodIsNotAllowed() {
+            assertThrows(IllegalArgumentException.class, () ->
+                    HttpJwksLoaderConfig.builder()
+                            .jwksUrl("https://example.com/jwks")
+                            .issuerIdentifier("test-issuer")
+                            .keyRotationGracePeriod(Duration.ofMinutes(-1))
+            );
+        }
+
+        @Test
+        @DisplayName("Should validate maxRetiredKeySets is positive")
+        void shouldValidateMaxRetiredKeySetsIsPositive() {
+            var baseBuilder = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("https://example.com/jwks")
+                    .issuerIdentifier("test-issuer");
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> baseBuilder.maxRetiredKeySets(0));
+
+            var anotherBuilder = HttpJwksLoaderConfig.builder()
+                    .jwksUrl("https://example.com/jwks")
+                    .issuerIdentifier("test-issuer");
+
+            assertThrows(IllegalArgumentException.class,
+                    () -> anotherBuilder.maxRetiredKeySets(-1));
+        }
     }
 
-    @Test
-    @DisplayName("Should use default grace period of 5 minutes")
-    void shouldUseDefaultGracePeriodOf5Minutes() {
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl("https://example.com/jwks")
-                .issuerIdentifier("test-issuer")
-                .build(); // No explicit grace period - should use default
+    @Nested
+    @DisplayName("Key Rotation Behavior Tests")
+    class KeyRotationBehaviorTests {
 
-        assertEquals(Duration.ofMinutes(5), config.getKeyRotationGracePeriod(),
-                "Default grace period should be 5 minutes as per Issue #110");
-        assertEquals(3, config.getMaxRetiredKeySets(),
-                "Default max retired key sets should be 3");
+        @Getter
+        private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
+
+        private SecurityEventCounter securityEventCounter;
+
+        @BeforeEach
+        void setUp() {
+            moduleDispatcher.setCallCounter(0);
+            moduleDispatcher.returnDefault();
+            securityEventCounter = new SecurityEventCounter();
+        }
+
+        @Test
+        @DisplayName("Should immediately invalidate retired keys with zero grace period after rotation")
+        void shouldImmediatelyInvalidateRetiredKeysWithZeroGracePeriod(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ZERO) // Zero grace period - should immediately invalidate retired keys
+                    .refreshIntervalSeconds(1) // Enable background refresh for key rotation
+                    .build();
+
+            HttpJwksLoader loader = new HttpJwksLoader(config);
+            loader.initJWKSLoader(securityEventCounter).join();
+
+            // Initial load - should find the original key
+            moduleDispatcher.returnDefault();
+            Optional<KeyInfo> originalKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
+            assertTrue(originalKey.isPresent(), "Original key should be found initially");
+
+            // Rotate keys - switch to different key
+            moduleDispatcher.switchToOtherPublicKey();
+
+            // Wait for key rotation to complete
+            await("Key rotation to complete")
+                    .atMost(2000, MILLISECONDS)
+                    .until(() -> {
+                        Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
+                        return newKey.isPresent();
+                    });
+
+            // New key should be accessible
+            Optional<KeyInfo> rotatedKey = loader.getKeyInfo(ROTATED_KEY_ID);
+            assertTrue(rotatedKey.isPresent(), "Rotated key should be found in current keys");
+
+            // With zero grace period, original key should immediately be inaccessible
+            // This verifies the timing bug fix - the key should be properly retired and immediately cleaned up
+            Optional<KeyInfo> retiredKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
+            assertFalse(retiredKey.isPresent(),
+                    "Original key should NOT be accessible with zero grace period after rotation. " +
+                            "This verifies the timing bug fix works correctly.");
+
+            loader.close();
+        }
+
+        @Test
+        @DisplayName("Should keep retired keys accessible within grace period")
+        void shouldKeepRetiredKeysAccessibleWithinGracePeriod(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ofMinutes(5)) // 5 minute grace period
+                    .refreshIntervalSeconds(1) // Enable background refresh for key rotation
+                    .build();
+
+            HttpJwksLoader loader = new HttpJwksLoader(config);
+            loader.initJWKSLoader(securityEventCounter).join();
+
+            // Initial load - should find the original key
+            moduleDispatcher.returnDefault();
+            Optional<KeyInfo> originalKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
+            assertTrue(originalKey.isPresent(), "Original key should be found initially");
+
+            // Rotate keys - switch to different key
+            moduleDispatcher.switchToOtherPublicKey();
+
+            // Wait for key rotation to complete
+            await("Key rotation to complete")
+                    .atMost(2000, MILLISECONDS)
+                    .until(() -> {
+                        Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
+                        return newKey.isPresent();
+                    });
+
+            // Both keys should be accessible: current key and retired key within grace period
+            Optional<KeyInfo> rotatedKey = loader.getKeyInfo(ROTATED_KEY_ID);
+            assertTrue(rotatedKey.isPresent(), "Current rotated key should be accessible");
+
+            Optional<KeyInfo> retiredKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
+            assertTrue(retiredKey.isPresent(),
+                    "Original key should still be accessible within 5-minute grace period. " +
+                            "This verifies the grace period mechanism works correctly.");
+
+            loader.close();
+        }
+
+        @Test
+        @DisplayName("FAILING TEST: Should retain original key in grace period after multiple unchanged refreshes")
+        void shouldRetainOriginalKeyDuringGracePeriodAfterMultipleUnchangedRefreshes(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+
+            // Configure with only 1 maxRetiredKeySets to make the bug appear faster
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ofMinutes(5)) // 5 minute grace period
+                    .refreshIntervalSeconds(1) // Fast refresh
+                    .maxRetiredKeySets(1) // CRITICAL: Only keep 1 retired set - this exposes the bug!
+                    .build();
+
+            // Start with default key
+            moduleDispatcher.returnDefault();
+
+            HttpJwksLoader loader = new HttpJwksLoader(config);
+            LoaderStatus status = loader.initJWKSLoader(securityEventCounter).join();
+            assertEquals(LoaderStatus.OK, status, "Loader should initialize successfully");
+
+            // Step 1: Verify original key is present after initialization
+            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
+                    "Step 1: Original key present after initialization");
+
+            // Step 2: Rotate keys - switch to alternative key
+            moduleDispatcher.switchToOtherPublicKey();
+
+            // Wait for first background refresh to pick up the rotation
+            await("First key rotation")
+                    .atMost(2, SECONDS)
+                    .pollInterval(100, MILLISECONDS)
+                    .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
+
+            // Step 3: Both keys should be accessible after first rotation
+            assertTrue(loader.getKeyInfo(ROTATED_KEY_ID).isPresent(),
+                    "Step 3a: Rotated key present");
+            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
+                    "Step 3b: Original key in grace period after first rotation");
+
+            // Step 4: Wait for ONE more background refresh with SAME content
+            // With maxRetiredKeySets=1, this second refresh should push out the original key
+            // even though it's still within the grace period!
+
+            int callsBefore = moduleDispatcher.getCallCounter();
+
+            // Wait for next refresh cycle
+            await("Second background refresh")
+                    .atMost(2, SECONDS)
+                    .pollInterval(100, MILLISECONDS)
+                    .until(() -> moduleDispatcher.getCallCounter() > callsBefore);
+
+            // Verify we got another HTTP call
+            assertTrue(moduleDispatcher.getCallCounter() > callsBefore,
+                    "Background refresh should have made another HTTP call");
+
+            // Step 5: Check if original key is still available
+            // This SHOULD pass (key should still be in grace period)
+            // but it WILL FAIL because updateKeys was called again with unchanged content
+            assertTrue(loader.getKeyInfo(ROTATED_KEY_ID).isPresent(),
+                    "Step 5a: Rotated key still present");
+
+            // THIS IS THE BUG: Original key disappears even though within grace period!
+            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
+                    "Step 5b: BUG - Original key LOST after 2nd refresh with unchanged content! " +
+                            "The key is within the 5-minute grace period but was pushed out because " +
+                            "updateKeys() is called on every HTTP 200, even with unchanged content.");
+
+            loader.close();
+        }
     }
 
-    @Test
-    @DisplayName("Should allow custom grace period configuration")
-    void shouldAllowCustomGracePeriodConfiguration() {
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl("https://example.com/jwks")
-                .issuerIdentifier("test-issuer")
-                .keyRotationGracePeriod(Duration.ofMinutes(10))
-                .maxRetiredKeySets(5)
-                .build();
+    @Nested
+    @DisplayName("Token Validation Roundtrip Tests")
+    class TokenValidationRoundtripTests {
+        @Getter
+        private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
 
-        assertEquals(Duration.ofMinutes(10), config.getKeyRotationGracePeriod(),
-                "Custom grace period should be configurable");
-        assertEquals(5, config.getMaxRetiredKeySets(),
-                "Custom max retired key sets should be configurable");
-    }
+        private SecurityEventCounter securityEventCounter;
 
-    @Test
-    @DisplayName("Should allow zero grace period to disable feature")
-    void shouldAllowZeroGracePeriodToDisableFeature() {
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl("https://example.com/jwks")
-                .issuerIdentifier("test-issuer")
-                .keyRotationGracePeriod(Duration.ZERO)
-                .build();
+        @BeforeEach
+        void setUp() {
+            moduleDispatcher.setCallCounter(0);
+            moduleDispatcher.returnDefault();
+            securityEventCounter = new SecurityEventCounter();
+        }
 
-        assertEquals(Duration.ZERO, config.getKeyRotationGracePeriod(),
-                "Zero grace period should be allowed to disable the feature");
-    }
+        @Test
+        @DisplayName("Should validate full JWT token roundtrip with grace period key rotation")
+        void shouldValidateFullTokenRoundtripWithGracePeriodKeyRotation(URIBuilder uriBuilder) {
+            TestLogLevel.DEBUG.addLogger("de.cuioss.jwt.validation");
+            TestLogLevel.WARN.addLogger(InMemoryKeyMaterialHandler.class);
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
 
-    @Test
-    @DisplayName("Configuration should be accessible via getters")
-    void configurationShouldBeAccessibleViaGetters() {
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl("https://example.com/jwks")
-                .issuerIdentifier("test-issuer")
-                .keyRotationGracePeriod(Duration.ofMinutes(5))
-                .maxRetiredKeySets(3)
-                .build();
+            // Configure loader with 5-minute grace period
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ofMinutes(5))
+                    .refreshIntervalSeconds(1) // Enable background refresh
+                    .build();
 
-        // Test that the getters work (they should be generated by Lombok)
-        assertEquals(Duration.ofMinutes(5), config.getKeyRotationGracePeriod());
-        assertEquals(3, config.getMaxRetiredKeySets());
-    }
+            // Ensure dispatcher is configured before creating loader
+            moduleDispatcher.returnDefault();
 
-    @Test
-    @DisplayName("Should immediately invalidate retired keys with zero grace period after rotation")
-    void shouldImmediatelyInvalidateRetiredKeysWithZeroGracePeriod(URIBuilder uriBuilder) {
-        String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+            HttpJwksLoader loader = new HttpJwksLoader(config);
+            LoaderStatus status = loader.initJWKSLoader(securityEventCounter).join();
+            assertEquals(LoaderStatus.OK, status, "Loader should initialize successfully");
 
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl(jwksEndpoint)
-                .issuerIdentifier("test-issuer")
-                .keyRotationGracePeriod(Duration.ZERO) // Zero grace period - should immediately invalidate retired keys
-                .refreshIntervalSeconds(1) // Enable background refresh for key rotation
-                .build();
+            // Verify the loader has the original key
+            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
+                    "Loader should have the original key after initialization");
 
-        HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter).join();
+            // Create IssuerConfig with our loader
+            IssuerConfig issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksLoader(loader)
+                    .build();
 
-        // Initial load - should find the original key
-        moduleDispatcher.returnDefault();
-        Optional<KeyInfo> originalKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
-        assertTrue(originalKey.isPresent(), "Original key should be found initially");
+            // Initialize the issuer config
+            issuerConfig.initSecurityEventCounter(securityEventCounter);
 
-        // Rotate keys - switch to different key
-        moduleDispatcher.switchToOtherPublicKey();
+            // Create TokenValidator with cache disabled to ensure fresh validation
+            TokenValidator validator = TokenValidator.builder()
+                    .issuerConfig(issuerConfig)
+                    .cacheConfig(AccessTokenCacheConfig.builder()
+                            .maxSize(0) // Disable caching
+                            .build())
+                    .build();
 
-        // Wait for key rotation to complete
-        await("Key rotation to complete")
-                .atMost(2000, MILLISECONDS)
-                .until(() -> {
-                    Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
-                    return newKey.isPresent();
-                });
+            // Generate a token signed with the original key
+            // Use TestTokenHolder constructor with TokenType and ClaimControlParameter
+            TestTokenHolder tokenHolderOriginalKey = new TestTokenHolder(
+                    TokenType.ACCESS_TOKEN,
+                    ClaimControlParameter.builder().build());
 
-        // New key should be accessible
-        Optional<KeyInfo> rotatedKey = loader.getKeyInfo(ROTATED_KEY_ID);
-        assertTrue(rotatedKey.isPresent(), "Rotated key should be found in current keys");
+            // Configure the token with specific claims
+            tokenHolderOriginalKey.withClaim("iss", ClaimValue.forPlainString("test-issuer"))
+                    .withClaim("sub", ClaimValue.forPlainString("test-subject"))
+                    .withAudience(List.of("test-audience"));
 
-        // With zero grace period, original key should immediately be inaccessible
-        // This verifies the timing bug fix - the key should be properly retired and immediately cleaned up
-        Optional<KeyInfo> retiredKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
-        assertFalse(retiredKey.isPresent(),
-                "Original key should NOT be accessible with zero grace period after rotation. " +
-                        "This verifies the timing bug fix works correctly.");
+            String tokenSignedWithOriginalKey = tokenHolderOriginalKey.getRawToken();
 
-        loader.close();
-    }
+            // Validate token with original key - should succeed
+            AccessTokenContent validationResult1 = validator.createAccessToken(tokenSignedWithOriginalKey);
+            assertNotNull(validationResult1, "Token signed with original key should validate");
+            assertEquals("test-subject", validationResult1.getSubject().orElse(null),
+                    "Subject claim should match");
 
-    @Test
-    @DisplayName("Should keep retired keys accessible within grace period")
-    void shouldKeepRetiredKeysAccessibleWithinGracePeriod(URIBuilder uriBuilder) {
-        String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+            // Rotate keys - switch to different key
+            moduleDispatcher.switchToOtherPublicKey();
 
-        HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
-                .jwksUrl(jwksEndpoint)
-                .issuerIdentifier("test-issuer")
-                .keyRotationGracePeriod(Duration.ofMinutes(5)) // 5 minute grace period
-                .refreshIntervalSeconds(1) // Enable background refresh for key rotation
-                .build();
+            // Wait for key rotation to complete
+            await("Key rotation to complete")
+                    .atMost(2000, MILLISECONDS)
+                    .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
 
-        HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter).join();
+            // Generate a new token signed with the rotated key
+            // We need to create a new TestTokenHolder that uses the alternative key
+            TestTokenHolder tokenHolderRotatedKey = new TestTokenHolder(
+                    TokenType.ACCESS_TOKEN,
+                    ClaimControlParameter.builder().build());
 
-        // Initial load - should find the original key
-        moduleDispatcher.returnDefault();
-        Optional<KeyInfo> originalKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
-        assertTrue(originalKey.isPresent(), "Original key should be found initially");
+            // Configure with the rotated key and claims
+            tokenHolderRotatedKey.withKeyId(ROTATED_KEY_ID)
+                    .withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.RS384)
+                    .withClaim("iss", ClaimValue.forPlainString("test-issuer"))
+                    .withClaim("sub", ClaimValue.forPlainString("test-subject-rotated"))
+                    .withAudience(List.of("test-audience"));
 
-        // Rotate keys - switch to different key
-        moduleDispatcher.switchToOtherPublicKey();
+            String tokenSignedWithRotatedKey = tokenHolderRotatedKey.getRawToken();
 
-        // Wait for key rotation to complete
-        await("Key rotation to complete")
-                .atMost(2000, MILLISECONDS)
-                .until(() -> {
-                    Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
-                    return newKey.isPresent();
-                });
+            // Validate new token with rotated key - should succeed
+            AccessTokenContent validationResult2 = validator.createAccessToken(tokenSignedWithRotatedKey);
+            assertNotNull(validationResult2, "Token signed with rotated key should validate");
+            assertEquals("test-subject-rotated", validationResult2.getSubject().orElse(null),
+                    "Subject claim should match for rotated key token");
 
-        // Both keys should be accessible: current key and retired key within grace period
-        Optional<KeyInfo> rotatedKey = loader.getKeyInfo(ROTATED_KEY_ID);
-        assertTrue(rotatedKey.isPresent(), "Current rotated key should be accessible");
+            // CRITICAL: Validate the original token AFTER key rotation
+            // This should STILL WORK due to the 5-minute grace period
+            AccessTokenContent validationResult3 = validator.createAccessToken(tokenSignedWithOriginalKey);
+            assertNotNull(validationResult3,
+                    "Token signed with ORIGINAL key should STILL validate within grace period. " +
+                            "This is the key test for Issue #110 - old tokens remain valid during grace period!");
+            assertEquals("test-subject", validationResult3.getSubject().orElse(null),
+                    "Original token subject should still be accessible");
 
-        Optional<KeyInfo> retiredKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
-        assertTrue(retiredKey.isPresent(),
-                "Original key should still be accessible within 5-minute grace period. " +
-                        "This verifies the grace period mechanism works correctly.");
+            // Both tokens should be valid simultaneously during grace period
+            assertNotNull(validator.createAccessToken(tokenSignedWithOriginalKey),
+                    "Original key token should remain valid");
+            assertNotNull(validator.createAccessToken(tokenSignedWithRotatedKey),
+                    "Rotated key token should be valid");
 
-        loader.close();
-    }
+            loader.close();
+        }
 
-    @Test
-    @DisplayName("Should validate negative grace period is not allowed")
-    @SuppressWarnings("java:S5778") // Single lambda invocation - validation happens in setter
-    void shouldValidateNegativeGracePeriodIsNotAllowed() {
-        assertThrows(IllegalArgumentException.class, () ->
-                HttpJwksLoaderConfig.builder()
-                        .jwksUrl("https://example.com/jwks")
-                        .issuerIdentifier("test-issuer")
-                        .keyRotationGracePeriod(Duration.ofMinutes(-1))
-        );
-    }
+        @Test
+        @DisplayName("Should immediately invalidate tokens after key rotation with zero grace period")
+        void shouldImmediatelyInvalidateTokensWithZeroGracePeriod(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
 
-    @Test
-    @DisplayName("Should validate maxRetiredKeySets is positive")
-    void shouldValidateMaxRetiredKeySetsIsPositive() {
-        var baseBuilder = HttpJwksLoaderConfig.builder()
-                .jwksUrl("https://example.com/jwks")
-                .issuerIdentifier("test-issuer");
+            // Configure loader with ZERO grace period
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .keyRotationGracePeriod(Duration.ZERO) // Zero grace period!
+                    .refreshIntervalSeconds(1)
+                    .build();
 
-        assertThrows(IllegalArgumentException.class,
-                () -> baseBuilder.maxRetiredKeySets(0));
+            // Ensure dispatcher is configured before creating loader
+            moduleDispatcher.returnDefault();
 
-        var anotherBuilder = HttpJwksLoaderConfig.builder()
-                .jwksUrl("https://example.com/jwks")
-                .issuerIdentifier("test-issuer");
+            HttpJwksLoader loader = new HttpJwksLoader(config);
+            LoaderStatus status = loader.initJWKSLoader(securityEventCounter).join();
+            assertEquals(LoaderStatus.OK, status, "Loader should initialize successfully");
 
-        assertThrows(IllegalArgumentException.class,
-                () -> anotherBuilder.maxRetiredKeySets(-1));
+            // Verify the loader has the original key
+            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
+                    "Loader should have the original key after initialization");
+
+            // Create IssuerConfig with our loader
+            IssuerConfig issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksLoader(loader)
+                    .build();
+
+            issuerConfig.initSecurityEventCounter(securityEventCounter);
+
+            // Create TokenValidator with cache disabled to ensure fresh validation
+            TokenValidator validator = TokenValidator.builder()
+                    .issuerConfig(issuerConfig)
+                    .cacheConfig(AccessTokenCacheConfig.builder()
+                            .maxSize(0) // Disable caching
+                            .build())
+                    .build();
+
+            // Generate a token signed with the original key
+            TestTokenHolder tokenHolderOriginalKey = new TestTokenHolder(
+                    TokenType.ACCESS_TOKEN,
+                    ClaimControlParameter.builder().build());
+
+            tokenHolderOriginalKey.withClaim("iss", ClaimValue.forPlainString("test-issuer"))
+                    .withClaim("sub", ClaimValue.forPlainString("test-subject"))
+                    .withAudience(List.of("test-audience"));
+
+            String tokenSignedWithOriginalKey = tokenHolderOriginalKey.getRawToken();
+
+            // Validate token with original key - should succeed initially
+            AccessTokenContent validationResult1 = validator.createAccessToken(tokenSignedWithOriginalKey);
+            assertNotNull(validationResult1, "Token signed with original key should validate initially");
+
+            // Rotate keys
+            moduleDispatcher.switchToOtherPublicKey();
+
+            // Wait for key rotation to complete
+            await("Key rotation to complete")
+                    .atMost(2000, MILLISECONDS)
+                    .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
+
+            // Also ensure the old key is no longer available (zero grace period)
+            await("Old key to be removed")
+                    .atMost(2000, MILLISECONDS)
+                    .until(() -> loader.getKeyInfo(ORIGINAL_KEY_ID).isEmpty());
+
+            // CRITICAL: With zero grace period, the original token should immediately fail validation
+            TokenValidationException exception = assertThrows(TokenValidationException.class,
+                    () -> validator.createAccessToken(tokenSignedWithOriginalKey),
+                    "Token signed with original key should IMMEDIATELY FAIL with zero grace period. " +
+                            "This verifies that zero grace period immediately invalidates old tokens!");
+
+            // Verify the exception is about key not found
+            assertTrue(exception.getMessage().contains("key") || exception.getMessage().contains("Key"),
+                    "Should fail with key-related error, got: " + exception.getMessage());
+
+            // Generate and validate a new token with the rotated key - should succeed
+            TestTokenHolder tokenHolderRotatedKey = new TestTokenHolder(
+                    TokenType.ACCESS_TOKEN,
+                    ClaimControlParameter.builder().build());
+
+            tokenHolderRotatedKey.withKeyId(ROTATED_KEY_ID)
+                    .withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.RS384)
+                    .withClaim("iss", ClaimValue.forPlainString("test-issuer"))
+                    .withClaim("sub", ClaimValue.forPlainString("test-subject-new"))
+                    .withAudience(List.of("test-audience"));
+
+            String tokenSignedWithRotatedKey = tokenHolderRotatedKey.getRawToken();
+            AccessTokenContent validationResult3 = validator.createAccessToken(tokenSignedWithRotatedKey);
+            assertNotNull(validationResult3, "Token signed with rotated key should validate");
+
+            loader.close();
+        }
     }
 }
