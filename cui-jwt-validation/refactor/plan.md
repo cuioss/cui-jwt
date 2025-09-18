@@ -28,20 +28,6 @@ After implementing any task, **strictly follow this completion process**:
 
 ---
 
-### T2. Add Lock-Free Status Check Tests
-[ ] **Priority:** High
-
-**Description:** Implement high-contention concurrent tests to verify status checks are truly lock-free and atomic state transitions work correctly.
-Do comply to project standards, especially the usage of awaitility.
-
-**Rationale:** Lock-free behavior is critical for health checks and system performance. Must be verified under concurrent load.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/test-driven-approach.md` (Lock-Free Status Tests)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/IssuerConfigResolverConcurrencyTest.java`
-
----
-
 ### S1. Validate Framework Independence
 [ ] **Priority:** High
 
@@ -119,6 +105,7 @@ All code structure and design tasks (C1-C9) have been completed successfully:
 
 Testing improvements completed:
 - ✅ T1. Add Async Initialization Tests
+- ✅ T2. Add Lock-Free Status Check Tests
 - ✅ T3. Add Key Rotation Grace Period Tests
 
 Performance improvements completed:
