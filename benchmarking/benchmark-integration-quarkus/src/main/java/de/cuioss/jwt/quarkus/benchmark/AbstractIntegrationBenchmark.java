@@ -52,9 +52,6 @@ import java.net.http.HttpRequest;
         // Initialize token repository using shared instance if available
         initializeTokenRepository();
 
-        // Allow subclasses to perform additional setup after token repository is ready
-        performIntegrationSpecificSetup();
-
         LOGGER.info("Integration benchmark setup completed");
     }
 
@@ -66,18 +63,6 @@ import java.net.http.HttpRequest;
         tokenRepository = new KeycloakTokenRepository(config);
 
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
-    }
-
-
-    /**
-     * Hook for subclasses to perform additional setup after token repository is initialized.
-     * Default implementation does nothing.
-     * 
-     * <p>Override this method to add endpoint-specific priming or other setup that requires
-     * an initialized token repository.</p>
-     */
-    protected void performIntegrationSpecificSetup() {
-        // Default implementation - subclasses can override
     }
 
     /**

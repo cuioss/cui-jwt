@@ -32,34 +32,6 @@ import java.net.http.HttpResponse;
  */
 public class JwtHealthBenchmark extends AbstractBaseBenchmark {
 
-    /**
-     * Override the base class setup to add endpoint-specific priming.
-     * Primes the system with a real health check request after base setup.
-     */
-    @Override protected void performAdditionalSetup() {
-        // Call parent's additional setup first
-        super.performAdditionalSetup();
-
-        // Prime with liveness endpoint (non-blocking - continue even if priming fails)
-        try {
-            long startTime = System.currentTimeMillis();
-            HttpRequest request = createRequestForPath("/q/health/live")
-                    .GET()
-                    .build();
-            HttpResponse<String> response = sendRequest(request);
-            long elapsedTime = System.currentTimeMillis() - startTime;
-
-            validateResponse(response, 200);
-            logger.info("Benchmark primed successfully with /q/health/live in {}ms", elapsedTime);
-        } catch (IOException | AssertionError e) {
-            logger.error("Benchmark priming FAILED for /q/health/live: {} - continuing with benchmark execution", e.getMessage());
-            // DO NOT throw exception - allow benchmark to continue and demonstrate the pattern
-        } catch (InterruptedException e) {
-            logger.error("Benchmark priming was interrupted for /q/health/live: {} - continuing with benchmark execution", e.getMessage());
-            // Restore interrupt status and continue - DO NOT throw exception
-            Thread.currentThread().interrupt();
-        }
-    }
 
     /**
      * Benchmark for Quarkus liveness endpoint throughput.

@@ -71,12 +71,13 @@ public abstract class AbstractBenchmarkBase {
     /**
      * Base setup method that initializes common resources.
      * Subclasses should call this from their @Setup method.
-     * 
+     *
      * <p>This method:
      * <ul>
      *   <li>Initializes the benchmark results directory</li>
      *   <li>Performs additional setup via template method</li>
      *   <li>Creates the HTTP client after serviceUrl is set</li>
+     *   <li>Performs post-initialization setup after HTTP client is ready</li>
      * </ul>
      */
     protected void setupBase() {
