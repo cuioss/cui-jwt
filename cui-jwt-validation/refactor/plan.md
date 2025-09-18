@@ -26,23 +26,13 @@ After implementing any task, **strictly follow this completion process**:
 
 ## High Priority Tasks
 
-### T1. Add Async Initialization Tests
-[ ] **Priority:** High
-
-**Description:** Create comprehensive tests for new async initialization behavior: constructor non-blocking, CompletableFuture handling, well-known discovery in async context. Do comply to project standards, especially the usage of awaitility.
-
-**Rationale:** New async functionality must be thoroughly tested to prevent regressions and ensure correct behavior.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/test-driven-approach.md` (Async Initialization section)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderTest.java`
-
 ---
 
 ### T2. Add Lock-Free Status Check Tests
 [ ] **Priority:** High
 
 **Description:** Implement high-contention concurrent tests to verify status checks are truly lock-free and atomic state transitions work correctly.
+Do comply to project standards, especially the usage of awaitility.
 
 **Rationale:** Lock-free behavior is critical for health checks and system performance. Must be verified under concurrent load.
 
@@ -71,6 +61,7 @@ After implementing any task, **strictly follow this completion process**:
 [ ] **Priority:** Medium
 
 **Description:** Test enhanced IssuerConfigResolver: constructor triggers async loading, only returns healthy configs, CompletableFuture management, timeout handling.
+Do comply to project standards, especially the usage of awaitility.
 
 **Rationale:** IssuerConfigResolver is now central to async loading coordination. Its behavior must be thoroughly tested.
 
@@ -84,6 +75,8 @@ After implementing any task, **strictly follow this completion process**:
 [ ] **Priority:** Medium
 
 **Description:** Add tests for specific exception handling in background refresh: IOException, JwksParseException, InvalidKeySpecException. Verify no generic RuntimeException handling.
+Use by leveraging existing test structure. Especially [JwksResolveDispatcher.java](../src/test/java/de/cuioss/jwt/validation/test/dispatcher/JwksResolveDispatcher.java)
+Do comply to project standards, especially the usage of awaitility.
 
 **Rationale:** Background refresh error handling was improved to use specific exceptions. This must be tested to ensure proper error recovery.
 
@@ -94,7 +87,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### P2. Validate Non-Blocking Startup Performance
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Measure and verify that constructor-based initialization no longer blocks application startup. Compare startup times before and after refactoring.
 
@@ -106,30 +99,7 @@ After implementing any task, **strictly follow this completion process**:
 
 ---
 
-### DOC1. Update API Documentation for Async Changes
-[ ] **Priority:** Medium
-
-**Description:** Update JavaDoc for JwksLoader interface and HttpJwksLoader to reflect new async initialization pattern and CompletableFuture usage. Do not be verbose, but focussed.
-While at it, simplify and clarify existing documentation. It is too verbose already.
-
-**Rationale:** API changes require updated documentation for developers using the library.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/redesign.md` (interface changes)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java`
-
 ---
-
-### S2. Verify ResilientHttpHandler Integration
-[ ] **Priority:** Medium
-
-**Description:** Ensure that new implementation properly leverages existing ResilientHttpHandler capabilities without reimplementing retry logic.
-
-**Rationale:** Must not duplicate existing resilience functionality. ResilientHttpHandler provides critical caching and retry capabilities.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (ResilientHttpHandler analysis)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (ResilientHttpHandler usage)
 
 ---
 
@@ -148,13 +118,19 @@ All code structure and design tasks (C1-C9) have been completed successfully:
 - ✅ C9. Update Quarkus Health Checks for Lock-Free Status
 
 Testing improvements completed:
+- ✅ T1. Add Async Initialization Tests
 - ✅ T3. Add Key Rotation Grace Period Tests
 
 Performance improvements completed:
 - ✅ P1. Verify Lock-Free Performance Improvement
 
 Documentation improvements completed:
+- ✅ DOC1. Update API Documentation for Async Changes
 - ✅ DOC2. Document Key Rotation Grace Period Configuration
 
 Maintenance tasks completed:
 - ✅ Q1. Fix Quarkus Artifact Relocation Warning
+- ✅ Q2. Fix IDE Warnings in HttpJwksLoaderTest
+
+System verification completed:
+- ✅ S2. Verify ResilientHttpHandler Integration

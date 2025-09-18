@@ -29,12 +29,16 @@ import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import lombok.Getter;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -194,18 +198,19 @@ class HttpJwksLoaderTest {
                 .jwksUrl(jwksEndpoint)
                 .issuerIdentifier("test-issuer")
                 .build();
-        HttpJwksLoader newLoader = new HttpJwksLoader(config);
-        // Wait for async initialization to complete
-        newLoader.initJWKSLoader(securityEventCounter).join();
+        try (HttpJwksLoader newLoader = new HttpJwksLoader(config)) {
+            // Wait for async initialization to complete
+            newLoader.initJWKSLoader(securityEventCounter).join();
 
-        // Verify the new loader works independently
-        assertNotNull(newLoader.getLoaderStatus(), "Health check should work for new loader");
+            // Verify the new loader works independently
+            assertNotNull(newLoader.getLoaderStatus(), "Health check should work for new loader");
 
-        // Both loaders should be functional - test with getKeyInfo
-        Optional<KeyInfo> originalLoaderKey = httpJwksLoader.getKeyInfo(TEST_KID);
-        Optional<KeyInfo> newLoaderKey = newLoader.getKeyInfo(TEST_KID);
-        assertTrue(originalLoaderKey.isPresent(), "Original loader should have the key");
-        assertTrue(newLoaderKey.isPresent(), "New loader should be able to retrieve the key");
+            // Both loaders should be functional - test with getKeyInfo
+            Optional<KeyInfo> originalLoaderKey = httpJwksLoader.getKeyInfo(TEST_KID);
+            Optional<KeyInfo> newLoaderKey = newLoader.getKeyInfo(TEST_KID);
+            assertTrue(originalLoaderKey.isPresent(), "Original loader should have the key");
+            assertTrue(newLoaderKey.isPresent(), "New loader should be able to retrieve the key");
+        }
     }
 
     @Test
@@ -273,16 +278,17 @@ class HttpJwksLoaderTest {
                     .issuerIdentifier("test-issuer")
                     .build();
 
-            HttpJwksLoader loader = new HttpJwksLoader(config);
-            // Wait for async initialization to complete
-            loader.initJWKSLoader(securityEventCounter).join();
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                // Wait for async initialization to complete
+                loader.initJWKSLoader(securityEventCounter).join();
 
-            // Try to get the symmetric key - should not be found as oct keys are filtered out
-            Optional<KeyInfo> keyInfo = loader.getKeyInfo("symmetric-key-1");
-            assertFalse(keyInfo.isPresent(), "Symmetric key should not be supported");
+                // Try to get the symmetric key - should not be found as oct keys are filtered out
+                Optional<KeyInfo> keyInfo = loader.getKeyInfo("symmetric-key-1");
+                assertFalse(keyInfo.isPresent(), "Symmetric key should not be supported");
 
-            // The key is simply not found - oct keys are filtered out in JWKSKeyLoader
-            // No UNSUPPORTED_JWKS_TYPE error is logged as the filtering happens silently
+                // The key is simply not found - oct keys are filtered out in JWKSKeyLoader
+                // No UNSUPPORTED_JWKS_TYPE error is logged as the filtering happens silently
+            }
         } finally {
             // Restore dispatcher state
             moduleDispatcher.setCustomResponse(previousResponse);
@@ -301,25 +307,26 @@ class HttpJwksLoaderTest {
                     .issuerIdentifier("test-issuer")
                     .build();
 
-            HttpJwksLoader failingLoader = new HttpJwksLoader(config);
-            // Wait for async initialization to complete (even if it fails)
-            failingLoader.initJWKSLoader(securityEventCounter).join();
+            try (HttpJwksLoader failingLoader = new HttpJwksLoader(config)) {
+                // Wait for async initialization to complete (even if it fails)
+                failingLoader.initJWKSLoader(securityEventCounter).join();
 
-            // Try to get a key, which should fail
-            Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
-            assertFalse(keyInfo.isPresent(), "Key info should not be present when connection fails");
+                // Try to get a key, which should fail
+                Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
+                assertFalse(keyInfo.isPresent(), "Key info should not be present when connection fails");
 
-            // Verify the appropriate error was logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
-                    JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.resolveIdentifierString());
+                // Verify the appropriate error was logged
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                        JWTValidationLogMessages.ERROR.JWKS_LOAD_FAILED.resolveIdentifierString());
 
-            // Also verify the no-cache warning was logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.JWKS_LOAD_FAILED_NO_CACHE.resolveIdentifierString());
+                // Also verify the no-cache warning was logged
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                        JWTValidationLogMessages.WARN.JWKS_LOAD_FAILED_NO_CACHE.resolveIdentifierString());
 
-            // And the HTTP fetch failure
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    HttpLogMessages.WARN.HTTP_FETCH_FAILED.resolveIdentifierString());
+                // And the HTTP fetch failure
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                        HttpLogMessages.WARN.HTTP_FETCH_FAILED.resolveIdentifierString());
+            }
         }
 
         @Test
@@ -333,17 +340,223 @@ class HttpJwksLoaderTest {
                     .wellKnownUrl(invalidWellKnownUrl)
                     .build();
 
-            HttpJwksLoader failingLoader = new HttpJwksLoader(config);
-            // Wait for async initialization to complete (even if it fails)
-            failingLoader.initJWKSLoader(securityEventCounter).join();
+            try (HttpJwksLoader failingLoader = new HttpJwksLoader(config)) {
+                // Wait for async initialization to complete (even if it fails)
+                failingLoader.initJWKSLoader(securityEventCounter).join();
 
-            // Try to get a key, which should fail because JWKS URI cannot be resolved
-            Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
-            assertFalse(keyInfo.isPresent(), "Key info should not be present when JWKS URI resolution fails");
+                // Try to get a key, which should fail because JWKS URI cannot be resolved
+                Optional<KeyInfo> keyInfo = failingLoader.getKeyInfo(TEST_KID);
+                assertFalse(keyInfo.isPresent(), "Key info should not be present when JWKS URI resolution fails");
 
-            // Verify JWKS_URI_RESOLUTION_FAILED was logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED.resolveIdentifierString());
+                // Verify JWKS_URI_RESOLUTION_FAILED was logged
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                        JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED.resolveIdentifierString());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Async Initialization Tests")
+    class AsyncInitializationTests {
+
+        @Getter
+        private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
+
+        @BeforeEach
+        void setUp() {
+            moduleDispatcher.setCallCounter(0);
+            moduleDispatcher.returnDefault();
+        }
+
+        @Test
+        @DisplayName("Constructor should not block or perform I/O operations")
+        void constructorShouldNotBlockOrPerformIO(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .build();
+
+            // Measure constructor execution time
+            long startTime = System.nanoTime();
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                long constructorDurationNanos = System.nanoTime() - startTime;
+
+                // Constructor should complete in < 10ms (no I/O operations)
+                long maxAllowedNanos = TimeUnit.MILLISECONDS.toNanos(10);
+                assertTrue(constructorDurationNanos < maxAllowedNanos,
+                        "Constructor took %d ns (%.2f ms), should be < %d ns (10 ms)".formatted(
+                                constructorDurationNanos,
+                                constructorDurationNanos / 1_000_000.0,
+                                maxAllowedNanos));
+
+                // Status should be UNDEFINED immediately after construction (no loading yet)
+                assertEquals(LoaderStatus.UNDEFINED, loader.getLoaderStatus(),
+                        "Status should be UNDEFINED immediately after construction");
+
+                // Verify no HTTP calls were made during construction
+                assertEquals(0, moduleDispatcher.getCallCounter(),
+                        "No HTTP calls should be made during construction");
+            }
+        }
+
+        @Test
+        @DisplayName("initJWKSLoader should return non-completed CompletableFuture")
+        void initJWKSLoaderShouldReturnAsyncCompletableFuture(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .build();
+
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                SecurityEventCounter counter = new SecurityEventCounter();
+
+                // Call initJWKSLoader - should return CompletableFuture
+                CompletableFuture<LoaderStatus> initFuture = loader.initJWKSLoader(counter);
+
+                // Verify it returns a CompletableFuture
+                assertNotNull(initFuture, "initJWKSLoader should return a CompletableFuture");
+
+                // The future should complete eventually with OK status
+                LoaderStatus finalStatus = initFuture.join();
+                assertEquals(LoaderStatus.OK, finalStatus, "Initialization should complete with OK status");
+
+                // After completion, loader should be in OK state
+                assertEquals(LoaderStatus.OK, loader.getLoaderStatus(),
+                        "Loader status should be OK after successful initialization");
+            }
+        }
+
+        @Test
+        @DisplayName("Status should transition atomically during async initialization")
+        void statusShouldTransitionAtomicallyDuringAsyncInit(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .build();
+
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                SecurityEventCounter counter = new SecurityEventCounter();
+
+                // Initial status should be UNDEFINED
+                assertEquals(LoaderStatus.UNDEFINED, loader.getLoaderStatus(),
+                        "Initial status should be UNDEFINED");
+
+                // Start async initialization
+                CompletableFuture<LoaderStatus> initFuture = loader.initJWKSLoader(counter);
+
+                // Wait for status to transition to LOADING, then to OK
+                Awaitility.await()
+                        .atMost(Duration.ofSeconds(5))
+                        .until(() -> loader.getLoaderStatus() == LoaderStatus.OK);
+
+                // Verify final status
+                assertEquals(LoaderStatus.OK, loader.getLoaderStatus(),
+                        "Final status should be OK");
+
+                // Verify future completed with OK
+                assertTrue(initFuture.isDone(), "Future should be completed");
+                assertEquals(LoaderStatus.OK, initFuture.join(), "Future should complete with OK");
+            }
+        }
+
+        @Test
+        @DisplayName("Multiple concurrent initJWKSLoader calls should be handled safely")
+        void multipleConcurrentInitCallsShouldBeSafe(URIBuilder uriBuilder) {
+            String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .jwksUrl(jwksEndpoint)
+                    .issuerIdentifier("test-issuer")
+                    .build();
+
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                SecurityEventCounter counter = new SecurityEventCounter();
+
+                // Make multiple concurrent calls to initJWKSLoader
+                CompletableFuture<LoaderStatus> future1 = loader.initJWKSLoader(counter);
+                CompletableFuture<LoaderStatus> future2 = loader.initJWKSLoader(counter);
+                CompletableFuture<LoaderStatus> future3 = loader.initJWKSLoader(counter);
+
+                // All futures should complete with OK
+                assertEquals(LoaderStatus.OK, future1.join(), "First init should complete with OK");
+                assertEquals(LoaderStatus.OK, future2.join(), "Second init should complete with OK");
+                assertEquals(LoaderStatus.OK, future3.join(), "Third init should complete with OK");
+
+                // Final loader status should be OK
+                assertEquals(LoaderStatus.OK, loader.getLoaderStatus(),
+                        "Loader status should be OK after concurrent initialization");
+
+                // Keys should be available
+                Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
+                assertTrue(keyInfo.isPresent(), "Keys should be available after initialization");
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Well-Known Discovery Async Tests")
+    class WellKnownAsyncTests {
+
+        @Test
+        @DisplayName("Constructor should not perform well-known discovery")
+        void constructorShouldNotPerformWellKnownDiscovery() {
+            // Create a well-known configuration with invalid URL to test constructor behavior
+            String invalidWellKnownUrl = "https://invalid-host.example.com/.well-known/openid_configuration";
+
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .wellKnownUrl(invalidWellKnownUrl)
+                    .build();
+
+            // Measure constructor time
+            long startTime = System.nanoTime();
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                long constructorDurationNanos = System.nanoTime() - startTime;
+
+                // Constructor should be fast (< 10ms) even with well-known URL
+                assertTrue(constructorDurationNanos < TimeUnit.MILLISECONDS.toNanos(10),
+                        "Constructor should complete quickly without well-known discovery");
+
+                assertEquals(LoaderStatus.UNDEFINED, loader.getLoaderStatus(),
+                        "Status should remain UNDEFINED until initialization");
+            }
+        }
+
+        @Test
+        @DisplayName("Well-known discovery failure should be handled in async context")
+        void wellKnownDiscoveryFailureShouldBeHandledAsync() {
+            // Create configuration with invalid well-known URL
+            String invalidWellKnownUrl = "https://invalid-host.example.com/.well-known/openid_configuration";
+
+            HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+                    .wellKnownUrl(invalidWellKnownUrl)
+                    .build();
+
+            try (HttpJwksLoader loader = new HttpJwksLoader(config)) {
+                SecurityEventCounter counter = new SecurityEventCounter();
+
+                // Constructor should still be fast even with invalid well-known URL
+                long startTime = System.nanoTime();
+                try (HttpJwksLoader ignored = new HttpJwksLoader(config)) {
+                    long constructorDuration = System.nanoTime() - startTime;
+
+                    assertTrue(constructorDuration < TimeUnit.MILLISECONDS.toNanos(10),
+                            "Constructor should be fast even with invalid well-known configuration");
+                }
+
+                // Async initialization should handle the failure
+                CompletableFuture<LoaderStatus> initFuture = loader.initJWKSLoader(counter);
+
+                // Wait for completion - should fail gracefully
+                LoaderStatus status = initFuture.join();
+                assertEquals(LoaderStatus.ERROR, status, "Initialization should fail with well-known discovery error");
+                assertEquals(LoaderStatus.ERROR, loader.getLoaderStatus(), "Loader should be in ERROR status");
+
+                // Verify appropriate error logging
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                        JWTValidationLogMessages.WARN.JWKS_URI_RESOLUTION_FAILED.resolveIdentifierString());
+            }
         }
     }
 }

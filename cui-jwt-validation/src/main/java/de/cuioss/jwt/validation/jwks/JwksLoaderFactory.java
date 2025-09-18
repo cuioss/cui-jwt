@@ -34,17 +34,16 @@ import lombok.experimental.UtilityClass;
  * <p>
  * Usage example:
  * <pre>
- * // Create a SecurityEventCounter for tracking security events
  * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
- *
- * // Configure and create an HTTP-based JWKS loader
  * HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
  *     .jwksUrl("https://auth.example.com/.well-known/jwks.json")
  *     .refreshIntervalSeconds(60)
  *     .build();
- * JwksLoader loader = JwksLoaderFactory.createHttpLoader(config, securityEventCounter);
  *
- * // Get a key by ID
+ * JwksLoader loader = JwksLoaderFactory.createHttpLoader(config, securityEventCounter);
+ * CompletableFuture&lt;LoaderStatus&gt; initFuture = loader.initJWKSLoader(securityEventCounter);
+ *
+ * // After initialization completes
  * Optional&lt;KeyInfo&gt; keyInfo = loader.getKeyInfo("kid123");
  * </pre>
  * <p>
