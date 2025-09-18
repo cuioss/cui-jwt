@@ -52,9 +52,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for Issue #110: Key rotation grace period functionality.
  * Tests configuration validation and grace period behavior with real HTTP endpoints.
+ * <p>
+ * Verifies Requirement CUI-JWT-4.5: Key Rotation Grace Period
  *
  * @author Oliver Wolff
- * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110</a>
+ * @see <a href="../../../../doc/Requirements.adoc#CUI-JWT-4.5">CUI-JWT-4.5: Key Rotation Grace Period</a>
+ * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
  */
 @EnableTestLogger
 @EnableMockWebServer

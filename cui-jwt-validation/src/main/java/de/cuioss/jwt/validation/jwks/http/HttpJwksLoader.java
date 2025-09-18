@@ -56,8 +56,12 @@ import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
  *   <li>Key rotation grace period support for Issue #110</li>
  *   <li>Proper separation of concerns</li>
  * </ul>
+ * <p>
+ * Implements Requirement CUI-JWT-4.5: Key Rotation Grace Period
  *
  * @author Oliver Wolff
+ * @see HttpJwksLoaderConfig#keyRotationGracePeriod
+ * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
  * @since 1.0
  */
 public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCloseable {
