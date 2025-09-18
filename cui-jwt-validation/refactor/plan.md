@@ -124,7 +124,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### C8. Update Quarkus Integration - Remove JwksStartupService Usage
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Remove JwksStartupService references from Quarkus module CDI configuration, TokenValidatorProducer, and any related Quarkus-specific startup logic.
 
@@ -181,7 +181,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### T3. Add Key Rotation Grace Period Tests
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Create tests for RetiredKeySet functionality: grace period behavior, cleanup after expiration, maximum retired sets limit enforcement.
 
@@ -252,7 +252,7 @@ After implementing any task, **strictly follow this completion process**:
 ### DOC1. Update API Documentation for Async Changes
 [ ] **Priority:** Medium
 
-**Description:** Update JavaDoc for JwksLoader interface and HttpJwksLoader to reflect new async initialization pattern and CompletableFuture usage.
+**Description:** Update JavaDoc for JwksLoader interface and HttpJwksLoader to reflect new async initialization pattern and CompletableFuture usage. Do not be verbose, but focussed.
 
 **Rationale:** API changes require updated documentation for developers using the library.
 
@@ -263,7 +263,7 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### DOC2. Document Key Rotation Grace Period Configuration
-[ ] **Priority:** Medium
+[x] **Priority:** Medium
 
 **Description:** Add documentation explaining key rotation grace period configuration, RetiredKeySet behavior, and best practices for key rotation.
 
