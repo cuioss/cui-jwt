@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -373,8 +374,9 @@ class JwksEndpointHealthCheckTest {
             }
 
             @Override
-            public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+            public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
                 // No initialization needed for test
+                return CompletableFuture.completedFuture(LoaderStatus.UNDEFINED);
             }
         };
 
@@ -441,8 +443,9 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
             // Do nothing
+            return CompletableFuture.completedFuture(LoaderStatus.ERROR);
         }
 
         @Override
@@ -476,8 +479,9 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
             // Do nothing
+            return CompletableFuture.completedFuture(LoaderStatus.OK);
         }
 
         @Override
@@ -511,8 +515,9 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
             // Do nothing
+            return CompletableFuture.completedFuture(LoaderStatus.ERROR);
         }
 
         @Override

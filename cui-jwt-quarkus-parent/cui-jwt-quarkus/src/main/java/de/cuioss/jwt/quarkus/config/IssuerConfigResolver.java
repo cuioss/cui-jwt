@@ -26,6 +26,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -355,6 +356,18 @@ public class IssuerConfigResolver {
     private HttpJwksLoaderConfig createHttpJwksLoaderConfig(String issuerName, String jwksUrl, String wellKnownUrl) {
         HttpJwksLoaderConfig.HttpJwksLoaderConfigBuilder builder = HttpJwksLoaderConfig.builder();
 
+        // Set the issuer identifier (required for direct JWKS configuration)
+        Optional<String> issuerIdentifier = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted(issuerName),
+                String.class
+        );
+        if (issuerIdentifier.isPresent()) {
+            builder.issuerIdentifier(issuerIdentifier.get());
+        } else {
+            // Use the issuer name as fallback if no explicit identifier is configured
+            builder.issuerIdentifier(issuerName);
+        }
+
         // Configure URLs - let the builder handle mutual exclusivity validation
         if (jwksUrl != null) {
             builder.jwksUrl(jwksUrl);
@@ -385,7 +398,7 @@ public class IssuerConfigResolver {
                 Integer.class
         );
         if (gracePeriodSeconds.isPresent()) {
-            builder.keyRotationGracePeriod(java.time.Duration.ofSeconds(gracePeriodSeconds.get()));
+            builder.keyRotationGracePeriod(Duration.ofSeconds(gracePeriodSeconds.get()));
             LOGGER.debug("Set key rotation grace period for %s: %s seconds", issuerName, gracePeriodSeconds.get());
         }
 

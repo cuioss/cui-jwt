@@ -22,7 +22,6 @@ import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
 import de.cuioss.jwt.quarkus.servlet.VertxServletObjectsResolver;
-import de.cuioss.jwt.quarkus.startup.JwksStartupService;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.ParserConfig;
@@ -118,8 +117,7 @@ public class CuiJwtProcessor {
                 TokenValidator.class,        // Public constructors, API methods
                 IssuerConfigResolver.class,  // Package constructor, internal methods
                 SecurityEventCounter.class,  // Default constructor, counter methods
-                MeterRegistry.class,         // Micrometer registry for metrics
-                JwksStartupService.class)    // CDI service for startup JWKS loading
+                MeterRegistry.class)         // Micrometer registry for metrics
                 .methods(true)    // Methods needed for API calls and getters
                 .fields(false)    // No direct field access needed
                 .constructors(true) // Constructors needed for instantiation
@@ -285,8 +283,7 @@ public class CuiJwtProcessor {
                         de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
                         ParserConfigResolver.class,
                         VertxServletObjectsResolver.class,
-                        JwtMetricsCollector.class,
-                        JwksStartupService.class
+                        JwtMetricsCollector.class
                 )
                 // Register additional configuration producers using class references
                 .addBeanClass(AccessLogFilterConfigProducer.class)
