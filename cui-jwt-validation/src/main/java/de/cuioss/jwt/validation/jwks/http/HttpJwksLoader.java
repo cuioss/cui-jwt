@@ -60,7 +60,7 @@ import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
  * Implements Requirement CUI-JWT-4.5: Key Rotation Grace Period
  *
  * @author Oliver Wolff
- * @see HttpJwksLoaderConfig#keyRotationGracePeriod
+ * @see HttpJwksLoaderConfig
  * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
  * @since 1.0
  */

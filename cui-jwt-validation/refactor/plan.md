@@ -24,141 +24,12 @@ After implementing any task, **strictly follow this completion process**:
 
 ---
 
-## Code Structure and Design Tasks
-
-### C1. Update JwksLoader Interface for Async Initialization
-[x] **Priority:** High
-
-**Description:** Modify the JwksLoader interface to return CompletableFuture from initJWKSLoader method, enabling unified async loading pattern for all loader types.
-
-**Rationale:** This is the foundation change that enables the entire async architecture. All loaders (HTTP, memory, file) need unified async initialization.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/redesign.md` (lines 13-34)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/consistency-analysis.md` (Issue 4 analysis)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java`
-
----
-
-### C2. Implement AtomicReference Status Management
-[x] **Priority:** High
-
-**Description:** Replace complex state management in HttpJwksLoader with single AtomicReference<LoaderStatus> for lock-free status checks. Remove duplicate status methods.
-
-**Rationale:** Health checks require instant, non-blocking status responses. Current implementation may block on I/O operations.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issues 2 & 3)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (lines 13, 127)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/test-driven-approach.md` (Lock-Free Status Tests)
-
----
-
-### C3. Implement HttpJwksLoader Complete Redesign
-[x] **Priority:** High
-
-**Description:** Replace existing HttpJwksLoader with clean implementation: simple constructor, async initialization, Optional return types, leverages ResilientHttpHandler.
-
-**Rationale:** Current implementation has complex state management, race conditions, and blocks in constructor. Clean redesign addresses all architectural issues.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (complete implementation)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (all identified issues)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java`
-
----
-
-### C4. Implement Key Rotation Grace Period (Issue #110)
-[x] **Priority:** High
-
-**Description:** Add RetiredKeySet management in HttpJwksLoader to maintain old keys during grace period, preventing immediate validation failures during key rotation.
-
-**Rationale:** Critical security requirement to support key rotation without service disruption. Addresses Issue #110 directly.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (lines 114-121, 149-160, 207-216)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issue 5)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/test-driven-approach.md` (Key Rotation tests)
-
----
-
-### C5. Enhance HttpJwksLoaderConfig with Overloaded Methods
-[x] **Priority:** Medium
-
-**Description:** Add getHttpHandler(String url) overload and isBackgroundRefreshEnabled() method to centralize configuration logic and eliminate duplication.
-
-**Rationale:** Reduces code duplication in handler creation and encapsulates background refresh decision logic in configuration.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (lines 222-248)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfig.java`
-
----
-
-### C6. Enhance IssuerConfigResolver with Async Loading Management
-[x] **Priority:** High
-
-**Description:** Modify IssuerConfigResolver constructor to trigger async loading for all enabled configs and manage CompletableFuture lifecycle. Only return configs with LoaderStatus.OK.
-
-**Rationale:** Eliminates initialization race conditions and provides central coordination point. Replaces JwksStartupService functionality.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/redesign.md` (lines 36-107)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issue 7)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/IssuerConfigResolver.java`
-
----
-
-### C7. Remove JwksStartupService
-[x] **Priority:** Medium
-
-**Description:** Delete JwksStartupService class as async loading is now handled by enhanced IssuerConfigResolver.
-
-**Rationale:** Eliminates redundant loading triggers and race conditions. Functionality is now centralized in IssuerConfigResolver.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issue 4 - Multiple Redundant Loading Triggers)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/consistency-analysis.md` (Issue 4 verification)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/startup/JwksStartupService.java`
-
----
-
-### C8. Update Quarkus Integration - Remove JwksStartupService Usage
-[x] **Priority:** High
-
-**Description:** Remove JwksStartupService references from Quarkus module CDI configuration, TokenValidatorProducer, and any related Quarkus-specific startup logic.
-
-**Rationale:** JwksStartupService is being deleted, so Quarkus integration must be updated to rely on enhanced IssuerConfigResolver for async loading.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (startup sequence analysis)
-- Quarkus module TokenValidatorProducer class
-- Any Quarkus @Startup or @PostConstruct annotations referencing JwksStartupService
-
----
-
-### C9. Update Quarkus Health Checks for Lock-Free Status
-[x] **Priority:** High
-
-**Description:** Update Quarkus MicroProfile Health integration to use new lock-free getLoaderStatus() method and remove any blocking status check patterns.
-Caution: Differentiate between liveness and readiness checks as per MicroProfile Health spec. liveness should consider that there is at least one IssuerConfiig configured.Readiness should consider that all configured IssuerConfig are in status OK.
-
-**Rationale:** Health checks must be instant and non-blocking. New AtomicReference status approach enables proper health check implementation.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issue 3 - Not Lock-Free Status Checks)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (lock-free status implementation)
-- Quarkus module health check implementations
-- MicroProfile Health specification requirements
-
----
-
-## Testing Improvements Tasks
+## High Priority Tasks
 
 ### T1. Add Async Initialization Tests
 [ ] **Priority:** High
 
-**Description:** Create comprehensive tests for new async initialization behavior: constructor non-blocking, CompletableFuture handling, well-known discovery in async context.
+**Description:** Create comprehensive tests for new async initialization behavior: constructor non-blocking, CompletableFuture handling, well-known discovery in async context. Do comply to project standards, especially the usage of awaitility.
 
 **Rationale:** New async functionality must be thoroughly tested to prevent regressions and ensure correct behavior.
 
@@ -181,18 +52,20 @@ Caution: Differentiate between liveness and readiness checks as per MicroProfile
 
 ---
 
-### T3. Add Key Rotation Grace Period Tests
-[x] **Priority:** High
+### S1. Validate Framework Independence
+[ ] **Priority:** High
 
-**Description:** Create tests for RetiredKeySet functionality: grace period behavior, cleanup after expiration, maximum retired sets limit enforcement.
+**Description:** Verify that refactored implementation maintains framework independence and works correctly in Quarkus, NiFi, and plain Java environments.
 
-**Rationale:** Key rotation is a critical security feature that must work correctly. Grace period logic needs thorough validation.
+**Rationale:** Critical requirement to maintain multi-framework compatibility. Must not break existing NiFi deployments.
 
 **Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/test-driven-approach.md` (Key Rotation Grace Period section)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (RetiredKeySet implementation)
+- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Framework Independence Requirement)
+- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/consistency-analysis.md` (Framework Independence verification)
 
 ---
+
+## Medium Priority Tasks
 
 ### T4. Add IssuerConfigResolver Async Loading Tests
 [ ] **Priority:** Medium
@@ -220,21 +93,6 @@ Caution: Differentiate between liveness and readiness checks as per MicroProfile
 
 ---
 
-## Performance Improvements Tasks
-
-### P1. Verify Lock-Free Performance Improvement
-[ ] **Priority:** Medium
-
-**Description:** Create benchmark tests to verify that AtomicReference status checks provide better performance than previous synchronized approach.
-
-**Rationale:** Performance improvement is a key goal of the refactoring. Must be measurable and verified.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issue 3 - Not Lock-Free Status Checks)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/IssuerConfigResolverPerformanceTest.java`
-
----
-
 ### P2. Validate Non-Blocking Startup Performance
 [ ] **Priority:** Medium
 
@@ -248,46 +106,17 @@ Caution: Differentiate between liveness and readiness checks as per MicroProfile
 
 ---
 
-## Documentation Improvements Tasks
-
 ### DOC1. Update API Documentation for Async Changes
 [ ] **Priority:** Medium
 
 **Description:** Update JavaDoc for JwksLoader interface and HttpJwksLoader to reflect new async initialization pattern and CompletableFuture usage. Do not be verbose, but focussed.
+While at it, simplify and clarify existing documentation. It is too verbose already.
 
 **Rationale:** API changes require updated documentation for developers using the library.
 
 **Required Reading:**
 - `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/redesign.md` (interface changes)
 - `/Users/oliver/git/cui-jwt/cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java`
-
----
-
-### DOC2. Document Key Rotation Grace Period Configuration
-[x] **Priority:** Medium
-
-**Description:** Add documentation explaining key rotation grace period configuration, RetiredKeySet behavior, and best practices for key rotation.
-
-**Rationale:** New key rotation feature needs proper documentation for operations teams.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/httpjwksloader-clean.md` (RetiredKeySet functionality)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Issue #110 context)
-
----
-
-## Security Enhancements Tasks
-
-### S1. Validate Framework Independence
-[ ] **Priority:** High
-
-**Description:** Verify that refactored implementation maintains framework independence and works correctly in Quarkus, NiFi, and plain Java environments.
-
-**Rationale:** Critical requirement to maintain multi-framework compatibility. Must not break existing NiFi deployments.
-
-**Required Reading:**
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/analyzis.md` (Framework Independence Requirement)
-- `/Users/oliver/git/cui-jwt/cui-jwt-validation/refactor/consistency-analysis.md` (Framework Independence verification)
 
 ---
 
@@ -304,3 +133,28 @@ Caution: Differentiate between liveness and readiness checks as per MicroProfile
 
 ---
 
+
+## Completed Tasks
+
+All code structure and design tasks (C1-C9) have been completed successfully:
+- ✅ C1. Update JwksLoader Interface for Async Initialization
+- ✅ C2. Implement AtomicReference Status Management
+- ✅ C3. Implement HttpJwksLoader Complete Redesign
+- ✅ C4. Implement Key Rotation Grace Period (Issue #110)
+- ✅ C5. Enhance HttpJwksLoaderConfig with Overloaded Methods
+- ✅ C6. Enhance IssuerConfigResolver with Async Loading Management
+- ✅ C7. Remove JwksStartupService
+- ✅ C8. Update Quarkus Integration - Remove JwksStartupService Usage
+- ✅ C9. Update Quarkus Health Checks for Lock-Free Status
+
+Testing improvements completed:
+- ✅ T3. Add Key Rotation Grace Period Tests
+
+Performance improvements completed:
+- ✅ P1. Verify Lock-Free Performance Improvement
+
+Documentation improvements completed:
+- ✅ DOC2. Document Key Rotation Grace Period Configuration
+
+Maintenance tasks completed:
+- ✅ Q1. Fix Quarkus Artifact Relocation Warning
