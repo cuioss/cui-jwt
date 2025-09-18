@@ -138,9 +138,10 @@ After implementing any task, **strictly follow this completion process**:
 ---
 
 ### C9. Update Quarkus Health Checks for Lock-Free Status
-[ ] **Priority:** High
+[x] **Priority:** High
 
 **Description:** Update Quarkus MicroProfile Health integration to use new lock-free getLoaderStatus() method and remove any blocking status check patterns.
+Caution: Differentiate between liveness and readiness checks as per MicroProfile Health spec. liveness should consider that there is at least one IssuerConfiig configured.Readiness should consider that all configured IssuerConfig are in status OK.
 
 **Rationale:** Health checks must be instant and non-blocking. New AtomicReference status approach enables proper health check implementation.
 

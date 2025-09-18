@@ -30,7 +30,6 @@ import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.dispatcher.JwksResolveDispatcher;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
-import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
@@ -453,21 +452,13 @@ class HttpJwksLoaderGracePeriodTest {
             moduleDispatcher.returnDefault();
 
             HttpJwksLoader loader = new HttpJwksLoader(config);
-            LoaderStatus status = loader.initJWKSLoader(securityEventCounter).join();
-            assertEquals(LoaderStatus.OK, status, "Loader should initialize successfully");
-
-            // Verify the loader has the original key
-            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
-                    "Loader should have the original key after initialization");
+            // Don't initialize the loader here - TokenValidator will do it via IssuerConfigResolver
 
             // Create IssuerConfig with our loader
             IssuerConfig issuerConfig = IssuerConfig.builder()
                     .issuerIdentifier("test-issuer")
                     .jwksLoader(loader)
                     .build();
-
-            // Initialize the issuer config
-            issuerConfig.initSecurityEventCounter(securityEventCounter);
 
             // Create TokenValidator with cache disabled to ensure fresh validation
             TokenValidator validator = TokenValidator.builder()
@@ -476,6 +467,15 @@ class HttpJwksLoaderGracePeriodTest {
                             .maxSize(0) // Disable caching
                             .build())
                     .build();
+
+            // Wait for the loader to be initialized (IssuerConfigResolver triggers async loading)
+            await("Loader initialization")
+                    .atMost(5, SECONDS)
+                    .until(() -> loader.getLoaderStatus() == LoaderStatus.OK);
+
+            // Verify the loader has the original key
+            assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
+                    "Loader should have the original key after initialization");
 
             // Generate a token signed with the original key
             // Use TestTokenHolder constructor with TokenType and ClaimControlParameter

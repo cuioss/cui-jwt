@@ -157,7 +157,7 @@ public class JwksEndpointHealthCheck implements HealthCheck {
             try {
                 JwksLoader jwksLoader = issuerConfig.getJwksLoader();
 
-                LoaderStatus status = jwksLoader.getCurrentStatus();
+                LoaderStatus status = jwksLoader.getLoaderStatus();
                 LOGGER.debug("JWKS loader status for issuer %s: %s", issuer, status);
 
                 return new EndpointResult(issuer, jwksLoader.getJwksType().toString(), status);

@@ -24,8 +24,8 @@ package de.cuioss.http.client;
  * Implementation requirements:
  * <ul>
  *   <li>Implementations must be thread-safe for concurrent access</li>
- *   <li>Health checks should be fail-fast to avoid blocking callers</li>
- *   <li>For lazy-loading implementations, {@link #getLoaderStatus()} may trigger initial loading</li>
+ *   <li>{@link #getLoaderStatus()} must be non-blocking and return immediately</li>
+ *   <li>Status checks must NOT trigger I/O operations or network requests</li>
  * </ul>
  * <p>
  * Usage example:
@@ -47,10 +47,12 @@ package de.cuioss.http.client;
 public interface LoadingStatusProvider {
 
     /**
-     * Checks the component's health status and returns detailed status information.
+     * Gets the current status of the loading operation without blocking.
      * <p>
-     * This method performs a health check by verifying that the component
-     * can perform its intended operations and returns the current status:
+     * This method must be non-blocking and return immediately with the current cached status.
+     * It must NOT trigger any I/O operations, network requests, or other potentially blocking operations.
+     * <p>
+     * The returned status values:
      * <ul>
      *   <li>{@link LoaderStatus#OK} - Component is operational and healthy</li>
      *   <li>{@link LoaderStatus#ERROR} - Component encountered an error</li>
@@ -58,17 +60,17 @@ public interface LoadingStatusProvider {
      *   <li>{@link LoaderStatus#UNDEFINED} - Initial state, not yet initialized</li>
      * </ul>
      * <p>
-     * The exact definition of "healthy" depends on the implementation:
+     * Implementation requirements:
      * <ul>
-     *   <li>For JWKS loaders: Can access at least one cryptographic key</li>
-     *   <li>For well-known resolvers: Can discover and access required endpoints</li>
-     *   <li>For issuer configurations: Are enabled and have operational loaders</li>
+     *   <li>Must be thread-safe for concurrent calls</li>
+     *   <li>Must return immediately without blocking</li>
+     *   <li>Must NOT perform any I/O operations or network requests</li>
+     *   <li>Should return the current cached status from memory</li>
+     *   <li>Required for MicroProfile Health compliance for readiness checks</li>
+     *   <li>In exceptional cases, may return UNDEFINED rather than throwing</li>
      * </ul>
-     * <p>
-     * For components with lazy initialization, this method may trigger the initial
-     * loading operation if not already performed.
      *
-     * @return the current health status of the component, never {@code null}
+     * @return the current status of the loading operation from cache/memory, never {@code null}
      */
     LoaderStatus getLoaderStatus();
 

@@ -249,11 +249,6 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
     }
 
     @Override
-    public LoaderStatus getCurrentStatus() {
-        return status.get(); // Pure atomic read
-    }
-
-    @Override
     public JwksType getJwksType() {
         return config.getJwksType(); // Delegate to config
     }

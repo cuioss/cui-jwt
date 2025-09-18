@@ -320,22 +320,8 @@ public class JWKSKeyLoader implements JwksLoader {
      * @return the current health status, considering both loader status and key availability
      */
     @Override
-    public @NonNull LoaderStatus getCurrentStatus() {
-        return status; // Return cached status immediately - NO I/O
-    }
-
-    @Override
     public @NonNull LoaderStatus getLoaderStatus() {
-        if (!initialized || keyInfoMap == null) {
-            return LoaderStatus.UNDEFINED;
-        }
-        if (status == LoaderStatus.OK && !keyInfoMap.isEmpty()) {
-            return LoaderStatus.OK;
-        } else if (status == LoaderStatus.ERROR) {
-            return LoaderStatus.ERROR;
-        } else {
-            return LoaderStatus.UNDEFINED;
-        }
+        return status; // Return cached status immediately - NO I/O
     }
 
     @Override

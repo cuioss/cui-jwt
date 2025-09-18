@@ -277,11 +277,6 @@ class TokenSignatureValidatorTest {
             }
 
             @Override
-            public LoaderStatus getCurrentStatus() {
-                return LoaderStatus.OK;
-            }
-
-            @Override
             public LoaderStatus getLoaderStatus() {
                 return LoaderStatus.OK;
             }

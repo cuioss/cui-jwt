@@ -342,7 +342,7 @@ class JwksEndpointHealthCheckTest {
     }
 
     @Test
-    @DisplayName("Health check should be fail-fast and non-blocking (getCurrentStatus() behavior)")
+    @DisplayName("Health check should be fail-fast and non-blocking (getLoaderStatus() behavior)")
     void healthCheckShouldBeFailFastAndNonBlocking() {
         // Create a fast JwksLoader implementation that demonstrates fail-fast behavior
         JwksLoader failFastLoader = new JwksLoader() {
@@ -357,15 +357,9 @@ class JwksEndpointHealthCheckTest {
             }
 
             @Override
-            public LoaderStatus getCurrentStatus() {
+            public LoaderStatus getLoaderStatus() {
                 // This method should be fail-fast and return immediately without blocking
                 return LoaderStatus.UNDEFINED; // Simulates initial state before any loading attempt
-            }
-
-            @Override
-            public LoaderStatus getLoaderStatus() {
-                // This would be the blocking method (not used by health check anymore)
-                return LoaderStatus.ERROR;
             }
 
             @Override
@@ -453,10 +447,6 @@ class JwksEndpointHealthCheckTest {
             return LoaderStatus.ERROR;
         }
 
-        @Override
-        public LoaderStatus getCurrentStatus() {
-            return LoaderStatus.ERROR;
-        }
     }
 
     /**
@@ -489,10 +479,6 @@ class JwksEndpointHealthCheckTest {
             return LoaderStatus.OK;
         }
 
-        @Override
-        public LoaderStatus getCurrentStatus() {
-            return LoaderStatus.OK;
-        }
     }
 
     /**
@@ -525,9 +511,5 @@ class JwksEndpointHealthCheckTest {
             return LoaderStatus.ERROR;
         }
 
-        @Override
-        public LoaderStatus getCurrentStatus() {
-            return LoaderStatus.ERROR;
-        }
     }
 }

@@ -115,23 +115,6 @@ public interface JwksLoader extends LoadingStatusProvider {
      */
     Optional<String> getIssuerIdentifier();
 
-    /**
-     * Gets the current loader status without triggering any loading operations.
-     * <p>
-     * This method must be non-blocking and fail-fast for use in health checks.
-     * It returns the current cached status from memory without performing any I/O
-     * operations or network requests.
-     * </p>
-     * <p>
-     * This method is required for MicroProfile Health compliance, ensuring that
-     * readiness checks can quickly determine the current state without blocking
-     * on potentially slow initialization or loading operations.
-     * </p>
-     *
-     * @return the current status from cache/memory, never triggers I/O operations
-     * @since 1.1
-     */
-    LoaderStatus getCurrentStatus();
 
     /**
      * Initializes the JwksLoader with the provided SecurityEventCounter and triggers
