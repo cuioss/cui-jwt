@@ -18,13 +18,16 @@
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
 
+        <!-- Scripts location -->
+        <integration.scripts.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts</integration.scripts.dir>
+
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.QuarkusIntegrationRunner</benchmark.runner>
 
         <!-- JMH Configuration Properties - Optimized for integration testing -->
         <jmh.include>de\.cuioss\.jwt\.quarkus\.benchmark\.benchmarks\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>target/benchmark-results/integration-result</jmh.result.filePrefix>
+        <jmh.result.filePrefix>${project.build.directory}/benchmark-results/integration-result</jmh.result.filePrefix>
         <jmh.iterations>5</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>2</jmh.forks>
@@ -73,12 +76,13 @@
             <artifactId>cui-benchmarking-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
-        <!-- HTTP Client for benchmarks -->
+
+        <!-- HTTP Client - needed at test scope -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.12.0</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- JSON processing -->
@@ -275,7 +279,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <executable>${integration.scripts.dir}/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
@@ -289,7 +293,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/dump-quarkus-logs.sh</executable>
+                                    <executable>${integration.scripts.dir}/dump-quarkus-logs.sh</executable>
                                     <arguments>
                                         <argument>target</argument>
                                     </arguments>
@@ -304,7 +308,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>${integration.scripts.dir}/stop-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>
@@ -402,7 +406,7 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</argument>
+                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ${integration.scripts.dir}/start-integration-container.sh</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
@@ -482,7 +486,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/dump-quarkus-logs.sh</executable>
+                                    <executable>${integration.scripts.dir}/dump-quarkus-logs.sh</executable>
                                     <arguments>
                                         <argument>target</argument>
                                     </arguments>
@@ -497,7 +501,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>${integration.scripts.dir}/stop-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>

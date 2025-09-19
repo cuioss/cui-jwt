@@ -137,14 +137,8 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
         LOGGER.info(INFO.EXPORT_JWT_METRICS_COMPLETED.format());
 
-        // Wait briefly to ensure file system has settled after metrics file creation
-        try {
-            Thread.sleep(100); // 100ms delay to ensure metrics files are fully written
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
         // Process JMH benchmark results to create both http-metrics.json and quarkus-metrics.json
+        // MetricsPostProcessor uses synchronous file I/O, so no delay is needed
         String benchmarkResultsFile = config.reportConfig().getOrCreateResultFile();
         MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
         metricsPostProcessor.parseAndExportAllMetrics(Instant.now());

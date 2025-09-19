@@ -27,7 +27,6 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Optional;
 
 /**
@@ -181,8 +180,23 @@ public abstract class AbstractBenchmarkBase {
         // Handle body
         RequestBody body = null;
         if (request.bodyPublisher().isPresent()) {
-            // For benchmarks we only use JSON bodies
-            body = RequestBody.create("", MediaType.parse("application/json"));
+            // Check if it's a no-body publisher by checking content length
+            var bodyPublisher = request.bodyPublisher().get();
+            long contentLength = bodyPublisher.contentLength();
+
+            if (contentLength == 0) {
+                // Empty body for methods that require a body (like POST with no content)
+                body = RequestBody.create("", MediaType.parse("application/json"));
+            } else if (contentLength > 0) {
+                // Non-empty request bodies are not currently supported
+                // Converting HttpRequest.BodyPublisher to OkHttp RequestBody would require
+                // complex async handling. Consider refactoring to use OkHttp Request directly
+                // if non-empty bodies are needed in benchmarks.
+                throw new UnsupportedOperationException(
+                        "Non-empty request bodies are not supported in benchmarks. " +
+                                "Current benchmarks use BodyPublishers.noBody(). " +
+                                "If you need to send request bodies, please refactor to use OkHttp Request directly.");
+            }
         }
 
         String method = request.method();
@@ -193,8 +207,8 @@ public abstract class AbstractBenchmarkBase {
             String responseBody = response.body() != null ? response.body().string() : "";
             int statusCode = response.code();
 
-            // Create HttpResponse wrapper
-            return new HttpResponseWrapper(request, statusCode, responseBody);
+            // Create HttpResponse wrapper with headers
+            return new HttpResponseWrapper(request, statusCode, responseBody, response.headers());
         }
     }
 
@@ -223,11 +237,14 @@ public abstract class AbstractBenchmarkBase {
         private final HttpRequest request;
         private final int statusCode;
         private final String body;
+        private final HttpHeaders headers;
 
-        HttpResponseWrapper(HttpRequest request, int statusCode, String body) {
+        HttpResponseWrapper(HttpRequest request, int statusCode, String body, Headers okHttpHeaders) {
             this.request = request;
             this.statusCode = statusCode;
             this.body = body;
+            // Convert OkHttp headers to HttpHeaders
+            this.headers = HttpHeaders.of(okHttpHeaders.toMultimap(), (a, b) -> true);
         }
 
         @Override public int statusCode() {
@@ -243,7 +260,7 @@ public abstract class AbstractBenchmarkBase {
         }
 
         @Override public HttpHeaders headers() {
-            return HttpHeaders.of(new HashMap<>(), (a, b) -> true);
+            return headers;
         }
 
         @Override public String body() {
