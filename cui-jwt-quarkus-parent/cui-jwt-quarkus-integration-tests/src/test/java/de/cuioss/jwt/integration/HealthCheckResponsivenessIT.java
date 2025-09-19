@@ -122,7 +122,7 @@ class HealthCheckResponsivenessIT extends BaseIntegrationTest {
     private HealthCheckTimingResult performTimedHealthCheck(String type, String url, int checkId) {
         Instant startTime = Instant.now();
         boolean success = false;
-        String status = "DOWN";
+        String status;
 
         String responseStatus = given()
                 .when()

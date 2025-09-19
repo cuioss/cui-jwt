@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.jwks.JwksLoader;
+import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 
 import lombok.experimental.UtilityClass;
 
@@ -39,6 +40,7 @@ public final class JwtPropertyKeys {
      */
     public static final String PREFIX = "cui.jwt";
     public static final String DOT_JWKS = ".jwks";
+    public static final String DOT_ENABLED = ".enabled";
 
     /**
      * Properties related to JWT parser configuration.
@@ -343,7 +345,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#keyRotationGracePeriod
+         * @see HttpJwksLoaderConfig#getKeyRotationGracePeriod()
          * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
          * @since 1.1
          */
@@ -364,7 +366,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#maxRetiredKeySets
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
          * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
          * @since 1.1
          */
@@ -436,7 +438,7 @@ public final class JwtPropertyKeys {
         /**
          * Whether health checks are enabled.
          */
-        public static final String ENABLED = BASE + ".enabled";
+        public static final String ENABLED = BASE + DOT_ENABLED;
 
         /**
          * Properties related to JWKS endpoint health checks.
@@ -520,7 +522,7 @@ public final class JwtPropertyKeys {
      * </p>
      */
     @UtilityClass
-    public static final class ACCESS_LOG {
+    public static final class ACCESSLOG {
         /**
          * Base path for access log filter configurations.
          */
@@ -626,7 +628,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code false}.
          * </p>
          */
-        public static final String ENABLED = BASE + ".enabled";
+        public static final String ENABLED = BASE + DOT_ENABLED;
     }
 
     /**
@@ -640,7 +642,7 @@ public final class JwtPropertyKeys {
          * Whether retry is enabled globally.
          * Default: true
          */
-        public static final String ENABLED = PREFIX_RETRY + ".enabled";
+        public static final String ENABLED = PREFIX_RETRY + DOT_ENABLED;
 
         /**
          * Maximum number of retry attempts.

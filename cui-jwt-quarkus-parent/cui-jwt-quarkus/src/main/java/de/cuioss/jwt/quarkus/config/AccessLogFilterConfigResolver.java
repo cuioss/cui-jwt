@@ -34,11 +34,11 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * providing sensible defaults for all optional values.
  * </p>
  * <p>
- * Configuration properties are defined in {@link JwtPropertyKeys.ACCESS_LOG}.
+ * Configuration properties are defined in {@link JwtPropertyKeys.ACCESSLOG}.
  * </p>
  * <p>
  * Control via enabled flag: cui.http.access-log.filter.enabled=true
- * - true: Enable access logging 
+ * - true: Enable access logging
  * - false: Disable access logging (default)
  * </p>
  */
@@ -62,16 +62,16 @@ public class AccessLogFilterConfigResolver {
         LOGGER.info(INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG::format);
 
         return AccessLogFilterConfig.builder()
-                .minStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.MIN_STATUS_CODE, Integer.class)
+                .minStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESSLOG.MIN_STATUS_CODE, Integer.class)
                         .orElse(400))
-                .maxStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.MAX_STATUS_CODE, Integer.class)
+                .maxStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESSLOG.MAX_STATUS_CODE, Integer.class)
                         .orElse(599))
-                .includeStatusCodes(resolveIntegerList(JwtPropertyKeys.ACCESS_LOG.INCLUDE_STATUS_CODES))
-                .includePaths(resolveStringList(JwtPropertyKeys.ACCESS_LOG.INCLUDE_PATHS))
-                .excludePaths(resolveStringList(JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS))
-                .pattern(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.PATTERN, String.class)
+                .includeStatusCodes(resolveIntegerList(JwtPropertyKeys.ACCESSLOG.INCLUDE_STATUS_CODES))
+                .includePaths(resolveStringList(JwtPropertyKeys.ACCESSLOG.INCLUDE_PATHS))
+                .excludePaths(resolveStringList(JwtPropertyKeys.ACCESSLOG.EXCLUDE_PATHS))
+                .pattern(config.getOptionalValue(JwtPropertyKeys.ACCESSLOG.PATTERN, String.class)
                         .orElse("{remoteAddr} {method} {path} -> {status} ({duration}ms)"))
-                .enabled(config.getOptionalValue(JwtPropertyKeys.ACCESS_LOG.ENABLED, Boolean.class)
+                .enabled(config.getOptionalValue(JwtPropertyKeys.ACCESSLOG.ENABLED, Boolean.class)
                         .orElse(false))
                 .build();
     }

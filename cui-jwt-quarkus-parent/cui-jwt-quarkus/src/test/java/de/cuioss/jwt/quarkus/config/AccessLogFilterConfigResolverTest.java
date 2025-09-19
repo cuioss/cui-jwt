@@ -59,13 +59,13 @@ class AccessLogFilterConfigResolverTest {
     void resolveConfigWithCustomValues() {
         // Given - custom config values
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.MIN_STATUS_CODE, "200",
-                JwtPropertyKeys.ACCESS_LOG.MAX_STATUS_CODE, "599",
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_STATUS_CODES, "201,202,204",
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_PATHS, "/api/*,/health/*",
-                JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS, "/metrics/*,/jwt/validate",
-                JwtPropertyKeys.ACCESS_LOG.PATTERN, "{method} {path} -> {status}",
-                JwtPropertyKeys.ACCESS_LOG.ENABLED, "true"
+                JwtPropertyKeys.ACCESSLOG.MIN_STATUS_CODE, "200",
+                JwtPropertyKeys.ACCESSLOG.MAX_STATUS_CODE, "599",
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_STATUS_CODES, "201,202,204",
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_PATHS, "/api/*,/health/*",
+                JwtPropertyKeys.ACCESSLOG.EXCLUDE_PATHS, "/metrics/*,/jwt/validate",
+                JwtPropertyKeys.ACCESSLOG.PATTERN, "{method} {path} -> {status}",
+                JwtPropertyKeys.ACCESSLOG.ENABLED, "true"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -88,9 +88,9 @@ class AccessLogFilterConfigResolverTest {
     void resolveConfigWithEmptyLists() {
         // Given - empty list values
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_STATUS_CODES, "",
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_PATHS, "  ",
-                JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS, ""
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_STATUS_CODES, "",
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_PATHS, "  ",
+                JwtPropertyKeys.ACCESSLOG.EXCLUDE_PATHS, ""
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -109,9 +109,9 @@ class AccessLogFilterConfigResolverTest {
     void resolveConfigWithSingleValues() {
         // Given - single values in lists
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_STATUS_CODES, "404",
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_PATHS, "/single-path",
-                JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS, "/exclude-path"
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_STATUS_CODES, "404",
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_PATHS, "/single-path",
+                JwtPropertyKeys.ACCESSLOG.EXCLUDE_PATHS, "/exclude-path"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -130,9 +130,9 @@ class AccessLogFilterConfigResolverTest {
     void resolveIntegrationTestConfig() {
         // Given - integration test configuration matching application.properties
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.MIN_STATUS_CODE, "206",
-                JwtPropertyKeys.ACCESS_LOG.MAX_STATUS_CODE, "599",
-                JwtPropertyKeys.ACCESS_LOG.PATTERN, "{remoteAddr} {method} {path} -> {status} ({duration}ms)"
+                JwtPropertyKeys.ACCESSLOG.MIN_STATUS_CODE, "206",
+                JwtPropertyKeys.ACCESSLOG.MAX_STATUS_CODE, "599",
+                JwtPropertyKeys.ACCESSLOG.PATTERN, "{remoteAddr} {method} {path} -> {status} ({duration}ms)"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 

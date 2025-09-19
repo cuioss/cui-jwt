@@ -54,9 +54,9 @@ class CustomAccessLogFilterTest {
     @DisplayName("Should initialize filter with custom configuration")
     void shouldInitializeFilterWithCustomConfig() {
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.MIN_STATUS_CODE, "500",
-                JwtPropertyKeys.ACCESS_LOG.MAX_STATUS_CODE, "599",
-                JwtPropertyKeys.ACCESS_LOG.EXCLUDE_PATHS, "/health/**,/metrics/**"
+                JwtPropertyKeys.ACCESSLOG.MIN_STATUS_CODE, "500",
+                JwtPropertyKeys.ACCESSLOG.MAX_STATUS_CODE, "599",
+                JwtPropertyKeys.ACCESSLOG.EXCLUDE_PATHS, "/health/**,/metrics/**"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -74,7 +74,7 @@ class CustomAccessLogFilterTest {
     @DisplayName("Should initialize filter with include status codes")
     void shouldInitializeFilterWithIncludeStatusCodes() {
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.INCLUDE_STATUS_CODES, "201,202"
+                JwtPropertyKeys.ACCESSLOG.INCLUDE_STATUS_CODES, "201,202"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -88,7 +88,7 @@ class CustomAccessLogFilterTest {
     @DisplayName("Should initialize filter with custom pattern")
     void shouldInitializeFilterWithCustomPattern() {
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.PATTERN, "{method} {path} {status}"
+                JwtPropertyKeys.ACCESSLOG.PATTERN, "{method} {path} {status}"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
@@ -102,7 +102,7 @@ class CustomAccessLogFilterTest {
     @DisplayName("Should initialize filter with enabled flag set to true")
     void shouldInitializeFilterWithEnabledFlag() {
         TestConfig config = new TestConfig(Map.of(
-                JwtPropertyKeys.ACCESS_LOG.ENABLED, "true"
+                JwtPropertyKeys.ACCESSLOG.ENABLED, "true"
         ));
         AccessLogFilterConfigResolver resolver = new AccessLogFilterConfigResolver(config);
 
