@@ -29,7 +29,6 @@
         <version.gson>2.13.1</version.gson>
         <version.hdrhistogram>2.2.2</version.hdrhistogram>
         <version.commons-io>2.20.0</version.commons-io>
-        <version.okhttp>5.1.0</version.okhttp>
         <!-- Skip benchmarks by default -->
         <skip.benchmark>true</skip.benchmark>
 
@@ -65,11 +64,6 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.commons-io}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${version.okhttp}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

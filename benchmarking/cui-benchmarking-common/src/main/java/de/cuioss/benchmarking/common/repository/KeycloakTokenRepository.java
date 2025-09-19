@@ -21,11 +21,15 @@ import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
-import okhttp3.*;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,11 +57,12 @@ public class KeycloakTokenRepository implements TokenProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(KeycloakTokenRepository.class);
     private static final int HTTP_OK = 200;
+    private static final int REQUEST_TIMEOUT_SECONDS = 10;
 
     private final TokenRepositoryConfig config;
     private final List<TokenInfo> tokenPool;
     private final AtomicInteger tokenIndex;
-    private final OkHttpClient httpClient;
+    private final HttpClient httpClient;
 
     /**
      * Creates a new KeycloakTokenRepository with the given configuration.
@@ -126,21 +131,22 @@ public class KeycloakTokenRepository implements TokenProvider {
                     "&username=" + URLEncoder.encode(config.getUsername(), StandardCharsets.UTF_8) +
                     "&password=" + URLEncoder.encode(config.getPassword(), StandardCharsets.UTF_8);
 
-            RequestBody requestBody = RequestBody.create(formData, MediaType.parse("application/x-www-form-urlencoded"));
-            Request request = new Request.Builder()
-                    .url(tokenEndpoint)
-                    .post(requestBody)
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(tokenEndpoint))
+                    .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(formData))
                     .build();
 
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (response.code() == HTTP_OK) {
-                    return extractAccessToken(response);
-                } else {
-                    handleTokenFetchError(response);
-                    throw new TokenFetchException("Unexpected error - handleTokenFetchError should have thrown");
-                }
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == HTTP_OK) {
+                return extractAccessToken(response);
+            } else {
+                handleTokenFetchError(response);
+                throw new TokenFetchException("Unexpected error - handleTokenFetchError should have thrown");
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             throw new TokenFetchException("Error fetching token from Keycloak", e);
         }
     }
@@ -153,8 +159,8 @@ public class KeycloakTokenRepository implements TokenProvider {
 
     }
 
-    @NonNull private String extractAccessToken(@NonNull Response response) throws IOException {
-        String responseBody = response.body() != null ? response.body().string() : null;
+    @NonNull private String extractAccessToken(@NonNull HttpResponse<String> response) {
+        String responseBody = response.body();
         if (responseBody == null || responseBody.isEmpty()) {
             throw new TokenFetchException("Empty response body from token endpoint");
         }
@@ -172,15 +178,15 @@ public class KeycloakTokenRepository implements TokenProvider {
         return token;
     }
 
-    private void handleTokenFetchError(@NonNull Response response) throws IOException {
-        String errorBody = response.body() != null ? response.body().string() : "<no body>";
+    private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
+        String errorBody = response.body() != null ? response.body() : "<no body>";
 
         LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
-                response.code(), errorBody);
+                response.statusCode(), errorBody);
 
         throw new TokenFetchException(
                 "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(
-                        response.code(), errorBody)
+                        response.statusCode(), errorBody)
         );
     }
 

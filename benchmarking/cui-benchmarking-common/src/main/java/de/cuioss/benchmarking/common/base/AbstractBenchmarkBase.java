@@ -17,17 +17,13 @@ package de.cuioss.benchmarking.common.base;
 
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
-import okhttp3.*;
 
-import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Optional;
 
 /**
  * Abstract base class for all benchmarks in the CUI JWT project.
@@ -57,7 +53,7 @@ public abstract class AbstractBenchmarkBase {
 
     protected String serviceUrl;
     protected String benchmarkResultsDir;
-    protected OkHttpClient httpClient;
+    protected HttpClient httpClient;
 
     /**
      * Constructor for AbstractBenchmarkBase.
@@ -99,7 +95,7 @@ public abstract class AbstractBenchmarkBase {
      */
     protected void initializeHttpClient() {
         httpClient = HttpClientFactory.getInsecureClient();
-        logger.debug("Using shared OkHttpClient");
+        logger.debug("Using shared Java HttpClient");
     }
 
     /**
@@ -168,48 +164,8 @@ public abstract class AbstractBenchmarkBase {
             throw new IllegalStateException("HTTP client not initialized. Ensure setupBase() was called.");
         }
 
-        // Build OkHttp request
-        Request.Builder builder = new Request.Builder()
-                .url(request.uri().toString());
-
-        // Copy headers
-        request.headers().map().forEach((name, values) ->
-                values.forEach(value -> builder.addHeader(name, value))
-        );
-
-        // Handle body
-        RequestBody body = null;
-        if (request.bodyPublisher().isPresent()) {
-            // Check if it's a no-body publisher by checking content length
-            var bodyPublisher = request.bodyPublisher().get();
-            long contentLength = bodyPublisher.contentLength();
-
-            if (contentLength == 0) {
-                // Empty body for methods that require a body (like POST with no content)
-                body = RequestBody.create("", MediaType.parse("application/json"));
-            } else if (contentLength > 0) {
-                // Non-empty request bodies are not currently supported
-                // Converting HttpRequest.BodyPublisher to OkHttp RequestBody would require
-                // complex async handling. Consider refactoring to use OkHttp Request directly
-                // if non-empty bodies are needed in benchmarks.
-                throw new UnsupportedOperationException(
-                        "Non-empty request bodies are not supported in benchmarks. " +
-                                "Current benchmarks use BodyPublishers.noBody(). " +
-                                "If you need to send request bodies, please refactor to use OkHttp Request directly.");
-            }
-        }
-
-        String method = request.method();
-        builder.method(method, body);
-
-        // Execute request
-        try (Response response = httpClient.newCall(builder.build()).execute()) {
-            String responseBody = response.body() != null ? response.body().string() : "";
-            int statusCode = response.code();
-
-            // Create HttpResponse wrapper with headers
-            return new HttpResponseWrapper(request, statusCode, responseBody, response.headers());
-        }
+        // Send request using Java HttpClient
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     /**
@@ -231,52 +187,4 @@ public abstract class AbstractBenchmarkBase {
      * Subclasses should override this method to implement specific metrics export logic.
      */
     public abstract void exportBenchmarkMetrics();
-
-    // Add inner class for HttpResponse wrapper (at end of class)
-    private static class HttpResponseWrapper implements HttpResponse<String> {
-        private final HttpRequest request;
-        private final int statusCode;
-        private final String body;
-        private final HttpHeaders headers;
-
-        HttpResponseWrapper(HttpRequest request, int statusCode, String body, Headers okHttpHeaders) {
-            this.request = request;
-            this.statusCode = statusCode;
-            this.body = body;
-            // Convert OkHttp headers to HttpHeaders
-            this.headers = HttpHeaders.of(okHttpHeaders.toMultimap(), (a, b) -> true);
-        }
-
-        @Override public int statusCode() {
-            return statusCode;
-        }
-
-        @Override public HttpRequest request() {
-            return request;
-        }
-
-        @Override public Optional<HttpResponse<String>> previousResponse() {
-            return Optional.empty();
-        }
-
-        @Override public HttpHeaders headers() {
-            return headers;
-        }
-
-        @Override public String body() {
-            return body;
-        }
-
-        @Override public Optional<SSLSession> sslSession() {
-            return Optional.empty();
-        }
-
-        @Override public URI uri() {
-            return request.uri();
-        }
-
-        @Override public HttpClient.Version version() {
-            return HttpClient.Version.HTTP_2;
-        }
-    }
 }

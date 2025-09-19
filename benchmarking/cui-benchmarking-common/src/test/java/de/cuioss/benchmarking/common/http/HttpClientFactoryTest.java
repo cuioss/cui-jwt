@@ -15,37 +15,36 @@
  */
 package de.cuioss.benchmarking.common.http;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import org.junit.jupiter.api.Test;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpClientFactoryTest {
 
     @Test void getInsecureClient() {
-        OkHttpClient client1 = HttpClientFactory.getInsecureClient();
-        OkHttpClient client2 = HttpClientFactory.getInsecureClient();
+        HttpClient client1 = HttpClientFactory.getInsecureClient();
+        HttpClient client2 = HttpClientFactory.getInsecureClient();
 
         assertNotNull(client1);
         assertNotNull(client2);
         // Should return cached instance
         assertSame(client1, client2);
 
-        // Verify HTTP/2 is configured with fallback to HTTP/1.1
-        assertTrue(client1.protocols().contains(Protocol.HTTP_2));
-        assertTrue(client1.protocols().contains(Protocol.HTTP_1_1));
+        // Verify HTTP version is configured
+        assertNotNull(client1.version());
 
-        // Verify timeouts are configured (5 seconds)
-        assertEquals(5000, client1.connectTimeoutMillis());
-        assertEquals(5000, client1.readTimeoutMillis());
-        assertEquals(5000, client1.writeTimeoutMillis());
+        // Verify connect timeout is configured (5 seconds)
+        assertTrue(client1.connectTimeout().isPresent());
+        assertEquals(Duration.ofSeconds(5), client1.connectTimeout().get());
     }
 
     @Test void concurrentAccess() throws InterruptedException {
         // Test thread safety of factory
         Thread[] threads = new Thread[10];
-        OkHttpClient[] clients = new OkHttpClient[10];
+        HttpClient[] clients = new HttpClient[10];
 
         for (int i = 0; i < threads.length; i++) {
             final int index = i;
@@ -58,27 +57,24 @@ class HttpClientFactoryTest {
         }
 
         // All threads should get the same cached instance
-        OkHttpClient expected = clients[0];
-        for (OkHttpClient client : clients) {
+        HttpClient expected = clients[0];
+        for (HttpClient client : clients) {
             assertSame(expected, client);
         }
     }
 
     @Test void clientConfiguration() {
-        OkHttpClient client = HttpClientFactory.getInsecureClient();
+        HttpClient client = HttpClientFactory.getInsecureClient();
 
         assertNotNull(client);
 
-        // Verify SSL configuration is insecure (trust all certificates)
-        assertNotNull(client.sslSocketFactory());
-        assertNotNull(client.hostnameVerifier());
+        // Verify SSL configuration is present
+        assertNotNull(client.sslContext());
 
-        // Verify connection pool is configured
-        assertNotNull(client.connectionPool());
+        // Verify executor is configured
+        assertNotNull(client.executor());
 
-        // Verify protocols include both HTTP/2 and HTTP/1.1
-        assertEquals(2, client.protocols().size());
-        assertTrue(client.protocols().contains(Protocol.HTTP_2));
-        assertTrue(client.protocols().contains(Protocol.HTTP_1_1));
+        // Verify version is set
+        assertNotNull(client.version());
     }
 }

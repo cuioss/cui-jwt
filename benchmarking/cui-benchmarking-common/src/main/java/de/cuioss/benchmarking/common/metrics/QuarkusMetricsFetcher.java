@@ -17,13 +17,15 @@ package de.cuioss.benchmarking.common.metrics;
 
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,10 +38,10 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusMetricsFetcher.class);
     private static final int HTTP_OK = 200;
-    private static final int REQUEST_TIMEOUT_MS = 10000;
+    private static final int REQUEST_TIMEOUT_SECONDS = 10;
 
     private final String quarkusUrl;
-    private final OkHttpClient httpClient;
+    private final HttpClient httpClient;
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
         this.quarkusUrl = quarkusUrl;
@@ -51,34 +53,31 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         String metricsUrl = quarkusUrl + "/q/metrics";
 
         try {
-            Request request = new Request.Builder()
-                    .url(metricsUrl)
-                    .get()
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(metricsUrl))
+                    .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
+                    .GET()
                     .build();
 
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (response.code() == HTTP_OK && response.body() != null) {
-                    String responseBody = response.body().string();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-                    // Save raw metrics for development
-                    saveRawMetricsData(responseBody);
+            if (response.statusCode() == HTTP_OK) {
+                String responseBody = response.body();
 
-                    parseQuarkusMetrics(responseBody, results);
-                } else {
-                    LOGGER.error("Failed to query Quarkus metrics: HTTP {} from {}",
-                            response.code(), metricsUrl);
-                    if (response.body() != null) {
-                        try {
-                            String errorBody = response.body().string();
-                            LOGGER.error("Error response body: {}", errorBody);
-                        } catch (IOException ex) {
-                            LOGGER.error("Could not read error response body", ex);
-                        }
-                    }
+                // Save raw metrics for development
+                saveRawMetricsData(responseBody);
+
+                parseQuarkusMetrics(responseBody, results);
+            } else {
+                LOGGER.error("Failed to query Quarkus metrics: HTTP {} from {}",
+                        response.statusCode(), metricsUrl);
+                String errorBody = response.body();
+                if (errorBody != null && !errorBody.isEmpty()) {
+                    LOGGER.error("Error response body: {}", errorBody);
                 }
             }
-        } catch (IOException e) {
-            LOGGER.error("IOException querying Quarkus metrics from {}", metricsUrl, e);
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Exception querying Quarkus metrics from {}", metricsUrl, e);
         }
 
         return results;
