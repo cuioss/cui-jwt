@@ -48,14 +48,13 @@ class BearerTokenProducerTest {
 
     private BearerTokenProducer producer;
     private TokenValidator tokenValidator;
-    private HttpServletRequestResolver servletResolver;
     private HttpServletRequestResolverMock servletResolverMock;
 
     @BeforeEach
     void setUp() {
         tokenValidator = createMock(TokenValidator.class);
         servletResolverMock = new HttpServletRequestResolverMock();
-        servletResolver = servletResolverMock;
+        HttpServletRequestResolver servletResolver = servletResolverMock;
         producer = new BearerTokenProducer(tokenValidator, servletResolver);
     }
 
@@ -86,7 +85,7 @@ class BearerTokenProducerTest {
 
     @Test
     @DisplayName("Should successfully validate token without requirements")
-    void successfulValidationNoRequirements() throws Exception {
+    void successfulValidationNoRequirements() {
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
         servletResolverMock.setBearerToken(token);
 
@@ -109,7 +108,7 @@ class BearerTokenProducerTest {
 
     @Test
     @DisplayName("Should return constraint violation when missing required scopes")
-    void missingRequiredScopes() throws Exception {
+    void missingRequiredScopes() {
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
         servletResolverMock.setBearerToken(token);
 
@@ -136,7 +135,7 @@ class BearerTokenProducerTest {
 
     @Test
     @DisplayName("Should return constraint violation when missing required roles")
-    void missingRequiredRoles() throws Exception {
+    void missingRequiredRoles() {
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
         servletResolverMock.setBearerToken(token);
 
@@ -163,7 +162,7 @@ class BearerTokenProducerTest {
 
     @Test
     @DisplayName("Should return constraint violation when missing required groups")
-    void missingRequiredGroups() throws Exception {
+    void missingRequiredGroups() {
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
         servletResolverMock.setBearerToken(token);
 
@@ -190,7 +189,7 @@ class BearerTokenProducerTest {
 
     @Test
     @DisplayName("Should handle token validation exception")
-    void tokenValidationException() throws Exception {
+    void tokenValidationException() {
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
         servletResolverMock.setBearerToken(token);
 
@@ -211,7 +210,7 @@ class BearerTokenProducerTest {
 
     @Test
     @DisplayName("Should handle getAccessTokenContent convenience method")
-    void getAccessTokenContentMethod() throws Exception {
+    void getAccessTokenContentMethod() {
         String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature";
         servletResolverMock.setBearerToken(token);
 
