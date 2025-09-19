@@ -151,6 +151,24 @@
                             <version>${version.lombok}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <!--
+                        Fix for JMH "inconsistent type hierarchy" error with Java 21+
+
+                        Issue: Java 21+ disables annotation processing by default, causing JMH's
+                        annotation processor to generate incomplete class hierarchies like:
+                        JwtHealthBenchmark_jmhType_B1 → B2 → B3 with compilation errors.
+
+                        Solution: -proc:full explicitly enables full annotation processing,
+                        ensuring JMH generates proper benchmark infrastructure code.
+
+                        Without this, benchmarks fail with "The hierarchy of the type
+                        [Benchmark]_jmhType_B3 is inconsistent" errors during execution.
+
+                        References: Known JMH issue with Java 21+ annotation processing changes
+                    -->
+                    <compilerArgs>
+                        <arg>-proc:full</arg>
+                    </compilerArgs>
                     <release>21</release>
                 </configuration>
             </plugin>

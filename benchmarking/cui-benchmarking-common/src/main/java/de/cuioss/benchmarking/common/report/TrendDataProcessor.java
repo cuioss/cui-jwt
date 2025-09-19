@@ -18,7 +18,10 @@ package de.cuioss.benchmarking.common.report;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -60,78 +63,23 @@ public class TrendDataProcessor {
     /**
      * Represents a single historical data point.
      */
-    public static class HistoricalDataPoint {
+    @Getter @RequiredArgsConstructor public static class HistoricalDataPoint {
         private final String timestamp;
         private final double throughput;
         private final double latency;
         private final double performanceScore;
-        private final String commitSha; // Reserved for future use
-
-        public HistoricalDataPoint(String timestamp, double throughput, double latency,
-                double performanceScore, String commitSha) {
-            this.timestamp = timestamp;
-            this.throughput = throughput;
-            this.latency = latency;
-            this.performanceScore = performanceScore;
-            this.commitSha = commitSha;
-        }
-
-        public String getTimestamp() {
-            return timestamp;
-        }
-
-        public double getThroughput() {
-            return throughput;
-        }
-
-        public double getLatency() {
-            return latency;
-        }
-
-        public double getPerformanceScore() {
-            return performanceScore;
-        }
-
+        private final String commitSha;
     }
 
     /**
      * Represents calculated trend metrics.
      */
-    public static class TrendMetrics {
+    @Getter @RequiredArgsConstructor public static class TrendMetrics {
         private final String direction; // "up", "down", or "stable"
         private final double changePercentage;
         private final double movingAverage;
         private final double throughputTrend;
         private final double latencyTrend;
-
-        public TrendMetrics(String direction, double changePercentage, double movingAverage,
-                double throughputTrend, double latencyTrend) {
-            this.direction = direction;
-            this.changePercentage = changePercentage;
-            this.movingAverage = movingAverage;
-            this.throughputTrend = throughputTrend;
-            this.latencyTrend = latencyTrend;
-        }
-
-        public String getDirection() {
-            return direction;
-        }
-
-        public double getChangePercentage() {
-            return changePercentage;
-        }
-
-        public double getMovingAverage() {
-            return movingAverage;
-        }
-
-        public double getThroughputTrend() {
-            return throughputTrend;
-        }
-
-        public double getLatencyTrend() {
-            return latencyTrend;
-        }
     }
 
     /**
@@ -164,7 +112,7 @@ public class TrendDataProcessor {
                     if (point != null) {
                         dataPoints.add(point);
                     }
-                } catch (Exception e) {
+                } catch (IOException | JsonSyntaxException e) {
                     LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("parsing history file: " + file), e);
                 }
             }
@@ -306,7 +254,7 @@ public class TrendDataProcessor {
             String commitSha = extractCommitFromFilename(filename);
 
             return new HistoricalDataPoint(timestamp, throughput, latency, performanceScore, commitSha);
-        } catch (Exception e) {
+        } catch (NullPointerException | ClassCastException | IllegalStateException | UnsupportedOperationException e) {
             LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("extracting data point"), e);
             return null;
         }

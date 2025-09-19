@@ -50,10 +50,10 @@ class QuarkusMetricsPostProcessorSimpleTest {
         Path testSubDir = testMetricsDir.resolve("1-test");
         Files.createDirectories(testSubDir);
 
-        // Copy sample metrics file to test directory with expected naming pattern
+        // Copy sample metrics file to test directory with production naming pattern
         Path sampleMetrics = Path.of("src/test/resources/quarkus-metrics-test.txt");
         if (Files.exists(sampleMetrics)) {
-            Files.copy(sampleMetrics, testSubDir.resolve("jwt-validation-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sampleMetrics, testSubDir.resolve("quarkus-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

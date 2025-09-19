@@ -243,7 +243,7 @@ class ComprehensiveMetricsPostProcessorTest {
         File metricsDir = new File(targetDir, "metrics-download");
         metricsDir.mkdirs();
 
-        File metricsFile = new File(metricsDir, "jwt-validation-metrics.txt");
+        File metricsFile = new File(metricsDir, "quarkus-metrics.txt");
 
         String metricsData = """
             system_cpu_usage 0.12

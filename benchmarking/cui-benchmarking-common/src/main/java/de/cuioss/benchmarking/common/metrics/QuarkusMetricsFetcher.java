@@ -24,7 +24,6 @@ import okhttp3.Response;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,10 +48,9 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     @Override public Map<String, Double> fetchMetrics() {
         Map<String, Double> results = new HashMap<>();
+        String metricsUrl = quarkusUrl + "/q/metrics";
 
         try {
-            String metricsUrl = quarkusUrl + "/q/metrics";
-
             Request request = new Request.Builder()
                     .url(metricsUrl)
                     .get()
@@ -67,26 +65,40 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
                     parseQuarkusMetrics(responseBody, results);
                 } else {
-                    LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.code());
+                    LOGGER.error("Failed to query Quarkus metrics: HTTP {} from {}",
+                            response.code(), metricsUrl);
+                    if (response.body() != null) {
+                        try {
+                            String errorBody = response.body().string();
+                            LOGGER.error("Error response body: {}", errorBody);
+                        } catch (IOException ex) {
+                            LOGGER.error("Could not read error response body", ex);
+                        }
+                    }
                 }
             }
         } catch (IOException e) {
-            LOGGER.warn("Error querying Quarkus metrics", e);
+            LOGGER.error("IOException querying Quarkus metrics from {}", metricsUrl, e);
         }
 
         return results;
     }
 
     /**
-     * Save raw metrics data with intelligent benchmark context
+     * Save raw metrics data to a fixed file name
      */
     private void saveRawMetricsData(String rawMetrics) {
         try {
-            // Create simple timestamp-based filename
-            String timestamp = Instant.now().toString().replace(":", "-").replace(".", "-");
-            File metricsDir = new File("target/metrics-download");
-            metricsDir.mkdirs();
-            File outputFile = new File(metricsDir, "quarkus-metrics-" + timestamp + ".txt");
+            // Use absolute path based on current working directory
+            File currentDir = new File(System.getProperty("user.dir"));
+            File metricsDir = new File(currentDir, "target/metrics-download");
+
+            if (!metricsDir.exists()) {
+                metricsDir.mkdirs();
+            }
+
+            // Use fixed file name without timestamp
+            File outputFile = new File(metricsDir, "quarkus-metrics.txt");
 
             try (FileWriter writer = new FileWriter(outputFile)) {
                 writer.write(rawMetrics);
@@ -95,7 +107,7 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
             LOGGER.debug("Saved raw Quarkus metrics to: {}", outputFile.getAbsolutePath());
 
         } catch (IOException e) {
-            LOGGER.warn("Failed to save raw metrics data", e);
+            LOGGER.error("Failed to save raw metrics data", e);
         }
     }
 

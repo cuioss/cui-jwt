@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
+import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Map;
@@ -103,15 +105,19 @@ class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> metrics = gson.fromJson(reader, mapType);
 
             // Should have CPU, memory, and metadata sections
             assertTrue(metrics.containsKey("cpu"), "Should contain CPU metrics");
             assertTrue(metrics.containsKey("memory"), "Should contain memory metrics");
             assertTrue(metrics.containsKey("metadata"), "Should contain metadata");
 
-            // Verify CPU metrics structure
-            Map<String, Object> cpuMetrics = (Map<String, Object>) metrics.get("cpu");
+            // Verify CPU metrics structure - safe cast with instanceof check
+            Object cpuObj = metrics.get("cpu");
+            assertInstanceOf(Map.class, cpuObj, "CPU metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> cpuMetrics = (Map<String, Object>) cpuObj;
             assertTrue(cpuMetrics.containsKey("system_cpu_usage_avg"));
             assertTrue(cpuMetrics.containsKey("system_cpu_usage_max"));
             assertTrue(cpuMetrics.containsKey("process_cpu_usage_avg"));
@@ -120,17 +126,23 @@ class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
             assertTrue(cpuMetrics.containsKey("load_average_1m_avg"));
             assertTrue(cpuMetrics.containsKey("load_average_1m_max"));
 
-            // Verify memory metrics structure
-            Map<String, Object> memoryMetrics = (Map<String, Object>) metrics.get("memory");
+            // Verify memory metrics structure - safe cast with instanceof check
+            Object memoryObj = metrics.get("memory");
+            assertInstanceOf(Map.class, memoryObj, "Memory metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> memoryMetrics = (Map<String, Object>) memoryObj;
             assertTrue(memoryMetrics.containsKey("heap"));
             assertTrue(memoryMetrics.containsKey("nonheap"));
 
-            Map<String, Object> heapMetrics = (Map<String, Object>) memoryMetrics.get("heap");
+            Object heapObj = memoryMetrics.get("heap");
+            assertInstanceOf(Map.class, heapObj, "Heap metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> heapMetrics = (Map<String, Object>) heapObj;
             assertTrue(heapMetrics.containsKey("used_bytes"));
             assertTrue(heapMetrics.containsKey("committed_bytes"));
 
-            // Verify metadata
-            Map<String, Object> metadata = (Map<String, Object>) metrics.get("metadata");
+            // Verify metadata - safe cast with instanceof check
+            Object metadataObj = metrics.get("metadata");
+            assertInstanceOf(Map.class, metadataObj, "Metadata should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> metadata = (Map<String, Object>) metadataObj;
             assertEquals(testTimestamp.toString(), metadata.get("timestamp"));
             assertEquals("Quarkus metrics - Prometheus format", metadata.get("source"));
         }
@@ -145,9 +157,17 @@ class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
 
         File outputFile = new File(tempDir.toFile(), "quarkus-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            @SuppressWarnings("unchecked") Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            @SuppressWarnings("unchecked") Map<String, Object> memoryMetrics = (Map<String, Object>) metrics.get("memory");
-            @SuppressWarnings("unchecked") Map<String, Object> heapMetrics = (Map<String, Object>) memoryMetrics.get("heap");
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> metrics = gson.fromJson(reader, mapType);
+
+            Object memoryObj = metrics.get("memory");
+            assertInstanceOf(Map.class, memoryObj, "Memory metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> memoryMetrics = (Map<String, Object>) memoryObj;
+
+            Object heapObj = memoryMetrics.get("heap");
+            assertInstanceOf(Map.class, heapObj, "Heap metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> heapMetrics = (Map<String, Object>) heapObj;
 
             Object usedBytes = heapMetrics.get("used_bytes");
             assertInstanceOf(Number.class, usedBytes);
@@ -162,8 +182,8 @@ class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
         metricsDir.mkdirs();
 
         // Copy test metrics file to expected location
-        File sourceFile = new File(metricsDownloadDir, "jwt-validation-metrics.txt");
-        File targetFile = new File(metricsDir, "jwt-validation-metrics.txt");
+        File sourceFile = new File(metricsDownloadDir, "quarkus-metrics.txt");
+        File targetFile = new File(metricsDir, "quarkus-metrics.txt");
         Files.copy(sourceFile.toPath(), targetFile.toPath());
 
         // When - use convenience method
@@ -174,7 +194,9 @@ class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> metrics = gson.fromJson(reader, mapType);
             assertFalse(metrics.isEmpty(), "Should have parsed metrics");
         }
     }
@@ -186,7 +208,7 @@ class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
         File metricsDir = new File(tempDir.toFile(), "test-metrics");
         metricsDir.mkdirs();
 
-        File testMetricsFile = new File(metricsDir, "jwt-validation-metrics.txt");
+        File testMetricsFile = new File(metricsDir, "quarkus-metrics.txt");
         try (FileWriter writer = new FileWriter(testMetricsFile)) {
             writer.write(STANDARD_PROMETHEUS_METRICS);
         }

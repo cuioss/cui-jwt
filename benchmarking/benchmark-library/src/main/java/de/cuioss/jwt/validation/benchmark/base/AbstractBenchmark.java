@@ -15,33 +15,45 @@
  */
 package de.cuioss.jwt.validation.benchmark.base;
 
-import de.cuioss.benchmarking.common.base.AbstractBenchmarkBase;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
 import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.TearDown;
 
 import java.io.IOException;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR;
+
 /**
  * Abstract base class for all JWT library benchmarks.
- * Extends the common base class and provides library-specific functionality.
+ * Provides token repository and validator setup for library-specific benchmarks.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-public abstract class AbstractBenchmark extends AbstractBenchmarkBase {
+public abstract class AbstractBenchmark {
 
+    static {
+        // Set the logging manager to prevent JBoss LogManager errors in forked JVMs
+        System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
+    }
+
+    protected final CuiLogger logger = new CuiLogger(this.getClass());
     protected MockTokenRepository tokenRepository;
     protected TokenValidator tokenValidator;
 
     /**
-     * Performs additional setup specific to library benchmarks.
-     * Initializes token repository and validator.
+     * Setup method for benchmark initialization.
+     * Initializes token repository and validator with default configuration.
+     * Subclasses should call this from their @Setup method.
      */
-    @Override protected void performAdditionalSetup() {
+    protected void setupBase() {
+        logger.debug("Setting up JWT library benchmark");
+
         // Initialize token repository with cache size configured for 10% of tokens
         MockTokenRepository.Config config = MockTokenRepository.Config.builder()
                 .cacheSize(60) // 10% of default 600 tokens
@@ -55,18 +67,20 @@ public abstract class AbstractBenchmark extends AbstractBenchmarkBase {
                         .windowSize(10000)
                         .build(),
                 config);
+
+        logger.debug("JWT library benchmark setup completed");
     }
 
     /**
      * Export metrics directly from this benchmark's monitor.
      * Called at the end of each benchmark trial.
      */
-    @TearDown(Level.Trial) @Override public void exportBenchmarkMetrics() {
+    @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
         if (tokenValidator != null) {
             try {
                 SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
-                logger.error("Failed to export benchmark metrics", e);
+                logger.error(e, ERROR.EXPORT_FAILED.format());
             }
         }
     }

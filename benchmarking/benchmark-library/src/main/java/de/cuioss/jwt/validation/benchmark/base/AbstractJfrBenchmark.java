@@ -65,12 +65,15 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     }
 
     /**
-     * Shuts down JFR instrumentation at the end of the trial.
+     * Shuts down JFR instrumentation and exports metrics at the end of the trial.
      */
-    @Override @TearDown(Level.Trial) public void tearDown() {
+    @Override @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {
             jfrInstrumentation.shutdown();
         }
+
+        // Call parent's export method
+        super.exportBenchmarkMetrics();
     }
 }

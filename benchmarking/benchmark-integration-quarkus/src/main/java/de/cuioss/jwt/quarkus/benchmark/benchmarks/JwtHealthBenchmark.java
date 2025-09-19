@@ -17,8 +17,6 @@ package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
 import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Mode;
 
 import java.io.IOException;
 import java.net.http.HttpRequest;
@@ -38,7 +36,7 @@ public class JwtHealthBenchmark extends AbstractBaseBenchmark {
      * Provides baseline throughput measurement without JWT processing.
      * Uses liveness endpoint which is more suitable for performance testing.
      */
-    @Benchmark @BenchmarkMode({Mode.Throughput, Mode.SampleTime}) public void healthCheckThroughput() throws IOException, InterruptedException {
+    @Benchmark public void healthCheckThroughput() throws IOException, InterruptedException {
         logger.debug("Starting liveness check request");
         HttpRequest request = createRequestForPath("/q/health/live")
                 .GET()

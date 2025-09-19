@@ -23,6 +23,8 @@ import org.openjdk.jmh.runner.RunnerException;
 
 import java.io.IOException;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+
 /**
  * Main class for running JWT validation library micro benchmarks.
  * <p>
@@ -57,7 +59,7 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
     @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
-        LOGGER.info("JWT validation micro benchmarks starting - Key cache initialized");
+        LOGGER.info(INFO.JWT_BENCHMARKS_STARTING.format());
     }
 
     @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {

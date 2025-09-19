@@ -66,7 +66,9 @@ public class SimpleMetricsExporter extends AbstractMetricsExporter {
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
         try {
+            LOGGER.debug("Starting metrics export for benchmark: {}", benchmarkMethodName);
             Map<String, Double> allMetrics = metricsFetcher.fetchMetrics();
+            LOGGER.debug("Fetched {} metrics from metricsFetcher", allMetrics.size());
             exportJwtValidationMetrics(benchmarkMethodName, timestamp, allMetrics);
         } catch (IOException e) {
             LOGGER.error("Failed to export metrics for {}", benchmarkMethodName, e);

@@ -58,7 +58,7 @@ public final class JfrSupport {
         } catch (ClassNotFoundException e) {
             log.debug("JFR classes not found: %s", e.getMessage());
             return false;
-        } catch (Exception e) {
+        } catch (SecurityException | UnsupportedOperationException | IllegalStateException e) {
             log.debug("JFR not available: %s", e.getMessage());
             return false;
         }

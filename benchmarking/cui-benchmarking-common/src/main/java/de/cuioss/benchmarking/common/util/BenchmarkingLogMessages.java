@@ -225,6 +225,104 @@ public final class BenchmarkingLogMessages {
                 .identifier(26)
                 .template("Copied JMH result to data directory: %s")
                 .build();
+
+        /** Message when JWT validation micro benchmarks start with key cache initialized. */
+        public static final LogRecord JWT_BENCHMARKS_STARTING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(27)
+                .template("JWT validation micro benchmarks starting - Key cache initialized")
+                .build();
+
+        /** Message when RSA key pre-generation starts. */
+        public static final LogRecord KEY_PREGENERATION_STARTING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(28)
+                .template("BenchmarkKeyCache: Starting RSA key pre-generation...")
+                .build();
+
+        /** Message when RSA key pre-generation completes. */
+        public static final LogRecord KEY_PREGENERATION_COMPLETED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(29)
+                .template("BenchmarkKeyCache: Pre-generated keys for %s issuer configurations in %s ms")
+                .build();
+
+        /** Message when key cache is initialized. */
+        public static final LogRecord KEY_CACHE_INITIALIZED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(30)
+                .template("BenchmarkKeyCache: Initialized with %s configurations")
+                .build();
+
+        /** Message when Quarkus JWT integration benchmarks start. */
+        public static final LogRecord QUARKUS_BENCHMARKS_STARTING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(31)
+                .template("Quarkus JWT integration benchmarks starting - Service: %s, Keycloak: %s")
+                .build();
+
+        /** Message when processing results starts. */
+        public static final LogRecord PROCESSING_RESULTS_STARTING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(32)
+                .template("QuarkusIntegrationRunner.processResults() - Starting with %s results")
+                .build();
+
+        /** Message when calling processQuarkusMetrics. */
+        public static final LogRecord CALLING_PROCESS_QUARKUS_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(33)
+                .template("QuarkusIntegrationRunner.processResults() - Calling processQuarkusMetrics()")
+                .build();
+
+        /** Message when processQuarkusMetrics completes. */
+        public static final LogRecord PROCESS_QUARKUS_METRICS_COMPLETED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(34)
+                .template("QuarkusIntegrationRunner.processResults() - Completed processQuarkusMetrics()")
+                .build();
+
+        /** Message when processQuarkusMetrics entry point. */
+        public static final LogRecord PROCESS_QUARKUS_METRICS_ENTRY = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(35)
+                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - ENTRY POINT")
+                .build();
+
+        /** Message when processing metrics from URL to directory. */
+        public static final LogRecord PROCESSING_METRICS_FROM_URL = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(36)
+                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Processing metrics from %s to %s")
+                .build();
+
+        /** Message when creating QuarkusMetricsFetcher. */
+        public static final LogRecord CREATING_METRICS_FETCHER = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(37)
+                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Creating QuarkusMetricsFetcher")
+                .build();
+
+        /** Message when creating SimpleMetricsExporter. */
+        public static final LogRecord CREATING_METRICS_EXPORTER = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(38)
+                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Creating SimpleMetricsExporter")
+                .build();
+
+        /** Message when calling exporter.exportJwtValidationMetrics. */
+        public static final LogRecord CALLING_EXPORT_JWT_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(39)
+                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Calling exporter.exportJwtValidationMetrics()")
+                .build();
+
+        /** Message when exporter.exportJwtValidationMetrics completes. */
+        public static final LogRecord EXPORT_JWT_METRICS_COMPLETED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(40)
+                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Completed exporter.exportJwtValidationMetrics()")
+                .build();
     }
 
     /**
@@ -263,6 +361,31 @@ public final class BenchmarkingLogMessages {
                 .prefix(PREFIX)
                 .identifier(103)
                 .template("Issue during %s")
+                .build();
+
+        /** Warning when key cache miss occurs during benchmark. */
+        public static final LogRecord KEY_CACHE_MISS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(104)
+                .template("BenchmarkKeyCache miss for count=%s. Generating keys during benchmark!")
+                .build();
+    }
+
+    /**
+     * ERROR level messages for serious failures.
+     */
+    public static final class ERROR {
+
+        /** Private constructor to prevent instantiation. */
+        private ERROR() {
+            // utility class
+        }
+
+        /** Error when export of benchmark metrics fails. */
+        public static final LogRecord EXPORT_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(200)
+                .template("Failed to export benchmark metrics")
                 .build();
     }
 

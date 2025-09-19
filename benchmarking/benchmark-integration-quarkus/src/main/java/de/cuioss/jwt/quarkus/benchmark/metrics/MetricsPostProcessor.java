@@ -375,12 +375,8 @@ public class MetricsPostProcessor {
             outputDir = resultsDirectory;
         }
 
-        try {
-            MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
-            parser.parseAndExportAllMetrics(Instant.now());
-        } catch (Exception e) {
-            LOGGER.error("Failed to parse and export metrics", e);
-        }
+        MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
+        parser.parseAndExportAllMetrics(Instant.now());
     }
 
     /**

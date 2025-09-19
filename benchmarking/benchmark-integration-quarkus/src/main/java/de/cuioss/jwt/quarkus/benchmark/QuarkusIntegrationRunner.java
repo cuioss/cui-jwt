@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+
 /**
  * Main class for running Quarkus integration benchmarks.
  * <p>
@@ -65,16 +67,20 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
         // Get configuration to log the URLs
         IntegrationConfiguration integrationConfig = config.integrationConfig();
-        LOGGER.info("Quarkus JWT integration benchmarks starting - Service: {}, Keycloak: {}",
-                integrationConfig.integrationServiceUrl(), integrationConfig.keycloakUrl());
+        LOGGER.info(INFO.QUARKUS_BENCHMARKS_STARTING.format(
+                integrationConfig.integrationServiceUrl(), integrationConfig.keycloakUrl()));
     }
 
     @Override protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
+        LOGGER.info(INFO.PROCESSING_RESULTS_STARTING.format(results.size()));
+
         // Call parent implementation for standard processing
         super.processResults(results, config);
 
         // Additional Quarkus-specific metrics processing
+        LOGGER.info(INFO.CALLING_PROCESS_QUARKUS_METRICS.format());
         processQuarkusMetrics(config);
+        LOGGER.info(INFO.PROCESS_QUARKUS_METRICS_COMPLETED.format());
     }
 
     @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
@@ -111,19 +117,32 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
      * @param config the benchmark configuration
      */
     private void processQuarkusMetrics(BenchmarkConfiguration config) {
+        LOGGER.info(INFO.PROCESS_QUARKUS_METRICS_ENTRY.format());
         String outputDirectory = config.resultsDirectory();
 
         // Get integration configuration to access URLs
         IntegrationConfiguration integrationConfig = config.integrationConfig();
 
-        LOGGER.debug("Processing metrics from {} to {}", integrationConfig.integrationServiceUrl(), outputDirectory);
+        LOGGER.info(INFO.PROCESSING_METRICS_FROM_URL.format(
+                integrationConfig.integrationServiceUrl(), outputDirectory));
 
         // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
+        LOGGER.info(INFO.CREATING_METRICS_FETCHER.format());
         QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(integrationConfig.integrationServiceUrl());
 
         // Use SimpleMetricsExporter to export JWT validation metrics
+        LOGGER.info(INFO.CREATING_METRICS_EXPORTER.format());
         SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
+        LOGGER.info(INFO.CALLING_EXPORT_JWT_METRICS.format());
         exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
+        LOGGER.info(INFO.EXPORT_JWT_METRICS_COMPLETED.format());
+
+        // Wait briefly to ensure file system has settled after metrics file creation
+        try {
+            Thread.sleep(100); // 100ms delay to ensure metrics files are fully written
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
 
         // Process JMH benchmark results to create both http-metrics.json and quarkus-metrics.json
         String benchmarkResultsFile = config.reportConfig().getOrCreateResultFile();
