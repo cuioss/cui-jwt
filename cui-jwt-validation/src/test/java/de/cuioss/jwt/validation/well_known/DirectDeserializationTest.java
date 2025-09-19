@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.well_known;
 import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.json.WellKnownResult;
-import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,15 +27,10 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for DIRECT deserialization from JSON to WellKnownResult.
- * This is the true mapper approach test - no intermediate steps allowed!
- *
- * @author Oliver Wolff
+ * Tests direct JSON deserialization to WellKnownResult.
  */
 @DisplayName("Direct Deserialization Test")
 class DirectDeserializationTest {
-
-    private static final CuiLogger LOGGER = new CuiLogger(DirectDeserializationTest.class);
 
     private static final String VALID_JSON = """
             {
@@ -63,48 +57,31 @@ class DirectDeserializationTest {
     }
 
     @Test
-    @DisplayName("Should deserialize directly to WellKnownResult record - THE TRUE TEST")
-    void shouldDeserializeDirectlyToWellKnownConfigurationRecord() {
+    @DisplayName("Should deserialize directly to WellKnownResult record")
+    void shouldDeserializeDirectlyToWellKnownConfigurationRecord() throws IOException {
         byte[] bytes = VALID_JSON.getBytes();
 
-        try {
-            // THIS IS THE TRUE MAPPER APPROACH - direct deserialization!
-            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
+        WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
 
-            // If this works, the mapper approach is successful
-            assertNotNull(config, "Direct deserialization should work");
-            assertEquals("https://example.com", config.issuer());
-            assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
-            assertEquals("https://example.com/auth", config.authorizationEndpoint());
-            assertEquals("https://example.com/token", config.tokenEndpoint());
-
-            LOGGER.info("✅ SUCCESS: Direct deserialization to record works!");
-
-        } catch (IOException e) {
-            // If this fails, we need to understand WHY
-            LOGGER.error("❌ FAILED: Direct deserialization failed with: " + e.getMessage());
-            LOGGER.error("Error type: " + e.getClass().getSimpleName());
-
-            fail("Direct deserialization failed: " + e.getMessage() +
-                    ". This means the true mapper approach doesn't work with records.");
-        }
+        assertNotNull(config);
+        assertEquals("https://example.com", config.issuer());
+        assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
+        assertEquals("https://example.com/auth", config.authorizationEndpoint());
+        assertEquals("https://example.com/token", config.tokenEndpoint());
     }
 
     @Test
     @DisplayName("Should deserialize minimal JSON directly to WellKnownResult record")
-    void shouldDeserializeMinimalJsonDirectly() {
+    void shouldDeserializeMinimalJsonDirectly() throws IOException {
         byte[] bytes = MINIMAL_JSON.getBytes();
 
-        assertDoesNotThrow(() -> {
-            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
+        WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
 
-            assertNotNull(config, "Direct deserialization of minimal JSON should work");
-            assertEquals("https://example.com", config.issuer());
-            assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
-            assertNull(config.authorizationEndpoint());
-            assertNull(config.tokenEndpoint());
-
-        }, "Direct deserialization of minimal JSON failed: ");
+        assertNotNull(config);
+        assertEquals("https://example.com", config.issuer());
+        assertEquals("https://example.com/.well-known/jwks.json", config.jwksUri());
+        assertNull(config.authorizationEndpoint());
+        assertNull(config.tokenEndpoint());
     }
 
     @Test
@@ -113,30 +90,8 @@ class DirectDeserializationTest {
         String malformedJson = "{invalid json}";
         byte[] bytes = malformedJson.getBytes();
 
-        assertThrows(IOException.class, () -> {
-            dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
-        }, "Malformed JSON should throw IOException during direct deserialization");
-    }
-
-    @Test
-    @DisplayName("Should return null for empty JSON during direct deserialization")
-    void shouldReturnNullForEmptyJsonDuringDirectDeserialization() {
-        String emptyJson = "{}";
-        byte[] bytes = emptyJson.getBytes();
-
-        try {
-            WellKnownResult config = dslJson.deserialize(WellKnownResult.class, bytes, bytes.length);
-
-            // This will either work (return a config with nulls) or fail (return null)
-            // Either way, we need to document the behavior
-            if (config == null) {
-                LOGGER.info("ℹ️  INFO: Empty JSON returns null during direct deserialization");
-            } else {
-                LOGGER.info("ℹ️  INFO: Empty JSON creates config with values: " + config);
-            }
-        } catch (IOException e) {
-            LOGGER.info("ℹ️  INFO: Empty JSON fails with: " + e.getMessage());
-        }
+        assertThrows(IOException.class, () ->
+                dslJson.deserialize(WellKnownResult.class, bytes, bytes.length));
     }
 
 }

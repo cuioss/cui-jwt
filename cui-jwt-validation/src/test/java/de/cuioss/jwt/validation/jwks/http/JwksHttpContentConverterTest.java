@@ -17,6 +17,9 @@ package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.json.Jwks;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -69,23 +72,11 @@ class JwksHttpContentConverterTest {
         assertEquals("test-key-1", result.get().keys().getFirst().kid());
     }
 
-    @Test
-    void shouldReturnEmptyForNullContent() {
-        Optional<Jwks> result = converter.convert(null);
-        assertTrue(result.isPresent());
-        assertTrue(result.get().isEmpty());
-    }
-
-    @Test
-    void shouldReturnEmptyForEmptyString() {
-        Optional<Jwks> result = converter.convert("");
-        assertTrue(result.isPresent());
-        assertTrue(result.get().isEmpty());
-    }
-
-    @Test
-    void shouldReturnEmptyForWhitespaceOnlyString() {
-        Optional<Jwks> result = converter.convert("   \n\t   ");
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "   \n\t   "})
+    void shouldReturnEmptyForInvalidContent(String content) {
+        Optional<Jwks> result = converter.convert(content);
         assertTrue(result.isPresent());
         assertTrue(result.get().isEmpty());
     }

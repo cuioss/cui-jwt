@@ -157,9 +157,30 @@ public class TokenHeaderValidator {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             JwtHeader header = decodedJwt.getHeader();
-            var headerInfo = header.getAlg().isPresent()
-                    ? "Available header claims: alg=" + header.alg() + (header.getKid().isPresent() ? ", kid=" + header.getKid().get() : "") + (header.getTyp().isPresent() ? ", typ=" + header.getTyp().get() : "")
-                    : "Available header claims: none";
+            StringBuilder headerInfo = new StringBuilder("Available header claims:");
+            boolean hasAny = false;
+
+            if (header.getAlg().isPresent()) {
+                headerInfo.append(" alg=").append(header.alg());
+                hasAny = true;
+            }
+
+            var kidOpt = header.getKid();
+            if (kidOpt.isPresent()) {
+                headerInfo.append(hasAny ? "," : "").append(" kid=").append(kidOpt.orElse(""));
+                hasAny = true;
+            }
+
+            var typOpt = header.getTyp();
+            if (typOpt.isPresent()) {
+                headerInfo.append(hasAny ? "," : "").append(" typ=").append(typOpt.orElse(""));
+                hasAny = true;
+            }
+
+            if (!hasAny) {
+                headerInfo.append(" none");
+            }
+
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
                     "Missing required key ID (kid) claim in token header. " + headerInfo

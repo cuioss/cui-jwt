@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.http.client.HttpHandlerProvider;
 import de.cuioss.http.client.retry.RetryStrategy;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.jwks.JwksType;
@@ -136,6 +137,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
     @Getter
     private final int maxRetiredKeySets;
 
+    @SuppressWarnings("java:S107") // ok for builder
     private HttpJwksLoaderConfig(int refreshIntervalSeconds,
             HttpHandler httpHandler,
             WellKnownConfig wellKnownConfig,
@@ -516,6 +518,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @throws IllegalArgumentException if any parameter is invalid
          * @throws IllegalArgumentException if no endpoint was configured
          */
+        @SuppressWarnings("java:S3776") // ok for builder
         public HttpJwksLoaderConfig build() {
             // Ensure at least one endpoint configuration method was used
             if (endpointSource == null) {
@@ -540,6 +543,12 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
                     if (jwksHttpHandler == null) {
                         throw new IllegalArgumentException("HttpHandler build() returned null - this indicates a programming error in the builder");
                     }
+
+                    // Check for insecure HTTP protocol
+                    URI uri = jwksHttpHandler.getUri();
+                    if (uri != null && "http".equalsIgnoreCase(uri.getScheme())) {
+                        LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS.format(uri.toString()));
+                    }
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     LOGGER.warn(WARN.INVALID_JWKS_URI::format);
                     throw new IllegalArgumentException("Invalid URL or HttpHandler configuration", e);
@@ -558,12 +567,10 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             }
 
             // Validate issuer requirement
-            if (configuredWellKnownConfig == null && jwksHttpHandler != null) {
-                // For direct JWKS, issuer is MANDATORY
-                if (issuerIdentifier == null) {
-                    throw new IllegalArgumentException("Issuer identifier is mandatory when using direct JWKS configuration");
-                }
+            if (configuredWellKnownConfig == null && jwksHttpHandler != null && issuerIdentifier == null) {
+                throw new IllegalArgumentException("Issuer identifier is mandatory when using direct JWKS configuration");
             }
+
             // For well-known, issuer will be discovered dynamically during resolution (optional in config)
 
             return new HttpJwksLoaderConfig(

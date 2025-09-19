@@ -75,11 +75,10 @@ class HttpJwksLoaderIssuerTest {
     @DisplayName("Should require issuer identifier for direct JWKS configuration")
     void shouldRequireIssuerForDirectJwks(URIBuilder uriBuilder) {
         // Attempt to create HttpJwksLoader with direct JWKS URL but no issuer - should fail
-        assertThrows(IllegalArgumentException.class, () -> {
-            HttpJwksLoaderConfig.builder()
-                    .jwksUrl(uriBuilder.addPathSegment("jwks").buildAsString())
-                    .build();
-        }, "Should throw exception when issuer is missing for direct JWKS configuration");
+        HttpJwksLoaderConfig.HttpJwksLoaderConfigBuilder jwks = HttpJwksLoaderConfig.builder()
+                .jwksUrl(uriBuilder.addPathSegment("jwks").buildAsString());
+
+        assertThrows(IllegalArgumentException.class, jwks::build, "Should throw exception when issuer is missing for direct JWKS configuration");
     }
 
     @Test

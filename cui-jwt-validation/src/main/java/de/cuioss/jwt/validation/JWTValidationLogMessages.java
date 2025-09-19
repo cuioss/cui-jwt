@@ -465,6 +465,12 @@ public final class JWTValidationLogMessages {
                 .identifier(143)
                 .template("Configured issuer '%s' does not match discovered issuer '%s' from well-known document")
                 .build();
+
+        public static final LogRecord INSECURE_HTTP_JWKS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(144)
+                .template("Using insecure HTTP protocol for JWKS endpoint: %s - HTTPS should be used in production")
+                .build();
     }
 
 }

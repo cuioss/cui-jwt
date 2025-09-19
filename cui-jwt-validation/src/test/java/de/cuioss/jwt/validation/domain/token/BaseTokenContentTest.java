@@ -59,6 +59,7 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
 
     @Test
     @DisplayName("Throw NullPointerException when claims is null")
+    @SuppressWarnings("java:S5778")
     void shouldThrowExceptionWhenClaimsIsNull() {
         assertThrows(NullPointerException.class,
                 () -> new TestBaseTokenContent(null, SAMPLE_TOKEN, TokenType.ACCESS_TOKEN, MapRepresentation.empty()),
