@@ -383,11 +383,11 @@ Follows link:https://github.com/cuioss/cui-llm-rules/tree/main/standards/cdi-qua
 
 === Performance Benchmarking
 
-The sibling module `quarkus-integration-jmh` builds upon this module's infrastructure for JMH performance benchmarking. It shares:
+Performance benchmarking is available in the `benchmarking/benchmark-integration-quarkus` module. It builds upon this module's infrastructure patterns:
 
 * Docker Compose and container configuration
 * Keycloak realm setup and integration patterns
 * HTTPS certificate management
 * Application deployment scripts
 
-This module provides functional validation while the benchmarking module measures performance using the same environment.
+This module provides functional validation while the benchmarking module measures performance using similar environment patterns.
