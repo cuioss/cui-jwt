@@ -97,7 +97,7 @@ class ScopeMapperTest {
         expected.add("email");
         ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
-        assertEquals(scopesArray.toString(), result.getOriginalString(), "Original string should be the JSON array string");
+        assertEquals("openid profile email", result.getOriginalString(), "Original string should be space-delimited format");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(new ArrayList<>(expected), result.getAsList(), "Scopes should be correctly parsed from array");
     }
@@ -138,7 +138,7 @@ class ScopeMapperTest {
         expected.add("email");
         ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
-        assertEquals(scopesArray.toString(), result.getOriginalString(), "Original string should be the JSON array string");
+        assertEquals("openid profile openid email profile", result.getOriginalString(), "Original string should preserve original order with duplicates");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(new ArrayList<>(expected), result.getAsList(), "Duplicate scopes should be removed");
         assertEquals(3, result.getAsList().size(), "Should have 3 unique scopes");
@@ -222,7 +222,7 @@ class ScopeMapperTest {
         expected.add("scope@with@at");
         ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
-        assertEquals(scopesArray.toString(), result.getOriginalString(), "Original string should be the JSON array string");
+        assertEquals("scope1 scope-with-dash scope_with_underscore scope.with.dots scope@with@at", result.getOriginalString(), "Original string should be space-delimited format");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(new ArrayList<>(expected), result.getAsList(), "Scopes with special characters should be correctly parsed");
     }
@@ -271,7 +271,7 @@ class ScopeMapperTest {
         expected.add("true");
         ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
         assertNotNull(result, "Result should not be null");
-        assertEquals(scopesArray.toString(), result.getOriginalString(), "Original string should be the JSON array string");
+        assertEquals("openid 123 true", result.getOriginalString(), "Original string should be space-delimited format");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
         assertEquals(new ArrayList<>(expected), result.getAsList(), "Non-string array elements should be converted to strings");
     }

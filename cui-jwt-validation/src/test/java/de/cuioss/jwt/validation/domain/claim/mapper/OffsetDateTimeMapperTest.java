@@ -86,9 +86,10 @@ class OffsetDateTimeMapperTest {
         long epochSeconds = 1673785845;
         String validTimestamp = String.valueOf(epochSeconds);
 
-        JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, validTimestamp);
+        JsonObject jsonObject = createJsonObjectWithStringClaim(validTimestamp);
+        MapRepresentation mapRepresentation = convertJsonObjectToMapRepresentation(jsonObject);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(mapRepresentation, CLAIM_NAME),
                 "Should throw IllegalArgumentException for string value (even if it's a valid numeric timestamp)");
     }
 
@@ -97,16 +98,17 @@ class OffsetDateTimeMapperTest {
     void shouldMapValidIsoDateTime() {
         String validDateTime = "2023-01-15T12:30:45Z";
 
-        JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, validDateTime);
+        JsonObject jsonObject = createJsonObjectWithStringClaim(validDateTime);
+        MapRepresentation mapRepresentation = convertJsonObjectToMapRepresentation(jsonObject);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(mapRepresentation, CLAIM_NAME),
                 "Should throw IllegalArgumentException for string value (even if it's a valid ISO-8601 date-time)");
     }
 
     @Test
     @DisplayName("Handle null claim value")
     void shouldHandleNullClaimValue() {
-        JsonObject jsonObject = createJsonObjectWithNullClaim(CLAIM_NAME);
+        JsonObject jsonObject = createJsonObjectWithNullClaim();
 
         ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
@@ -120,9 +122,10 @@ class OffsetDateTimeMapperTest {
     @ValueSource(strings = {"", " ", "\t", "\n"})
     @DisplayName("Throw exception for blank string inputs (not compliant with JWT spec)")
     void shouldThrowExceptionForBlankStringInputs(String blankInput) {
-        JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, blankInput);
+        JsonObject jsonObject = createJsonObjectWithStringClaim(blankInput);
+        MapRepresentation mapRepresentation = convertJsonObjectToMapRepresentation(jsonObject);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(mapRepresentation, CLAIM_NAME),
                 "Should throw IllegalArgumentException for string value (even if it's blank)");
     }
 
@@ -140,9 +143,10 @@ class OffsetDateTimeMapperTest {
     })
     @DisplayName("Throw exception for invalid date-time formats")
     void shouldThrowExceptionForInvalidFormats(String invalidDateTime) {
-        JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, invalidDateTime);
+        JsonObject jsonObject = createJsonObjectWithStringClaim(invalidDateTime);
+        MapRepresentation mapRepresentation = convertJsonObjectToMapRepresentation(jsonObject);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(mapRepresentation, CLAIM_NAME),
                 "Should throw IllegalArgumentException for invalid date-time format");
     }
 
@@ -178,26 +182,27 @@ class OffsetDateTimeMapperTest {
         JsonObject jsonObject = Json.createObjectBuilder()
                 .add(CLAIM_NAME, Json.createObjectBuilder().build())
                 .build();
+        MapRepresentation mapRepresentation = convertJsonObjectToMapRepresentation(jsonObject);
 
-        assertThrows(IllegalArgumentException.class, () -> underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME),
+        assertThrows(IllegalArgumentException.class, () -> underTest.map(mapRepresentation, CLAIM_NAME),
                 "Should throw IllegalArgumentException for unsupported JSON value type");
     }
 
     // Helper methods
 
-    private JsonObject createJsonObjectWithStringClaim(String claimName, String value) {
+    private JsonObject createJsonObjectWithStringClaim(String value) {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         if (value != null) {
-            builder.add(claimName, value);
+            builder.add(CLAIM_NAME, value);
         } else {
-            builder.addNull(claimName);
+            builder.addNull(CLAIM_NAME);
         }
         return builder.build();
     }
 
-    private JsonObject createJsonObjectWithNullClaim(String claimName) {
+    private JsonObject createJsonObjectWithNullClaim() {
         return Json.createObjectBuilder()
-                .addNull(claimName)
+                .addNull(CLAIM_NAME)
                 .build();
     }
 }

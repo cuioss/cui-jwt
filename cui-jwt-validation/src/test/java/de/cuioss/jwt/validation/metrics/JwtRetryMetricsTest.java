@@ -99,7 +99,6 @@ class JwtRetryMetricsTest {
     @DisplayName("Should record retry attempt metrics")
     void shouldRecordRetryAttemptMetrics() {
         Duration attemptDuration = Duration.ofMillis(250);
-        RuntimeException exception = new RuntimeException("Test exception");
 
         retryMetrics.recordRetryAttempt(context, 1, attemptDuration, false);
 

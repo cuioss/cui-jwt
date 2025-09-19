@@ -24,7 +24,6 @@ import lombok.NonNull;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * A {@link ClaimMapper} implementation for mapping scope claims.
@@ -49,31 +48,25 @@ public class ScopeMapper implements ClaimMapper {
 
         // According to OAuth 2.0 specification (RFC 6749), the scope parameter is a space-delimited string.
         // However, some implementations use arrays for scopes, so we handle both formats.
-        if (value instanceof String stringValue) {
-            // Handle space-separated string of scopes (standard format per RFC 6749)
-            originalValue = stringValue;
-            scopes = Splitter.on(' ').trimResults().omitEmptyStrings().splitToList(originalValue);
-        } else if (value instanceof List<?> listValue) {
-            // Handle List of scopes (non-standard but common)
-            // Convert to JSON format to maintain compatibility with previous behavior
-            originalValue = listValue.stream()
-                    .map(item -> {
-                        if (item instanceof String) {
-                            return "\"" + item + "\"";
-                        } else if (item instanceof Boolean || item instanceof Number) {
-                            return item.toString();
-                        } else {
-                            return "\"" + item.toString() + "\"";
-                        }
-                    })
-                    .collect(Collectors.joining(",", "[", "]"));
-            scopes = listValue.stream()
-                    .map(Object::toString)
-                    .toList();
-        } else {
-            // Reject other types as non-compliant with OAuth 2.0 specification
-            throw new IllegalArgumentException("Unsupported value type for scope: " +
-                    value.getClass().getSimpleName() + ". According to OAuth 2.0 specification, scope should be a space-delimited string.");
+        switch (value) {
+            case String stringValue -> {
+                // Handle space-separated string of scopes (standard format per RFC 6749)
+                originalValue = stringValue;
+                scopes = Splitter.on(' ').trimResults().omitEmptyStrings().splitToList(originalValue);
+            }
+            case List<?> listValue -> {
+                // Handle List of scopes (non-standard but common)
+                // Convert to space-delimited format per OAuth 2.0 RFC 6749
+                scopes = listValue.stream()
+                        .map(Object::toString)
+                        .toList();
+                originalValue = String.join(" ", scopes);
+            }
+            default -> {
+                // Reject other types as non-compliant with OAuth 2.0 specification
+                throw new IllegalArgumentException("Unsupported value type for scope: " +
+                        value.getClass().getSimpleName() + ". According to OAuth 2.0 specification, scope should be a space-delimited string.");
+            }
         }
 
         return ClaimValue.forList(originalValue, new TreeSet<>(scopes).stream().toList());
