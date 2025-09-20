@@ -136,7 +136,7 @@ public abstract class AbstractMetricsExporter implements MetricsExporter {
 
     /**
      * Format number according to rules: 1 decimal for values less than 10, no decimal for values greater than or equal to 10.
-     * 
+     *
      * @param value The value to format
      * @return Formatted number (Double for values less than 10, Long for values greater than or equal to 10)
      */
@@ -145,7 +145,7 @@ public abstract class AbstractMetricsExporter implements MetricsExporter {
             DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.US));
             return Double.parseDouble(df.format(value));
         } else {
-            return Math.round(value);
+            return Long.valueOf(Math.round(value));
         }
     }
 
