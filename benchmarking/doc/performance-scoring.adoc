@@ -9,71 +9,83 @@ A weighted performance score combining throughput, latency, and error resilience
 
 [source,text]
 ----
-Performance Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience × 0.03)
+Performance Score = (Throughput_Score × 0.5) + (Latency_Score × 0.5)
 
 Where:
-- Throughput = Operations/second (concurrent load)
-- Latency_Inverted = 1,000,000 ÷ Average_Time_Microseconds
-- Error_Resilience = Operations/second (0% error scenario)
+- Throughput_Score = Throughput ÷ 100        // 10000 ops/s = score 100 (uncapped)
+- Latency_Score = 100 ÷ Latency_ms          // 1 ms = score 100 (uncapped)
+- Throughput = Average operations/second from benchmarks
+- Latency_ms = Average latency in milliseconds
+
+Note: Scores are not capped, allowing exceptional performance to exceed 100
 ----
 
 == Metrics
 
-=== Throughput (57% weight)
+=== Throughput (50% weight)
 
-* Measures: Token validations per second under concurrent load
-* Configuration: `@BenchmarkMode(Mode.Throughput)` with `@Threads(Threads.MAX)`
-* Target: >10,000 ops/sec (good), >50,000 ops/sec (excellent)
+* Measures: Average operations per second across all throughput benchmarks
+* Score normalized: 10,000 ops/s = 100 points
+* Higher is better, no upper limit
 
-=== Latency (40% weight)
+=== Latency (50% weight)
 
-* Measures: Average single-threaded validation time
-* Configuration: `@BenchmarkMode(Mode.AverageTime)` with `@Threads(1)`
-* Target: <100μs (good), <50μs (excellent)
-
-=== Error Resilience (3% weight)
-
-* Measures: Performance stability with invalid tokens
-* Validates error handling doesn't degrade performance
+* Measures: Average latency across all latency benchmarks
+* Score normalized: 1 ms = 100 points (inverse relationship)
+* Lower is better, no upper limit on score
 
 == Score Interpretation
 
 [cols="1,1,2", options="header"]
 |===
-|Score Range |Level |Description
+|Score Range |Grade |Description
 
-|> 40,000
-|Exceptional
-|High-scale production ready
+|≥ 90
+|A
+|Excellent performance - high-scale production ready
 
-|30,000-40,000
-|Excellent
-|Most production scenarios
+|75-89
+|B
+|Good performance - suitable for most production scenarios
 
-|20,000-30,000
-|Good
-|Typical applications
+|60-74
+|C
+|Adequate performance - typical applications
 
-|10,000-20,000
-|Moderate
-|Low-medium load
+|40-59
+|D
+|Below average - optimization recommended
 
-|< 10,000
-|Needs Improvement
-|Optimization required
+|< 40
+|F
+|Poor performance - optimization required
 |===
 
 == Example Calculation
 
 [source,text]
 ----
-Throughput: 45,000 ops/sec
-Average Time: 80 microseconds
-Error Resilience: 40,000 ops/sec
+Integration Benchmark:
+Average Throughput: 5,847 ops/sec
+Average Latency: 1.17 ms
 
-Latency_Inverted = 1,000,000 ÷ 80 = 12,500 ops/sec
-Score = (45,000 × 0.57) + (12,500 × 0.40) + (40,000 × 0.03)
-      = 25,650 + 5,000 + 1,200 = 31,850
+Throughput_Score = 5847 ÷ 100 = 58.47
+Latency_Score = 100 ÷ 1.17 = 85.47
+
+Performance Score = (58.47 × 0.5) + (85.47 × 0.5)
+                  = 29.24 + 42.74
+                  = 71.98 (Grade C)
+
+Micro Benchmark:
+Average Throughput: 83,909 ops/sec  
+Average Latency: 0.35 ms
+
+Throughput_Score = 83909 ÷ 100 = 839.09
+Latency_Score = 100 ÷ 0.35 = 285.71
+
+Performance Score = (839.09 × 0.5) + (285.71 × 0.5)
+                  = 419.55 + 142.86
+                  = 562.41 (Grade A, exceptional performance)
 ----
 
 == Badge Format

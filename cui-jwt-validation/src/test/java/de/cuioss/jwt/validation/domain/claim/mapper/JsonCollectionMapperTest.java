@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
@@ -29,6 +32,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,13 +45,27 @@ class JsonCollectionMapperTest {
     private static final String CLAIM_NAME = "testClaim";
     private final JsonCollectionMapper underTest = new JsonCollectionMapper();
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @Test
     @DisplayName("Map array of strings to list")
     void shouldMapArrayOfStrings() {
         List<String> expectedValues = List.of("value1", "value2", "value3");
         JsonObject jsonObject = createJsonObjectWithArrayClaim(CLAIM_NAME, expectedValues);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -65,7 +83,7 @@ class JsonCollectionMapperTest {
         String input = "single-value";
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -81,7 +99,7 @@ class JsonCollectionMapperTest {
                 .add(CLAIM_NAME, input)
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -98,7 +116,7 @@ class JsonCollectionMapperTest {
                 .add(CLAIM_NAME, input)
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -116,7 +134,7 @@ class JsonCollectionMapperTest {
                 ? createJsonObjectWithNullClaim(CLAIM_NAME)
                 : createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -135,7 +153,7 @@ class JsonCollectionMapperTest {
         String input = "!@#$%^&*()_+{}|:<>?~`-=[]\\;',./";
         JsonObject jsonObject = createJsonObjectWithStringClaim(CLAIM_NAME, input);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -149,7 +167,7 @@ class JsonCollectionMapperTest {
         List<String> inputs = List.of("!@#$", "%^&*()", "_+{}|:", "<>?~`-=", "[]\\;',./");
         JsonObject jsonObject = createJsonObjectWithArrayClaim(CLAIM_NAME, inputs);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -166,7 +184,7 @@ class JsonCollectionMapperTest {
     void shouldHandleMissingClaim() {
         JsonObject jsonObject = Json.createObjectBuilder().build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -178,7 +196,7 @@ class JsonCollectionMapperTest {
     void shouldHandleEmptyJsonObject() {
         JsonObject emptyJsonObject = Json.createObjectBuilder().build();
 
-        ClaimValue result = underTest.map(emptyJsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(emptyJsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");
@@ -198,7 +216,7 @@ class JsonCollectionMapperTest {
                 .add(CLAIM_NAME, arrayBuilder)
                 .build();
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result, "Result should not be null");
         assertEquals(ClaimValueType.STRING_LIST, result.getType(), "Type should be STRING_LIST");

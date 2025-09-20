@@ -154,6 +154,7 @@ public class InMemoryJWKSFactory {
      *
      * @return an empty JWKS JSON string
      */
+    @SuppressWarnings("SameReturnValue")
     public static String createEmptyJwks() {
         return "{\"keys\": []}";
     }
@@ -163,6 +164,7 @@ public class InMemoryJWKSFactory {
      *
      * @return an invalid JSON string
      */
+    @SuppressWarnings("SameReturnValue")
     public static String createInvalidJson() {
         return "invalid json";
     }

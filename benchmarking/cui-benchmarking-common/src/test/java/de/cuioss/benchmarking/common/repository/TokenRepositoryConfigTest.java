@@ -21,8 +21,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TokenRepositoryConfigTest {
 
-    @Test void defaultValues() {
-        TokenRepositoryConfig config = TokenRepositoryConfig.builder().build();
+    @Test void builderWithAllRequiredValues() {
+        TokenRepositoryConfig config = TokenRepositoryConfig.builder()
+                .keycloakBaseUrl("https://localhost:1443")
+                .realm("benchmark")
+                .clientId("benchmark-client")
+                .clientSecret("benchmark-secret")
+                .username("benchmark-user")
+                .password("benchmark-password")
+                .build();
 
         assertEquals("https://localhost:1443", config.getKeycloakBaseUrl());
         assertEquals("benchmark", config.getRealm());
@@ -30,6 +37,7 @@ class TokenRepositoryConfigTest {
         assertEquals("benchmark-secret", config.getClientSecret());
         assertEquals("benchmark-user", config.getUsername());
         assertEquals("benchmark-password", config.getPassword());
+        // Verify defaults for non-required fields
         assertEquals(100, config.getTokenPoolSize());
         assertEquals(5000, config.getConnectionTimeoutMs());
         assertEquals(10000, config.getRequestTimeoutMs());
@@ -65,20 +73,25 @@ class TokenRepositoryConfigTest {
         assertEquals(300, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test void partialBuilder() {
+    @Test void builderWithAllRequiredFields() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://partial.com")
                 .realm("partial-realm")
+                .clientId("partial-client")
+                .clientSecret("partial-secret")
+                .username("partial-user")
+                .password("partial-password")
                 .tokenPoolSize(50)
                 .build();
 
-        // Verify partial configuration with defaults
+        // Verify all required fields are set
         assertEquals("https://partial.com", config.getKeycloakBaseUrl());
         assertEquals("partial-realm", config.getRealm());
+        assertEquals("partial-client", config.getClientId());
+        assertEquals("partial-secret", config.getClientSecret());
+        assertEquals("partial-user", config.getUsername());
+        assertEquals("partial-password", config.getPassword());
         assertEquals(50, config.getTokenPoolSize());
-        // Defaults should be preserved
-        assertEquals("benchmark-client", config.getClientId());
-        assertEquals("benchmark-secret", config.getClientSecret());
     }
 
     @Test void equalsAndHashCode() {

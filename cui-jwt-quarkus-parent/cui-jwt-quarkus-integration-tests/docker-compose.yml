@@ -30,8 +30,22 @@ services:
       - KC_HTTPS_PORT=8443
       - KC_HOSTNAME=localhost
       # External hostname for Docker container well-known discovery
+      
+      # HTTP Access Logging Configuration (Quarkus-based)
+      # Enable comprehensive request/response logging for JWKS endpoint diagnostics
+      - QUARKUS_HTTP_ACCESS_LOG_ENABLED=true
+      - QUARKUS_HTTP_ACCESS_LOG_PATTERN=combined
+      - QUARKUS_HTTP_ACCESS_LOG_CATEGORY=io.quarkus.http.access-log
     networks:
       - jwt-integration
+    
+    # Health check to ensure Keycloak is ready before dependent services start
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && exec 3<&-"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
 
   cui-jwt-integration-tests:
     # Use separate Dockerfiles for different variants
@@ -56,13 +70,12 @@ services:
       - QUARKUS_LOG_LEVEL=INFO
 
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
 
     volumes:
       # Read-only certificate mount (production pattern)
       - ./src/main/docker/certificates:/app/certificates:ro
-      # JFR output volume - mount directly to benchmark target directory
-      - ../quarkus-integration-jmh/target/benchmark-results/jfr-recordings:/tmp/jfr-output:rw
 
     # OWASP Security hardening (production-grade)
     security_opt:
@@ -87,13 +100,7 @@ services:
           memory: 256M
           cpus: '1.0'
 
-    # Health check using internal script (optimized for fast native startup)
-    healthcheck:
-      test: ["CMD", "/app/health-check.sh"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    # No health check for distroless - health endpoints are available at /q/health
 
     # Network isolation (production pattern)
     networks:

@@ -316,22 +316,28 @@ class EcdsaSignatureFormatConverterTest {
         int pos = contentStart;
 
         // First INTEGER (R component)
-        assertTrue(pos < asn1Signature.length, "R component position should be valid");
         assertEquals(0x02, asn1Signature[pos], "R component should start with INTEGER tag (0x02)");
 
         // Skip R component
         pos++; // Skip INTEGER tag
+        assertTrue(pos < asn1Signature.length, "Position should be valid after skipping INTEGER tag");
         int rLength = asn1Signature[pos] & 0xFF;
-        pos++; // Skip length
+        pos++; // Skip length byte
+
         if ((rLength & 0x80) != 0) {
-            // Long form length for R
+            // Long form length for R - we need to skip the length bytes but keep the actual length value
             int rLengthBytes = rLength & 0x7F;
+            assertTrue(pos + rLengthBytes <= asn1Signature.length, "Long form length bytes should be within bounds");
+            // For this basic verification, we'll just skip past the long form
             pos += rLengthBytes;
-            // Recalculate actual length (simplified - just skip the content)
-            rLength = 32; // Approximate for testing
+            // In real ASN.1 parsing, we'd read the actual length from these bytes
+            // For now, just use a reasonable estimate for ECDSA signatures
+            rLength = 32; // Typical for P-256
         }
+
+        assertTrue(pos + rLength <= asn1Signature.length, "R component content should be within bounds");
         pos += rLength; // Skip R content
-        
+
         // Second INTEGER (S component)
         assertTrue(pos < asn1Signature.length, "S component position should be valid");
         assertEquals(0x02, asn1Signature[pos], "S component should start with INTEGER tag (0x02)");

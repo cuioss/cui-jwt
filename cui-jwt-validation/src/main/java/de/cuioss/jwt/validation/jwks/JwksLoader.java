@@ -15,79 +15,42 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
-import de.cuioss.jwt.validation.HealthStatusProvider;
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import lombok.NonNull;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Interface for loading JSON Web Keys (JWK) from a JWKS source.
+ * Interface for loading JSON Web Keys (JWK) from various sources with async initialization.
  * <p>
- * Implementations can load keys from different sources like HTTP endpoints or files.
+ * Implementations load keys from HTTP endpoints, files, or memory. The interface follows
+ * an async initialization pattern where {@link #initJWKSLoader(SecurityEventCounter)} triggers
+ * loading and returns a CompletableFuture, while {@link #getKeyInfo(String)} performs retrieval only.
  * <p>
- * This interface supports cryptographic agility by providing methods to get keys
- * along with their algorithm information.
- * <p>
- * Usage examples:
- * <p>
- * File-based JWKS loader:
+ * Usage pattern:
  * <pre>
- * // Create a file-based JWKS loader
- * String jwksFilePath = "/path/to/jwks.json";
- * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
- * JwksLoader fileJwksLoader = JwksLoaderFactory.createFileLoader(jwksFilePath, securityEventCounter);
+ * JwksLoader loader = new HttpJwksLoader(config);
+ * CompletableFuture&lt;LoaderStatus&gt; initFuture = loader.initJWKSLoader(securityEventCounter);
  *
- * // Get a key by ID
- * String keyId = "my-key-id";
- * Optional&lt;KeyInfo&gt; keyInfo = fileJwksLoader.getKeyInfo(keyId);
- *
- * // Use the key if present
- * keyInfo.ifPresent(info -> {
- *     PublicKey publicKey = info.getKey();
- *     String algorithm = info.getAlgorithm();
- *     // Use the key for signature verification
- * });
+ * // Later, after initialization completes
+ * Optional&lt;KeyInfo&gt; keyInfo = loader.getKeyInfo("key-id");
  * </pre>
- * <p>
- * HTTP-based JWKS loader:
- * <pre>
- * // Create an HTTP-based JWKS loader with 60-second refresh interval
- * String jwksEndpoint = "https://example.com/.well-known/jwks.json";
- * HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
- *     .jwksUrl(jwksEndpoint)
- *     .refreshIntervalSeconds(60)
- *     .build();
- * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
- * JwksLoader httpJwksLoader = JwksLoaderFactory.createHttpLoader(config, securityEventCounter);
- *
- * // Get a key by ID
- * Optional&lt;KeyInfo&gt; keyInfo = httpJwksLoader.getKeyInfo("my-key-id");
- * </pre>
- * <p>
- * In-memory JWKS loader:
- * <pre>
- * // Create an in-memory JWKS loader
- * String jwksContent = "{\"keys\":[{\"kty\":\"RSA\",\"kid\":\"my-key-id\",\"use\":\"sig\",\"alg\":\"RS256\",\"n\":\"...\",\"e\":\"...\"}]}";
- * SecurityEventCounter securityEventCounter = new SecurityEventCounter();
- * JwksLoader inMemoryJwksLoader = JwksLoaderFactory.createInMemoryLoader(jwksContent, securityEventCounter);
- *
- * // Get a key by ID
- * Optional&lt;KeyInfo&gt; keyInfo = inMemoryJwksLoader.getKeyInfo("my-key-id");
- * </pre>
- * <p>
- * For more details on the security aspects, see the
- * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/security.adoc">Security Specification</a>
  *
  * @author Oliver Wolff
  * @since 1.0
  */
 @SuppressWarnings("JavadocLinkAsPlainText")
-public interface JwksLoader extends HealthStatusProvider {
+public interface JwksLoader extends LoadingStatusProvider {
 
     /**
-     * Gets a key by its ID.
+     * Retrieves a key by its ID from loaded keys.
+     * <p>
+     * This method performs retrieval only - no loading or initialization.
+     * Keys must be loaded via {@link #initJWKSLoader(SecurityEventCounter)} first.
      *
      * @param kid the key ID
      * @return an Optional containing the key info if found, empty otherwise
@@ -113,19 +76,23 @@ public interface JwksLoader extends HealthStatusProvider {
      */
     Optional<String> getIssuerIdentifier();
 
+
     /**
-     * Initializes the JwksLoader with the provided SecurityEventCounter.
+     * Initializes the JwksLoader with the provided SecurityEventCounter and triggers
+     * asynchronous loading of key material.
      * <p>
      * This method should be called after construction to complete the initialization
-     * of the JWKS loader with the security event counter for tracking security events.
+     * of the JWKS loader with the security event counter for tracking security events
+     * and to begin loading the JWKS content asynchronously.
      * </p>
      * <p>
-     * This method is not thread-safe and should be called before the object is shared
-     * between threads.
+     * The returned CompletableFuture will complete when the initial loading of keys
+     * is finished, with a LoaderStatus indicating the result of the loading operation.
      * </p>
      *
      * @param securityEventCounter the counter for security events, must not be null
+     * @return a CompletableFuture that completes when keys are loaded, with the final LoaderStatus
      * @throws NullPointerException if securityEventCounter is null
      */
-    void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter);
+    CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter);
 }

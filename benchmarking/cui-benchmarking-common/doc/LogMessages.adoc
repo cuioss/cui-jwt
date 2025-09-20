@@ -1,0 +1,122 @@
+= Log Messages for cui-benchmarking-common Module
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+
+This document lists all structured log messages provided by the `de.cuioss.benchmarking.common.util.BenchmarkingLogMessages` class.
+
+All messages follow the format: `Benchmarking-[identifier]: [message]`
+
+== Message Identifier Ranges
+
+* 001-099: INFO messages
+* 100-199: WARN messages
+* 200-299: ERROR messages
+* 500-599: DEBUG messages
+
+== INFO Level Messages (001-099)
+
+[cols="1,1,4"]
+|===
+| ID | Constant | Message Template
+
+| 001 | BENCHMARK_RUNNER_STARTING | Starting CUI benchmark runner...
+| 003 | BENCHMARKS_COMPLETED | Benchmarks completed successfully with %s results
+| 004 | ARTIFACTS_GENERATED | All artifacts generated successfully
+| 005 | PROCESSING_RESULTS | Processing %s benchmark results to generate artifacts
+| 006 | BENCHMARK_TYPE_DETECTED | Detected benchmark type: %s
+| 007 | GENERATING_BADGES | Generating performance badges for %s benchmarks
+| 008 | GENERATING_METRICS | Generating performance metrics
+| 009 | GENERATING_REPORTS | Generating HTML reports
+| 010 | GENERATING_GITHUB_PAGES | Generating GitHub Pages deployment structure
+| 011 | WRITING_SUMMARY | Writing benchmark summary file
+| 012 | GENERATING_METRICS_JSON | Generating metrics JSON for %s benchmark results
+| 013 | METRICS_FILE_GENERATED | Generated metrics file: %s
+| 014 | INDIVIDUAL_METRICS_GENERATED | Generated %s individual metric files
+| 015 | BADGE_GENERATED | Generated %s badge: %s
+| 016 | PREPARING_GITHUB_PAGES | Preparing GitHub Pages deployment structure
+| 017 | SOURCE_DIRECTORY | Source: %s
+| 018 | DEPLOY_DIRECTORY | Deploy: %s
+| 019 | GITHUB_PAGES_READY | GitHub Pages deployment structure ready
+| 020 | GENERATING_INDEX_PAGE | Generating index page for %s benchmark results
+| 021 | INDEX_PAGE_GENERATED | Generated index page: %s
+| 022 | GENERATING_TRENDS_PAGE | Generating trends page
+| 023 | TRENDS_PAGE_GENERATED | Generated trends page: %s
+| 024 | WRITING_BENCHMARK_SUMMARY | Writing benchmark summary for %s %s results
+| 025 | SUMMARY_FILE_GENERATED | Generated summary file: %s
+| 026 | JMH_RESULT_COPIED | Copied JMH result to data directory: %s
+| 027 | JWT_BENCHMARKS_STARTING | JWT validation micro benchmarks starting - Key cache initialized
+| 028 | KEY_PREGENERATION_STARTING | BenchmarkKeyCache: Starting RSA key pre-generation...
+| 029 | KEY_PREGENERATION_COMPLETED | BenchmarkKeyCache: Pre-generated keys for %s issuer configurations in %s ms
+| 030 | KEY_CACHE_INITIALIZED | BenchmarkKeyCache: Initialized with %s configurations
+| 031 | QUARKUS_BENCHMARKS_STARTING | Quarkus JWT integration benchmarks starting - Service: %s, Keycloak: %s
+| 032 | PROCESSING_RESULTS_STARTING | QuarkusIntegrationRunner.processResults() - Starting with %s results
+| 033 | CALLING_PROCESS_QUARKUS_METRICS | QuarkusIntegrationRunner.processResults() - Calling processQuarkusMetrics()
+| 034 | PROCESS_QUARKUS_METRICS_COMPLETED | QuarkusIntegrationRunner.processResults() - Completed processQuarkusMetrics()
+| 035 | PROCESS_QUARKUS_METRICS_ENTRY | QuarkusIntegrationRunner.processQuarkusMetrics() - ENTRY POINT
+| 036 | PROCESSING_METRICS_FROM_URL | QuarkusIntegrationRunner.processQuarkusMetrics() - Processing metrics from %s to %s
+| 037 | CREATING_METRICS_FETCHER | QuarkusIntegrationRunner.processQuarkusMetrics() - Creating QuarkusMetricsFetcher
+| 038 | CREATING_METRICS_EXPORTER | QuarkusIntegrationRunner.processQuarkusMetrics() - Creating SimpleMetricsExporter
+| 039 | CALLING_EXPORT_JWT_METRICS | QuarkusIntegrationRunner.processQuarkusMetrics() - Calling exporter.exportJwtValidationMetrics()
+| 040 | EXPORT_JWT_METRICS_COMPLETED | QuarkusIntegrationRunner.processQuarkusMetrics() - Completed exporter.exportJwtValidationMetrics()
+|===
+
+== WARN Level Messages (100-199)
+
+[cols="1,1,4"]
+|===
+| ID | Constant | Message Template
+
+| 100 | FAILED_COPY_HTML | Failed to copy HTML file: %s
+| 101 | FAILED_COPY_BADGE | Failed to copy badge file: %s
+| 102 | FAILED_COPY_DATA | Failed to copy data file: %s
+| 103 | ISSUE_DURING_INDEX_GENERATION | Issue during %s
+| 104 | KEY_CACHE_MISS | BenchmarkKeyCache miss for count=%s. Generating keys during benchmark!
+|===
+
+== ERROR Level Messages (200-299)
+
+[cols="1,1,4"]
+|===
+| ID | Constant | Message Template
+
+| 200 | EXPORT_FAILED | Failed to export benchmark metrics
+|===
+
+== DEBUG Level Messages (500-599)
+
+[cols="1,1,4"]
+|===
+| ID | Constant | Message Template
+
+| 500 | COPYING_HTML_FILES | Copying HTML files
+| 501 | CREATING_API_ENDPOINTS | Creating API endpoints
+| 502 | API_ENDPOINT_CREATED | Created API endpoint: %s
+| 503 | COPYING_BADGE_FILES | Copying badge files
+| 504 | COPYING_DATA_FILES | Copying data files
+| 505 | GENERATING_ADDITIONAL_PAGES | Generating additional pages
+|===
+
+== Usage
+
+All LogRecord constants are accessed through static imports:
+
+[source,java]
+----
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR;
+
+// Example usage:
+LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format());
+LOGGER.warn(WARN.KEY_CACHE_MISS.format(count));
+LOGGER.error(e, ERROR.EXPORT_FAILED.format());
+----
+
+== Notes
+
+* DEBUG level messages do not use LogRecord - they use direct logging
+* Exception parameters come first in error logging calls
+* All parameter substitution uses '%s' format
+* The benchmarking library does not require LogAsserts testing coverage

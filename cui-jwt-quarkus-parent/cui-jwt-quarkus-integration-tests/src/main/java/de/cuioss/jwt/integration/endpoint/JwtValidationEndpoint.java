@@ -182,6 +182,7 @@ public class JwtValidationEndpoint {
     @GET
     @Path("/bearer-token/with-scopes")
     public Response testTokenWithScopes() {
+        LOGGER.debug("testTokenWithScopes called");
         return processBearerTokenResult(tokenWithScopes.get(), "Token with scopes");
     }
 

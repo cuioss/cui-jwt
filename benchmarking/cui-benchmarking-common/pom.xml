@@ -57,7 +57,6 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
-        
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

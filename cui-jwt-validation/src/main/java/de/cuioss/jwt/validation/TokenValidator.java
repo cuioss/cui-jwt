@@ -24,6 +24,7 @@ import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.MetricsTicker;
 import de.cuioss.jwt.validation.metrics.MetricsTickerFactory;
@@ -307,7 +308,7 @@ public class TokenValidator {
             // Use cache-aware processing for access tokens
             AccessTokenContent result = processAccessTokenWithCache(tokenString);
 
-            LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CREATED::format);
+            LOGGER.debug("Successfully created access token");
             securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
 
             return result;
@@ -339,7 +340,7 @@ public class TokenValidator {
         IdTokenContent token = buildIdToken(decodedJwt, cachedBuilder);
         IdTokenContent validatedToken = validateTokenClaims(token, issuerConfig, NoOpMetricsTicker.INSTANCE);
 
-        LOGGER.debug(JWTValidationLogMessages.DEBUG.ID_TOKEN_CREATED::format);
+        LOGGER.debug("Successfully created ID-Token");
         securityEventCounter.increment(SecurityEventCounter.EventType.ID_TOKEN_CREATED);
 
         return validatedToken;
@@ -368,16 +369,17 @@ public class TokenValidator {
         Map<String, ClaimValue> claims = Map.of();
         try {
             DecodedJwt decoded = jwtParser.decode(tokenString, false);
-            if (decoded.getBody().isPresent()) {
+            MapRepresentation body = decoded.getBody();
+            if (!body.isEmpty()) {
                 LOGGER.debug("Adding claims, because of being a JWT");
-                claims = TokenBuilder.extractClaimsForRefreshToken(decoded.getBody().get());
+                claims = TokenBuilder.extractClaimsForRefreshToken(body);
             }
         } catch (TokenValidationException e) {
             // Ignore validation exceptions for refresh tokens
             LOGGER.debug("Ignoring validation exception for refresh token: %s", e.getMessage());
         }
         var refreshToken = new RefreshTokenContent(tokenString, claims);
-        LOGGER.debug(JWTValidationLogMessages.DEBUG.REFRESH_TOKEN_CREATED::format);
+        LOGGER.debug("Successfully created Refresh-Token");
         securityEventCounter.increment(SecurityEventCounter.EventType.REFRESH_TOKEN_CREATED);
         return refreshToken;
     }

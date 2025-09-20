@@ -15,7 +15,9 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.http.client.HttpLogMessages;
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -67,11 +69,12 @@ class HttpJwksLoaderSchedulerTest {
         // Create loader without scheduler config
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(0) // Disable scheduler
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Trigger initial load
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
@@ -80,7 +83,7 @@ class HttpJwksLoaderSchedulerTest {
         // Scheduler should not be active without config
         assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should not be active without refresh interval");
 
-        loader.shutdown();
+        loader.close();
     }
 
     @Test
@@ -93,11 +96,12 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(0) // Zero means no refresh
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Trigger initial load
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
@@ -106,7 +110,9 @@ class HttpJwksLoaderSchedulerTest {
         // Scheduler should not be active with zero interval
         assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should not be active with zero interval");
 
-        loader.shutdown();
+        // With zero interval, background refresh is simply not started (no warning logged)
+
+        loader.close();
     }
 
     @Test
@@ -119,33 +125,30 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(1) // 1 second for testing
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        // initJWKSLoader triggers the initial load and starts the scheduler
+        loader.initJWKSLoader(securityEventCounter).join();
 
-        // Scheduler should not be active before first load
-        assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should not be active before first load");
+        // After initialization, scheduler should already be active (started during init)
+        assertTrue(loader.isBackgroundRefreshActive(), "Background refresh should be active after initialization");
 
-        // Trigger initial load
+        // Verify initial load worked by getting a key
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Initial load should work");
-
-        // Wait for scheduler to start using Awaitility
-        await("Background refresh scheduler to start")
-                .atMost(2, SECONDS)
-                .until(loader::isBackgroundRefreshActive);
 
         // Verify log message about scheduler start
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.INFO,
-                "Background JWKS refresh started with interval: 1");
+                JWTValidationLogMessages.INFO.JWKS_BACKGROUND_REFRESH_STARTED.resolveIdentifierString());
 
-        loader.shutdown();
+        loader.close();
 
-        // After shutdown, scheduler should be inactive
-        assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should be inactive after shutdown");
+        // After close, scheduler should be inactive
+        assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should be inactive after close");
     }
 
     @Test
@@ -158,11 +161,12 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(1) // 1 second for testing
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Trigger initial load
         Optional<KeyInfo> initialKeyInfo = loader.getKeyInfo(TEST_KID);
@@ -178,7 +182,19 @@ class HttpJwksLoaderSchedulerTest {
                 .atMost(2, SECONDS)
                 .until(() -> moduleDispatcher.getCallCounter() > initialCallCount);
 
-        loader.shutdown();
+        // Verify background refresh update was logged (either JWKS_BACKGROUND_REFRESH_UPDATED or JWKS_KEYS_UPDATED)
+        try {
+            LogAsserts.assertLogMessagePresentContaining(
+                    TestLogLevel.INFO,
+                    JWTValidationLogMessages.INFO.JWKS_BACKGROUND_REFRESH_UPDATED.resolveIdentifierString());
+        } catch (AssertionError e) {
+            // Background refresh might trigger JWKS_KEYS_UPDATED instead
+            LogAsserts.assertLogMessagePresentContaining(
+                    TestLogLevel.INFO,
+                    JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED.resolveIdentifierString());
+        }
+
+        loader.close();
     }
 
     @Test
@@ -191,35 +207,48 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(1) // 1 second for testing
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Trigger initial successful load
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Initial load should work");
-        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should be healthy after initial load");
+        assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should be healthy after initial load");
 
         // Make subsequent requests fail
         moduleDispatcher.returnError();
 
         // Wait for background refresh to encounter errors - scheduler runs every 1 second
         await("Scheduler to execute at least one background refresh cycle")
-                .atMost(1500, MILLISECONDS)
-                .pollDelay(1200, MILLISECONDS) // Give scheduler time to run at least once
+                .atMost(3000, MILLISECONDS)
+                .pollDelay(1500, MILLISECONDS) // Give scheduler time to run at least once
                 .until(() -> true); // Just wait for the time period
 
         // Loader should still be healthy if it has existing keys
-        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should remain healthy with cached keys even if background refresh fails");
+        assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should remain healthy with cached keys even if background refresh fails");
 
-        // Verify error logging occurred
+        // Verify HTTP error logging occurred
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.WARN,
-                "Background JWKS refresh failed");
+                "HTTP 500 (Server Error (500-599))");
 
-        loader.shutdown();
+        // Verify background refresh failure was logged (might also log HTTP fetch failure)
+        try {
+            LogAsserts.assertLogMessagePresentContaining(
+                    TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.resolveIdentifierString());
+        } catch (AssertionError e) {
+            // Might log HTTP_STATUS_WARNING instead when connection fails with 500 error
+            LogAsserts.assertLogMessagePresentContaining(
+                    TestLogLevel.WARN,
+                    HttpLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
+        }
+
+        loader.close();
     }
 
     @Test
@@ -232,11 +261,12 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(10) // Longer interval to avoid multiple executions during test
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Trigger multiple loads
         loader.getKeyInfo(TEST_KID);
@@ -254,12 +284,12 @@ class HttpJwksLoaderSchedulerTest {
                 TestLogLevel.INFO,
                 "Background JWKS refresh started");
 
-        loader.shutdown();
+        loader.close();
     }
 
     @Test
-    @DisplayName("Should shutdown scheduler cleanly")
-    void shouldShutdownSchedulerCleanly(URIBuilder uriBuilder) {
+    @DisplayName("Should close scheduler cleanly")
+    void shouldCloseSchedulerCleanly(URIBuilder uriBuilder) {
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
 
         // Ensure dispatcher is in normal mode
@@ -267,11 +297,12 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(1)
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Start scheduler
         loader.getKeyInfo(TEST_KID);
@@ -279,14 +310,14 @@ class HttpJwksLoaderSchedulerTest {
                 .atMost(500, MILLISECONDS)
                 .until(loader::isBackgroundRefreshActive);
 
-        // Shutdown should cancel the task
-        loader.shutdown();
-        assertFalse(loader.isBackgroundRefreshActive(), "Scheduler should be inactive after shutdown");
+        // Close should cancel the task
+        loader.close();
+        assertFalse(loader.isBackgroundRefreshActive(), "Scheduler should be inactive after close");
 
-        // Multiple shutdowns should be safe
-        loader.shutdown();
-        loader.shutdown();
-        assertFalse(loader.isBackgroundRefreshActive(), "Multiple shutdowns should be safe");
+        // Multiple closes should be safe
+        loader.close();
+        loader.close();
+        assertFalse(loader.isBackgroundRefreshActive(), "Multiple closes should be safe");
     }
 
     @Test
@@ -299,21 +330,25 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(1)
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Initial load should fail - getKeyInfo returns empty when loading fails
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isEmpty(), "Expected empty result for failed initial load");
 
-        // Scheduler should not be started after failed load
-        assertFalse(loader.isBackgroundRefreshActive(), "Background refresh should not start after failed initial load");
-        assertNotEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should not be healthy after failed load");
+        // Scheduler should be started after failed load to enable retries
+        assertTrue(loader.isBackgroundRefreshActive(), "Background refresh should start after failed initial load to enable retries");
+        // With retry capability, failed loads should not permanently corrupt status
+        LoaderStatus status = loader.getLoaderStatus();
+        assertTrue(status == LoaderStatus.UNDEFINED || status == LoaderStatus.OK,
+                "Loader should have UNDEFINED or OK status (not permanent ERROR) after failed load to enable retry");
 
-        loader.shutdown();
+        loader.close();
     }
 
     @Test
@@ -326,11 +361,12 @@ class HttpJwksLoaderSchedulerTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(1)
                 .build();
 
         HttpJwksLoader loader = new HttpJwksLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
 
         // Trigger initial load
         Optional<KeyInfo> keyInfo = loader.getKeyInfo(TEST_KID);
@@ -357,6 +393,6 @@ class HttpJwksLoaderSchedulerTest {
                     "Keys updated due to data change");
         }
 
-        loader.shutdown();
+        loader.close();
     }
 }

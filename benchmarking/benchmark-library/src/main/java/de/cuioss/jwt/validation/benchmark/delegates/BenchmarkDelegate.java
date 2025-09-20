@@ -16,7 +16,7 @@
 package de.cuioss.jwt.validation.benchmark.delegates;
 
 import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.TokenRepository;
+import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 
@@ -30,9 +30,9 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 public abstract class BenchmarkDelegate {
 
     protected final TokenValidator tokenValidator;
-    protected final TokenRepository tokenRepository;
+    protected final MockTokenRepository tokenRepository;
 
-    protected BenchmarkDelegate(TokenValidator tokenValidator, TokenRepository tokenRepository) {
+    protected BenchmarkDelegate(TokenValidator tokenValidator, MockTokenRepository tokenRepository) {
         this.tokenValidator = tokenValidator;
         this.tokenRepository = tokenRepository;
     }

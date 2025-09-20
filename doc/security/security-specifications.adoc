@@ -224,7 +224,7 @@ The following tests verify the implementation:
 ** JSON depth limit tests
 ** Large JSON array handling tests
 ** Large JSON string handling tests
-** JsonReaderFactory caching tests
+** DSL-JSON parser caching tests
 
 These security measures protect against common attacks such as memory exhaustion, stack overflow, and malformed input attacks.
 

@@ -15,11 +15,11 @@
  */
 package de.cuioss.jwt.quarkus.health;
 
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
@@ -340,6 +341,80 @@ class JwksEndpointHealthCheckTest {
                 "Both responses should have the same name");
     }
 
+    @Test
+    @DisplayName("Health check should be fail-fast and non-blocking (getLoaderStatus() behavior)")
+    void healthCheckShouldBeFailFastAndNonBlocking() {
+        // Create a fast JwksLoader implementation that demonstrates fail-fast behavior
+        JwksLoader failFastLoader = new JwksLoader() {
+            @Override
+            public Optional<KeyInfo> getKeyInfo(String kid) {
+                return Optional.empty();
+            }
+
+            @Override
+            public JwksType getJwksType() {
+                return JwksType.MEMORY;
+            }
+
+            @Override
+            public LoaderStatus getLoaderStatus() {
+                // This method should be fail-fast and return immediately without blocking
+                return LoaderStatus.UNDEFINED; // Simulates initial state before any loading attempt
+            }
+
+            @Override
+            public Optional<String> getIssuerIdentifier() {
+                return Optional.empty();
+            }
+
+            @Override
+            public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+                // No initialization needed for test
+                return CompletableFuture.completedFuture(LoaderStatus.UNDEFINED);
+            }
+        };
+
+        // Create issuer config with fail-fast loader
+        IssuerConfig failFastIssuerConfig = IssuerConfig.builder()
+                .issuerIdentifier("fail-fast-issuer")
+                .jwksLoader(failFastLoader)
+                .build();
+
+        // Create health check with fail-fast loader
+        JwksEndpointHealthCheck failFastHealthCheck = new JwksEndpointHealthCheck(
+                List.of(failFastIssuerConfig), 30);
+
+        // Measure execution time to ensure it's fail-fast
+        long startTime = System.currentTimeMillis();
+        HealthCheckResponse response = failFastHealthCheck.call();
+        long executionTime = System.currentTimeMillis() - startTime;
+
+        // Verify response
+        assertNotNull(response, "Response should not be null");
+        assertEquals("jwks-endpoints", response.getName(),
+                "Health check should have correct name");
+
+        // Verify fail-fast behavior - should complete very quickly (< 100ms)
+        assertTrue(executionTime < 100,
+                "Health check should be fail-fast (< 100ms), but took: " + executionTime + "ms");
+
+        // Verify response contains data about the UNDEFINED status
+        assertTrue(response.getData().isPresent(), "Data should be present");
+        Map<String, Object> data = response.getData().get();
+
+        // UNDEFINED status should be reported as DOWN in health check
+        assertEquals("DOWN", data.get("issuer.0.status"),
+                "UNDEFINED status should be reported as DOWN");
+        assertEquals("fail-fast-issuer", data.get("issuer.0.url"),
+                "URL should match issuer identifier");
+        assertEquals("memory", data.get("issuer.0.jwksType"),
+                "jwksType should be 'memory'");
+
+        // Overall status should be DOWN due to UNDEFINED loader status
+        assertEquals(HealthCheckResponse.Status.DOWN, response.getStatus(),
+                "Health check status should be DOWN with UNDEFINED loader status");
+    }
+
     // Mock JwksLoader implementations for testing
 
     /**
@@ -362,14 +437,16 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
             // Do nothing
+            return CompletableFuture.completedFuture(LoaderStatus.ERROR);
         }
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.ERROR;
         }
+
     }
 
     /**
@@ -392,14 +469,16 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
             // Do nothing
+            return CompletableFuture.completedFuture(LoaderStatus.OK);
         }
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.OK;
         }
+
     }
 
     /**
@@ -422,13 +501,15 @@ class JwksEndpointHealthCheckTest {
         }
 
         @Override
-        public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+        public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
             // Do nothing
+            return CompletableFuture.completedFuture(LoaderStatus.ERROR);
         }
 
         @Override
-        public LoaderStatus isHealthy() {
+        public LoaderStatus getLoaderStatus() {
             return LoaderStatus.ERROR;
         }
+
     }
 }

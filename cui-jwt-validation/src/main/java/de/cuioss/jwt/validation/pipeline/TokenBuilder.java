@@ -19,10 +19,9 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.NonNull;
 
 import java.util.HashMap;
@@ -51,9 +50,6 @@ import java.util.Optional;
  * @since 1.0
  */
 public class TokenBuilder {
-
-    // Singleton mapper for unknown claims
-    private static final IdentityMapper IDENTITY_MAPPER = new IdentityMapper();
 
     // Combined mapper lookup to avoid runtime checks
     private final Map<String, ClaimMapper> allMappers;
@@ -87,15 +83,14 @@ public class TokenBuilder {
      * @return an Optional containing the AccessTokenContent if it could be created, empty otherwise
      */
     public Optional<AccessTokenContent> createAccessToken(@NonNull DecodedJwt decodedJwt) {
-        Optional<JsonObject> bodyOption = decodedJwt.getBody();
-        if (bodyOption.isEmpty()) {
+        MapRepresentation body = decodedJwt.getBody();
+        if (body.isEmpty()) {
             return Optional.empty();
         }
 
-        JsonObject body = bodyOption.get();
         Map<String, ClaimValue> claims = extractClaims(body);
 
-        return Optional.of(new AccessTokenContent(claims, decodedJwt.rawToken(), null));
+        return Optional.of(new AccessTokenContent(claims, decodedJwt.rawToken(), null, body));
     }
 
     /**
@@ -105,46 +100,71 @@ public class TokenBuilder {
      * @return an Optional containing the IdTokenContent if it could be created, empty otherwise
      */
     public Optional<IdTokenContent> createIdToken(@NonNull DecodedJwt decodedJwt) {
-        Optional<JsonObject> bodyOption = decodedJwt.getBody();
-        if (bodyOption.isEmpty()) {
+        MapRepresentation body = decodedJwt.getBody();
+        if (body.isEmpty()) {
             return Optional.empty();
         }
 
-        JsonObject body = bodyOption.get();
         Map<String, ClaimValue> claims = extractClaims(body);
 
-        return Optional.of(new IdTokenContent(claims, decodedJwt.rawToken()));
+        return Optional.of(new IdTokenContent(claims, decodedJwt.rawToken(), body));
     }
 
 
     /**
-     * Extracts claims from a JSON object.
+     * Extracts claims from a MapRepresentation using proper claim mappers.
      *
-     * @param jsonObject the JSON object containing claims
+     * @param mapRepresentation the MapRepresentation containing claims
      * @return a map of claim names to claim values
      */
-    private Map<String, ClaimValue> extractClaims(JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
+    private Map<String, ClaimValue> extractClaims(MapRepresentation mapRepresentation) {
+        Map<String, ClaimValue> claims = HashMap.newHashMap(mapRepresentation.size());
 
-        for (String key : jsonObject.keySet()) {
-            ClaimMapper mapper = allMappers.getOrDefault(key, IDENTITY_MAPPER);
-            claims.put(key, mapper.map(jsonObject, key));
+        for (String key : mapRepresentation.keySet()) {
+            // Try to find a configured claim mapper for this key
+            ClaimMapper mapper = allMappers.get(key);
+
+            if (mapper != null) {
+                // Use the configured mapper (either built-in or custom)
+                ClaimValue claimValue = mapper.map(mapRepresentation, key);
+                claims.put(key, claimValue);
+            } else {
+                // Fallback for unknown claims - use identity mapping
+                Optional<String> stringValue = mapRepresentation.getString(key);
+                if (stringValue.isPresent()) {
+                    claims.put(key, ClaimValue.forPlainString(stringValue.get()));
+                } else {
+                    // Handle non-string values by converting to string
+                    Optional<Object> value = mapRepresentation.getValue(key);
+                    value.ifPresent(o -> claims.put(key, ClaimValue.forPlainString(o.toString())));
+                }
+            }
         }
 
         return claims;
     }
 
+
     /**
-     * Extracts claims for a Refresh-Token from a JSON object.
+     * Extracts claims for a Refresh-Token from a MapRepresentation.
      *
-     * @param jsonObject the JSON object containing claims
+     * @param mapRepresentation the MapRepresentation containing claims
      * @return a map of claim names to claim values
      */
-    public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull JsonObject jsonObject) {
-        Map<String, ClaimValue> claims = HashMap.newHashMap(jsonObject.size());
+    public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull MapRepresentation mapRepresentation) {
+        Map<String, ClaimValue> claims = HashMap.newHashMap(mapRepresentation.size());
 
-        for (String key : jsonObject.keySet()) {
-            claims.put(key, IDENTITY_MAPPER.map(jsonObject, key));
+        for (String key : mapRepresentation.keySet()) {
+            // Convert Map entry to ClaimValue
+            Optional<Object> value = mapRepresentation.getValue(key);
+            if (value.isPresent()) {
+                Object valueObj = value.get();
+                if (valueObj instanceof String stringValue) {
+                    claims.put(key, ClaimValue.forPlainString(stringValue));
+                } else {
+                    claims.put(key, ClaimValue.forPlainString(valueObj.toString()));
+                }
+            }
         }
 
         return claims;

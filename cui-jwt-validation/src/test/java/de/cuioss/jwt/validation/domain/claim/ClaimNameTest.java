@@ -15,6 +15,9 @@
  */
 package de.cuioss.jwt.validation.domain.claim;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldHandleObjectContracts;
@@ -29,6 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -43,11 +47,25 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests ClaimName functionality")
 class ClaimNameTest implements ShouldHandleObjectContracts<ClaimName> {
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("provideClaimNameMapTestData")
     @DisplayName("Map claims from JsonObject")
     void shouldMapClaimsFromJsonObject(ClaimName claimName, JsonObject jsonObject, ClaimValue expectedValue) {
-        ClaimValue result = claimName.map(jsonObject);
+        ClaimValue result = claimName.map(convertJsonObjectToMapRepresentation(jsonObject));
 
         assertNotNull(result, "Result should not be null");
         assertEquals(expectedValue.getType(), result.getType(), "Type should match expected");

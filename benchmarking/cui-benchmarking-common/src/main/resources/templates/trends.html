@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Trends</title>
+    <link rel="stylesheet" href="report-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data-loader.js"></script>
+</head>
+<body data-page-type="trends">
+    <header class="header">
+        <h1>CUI JWT <span id="benchmark-type-title">Benchmarking</span> Dashboard</h1>
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link">Overview</a>
+            <a href="trends.html" class="nav-link active">Trends</a>
+            <a href="detailed.html" class="nav-link">Detailed</a>
+            <span class="nav-separator">|</span>
+            <a href="../micro/index.html" class="nav-link">Micro</a>
+            <a href="../integration/index.html" class="nav-link">Integration</a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="trends">
+            <h2>Performance Trends</h2>
+            <p>Historical performance analysis and trend visualization.</p>
+            <div class="chart-container">
+                <canvas id="trends-chart"></canvas>
+            </div>
+            <div class="trends-summary">
+                <h3>Trend Analysis</h3>
+                <p>Performance Score: <span id="performance-score">N/A</span></p>
+                <p>Performance Grade: <span id="performance-grade">N/A</span></p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>Generated on <span id="report-timestamp">-</span></p>
+        <p>© 2025 CUI OpenSource Software</p>
+    </footer>
+</body>
+</html>

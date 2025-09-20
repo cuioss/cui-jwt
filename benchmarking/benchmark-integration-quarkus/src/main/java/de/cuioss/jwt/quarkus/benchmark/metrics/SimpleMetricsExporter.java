@@ -15,61 +15,49 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
+import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
+import de.cuioss.benchmarking.common.metrics.AbstractMetricsExporter;
 import de.cuioss.benchmarking.common.metrics.MetricsFetcher;
-import de.cuioss.jwt.quarkus.benchmark.constants.MetricConstants;
-import de.cuioss.tools.logging.CuiLogger;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Simplified metrics exporter that processes JWT bearer token validation metrics.
+ * Metrics exporter for integration benchmarks that processes JWT bearer token validation metrics.
  * Creates integration-metrics.json with bearer token validation results.
  * Uses dependency injection pattern for metrics fetching to improve testability.
  *
  * @since 1.0
  */
-public class SimpleMetricsExporter {
+public class SimpleMetricsExporter extends AbstractMetricsExporter {
 
-    private static final CuiLogger LOGGER = new CuiLogger(SimpleMetricsExporter.class);
-
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>)
-                    (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
-            .create();
     public static final String EVENT_TYPE = "event_type";
     public static final String RESULT = "result";
     public static final String CATEGORY = "category";
     public static final String GET_BEARER_TOKEN_RESULT = "getBearerTokenResult";
 
-    private final String outputDirectory;
+    private static final String METRICS_FILE = "integration-metrics.json";
     private final MetricsFetcher metricsFetcher;
 
     public SimpleMetricsExporter(String outputDirectory, MetricsFetcher metricsFetcher) {
-        this.outputDirectory = outputDirectory;
+        super(outputDirectory);
         this.metricsFetcher = metricsFetcher;
-        File dir = new File(outputDirectory);
-        dir.mkdirs();
-        LOGGER.debug("SimpleMetricsExporter initialized with output directory: {} (exists: {})",
-                dir.getAbsolutePath(), dir.exists());
+    }
+
+    @Override public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
+        if (!(metricsData instanceof Map)) {
+            // If not already a Map, try to fetch metrics
+            Map<String, Double> allMetrics = metricsFetcher.fetchMetrics();
+            exportJwtValidationMetrics(benchmarkMethodName, timestamp, allMetrics);
+        } else {
+            @SuppressWarnings("unchecked") Map<String, Double> allMetrics = (Map<String, Double>) metricsData;
+            exportJwtValidationMetrics(benchmarkMethodName, timestamp, allMetrics);
+        }
     }
 
     /**
@@ -77,69 +65,39 @@ public class SimpleMetricsExporter {
      * Updates the aggregated integration-metrics.json file.
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp) {
-        LOGGER.debug("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
-
-        // Always save raw metrics for ALL benchmarks
         try {
+            LOGGER.debug("Starting metrics export for benchmark: {}", benchmarkMethodName);
             Map<String, Double> allMetrics = metricsFetcher.fetchMetrics();
-            LOGGER.debug("Fetched {} metrics from Quarkus", allMetrics.size());
-
-            // Process JWT validation specific metrics if applicable
-            if (isJwtValidationBenchmark(benchmarkMethodName)) {
-                Map<String, Object> timedMetrics = extractTimedMetrics(allMetrics);
-                Map<String, Object> securityEventMetrics = extractSecurityEventMetrics(allMetrics);
-
-                // Create benchmark data with bearer token and security event metrics
-                Map<String, Object> benchmarkData = new LinkedHashMap<>();
-                benchmarkData.put("timestamp", timestamp.toString());
-                benchmarkData.put("bearer_token_producer_metrics", timedMetrics);
-                benchmarkData.put("security_event_counter_metrics", securityEventMetrics);
-
-                // Extract just the method name (remove class prefix)
-                String simpleBenchmarkName = benchmarkMethodName;
-                if (benchmarkMethodName.contains(".")) {
-                    simpleBenchmarkName = benchmarkMethodName.substring(benchmarkMethodName.lastIndexOf('.') + 1);
-                }
-
-                // Update aggregated file
-                updateAggregatedMetrics(simpleBenchmarkName, benchmarkData);
-            } else {
-                LOGGER.debug("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
-            }
-
+            LOGGER.debug("Fetched {} metrics from metricsFetcher", allMetrics.size());
+            exportJwtValidationMetrics(benchmarkMethodName, timestamp, allMetrics);
         } catch (IOException e) {
             LOGGER.error("Failed to export metrics for {}", benchmarkMethodName, e);
         }
     }
 
-    private void updateAggregatedMetrics(String benchmarkMethodName, Map<String, Object> benchmarkData) throws IOException {
-        String filename = outputDirectory + "/integration-metrics.json";
+    private void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp, Map<String, Double> allMetrics) throws IOException {
+        LOGGER.debug("Exporting JWT bearer token validation metrics for: {}", benchmarkMethodName);
+        LOGGER.debug("Fetched {} metrics from Quarkus", allMetrics.size());
 
-        // Read existing data
-        Map<String, Object> allMetrics = new LinkedHashMap<>();
-        File file = new File(filename);
-        if (file.exists()) {
-            String content = Files.readString(file.toPath());
-            if (!content.trim().isEmpty()) {
-                Type mapType = new TypeToken<Map<String, Object>>(){
-                }.getType();
-                allMetrics = GSON.fromJson(content, mapType);
-            }
-        }
+        // Process JWT validation specific metrics if applicable
+        if (isJwtValidationBenchmark(benchmarkMethodName)) {
+            Map<String, Object> timedMetrics = extractTimedMetrics(allMetrics);
+            Map<String, Object> securityEventMetrics = extractSecurityEventMetrics(allMetrics);
 
-        // Add/update benchmark data
-        allMetrics.put(benchmarkMethodName, benchmarkData);
+            // Create benchmark data with bearer token and security event metrics
+            Map<String, Object> benchmarkData = new LinkedHashMap<>();
+            benchmarkData.put("timestamp", timestamp.toString());
+            benchmarkData.put("bearer_token_producer_metrics", timedMetrics);
+            benchmarkData.put("security_event_counter_metrics", securityEventMetrics);
 
-        // Write back
-        File outputFile = new File(filename);
-        LOGGER.debug("Writing metrics to: {} (parent exists: {})",
-                outputFile.getAbsolutePath(), outputFile.getParentFile().exists());
+            // Extract just the method name (remove class prefix)
+            String simpleBenchmarkName = extractSimpleBenchmarkName(benchmarkMethodName);
 
-        try (FileWriter writer = new FileWriter(outputFile)) {
-            GSON.toJson(allMetrics, writer);
-            writer.flush();
-            LOGGER.debug("Updated integration-metrics.json with {} benchmarks at: {}",
-                    allMetrics.size(), outputFile.getAbsolutePath());
+            // Update aggregated file
+            String filepath = outputDirectory + "/" + METRICS_FILE;
+            updateAggregatedMetrics(filepath, simpleBenchmarkName, benchmarkData);
+        } else {
+            LOGGER.debug("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
         }
     }
 
@@ -263,7 +221,7 @@ public class SimpleMetricsExporter {
         // - _max: maximum observed value in seconds
         // We need to estimate percentiles from these values
 
-        String validationMetricPrefix = MetricConstants.BEARERTOKEN.VALIDATION.replace(".", "_") + "_seconds";
+        String validationMetricPrefix = BenchmarkConstants.Metrics.BearerToken.VALIDATION.replace(".", "_") + "_seconds";
 
         // Collect the available metrics
         Double count = null;
@@ -333,19 +291,5 @@ public class SimpleMetricsExporter {
         return timedMetrics;
     }
 
-
-    /**
-     * Format number according to rules: 1 decimal for <10, no decimal for >=10
-     */
-    private Object formatNumber(double value) {
-        if (value < 10) {
-            // Use DecimalFormat to ensure exactly 1 decimal place
-            DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.US));
-            return Double.parseDouble(df.format(value));
-        } else {
-            // Return as integer for values >= 10
-            return Math.round(value);
-        }
-    }
 
 }

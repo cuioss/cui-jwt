@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.JwkKey;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -57,18 +57,19 @@ public final class JwkKeyHandler {
     // Cache for KeyFactory instances to improve performance
     private static final Map<String, KeyFactory> KEY_FACTORY_CACHE = new ConcurrentHashMap<>();
 
+
     /**
-     * Parse an RSA key from a JWK.
+     * Parses an RSA public key from a JwkKey record.
      *
-     * @param jwk the JWK object
-     * @return the RSA public key
+     * @param jwk the JwkKey record containing RSA parameters
+     * @return the parsed RSA public key
      * @throws InvalidKeySpecException if the key specification is invalid
      */
-    public static PublicKey parseRsaKey(JsonObject jwk) throws InvalidKeySpecException {
-        // Get the modulus and exponent
-        BigInteger exponent = JwkKeyConstants.Exponent.from(jwk)
+    public static PublicKey parseRsaKey(JwkKey jwk) throws InvalidKeySpecException {
+        // Use JwkKey's transformation methods with proper validation
+        BigInteger exponent = jwk.getExponentAsBigInteger()
                 .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("e")));
-        BigInteger modulus = JwkKeyConstants.Modulus.from(jwk)
+        BigInteger modulus = jwk.getModulusAsBigInteger()
                 .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("n")));
 
         // Create RSA public key
@@ -77,22 +78,21 @@ public final class JwkKeyHandler {
         return factory.generatePublic(spec);
     }
 
+
     /**
-     * Parse an EC key from a JWK.
+     * Parse an EC key from a JwkKey record.
      *
-     * @param jwk the JWK object
+     * @param jwk the JwkKey record containing EC parameters
      * @return the EC public key
      * @throws InvalidKeySpecException if the key specification is invalid
      */
-    public static PublicKey parseEcKey(JsonObject jwk) throws InvalidKeySpecException {
-        var curveOpt = JwkKeyConstants.Curve.from(jwk);
-        if (curveOpt.isEmpty()) {
-            throw new InvalidKeySpecException(MESSAGE.formatted("crv"));
-        }
-        String curve = curveOpt.get();
-        BigInteger x = JwkKeyConstants.XCoordinate.from(jwk)
+    public static PublicKey parseEcKey(JwkKey jwk) throws InvalidKeySpecException {
+        // Use JwkKey's transformation methods with proper validation
+        String curve = jwk.getCrv()
+                .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("crv")));
+        BigInteger x = jwk.getXCoordinateAsBigInteger()
                 .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("x")));
-        BigInteger y = JwkKeyConstants.YCoordinate.from(jwk)
+        BigInteger y = jwk.getYCoordinateAsBigInteger()
                 .orElseThrow(() -> new InvalidKeySpecException(MESSAGE.formatted("y")));
 
         // Create EC point

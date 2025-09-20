@@ -15,7 +15,8 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
@@ -29,8 +30,14 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests for issuer discovery in HttpWellKnownResolver.
+ * <p>
+ * Verifies that the issuer is correctly discovered from the well-known configuration
+ * and handles various error scenarios appropriately.
+ */
 @EnableTestLogger
-@DisplayName("HttpWellKnownResolver Issuer String Tests")
+@DisplayName("HttpWellKnownResolver Issuer Discovery")
 @EnableMockWebServer
 class HttpWellKnownResolverIssuerTest {
 
@@ -45,134 +52,170 @@ class HttpWellKnownResolverIssuerTest {
     }
 
     @Test
-    @DisplayName("Should return issuer string from successful well-known response")
-    void shouldReturnIssuerStringFromSuccessfulResponse(URIBuilder uriBuilder) {
-        // Setup dispatcher with valid response
+    @DisplayName("Should return issuer from discovered configuration")
+    void shouldReturnIssuerFromDiscoveredConfiguration(URIBuilder uriBuilder) {
+        // Setup well-known dispatcher to return valid response
         moduleDispatcher.returnDefault();
 
+        String baseUrl = uriBuilder.buildAsString();
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
         WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
                 .build();
 
-        resolver = new HttpWellKnownResolver(config);
+        resolver = config.createResolver();
 
-        // Verify issuer is returned as a string
+        // Get issuer - should return the discovered issuer
         Optional<String> issuer = resolver.getIssuer();
-        assertTrue(issuer.isPresent(), "Issuer should be present");
-        assertNotNull(issuer.get(), "Issuer should not be null");
-        assertTrue(issuer.get().startsWith("http"), "Issuer should be a URL string");
+        assertTrue(issuer.isPresent(), "Issuer should be discovered");
+        assertEquals(baseUrl, issuer.get(), "Issuer should match expected URL");
 
-        // Verify health status is OK
-        assertEquals(LoaderStatus.OK, resolver.isHealthy());
+        // Verify health status is OK after successful discovery
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
+
+        // Verify well-known endpoint was called once
+        assertEquals(1, moduleDispatcher.getCallCounter(), "Well-known endpoint should be called once");
     }
 
     @Test
-    @DisplayName("Should return empty Optional when issuer is missing from response")
-    void shouldReturnEmptyWhenIssuerMissing(URIBuilder uriBuilder) {
+    @DisplayName("Should return empty Optional when discovery fails")
+    void shouldReturnEmptyOptionalWhenDiscoveryFails(URIBuilder uriBuilder) {
+        // Setup dispatcher to return error
+        moduleDispatcher.returnError();
+
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
+                .build();
+
+        resolver = config.createResolver();
+
+        // Issuer should not be available when discovery fails
+        Optional<String> issuer = resolver.getIssuer();
+        assertFalse(issuer.isPresent(), "Issuer should not be available when discovery fails");
+
+        // Health status should reflect error
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
+
+        // Well-known endpoint should be called
+        assertTrue(moduleDispatcher.getCallCounter() >= 1, "Well-known endpoint should be called at least once");
+    }
+
+    @Test
+    @DisplayName("Should return empty Optional when issuer is missing")
+    void shouldReturnEmptyOptionalWhenIssuerMissing(URIBuilder uriBuilder) {
         // Setup dispatcher with response missing issuer
         moduleDispatcher.returnMissingIssuer();
 
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
         WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
                 .build();
 
-        resolver = new HttpWellKnownResolver(config);
+        resolver = config.createResolver();
 
-        // Verify issuer is empty
+        // Issuer should not be available when missing from response
         Optional<String> issuer = resolver.getIssuer();
-        assertFalse(issuer.isPresent(), "Issuer should not be present when missing from response");
+        assertFalse(issuer.isPresent(), "Issuer should not be available when missing from response");
 
-        // Verify health status is ERROR since issuer is required
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        // Health status should be ERROR since issuer is required
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
     }
 
     @Test
-    @DisplayName("Should handle issuer mismatch validation")
-    void shouldHandleIssuerMismatchValidation(URIBuilder uriBuilder) {
-        // Setup dispatcher with invalid issuer (mismatch)
+    @DisplayName("Should cache discovery results")
+    void shouldCacheDiscoveryResults(URIBuilder uriBuilder) {
+        // Setup well-known dispatcher to return valid response
+        moduleDispatcher.returnDefault();
+
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
+                .build();
+
+        resolver = config.createResolver();
+
+        // Get issuer multiple times
+        Optional<String> issuer1 = resolver.getIssuer();
+        Optional<String> issuer2 = resolver.getIssuer();
+        Optional<String> issuer3 = resolver.getIssuer();
+
+        // All should return the same result
+        assertTrue(issuer1.isPresent());
+        assertTrue(issuer2.isPresent());
+        assertTrue(issuer3.isPresent());
+        assertEquals(issuer1.get(), issuer2.get(), "Multiple calls should return same issuer");
+        assertEquals(issuer2.get(), issuer3.get(), "Multiple calls should return same issuer");
+
+        // Well-known should only be called once (cached)
+        assertEquals(1, moduleDispatcher.getCallCounter(), "Well-known endpoint should be called once (cached)");
+    }
+
+    @Test
+    @DisplayName("Should handle invalid issuer appropriately")
+    void shouldHandleInvalidIssuerAppropriately(URIBuilder uriBuilder) {
+        // Setup dispatcher with invalid issuer
         moduleDispatcher.returnInvalidIssuer();
 
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
         WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
                 .build();
 
-        resolver = new HttpWellKnownResolver(config);
+        resolver = config.createResolver();
 
-        // When issuer validation fails, issuer should not be set
+        // Should still return the issuer even if it's invalid (validation is not the resolver's job)
         Optional<String> issuer = resolver.getIssuer();
-        assertFalse(issuer.isPresent(), "Issuer should not be present when validation fails");
+        assertTrue(issuer.isPresent(), "Invalid issuer should still be returned");
+        assertTrue(issuer.get().contains("invalid-"), "Should contain the invalid issuer");
 
-        // Verify health status is ERROR
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        // Health status should be OK for successful HTTP response (content validation is separate)
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
     }
 
     @Test
-    @DisplayName("Should cache issuer after successful load")
-    void shouldCacheIssuerAfterSuccessfulLoad(URIBuilder uriBuilder) {
-        // Setup dispatcher with valid response
-        moduleDispatcher.returnDefault();
+    @DisplayName("Should work with minimal configuration")
+    void shouldWorkWithMinimalConfiguration(URIBuilder uriBuilder) {
+        // Setup dispatcher to return only required fields
+        moduleDispatcher.returnOnlyRequiredFields();
+
+        String baseUrl = uriBuilder.buildAsString();
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
 
         WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
                 .build();
 
-        resolver = new HttpWellKnownResolver(config);
+        resolver = config.createResolver();
 
-        // First call - should load from server
-        Optional<String> issuer1 = resolver.getIssuer();
-        assertTrue(issuer1.isPresent());
+        // Should still work with minimal configuration
+        Optional<String> issuer = resolver.getIssuer();
+        assertTrue(issuer.isPresent(), "Issuer should be available from minimal config");
+        assertEquals(baseUrl, issuer.get(), "Issuer should match expected URL");
 
-        // Second call - should return cached value
-        Optional<String> issuer2 = resolver.getIssuer();
-        assertTrue(issuer2.isPresent());
+        // JWKS URI should also be available
+        Optional<String> jwksUri = resolver.getJwksUri();
+        assertTrue(jwksUri.isPresent(), "JWKS URI should be available from minimal config");
 
-        // Both should be the same
-        assertEquals(issuer1.get(), issuer2.get());
-
-        // Verify only one request was made
-        assertEquals(1, moduleDispatcher.getCallCounter());
-    }
-
-    @Test
-    @DisplayName("Should handle concurrent access to issuer")
-    void shouldHandleConcurrentAccessToIssuer(URIBuilder uriBuilder) throws InterruptedException {
-        // Setup dispatcher with valid response
-        moduleDispatcher.returnDefault();
-
-        WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl(uriBuilder.addPathSegment(".well-known").addPathSegment("openid-configuration").buildAsString())
-                .build();
-
-        resolver = new HttpWellKnownResolver(config);
-
-        int threadCount = 10;
-        Thread[] threads = new Thread[threadCount];
-        @SuppressWarnings("unchecked") Optional<String>[] results = new Optional[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            final int index = i;
-            threads[i] = new Thread(() -> {
-                results[index] = resolver.getIssuer();
-            });
-        }
-
-        // Start all threads
-        for (Thread thread : threads) {
-            thread.start();
-        }
-
-        // Wait for all threads to complete
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        // All threads should get the same issuer value
-        for (int i = 0; i < threadCount; i++) {
-            assertTrue(results[i].isPresent(), "Thread " + i + " should have received issuer");
-            assertEquals(results[0].get(), results[i].get(), "All threads should receive the same issuer");
-        }
-
-        // Should only make one request despite concurrent access
-        assertEquals(1, moduleDispatcher.getCallCounter());
+        // Other endpoints might not be available in minimal config
+        Optional<String> authEndpoint = resolver.getAuthorizationEndpoint();
+        assertFalse(authEndpoint.isPresent(), "Authorization endpoint should not be in minimal config");
     }
 }

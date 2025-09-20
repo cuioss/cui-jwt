@@ -16,12 +16,17 @@
 package de.cuioss.benchmarking.common.util;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Common JSON serialization utilities for benchmark results.
@@ -39,9 +44,22 @@ public final class JsonSerializationHelper {
      * - Pretty printing
      * - Smart number formatting (integers without .0)
      * - ISO instant formatting
+     * - Special floating point value serialization
+     * - Thread-safe singleton
      */
     public static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
+            .serializeSpecialFloatingPointValues()
+            .registerTypeAdapter(Double.class, new DoubleSerializer())
+            .registerTypeAdapter(Instant.class, new InstantSerializer())
+            .create();
+
+    /**
+     * Compact Gson instance for minimal output (no pretty printing).
+     * Useful for reducing JSON size in performance-critical situations.
+     */
+    public static final Gson COMPACT_GSON = new GsonBuilder()
+            .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(Double.class, new DoubleSerializer())
             .registerTypeAdapter(Instant.class, new InstantSerializer())
             .create();
@@ -78,6 +96,99 @@ public final class JsonSerializationHelper {
     }
 
     /**
+     * Reads a JSON file into a generic type using TypeToken.
+     * Useful for deserializing collections and generic types.
+     *
+     * @param <T> the type to deserialize to
+     * @param path the file path to read from
+     * @param typeToken the TypeToken representing the generic type
+     * @return the deserialized object
+     * @throws IOException if an I/O error occurs
+     */
+    public static <T> T readJsonFile(Path path, TypeToken<T> typeToken) throws IOException {
+        String json = Files.readString(path);
+        return GSON.fromJson(json, typeToken.getType());
+    }
+
+    /**
+     * Serializes an object to JSON string using the default GSON instance.
+     *
+     * @param object the object to serialize
+     * @return the JSON string representation
+     */
+    public static String toJson(Object object) {
+        return GSON.toJson(object);
+    }
+
+    /**
+     * Serializes an object to compact JSON string (no pretty printing).
+     *
+     * @param object the object to serialize
+     * @return the compact JSON string representation
+     */
+    public static String toCompactJson(Object object) {
+        return COMPACT_GSON.toJson(object);
+    }
+
+    /**
+     * Deserializes a JSON string to an object.
+     *
+     * @param <T> the type to deserialize to
+     * @param json the JSON string
+     * @param type the class of the type to deserialize
+     * @return the deserialized object
+     */
+    public static <T> T fromJson(String json, Class<T> type) {
+        return GSON.fromJson(json, type);
+    }
+
+    /**
+     * Deserializes a JSON string to a generic type using TypeToken.
+     *
+     * @param <T> the type to deserialize to
+     * @param json the JSON string
+     * @param typeToken the TypeToken representing the generic type
+     * @return the deserialized object
+     */
+    public static <T> T fromJson(String json, TypeToken<T> typeToken) {
+        return GSON.fromJson(json, typeToken.getType());
+    }
+
+    /**
+     * Convenience method for deserializing JSON to Map&lt;String, Object&gt;.
+     *
+     * @param json the JSON string
+     * @return the deserialized map
+     */
+    public static Map<String, Object> jsonToMap(String json) {
+        Type type = new TypeToken<Map<String, Object>>() {
+        }.getType();
+        return GSON.fromJson(json, type);
+    }
+
+    /**
+     * Convenience method for deserializing JSON to List&lt;Map&lt;String, Object&gt;&gt;.
+     *
+     * @param json the JSON string
+     * @return the deserialized list of maps
+     */
+    public static List<Map<String, Object>> jsonToListOfMaps(String json) {
+        Type type = new TypeToken<List<Map<String, Object>>>() {
+        }.getType();
+        return GSON.fromJson(json, type);
+    }
+
+    /**
+     * Creates a JsonElement from an object using the default GSON instance.
+     *
+     * @param object the object to convert
+     * @return the JsonElement representation
+     */
+    public static JsonElement toJsonTree(Object object) {
+        return GSON.toJsonTree(object);
+    }
+
+    /**
      * Formats a double value for display.
      * Returns integer representation if the value is a whole number.
      *
@@ -88,7 +199,7 @@ public final class JsonSerializationHelper {
         if (value == (long) value) {
             return String.valueOf((long) value);
         }
-        return "%.2f".formatted(value);
+        return String.format(Locale.US, "%.2f", value);
     }
 
     /**
@@ -96,7 +207,7 @@ public final class JsonSerializationHelper {
      * Serializes whole numbers without decimal point.
      */
     private static class DoubleSerializer implements JsonSerializer<Double> {
-        @Override public JsonElement serialize(Double src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+        @Override public JsonElement serialize(Double src, Type typeOfSrc, JsonSerializationContext context) {
             if (src == null) {
                 return JsonNull.INSTANCE;
             }
@@ -115,7 +226,7 @@ public final class JsonSerializationHelper {
      * Serializes to ISO-8601 format.
      */
     private static class InstantSerializer implements JsonSerializer<Instant> {
-        @Override public JsonElement serialize(Instant src, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+        @Override public JsonElement serialize(Instant src, Type typeOfSrc, JsonSerializationContext context) {
             if (src == null) {
                 return JsonNull.INSTANCE;
             }

@@ -15,20 +15,25 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
-import jakarta.json.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.StringReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -72,9 +77,7 @@ class TokenSignatureValidatorES256FormatTest {
         var decodedJwt = createES256TokenWithIeeeP1363Signature(tokenHolder);
 
         // This should now work with format conversion
-        assertDoesNotThrow(() -> {
-            validator.validateSignature(decodedJwt);
-        });
+        assertDoesNotThrow(() -> validator.validateSignature(decodedJwt));
     }
 
     @Test
@@ -89,9 +92,7 @@ class TokenSignatureValidatorES256FormatTest {
         var decodedJwt = tokenHolder.asDecodedJwt();
 
         // This should now work with the implemented format conversion
-        assertDoesNotThrow(() -> {
-            validator.validateSignature(decodedJwt);
-        });
+        assertDoesNotThrow(() -> validator.validateSignature(decodedJwt));
     }
 
     /**
@@ -133,15 +134,14 @@ class TokenSignatureValidatorES256FormatTest {
             String completeJwt = dataToSign + "." + signatureEncoded;
             String[] parts = completeJwt.split("\\.");
 
-            // Parse header and payload back to JSON objects
-            var headerJson = Json.createReader(
-                    new StringReader(header)).readObject();
-            var payloadJson = Json.createReader(
-                    new StringReader(payload)).readObject();
+            // Parse header and payload using DSL-JSON
+            var dslJson = ParserConfig.builder().build().getDslJson();
 
-            return new DecodedJwt(headerJson, payloadJson, signatureEncoded, parts, completeJwt);
+            var jwtHeader = dslJson.deserialize(JwtHeader.class, header.getBytes(), header.length());
+            var mapRepresentation = MapRepresentation.fromJson(dslJson, payload);
+            return new DecodedJwt(jwtHeader, mapRepresentation, signatureEncoded, parts, completeJwt);
 
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | IOException e) {
             throw new IllegalStateException("Failed to create IEEE P1363 format ES256 token", e);
         }
     }
@@ -150,32 +150,16 @@ class TokenSignatureValidatorES256FormatTest {
      * Creates a JSON payload string from the token holder's claims.
      */
     private String createPayloadFromToken(TestTokenHolder tokenHolder) {
-        var claims = tokenHolder.getClaims();
-        var jsonBuilder = Json.createObjectBuilder();
+        // Get the existing JWT token and extract the payload
+        String rawToken = tokenHolder.getRawToken();
+        String[] parts = rawToken.split("\\.");
+        if (parts.length < 2) {
+            throw new IllegalStateException("Invalid JWT token format");
+        }
 
-        claims.forEach((key, value) -> {
-            if (value != null && value.getOriginalString() != null) {
-                switch (value.getType()) {
-                    case STRING_LIST:
-                        var arrayBuilder = Json.createArrayBuilder();
-                        value.getAsList().forEach(arrayBuilder::add);
-                        jsonBuilder.add(key, arrayBuilder);
-                        break;
-                    case DATETIME:
-                        var dateTime = value.getDateTime();
-                        if (dateTime != null) {
-                            jsonBuilder.add(key, dateTime.toEpochSecond());
-                        }
-                        break;
-                    case STRING:
-                    default:
-                        jsonBuilder.add(key, value.getOriginalString());
-                        break;
-                }
-            }
-        });
-
-        return jsonBuilder.build().toString();
+        // Decode the payload part
+        byte[] payloadBytes = Base64.getUrlDecoder().decode(parts[1]);
+        return new String(payloadBytes, StandardCharsets.UTF_8);
     }
 
     /**
@@ -183,7 +167,7 @@ class TokenSignatureValidatorES256FormatTest {
      * This is a simplified conversion for ES256 (P-256 curve).
      */
     @SuppressWarnings("java:S125")
-    private byte[] convertAsn1ToIeeeP1363(byte[] asn1Signature) throws Exception {
+    private byte[] convertAsn1ToIeeeP1363(byte[] asn1Signature) {
         // Parse ASN.1 DER structure: SEQUENCE { r INTEGER, s INTEGER }
         // This is a simplified parser for the specific case
 

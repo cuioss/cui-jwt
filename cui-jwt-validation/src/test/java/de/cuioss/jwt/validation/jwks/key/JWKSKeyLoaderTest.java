@@ -31,7 +31,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
 import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED;
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger(debug = {JWKSKeyLoader.class}, trace = {JWKSKeyLoader.class})
@@ -115,7 +117,8 @@ class JWKSKeyLoaderTest {
             invalidLoader.initJWKSLoader(new SecurityEventCounter());
             Optional<KeyInfo> keyInfo = invalidLoader.getKeyInfo(TEST_KID);
             assertFalse(keyInfo.isPresent(), "Key info should not be present when JWKS is invalid");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR, "Failed to parse JWKS JSON");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                    ERROR.JWKS_INVALID_JSON.resolveIdentifierString());
         }
 
         @Test
@@ -129,7 +132,8 @@ class JWKSKeyLoaderTest {
             missingFieldsLoader.initJWKSLoader(new SecurityEventCounter());
             Optional<KeyInfo> keyInfo = missingFieldsLoader.getKeyInfo(TEST_KID);
             assertFalse(keyInfo.isPresent(), "Key info should not be present when JWK is missing required fields");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Failed to parse RSA key");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    WARN.RSA_KEY_PARSE_FAILED.resolveIdentifierString());
         }
     }
 
@@ -164,9 +168,8 @@ class JWKSKeyLoaderTest {
         void shouldWorkWithCustomParserConfig() {
             ParserConfig customConfig = ParserConfig.builder()
                     .maxPayloadSize(1024)
-                    .maxStringSize(512)
-                    .maxArraySize(10)
-                    .maxDepth(5)
+                    .maxStringLength(512)
+                    .maxBufferSize(2048)
                     .build();
             JWKSKeyLoader loaderWithCustomConfig = JWKSKeyLoader.builder()
                     .jwksContent(jwksContent)
@@ -253,7 +256,8 @@ class JWKSKeyLoaderTest {
 
             Optional<KeyInfo> keyInfo = loader.getKeyInfo("test-kid");
             assertFalse(keyInfo.isPresent(), "Key should be rejected with unsupported algorithm RS256");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Invalid or unsupported algorithm");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    WARN.JWK_INVALID_ALGORITHM.resolveIdentifierString());
         }
 
         @Test
@@ -270,6 +274,123 @@ class JWKSKeyLoaderTest {
 
             Optional<KeyInfo> keyInfo = loader.getKeyInfo("test-kid");
             assertTrue(keyInfo.isPresent(), "Key should be loaded with default preferences when null is passed");
+        }
+    }
+
+    @Nested
+    @DisplayName("JWK Validation Tests")
+    class JwkValidationTests {
+        @Test
+        @DisplayName("Should handle JWK with missing kty field")
+        void shouldHandleJwkWithMissingKty() {
+            String jwksMissingKty = """
+                {
+                    "keys": [
+                        {
+                            "kid": "test-kid",
+                            "use": "sig",
+                            "alg": "RS256",
+                            "n": "test-modulus",
+                            "e": "AQAB"
+                        }
+                    ]
+                }
+                """;
+
+            JWKSKeyLoader loader = JWKSKeyLoader.builder()
+                    .jwksContent(jwksMissingKty)
+                    .build();
+            loader.initJWKSLoader(new SecurityEventCounter());
+
+            Optional<KeyInfo> keyInfo = loader.getKeyInfo("test-kid");
+            assertFalse(keyInfo.isPresent(), "Key should not be loaded without kty field");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    WARN.JWK_MISSING_KTY.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should handle JWK with unsupported key type")
+        void shouldHandleJwkWithUnsupportedKeyType() {
+            String jwksUnsupportedType = """
+                {
+                    "keys": [
+                        {
+                            "kty": "UNKNOWN",
+                            "kid": "test-kid",
+                            "use": "sig",
+                            "alg": "RS256"
+                        }
+                    ]
+                }
+                """;
+
+            JWKSKeyLoader loader = JWKSKeyLoader.builder()
+                    .jwksContent(jwksUnsupportedType)
+                    .build();
+            loader.initJWKSLoader(new SecurityEventCounter());
+
+            Optional<KeyInfo> keyInfo = loader.getKeyInfo("test-kid");
+            assertFalse(keyInfo.isPresent(), "Key should not be loaded with unsupported key type");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    WARN.JWK_UNSUPPORTED_KEY_TYPE.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should handle JWK with key ID exceeding max length")
+        void shouldHandleJwkWithKeyIdExceedingMaxLength() {
+            String longKid = "k".repeat(300); // Exceeds typical max length
+            String jwksLongKid = """
+                {
+                    "keys": [
+                        {
+                            "kty": "RSA",
+                            "kid": "%s",
+                            "use": "sig",
+                            "alg": "RS256",
+                            "n": "test-modulus",
+                            "e": "AQAB"
+                        }
+                    ]
+                }
+                """.formatted(longKid);
+
+            JWKSKeyLoader loader = JWKSKeyLoader.builder()
+                    .jwksContent(jwksLongKid)
+                    .build();
+            loader.initJWKSLoader(new SecurityEventCounter());
+
+            Optional<KeyInfo> keyInfo = loader.getKeyInfo(longKid);
+            assertFalse(keyInfo.isPresent(), "Key should not be loaded with excessively long key ID");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    WARN.JWK_KEY_ID_TOO_LONG.resolveIdentifierString());
+        }
+
+        @Test
+        @DisplayName("Should handle EC key parse failure")
+        void shouldHandleEcKeyParseFailure() {
+            String invalidEcJwks = """
+                {
+                    "keys": [
+                        {
+                            "kty": "EC",
+                            "kid": "test-kid",
+                            "use": "sig",
+                            "alg": "ES256",
+                            "crv": "P-256"
+                        }
+                    ]
+                }
+                """;
+
+            JWKSKeyLoader loader = JWKSKeyLoader.builder()
+                    .jwksContent(invalidEcJwks)
+                    .build();
+            loader.initJWKSLoader(new SecurityEventCounter());
+
+            Optional<KeyInfo> keyInfo = loader.getKeyInfo("test-kid");
+            assertFalse(keyInfo.isPresent(), "EC key should not be loaded without required fields");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    WARN.EC_KEY_PARSE_FAILED.resolveIdentifierString());
         }
     }
 }

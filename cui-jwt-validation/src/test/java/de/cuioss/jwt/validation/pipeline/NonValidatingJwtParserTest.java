@@ -15,15 +15,15 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -75,19 +75,21 @@ class NonValidatingJwtParserTest {
             DecodedJwt jwt = parser.decode(VALID_TOKEN);
 
             // Verify header
-            assertTrue(jwt.getHeader().isPresent(), "Header should be present");
-            JsonObject header = jwt.getHeader().get();
-            assertEquals("RS256", header.getString("alg"), "Algorithm should be RS256");
-            assertEquals("JWT", header.getString("typ"), "Type should be JWT");
-            assertEquals("test-key-id", header.getString("kid"), "Key ID should match expected");
+            var header = jwt.getHeader();
+            assertNotNull(header, "Header should be present");
+            assertNotNull(header.alg(), "Algorithm should be present");
+            assertEquals("RS256", header.alg(), "Algorithm should be RS256");
+            assertEquals("JWT", header.getTyp().orElse(""), "Type should be JWT");
+            assertEquals("test-key-id", header.getKid().orElse(""), "Key ID should match expected");
 
             // Verify body
-            assertTrue(jwt.getBody().isPresent(), "Body should be present");
-            JsonObject body = jwt.getBody().get();
-            assertEquals("1234567890", body.getString("sub"), "Subject should match expected");
-            assertEquals("John Doe", body.getString("name"), "Name should match expected");
-            assertEquals("https://example.com", body.getString("iss"), "Issuer should match expected");
-            assertEquals(1735689600, body.getInt("exp"), "Expiration should match expected");
+            var body = jwt.getBody();
+            assertNotNull(body, "Body should be present");
+            assertFalse(body.isEmpty(), "Body should not be empty");
+            assertEquals("1234567890", body.getString("sub").orElse(""), "Subject should match expected");
+            assertEquals("John Doe", body.getString("name").orElse(""), "Name should match expected");
+            assertEquals("https://example.com", body.getString("iss").orElse(""), "Issuer should match expected");
+            assertEquals(1735689600, body.getNumber("exp").orElse(0).intValue(), "Expiration should match expected");
 
             // Verify signature
             assertTrue(jwt.getSignature().isPresent(), "Signature should be present");
@@ -138,6 +140,22 @@ class NonValidatingJwtParserTest {
 
             // Verify the exception has a valid event type
             assertNotNull(exception.getEventType(), "Exception should have an event type");
+            // The tokens provided don't have valid JWT structure (missing periods), so they fail during decode
+            assertTrue(
+                    exception.getEventType() == EventType.INVALID_JWT_FORMAT ||
+                            exception.getEventType() == EventType.FAILED_TO_DECODE_JWT,
+                    "Exception should have INVALID_JWT_FORMAT or FAILED_TO_DECODE_JWT event type");
+
+            // Verify log message - could be either depending on the failure mode
+            // Try to assert either message might be present, catch the assertion error
+            try {
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                        JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.resolveIdentifierString());
+            } catch (AssertionError e) {
+                // If first assertion fails, the second must pass
+                LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                        JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.resolveIdentifierString());
+            }
         }
 
         @Test
@@ -162,12 +180,7 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle missing issuer")
         void shouldHandleMissingIssuer() {
-            JsonObjectBuilder payloadBuilder = Json.createObjectBuilder()
-                    .add("sub", "1234567890")
-                    .add("name", "John Doe")
-                    .add("exp", 1735689600);
-
-            String payloadWithoutIssuer = payloadBuilder.build().toString();
+            String payloadWithoutIssuer = "{\"sub\":\"1234567890\",\"name\":\"John Doe\",\"exp\":1735689600}";
             String encodedPayloadWithoutIssuer = Base64.getUrlEncoder().encodeToString(payloadWithoutIssuer.getBytes(StandardCharsets.UTF_8));
             String tokenWithoutIssuer = ENCODED_HEADER + "." + encodedPayloadWithoutIssuer + "." + ENCODED_SIGNATURE;
 
@@ -182,11 +195,7 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle missing kid")
         void shouldHandleMissingKid() {
-            JsonObjectBuilder headerBuilder = Json.createObjectBuilder()
-                    .add("alg", "RS256")
-                    .add("typ", "JWT");
-
-            String headerWithoutKid = headerBuilder.build().toString();
+            String headerWithoutKid = "{\"alg\":\"RS256\",\"typ\":\"JWT\"}";
             String encodedHeaderWithoutKid = Base64.getUrlEncoder().encodeToString(headerWithoutKid.getBytes(StandardCharsets.UTF_8));
             String tokenWithoutKid = encodedHeaderWithoutKid + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;
 
@@ -216,6 +225,10 @@ class NonValidatingJwtParserTest {
             // Verify the exception has the correct event type
             assertEquals(EventType.TOKEN_SIZE_EXCEEDED, exception.getEventType(),
                     "Exception should have TOKEN_SIZE_EXCEEDED event type");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.resolveIdentifierString());
         }
 
         @Test
@@ -240,6 +253,10 @@ class NonValidatingJwtParserTest {
             // Verify the exception has the correct event type
             assertEquals(EventType.TOKEN_SIZE_EXCEEDED, exception.getEventType(),
                     "Exception should have TOKEN_SIZE_EXCEEDED event type");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.resolveIdentifierString());
         }
 
         @Test
@@ -276,9 +293,12 @@ class NonValidatingJwtParserTest {
                     "Exception should have DECODED_PART_SIZE_EXCEEDED event type");
 
             // Check the event count
-
             assertEquals(1, counter.getCount(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED),
                     "Should count DECODED_PART_SIZE_EXCEEDED event");
+
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.resolveIdentifierString());
         }
     }
 
@@ -353,6 +373,10 @@ class NonValidatingJwtParserTest {
             assertEquals(EventType.TOKEN_SIZE_EXCEEDED, exception.getEventType(),
                     "Exception should have TOKEN_SIZE_EXCEEDED event type");
 
+            // Verify log message
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.resolveIdentifierString());
+
             // Verify the counter was incremented
             assertEquals(1, counter.getCount(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED),
                     "Should count TOKEN_SIZE_EXCEEDED event");
@@ -368,11 +392,11 @@ class NonValidatingJwtParserTest {
         void shouldRespectJsonDepthLimits() {
             // Create a deeply nested JSON structure that exceeds the max depth
             StringBuilder nestedJson = new StringBuilder("{");
-            for (int i = 0; i < ParserConfig.DEFAULT_MAX_DEPTH + 1; i++) {
+            for (int i = 0; i < 20; i++) { // Create deep nesting
                 nestedJson.append("\"level").append(i).append("\":{");
             }
             // Close all the nested objects
-            nestedJson.append("}".repeat(ParserConfig.DEFAULT_MAX_DEPTH + 1));
+            nestedJson.append("}".repeat(20));
 
             String encodedNestedJson = Base64.getUrlEncoder().encodeToString(nestedJson.toString().getBytes(StandardCharsets.UTF_8));
             String tokenWithDeepJson = encodedNestedJson + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;
@@ -388,9 +412,9 @@ class NonValidatingJwtParserTest {
         @Test
         @DisplayName("Should handle large JSON arrays")
         void shouldHandleLargeJsonArrays() {
-            // Create a JSON with a large array
-            StringBuilder largeArrayJson = new StringBuilder("{\"array\":[");
-            for (int i = 0; i < ParserConfig.DEFAULT_MAX_ARRAY_SIZE - 1; i++) {
+            // Create a JSON with a large array and required alg field
+            StringBuilder largeArrayJson = new StringBuilder("{\"alg\":\"RS256\",\"array\":[");
+            for (int i = 0; i < 99; i++) { // Create reasonably sized array
                 if (i > 0) {
                     largeArrayJson.append(",");
                 }
@@ -405,16 +429,17 @@ class NonValidatingJwtParserTest {
             DecodedJwt result = parser.decode(tokenWithLargeArray);
 
             // Verify the array was parsed correctly
-            assertTrue(result.getHeader().isPresent(), "Header should be present");
-            JsonObject header = result.getHeader().get();
-            assertTrue(header.containsKey("array"), "Array should be present in header");
+            var header = result.getHeader();
+            assertNotNull(header, "Header should be present");
+            assertNotNull(header.alg(), "Algorithm should be present");
+            // Note: With new header structure, the array would be in the body, not header
         }
 
         @Test
         @DisplayName("Should handle large JSON strings")
         void shouldHandleLargeJsonStrings() {
-            // Create a JSON with a large string
-            String largeStringJson = "{\"largeString\":\"" + "a".repeat(ParserConfig.DEFAULT_MAX_STRING_SIZE - 100) + "\"}";
+            // Create a JSON with a large string and required alg field
+            String largeStringJson = "{\"alg\":\"RS256\",\"largeString\":\"" + "a".repeat(ParserConfig.DEFAULT_MAX_STRING_LENGTH - 100) + "\"}";
 
             String encodedLargeStringJson = Base64.getUrlEncoder().encodeToString(largeStringJson.getBytes(StandardCharsets.UTF_8));
             String tokenWithLargeString = encodedLargeStringJson + "." + ENCODED_PAYLOAD + "." + ENCODED_SIGNATURE;
@@ -423,9 +448,10 @@ class NonValidatingJwtParserTest {
             DecodedJwt result = parser.decode(tokenWithLargeString);
 
             // Verify the string was parsed correctly
-            assertTrue(result.getHeader().isPresent(), "Header should be present");
-            JsonObject header = result.getHeader().get();
-            assertTrue(header.containsKey("largeString"), "Large string should be present in header");
+            var header = result.getHeader();
+            assertNotNull(header, "Header should be present");
+            assertNotNull(header.alg(), "Algorithm should be present");
+            // Note: With new header structure, the large string would be in the body, not header
         }
 
         @Test

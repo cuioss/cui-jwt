@@ -15,7 +15,8 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -36,7 +37,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger
-@DisplayName("Tests HttpJwksLoader")
+@DisplayName("HttpJwksLoader Core Functionality Tests")
 @EnableMockWebServer
 class HttpJwksLoaderTest {
 
@@ -58,24 +59,24 @@ class HttpJwksLoaderTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
 
         httpJwksLoader = new HttpJwksLoader(config);
-        httpJwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        httpJwksLoader.initJWKSLoader(securityEventCounter).join();
     }
 
     @Test
     @DisplayName("Should create loader with constructor")
     void shouldCreateLoaderWithConstructor() {
         assertNotNull(httpJwksLoader, "HttpJwksLoader should not be null");
-        // Simplified loader doesn't expose config - just verify it was created
-        assertNotNull(httpJwksLoader.isHealthy(), "Status should be available");
+        assertNotNull(httpJwksLoader.getLoaderStatus(), "Status should be available");
     }
 
     @Test
     @DisplayName("Should get key info by ID")
     void shouldGetKeyInfoById() {
-
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Key info should be present");
         assertEquals(TEST_KID, keyInfo.get().keyId(), "Key ID should match");
@@ -87,14 +88,11 @@ class HttpJwksLoaderTest {
     void shouldReturnEmptyForUnknownKeyId() {
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo("unknown-kid");
         assertFalse(keyInfo.isPresent(), "Key info should not be present for unknown key ID");
-        // Note: KEY_NOT_FOUND events are only incremented during actual token signature validation,
-        // not during direct key lookups. This follows the same pattern as other JwksLoader implementations.
     }
 
     @Test
     @DisplayName("Should return empty for null key ID")
     void shouldReturnEmptyForNullKeyId() {
-
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(null);
         assertFalse(keyInfo.isPresent(), "Key info should not be present for null key ID");
     }
@@ -102,7 +100,6 @@ class HttpJwksLoaderTest {
     @Test
     @DisplayName("Should get key info for test kid")
     void shouldGetKeyInfoForTestKid() {
-        // Test getting the specific test key
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Key info should be present for test kid");
         assertEquals(TEST_KID, keyInfo.get().keyId(), "Key ID should match test kid");
@@ -111,26 +108,21 @@ class HttpJwksLoaderTest {
     @Test
     @DisplayName("Should verify key loading works")
     void shouldVerifyKeyLoadingWorks() {
-        // Verify that keys are loaded properly by checking a known key
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
-        assertTrue(keyInfo.isPresent(), "Key should be loaded successfully");
-        assertNotNull(keyInfo.get().key(), "Key object should not be null");
-        assertNotNull(keyInfo.get().keyId(), "Key ID should not be null");
+        assertTrue(keyInfo.isPresent(), "Key info should be present");
+        assertNotNull(keyInfo.get().key(), "Public key should not be null");
     }
 
     @Test
     @DisplayName("Should verify test key exists")
     void shouldVerifyTestKeyExists() {
-        // Verify that the test key is available
-        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
-        assertTrue(keyInfo.isPresent(), "Test key should be available");
-        assertEquals(TEST_KID, keyInfo.get().keyId(), "Key ID should match expected test ID");
+        assertTrue(httpJwksLoader.getKeyInfo(TEST_KID).isPresent(),
+                "Test key with ID '" + TEST_KID + "' should exist");
     }
 
     @Test
     @DisplayName("Should load keys on first access and cache in memory")
     void shouldLoadKeysOnFirstAccess() {
-
         // First call should load
         Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Key info should be present");
@@ -146,45 +138,31 @@ class HttpJwksLoaderTest {
     @DisplayName("Should handle health checks")
     void shouldHandleHealthChecks() {
         // Initially undefined status
-        assertNotNull(httpJwksLoader.isHealthy(), "Status should not be null");
+        assertNotNull(httpJwksLoader.getLoaderStatus(), "Status should not be null");
 
         // After loading, should be healthy
         httpJwksLoader.getKeyInfo(TEST_KID);
-        assertEquals(LoaderStatus.OK, httpJwksLoader.isHealthy(), "Should be healthy after successful load");
+        assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus(), "Should be healthy after successful load");
     }
 
     @Test
     @ModuleDispatcher
     @DisplayName("Should create new loader with simplified config")
     void shouldCreateNewLoaderWithSimplifiedConfig(URIBuilder uriBuilder) {
-
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
 
         HttpJwksLoader customLoader = new HttpJwksLoader(config);
-        customLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        customLoader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(customLoader);
 
         // Verify it works
         Optional<KeyInfo> keyInfo = customLoader.getKeyInfo(TEST_KID);
         assertTrue(keyInfo.isPresent(), "Key info should be present");
-    }
-
-    @Test
-    @DisplayName("Should count JWKS_FETCH_FAILED event")
-    void shouldCountJwksFetchFailedEvent() {
-        // Get initial count
-        long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_FETCH_FAILED);
-
-        // Manually increment the counter to simulate a fetch failure
-        // This is similar to the approach used in JwksLoaderFactoryTest
-        securityEventCounter.increment(SecurityEventCounter.EventType.JWKS_FETCH_FAILED);
-
-        // Verify that the counter was incremented
-        assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_FETCH_FAILED),
-                "JWKS_FETCH_FAILED event should be incremented");
     }
 
     @Test
@@ -195,22 +173,24 @@ class HttpJwksLoaderTest {
         assertTrue(initialKeyInfo.isPresent(), "Initial key info should be present");
 
         // Create a new loader instance with the same configuration
-        // This tests that multiple loaders can work independently
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
-        HttpJwksLoader newLoader = new HttpJwksLoader(config);
-        newLoader.initJWKSLoader(securityEventCounter);
+        try (HttpJwksLoader newLoader = new HttpJwksLoader(config)) {
+            // Wait for async initialization to complete
+            newLoader.initJWKSLoader(securityEventCounter).join();
 
-        // Verify the new loader works independently
-        assertNotNull(newLoader.isHealthy(), "Health check should work for new loader");
+            // Verify the new loader works independently
+            assertNotNull(newLoader.getLoaderStatus(), "Health check should work for new loader");
 
-        // Both loaders should be functional - test with getKeyInfo
-        Optional<KeyInfo> originalLoaderKey = httpJwksLoader.getKeyInfo(TEST_KID);
-        Optional<KeyInfo> newLoaderKey = newLoader.getKeyInfo(TEST_KID);
-        assertTrue(originalLoaderKey.isPresent(), "Original loader should have the key");
-        assertTrue(newLoaderKey.isPresent(), "New loader should be able to retrieve the key");
+            // Both loaders should be functional
+            Optional<KeyInfo> originalLoaderKey = httpJwksLoader.getKeyInfo(TEST_KID);
+            Optional<KeyInfo> newLoaderKey = newLoader.getKeyInfo(TEST_KID);
+            assertTrue(originalLoaderKey.isPresent(), "Original loader should have the key");
+            assertTrue(newLoaderKey.isPresent(), "New loader should be able to retrieve the key");
+        }
     }
 
     @Test
@@ -222,10 +202,33 @@ class HttpJwksLoaderTest {
         // Then the key should be found
         assertTrue(keyInfo.isPresent(), "Key info should be present");
 
-        // Verify that some info logging occurred during JWKS loading
-        // The simplified loader logs success messages
+        // Verify that JWKS loaded message is logged with issuer information
         LogAsserts.assertLogMessagePresentContaining(
                 TestLogLevel.INFO,
-                "Successfully loaded JWKS");
+                "JWKS loaded successfully for issuer");
+    }
+
+    @Test
+    @DisplayName("Should log JWKS_LOADED when JWKS is loaded via HTTP")
+    void shouldLogJwksLoadedWhenJwksIsLoadedViaHttp() {
+        // First access loads keys via HTTP
+        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Key info should be present");
+
+        // Verify JWKS_LOADED was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.JWKS_LOADED.resolveIdentifierString());
+    }
+
+    @Test
+    @DisplayName("Should log JWKS_KEYS_UPDATED when keys are updated")
+    void shouldLogJwksKeysUpdatedWhenKeysAreUpdated() {
+        // Load a key to trigger keys update
+        Optional<KeyInfo> keyInfo = httpJwksLoader.getKeyInfo(TEST_KID);
+        assertTrue(keyInfo.isPresent(), "Key info should be present");
+
+        // JWKS_KEYS_UPDATED is logged when keys are successfully loaded and updated
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.INFO,
+                JWTValidationLogMessages.INFO.JWKS_KEYS_UPDATED.resolveIdentifierString());
     }
 }

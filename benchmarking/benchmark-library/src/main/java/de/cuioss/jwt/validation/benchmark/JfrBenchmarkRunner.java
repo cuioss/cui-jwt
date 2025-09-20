@@ -16,13 +16,17 @@
 package de.cuioss.jwt.validation.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.results.RunResult;
+import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
  * JFR-enabled benchmark runner for JWT validation performance analysis with variance metrics.
@@ -36,32 +40,22 @@ import java.io.File;
  * <p>
  * To run: {@code mvn verify -Pbenchmark-jfr}
  * <p>
- * JFR data is automatically saved to: {@code target/benchmark-results/}
+ * JFR data is automatically saved to: {@code target/benchmark-jfr-results/}
  *
  * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.CoreJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.ErrorJfrBenchmark
  * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.MixedJfrBenchmark
- * @see de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer
  */
-public class JfrBenchmarkRunner {
+public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
 
-    private static final CuiLogger log = new CuiLogger(JfrBenchmarkRunner.class);
+    private static final CuiLogger LOGGER = new CuiLogger(JfrBenchmarkRunner.class);
+    private static final String RESULTS_DIR = "target/benchmark-jfr-results";
 
-    /**
-     * Main method to run JFR-instrumented benchmarks.
-     *
-     * @param args command line arguments (not used)
-     * @throws Exception if an error occurs during benchmark execution
-     */
-    public static void main(String[] args) throws Exception {
-
-        log.info("Initializing benchmark key cache...");
-        BenchmarkKeyCache.initialize();
-        log.info("Key cache initialized. Starting JFR benchmarks...\n");
-
-        String resultsDir = getBenchmarkResultsDir();
-
-        BenchmarkConfiguration config = BenchmarkConfiguration.fromSystemProperties()
+    @Override protected BenchmarkConfiguration createConfiguration() {
+        return BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("measureThroughput")  // JFR benchmarks also measure throughput
+                .withLatencyBenchmarkName("measureAverageTime")    // JFR benchmarks also measure latency
                 .withIncludePattern("de\\.cuioss\\.jwt\\.validation\\.benchmark\\.jfr\\.benchmarks\\..*")
                 .withForks(1)
                 .withWarmupIterations(5)
@@ -70,60 +64,65 @@ public class JfrBenchmarkRunner {
                 .withWarmupTime(TimeValue.seconds(3))
                 .withThreads(16)
                 .withResultFile(getJfrResultFile())
-                .withResultsDirectory(resultsDir)
+                .withResultsDirectory(RESULTS_DIR)
                 .build();
-
-        Options options = new OptionsBuilder()
-                .include(config.includePattern())
-                .resultFormat(config.resultFormat())
-                .result(getJfrResultFile())  // Use JFR-specific result file
-                .forks(config.forks())
-                .warmupIterations(config.warmupIterations())
-                .measurementIterations(config.measurementIterations())
-                .measurementTime(config.measurementTime())
-                .warmupTime(config.warmupTime())
-                .threads(config.threads())
-                .jvmArgs("-XX:+UnlockDiagnosticVMOptions",
-                        "-XX:+DebugNonSafepoints",
-                        "-XX:StartFlightRecording=filename=" + resultsDir + "/jfr-benchmark.jfr,settings=profile",
-                        "-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties",
-                        "-Dbenchmark.results.dir=" + resultsDir)
-                .build();
-
-        log.info("Running JFR-instrumented benchmarks...");
-        log.info("JFR recording will be saved to: " + getBenchmarkResultsDir() + "/jfr-benchmark.jfr");
-
-        new Runner(options).run();
-
-        log.info("Benchmark completed. To analyze variance:");
-        log.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer " + getBenchmarkResultsDir() + "/jfr-benchmark.jfr");
     }
 
+    @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
+        // Initialize key cache before benchmarks start
+        BenchmarkKeyCache.initialize();
+        LOGGER.info("JFR-instrumented benchmarks starting - Key cache initialized");
+        LOGGER.info("JFR recording will be saved to: " + config.resultsDirectory() + "/jfr-benchmark.jfr");
+    }
+
+    @Override protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
+        // Get base options from parent
+        OptionsBuilder builder = super.buildCommonOptions(config);
+
+        // Add JFR-specific JVM arguments
+        builder.jvmArgs("-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+DebugNonSafepoints",
+                "-XX:StartFlightRecording=filename=" + config.resultsDirectory() + "/jfr-benchmark.jfr,settings=profile",
+                "-Djava.util.logging.config.file=benchmark-logging.properties",
+                "-Dbenchmark.results.dir=" + config.resultsDirectory());
+
+        return builder;
+    }
+
+    @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
+        LOGGER.info("JFR benchmark completed. To analyze variance:");
+        LOGGER.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer " +
+                config.resultsDirectory() + "/jfr-benchmark.jfr");
+    }
+
+    @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
+        // No special cleanup required for JFR benchmarks
+        LOGGER.debug("JFR benchmark cleanup completed");
+    }
 
     /**
-     * Gets the JFR-specific result file from system property or defaults to jfr-benchmark-result.json.
-     * This method appends "-jfr" to the file prefix to distinguish from regular benchmark results.
+     * Gets the JFR-specific result file.
+     * 
+     * @return the JFR result file path
      */
     private static String getJfrResultFile() {
-        String filePrefix = System.getProperty("jmh.result.filePrefix");
-        if (filePrefix != null && !filePrefix.isEmpty()) {
-            String resultFile = filePrefix + "-jfr.json";
-            File file = new File(resultFile);
-            File parentDir = file.getParentFile();
-            if (parentDir != null && !parentDir.exists()) {
-                parentDir.mkdirs();
-            }
-            return resultFile;
+        String resultFile = RESULTS_DIR + "/micro-result.json";
+        File file = new File(resultFile);
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
         }
-        return getBenchmarkResultsDir() + "/jfr-benchmark-result.json";
+        return resultFile;
     }
 
     /**
-     * Gets the benchmark results directory from system property or defaults to target/benchmark-jfr-results.
-     * 
-     * @return the benchmark results directory path
+     * Main method to run JFR-instrumented benchmarks.
+     *
+     * @param args command line arguments (not used)
+     * @throws IOException if I/O operations fail
+     * @throws RunnerException if benchmark execution fails
      */
-    private static String getBenchmarkResultsDir() {
-        return System.getProperty("benchmark.results.dir", "target/benchmark-jfr-results");
+    public static void main(String[] args) throws IOException, RunnerException {
+        new JfrBenchmarkRunner().runBenchmark();
     }
 }

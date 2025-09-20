@@ -148,6 +148,14 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 |`cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy`
 |boolean (default: false)
 |Whether to use HTTP proxy settings from the system properties.
+
+|`cui.jwt.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
+|int (default: 300)
+|The grace period in seconds for retired keys during rotation. During this period, tokens signed with recently rotated keys can still be validated, preventing service disruptions for in-flight requests. Set to 0 to immediately invalidate old keys upon rotation. This implements Issue #110 for seamless key rotation.
+
+|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
+|int (default: 10)
+|The maximum number of retired key sets to retain in memory during the grace period. This prevents unbounded memory growth when keys rotate frequently. Older retired key sets beyond this limit are removed even if still within the grace period.
 |===
 
 == Keycloak Integration
@@ -188,6 +196,69 @@ cui.jwt.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
 * **Simplified Integration**: Reduces Keycloak realm configuration complexity
 * **Standards Compliance**: Maintains compatibility with standard JWT claim names
 * **Flexible Deployment**: Mix Keycloak and non-Keycloak issuers with appropriate configurations
+
+== HTTP Access Log Filter Configuration
+
+The extension provides a custom HTTP access log filter that offers more granular control than Quarkus built-in access logging. The filter is controlled by an enabled flag and allows filtering by HTTP status codes and URL patterns.
+
+[cols="2,1,5"]
+|===
+|Property |Type |Description
+
+|`cui.http.access-log.filter.enabled`
+|boolean (default: false)
+|Whether the access log filter is enabled. When set to true, the filter will process HTTP requests and responses according to the configured filtering rules. When false, the filter is disabled and no access logging will occur.
+
+|`cui.http.access-log.filter.min-status-code`
+|int (default: 400)
+|Minimum HTTP status code to log. Only responses with status codes >= this value will be logged. Common values: 200 (log all responses), 400 (log only client and server errors), 500 (log only server errors).
+
+|`cui.http.access-log.filter.max-status-code`
+|int (default: 599)
+|Maximum HTTP status code to log. Only responses with status codes <= this value will be logged. Set to 599 to include all error codes.
+
+|`cui.http.access-log.filter.include-status-codes`
+|String (comma-separated)
+|Specific HTTP status codes to always log, regardless of min/max range. Useful for logging specific success codes (like 201, 202) along with errors. Example: "201,202,204".
+
+|`cui.http.access-log.filter.include-paths`
+|String (comma-separated)
+|URL path patterns to include in logging. If specified, only requests matching these patterns will be considered for logging. Uses simple glob patterns (* and **). Empty means all paths are eligible. Example: "/api/**,/health/**".
+
+|`cui.http.access-log.filter.exclude-paths`
+|String (comma-separated)
+|URL path patterns to exclude from logging. These patterns override include patterns. Uses simple glob patterns (* and **). Common exclusions: "/jwt/validate". Example: "/metrics/**".
+
+|`cui.http.access-log.filter.pattern`
+|String (default: "{remoteAddr} {method} {path} -> {status} ({duration}ms)")
+|Log format pattern. Supports placeholders: {method} (HTTP method), {path} (request path), {status} (HTTP status code), {duration} (request duration in milliseconds), {remoteAddr} (remote IP address), {userAgent} (User-Agent header).
+|===
+
+=== Enabling Access Log Filter
+
+The access log filter is controlled by the enabled flag. To enable it, set the enabled property:
+
+[source,properties]
+----
+# Enable access log filter
+cui.http.access-log.filter.enabled=true
+
+# Example: Log only errors (4xx and 5xx status codes) - this is the default
+cui.http.access-log.filter.min-status-code=400
+cui.http.access-log.filter.max-status-code=599
+
+# Example: Log only server errors (5xx status codes)
+cui.http.access-log.filter.min-status-code=500
+cui.http.access-log.filter.max-status-code=599
+
+# Example: Log errors plus specific success codes
+cui.http.access-log.filter.min-status-code=400
+cui.http.access-log.filter.include-status-codes=201,202,204
+
+# Example: Log only API endpoints, exclude metrics
+cui.http.access-log.filter.include-paths=/api/**
+cui.http.access-log.filter.exclude-paths=/metrics/**
+----
 
 == Health Check Configuration
 
@@ -257,6 +328,12 @@ For quick reference, here are all the default values in one place:
 |`cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy`
 |false
 
+|`cui.jwt.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
+|300
+
+|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
+|10
+
 |`cui.jwt.health.jwks.cache-seconds`
 |30
 
@@ -292,6 +369,10 @@ cui.jwt.issuers.keycloak.jwks.http.connection-timeout-seconds=3
 cui.jwt.issuers.keycloak.jwks.http.read-timeout-seconds=3
 cui.jwt.issuers.keycloak.jwks.http.max-retries=5
 cui.jwt.issuers.keycloak.jwks.http.use-system-proxy=true
+
+# Key rotation grace period configuration (Issue #110)
+cui.jwt.issuers.keycloak.jwks.http.key-rotation-grace-period-seconds=300  # 5 minute grace period
+cui.jwt.issuers.keycloak.jwks.http.max-retired-key-sets=10               # Keep max 10 old key sets
 ----
 
 === Example 2: OpenID Connect Discovery Configuration (Recommended)

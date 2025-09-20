@@ -15,20 +15,18 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.JwkKey;
+import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.parser.JwksParser;
 import de.cuioss.jwt.validation.jwks.parser.KeyProcessor;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
-import jakarta.json.JsonException;
-import jakarta.json.JsonObject;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.ToString;
@@ -39,13 +37,14 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation of {@link JwksLoader} that loads JWKS from string content.
  * <p>
- * This implementation processes JWKS content that is provided as a string. 
- * If file-based JWKS loading is needed, the file content is resolved to string 
+ * This implementation processes JWKS content that is provided as a string.
+ * If file-based JWKS loading is needed, the file content is resolved to string
  * at build time through the builder pattern.
  * <p>
  * This implementation supports cryptographic agility by handling multiple key types
@@ -81,8 +80,9 @@ public class JWKSKeyLoader implements JwksLoader {
     private volatile LoaderStatus status;
     private Map<String, KeyInfo> keyInfoMap;
 
-    // Field for deferred initialization
+    // Fields for deferred initialization
     private final String jwksContent;
+    private final Jwks jwks;
     private volatile boolean initialized = false;
 
     /**
@@ -90,6 +90,7 @@ public class JWKSKeyLoader implements JwksLoader {
      */
     public static class JWKSKeyLoaderBuilder {
         private String jwksContent;
+        private Jwks jwks;
         private String jwksFilePath;
         private ParserConfig parserConfig = ParserConfig.builder().build();
         private JwkAlgorithmPreferences jwkAlgorithmPreferences = new JwkAlgorithmPreferences(); // Default instance
@@ -106,6 +107,22 @@ public class JWKSKeyLoader implements JwksLoader {
          */
         public JWKSKeyLoaderBuilder jwksContent(String jwksContent) {
             this.jwksContent = jwksContent;
+            this.jwks = null; // Reset Jwks when String is set
+            return this;
+        }
+
+        /**
+         * Sets the JWKS content as a Jwks object for optimal processing.
+         * <p>
+         * This method provides the most efficient way to set JWKS content that has already
+         * been parsed from HTTP responses, eliminating double JSON parsing.
+         *
+         * @param jwks the JWKS content as a Jwks object
+         * @return this builder
+         */
+        public JWKSKeyLoaderBuilder jwksContent(Jwks jwks) {
+            this.jwks = jwks;
+            this.jwksContent = null; // Reset String when Jwks is set
             return this;
         }
 
@@ -163,12 +180,15 @@ public class JWKSKeyLoader implements JwksLoader {
          */
         @NonNull
         public JWKSKeyLoader build() {
-            if (jwksContent == null && jwksFilePath == null) {
-                throw new IllegalArgumentException("Either jwksContent or jwksFilePath must be provided");
+            if (jwksContent == null && jwks == null && jwksFilePath == null) {
+                throw new IllegalArgumentException("Either jwksContent, jwks, or jwksFilePath must be provided");
             }
 
-            if (jwksContent != null) {
-                // Direct content provided
+            if (jwks != null) {
+                // Jwks content provided - most efficient
+                return new JWKSKeyLoader(jwks, parserConfig, jwkAlgorithmPreferences, jwksType);
+            } else if (jwksContent != null) {
+                // String content provided
                 return new JWKSKeyLoader(jwksContent, parserConfig, jwkAlgorithmPreferences, jwksType);
             } else {
                 // File path provided - resolve at build time and fail fast if unable to read
@@ -222,6 +242,29 @@ public class JWKSKeyLoader implements JwksLoader {
             @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences,
             @NonNull JwksType jwksType) {
         this.jwksContent = jwksContent;
+        this.jwks = null;
+        this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+        this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
+        this.jwksType = jwksType;
+        this.status = LoaderStatus.UNDEFINED;
+    }
+
+    /**
+     * Creates a new JWKSKeyLoader with deferred initialization using Jwks content.
+     * The SecurityEventCounter must be set via initJWKSLoader() before use.
+     *
+     * @param jwks the JWKS content as a Jwks object, must not be null
+     * @param parserConfig the configuration for parsing, may be null (defaults to a new instance)
+     * @param jwkAlgorithmPreferences the JWK algorithm preferences for parsing validation, must not be null
+     * @param jwksType the type of JWKS source, must not be null
+     */
+    public JWKSKeyLoader(
+            @NonNull Jwks jwks,
+            ParserConfig parserConfig,
+            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences,
+            @NonNull JwksType jwksType) {
+        this.jwksContent = null;
+        this.jwks = jwks;
         this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
         this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
         this.jwksType = jwksType;
@@ -277,17 +320,8 @@ public class JWKSKeyLoader implements JwksLoader {
      * @return the current health status, considering both loader status and key availability
      */
     @Override
-    public @NonNull LoaderStatus isHealthy() {
-        if (!initialized || keyInfoMap == null) {
-            return LoaderStatus.UNDEFINED;
-        }
-        if (status == LoaderStatus.OK && !keyInfoMap.isEmpty()) {
-            return LoaderStatus.OK;
-        } else if (status == LoaderStatus.ERROR) {
-            return LoaderStatus.ERROR;
-        } else {
-            return LoaderStatus.UNDEFINED;
-        }
+    public @NonNull LoaderStatus getLoaderStatus() {
+        return status; // Return cached status immediately - NO I/O
     }
 
     @Override
@@ -297,23 +331,27 @@ public class JWKSKeyLoader implements JwksLoader {
     }
 
     @Override
-    public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+    public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
         if (!initialized) {
             this.securityEventCounter = securityEventCounter;
             this.initialized = true;
             initializeKeys();
             LOGGER.debug("JWKSKeyLoader initialized with SecurityEventCounter");
+            // Return completed future with current status after initialization
+            return CompletableFuture.completedFuture(status);
         }
+        // Already initialized, return current status immediately
+        return CompletableFuture.completedFuture(status);
     }
 
     /**
      * Initializes the JWKS keys by parsing the content.
      */
     private void initializeKeys() {
-        try {
+        if (jwks != null) {
+            parseAndProcessKeys(jwks);
+        } else {
             parseAndProcessKeys(jwksContent);
-        } catch (JsonException | IllegalArgumentException e) {
-            handleParseError(e);
         }
     }
 
@@ -328,11 +366,38 @@ public class JWKSKeyLoader implements JwksLoader {
         KeyProcessor processor = new KeyProcessor(this.securityEventCounter, this.jwkAlgorithmPreferences);
 
         // Parse JWKS content to get individual JWK objects (includes structure validation)
-        List<JsonObject> jwkObjects = parser.parse(contentToProcess);
+        List<JwkKey> jwkObjects = parser.parse(contentToProcess);
 
+        processKeys(jwkObjects, processor);
+    }
+
+    /**
+     * Parses and processes JWKS object into KeyInfo objects.
+     * This method provides optimal performance by avoiding JSON parsing.
+     *
+     * @param jwks the JWKS content as Jwks object
+     */
+    private void parseAndProcessKeys(Jwks jwks) {
+        // Process JWKS directly
+        KeyProcessor processor = new KeyProcessor(this.securityEventCounter, this.jwkAlgorithmPreferences);
+
+        // Use JWKS keys directly (no parsing needed)
+        List<JwkKey> jwkObjects = jwks.keys();
+
+        processKeys(jwkObjects, processor);
+    }
+
+    /**
+     * Common method to process JWK objects into KeyInfo objects.
+     *
+     * @param jwkObjects the parsed JWK objects
+     * @param processor the key processor
+     */
+    private void processKeys(List<JwkKey> jwkObjects, KeyProcessor processor) {
         // Process each key (includes key parameter validation)
         Map<String, KeyInfo> keyMap = new ConcurrentHashMap<>();
-        for (JsonObject jwk : jwkObjects) {
+        for (JwkKey jwk : jwkObjects) {
+            // Process JwkKey directly
             var keyInfoOpt = processor.processKey(jwk);
             keyInfoOpt.ifPresent(keyInfo -> keyMap.put(keyInfo.keyId(), keyInfo));
         }
@@ -342,15 +407,4 @@ public class JWKSKeyLoader implements JwksLoader {
         LOGGER.debug("Successfully loaded %s key(s)", keyMap.size());
     }
 
-    /**
-     * Handles parse errors by logging and setting error state.
-     *
-     * @param e the exception that occurred during parsing
-     */
-    private void handleParseError(Exception e) {
-        LOGGER.warn(e, WARN.JWKS_JSON_PARSE_FAILED.format(e.getMessage()));
-        securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
-        this.keyInfoMap = new ConcurrentHashMap<>();
-        this.status = LoaderStatus.ERROR;
-    }
 }

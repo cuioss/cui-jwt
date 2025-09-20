@@ -16,8 +16,11 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -147,7 +150,8 @@ class TokenHeaderValidatorTest {
             assertEquals(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM, exception.getEventType());
 
             // And a warning should be logged
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Unsupported algorithm: RS256");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.resolveIdentifierString());
 
             // Verify security event was recorded
             assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM));
@@ -181,6 +185,115 @@ class TokenHeaderValidatorTest {
 
             // Verify security event was recorded
             assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+        }
+    }
+
+    @Nested
+    @DisplayName("Embedded JWK Protection Tests (CVE-2018-0114)")
+    class EmbeddedJwkProtectionTests {
+
+        // Test data: Complete valid RSA JWK for testing embedded JWK rejection
+        private static final String EMBEDDED_RSA_JWK = """
+                {
+                  "kty": "RSA",
+                  "n": "xGOr-H7A-PWG3z0hanVc22VWP",
+                  "e": "AQAB",
+                  "alg": "RS256",
+                  "use": "sig"
+                }""".replaceAll("\\s+", "");
+
+        @Test
+        @DisplayName("Should reject token with embedded JWK in header")
+        void shouldRejectTokenWithEmbeddedJwk() {
+            // Get initial count
+            long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
+
+            // Given a validator
+            var issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                    .build();
+            TokenHeaderValidator validator = createValidator(issuerConfig);
+
+            // And a token with an embedded JWK in the header
+            // Create a JwtHeader with an embedded JWK
+            var headerWithJwk = new JwtHeader(
+                    "RS256",  // alg
+                    "JWT",    // typ
+                    "key-1",  // kid
+                    null,     // jku
+                    EMBEDDED_RSA_JWK, // jwk - embedded JWK
+                    null,     // x5u
+                    null,     // x5c
+                    null,     // x5t
+                    null,     // x5tS256
+                    null,     // cty
+                    null      // crit
+            );
+
+            // Create a DecodedJwt with the header containing embedded JWK
+            DecodedJwt decodedJwt = new DecodedJwt(
+                    headerWithJwk,
+                    MapRepresentation.empty(),
+                    "fake-signature",
+                    new String[]{"header", "payload", "signature"},
+                    "header.payload.signature"
+            );
+
+            // When validating the token, it should throw an exception
+            var exception = assertThrows(TokenValidationException.class,
+                    () -> validator.validate(decodedJwt));
+
+            // Verify the exception has the correct event type
+            assertEquals(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM, exception.getEventType());
+
+            // And the exception message should mention embedded JWK
+            assertTrue(exception.getMessage().contains("Embedded JWK"));
+
+            // And a warning should be logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.resolveIdentifierString());
+
+            // Verify security event was recorded
+            assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM));
+        }
+
+        @Test
+        @DisplayName("Should accept token without embedded JWK")
+        void shouldAcceptTokenWithoutEmbeddedJwk() {
+            // Given a validator
+            var issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                    .build();
+            TokenHeaderValidator validator = createValidator(issuerConfig);
+
+            // And a token without an embedded JWK in the header
+            var headerWithoutJwk = new JwtHeader(
+                    "RS256",  // alg
+                    "JWT",    // typ
+                    "key-1",  // kid
+                    null,     // jku
+                    null,     // jwk - no embedded JWK
+                    null,     // x5u
+                    null,     // x5c
+                    null,     // x5t
+                    null,     // x5tS256
+                    null,     // cty
+                    null      // crit
+            );
+
+            // Create a DecodedJwt without embedded JWK
+            DecodedJwt decodedJwt = new DecodedJwt(
+                    headerWithoutJwk,
+                    MapRepresentation.empty(),
+                    "fake-signature",
+                    new String[]{"header", "payload", "signature"},
+                    "header.payload.signature"
+            );
+
+            // When validating the token, it should not throw an exception for embedded JWK
+            assertDoesNotThrow(() -> validator.validate(decodedJwt));
         }
     }
 

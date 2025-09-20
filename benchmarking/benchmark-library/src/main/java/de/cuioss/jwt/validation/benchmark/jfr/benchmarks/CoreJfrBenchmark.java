@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
-import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import org.openjdk.jmh.annotations.*;
 
@@ -31,9 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class CoreJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class CoreJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String OPERATION_TYPE_VALIDATION = "validation";
 
@@ -85,9 +83,9 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
             ValidationSupplier validationSupplier) {
         String token = coreValidationDelegate.getCurrentToken(tokenType);
 
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation(operationName, OPERATION_TYPE_VALIDATION)) {
-            recorder.withTokenSize(token.length())
-                    .withIssuer(tokenRepository.getTokenIssuer(token));
+        try (var recorder = jfrInstrumentation.recordOperation(operationName, OPERATION_TYPE_VALIDATION)) {
+            recorder.withPayloadSize(token.length())
+                    .withMetadata("issuer", tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = validationSupplier.validate();
             recorder.withSuccess(true);
@@ -98,8 +96,7 @@ public class CoreJfrBenchmark extends AbstractJfrBenchmark {
     /**
      * Functional interface for validation operations.
      */
-    @FunctionalInterface
-    private interface ValidationSupplier {
+    @FunctionalInterface private interface ValidationSupplier {
         AccessTokenContent validate();
     }
 }

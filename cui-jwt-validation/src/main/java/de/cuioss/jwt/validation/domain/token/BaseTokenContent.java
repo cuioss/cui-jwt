@@ -17,6 +17,7 @@ package de.cuioss.jwt.validation.domain.token;
 
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -69,15 +70,28 @@ public abstract class BaseTokenContent implements TokenContent {
     private final TokenType tokenType;
 
     /**
+     * Raw JSON payload as Map representation for ClaimMapper processing.
+     * This contains the original deserialized JSON structure from DSL-JSON
+     * before it's processed into typed ClaimValue objects.
+     */
+    @Getter
+    @NonNull
+    private final MapRepresentation rawPayload;
+
+
+    /**
      * Constructor for BaseTokenContent.
      *
-     * @param claims    the token claims
-     * @param rawToken  the raw token string
-     * @param tokenType the token type
+     * @param claims     the token claims
+     * @param rawToken   the raw token string
+     * @param tokenType  the token type
+     * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
-    protected BaseTokenContent(@NonNull Map<String, ClaimValue> claims, @NonNull String rawToken, @NonNull TokenType tokenType) {
+    protected BaseTokenContent(@NonNull Map<String, ClaimValue> claims, @NonNull String rawToken,
+            @NonNull TokenType tokenType, @NonNull MapRepresentation rawPayload) {
         this.claims = claims;
         this.rawToken = rawToken;
         this.tokenType = tokenType;
+        this.rawPayload = rawPayload;
     }
 }

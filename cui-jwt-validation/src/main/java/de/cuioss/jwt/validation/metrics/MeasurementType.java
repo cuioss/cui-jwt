@@ -144,7 +144,34 @@ public enum MeasurementType {
      * Measures time to store a validated token in the cache, including
      * serialization and LRU management. This metric helps identify caching overhead.
      */
-    CACHE_STORE("Cache store operation");
+    CACHE_STORE("Cache store operation"),
+
+    /**
+     * HTTP retry operation - single attempt.
+     * <p>
+     * Measures time for individual retry attempts within the retry strategy.
+     * This includes the actual operation execution time but excludes retry delays.
+     * Useful for analyzing per-attempt performance patterns.
+     */
+    RETRY_ATTEMPT("HTTP retry single attempt"),
+
+    /**
+     * HTTP retry operation - complete with all attempts.
+     * <p>
+     * Measures total time for retry operations including all attempts, delays,
+     * and eventual success or failure. This represents the complete retry cycle
+     * from the caller's perspective and includes exponential backoff delays.
+     */
+    RETRY_COMPLETE("HTTP retry complete operation"),
+
+    /**
+     * HTTP retry delay time.
+     * <p>
+     * Measures actual delay time between retry attempts as calculated by the
+     * exponential backoff algorithm including jitter. This helps analyze
+     * retry timing patterns and backoff effectiveness.
+     */
+    RETRY_DELAY("HTTP retry delay time");
 
     /**
      * Human-readable description of this measurement type for logging and monitoring.

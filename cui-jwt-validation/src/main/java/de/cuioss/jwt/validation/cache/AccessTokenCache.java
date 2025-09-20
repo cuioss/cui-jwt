@@ -65,13 +65,6 @@ public class AccessTokenCache {
 
     private static final CuiLogger LOGGER = new CuiLogger(AccessTokenCache.class);
 
-
-    /**
-     * The configuration for this cache.
-     */
-    @NonNull
-    private final AccessTokenCacheConfig config;
-
     /**
      * The maximum number of tokens to cache.
      */
@@ -116,7 +109,6 @@ public class AccessTokenCache {
             @NonNull AccessTokenCacheConfig config,
             @NonNull SecurityEventCounter securityEventCounter) {
 
-        this.config = config;
         this.maxSize = config.getMaxSize();
         this.securityEventCounter = securityEventCounter;
 
@@ -196,7 +188,7 @@ public class AccessTokenCache {
             OffsetDateTime now = OffsetDateTime.now();
             if (existing.verifyToken(tokenString) && !existing.isExpired(now)) {
                 // True cache hit - valid cached token
-                LOGGER.debug(JWTValidationLogMessages.DEBUG.ACCESS_TOKEN_CACHE_HIT::format);
+                LOGGER.debug("Access token retrieved from cache");
                 securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT);
                 updateLru(cacheKey);
                 return existing.getContent();
@@ -247,8 +239,8 @@ public class AccessTokenCache {
                     LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
                     throw new InternalCacheException(
                             "Token passed validation but has no expiration time", e);
-                } catch (Exception e) {
-                    // Any other unexpected exception
+                } catch (IllegalArgumentException | SecurityException e) {
+                    // Handle specific runtime exceptions that could occur during token caching
                     LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
                     throw new InternalCacheException(
                             "Failed to cache validated token", e);
@@ -367,7 +359,7 @@ public class AccessTokenCache {
 
                 LOGGER.debug("Evicted %s expired tokens from cache", expiredKeys.size());
             }
-        } catch (Exception e) {
+        } catch (IllegalStateException | SecurityException e) {
             LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED.format());
         }
     }

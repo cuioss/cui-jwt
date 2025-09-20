@@ -34,7 +34,6 @@ import lombok.NonNull;
 
 import java.util.*;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO.BEARER_TOKEN_VALIDATION_SUCCESS;
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
 
 /**
@@ -151,11 +150,18 @@ public class BearerTokenProducer {
         Optional<String> tokenResult = extractBearerTokenFromHeaderMap();
         if (tokenResult.isEmpty()) {
             // No token found or missing token - don't call validator, outcome is clear
-            LOGGER.debug(BEARER_TOKEN_MISSING_OR_INVALID::format);
+            LOGGER.debug("Bearer token missing or invalid in Authorization header");
             return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
         }
 
         String bearerToken = tokenResult.get();
+
+        // Check for empty bearer token (RFC 6750 violation - should return 400 Bad Request)
+        if (bearerToken.trim().isEmpty()) {
+            LOGGER.debug("Bearer token is empty - invalid request per RFC 6750");
+            return BearerTokenResult.invalidRequest(
+                    "Bearer token is empty", requiredScopes, requiredRoles, requiredGroups);
+        }
 
         try {
             LOGGER.trace("Validating bearer token: %s", bearerToken);
@@ -167,7 +173,7 @@ public class BearerTokenProducer {
             Set<String> missingGroups = tokenContent.determineMissingGroups(requiredGroups);
 
             if (missingScopes.isEmpty() && missingRoles.isEmpty() && missingGroups.isEmpty()) {
-                LOGGER.debug(BEARER_TOKEN_VALIDATION_SUCCESS::format);
+                LOGGER.debug("Bearer token validation successful");
                 return BearerTokenResult.builder()
                         .status(BearerTokenStatus.FULLY_VERIFIED)
                         .accessTokenContent(tokenContent)
@@ -183,7 +189,7 @@ public class BearerTokenProducer {
             }
         } catch (TokenValidationException e) {
             // No need to use logger.warn, because precise logging already took place in the library
-            LOGGER.debug(e, BEARER_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.debug(e, "Bearer token validation failed: %s", e.getMessage());
             return BearerTokenResult.parsingError(e, requiredScopes, requiredRoles, requiredGroups);
         }
     }

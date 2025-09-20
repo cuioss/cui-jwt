@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.pipeline;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.JwtHeader;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
@@ -102,7 +103,8 @@ public class TokenHeaderValidator {
      */
     @SuppressWarnings("java:S3655") // owolff: False Positive: isPresent is checked before calling get()
     private void validateNoEmbeddedJwk(DecodedJwt decodedJwt) {
-        if (decodedJwt.getHeader().isPresent() && decodedJwt.getHeader().get().containsKey("jwk")) {
+        JwtHeader header = decodedJwt.getHeader();
+        if (header.getJwk().isPresent()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format("Embedded JWK"));
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
@@ -154,9 +156,31 @@ public class TokenHeaderValidator {
         if (kid.isEmpty()) {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            var headerInfo = decodedJwt.getHeader()
-                    .map(header -> "Available header claims: " + header.keySet())
-                    .orElse("Available header claims: none");
+            JwtHeader header = decodedJwt.getHeader();
+            StringBuilder headerInfo = new StringBuilder("Available header claims:");
+            boolean hasAny = false;
+
+            if (header.getAlg().isPresent()) {
+                headerInfo.append(" alg=").append(header.alg());
+                hasAny = true;
+            }
+
+            var kidOpt = header.getKid();
+            if (kidOpt.isPresent()) {
+                headerInfo.append(hasAny ? "," : "").append(" kid=").append(kidOpt.orElse(""));
+                hasAny = true;
+            }
+
+            var typOpt = header.getTyp();
+            if (typOpt.isPresent()) {
+                headerInfo.append(hasAny ? "," : "").append(" typ=").append(typOpt.orElse(""));
+                hasAny = true;
+            }
+
+            if (!hasAny) {
+                headerInfo.append(" none");
+            }
+
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
                     "Missing required key ID (kid) claim in token header. " + headerInfo

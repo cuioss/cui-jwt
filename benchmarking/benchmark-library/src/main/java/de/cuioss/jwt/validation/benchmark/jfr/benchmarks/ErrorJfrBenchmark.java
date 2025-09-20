@@ -15,9 +15,9 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
-import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation.OperationRecorder;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import org.openjdk.jmh.annotations.*;
 
@@ -31,11 +31,10 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String ERROR_VALIDATION_OPERATION = "error-validation";
+    public static final String ISSUER = "issuer";
 
     private ErrorLoadDelegate errorLoadDelegate;
 
@@ -57,10 +56,10 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
      * Measures validation performance for valid tokens with JFR instrumentation.
      */
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent validateValidTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", "validation")) {
+        try (var recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", "validation")) {
             String token = tokenRepository.getPrimaryToken();
-            recorder.withTokenSize(token.length())
-                    .withIssuer(tokenRepository.getTokenIssuer(token));
+            recorder.withPayloadSize(token.length())
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = errorLoadDelegate.validateValid();
             recorder.withSuccess(true);
@@ -72,9 +71,9 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
      * Measures validation performance for expired tokens with JFR instrumentation.
      */
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateExpiredTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(200) // Approximate size
-                    .withIssuer("benchmark-issuer")
+        try (var recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
+            recorder.withPayloadSize(200) // Approximate size
+                    .withMetadata(ISSUER, "benchmark-issuer")
                     .withError("expired");
 
             Object result = errorLoadDelegate.validateExpired();
@@ -87,9 +86,9 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
      * Measures validation performance for malformed tokens with JFR instrumentation.
      */
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMalformedTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(25) // Length of malformed token
-                    .withIssuer("unknown")
+        try (var recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
+            recorder.withPayloadSize(25) // Length of malformed token
+                    .withMetadata(ISSUER, "unknown")
                     .withError("malformed");
 
             Object result = errorLoadDelegate.validateMalformed();
@@ -102,9 +101,9 @@ public class ErrorJfrBenchmark extends AbstractJfrBenchmark {
      * Measures validation performance for tokens with invalid signatures with JFR instrumentation.
      */
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateInvalidSignatureTokenWithJfr() {
-        try (OperationRecorder recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
-            recorder.withTokenSize(200) // Approximate size
-                    .withIssuer("benchmark-issuer")
+        try (var recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
+            recorder.withPayloadSize(200) // Approximate size
+                    .withMetadata(ISSUER, "benchmark-issuer")
                     .withError("invalid_signature");
 
             Object result = errorLoadDelegate.validateInvalidSignature();

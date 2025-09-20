@@ -15,6 +15,10 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.retry.RetryStrategy;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +47,7 @@ class HttpJwksLoaderConfigTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
         assertEquals(URI.create(VALID_URL), config.getHttpHandler().getUri());
@@ -58,6 +63,7 @@ class HttpJwksLoaderConfigTest {
         SSLContext sslContext = SSLContext.getDefault();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .sslContext(sslContext)
                 .build();
@@ -73,6 +79,7 @@ class HttpJwksLoaderConfigTest {
         String urlWithoutScheme = "example.com/jwks.json";
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(urlWithoutScheme)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
         assertEquals(URI.create("https://" + urlWithoutScheme), config.getHttpHandler().getUri());
@@ -85,6 +92,7 @@ class HttpJwksLoaderConfigTest {
         SecureSSLContextProvider secureProvider = new SecureSSLContextProvider();
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .tlsVersions(secureProvider)
                 .build();
@@ -98,6 +106,7 @@ class HttpJwksLoaderConfigTest {
         int negativeRefreshInterval = -1;
         assertThrows(IllegalArgumentException.class, () -> HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(negativeRefreshInterval)
                 .build());
     }
@@ -119,6 +128,7 @@ class HttpJwksLoaderConfigTest {
         ScheduledExecutorService customExecutorService = Executors.newScheduledThreadPool(2);
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .scheduledExecutorService(customExecutorService)
                 .build();
@@ -135,6 +145,7 @@ class HttpJwksLoaderConfigTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL) // Positive refresh interval
                 .build();
         assertNotNull(config.getScheduledExecutorService(),
@@ -147,6 +158,7 @@ class HttpJwksLoaderConfigTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(0) // Zero refresh interval
                 .build();
         assertNull(config.getScheduledExecutorService(),
@@ -161,6 +173,7 @@ class HttpJwksLoaderConfigTest {
         URI testUri = URI.create(VALID_URL);
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUri(testUri)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
         assertEquals(testUri, config.getHttpHandler().getUri(),
@@ -174,6 +187,7 @@ class HttpJwksLoaderConfigTest {
         int connectTimeout = 30;
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .connectTimeoutSeconds(connectTimeout)
                 .build();
@@ -189,6 +203,7 @@ class HttpJwksLoaderConfigTest {
         int readTimeout = 60;
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .readTimeoutSeconds(readTimeout)
                 .build();
@@ -205,6 +220,7 @@ class HttpJwksLoaderConfigTest {
         int readTimeout = 60;
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .connectTimeoutSeconds(connectTimeout)
                 .readTimeoutSeconds(readTimeout)
@@ -218,6 +234,7 @@ class HttpJwksLoaderConfigTest {
 
         assertThrows(IllegalArgumentException.class, () -> HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .connectTimeoutSeconds(0)
                 .build());
@@ -230,6 +247,7 @@ class HttpJwksLoaderConfigTest {
         int negativeConnectTimeout = -1;
         assertThrows(IllegalArgumentException.class, () -> HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .connectTimeoutSeconds(negativeConnectTimeout)
                 .build());
@@ -241,6 +259,7 @@ class HttpJwksLoaderConfigTest {
 
         assertThrows(IllegalArgumentException.class, () -> HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .readTimeoutSeconds(0)
                 .build());
@@ -253,6 +272,7 @@ class HttpJwksLoaderConfigTest {
         int negativeReadTimeout = -1;
         assertThrows(IllegalArgumentException.class, () -> HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .readTimeoutSeconds(negativeReadTimeout)
                 .build());
@@ -264,6 +284,7 @@ class HttpJwksLoaderConfigTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
         String toString = config.toString();
@@ -275,20 +296,28 @@ class HttpJwksLoaderConfigTest {
     @Test
     @DisplayName("Should test equals and hashCode methods")
     void shouldTestEqualsAndHashCode() {
+        // Use same RetryStrategy instance for both configs since it's now part of equals/hashCode
+        RetryStrategy sharedRetryStrategy = RetryStrategy.exponentialBackoff();
 
         HttpJwksLoaderConfig config1 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
+                .retryStrategy(sharedRetryStrategy)
                 .build();
 
         HttpJwksLoaderConfig config2 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
+                .retryStrategy(sharedRetryStrategy)
                 .build();
 
         HttpJwksLoaderConfig config3 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(120) // Different value
+                .retryStrategy(sharedRetryStrategy)
                 .build();
         assertEquals(config1, config2, "Configs with same values should be equal");
         assertEquals(config1.hashCode(), config2.hashCode(), "Configs with same values should have same hashCode");
@@ -328,7 +357,8 @@ class HttpJwksLoaderConfigTest {
     @DisplayName("Should throw exception when jwksUrl() and jwksUri() are both used")
     void shouldThrowExceptionWhenJwksUrlAndJwksUriBothUsed() {
         HttpJwksLoaderConfig.HttpJwksLoaderConfigBuilder builder = HttpJwksLoaderConfig.builder()
-                .jwksUrl(VALID_URL);
+                .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                 builder.jwksUri(URI.create("https://another.example.com/jwks.json")));
@@ -347,6 +377,7 @@ class HttpJwksLoaderConfigTest {
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
                 .jwksUrl("https://final.example.com/jwks.json") // Override with different URL
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
 
@@ -360,8 +391,13 @@ class HttpJwksLoaderConfigTest {
         assertThrows(IllegalArgumentException.class, () ->
                 HttpJwksLoaderConfig.builder()
                         .jwksUrl("not-a-valid-url://invalid")
+                        .issuerIdentifier("test-issuer")
                         .refreshIntervalSeconds(REFRESH_INTERVAL)
                         .build());
+
+        // Verify the warning was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_JWKS_URI.resolveIdentifierString());
     }
 
     @Test
@@ -369,24 +405,26 @@ class HttpJwksLoaderConfigTest {
     void shouldGuaranteeHttpHandlerNonNullForHttpConfigurations() {
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)
+                .issuerIdentifier("test-issuer")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
 
         // Verify the contract: HttpHandler is guaranteed non-null for HTTP configurations
         assertNotNull(config.getHttpHandler(), "HttpHandler must be non-null for HTTP configurations");
-        assertNull(config.getWellKnownResolver(), "WellKnownResolver should be null for HTTP configurations");
+        assertNull(config.getWellKnownConfig(), "WellKnownConfig should be null for HTTP configurations");
     }
 
     @Test
-    @DisplayName("Should guarantee WellKnownResolver is non-null for well-known configurations")
-    void shouldGuaranteeWellKnownResolverNonNullForWellKnownConfigurations() {
+    @DisplayName("Should guarantee WellKnownConfig is non-null for well-known configurations")
+    void shouldGuaranteeWellKnownConfigNonNullForWellKnownConfigurations() {
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
                 .refreshIntervalSeconds(REFRESH_INTERVAL)
                 .build();
 
-        // Verify the contract: WellKnownResolver is guaranteed non-null for well-known configurations  
-        assertNotNull(config.getWellKnownResolver(), "WellKnownResolver must be non-null for well-known configurations");
-        assertNull(config.getHttpHandler(), "HttpHandler should be null for well-known configurations");
+        // Verify the contract: WellKnownConfig is guaranteed non-null for well-known configurations
+        assertNotNull(config.getWellKnownConfig(), "WellKnownConfig must be non-null for well-known configurations");
+        // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
+        assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }
 }

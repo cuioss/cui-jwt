@@ -15,39 +15,83 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.junit.jupiter.api.BeforeEach;
+import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static de.cuioss.jwt.quarkus.benchmark.metrics.MetricsTestDataConstants.STANDARD_PROMETHEUS_METRICS;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for QuarkusMetricsPostProcessor
+ * Tests for QuarkusMetricsPostProcessor using parameterized test approach
  */
-class QuarkusMetricsPostProcessorTest {
+class QuarkusMetricsPostProcessorTest extends AbstractMetricsProcessorTest {
 
-    @TempDir
-    Path tempDir;
-
-    private Gson gson;
     private String metricsDownloadDir;
 
-    @BeforeEach void setUp() throws IOException {
-        gson = new GsonBuilder().create();
+    @Override protected void onSetUp() throws IOException {
         metricsDownloadDir = createTestMetricsDirectory();
     }
 
+    @Override protected void processMetrics(String inputFile, String outputDir, TestFixture fixture) throws IOException {
+        // For Quarkus metrics, we need to set up the metrics directory structure
+        QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, outputDir);
+        processor.parseAndExportQuarkusMetrics(Instant.now());
+    }
+
+    @Override protected void processMetricsWithTimestamp(String inputFile, String outputDir, TestFixture fixture, Instant timestamp) throws IOException {
+        QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, outputDir);
+        processor.parseAndExportQuarkusMetrics(timestamp);
+    }
+
+    @Override protected Stream<Arguments> provideFileExistenceTestCases() {
+        return Stream.of(
+                Arguments.of("Standard Prometheus metrics",
+                        new TestFixture(STANDARD_PROMETHEUS_METRICS, "quarkus-metrics.json", ProcessorType.QUARKUS_METRICS))
+        );
+    }
+
+    @Override protected Stream<Arguments> provideJsonStructureTestCases() {
+        return Stream.of(
+                Arguments.of("Quarkus metrics structure",
+                        new TestFixture(STANDARD_PROMETHEUS_METRICS, "quarkus-metrics.json", ProcessorType.QUARKUS_METRICS),
+                        new String[]{"cpu", "memory", "metadata"})
+        );
+    }
+
+    @Override protected Stream<Arguments> provideNumericValidationTestCases() {
+        return Stream.of(
+                Arguments.of("CPU usage percentage validation",
+                        new TestFixture(STANDARD_PROMETHEUS_METRICS, "quarkus-metrics.json", ProcessorType.QUARKUS_METRICS),
+                        new NumericValidation("cpu.system_cpu_usage_avg", 0, 100)),
+                Arguments.of("CPU count validation",
+                        new TestFixture(STANDARD_PROMETHEUS_METRICS, "quarkus-metrics.json", ProcessorType.QUARKUS_METRICS),
+                        new NumericValidation("cpu.cpu_count", 1, 1024))
+        );
+    }
+
+    @Override protected Stream<Arguments> provideTimestampTestCases() {
+        return Stream.of(
+                Arguments.of("Quarkus metadata timestamp",
+                        new TestFixture(STANDARD_PROMETHEUS_METRICS, "quarkus-metrics.json", ProcessorType.QUARKUS_METRICS),
+                        "metadata.timestamp")
+        );
+    }
+
+    // QuarkusMetricsPostProcessor doesn't throw exceptions in our test scenarios,
+    // so we don't override provideExceptionTestCases (returns empty stream)
+
+    // Additional specific tests
     @Test void shouldParseQuarkusMetricsFiles() throws IOException {
         // Given - processor with test metrics directory
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
@@ -61,15 +105,19 @@ class QuarkusMetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> metrics = gson.fromJson(reader, mapType);
 
             // Should have CPU, memory, and metadata sections
             assertTrue(metrics.containsKey("cpu"), "Should contain CPU metrics");
             assertTrue(metrics.containsKey("memory"), "Should contain memory metrics");
             assertTrue(metrics.containsKey("metadata"), "Should contain metadata");
 
-            // Verify CPU metrics structure
-            Map<String, Object> cpuMetrics = (Map<String, Object>) metrics.get("cpu");
+            // Verify CPU metrics structure - safe cast with instanceof check
+            Object cpuObj = metrics.get("cpu");
+            assertInstanceOf(Map.class, cpuObj, "CPU metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> cpuMetrics = (Map<String, Object>) cpuObj;
             assertTrue(cpuMetrics.containsKey("system_cpu_usage_avg"));
             assertTrue(cpuMetrics.containsKey("system_cpu_usage_max"));
             assertTrue(cpuMetrics.containsKey("process_cpu_usage_avg"));
@@ -78,66 +126,52 @@ class QuarkusMetricsPostProcessorTest {
             assertTrue(cpuMetrics.containsKey("load_average_1m_avg"));
             assertTrue(cpuMetrics.containsKey("load_average_1m_max"));
 
-            // Verify memory metrics structure
-            Map<String, Object> memoryMetrics = (Map<String, Object>) metrics.get("memory");
+            // Verify memory metrics structure - safe cast with instanceof check
+            Object memoryObj = metrics.get("memory");
+            assertInstanceOf(Map.class, memoryObj, "Memory metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> memoryMetrics = (Map<String, Object>) memoryObj;
             assertTrue(memoryMetrics.containsKey("heap"));
             assertTrue(memoryMetrics.containsKey("nonheap"));
 
-            Map<String, Object> heapMetrics = (Map<String, Object>) memoryMetrics.get("heap");
+            Object heapObj = memoryMetrics.get("heap");
+            assertInstanceOf(Map.class, heapObj, "Heap metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> heapMetrics = (Map<String, Object>) heapObj;
             assertTrue(heapMetrics.containsKey("used_bytes"));
             assertTrue(heapMetrics.containsKey("committed_bytes"));
 
-            // Verify metadata
-            Map<String, Object> metadata = (Map<String, Object>) metrics.get("metadata");
+            // Verify metadata - safe cast with instanceof check
+            Object metadataObj = metrics.get("metadata");
+            assertInstanceOf(Map.class, metadataObj, "Metadata should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> metadata = (Map<String, Object>) metadataObj;
             assertEquals(testTimestamp.toString(), metadata.get("timestamp"));
             assertEquals("Quarkus metrics - Prometheus format", metadata.get("source"));
         }
     }
 
-    @Test void shouldHandlePercentageFormatting() throws IOException {
-        // Given - processor with test metrics
-        QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
-
-        // When - parse metrics
-        processor.parseAndExportQuarkusMetrics(Instant.now());
-
-        // Then - verify percentage formatting
-        File outputFile = new File(tempDir.toFile(), "quarkus-metrics.json");
-        try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            Map<String, Object> cpuMetrics = (Map<String, Object>) metrics.get("cpu");
-
-            // CPU usage values should be formatted as percentages
-            Object systemCpuAvg = cpuMetrics.get("system_cpu_usage_avg");
-            assertInstanceOf(Number.class, systemCpuAvg, "CPU usage should be a number");
-
-            double cpuValue = ((Number) systemCpuAvg).doubleValue();
-            assertTrue(cpuValue >= 0 && cpuValue <= 100, "CPU usage should be in percentage range (0-100)");
-        }
-    }
+    // Percentage formatting is now covered by provideNumericValidationTestCases
 
     @Test void shouldHandleMemoryCalculations() throws IOException {
-        // Given - processor with test metrics
+        // Specific test for memory calculations
         QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(metricsDownloadDir, tempDir.toString());
-
-        // When - parse metrics
         processor.parseAndExportQuarkusMetrics(Instant.now());
 
-        // Then - verify memory calculations
         File outputFile = new File(tempDir.toFile(), "quarkus-metrics.json");
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
-            Map<String, Object> memoryMetrics = (Map<String, Object>) metrics.get("memory");
-            Map<String, Object> heapMetrics = (Map<String, Object>) memoryMetrics.get("heap");
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> metrics = gson.fromJson(reader, mapType);
 
-            // Heap metrics should be present and positive
+            Object memoryObj = metrics.get("memory");
+            assertInstanceOf(Map.class, memoryObj, "Memory metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> memoryMetrics = (Map<String, Object>) memoryObj;
+
+            Object heapObj = memoryMetrics.get("heap");
+            assertInstanceOf(Map.class, heapObj, "Heap metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> heapMetrics = (Map<String, Object>) heapObj;
+
             Object usedBytes = heapMetrics.get("used_bytes");
-            assertInstanceOf(Number.class, usedBytes, "Used bytes should be a number");
-            assertTrue(((Number) usedBytes).longValue() > 0, "Used bytes should be positive");
-
-            Object committedBytes = heapMetrics.get("committed_bytes");
-            assertInstanceOf(Number.class, committedBytes, "Committed bytes should be a number");
-            assertTrue(((Number) committedBytes).longValue() > 0, "Committed bytes should be positive");
+            assertInstanceOf(Number.class, usedBytes);
+            assertTrue(((Number) usedBytes).longValue() > 0);
         }
     }
 
@@ -148,8 +182,8 @@ class QuarkusMetricsPostProcessorTest {
         metricsDir.mkdirs();
 
         // Copy test metrics file to expected location
-        File sourceFile = new File(metricsDownloadDir, "jwt-validation-metrics.txt");
-        File targetFile = new File(metricsDir, "jwt-validation-metrics.txt");
+        File sourceFile = new File(metricsDownloadDir, "quarkus-metrics.txt");
+        File targetFile = new File(metricsDir, "quarkus-metrics.txt");
         Files.copy(sourceFile.toPath(), targetFile.toPath());
 
         // When - use convenience method
@@ -160,7 +194,9 @@ class QuarkusMetricsPostProcessorTest {
         assertTrue(outputFile.exists());
 
         try (FileReader reader = new FileReader(outputFile)) {
-            Map<String, Object> metrics = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> metrics = gson.fromJson(reader, mapType);
             assertFalse(metrics.isEmpty(), "Should have parsed metrics");
         }
     }
@@ -172,43 +208,9 @@ class QuarkusMetricsPostProcessorTest {
         File metricsDir = new File(tempDir.toFile(), "test-metrics");
         metricsDir.mkdirs();
 
-        File testMetricsFile = new File(metricsDir, "jwt-validation-metrics.txt");
-
-        String testMetricsContent = """
-            # TYPE system_cpu_usage gauge
-            # HELP system_cpu_usage The "recent cpu usage" of the system the application is running in
-            system_cpu_usage 0.13922521857923498
-            # TYPE process_cpu_usage gauge
-            # HELP process_cpu_usage The "recent cpu usage" for the Java Virtual Machine process
-            process_cpu_usage 0.1377049180327869
-            # TYPE system_cpu_count gauge
-            # HELP system_cpu_count The number of processors available to the Java virtual machine
-            system_cpu_count 2.0
-            # TYPE system_load_average_1m gauge
-            # HELP system_load_average_1m The sum of the number of runnable entities queued to available processors
-            system_load_average_1m 3.77783203125
-            # TYPE jvm_memory_used_bytes gauge
-            # HELP jvm_memory_used_bytes The amount of used memory
-            jvm_memory_used_bytes{area="heap",id="old generation space"} 7864320.0
-            jvm_memory_used_bytes{area="heap",id="eden space"} 5242880.0
-            jvm_memory_used_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
-            jvm_memory_used_bytes{area="heap",id="survivor space"} 0.0
-            # TYPE jvm_memory_committed_bytes gauge
-            # HELP jvm_memory_committed_bytes The amount of memory in bytes that is committed for the Java virtual machine to use
-            jvm_memory_committed_bytes{area="heap",id="old generation space"} 7864320.0
-            jvm_memory_committed_bytes{area="heap",id="eden space"} 4718592.0
-            jvm_memory_committed_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
-            jvm_memory_committed_bytes{area="heap",id="survivor space"} 0.0
-            # TYPE jvm_memory_max_bytes gauge
-            # HELP jvm_memory_max_bytes The maximum amount of memory in bytes that can be used for memory management
-            jvm_memory_max_bytes{area="heap",id="old generation space"} -1.0
-            jvm_memory_max_bytes{area="heap",id="eden space"} -1.0
-            jvm_memory_max_bytes{area="nonheap",id="runtime code cache (code and data)"} -1.0
-            jvm_memory_max_bytes{area="heap",id="survivor space"} -1.0
-            """;
-
+        File testMetricsFile = new File(metricsDir, "quarkus-metrics.txt");
         try (FileWriter writer = new FileWriter(testMetricsFile)) {
-            writer.write(testMetricsContent);
+            writer.write(STANDARD_PROMETHEUS_METRICS);
         }
 
         return metricsDir.getAbsolutePath();

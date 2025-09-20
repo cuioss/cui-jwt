@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.benchmark.metrics;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import de.cuioss.benchmarking.common.metrics.MetricsFetcher;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -62,25 +64,35 @@ class SimpleMetricsExporterTest {
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
-            Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> aggregatedData = gson.fromJson(reader, mapType);
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
 
-            Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
+            Object benchmarkObj = aggregatedData.get("validateJwtThroughput");
+            assertInstanceOf(Map.class, benchmarkObj, "Benchmark data should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> benchmarkData = (Map<String, Object>) benchmarkObj;
             assertNotNull(benchmarkData);
             assertTrue(benchmarkData.containsKey("bearer_token_producer_metrics"));
             assertTrue(benchmarkData.containsKey("security_event_counter_metrics"));
 
-            Map<String, Object> bearerMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
+            Object bearerObj = benchmarkData.get("bearer_token_producer_metrics");
+            assertInstanceOf(Map.class, bearerObj, "Bearer metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> bearerMetrics = (Map<String, Object>) bearerObj;
             assertTrue(bearerMetrics.containsKey("validation"));
 
-            Map<String, Object> validation = (Map<String, Object>) bearerMetrics.get("validation");
+            Object validationObj = bearerMetrics.get("validation");
+            assertInstanceOf(Map.class, validationObj, "Validation should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> validation = (Map<String, Object>) validationObj;
             assertTrue(validation.containsKey("sample_count"));
             assertTrue(validation.containsKey("p50_us"));
             assertTrue(validation.containsKey("p95_us"));
             assertTrue(validation.containsKey("p99_us"));
 
             // Check security event metrics
-            Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
+            Object securityObj = benchmarkData.get("security_event_counter_metrics");
+            assertInstanceOf(Map.class, securityObj, "Security metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> securityMetrics = (Map<String, Object>) securityObj;
             assertTrue(securityMetrics.containsKey("total_errors"));
             assertTrue(securityMetrics.containsKey("total_success"));
             assertTrue(securityMetrics.containsKey("errors_by_category"));
@@ -105,13 +117,17 @@ class SimpleMetricsExporterTest {
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
-            Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> aggregatedData = gson.fromJson(reader, mapType);
 
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
             assertTrue(aggregatedData.containsKey("validateJwtLatency"));
 
             for (String benchmarkKey : aggregatedData.keySet()) {
-                Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get(benchmarkKey);
+                Object benchmarkObj = aggregatedData.get(benchmarkKey);
+                assertInstanceOf(Map.class, benchmarkObj, "Benchmark data should be a Map");
+                @SuppressWarnings("unchecked") Map<String, Object> benchmarkData = (Map<String, Object>) benchmarkObj;
                 assertTrue(benchmarkData.containsKey("timestamp"));
                 assertTrue(benchmarkData.containsKey("bearer_token_producer_metrics"));
                 assertTrue(benchmarkData.containsKey("security_event_counter_metrics"));
@@ -177,7 +193,9 @@ class SimpleMetricsExporterTest {
         assertFalse(jsonContent.contains("\"JwtHealth\""));
         assertFalse(jsonContent.contains("\"healthCheckLatency\""));
 
-        @SuppressWarnings("unchecked") Map<String, Object> aggregatedData = (Map<String, Object>) gson.fromJson(new FileReader(aggregatedFile), Map.class);
+        Type mapType = new TypeToken<Map<String, Object>>(){
+        }.getType();
+        Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), mapType);
         assertEquals(3, aggregatedData.size());
     }
 
@@ -187,19 +205,27 @@ class SimpleMetricsExporterTest {
 
         // Assert
         File aggregatedFile = new File(tempDir.toFile(), "integration-metrics.json");
-        Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), Map.class);
+        Type mapType = new TypeToken<Map<String, Object>>(){
+        }.getType();
+        Map<String, Object> aggregatedData = gson.fromJson(new FileReader(aggregatedFile), mapType);
 
-        Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
+        Object benchmarkObj = aggregatedData.get("validateJwtThroughput");
+        assertInstanceOf(Map.class, benchmarkObj, "Benchmark data should be a Map");
+        @SuppressWarnings("unchecked") Map<String, Object> benchmarkData = (Map<String, Object>) benchmarkObj;
         assertNotNull(benchmarkData.get("bearer_token_producer_metrics"));
 
-        Map<String, Object> httpMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
+        Object httpObj = benchmarkData.get("bearer_token_producer_metrics");
+        assertInstanceOf(Map.class, httpObj, "HTTP metrics should be a Map");
+        @SuppressWarnings("unchecked") Map<String, Object> httpMetrics = (Map<String, Object>) httpObj;
 
         // Check for new @Timed metrics structure - validation only (extraction removed)
         assertTrue(httpMetrics.containsKey("validation"),
                 "Should contain validation metric");
 
         // Check validation metric structure
-        Map<String, Object> validation = (Map<String, Object>) httpMetrics.get("validation");
+        Object validationObj = httpMetrics.get("validation");
+        assertInstanceOf(Map.class, validationObj, "Validation should be a Map");
+        @SuppressWarnings("unchecked") Map<String, Object> validation = (Map<String, Object>) validationObj;
         assertTrue(validation.containsKey("sample_count"));
         assertTrue(validation.containsKey("p50_us"));
         assertTrue(validation.containsKey("p95_us"));
@@ -210,7 +236,9 @@ class SimpleMetricsExporterTest {
         assertTrue(sampleCount > 0, "Bearer token validation should have sample count > 0");
 
         // Check security event metrics
-        Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
+        Object securityObj = benchmarkData.get("security_event_counter_metrics");
+        assertInstanceOf(Map.class, securityObj, "Security metrics should be a Map");
+        @SuppressWarnings("unchecked") Map<String, Object> securityMetrics = (Map<String, Object>) securityObj;
         assertNotNull(securityMetrics, "Should have security event counter metrics");
         assertTrue(securityMetrics.containsKey("total_errors"));
         assertTrue(securityMetrics.containsKey("total_success"));
@@ -237,12 +265,22 @@ class SimpleMetricsExporterTest {
         assertTrue(aggregatedFile.exists());
 
         try (FileReader reader = new FileReader(aggregatedFile)) {
-            Map<String, Object> aggregatedData = gson.fromJson(reader, Map.class);
+            Type mapType = new TypeToken<Map<String, Object>>(){
+            }.getType();
+            Map<String, Object> aggregatedData = gson.fromJson(reader, mapType);
             assertTrue(aggregatedData.containsKey("validateJwtThroughput"));
 
-            Map<String, Object> benchmarkData = (Map<String, Object>) aggregatedData.get("validateJwtThroughput");
-            Map<String, Object> bearerMetrics = (Map<String, Object>) benchmarkData.get("bearer_token_producer_metrics");
-            Map<String, Object> securityMetrics = (Map<String, Object>) benchmarkData.get("security_event_counter_metrics");
+            Object benchmarkObj = aggregatedData.get("validateJwtThroughput");
+            assertInstanceOf(Map.class, benchmarkObj, "Benchmark data should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> benchmarkData = (Map<String, Object>) benchmarkObj;
+
+            Object bearerObj = benchmarkData.get("bearer_token_producer_metrics");
+            assertInstanceOf(Map.class, bearerObj, "Bearer metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> bearerMetrics = (Map<String, Object>) bearerObj;
+
+            Object securityObj = benchmarkData.get("security_event_counter_metrics");
+            assertInstanceOf(Map.class, securityObj, "Security metrics should be a Map");
+            @SuppressWarnings("unchecked") Map<String, Object> securityMetrics = (Map<String, Object>) securityObj;
 
             assertNotNull(bearerMetrics, "Should have bearer token producer metrics even with empty data");
             assertTrue(bearerMetrics.containsKey("validation"));

@@ -295,8 +295,7 @@ public class MetricsPostProcessor {
     /**
      * Class to track metrics for an HTTP endpoint - made public for testing
      */
-    @Getter
-    public static class HttpEndpointMetrics {
+    @Getter public static class HttpEndpointMetrics {
         final String displayName;
         final String sourceBenchmark;
         int sampleCount;
@@ -376,12 +375,8 @@ public class MetricsPostProcessor {
             outputDir = resultsDirectory;
         }
 
-        try {
-            MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
-            parser.parseAndExportAllMetrics(Instant.now());
-        } catch (Exception e) {
-            LOGGER.error("Failed to parse and export metrics", e);
-        }
+        MetricsPostProcessor parser = new MetricsPostProcessor(benchmarkFile, outputDir);
+        parser.parseAndExportAllMetrics(Instant.now());
     }
 
     /**

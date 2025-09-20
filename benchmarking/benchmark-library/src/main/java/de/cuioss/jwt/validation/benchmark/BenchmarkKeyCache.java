@@ -22,6 +22,9 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
+
 /**
  * Pre-generates and caches RSA key pairs for benchmarking to avoid key generation
  * during benchmark measurements.
@@ -49,15 +52,14 @@ public final class BenchmarkKeyCache {
     static {
         // Pre-generate key materials for common issuer counts
         long startTime = System.currentTimeMillis();
-        LOGGER.info("BenchmarkKeyCache: Starting RSA key pre-generation...");
+        LOGGER.info(INFO.KEY_PREGENERATION_STARTING.format());
 
         for (int count = 1; count <= MAX_CACHED_ISSUERS; count++) {
             ISSUER_CACHE.put(count, InMemoryKeyMaterialHandler.createMultipleIssuers(count));
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        LOGGER.info("BenchmarkKeyCache: Pre-generated keys for %s issuer configurations in %s ms",
-                MAX_CACHED_ISSUERS, duration);
+        LOGGER.info(INFO.KEY_PREGENERATION_COMPLETED.format(MAX_CACHED_ISSUERS, duration));
     }
 
     /**
@@ -86,7 +88,7 @@ public final class BenchmarkKeyCache {
         }
 
         // Generate on demand if not cached (this should be rare in benchmarks)
-        LOGGER.warn("BenchmarkKeyCache miss for count=%s. Generating keys during benchmark!", count);
+        LOGGER.warn(WARN.KEY_CACHE_MISS.format(count));
         IssuerKeyMaterial[] generated = InMemoryKeyMaterialHandler.createMultipleIssuers(count);
         ISSUER_CACHE.put(count, generated);
         return generated;
@@ -100,6 +102,6 @@ public final class BenchmarkKeyCache {
      */
     public static void initialize() {
         // The static initializer will run when this method is called
-        LOGGER.info("BenchmarkKeyCache: Initialized with %s configurations", ISSUER_CACHE.size());
+        LOGGER.info(INFO.KEY_CACHE_INITIALIZED.format(ISSUER_CACHE.size()));
     }
 }

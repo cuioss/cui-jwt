@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
@@ -52,7 +53,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @TestTokenSource(value = TokenType.ID_TOKEN, count = 3)
     @DisplayName("Create IdTokenContent with valid parameters")
     void shouldCreateIdTokenContentWithValidParameters(TestTokenHolder tokenHolder) {
-        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken());
+        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), MapRepresentation.empty());
 
         assertNotNull(idTokenContent, "IdTokenContent should not be null");
         assertEquals(tokenHolder.getClaims(), idTokenContent.getClaims(), "Claims should match");
@@ -65,7 +66,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @DisplayName("Return audience correctly when present")
     void shouldReturnAudienceCorrectlyWhenPresent(TestTokenHolder tokenHolder) {
         tokenHolder.withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forList(TEST_AUDIENCE.toString(), TEST_AUDIENCE));
-        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken());
+        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), MapRepresentation.empty());
 
         List<String> audience = idTokenContent.getAudience();
 
@@ -76,7 +77,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @DisplayName("Throw exception when audience not present")
     void shouldThrowExceptionWhenAudienceNotPresent() {
         Map<String, ClaimValue> claims = new HashMap<>();
-        var idTokenContent = new IdTokenContent(claims, SAMPLE_TOKEN);
+        var idTokenContent = new IdTokenContent(claims, SAMPLE_TOKEN, MapRepresentation.empty());
 
         assertThrows(IllegalStateException.class, idTokenContent::getAudience,
                 "Should throw IllegalStateException for missing audience claim");
@@ -87,7 +88,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @DisplayName("Return name when present")
     void shouldReturnNameWhenPresent(TestTokenHolder tokenHolder) {
         tokenHolder.withClaim(ClaimName.NAME.getName(), ClaimValue.forPlainString(TEST_NAME));
-        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken());
+        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), MapRepresentation.empty());
 
         Optional<String> name = idTokenContent.getName();
 
@@ -99,7 +100,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @DisplayName("Return empty name when not present")
     void shouldReturnEmptyNameWhenNotPresent() {
         Map<String, ClaimValue> claims = new HashMap<>();
-        var idTokenContent = new IdTokenContent(claims, SAMPLE_TOKEN);
+        var idTokenContent = new IdTokenContent(claims, SAMPLE_TOKEN, MapRepresentation.empty());
 
         Optional<String> name = idTokenContent.getName();
 
@@ -111,7 +112,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @DisplayName("Return email when present")
     void shouldReturnEmailWhenPresent(TestTokenHolder tokenHolder) {
         tokenHolder.withClaim(ClaimName.EMAIL.getName(), ClaimValue.forPlainString(TEST_EMAIL));
-        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken());
+        var idTokenContent = new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), MapRepresentation.empty());
 
         Optional<String> email = idTokenContent.getEmail();
 
@@ -123,7 +124,7 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @DisplayName("Return empty email when not present")
     void shouldReturnEmptyEmailWhenNotPresent() {
         Map<String, ClaimValue> claims = new HashMap<>();
-        var idTokenContent = new IdTokenContent(claims, SAMPLE_TOKEN);
+        var idTokenContent = new IdTokenContent(claims, SAMPLE_TOKEN, MapRepresentation.empty());
 
         Optional<String> email = idTokenContent.getEmail();
 
@@ -133,6 +134,6 @@ class IdTokenContentTest implements ShouldHandleObjectContracts<IdTokenContent> 
     @Override
     public IdTokenContent getUnderTest() {
         var tokenHolder = TestTokenGenerators.idTokens().next();
-        return new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken());
+        return new IdTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), MapRepresentation.empty());
     }
 }

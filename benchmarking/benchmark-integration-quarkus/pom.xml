@@ -18,12 +18,16 @@
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.benchmark</maven.jar.plugin.automatic.module.name>
 
+        <!-- Scripts location -->
+        <integration.scripts.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts</integration.scripts.dir>
+
         <!-- Default benchmark runner -->
         <benchmark.runner>de.cuioss.jwt.quarkus.benchmark.QuarkusIntegrationRunner</benchmark.runner>
 
         <!-- JMH Configuration Properties - Optimized for integration testing -->
+        <jmh.include>de\.cuioss\.jwt\.quarkus\.benchmark\.benchmarks\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
-        <jmh.result.filePrefix>${benchmark.results.dir}/integration-benchmark-result</jmh.result.filePrefix>
+        <jmh.result.filePrefix>${project.build.directory}/benchmark-results/integration-result</jmh.result.filePrefix>
         <jmh.iterations>5</jmh.iterations>
         <jmh.warmupIterations>1</jmh.warmupIterations>
         <jmh.forks>2</jmh.forks>
@@ -35,6 +39,19 @@
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
+        
+        <!-- Token Repository Configuration Properties -->
+        <token.keycloak.url>https://localhost:1443</token.keycloak.url>
+        <token.keycloak.realm>benchmark</token.keycloak.realm>
+        <token.keycloak.clientId>benchmark-client</token.keycloak.clientId>
+        <token.keycloak.clientSecret>benchmark-secret</token.keycloak.clientSecret>
+        <token.keycloak.username>benchmark-user</token.keycloak.username>
+        <token.keycloak.password>benchmark-password</token.keycloak.password>
+        <token.pool.size>100</token.pool.size>
+        <token.connection.timeoutMs>5000</token.connection.timeoutMs>
+        <token.request.timeoutMs>10000</token.request.timeoutMs>
+        <token.verifySsl>false</token.verifySsl>
+        <token.refreshThresholdSeconds>180</token.refreshThresholdSeconds>
     </properties>
 
     <dependencies>
@@ -60,7 +77,7 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- JSON processing -->
+<!-- JSON processing -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -130,6 +147,24 @@
                             <version>${version.lombok}</version>
                         </path>
                     </annotationProcessorPaths>
+                    <!--
+                        Fix for JMH "inconsistent type hierarchy" error with Java 21+
+
+                        Issue: Java 21+ disables annotation processing by default, causing JMH's
+                        annotation processor to generate incomplete class hierarchies like:
+                        JwtHealthBenchmark_jmhType_B1 → B2 → B3 with compilation errors.
+
+                        Solution: -proc:full explicitly enables full annotation processing,
+                        ensuring JMH generates proper benchmark infrastructure code.
+
+                        Without this, benchmarks fail with "The hierarchy of the type
+                        [Benchmark]_jmhType_B3 is inconsistent" errors during execution.
+
+                        References: Known JMH issue with Java 21+ annotation processing changes
+                    -->
+                    <compilerArgs>
+                        <arg>-proc:full</arg>
+                    </compilerArgs>
                     <release>21</release>
                 </configuration>
             </plugin>
@@ -152,6 +187,7 @@
                                 <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
                                 <argument>-classpath</argument>
                                 <argument>${project.build.outputDirectory}${path.separator}${project.build.directory}/dependency/*</argument>
+                                <argument>-Djmh.include=${jmh.include}</argument>
                                 <argument>-Djmh.result.format=${jmh.result.format}</argument>
                                 <argument>-Djmh.result.filePrefix=${jmh.result.filePrefix}</argument>
                                 <argument>-Djmh.iterations=${jmh.iterations}</argument>
@@ -160,12 +196,24 @@
                                 <argument>-Djmh.threads=${jmh.threads}</argument>
                                 <argument>-Djmh.time=${jmh.time}</argument>
                                 <argument>-Djmh.warmupTime=${jmh.warmupTime}</argument>
-                                <argument>-Dbenchmark.results.dir=${benchmark.results.dir}</argument>
                                 <argument>-Dintegration.service.url=${integration.service.url}</argument>
                                 <argument>-Dkeycloak.url=${keycloak.url}</argument>
                                 <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
-                                <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
-                                <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
+                                <!-- Token Repository Properties -->
+                                <argument>-Dtoken.keycloak.url=${token.keycloak.url}</argument>
+                                <argument>-Dtoken.keycloak.realm=${token.keycloak.realm}</argument>
+                                <argument>-Dtoken.keycloak.clientId=${token.keycloak.clientId}</argument>
+                                <argument>-Dtoken.keycloak.clientSecret=${token.keycloak.clientSecret}</argument>
+                                <argument>-Dtoken.keycloak.username=${token.keycloak.username}</argument>
+                                <argument>-Dtoken.keycloak.password=${token.keycloak.password}</argument>
+                                <argument>-Dtoken.pool.size=${token.pool.size}</argument>
+                                <argument>-Dtoken.connection.timeoutMs=${token.connection.timeoutMs}</argument>
+                                <argument>-Dtoken.request.timeoutMs=${token.request.timeoutMs}</argument>
+                                <argument>-Dtoken.verifySsl=${token.verifySsl}</argument>
+                                <argument>-Dtoken.refreshThresholdSeconds=${token.refreshThresholdSeconds}</argument>
+                                <!-- HTTP Protocol Configuration -->
+                                <argument>-Dbenchmark.http.protocol=${benchmark.http.protocol}</argument>
+                                <argument>-Djava.util.logging.config.file=benchmark-logging.properties</argument>
                                 <argument>-XX:+UnlockDiagnosticVMOptions</argument>
                                 <argument>-XX:+DebugNonSafepoints</argument>
                                 <argument>${benchmark.runner}</argument>
@@ -186,10 +234,9 @@
 
     <profiles>
         <profile>
-            <id>benchmark-testing</id>
+            <id>benchmark</id>
             <properties>
                 <skip.benchmark>false</skip.benchmark>
-                <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
             </properties>
             <build>
                 <plugins>
@@ -224,12 +271,27 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</executable>
+                                    <executable>${integration.scripts.dir}/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
                             <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
                             <!-- No separate CLI execution needed anymore -->
+                            <!-- Dump Quarkus logs before stopping containers -->
+                            <execution>
+                                <id>dump-quarkus-logs</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${integration.scripts.dir}/dump-quarkus-logs.sh</executable>
+                                    <arguments>
+                                        <argument>target</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-integration-containers</id>
@@ -238,7 +300,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>${integration.scripts.dir}/stop-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>
@@ -286,7 +348,6 @@
             <id>benchmark-jfr</id>
             <properties>
                 <skip.benchmark>false</skip.benchmark>
-                <benchmark.results.dir>target/benchmark-results</benchmark.results.dir>
                 <jfr.enabled>true</jfr.enabled>
             </properties>
             <build>
@@ -337,7 +398,7 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/start-integration-container.sh</argument>
+                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ${integration.scripts.dir}/start-integration-container.sh</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
@@ -368,7 +429,7 @@
                                         <argument>-Dkeycloak.url=${keycloak.url}</argument>
                                         <argument>-Dquarkus.metrics.url=${quarkus.metrics.url}</argument>
                                         <argument>-Djava.util.logging.manager=java.util.logging.LogManager</argument>
-                                        <argument>-Djava.util.logging.config.file=src/main/resources/benchmark-logging.properties</argument>
+                                        <argument>-Djava.util.logging.config.file=benchmark-logging.properties</argument>
                                         <argument>-XX:+UnlockDiagnosticVMOptions</argument>
                                         <argument>-XX:+DebugNonSafepoints</argument>
                                         <argument>-XX:StartFlightRecording=settings=profile,filename=${benchmark.results.dir}/jfr-recordings/benchmark.jfr,dumponexit=true</argument>
@@ -409,6 +470,21 @@
                             <!-- Generate HTTP metrics from benchmark results (JFR profile) -->
                             <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
                             <!-- No separate CLI execution needed anymore -->
+                            <!-- Dump Quarkus logs before stopping containers -->
+                            <execution>
+                                <id>dump-quarkus-logs-jfr</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${integration.scripts.dir}/dump-quarkus-logs.sh</executable>
+                                    <arguments>
+                                        <argument>target</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Stop integration test containers -->
                             <execution>
                                 <id>stop-jfr-containers</id>
@@ -417,7 +493,7 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/stop-integration-container.sh</executable>
+                                    <executable>${integration.scripts.dir}/stop-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                     <!-- Don't fail build if cleanup fails -->
                                     <successCodes>

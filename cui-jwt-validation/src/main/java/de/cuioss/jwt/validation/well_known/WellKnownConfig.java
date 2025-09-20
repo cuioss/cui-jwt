@@ -15,14 +15,14 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
+import de.cuioss.http.client.HttpHandlerProvider;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
-import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import javax.net.ssl.SSLContext;
@@ -32,7 +32,7 @@ import java.net.URI;
  * Configuration for well-known endpoint discovery.
  * <p>
  * This class encapsulates all configuration parameters needed to create a
- * {@link de.cuioss.jwt.validation.well_known.WellKnownResolver} for OIDC endpoint discovery.
+ * WellKnownConfig for OIDC endpoint discovery.
  * It uses an internal {@link HttpHandler} built with sensible defaults while allowing
  * customization of timeouts, SSL context, and parser configuration.
  * <p>
@@ -42,10 +42,9 @@ import java.net.URI;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode
-public class WellKnownConfig {
+public class WellKnownConfig implements HttpHandlerProvider {
 
     /**
      * Default connect timeout in seconds for well-known endpoint requests.
@@ -64,10 +63,32 @@ public class WellKnownConfig {
     private final HttpHandler httpHandler;
 
     /**
+     * The retry strategy for HTTP operations.
+     */
+    @Getter
+    @NonNull
+    private final RetryStrategy retryStrategy;
+
+    /**
      * Parser configuration for JSON processing.
      */
     @Getter
     private final ParserConfig parserConfig;
+
+    private WellKnownConfig(HttpHandler httpHandler, RetryStrategy retryStrategy, ParserConfig parserConfig) {
+        this.httpHandler = httpHandler;
+        this.retryStrategy = retryStrategy;
+        this.parserConfig = parserConfig;
+    }
+
+    /**
+     * Creates a new HttpWellKnownResolver using this configuration.
+     *
+     * @return a configured HttpWellKnownResolver instance
+     */
+    public HttpWellKnownResolver createResolver() {
+        return new HttpWellKnownResolver(this);
+    }
 
     /**
      * Creates a new builder for WellKnownConfig.
@@ -83,6 +104,7 @@ public class WellKnownConfig {
      */
     public static class WellKnownConfigBuilder {
         private final HttpHandler.HttpHandlerBuilder httpHandlerBuilder;
+        private RetryStrategy retryStrategy = RetryStrategy.exponentialBackoff();
         private ParserConfig parserConfig;
 
         /**
@@ -164,6 +186,18 @@ public class WellKnownConfig {
         }
 
         /**
+         * Sets the retry strategy for HTTP operations.
+         * Defaults to exponential backoff strategy if not explicitly set.
+         *
+         * @param retryStrategy the retry strategy to use for HTTP requests
+         * @return this builder instance
+         */
+        public WellKnownConfigBuilder retryStrategy(@NonNull RetryStrategy retryStrategy) {
+            this.retryStrategy = retryStrategy;
+            return this;
+        }
+
+        /**
          * Sets the parser configuration for JSON processing.
          *
          * @param parserConfig the parser configuration
@@ -184,7 +218,8 @@ public class WellKnownConfig {
         public WellKnownConfig build() {
             try {
                 HttpHandler httpHandler = httpHandlerBuilder.build();
-                return new WellKnownConfig(httpHandler, parserConfig);
+                ParserConfig finalParserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
+                return new WellKnownConfig(httpHandler, retryStrategy, finalParserConfig);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 throw new IllegalArgumentException("Invalid well-known endpoint configuration", e);
             }

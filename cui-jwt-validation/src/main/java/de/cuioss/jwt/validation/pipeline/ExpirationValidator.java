@@ -43,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 public class ExpirationValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ExpirationValidator.class);
-    private static final int CLOCK_SKEW_SECONDS = 60;
 
     @NonNull
     private final SecurityEventCounter securityEventCounter;

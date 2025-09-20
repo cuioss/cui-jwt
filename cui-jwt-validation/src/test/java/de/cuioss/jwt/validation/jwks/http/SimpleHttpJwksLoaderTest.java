@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.dispatcher.JwksResolveDispatcher;
@@ -38,32 +38,37 @@ class SimpleHttpJwksLoaderTest {
     private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
 
     private HttpJwksLoader httpJwksLoader;
-    private SecurityEventCounter securityEventCounter;
 
     @BeforeEach
     void setUp(URIBuilder uriBuilder) {
         String jwksEndpoint = uriBuilder.addPathSegment(JwksResolveDispatcher.LOCAL_PATH).buildAsString();
         moduleDispatcher.setCallCounter(0);
 
-        securityEventCounter = new SecurityEventCounter();
+        SecurityEventCounter securityEventCounter = new SecurityEventCounter();
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl(jwksEndpoint)
+                .issuerIdentifier("test-issuer")
                 .build();
 
         httpJwksLoader = new HttpJwksLoader(config);
-        httpJwksLoader.initJWKSLoader(securityEventCounter);
+        // Wait for async initialization to complete
+        httpJwksLoader.initJWKSLoader(securityEventCounter).join();
     }
 
     @Test
     void basicKeyLoading() {
-        // isHealthy() now triggers loading, so it should return LoaderStatus.OK and load keys
-        assertEquals(LoaderStatus.OK, httpJwksLoader.isHealthy());
+        // With async initialization, loading happens during initJWKSLoader
+        // Since we wait for it to complete in setUp, status should be OK
+        assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus());
 
-        // After health check, status should be OK
-        assertEquals(LoaderStatus.OK, httpJwksLoader.isHealthy());
+        // Get a key - loading already happened during initialization
+        httpJwksLoader.getKeyInfo("test-key-id");
 
-        // Should have called endpoint once during health check
+        // Status should still be OK
+        assertEquals(LoaderStatus.OK, httpJwksLoader.getLoaderStatus());
+
+        // Should have called endpoint once during initialization
         assertEquals(1, moduleDispatcher.getCallCounter());
 
         // Load a key - should use already loaded keys
@@ -81,7 +86,7 @@ class SimpleHttpJwksLoaderTest {
         httpJwksLoader.getKeyInfo("default-key-id");
         httpJwksLoader.getKeyInfo("default-key-id");
         httpJwksLoader.getKeyInfo("another-key-id");
-        httpJwksLoader.isHealthy();
+        httpJwksLoader.getLoaderStatus();
 
         assertEquals(1, moduleDispatcher.getCallCounter());
     }

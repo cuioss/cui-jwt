@@ -15,23 +15,25 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.HttpHandlerProvider;
+import de.cuioss.http.client.retry.RetryStrategy;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
-import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
+import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
-import de.cuioss.jwt.validation.well_known.WellKnownResolver;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.http.HttpHandler;
 import de.cuioss.tools.net.http.SecureSSLContextProvider;
-import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -41,7 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * This class encapsulates configuration options for the HttpJwksLoader,
  * including JWKS endpoint URL, refresh interval, SSL context, and
  * background refresh parameters. The JWKS endpoint URL can be configured
- * directly or discovered via a {@link WellKnownResolver}.
+ * directly or discovered via a {@link WellKnownConfig}.
  * <p>
  * Complex caching parameters (maxCacheSize, adaptiveWindowSize) have been
  * removed for simplification while keeping essential refresh functionality.
@@ -52,10 +54,9 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
 @EqualsAndHashCode
-public class HttpJwksLoaderConfig {
+public class HttpJwksLoaderConfig implements HttpHandlerProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpJwksLoaderConfig.class);
 
@@ -63,6 +64,16 @@ public class HttpJwksLoaderConfig {
      * A Default of 10 minutes (600 seconds).
      */
     private static final int DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 60 * 10;
+
+    /**
+     * Default key rotation grace period of 5 minutes (as per Issue #110).
+     */
+    private static final Duration DEFAULT_KEY_ROTATION_GRACE_PERIOD = Duration.ofMinutes(5);
+
+    /**
+     * Default maximum number of retired key sets to keep.
+     */
+    private static final int DEFAULT_MAX_RETIRED_KEY_SETS = 3;
 
     /**
      * The interval in seconds at which to refresh the keys.
@@ -75,23 +86,29 @@ public class HttpJwksLoaderConfig {
     /**
      * The HttpHandler used for HTTP requests.
      * <p>
-     * This field is guaranteed to be non-null when {@code getJwksType() == JwksType.HTTP}.
-     * It will be null only when using WellKnownResolver (i.e., {@code getJwksType() == JwksType.WELL_KNOWN}).
+     * This field is guaranteed to be non-null when using direct JWKS URI configuration.
+     * It will be null only when using WellKnownConfig for discovery.
      * <p>
      * The non-null contract for HTTP configurations is enforced by the {@link HttpJwksLoaderConfigBuilder#build()}
      * method, which validates that the HttpHandler was successfully created before constructing the config.
      */
-    @Getter
     @EqualsAndHashCode.Exclude
     private final HttpHandler httpHandler;
 
     /**
-     * The WellKnownResolver used for well-known endpoint discovery.
+     * The WellKnownConfig used for well-known endpoint discovery.
      * Will be null if using direct HttpHandler.
+     * Contains all configuration needed to load well-known configuration.
      */
     @Getter
     @EqualsAndHashCode.Exclude
-    private final WellKnownResolver wellKnownResolver;
+    private final WellKnownConfig wellKnownConfig;
+
+    /**
+     * The retry strategy for HTTP operations.
+     */
+    @Getter
+    private final RetryStrategy retryStrategy;
 
     /**
      * The ScheduledExecutorService used for background refresh operations.
@@ -101,6 +118,111 @@ public class HttpJwksLoaderConfig {
     @EqualsAndHashCode.Exclude
     private final ScheduledExecutorService scheduledExecutorService;
 
+    /**
+     * The issuer identifier for this JWKS configuration.
+     * Used for logging and identification purposes.
+     */
+    @Getter
+    private final String issuerIdentifier;
+
+    /**
+     * The grace period for keeping retired key sets after rotation.
+     */
+    @Getter
+    private final Duration keyRotationGracePeriod;
+
+    /**
+     * Maximum number of retired key sets to keep.
+     */
+    @Getter
+    private final int maxRetiredKeySets;
+
+    @SuppressWarnings("java:S107") // ok for builder
+    private HttpJwksLoaderConfig(int refreshIntervalSeconds,
+            HttpHandler httpHandler,
+            WellKnownConfig wellKnownConfig,
+            RetryStrategy retryStrategy,
+            ScheduledExecutorService scheduledExecutorService,
+            String issuerIdentifier,
+            Duration keyRotationGracePeriod,
+            int maxRetiredKeySets) {
+        this.refreshIntervalSeconds = refreshIntervalSeconds;
+        this.httpHandler = httpHandler;
+        this.wellKnownConfig = wellKnownConfig;
+        this.retryStrategy = retryStrategy;
+        this.scheduledExecutorService = scheduledExecutorService;
+        this.issuerIdentifier = issuerIdentifier;
+        this.keyRotationGracePeriod = keyRotationGracePeriod;
+        this.maxRetiredKeySets = maxRetiredKeySets;
+    }
+
+    /**
+     * Provides the HttpHandler for HTTP operations, implementing HttpHandlerProvider interface.
+     * <p>
+     * This method handles both configuration modes:
+     * <ul>
+     *   <li><strong>Direct HTTP mode</strong>: Returns the configured HttpHandler</li>
+     *   <li><strong>WellKnown mode</strong>: Returns the HttpHandler from the WellKnownConfig</li>
+     * </ul>
+     *
+     * @return the HttpHandler instance, never null
+     * @throws IllegalStateException if no HttpHandler is available in either mode
+     */
+    @Override
+    @NonNull
+    public HttpHandler getHttpHandler() {
+        if (httpHandler != null) {
+            // Direct HTTP mode - return the configured HttpHandler
+            return httpHandler;
+        } else if (wellKnownConfig != null) {
+            // WellKnown mode - get HttpHandler from the WellKnownConfig
+            return wellKnownConfig.getHttpHandler();
+        } else {
+            throw new IllegalStateException("Neither HttpHandler nor WellKnownConfig is configured");
+        }
+    }
+
+
+    /**
+     * Creates a new HttpHandler for the given URL using configured values.
+     * This overloaded method centralizes HttpHandler creation with consistent settings
+     * based on the current configuration instance.
+     *
+     * @param url the URL to create a handler for
+     * @return a new HttpHandler instance with configured settings
+     */
+    @NonNull
+    public HttpHandler getHttpHandler(@NonNull String url) {
+        // Reuse existing HttpHandler configuration as base
+        HttpHandler baseHandler = getHttpHandler();
+
+        // Create a new handler with the same configuration but different URL
+        return baseHandler.asBuilder()
+                .url(url)
+                .build();
+    }
+
+    /**
+     * Determines if background refresh is enabled based on configuration.
+     * Background refresh is enabled when both a ScheduledExecutorService is configured
+     * and the refresh interval is greater than 0.
+     *
+     * @return true if background refresh should be enabled, false otherwise
+     */
+    public boolean isBackgroundRefreshEnabled() {
+        return scheduledExecutorService != null && refreshIntervalSeconds > 0;
+    }
+
+    /**
+     * Gets the JWKS type based on configuration.
+     * Returns WELL_KNOWN if using well-known discovery, HTTP if using direct endpoint.
+     *
+     * @return the JwksType for this configuration
+     */
+    @NonNull
+    public JwksType getJwksType() {
+        return wellKnownConfig != null ? JwksType.WELL_KNOWN : JwksType.HTTP;
+    }
 
     /**
      * Creates a new builder for HttpJwksLoaderConfig.
@@ -131,8 +253,12 @@ public class HttpJwksLoaderConfig {
     public static class HttpJwksLoaderConfigBuilder {
         private Integer refreshIntervalSeconds = DEFAULT_REFRESH_INTERVAL_IN_SECONDS;
         private final HttpHandler.HttpHandlerBuilder httpHandlerBuilder;
+        private RetryStrategy retryStrategy;
         private ScheduledExecutorService scheduledExecutorService;
         private WellKnownConfig wellKnownConfig;
+        private String issuerIdentifier;
+        private Duration keyRotationGracePeriod = DEFAULT_KEY_ROTATION_GRACE_PERIOD;
+        private int maxRetiredKeySets = DEFAULT_MAX_RETIRED_KEY_SETS;
 
         // Track which endpoint configuration method was used to ensure mutual exclusivity
         private EndpointSource endpointSource = null;
@@ -142,6 +268,44 @@ public class HttpJwksLoaderConfig {
          */
         public HttpJwksLoaderConfigBuilder() {
             this.httpHandlerBuilder = HttpHandler.builder();
+        }
+
+        /**
+         * Sets the issuer identifier for this JWKS configuration.
+         * Used for logging and identification purposes.
+         *
+         * @param issuerIdentifier the issuer identifier
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder issuerIdentifier(@NonNull String issuerIdentifier) {
+            this.issuerIdentifier = issuerIdentifier;
+            return this;
+        }
+
+        /**
+         * Sets the key rotation grace period.
+         * Defaults to 1 hour if not specified.
+         *
+         * @param keyRotationGracePeriod the grace period duration
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder keyRotationGracePeriod(@NonNull Duration keyRotationGracePeriod) {
+            Preconditions.checkArgument(!keyRotationGracePeriod.isNegative(), "keyRotationGracePeriod must not be negative");
+            this.keyRotationGracePeriod = keyRotationGracePeriod;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of retired key sets to keep.
+         * Defaults to 3 if not specified.
+         *
+         * @param maxRetiredKeySets the maximum number of retired key sets
+         * @return this builder instance
+         */
+        public HttpJwksLoaderConfigBuilder maxRetiredKeySets(int maxRetiredKeySets) {
+            Preconditions.checkArgument(maxRetiredKeySets > 0, "maxRetiredKeySets must be positive");
+            this.maxRetiredKeySets = maxRetiredKeySets;
+            return this;
         }
 
         /**
@@ -201,6 +365,8 @@ public class HttpJwksLoaderConfig {
             this.endpointSource = EndpointSource.WELL_KNOWN_URL;
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUrl(wellKnownUrl)
+                    .retryStrategy(RetryStrategy.exponentialBackoff())
+                    .parserConfig(ParserConfig.builder().build())
                     .build();
             return this;
         }
@@ -226,6 +392,8 @@ public class HttpJwksLoaderConfig {
             this.endpointSource = EndpointSource.WELL_KNOWN_URI;
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUri(wellKnownUri)
+                    .retryStrategy(RetryStrategy.exponentialBackoff())
+                    .parserConfig(ParserConfig.builder().build())
                     .build();
             return this;
         }
@@ -299,6 +467,18 @@ public class HttpJwksLoaderConfig {
         }
 
         /**
+         * Sets the retry strategy for HTTP operations.
+         *
+         * @param retryStrategy the retry strategy to use for HTTP requests
+         * @return this builder instance
+         * @throws IllegalArgumentException if retryStrategy is null
+         */
+        public HttpJwksLoaderConfigBuilder retryStrategy(@NonNull RetryStrategy retryStrategy) {
+            this.retryStrategy = retryStrategy;
+            return this;
+        }
+
+        /**
          * Sets the ScheduledExecutorService for background refresh operations.
          *
          * @param scheduledExecutorService the executor service to use
@@ -338,6 +518,7 @@ public class HttpJwksLoaderConfig {
          * @throws IllegalArgumentException if any parameter is invalid
          * @throws IllegalArgumentException if no endpoint was configured
          */
+        @SuppressWarnings("java:S3776") // ok for builder
         public HttpJwksLoaderConfig build() {
             // Ensure at least one endpoint configuration method was used
             if (endpointSource == null) {
@@ -345,18 +526,28 @@ public class HttpJwksLoaderConfig {
                         "No JWKS endpoint configured. Must call one of: jwksUri(), jwksUrl(), wellKnownUrl(), or wellKnownUri()");
             }
 
-            HttpHandler jwksHttpHandler = null;
-            WellKnownResolver configuredWellKnownResolver = null;
+            // Ensure RetryStrategy is configured
+            if (retryStrategy == null) {
+                retryStrategy = RetryStrategy.exponentialBackoff();
+            }
 
+            HttpHandler jwksHttpHandler = null;
+            WellKnownConfig configuredWellKnownConfig = null;
             if (endpointSource == EndpointSource.WELL_KNOWN_URL || endpointSource == EndpointSource.WELL_KNOWN_URI) {
-                // Create WellKnownResolver from WellKnownConfig
-                configuredWellKnownResolver = createWellKnownResolver(this.wellKnownConfig);
+                // Use WellKnownConfig directly
+                configuredWellKnownConfig = this.wellKnownConfig;
             } else {
                 // Build the HttpHandler for direct URL/URI configuration
                 try {
                     jwksHttpHandler = httpHandlerBuilder.build();
                     if (jwksHttpHandler == null) {
                         throw new IllegalArgumentException("HttpHandler build() returned null - this indicates a programming error in the builder");
+                    }
+
+                    // Check for insecure HTTP protocol
+                    URI uri = jwksHttpHandler.getUri();
+                    if (uri != null && "http".equalsIgnoreCase(uri.getScheme())) {
+                        LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS.format(uri.toString()));
                     }
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     LOGGER.warn(WARN.INVALID_JWKS_URI::format);
@@ -375,23 +566,24 @@ public class HttpJwksLoaderConfig {
                 });
             }
 
+            // Validate issuer requirement
+            if (configuredWellKnownConfig == null && jwksHttpHandler != null && issuerIdentifier == null) {
+                throw new IllegalArgumentException("Issuer identifier is mandatory when using direct JWKS configuration");
+            }
+
+            // For well-known, issuer will be discovered dynamically during resolution (optional in config)
+
             return new HttpJwksLoaderConfig(
                     refreshIntervalSeconds,
                     jwksHttpHandler,
-                    configuredWellKnownResolver,
-                    executor);
+                    configuredWellKnownConfig,
+                    retryStrategy,
+                    executor,
+                    issuerIdentifier,
+                    keyRotationGracePeriod,
+                    maxRetiredKeySets);
         }
 
-        /**
-         * Creates a WellKnownResolver from the given WellKnownConfig.
-         * Uses the WellKnownConfig which internally manages HttpHandler creation.
-         *
-         * @param config the WellKnownConfig to create the resolver from
-         * @return a configured WellKnownResolver instance
-         * @throws IllegalArgumentException if the configuration is invalid
-         */
-        private WellKnownResolver createWellKnownResolver(WellKnownConfig config) {
-            return new HttpWellKnownResolver(config);
-        }
     }
+
 }

@@ -15,13 +15,16 @@
  */
 package de.cuioss.jwt.validation.cache;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -46,6 +49,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger
 class AccessTokenCacheTest {
+
+    /**
+     * Creates an empty MapRepresentation for tests that don't need specific payload data.
+     */
+    private static MapRepresentation createEmptyMapRepresentation() {
+        try {
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, "{}");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        }
+    }
 
     private AccessTokenCache cache;
     private SecurityEventCounter securityEventCounter;
@@ -249,7 +264,7 @@ class AccessTokenCacheTest {
         AccessTokenContent generated = tokenHolder.asAccessTokenContent();
 
         // Create a new instance with our specified raw token
-        return new AccessTokenContent(generated.getClaims(), rawToken, TokenType.ACCESS_TOKEN.getTypeClaimName());
+        return new AccessTokenContent(generated.getClaims(), rawToken, TokenType.ACCESS_TOKEN.getTypeClaimName(), createEmptyMapRepresentation());
     }
 
     @Test
@@ -262,8 +277,8 @@ class AccessTokenCacheTest {
                 cache.computeIfAbsent(token, t -> null, performanceMonitor));
 
         assertEquals("Validation function returned null - expected exception on failure", exception.getMessage());
-        LogAsserts.assertLogMessagePresent(TestLogLevel.ERROR,
-                JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.resolveIdentifierString());
     }
 
     @Test
@@ -281,6 +296,18 @@ class AccessTokenCacheTest {
         }
 
         // Then - cache should be at capacity
+        assertEquals(10, cache.size());
+    }
+
+    @Test
+    void shouldHandleCacheEvictionProperly() {
+        // Given - fill cache to capacity first
+        for (int i = 0; i < 10; i++) {
+            String token = "token-" + i;
+            AccessTokenContent content = createAccessToken("https://example.com",
+                    OffsetDateTime.now().plusHours(1));
+            cache.computeIfAbsent(token, t -> content, performanceMonitor);
+        }
         assertEquals(10, cache.size());
 
         // When - add 11th token to trigger eviction
@@ -374,6 +401,24 @@ class AccessTokenCacheTest {
     }
 
     @Test
+    void tokenWithoutExpirationThrowsException() {
+        // Given a token without expiration claim
+        String token = "token-without-exp";
+        TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
+        // Remove expiration claim
+        tokenHolder.getClaims().remove(ClaimName.EXPIRATION.getName());
+        AccessTokenContent contentWithoutExp = tokenHolder.asAccessTokenContent();
+
+        // When/Then - should throw InternalCacheException
+        InternalCacheException exception = assertThrows(InternalCacheException.class, () ->
+                cache.computeIfAbsent(token, t -> contentWithoutExp, performanceMonitor));
+
+        assertEquals("Token passed validation but has no expiration time", exception.getMessage());
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.resolveIdentifierString());
+    }
+
+    @Test
     void cacheDisabledNoEvictionLogic() {
         // Given - cache with size 0 (disabled)
         cache.shutdown();
@@ -445,6 +490,5 @@ class AccessTokenCacheTest {
         assertNotNull(result);
         assertEquals(1, cache.size());
     }
-
 
 }

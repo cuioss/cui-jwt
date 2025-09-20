@@ -92,5 +92,18 @@ public enum BearerTokenStatus {
      *   <li>Missing required groups</li>
      * </ul>
      */
-    CONSTRAINT_VIOLATION
+    CONSTRAINT_VIOLATION,
+
+    /**
+     * The bearer token request is malformed according to RFC 6750.
+     * <p>
+     * This occurs when the Authorization header contains "Bearer " but:
+     * <ul>
+     *   <li>The token is empty (just "Bearer " with nothing after)</li>
+     *   <li>The token contains invalid characters for a bearer token</li>
+     * </ul>
+     * According to RFC 6750, this should result in a 400 Bad Request response
+     * with error code "invalid_request".
+     */
+    INVALID_REQUEST
 }

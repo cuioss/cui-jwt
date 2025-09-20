@@ -160,7 +160,7 @@ The resolution logic prioritizes dynamic identification over static configuratio
 ----
 public Optional<String> getIssuerIdentifier() {
     // First try to get issuer identifier from JwksLoader (for well-known discovery)
-    if (jwksLoader != null && jwksLoader.isHealthy() == LoaderStatus.OK) {
+    if (jwksLoader != null && jwksLoader.getLoaderStatus() == LoaderStatus.OK) {
         Optional<String> jwksLoaderIssuer = jwksLoader.getIssuerIdentifier();
         if (jwksLoaderIssuer.isPresent()) {
             return jwksLoaderIssuer;
@@ -264,7 +264,7 @@ The `JwksLoader` interface handles the retrieval, caching, and rotation of crypt
 The JwksLoader interface provides the following core methods:
 
 * **Key Management**: `getKeyInfo()`, `getFirstKeyInfo()`, `getAllKeyInfos()`, `keySet()`
-* **Health Monitoring**: `isHealthy()`
+* **Health Monitoring**: `getLoaderStatus()`
 * **Type Information**: `getJwksType()`
 * **Issuer Identification**: `getIssuerIdentifier()` - NEW: Returns the issuer identifier when available
 
@@ -289,6 +289,29 @@ JwksLoader loader = JwksLoaderFactory.createHttpLoader(config, eventCounter);
 Optional<String> issuer = loader.getIssuerIdentifier();
 ----
 
+==== Key Rotation Grace Period
+_See Requirement xref:../Requirements.adoc#CUI-JWT-4.5[CUI-JWT-4.5: Key Rotation Grace Period]_
+
+The `HttpJwksLoader` implements a configurable grace period for retired keys during rotation:
+
+* **Grace Period Configuration**: Default 5 minutes, configurable via `HttpJwksLoaderConfig.keyRotationGracePeriod`
+* **Zero Grace Period**: Setting to `Duration.ZERO` immediately invalidates old keys
+* **Retired Key Management**: Maintains a bounded queue of retired key sets with timestamps
+* **Automatic Cleanup**: Expired keys beyond the grace period are automatically removed
+* **Content Change Detection**: Prevents unnecessary rotation when JWKS content hasn't changed (Issue #110)
+
+Implementation Details:
+[source,java]
+----
+HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
+    .jwksUrl("https://example.com/.well-known/jwks.json")
+    .keyRotationGracePeriod(Duration.ofMinutes(5))  // Default grace period
+    .maxRetiredKeySets(10)                          // Max retained sets
+    .build();
+----
+
+The grace period ensures tokens signed with recently rotated keys remain valid during the transition, preventing service disruptions for in-flight requests.
+
 ==== JwksLoaderFactory
 
 The JwksLoaderFactory provides methods to create different types of JwksLoader implementations:
@@ -309,6 +332,7 @@ For implementation details, see the JavaDoc of the following classes:
 The following tests verify the implementation:
 
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderTest.java[HttpJwksLoaderTest]
+* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderGracePeriodTest.java[HttpJwksLoaderGracePeriodTest] - Verifies grace period functionality (Requirement CUI-JWT-4.5)
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderCachingAndFallbackTest.java[HttpJwksLoaderCachingAndFallbackTest]
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/FileJwksLoaderTest.java[FileJwksLoaderTest]
 * xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/InMemoryJwksLoaderTest.java[InMemoryJwksLoaderTest]

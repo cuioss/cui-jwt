@@ -129,7 +129,7 @@ public class EnhancedJwksResolveDispatcher extends JwksResolveDispatcher {
                 }
                 yield createDefaultResponse();
             }
-            case CONNECTION_FAILURE -> throw new RuntimeException("Simulated connection failure");
+            case CONNECTION_FAILURE -> throw new IllegalStateException("Simulated connection failure");
             default ->
                 // Use parent class behavior for other cases
                 // Note: We don't call super.handleGet() because it would increment the counter again

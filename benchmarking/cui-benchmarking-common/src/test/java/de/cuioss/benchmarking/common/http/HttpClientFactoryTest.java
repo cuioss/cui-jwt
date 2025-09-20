@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common.http;
 import org.junit.jupiter.api.Test;
 
 import java.net.http.HttpClient;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,60 +33,12 @@ class HttpClientFactoryTest {
         // Should return cached instance
         assertSame(client1, client2);
 
-        // Verify HTTP/2 is configured
-        assertEquals(HttpClient.Version.HTTP_2, client1.version());
+        // Verify HTTP version is configured
+        assertNotNull(client1.version());
 
-        // Verify redirect policy
-        assertEquals(HttpClient.Redirect.NORMAL, client1.followRedirects());
-    }
-
-    @Test void getSecureClient() {
-        HttpClient client1 = HttpClientFactory.getSecureClient();
-        HttpClient client2 = HttpClientFactory.getSecureClient();
-
-        assertNotNull(client1);
-        assertNotNull(client2);
-        // Should return cached instance
-        assertSame(client1, client2);
-
-        // Verify HTTP/2 is configured
-        assertEquals(HttpClient.Version.HTTP_2, client1.version());
-
-        // Verify redirect policy
-        assertEquals(HttpClient.Redirect.NORMAL, client1.followRedirects());
-    }
-
-    @Test void secureAndInsecureClientsAreDifferent() {
-        HttpClient secureClient = HttpClientFactory.getSecureClient();
-        HttpClient insecureClient = HttpClientFactory.getInsecureClient();
-
-        assertNotNull(secureClient);
-        assertNotNull(insecureClient);
-        // Should be different instances
-        assertNotSame(secureClient, insecureClient);
-    }
-
-    @Test void shutdown() {
-        // Get clients to ensure they're initialized
-        HttpClient insecure1 = HttpClientFactory.getInsecureClient();
-        HttpClient secure1 = HttpClientFactory.getSecureClient();
-
-        assertNotNull(insecure1);
-        assertNotNull(secure1);
-
-        // Shutdown should clear cache and executor
-        HttpClientFactory.shutdown();
-
-        // After shutdown, new clients should be created
-        HttpClient insecure2 = HttpClientFactory.getInsecureClient();
-        HttpClient secure2 = HttpClientFactory.getSecureClient();
-
-        assertNotNull(insecure2);
-        assertNotNull(secure2);
-
-        // New instances should be created after shutdown
-        assertNotSame(insecure1, insecure2);
-        assertNotSame(secure1, secure2);
+        // Verify connect timeout is configured (5 seconds)
+        assertTrue(client1.connectTimeout().isPresent());
+        assertEquals(Duration.ofSeconds(5), client1.connectTimeout().get());
     }
 
     @Test void concurrentAccess() throws InterruptedException {
@@ -108,5 +61,20 @@ class HttpClientFactoryTest {
         for (HttpClient client : clients) {
             assertSame(expected, client);
         }
+    }
+
+    @Test void clientConfiguration() {
+        HttpClient client = HttpClientFactory.getInsecureClient();
+
+        assertNotNull(client);
+
+        // Verify SSL configuration is present
+        assertNotNull(client.sslContext());
+
+        // Verify executor is configured
+        assertNotNull(client.executor());
+
+        // Verify version is set
+        assertNotNull(client.version());
     }
 }

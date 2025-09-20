@@ -20,7 +20,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.io.Serial;
@@ -57,7 +56,6 @@ import java.util.Map;
  */
 @ToString
 @EqualsAndHashCode
-@RequiredArgsConstructor
 public class RefreshTokenContent implements MinimalTokenContent {
 
     @Serial
@@ -76,6 +74,11 @@ public class RefreshTokenContent implements MinimalTokenContent {
     @Getter
     @NonNull
     private final Map<String, ClaimValue> claims;
+
+    public RefreshTokenContent(@NonNull String rawToken, @NonNull Map<String, ClaimValue> claims) {
+        this.rawToken = rawToken;
+        this.claims = claims;
+    }
 
     /**
      * Gets the validation type.

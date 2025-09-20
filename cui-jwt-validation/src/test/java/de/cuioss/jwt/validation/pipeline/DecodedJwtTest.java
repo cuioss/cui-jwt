@@ -15,13 +15,16 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,14 +48,19 @@ class DecodedJwtTest {
     @DisplayName("Should create DecodedJwt with all values")
     void shouldCreateDecodedJwtWithAllValues() {
 
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
         DecodedJwt jwt = new DecodedJwt(header, body, SIGNATURE, PARTS, RAW_TOKEN);
-        assertTrue(jwt.getHeader().isPresent());
-        assertEquals(header, jwt.getHeader().get());
 
-        assertTrue(jwt.getBody().isPresent());
-        assertEquals(body, jwt.getBody().get());
+        JwtHeader actualHeader = jwt.header();
+        assertNotNull(actualHeader);
+        assertEquals(ALG, actualHeader.alg());
+        assertEquals(KID, actualHeader.getKid().orElse(null));
+
+        MapRepresentation actualBody = jwt.body();
+        assertNotNull(actualBody);
+        assertEquals(ISSUER, actualBody.getString("iss").orElse(null));
+        assertEquals("test-subject", actualBody.getString("sub").orElse(null));
 
         assertTrue(jwt.getSignature().isPresent());
         assertEquals(SIGNATURE, jwt.getSignature().get());
@@ -75,8 +83,11 @@ class DecodedJwtTest {
     void shouldCreateDecodedJwtWithNullValues() {
 
         DecodedJwt jwt = new DecodedJwt(null, null, null, PARTS, RAW_TOKEN);
-        assertFalse(jwt.getHeader().isPresent());
-        assertFalse(jwt.getBody().isPresent());
+        JwtHeader actualHeader = jwt.header();
+        assertNull(actualHeader);
+
+        MapRepresentation actualBody = jwt.body();
+        assertNull(actualBody);
         assertFalse(jwt.getSignature().isPresent());
         assertFalse(jwt.getIssuer().isPresent());
         assertFalse(jwt.getKid().isPresent());
@@ -86,17 +97,16 @@ class DecodedJwtTest {
     }
 
     @Test
-    @DisplayName("Should create DecodedJwt with empty header and body")
-    void shouldCreateDecodedJwtWithEmptyHeaderAndBody() {
+    @DisplayName("Should create DecodedJwt with null header and body")
+    void shouldCreateDecodedJwtWithNullHeaderAndBody() {
 
-        JsonObject emptyHeader = Json.createObjectBuilder().build();
-        JsonObject emptyBody = Json.createObjectBuilder().build();
-        DecodedJwt jwt = new DecodedJwt(emptyHeader, emptyBody, SIGNATURE, PARTS, RAW_TOKEN);
-        assertTrue(jwt.getHeader().isPresent());
-        assertEquals(emptyHeader, jwt.getHeader().get());
+        // Use actual null values, not "empty" objects
+        DecodedJwt jwt = new DecodedJwt(null, null, SIGNATURE, PARTS, RAW_TOKEN);
+        JwtHeader actualHeader = jwt.header();
+        assertNull(actualHeader);
 
-        assertTrue(jwt.getBody().isPresent());
-        assertEquals(emptyBody, jwt.getBody().get());
+        MapRepresentation actualBody = jwt.body();
+        assertNull(actualBody);
 
         assertTrue(jwt.getSignature().isPresent());
         assertEquals(SIGNATURE, jwt.getSignature().get());
@@ -113,8 +123,8 @@ class DecodedJwtTest {
     @DisplayName("Should create DecodedJwt using builder")
     void shouldCreateDecodedJwtUsingBuilder() {
 
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
         DecodedJwt jwt = DecodedJwt.builder()
                 .header(header)
                 .body(body)
@@ -122,11 +132,15 @@ class DecodedJwtTest {
                 .parts(PARTS)
                 .rawToken(RAW_TOKEN)
                 .build();
-        assertTrue(jwt.getHeader().isPresent());
-        assertEquals(header, jwt.getHeader().get());
+        JwtHeader actualHeader = jwt.header();
+        assertNotNull(actualHeader);
+        assertEquals(ALG, actualHeader.alg());
+        assertEquals(KID, actualHeader.getKid().orElse(null));
 
-        assertTrue(jwt.getBody().isPresent());
-        assertEquals(body, jwt.getBody().get());
+        MapRepresentation actualBody = jwt.body();
+        assertNotNull(actualBody);
+        assertEquals(ISSUER, actualBody.getString("iss").orElse(null));
+        assertEquals("test-subject", actualBody.getString("sub").orElse(null));
 
         assertTrue(jwt.getSignature().isPresent());
         assertEquals(SIGNATURE, jwt.getSignature().get());
@@ -148,12 +162,12 @@ class DecodedJwtTest {
     @DisplayName("Should have proper equals and hashCode")
     void shouldHaveProperEqualsAndHashCode() {
 
-        JsonObject header1 = createTestHeader();
-        JsonObject body1 = createTestBody();
+        JwtHeader header1 = createTestHeader();
+        MapRepresentation body1 = createTestBody();
         DecodedJwt jwt1 = new DecodedJwt(header1, body1, SIGNATURE, PARTS, RAW_TOKEN);
 
-        JsonObject header2 = createTestHeader();
-        JsonObject body2 = createTestBody();
+        JwtHeader header2 = createTestHeader();
+        MapRepresentation body2 = createTestBody();
         DecodedJwt jwt2 = new DecodedJwt(header2, body2, SIGNATURE, PARTS, RAW_TOKEN);
         assertEquals(jwt1, jwt2);
         assertEquals(jwt1.hashCode(), jwt2.hashCode());
@@ -162,8 +176,8 @@ class DecodedJwtTest {
     @Test
     @DisplayName("Should properly compare array fields in equals")
     void shouldProperlyCompareArrayFieldsInEquals() {
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
 
         // Create two identical arrays with same content but different references
         String[] parts1 = {"header", "payload", "signature"};
@@ -187,8 +201,8 @@ class DecodedJwtTest {
     @DisplayName("Should have proper toString")
     void shouldHaveProperToString() {
 
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
         DecodedJwt jwt = new DecodedJwt(header, body, SIGNATURE, PARTS, RAW_TOKEN);
         String toString = jwt.toString();
         assertNotNull(toString, "toString() result should not be null");
@@ -213,8 +227,8 @@ class DecodedJwtTest {
         String encodedSignature = Base64.getUrlEncoder().withoutPadding().encodeToString("test-signature-bytes".getBytes());
         String[] validParts = {encodedHeader, encodedPayload, encodedSignature};
 
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
         DecodedJwt jwt = new DecodedJwt(header, body, encodedSignature, validParts, "header.payload.signature");
 
         // Test successful decoding
@@ -226,8 +240,8 @@ class DecodedJwtTest {
     @Test
     @DisplayName("Should throw IllegalStateException for invalid JWT format")
     void shouldThrowIllegalStateExceptionForInvalidFormat() {
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
 
         // Test with null parts
         DecodedJwt jwtNullParts = new DecodedJwt(header, body, SIGNATURE, null, RAW_TOKEN);
@@ -246,8 +260,8 @@ class DecodedJwtTest {
     @Test
     @DisplayName("Should throw IllegalStateException for invalid Base64URL signature")
     void shouldThrowIllegalStateExceptionForInvalidBase64() {
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
 
         // Create parts with invalid Base64URL in signature part
         String[] invalidBase64Parts = {"header", "payload", "invalid@base64!signature"};
@@ -265,8 +279,8 @@ class DecodedJwtTest {
         // Create a test JWT with proper parts
         String[] validParts = {"encodedHeader", "encodedPayload", "encodedSignature"};
 
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
         DecodedJwt jwt = new DecodedJwt(header, body, "encodedSignature", validParts, "header.payload.signature");
 
         // Test successful data extraction
@@ -277,8 +291,8 @@ class DecodedJwtTest {
     @Test
     @DisplayName("Should throw IllegalStateException for invalid JWT format when getting data to verify")
     void shouldThrowIllegalStateExceptionForInvalidFormatWhenGettingDataToVerify() {
-        JsonObject header = createTestHeader();
-        JsonObject body = createTestBody();
+        JwtHeader header = createTestHeader();
+        MapRepresentation body = createTestBody();
 
         // Test with null parts
         DecodedJwt jwtNullParts = new DecodedJwt(header, body, SIGNATURE, null, RAW_TOKEN);
@@ -294,17 +308,25 @@ class DecodedJwtTest {
         assertTrue(exception.getMessage().contains("2"));
     }
 
-    private JsonObject createTestHeader() {
-        return Json.createObjectBuilder()
-                .add("alg", ALG)
-                .add("kid", KID)
-                .build();
+    private JwtHeader createTestHeader() {
+        try {
+            String headerJson = "{\"alg\":\"" + ALG + "\",\"kid\":\"" + KID + "\"}";
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            byte[] headerBytes = headerJson.getBytes();
+            return dslJson.deserialize(JwtHeader.class, headerBytes, headerBytes.length);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create test header", e);
+        }
     }
 
-    private JsonObject createTestBody() {
-        return Json.createObjectBuilder()
-                .add("iss", ISSUER)
-                .add("sub", "test-subject")
-                .build();
+    private MapRepresentation createTestBody() {
+        try {
+            String bodyJson = "{\"iss\":\"" + ISSUER + "\",\"sub\":\"test-subject\"}";
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, bodyJson);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create test body", e);
+        }
     }
+
 }

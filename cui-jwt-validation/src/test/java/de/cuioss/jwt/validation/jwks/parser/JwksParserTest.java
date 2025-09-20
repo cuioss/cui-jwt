@@ -15,13 +15,14 @@
  */
 package de.cuioss.jwt.validation.jwks.parser;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.jwt.validation.json.JwkKey;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,15 +56,15 @@ class JwksParserTest {
             String jwksContent = InMemoryJWKSFactory.createDefaultJwks();
 
             // When parsing
-            List<JsonObject> result = parser.parse(jwksContent);
+            List<JwkKey> result = parser.parse(jwksContent);
 
             // Then parsing should succeed
             assertFalse(result.isEmpty(), "Should parse at least one key");
             assertEquals(1, result.size(), "Should parse exactly one key from default JWKS");
 
-            JsonObject jwk = result.getFirst();
-            assertTrue(jwk.containsKey("kty"), "Parsed JWK should contain key type");
-            assertTrue(jwk.containsKey("kid"), "Parsed JWK should contain key ID");
+            JwkKey jwk = result.getFirst();
+            assertNotNull(jwk.kty(), "Parsed JWK should contain key type");
+            assertNotNull(jwk.kid(), "Parsed JWK should contain key ID");
         }
 
         @Test
@@ -82,13 +83,13 @@ class JwksParserTest {
                 """;
 
             // When parsing
-            List<JsonObject> result = parser.parse(singleJwk);
+            List<JwkKey> result = parser.parse(singleJwk);
 
             // Then parsing should succeed
             assertEquals(1, result.size(), "Should parse single JWK");
-            JsonObject jwk = result.getFirst();
-            assertEquals("RSA", jwk.getString("kty"));
-            assertEquals("test-key", jwk.getString("kid"));
+            JwkKey jwk = result.getFirst();
+            assertEquals("RSA", jwk.kty());
+            assertEquals("test-key", jwk.kid());
         }
 
         @Test
@@ -120,12 +121,12 @@ class JwksParserTest {
                 """;
 
             // When parsing
-            List<JsonObject> result = parser.parse(multiKeyJwks);
+            List<JwkKey> result = parser.parse(multiKeyJwks);
 
             // Then should parse all keys
             assertEquals(2, result.size(), "Should parse both keys");
-            assertTrue(result.stream().anyMatch(jwk -> "key1".equals(jwk.getString("kid"))));
-            assertTrue(result.stream().anyMatch(jwk -> "key2".equals(jwk.getString("kid"))));
+            assertTrue(result.stream().anyMatch(jwk -> "key1".equals(jwk.kid())));
+            assertTrue(result.stream().anyMatch(jwk -> "key2".equals(jwk.kid())));
         }
     }
 
@@ -140,11 +141,12 @@ class JwksParserTest {
             String invalidJson = "{ invalid json }";
 
             // When parsing
-            List<JsonObject> result = parser.parse(invalidJson);
+            List<JwkKey> result = parser.parse(invalidJson);
 
             // Then should return empty list and log error
             assertTrue(result.isEmpty(), "Should return empty list for invalid JSON");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR, "Failed to parse JWKS JSON");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                    JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.resolveIdentifierString());
         }
 
         @Test
@@ -154,11 +156,12 @@ class JwksParserTest {
             String emptyJwks = "{}";
 
             // When parsing
-            List<JsonObject> result = parser.parse(emptyJwks);
+            List<JwkKey> result = parser.parse(emptyJwks);
 
             // Then should return empty list and log warning
             assertTrue(result.isEmpty(), "Should return empty list for empty JWKS");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "JWKS JSON does not contain 'keys' array or 'kty' field");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL.resolveIdentifierString());
         }
 
         @Test
@@ -172,10 +175,12 @@ class JwksParserTest {
                 """;
 
             // When parsing
-            List<JsonObject> result = parser.parse(emptyKeysJwks);
+            List<JwkKey> result = parser.parse(emptyKeysJwks);
 
-            // Then should return empty list
+            // Then should return empty list and log warning
             assertTrue(result.isEmpty(), "Should return empty list for empty keys array");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY.resolveIdentifierString());
         }
     }
 
@@ -194,11 +199,12 @@ class JwksParserTest {
             String largeContent = "{ \"keys\": [" + "x".repeat(200) + "] }";
 
             // When parsing
-            List<JsonObject> result = smallParser.parse(largeContent);
+            List<JwkKey> result = smallParser.parse(largeContent);
 
             // Then should reject and return empty list
             assertTrue(result.isEmpty(), "Should return empty list for oversized content");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR, "JWKS content size exceeds maximum allowed size");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                    JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED.resolveIdentifierString());
         }
 
         @Test
@@ -213,6 +219,70 @@ class JwksParserTest {
             // Then should increment security event counter
             assertTrue(securityEventCounter.getCount(SecurityEventCounter.EventType.JWKS_JSON_PARSE_FAILED) > 0,
                     "Should track JSON parse failures");
+        }
+    }
+
+    @Nested
+    @DisplayName("JWKS with too many keys")
+    class JwksTooManyKeysTests {
+
+        @Test
+        @DisplayName("Should handle JWKS with too many keys")
+        void shouldHandleJwksWithTooManyKeys() {
+            // Given a parser with small payload size limit
+            ParserConfig config = ParserConfig.builder().maxPayloadSize(50).build();
+            JwksParser limitedParser = new JwksParser(config, securityEventCounter);
+
+            // Given JWKS with more keys than can fit in size limit
+            String manyKeysJwks = """
+                {
+                    "keys": [
+                        {"kty": "RSA", "kid": "key1", "n": "mod1", "e": "AQAB"},
+                        {"kty": "RSA", "kid": "key2", "n": "mod2", "e": "AQAB"},
+                        {"kty": "RSA", "kid": "key3", "n": "mod3", "e": "AQAB"}
+                    ]
+                }
+                """;
+
+            // When parsing - will fail due to size limit
+            List<JwkKey> result = limitedParser.parse(manyKeysJwks);
+
+            // Then should return empty list and log error
+            assertTrue(result.isEmpty(), "Should return empty list when JWKS exceeds size limit");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
+                    JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED.resolveIdentifierString());
+        }
+    }
+
+    @Nested
+    @DisplayName("JWKS with missing KTY")
+    class JwksMissingKtyTests {
+
+        @Test
+        @DisplayName("Should handle JWK with missing kty field")
+        void shouldHandleJwkWithMissingKty() {
+            // Given a JWK without kty field
+            String missingKtyJwk = """
+                {
+                    "keys": [
+                        {
+                            "kid": "test-key",
+                            "use": "sig",
+                            "alg": "RS256",
+                            "n": "test-modulus",
+                            "e": "AQAB"
+                        }
+                    ]
+                }
+                """;
+
+            // When parsing
+            List<JwkKey> result = parser.parse(missingKtyJwk);
+
+            // Then should skip key and log warning
+            assertTrue(result.isEmpty(), "Should skip key with missing kty");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.JWK_MISSING_KTY.resolveIdentifierString());
         }
     }
 }

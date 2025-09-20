@@ -15,16 +15,15 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
-import jakarta.json.JsonReader;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.json.JwkKey;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.StringReader;
 import java.security.Key;
 import java.security.spec.InvalidKeySpecException;
 
@@ -33,65 +32,33 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link JwkKeyHandler} with a focus on security aspects and potential attacks.
  */
+@EnableTestLogger
 class JwkKeyHandlerTest {
 
-    private JsonObject createJsonObject(String jsonString) {
-        try (JsonReader reader = Json.createReader(new StringReader(jsonString))) {
-            return reader.readObject();
-        }
+    private JwkKey createRsaJwk() {
+        // Use hardcoded RSA values from InMemoryJWKSFactory for testing
+        // These are Base64 URL encoded RSA parameters from the test factory
+        return new JwkKey(
+                "RSA",
+                "test-key",
+                "RS256",
+                "0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw",
+                "AQAB",
+                null, null, null
+        );
     }
 
-    private String extractSingleJwk(String jwksString) {
-        try (JsonReader reader = Json.createReader(new StringReader(jwksString))) {
-            JsonObject jwks = reader.readObject();
-            return jwks.getJsonArray("keys").getJsonObject(0).toString();
-        }
+    private JwkKey createRsaJwk(String n, String e) {
+        return new JwkKey("RSA", "test-key", null, n, e, null, null, null);
     }
 
-    private JsonObject createRsaJwk() {
-        String jwksString = InMemoryJWKSFactory.createDefaultJwks();
-        String jwkString = extractSingleJwk(jwksString);
-        return createJsonObject(jwkString);
-    }
-
-    private JsonObject createJsonObject(String n, String e) {
-        JsonObjectBuilder builder = Json.createObjectBuilder()
-                .add("kty", "RSA");
-
-        if (n != null) {
-            builder.add("n", n);
-        }
-
-        if (e != null) {
-            builder.add("e", e);
-        }
-
-        builder.add("kid", "test-key");
-
-        return builder.build();
-    }
-
-    private JsonObject createEcJwk(String x, String y) {
-        JsonObjectBuilder builder = Json.createObjectBuilder()
-                .add("kty", "EC")
-                .add("crv", "P-256");
-
-        if (x != null) {
-            builder.add("x", x);
-        }
-
-        if (y != null) {
-            builder.add("y", y);
-        }
-
-        builder.add("kid", "test-key");
-
-        return builder.build();
+    private JwkKey createEcJwk(String x, String y) {
+        return new JwkKey("EC", "test-key", null, null, null, "P-256", x, y);
     }
 
     @Test
     void shouldParseValidRsaKey() throws InvalidKeySpecException {
-        JsonObject jwk = createRsaJwk();
+        JwkKey jwk = createRsaJwk();
         Key key = JwkKeyHandler.parseRsaKey(jwk);
         assertNotNull(key, "RSA key should not be null");
         assertEquals("RSA", key.getAlgorithm(), "Key algorithm should be RSA");
@@ -99,13 +66,13 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldValidateRsaKeyFields() {
-        JsonObject jwk = createRsaJwk();
+        JwkKey jwk = createRsaJwk();
         assertDoesNotThrow(() -> JwkKeyHandler.parseRsaKey(jwk));
     }
 
     @Test
     void shouldRejectRsaKeyWithMissingModulus() {
-        JsonObject jwk = createJsonObject(null, "AQAB");
+        JwkKey jwk = createRsaJwk(null, "AQAB");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
@@ -116,7 +83,7 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldRejectRsaKeyWithMissingExponent() {
-        JsonObject jwk = createJsonObject("someModulus", null);
+        JwkKey jwk = createRsaJwk("someModulus", null);
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
@@ -127,29 +94,39 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldRejectRsaKeyWithInvalidBase64UrlModulus() {
-        JsonObject jwk = createJsonObject("invalid!base64", "AQAB");
+        JwkKey jwk = createRsaJwk("invalid!base64", "AQAB");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
                 () -> JwkKeyHandler.parseRsaKey(jwk)
         );
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'n'"), exception.getMessage());
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test
     void shouldRejectRsaKeyWithInvalidBase64UrlExponent() {
-        JsonObject jwk = createJsonObject("validModulus", "invalid!base64");
+        JwkKey jwk = createRsaJwk("validModulus", "invalid!base64");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
                 () -> JwkKeyHandler.parseRsaKey(jwk)
         );
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'e'"));
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test
     void shouldRejectEcKeyWithMissingXCoordinate() {
-        JsonObject jwk = createEcJwk(null, "validYCoord");
+        JwkKey jwk = createEcJwk(null, "validYCoord");
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
                 () -> JwkKeyHandler.parseEcKey(jwk)
@@ -160,7 +137,7 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldRejectEcKeyWithMissingYCoordinate() {
-        JsonObject jwk = createEcJwk("validXCoord", null);
+        JwkKey jwk = createEcJwk("validXCoord", null);
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
@@ -172,7 +149,7 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldRejectEcKeyWithInvalidBase64UrlXCoordinate() {
-        JsonObject jwk = createEcJwk("invalid!base64", "validYCoord");
+        JwkKey jwk = createEcJwk("invalid!base64", "validYCoord");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
@@ -180,11 +157,16 @@ class JwkKeyHandlerTest {
         );
 
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'x'"), "Actual message: " + exception.getMessage());
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @Test
     void shouldRejectEcKeyWithInvalidBase64UrlYCoordinate() {
-        JsonObject jwk = createEcJwk("validXCoord", "invalid!base64");
+        JwkKey jwk = createEcJwk("validXCoord", "invalid!base64");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
@@ -192,6 +174,11 @@ class JwkKeyHandlerTest {
         );
 
         assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'y'"), exception.getMessage());
+
+        // Verify that the warning was logged for invalid characters
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "invalid!base64");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
     }
 
     @ParameterizedTest
@@ -217,6 +204,44 @@ class JwkKeyHandlerTest {
     }
 
     @Test
+    void shouldRejectRsaKeyWithBase64Padding() {
+        // This tests the specific case where Base64 URL should NOT have padding
+        // Base64 URL (RFC 4648) explicitly forbids padding characters
+        // Testing with "abc==" which has padding characters
+        JwkKey jwk = createRsaJwk("abc==", "AQAB");  // Double padding - definitely invalid for Base64 URL
+
+        InvalidKeySpecException exception = assertThrows(
+                InvalidKeySpecException.class,
+                () -> JwkKeyHandler.parseRsaKey(jwk)
+        );
+        assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'n'"),
+                "Should reject Base64 with padding, actual message: " + exception.getMessage());
+
+        // Verify that the warning was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "abc==");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
+    }
+
+    @Test
+    void shouldRejectEcKeyWithBase64Padding() {
+        // Test EC key with Base64 padding in coordinates
+        JwkKey jwk = createEcJwk("validX", "abc==");  // Double padding - definitely invalid for Base64 URL
+
+        InvalidKeySpecException exception = assertThrows(
+                InvalidKeySpecException.class,
+                () -> JwkKeyHandler.parseEcKey(jwk)
+        );
+        assertTrue(exception.getMessage().contains("Invalid Base64 URL encoded value for 'y'"),
+                "Should reject Base64 with padding, actual message: " + exception.getMessage());
+
+        // Verify that the warning was logged
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "abc==");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.INVALID_BASE64_URL_ENCODING.resolveIdentifierString());
+    }
+
+    @Test
     void shouldReturnDefaultAlgorithmForUnknownCurve() {
         String curve = "unknown-curve";
 
@@ -230,13 +255,7 @@ class JwkKeyHandlerTest {
         // These are example values for P-256 curve (secp256r1)
         String x = "f83OJ3D2xF4P4QJrL6Z4pWQ2vQKj6k1b6QJ6Qn6QJ6Q";
         String y = "x_FEzRu9QJ6Qn6QJ6QJ6Qn6QJ6Qn6QJ6Qn6QJ6Qn6Q";
-        JsonObject jwk = Json.createObjectBuilder()
-                .add("kty", "EC")
-                .add("crv", "P-256")
-                .add("x", x)
-                .add("y", y)
-                .add("kid", "test-key")
-                .build();
+        JwkKey jwk = new JwkKey("EC", "test-key", null, null, null, "P-256", x, y);
 
         Key key = JwkKeyHandler.parseEcKey(jwk);
 
@@ -246,12 +265,7 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldRejectEcKeyWithMissingCurve() {
-        JsonObject jwk = Json.createObjectBuilder()
-                .add("kty", "EC")
-                .add("x", "validXCoord")
-                .add("y", "validYCoord")
-                .add("kid", "test-key")
-                .build();
+        JwkKey jwk = new JwkKey("EC", "test-key", null, null, null, null, "validXCoord", "validYCoord");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,
@@ -264,13 +278,7 @@ class JwkKeyHandlerTest {
 
     @Test
     void shouldRejectEcKeyWithUnsupportedCurve() {
-        JsonObject jwk = Json.createObjectBuilder()
-                .add("kty", "EC")
-                .add("crv", "P-192") // Unsupported curve
-                .add("x", "validXCoord")
-                .add("y", "validYCoord")
-                .add("kid", "test-key")
-                .build();
+        JwkKey jwk = new JwkKey("EC", "test-key", null, null, null, "P-192", "validXCoord", "validYCoord");
 
         InvalidKeySpecException exception = assertThrows(
                 InvalidKeySpecException.class,

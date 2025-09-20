@@ -15,23 +15,20 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
-import jakarta.json.JsonException;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.jspecify.annotations.NonNull;
 
-import java.io.StringReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
@@ -66,15 +63,15 @@ import java.util.Base64;
  *     jwt.getAlg().ifPresent(alg -> LOGGER.debug("Algorithm: %s", alg));
  *     jwt.getIssuer().ifPresent(issuer -> LOGGER.debug("Issuer: %s", issuer));
  *     jwt.getKid().ifPresent(kid -> LOGGER.debug("Key ID: %s", kid));
- *     
+ *
  *     // Access the raw token
  *     String rawToken = jwt.getRawToken();
- *     
+ *
  *     // For more complex operations, access the header and body JSON objects
  *     jwt.getHeader().ifPresent(header -> {
  *         // Process header fields not covered by convenience methods
  *     });
- *     
+ *
  *     jwt.getBody().ifPresent(body -> {
  *         // Process custom claims in the body
  *         if (body.containsKey("custom_claim")) {
@@ -123,8 +120,6 @@ import java.util.Base64;
  */
 @ToString
 @EqualsAndHashCode
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
 public class NonValidatingJwtParser {
 
     private static final CuiLogger LOGGER = new CuiLogger(NonValidatingJwtParser.class);
@@ -132,14 +127,41 @@ public class NonValidatingJwtParser {
     /**
      * Configuration for the parser, containing all security settings.
      */
-    @Builder.Default
-    private final ParserConfig config = ParserConfig.builder().build();
+    private final ParserConfig config;
 
     /**
      * Counter for security events that occur during token processing.
      */
     @NonNull
     private final SecurityEventCounter securityEventCounter;
+
+    private NonValidatingJwtParser(ParserConfig config, @NonNull SecurityEventCounter securityEventCounter) {
+        this.config = config != null ? config : ParserConfig.builder().build();
+        this.securityEventCounter = securityEventCounter;
+    }
+
+    public static NonValidatingJwtParserBuilder builder() {
+        return new NonValidatingJwtParserBuilder();
+    }
+
+    public static class NonValidatingJwtParserBuilder {
+        private ParserConfig config = ParserConfig.builder().build();
+        private SecurityEventCounter securityEventCounter;
+
+        public NonValidatingJwtParserBuilder config(ParserConfig config) {
+            this.config = config;
+            return this;
+        }
+
+        public NonValidatingJwtParserBuilder securityEventCounter(SecurityEventCounter securityEventCounter) {
+            this.securityEventCounter = securityEventCounter;
+            return this;
+        }
+
+        public NonValidatingJwtParser build() {
+            return new NonValidatingJwtParser(config, securityEventCounter);
+        }
+    }
 
     /**
      * Decodes a JWT token and returns a DecodedJwt object containing the decoded parts.
@@ -221,7 +243,7 @@ public class NonValidatingJwtParser {
         try {
             // Decode token parts
             return decodeTokenParts(parts, token, logWarnings);
-        } catch (IllegalArgumentException | JsonException e) {
+        } catch (IllegalArgumentException e) {
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
@@ -236,7 +258,7 @@ public class NonValidatingJwtParser {
 
 
     /**
-     * Decodes the token parts and creates a DecodedJwt object.
+     * Decodes the token parts and creates a DecodedJwt object using DSL-JSON.
      *
      * @param parts       the token parts
      * @param token       the original token
@@ -245,61 +267,98 @@ public class NonValidatingJwtParser {
      * @throws TokenValidationException if decoding fails
      */
     private DecodedJwt decodeTokenParts(String[] parts, String token, boolean logWarnings) {
-        // Decode the header (first part)
-        JsonObject header = decodeJsonPart(parts[0], logWarnings);
+        try {
+            // Decode the header (first part) to JwtHeader using DSL-JSON
+            JwtHeader header = decodeJwtHeader(parts[0]);
 
-        // Decode the payload (second part)
-        JsonObject body = decodeJsonPart(parts[1], logWarnings);
+            // Decode the payload (second part) to MapRepresentation using DSL-JSON
+            MapRepresentation body = decodePayload(parts[1]);
 
-        // The signature part (third part) is kept as is
-        String signature = parts[2];
+            // The signature part (third part) is kept as is
+            String signature = parts[2];
 
-        return new DecodedJwt(header, body, signature, parts, token);
+            return new DecodedJwt(header, body, signature, parts, token);
+        } catch (IOException e) {
+            // IOException from DSL-JSON deserialization
+            if (logWarnings) {
+                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+            }
+            securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
+            throw new TokenValidationException(
+                    SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
+                    "Failed to decode JWT parts: " + e.getMessage(),
+                    e
+            );
+        }
     }
 
     /**
-     * Decodes a Base64Url encoded JSON part of a JWT token.
-     * Implements security measures to prevent JSON parsing attacks:
-     * - JSON depth limits
-     * - JSON object size limits
-     * - Protection against duplicate keys
+     * Decodes a Base64Url encoded JWT header using DSL-JSON.
+     *
+     * @param encodedHeader the Base64Url encoded header part
+     * @return the decoded JwtHeader
+     * @throws IOException if decoding fails
+     */
+    private JwtHeader decodeJwtHeader(String encodedHeader) throws IOException {
+        String decodedJson = decodeBase64UrlPart(encodedHeader);
+        DslJson<Object> dslJson = config.getDslJson();
+
+        byte[] jsonBytes = decodedJson.getBytes();
+        JwtHeader header = dslJson.deserialize(JwtHeader.class, jsonBytes, jsonBytes.length);
+
+        if (header == null) {
+            throw new TokenValidationException(
+                    SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
+                    "Failed to deserialize JWT header: null result"
+            );
+        }
+
+        return header;
+    }
+
+    /**
+     * Decodes a Base64Url encoded JWT payload using DSL-JSON.
+     *
+     * @param encodedPayload the Base64Url encoded payload part
+     * @return the decoded MapRepresentation
+     * @throws IOException if decoding fails
+     */
+    private MapRepresentation decodePayload(String encodedPayload) throws IOException {
+        String decodedJson = decodeBase64UrlPart(encodedPayload);
+        DslJson<Object> dslJson = config.getDslJson();
+
+        return MapRepresentation.fromJson(dslJson, decodedJson);
+    }
+
+    /**
+     * Decodes a Base64Url encoded part to JSON string.
      *
      * @param encodedPart the Base64Url encoded part
-     * @param logWarnings whether to log warnings when decoding fails
-     * @return the decoded JsonObject
-     * @throws TokenValidationException if decoding fails
+     * @return the decoded JSON string
      */
-    private JsonObject decodeJsonPart(String encodedPart, boolean logWarnings) {
+    private String decodeBase64UrlPart(String encodedPart) {
         try {
-            byte[] decoded = Base64.getUrlDecoder().decode(encodedPart);
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(encodedPart);
 
-            if (decoded.length > config.getMaxPayloadSize()) {
-                if (logWarnings) {
-                    LOGGER.warn(JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize()));
-                    securityEventCounter.increment(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED);
-                }
+            // Check payload size limit to prevent memory exhaustion attacks
+            if (decodedBytes.length > config.getMaxPayloadSize()) {
+                LOGGER.warn(JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize()));
+                securityEventCounter.increment(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED);
                 throw new TokenValidationException(
                         SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED,
                         JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize())
                 );
             }
 
-            // Use the cached JsonReaderFactory with security settings
-            try (JsonReader reader = config.getJsonReaderFactory()
-                    .createReader(new StringReader(new String(decoded, StandardCharsets.UTF_8)))) {
-                return reader.readObject();
-            }
-        } catch (IllegalArgumentException | JsonException e) {
-            if (logWarnings) {
-                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
-                securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
-            }
+            return new String(decodedBytes, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
-                    "Failed to decode JWT part: %s".formatted(e.getMessage()),
+                    "Failed to decode Base64Url part: " + e.getMessage(),
                     e
             );
         }
     }
+
 
 }

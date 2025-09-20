@@ -117,6 +117,7 @@ public class ClaimValue implements Serializable {
         return null != originalString;
     }
 
+
     /**
      * Checks if the value is empty (null).
      *

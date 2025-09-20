@@ -165,18 +165,14 @@ public class TestRealm {
      * @return true if the endpoint is healthy, false otherwise
      */
     public boolean isWellKnownEndpointHealthy() {
-        try {
-            Response response = given()
-                    .baseUri(KEYCLOAK_BASE_URL)
-                    .when()
-                    .get(WELL_KNOWN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+        Response response = given()
+                .baseUri(KEYCLOAK_BASE_URL)
+                .when()
+                .get(WELL_KNOWN_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
-            return response.statusCode() == 200 &&
-                    response.body().asString().contains("\"issuer\"") &&
-                    response.body().asString().contains("\"jwks_uri\"");
-        } catch (Exception e) {
-            return false;
-        }
+        return response.statusCode() == 200 &&
+                response.body().asString().contains("\"issuer\"") &&
+                response.body().asString().contains("\"jwks_uri\"");
     }
 
     /**
@@ -185,16 +181,12 @@ public class TestRealm {
      * @return true if the JWKS endpoint is accessible, false otherwise
      */
     public boolean isJwksEndpointHealthy() {
-        try {
-            Response response = given()
-                    .baseUri(KEYCLOAK_BASE_URL)
-                    .when()
-                    .get(CERTS_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
+        Response response = given()
+                .baseUri(KEYCLOAK_BASE_URL)
+                .when()
+                .get(CERTS_ENDPOINT_TEMPLATE.formatted(realmIdentifier));
 
-            return response.statusCode() == 200 && response.body().asString().contains("\"keys\"");
-        } catch (Exception e) {
-            return false;
-        }
+        return response.statusCode() == 200 && response.body().asString().contains("\"keys\"");
     }
 
     /**
@@ -203,16 +195,12 @@ public class TestRealm {
      * @return true if Keycloak is healthy, false otherwise
      */
     public boolean isKeycloakHealthy() {
-        try {
-            Response response = given()
-                    .baseUri(KEYCLOAK_MANAGEMENT_URL)
-                    .when()
-                    .get("/health/ready");
+        Response response = given()
+                .baseUri(KEYCLOAK_MANAGEMENT_URL)
+                .when()
+                .get("/health/ready");
 
-            return response.statusCode() == 200;
-        } catch (Exception e) {
-            return false;
-        }
+        return response.statusCode() == 200;
     }
 
     private void validateToken(String token, String tokenType) {

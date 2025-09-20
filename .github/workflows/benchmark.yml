@@ -77,11 +77,72 @@ jobs:
           # Run integration benchmarks with native image using profile that includes container startup
           # The benchmarks now automatically generate artifacts in target/benchmark-results
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
           
           # Verify artifacts were generated
           echo "📊 Integration benchmark artifacts generated:"
           ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/
+
+      - name: Archive Historical Data
+        run: |
+          # Generate timestamp and commit info
+          TIMESTAMP=$(date -u +"%Y-%m-%d-T%H%MZ")
+          COMMIT_SHA="${{ github.sha }}"
+          ARCHIVE_NAME="${TIMESTAMP}-${COMMIT_SHA:0:8}.json"
+          
+          # Create history directories if they don't exist
+          mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
+          mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history
+          
+          # Archive current benchmark data if it exists
+          if [ -f "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
+            cp benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
+               "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
+          fi
+          
+          if [ -f "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
+            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
+               "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
+          fi
+
+      - name: Fetch Previous History
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: cuioss/cuioss.github.io
+          ref: main
+          path: previous-pages
+          sparse-checkout: |
+            cui-jwt/benchmarks/micro/history
+            cui-jwt/benchmarks/integration/history
+        continue-on-error: true
+        
+      - name: Merge Historical Data
+        run: |
+          # Copy previous history if it exists
+          if [ -d "previous-pages/cui-jwt/benchmarks/micro/history" ]; then
+            echo "📜 Merging micro benchmark history..."
+            mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
+            cp -n previous-pages/cui-jwt/benchmarks/micro/history/*.json \
+               benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
+          fi
+          
+          if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
+            echo "📜 Merging integration benchmark history..."
+            mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history
+            cp -n previous-pages/cui-jwt/benchmarks/integration/history/*.json \
+               benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
+          fi
+          
+          # Enforce retention policy (keep only 10 most recent)
+          for dir in benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history \
+                     benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history; do
+            if [ -d "$dir" ]; then
+              echo "🧹 Enforcing retention policy in $dir"
+              cd "$dir"
+              ls -t *.json 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
+              cd - > /dev/null
+            fi
+          done
 
       - name: Combine Benchmark Artifacts
         run: |
@@ -109,8 +170,9 @@ jobs:
             cp -r benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/* gh-pages/integration/
             # Copy integration badges to root badges directory
             if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges" ]; then
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/integration-performance-badge.json gh-pages/badges/ 2>/dev/null || true
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/integration-trend-badge.json gh-pages/badges/ 2>/dev/null || true
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/performance-badge.json gh-pages/badges/integration-performance-badge.json 2>/dev/null || true
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/trend-badge.json gh-pages/badges/integration-trend-badge.json 2>/dev/null || true
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/last-run-badge.json gh-pages/badges/integration-last-run-badge.json 2>/dev/null || true
             fi
           fi
           
@@ -119,6 +181,10 @@ jobs:
           
           echo "📊 Combined artifacts structure:"
           ls -la gh-pages/
+          echo "📊 Micro history:"
+          ls -la gh-pages/micro/history/ 2>/dev/null || echo "No micro history"
+          echo "📊 Integration history:"
+          ls -la gh-pages/integration/history/ 2>/dev/null || echo "No integration history"
           
       - name: Upload benchmark results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

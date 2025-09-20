@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
 
 /**
  * Collects JWT validation metrics from {@link SecurityEventCounter} and exposes them as Micrometer metrics.
@@ -213,7 +214,7 @@ public class JwtMetricsCollector {
             if (eventType.getCategory() == null) {
                 long count = securityEventCounter.getCount(eventType);
                 if (count > 0) {
-                    LOGGER.debug("Success event %s has count %d", eventType.name(), count);
+                    LOGGER.debug("Success event %s has count %s", eventType.name(), count);
                 }
             }
         }
@@ -236,9 +237,9 @@ public class JwtMetricsCollector {
                 if (counter != null) {
                     // Increment the counter by the delta
                     counter.increment(delta);
-                    LOGGER.debug("Updated counter for event type %s by %d (total: %f)", eventType.name(), delta, counter.count());
+                    LOGGER.debug("Updated counter for event type %s by %s (total: %s)", eventType.name(), delta, counter.count());
                 } else {
-                    LOGGER.warn("No Micrometer counter found for event type %s, delta %d lost", eventType.name(), delta);
+                    LOGGER.warn(WARN.NO_MICROMETER_COUNTER_FOUND.format(eventType.name(), delta));
                 }
 
                 // Update the last known count

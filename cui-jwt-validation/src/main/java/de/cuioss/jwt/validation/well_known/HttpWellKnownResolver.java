@@ -15,203 +15,123 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
-import de.cuioss.jwt.validation.util.ETagAwareHttpHandler;
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.LoadingStatusProvider;
+import de.cuioss.http.client.ResilientHttpHandler;
+import de.cuioss.http.client.result.HttpResultObject;
+import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.HttpHandler;
-import jakarta.json.JsonObject;
-import lombok.NonNull;
 
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * HTTP-based implementation of WellKnownResolver that discovers OIDC endpoints.
+ * HTTP-based implementation for resolving OpenID Connect well-known configuration endpoints.
  * <p>
- * This class provides lazy loading of well-known endpoints with built-in retry logic
- * and health checking capabilities. It follows the same pattern as HttpJwksLoader
- * with thread-safe operations and status reporting.
+ * This class provides a thin wrapper around {@link ResilientHttpHandler} for loading and
+ * parsing well-known OIDC discovery documents. It handles HTTP operations, caching,
+ * and provides convenient access to discovered endpoints.
  * <p>
- * Features:
- * <ul>
- *   <li>Lazy loading - HTTP requests are deferred until first access</li>
- *   <li>Thread-safe initialization using double-checked locking</li>
- *   <li>Built-in retry logic for transient failures</li>
- *   <li>Health checking with status reporting</li>
- *   <li>Caching of successfully resolved endpoints</li>
- * </ul>
+ * The resolver loads the well-known configuration once and caches the result for
+ * subsequent endpoint lookups. It provides methods to access common OIDC endpoints
+ * like JWKS URI, issuer, authorization endpoint, etc.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-public class HttpWellKnownResolver implements WellKnownResolver {
+public class HttpWellKnownResolver implements LoadingStatusProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(HttpWellKnownResolver.class);
 
-    private static final String ISSUER_KEY = "issuer";
-    private static final String JWKS_URI_KEY = "jwks_uri";
-    private static final String AUTHORIZATION_ENDPOINT_KEY = "authorization_endpoint";
-    private static final String TOKEN_ENDPOINT_KEY = "token_endpoint";
-    private static final String USERINFO_ENDPOINT_KEY = "userinfo_endpoint";
-
-    private final URL wellKnownUrl;
-    private final ETagAwareHttpHandler etagHandler;
-    private final WellKnownParser parser;
-    private final WellKnownEndpointMapper mapper;
-
-    private final Map<String, HttpHandler> endpoints = new ConcurrentHashMap<>();
-    private volatile String issuerIdentifier;
-    private volatile LoaderStatus status = LoaderStatus.UNDEFINED;
+    private final ResilientHttpHandler<WellKnownResult> wellKnownHandler;
+    private HttpResultObject<WellKnownResult> cachedResult;
 
     /**
-     * Creates a new HTTP well-known resolver from WellKnownConfig.
+     * Creates a new HttpWellKnownResolver with the specified configuration.
      *
      * @param config the well-known configuration containing HTTP handler and parser settings
      */
-    public HttpWellKnownResolver(@NonNull WellKnownConfig config) {
-        HttpHandler httpHandler = config.getHttpHandler();
-        this.wellKnownUrl = httpHandler.getUrl();
-        this.etagHandler = new ETagAwareHttpHandler(httpHandler);
-        this.parser = new WellKnownParser(config.getParserConfig());
-        this.mapper = new WellKnownEndpointMapper(httpHandler);
-        LOGGER.debug("Created HttpWellKnownResolver for URL: %s (not yet loaded)", wellKnownUrl);
+    public HttpWellKnownResolver(WellKnownConfig config) {
+        var converter = new WellKnownConfigurationConverter(config.getParserConfig().getDslJson());
+        this.wellKnownHandler = new ResilientHttpHandler<>(config.getHttpHandler(), converter);
+        LOGGER.debug("Created HttpWellKnownResolver for well-known endpoint discovery");
     }
 
-    @Override
-    public Optional<HttpHandler> getJwksUri() {
-        ensureLoaded();
-        return Optional.ofNullable(endpoints.get(JWKS_URI_KEY));
+    /**
+     * Ensures the well-known configuration is loaded and cached.
+     *
+     * @return Optional containing the WellKnownResult if available and valid, empty otherwise
+     */
+    private Optional<WellKnownResult> ensureLoaded() {
+        if (cachedResult == null) {
+            cachedResult = wellKnownHandler.load();
+        }
+        if (cachedResult.isValid()) {
+            return Optional.of(cachedResult.getResult());
+        }
+        return Optional.empty();
     }
 
-    @Override
-    public Optional<HttpHandler> getAuthorizationEndpoint() {
-        ensureLoaded();
-        return Optional.ofNullable(endpoints.get(AUTHORIZATION_ENDPOINT_KEY));
+    /**
+     * Gets the JWKS URI from the well-known configuration.
+     *
+     * @return Optional containing the JWKS URI if available, empty otherwise
+     */
+    public Optional<String> getJwksUri() {
+        return ensureLoaded().flatMap(WellKnownResult::getJwksUri);
     }
 
-    @Override
-    public Optional<HttpHandler> getTokenEndpoint() {
-        ensureLoaded();
-        return Optional.ofNullable(endpoints.get(TOKEN_ENDPOINT_KEY));
-    }
-
-    @Override
-    public Optional<HttpHandler> getUserinfoEndpoint() {
-        ensureLoaded();
-        return Optional.ofNullable(endpoints.get(USERINFO_ENDPOINT_KEY));
-    }
-
-    @Override
+    /**
+     * Gets the issuer from the well-known configuration.
+     *
+     * @return Optional containing the issuer if available, empty otherwise
+     */
     public Optional<String> getIssuer() {
-        ensureLoaded();
-        return Optional.ofNullable(issuerIdentifier);
+        return ensureLoaded().flatMap(WellKnownResult::getIssuer);
     }
 
+    /**
+     * Gets the authorization endpoint from the well-known configuration.
+     *
+     * @return Optional containing the authorization endpoint if available, empty otherwise
+     */
+    public Optional<String> getAuthorizationEndpoint() {
+        return ensureLoaded().flatMap(WellKnownResult::getAuthorizationEndpoint);
+    }
+
+    /**
+     * Gets the token endpoint from the well-known configuration.
+     *
+     * @return Optional containing the token endpoint if available, empty otherwise
+     */
+    public Optional<String> getTokenEndpoint() {
+        return ensureLoaded().flatMap(WellKnownResult::getTokenEndpoint);
+    }
+
+    /**
+     * Gets the userinfo endpoint from the well-known configuration.
+     *
+     * @return Optional containing the userinfo endpoint if available, empty otherwise
+     */
+    public Optional<String> getUserinfoEndpoint() {
+        return ensureLoaded().flatMap(WellKnownResult::getUserinfoEndpoint);
+    }
+
+    /**
+     * Gets the complete well-known configuration result.
+     *
+     * @return Optional containing the WellKnownResult if available, empty otherwise
+     */
+    public Optional<WellKnownResult> getWellKnownResult() {
+        return ensureLoaded();
+    }
+
+    /**
+     * Checks the health status of the well-known resolver.
+     *
+     * @return the current LoaderStatus indicating health state
+     */
     @Override
-    public LoaderStatus isHealthy() {
-        if (endpoints.isEmpty()) {
-            ensureLoaded();
-        }
-        return status;
-    }
-
-
-    private void ensureLoaded() {
-        if (endpoints.isEmpty() && issuerIdentifier == null) {
-            loadEndpointsIfNeeded();
-        }
-    }
-
-    private void loadEndpointsIfNeeded() {
-        // Double-checked locking pattern with ConcurrentHashMap
-        if (endpoints.isEmpty() && issuerIdentifier == null) {
-            synchronized (this) {
-                if (endpoints.isEmpty() && issuerIdentifier == null) {
-                    loadEndpoints();
-                }
-            }
-        }
-    }
-
-    private void loadEndpoints() {
-        LOGGER.debug("Loading well-known endpoints from %s", wellKnownUrl);
-
-        // Fetch and parse discovery document
-        ETagAwareHttpHandler.LoadResult result = etagHandler.load();
-        if (result.content() == null) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        Optional<JsonObject> parseResult = parser.parseJsonResponse(result.content(), wellKnownUrl);
-        if (parseResult.isEmpty()) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        JsonObject discoveryDocument = parseResult.get();
-        LOGGER.debug("Discovery document load state: %s", result.loadState());
-        LOGGER.debug(JWTValidationLogMessages.DEBUG.DISCOVERY_DOCUMENT_FETCHED.format(discoveryDocument));
-
-        Map<String, HttpHandler> parsedEndpoints = new HashMap<>();
-
-        // Parse all endpoints
-        String issuerString = parser.getString(discoveryDocument, ISSUER_KEY)
-                .orElse(null);
-        if (issuerString == null) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        if (!parser.validateIssuer(issuerString, wellKnownUrl)) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        // JWKS URI (Required)
-        if (!mapper.addHttpHandlerToMap(parsedEndpoints, JWKS_URI_KEY,
-                parser.getString(discoveryDocument, JWKS_URI_KEY).orElse(null), wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        // Required endpoints
-        if (!mapper.addHttpHandlerToMap(parsedEndpoints, AUTHORIZATION_ENDPOINT_KEY,
-                parser.getString(discoveryDocument, AUTHORIZATION_ENDPOINT_KEY).orElse(null), wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        if (!mapper.addHttpHandlerToMap(parsedEndpoints, TOKEN_ENDPOINT_KEY,
-                parser.getString(discoveryDocument, TOKEN_ENDPOINT_KEY).orElse(null), wellKnownUrl, true)) {
-            this.status = LoaderStatus.ERROR;
-            LOGGER.error(JWTValidationLogMessages.ERROR.WELL_KNOWN_LOAD_FAILED.format(wellKnownUrl, 1));
-            return;
-        }
-
-        // Optional endpoints
-        mapper.addHttpHandlerToMap(parsedEndpoints, USERINFO_ENDPOINT_KEY,
-                parser.getString(discoveryDocument, USERINFO_ENDPOINT_KEY).orElse(null), wellKnownUrl, false);
-
-        // Accessibility check for jwks_uri
-        mapper.performAccessibilityCheck(JWKS_URI_KEY, parsedEndpoints.get(JWKS_URI_KEY));
-
-        // Success - save the endpoints and issuer identifier
-        this.endpoints.clear();
-        this.endpoints.putAll(parsedEndpoints);
-        this.issuerIdentifier = issuerString;
-        this.status = LoaderStatus.OK;
-
-        LOGGER.info(JWTValidationLogMessages.INFO.WELL_KNOWN_ENDPOINTS_LOADED.format(wellKnownUrl));
+    public LoaderStatus getLoaderStatus() {
+        return wellKnownHandler.getLoaderStatus();
     }
 }

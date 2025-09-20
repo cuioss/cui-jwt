@@ -20,7 +20,7 @@ import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -179,6 +179,33 @@ public enum ClaimName {
         this.claimMapper = claimMapper;
     }
 
+    /**
+     * Gets the claim name string.
+     *
+     * @return the claim name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Gets the claim value type.
+     *
+     * @return the claim value type
+     */
+    public ClaimValueType getValueType() {
+        return valueType;
+    }
+
+    /**
+     * Gets the specification description.
+     *
+     * @return the specification description
+     */
+    public String getSpec() {
+        return spec;
+    }
+
     // Thread-safe cache for ClaimName lookups to improve performance
     private static final Map<String, Optional<ClaimName>> CLAIM_NAME_CACHE = new ConcurrentHashMap<>();
 
@@ -187,8 +214,17 @@ public enum ClaimName {
      *
      * @return the mapped ClaimValue
      */
-    public @NonNull ClaimValue map(@NonNull JsonObject jsonObject) {
-        return claimMapper.map(jsonObject, getName());
+    public @NonNull ClaimValue map(@NonNull MapRepresentation mapRepresentation) {
+        return claimMapper.map(mapRepresentation, getName());
+    }
+
+    /**
+     * Gets the claim mapper for this claim.
+     *
+     * @return the ClaimMapper instance
+     */
+    public @NonNull ClaimMapper getClaimMapper() {
+        return claimMapper;
     }
 
     /**

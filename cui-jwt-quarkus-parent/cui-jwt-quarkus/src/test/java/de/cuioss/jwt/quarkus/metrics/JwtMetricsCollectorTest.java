@@ -19,6 +19,8 @@ import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Collection;
 import java.util.Objects;
 
+import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -48,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @QuarkusTest
 @TestProfile(JwtTestProfile.class)
+@EnableTestLogger
 class JwtMetricsCollectorTest {
 
     @Inject
@@ -64,6 +69,8 @@ class JwtMetricsCollectorTest {
     void shouldInitializeMetrics() {
         // Ensure collector is properly initialized
         assertNotNull(metricsCollector);
+
+        // Logging verification is handled in separate unit test
 
         // Get counters from registry - both error and success counters
         Collection<Counter> errorCounters = registry.find(MetricIdentifier.VALIDATION.ERRORS).counters();
@@ -132,6 +139,10 @@ class JwtMetricsCollectorTest {
 
         // Clear all metrics
         metricsCollector.clear();
+
+        // Verify logging occurred during clear
+        assertLogMessagePresent(TestLogLevel.INFO, INFO.CLEARING_JWT_METRICS.format());
+        assertLogMessagePresent(TestLogLevel.INFO, INFO.JWT_METRICS_CLEARED.format());
 
         // Verify all metrics are cleared
         assertEquals(0, securityEventCounter.getCount(testEventType), "Security event counter should be cleared");

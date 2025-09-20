@@ -20,6 +20,9 @@ import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldImplementEqualsAndHashCode;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldImplementToString;
 import de.cuioss.tools.logging.CuiLogger;
@@ -43,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Oliver Wolff
  * @see <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#multi-issuer">Multi-Issuer Specification</a>
  */
+@EnableTestLogger
 @DisplayName("Tests for IssuerConfig")
 class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldImplementEqualsAndHashCode<IssuerConfig> {
 
@@ -88,6 +92,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             var claimMapper = new IdentityMapper();
             var httpConfig = HttpJwksLoaderConfig.builder()
                     .jwksUrl(TEST_JWKS_URL)
+                    .issuerIdentifier("test-issuer")
                     .build();
 
             var config = IssuerConfig.builder()
@@ -115,6 +120,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             var config = IssuerConfig.builder()
                     .httpJwksLoaderConfig(HttpJwksLoaderConfig.builder()
                             .jwksUrl(TEST_JWKS_URL)
+                            .issuerIdentifier("test-issuer")
                             .build())
                     .build();
             var securityEventCounter = new SecurityEventCounter();
@@ -163,6 +169,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             assertTrue(exception.getMessage().contains("No JwksLoader configuration is present"));
         }
 
+        @SuppressWarnings("DataFlowIssue")
         @Test
         @DisplayName("Should throw exception when securityEventCounter is null")
         void shouldThrowExceptionWhenSecurityEventCounterIsNull() {
@@ -195,6 +202,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
         void shouldBuildSuccessfulConfigurationWithHttpJwks() {
             var httpConfig = HttpJwksLoaderConfig.builder()
                     .jwksUrl("https://example.com/.well-known/jwks.json")
+                    .issuerIdentifier("test-issuer")
                     .build();
             assertDoesNotThrow(() -> {
                 IssuerConfig.builder()
@@ -238,6 +246,21 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
                         .enabled(false)
                         .build();
             });
+        }
+
+        @Test
+        @DisplayName("Should log warning when claimSubOptional is true")
+        void shouldLogWarningWhenClaimSubOptionalIsTrue() {
+            // Build config with claimSubOptional set to true
+            IssuerConfig.builder()
+                    .issuerIdentifier(TEST_ISSUER)
+                    .jwksContent(TEST_JWKS_CONTENT)
+                    .claimSubOptional(true)
+                    .build();
+
+            // Verify the warning was logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                    JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING.resolveIdentifierString());
         }
     }
 }

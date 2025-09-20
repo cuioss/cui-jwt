@@ -70,9 +70,9 @@ class ClientConfusionAttackTest {
         try {
             var decoder = NonValidatingJwtParser.builder().securityEventCounter(new SecurityEventCounter()).build();
             var jwt = decoder.decode(token);
-            var header = jwt.getHeader().orElse(null);
+            var header = jwt.getHeader();
             var kid = jwt.getKid().orElse("null");
-            var body = jwt.getBody().orElse(null);
+            var body = jwt.getBody();
 
             LOGGER.debug("Token headers: " + header);
             LOGGER.debug("Token kid: " + kid);
@@ -81,14 +81,14 @@ class ClientConfusionAttackTest {
             // Add more detailed debugging for audience claim
             if (body != null) {
                 if (body.containsKey("aud")) {
-                    LOGGER.debug("Audience claim found: " + body.get("aud"));
-                    LOGGER.debug("Audience claim type: " + body.get("aud").getValueType());
+                    LOGGER.debug("Audience claim found: " + body.getValue("aud").orElse(null));
+                    LOGGER.debug("Audience claim type: " + body.getValue("aud").map(obj -> obj.getClass().getSimpleName()).orElse("null"));
                 } else {
                     LOGGER.debug("No audience claim found in token");
                 }
 
                 if (body.containsKey("azp")) {
-                    LOGGER.debug("AZP claim found: " + body.get("azp"));
+                    LOGGER.debug("AZP claim found: " + body.getValue("azp").orElse(null));
                 } else {
                     LOGGER.debug("No azp claim found in token");
                 }
@@ -165,9 +165,9 @@ class ClientConfusionAttackTest {
         try {
             var decoder = NonValidatingJwtParser.builder().securityEventCounter(new SecurityEventCounter()).build();
             var jwt = decoder.decode(token);
-            var header = jwt.getHeader().orElse(null);
+            var header = jwt.getHeader();
             var kid = jwt.getKid().orElse("null");
-            var body = jwt.getBody().orElse(null);
+            var body = jwt.getBody();
 
             LOGGER.debug("Token headers: " + header);
             LOGGER.debug("Token kid: " + kid);
@@ -176,14 +176,14 @@ class ClientConfusionAttackTest {
             // Add more detailed debugging for audience claim
             if (body != null) {
                 if (body.containsKey("aud")) {
-                    LOGGER.debug("Audience claim found: " + body.get("aud"));
-                    LOGGER.debug("Audience claim type: " + body.get("aud").getValueType());
+                    LOGGER.debug("Audience claim found: " + body.getValue("aud").orElse(null));
+                    LOGGER.debug("Audience claim type: " + body.getValue("aud").map(obj -> obj.getClass().getSimpleName()).orElse("null"));
                 } else {
                     LOGGER.debug("No audience claim found in token");
                 }
 
                 if (body.containsKey("azp")) {
-                    LOGGER.debug("AZP claim found: " + body.get("azp"));
+                    LOGGER.debug("AZP claim found: " + body.getValue("azp").orElse(null));
                 } else {
                     LOGGER.debug("No azp claim found in token");
                 }

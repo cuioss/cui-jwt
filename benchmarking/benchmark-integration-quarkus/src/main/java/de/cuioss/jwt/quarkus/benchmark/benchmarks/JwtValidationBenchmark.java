@@ -34,6 +34,7 @@ public class JwtValidationBenchmark extends AbstractIntegrationBenchmark {
 
     public static final String PATH = "/jwt/validate";
 
+
     /**
      * Benchmark for successful JWT validation with valid tokens.
      * Measures throughput and latency of the /jwt/validate endpoint.

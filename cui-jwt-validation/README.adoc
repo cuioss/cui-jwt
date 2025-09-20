@@ -63,16 +63,11 @@ try {
 * xref:doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
 * xref:doc/configuration/openid-discovery.adoc[OpenID Connect Discovery]
 
-== Runtime Dependencies
+== JSON Processing
 
-[source,xml]
-----
-<dependency>
-    <groupId>org.eclipse.parsson</groupId>
-    <artifactId>parsson</artifactId>
-    <version>1.1.7</version>
-</dependency>
-----
+This library uses DSL-JSON for secure, high-performance JSON parsing with configurable security limits.
+DSL-JSON provides compile-time code generation and actual enforcement of security constraints, 
+unlike reflection-based parsers that often ignore configured limits.
 
 == Test Support
 

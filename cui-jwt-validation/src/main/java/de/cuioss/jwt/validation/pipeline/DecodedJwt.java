@@ -16,7 +16,8 @@
 package de.cuioss.jwt.validation.pipeline;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import jakarta.json.JsonObject;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.NonNull;
 
 import java.util.Arrays;
@@ -27,11 +28,11 @@ import java.util.Optional;
 /**
  * Record representing a decoded JWT token.
  * <p>
- * This record holds the parsed components of a JWT token after Base64 decoding and JSON parsing,
+ * This record holds the parsed components of a JWT token after Base64 decoding and DSL-JSON parsing,
  * but before any validation occurs. It contains:
  * <ul>
- *   <li>The decoded header as a JsonObject</li>
- *   <li>The decoded payload (body) as a JsonObject</li>
+ *   <li>The decoded header as a JwtHeader record</li>
+ *   <li>The decoded payload (body) as a MapRepresentation</li>
  *   <li>The signature part as a String</li>
  *   <li>Convenience methods for accessing common JWT fields</li>
  *   <li>The original token parts and raw token string</li>
@@ -48,8 +49,8 @@ import java.util.Optional;
  * For more details on the token validation process, see the
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#token-validation-pipeline">Token Validation Pipeline</a>
  *
- * @param header the decoded header as a JsonObject
- * @param body the decoded payload (body) as a JsonObject
+ * @param header the decoded header as a JwtHeader
+ * @param body the decoded payload (body) as a MapRepresentation
  * @param signature the signature part as a String
  * @param parts the original token parts (header.payload.signature)
  * @param rawToken the original raw token string
@@ -58,8 +59,8 @@ import java.util.Optional;
  * @since 1.0
  */
 public record DecodedJwt(
-JsonObject header,
-JsonObject body,
+JwtHeader header,
+MapRepresentation body,
 String signature,
 String[] parts,
 String rawToken
@@ -67,19 +68,19 @@ String rawToken
     /**
      * Gets the header of the JWT token.
      *
-     * @return an Optional containing the header if present
+     * @return the JwtHeader, never null (minimal header with empty algorithm if not present)
      */
-    public Optional<JsonObject> getHeader() {
-        return Optional.ofNullable(header);
+    public JwtHeader getHeader() {
+        return header != null ? header : new JwtHeader("", null, null, null, null, null, null, null, null, null, null);
     }
 
     /**
      * Gets the body of the JWT token.
      *
-     * @return an Optional containing the body if present
+     * @return the body MapRepresentation, never null (empty MapRepresentation if not present)
      */
-    public Optional<JsonObject> getBody() {
-        return Optional.ofNullable(body);
+    public MapRepresentation getBody() {
+        return body != null ? body : MapRepresentation.empty();
     }
 
     /**
@@ -97,9 +98,7 @@ String rawToken
      * @return an Optional containing the issuer if present
      */
     public Optional<String> getIssuer() {
-        return body != null && body.containsKey(ClaimName.ISSUER.getName())
-                ? Optional.of(body.getString(ClaimName.ISSUER.getName()))
-                : Optional.empty();
+        return body != null ? body.getString(ClaimName.ISSUER.getName()) : Optional.empty();
     }
 
     /**
@@ -108,9 +107,7 @@ String rawToken
      * @return an Optional containing the kid if present
      */
     public Optional<String> getKid() {
-        return header != null && header.containsKey("kid")
-                ? Optional.of(header.getString("kid"))
-                : Optional.empty();
+        return header != null ? header.getKid() : Optional.empty();
     }
 
     /**
@@ -119,9 +116,7 @@ String rawToken
      * @return an Optional containing the algorithm if present
      */
     public Optional<String> getAlg() {
-        return header != null && header.containsKey("alg")
-                ? Optional.of(header.getString("alg"))
-                : Optional.empty();
+        return header != null ? Optional.ofNullable(header.alg()) : Optional.empty();
     }
 
     /**
@@ -249,18 +244,18 @@ String rawToken
      * Provides a fluent API for constructing DecodedJwt records.
      */
     public static class DecodedJwtBuilder {
-        private JsonObject header;
-        private JsonObject body;
+        private JwtHeader header;
+        private MapRepresentation body;
         private String signature;
         private String[] parts;
         private String rawToken;
 
-        public DecodedJwtBuilder header(JsonObject header) {
+        public DecodedJwtBuilder header(JwtHeader header) {
             this.header = header;
             return this;
         }
 
-        public DecodedJwtBuilder body(JsonObject body) {
+        public DecodedJwtBuilder body(MapRepresentation body) {
             this.body = body;
             return this;
         }

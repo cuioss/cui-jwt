@@ -15,13 +15,11 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
-import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.repository.TokenRepository;
+import de.cuioss.benchmarking.common.repository.KeycloakTokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
+import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 import java.net.http.HttpRequest;
@@ -35,27 +33,21 @@ import java.net.http.HttpRequest;
  *
  * @since 1.0
  */
-@State(Scope.Benchmark)
-public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark {
+@State(Scope.Benchmark) public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark {
 
     private static final CuiLogger LOGGER = new CuiLogger(AbstractIntegrationBenchmark.class);
 
-    protected String keycloakUrl;
-    protected TokenRepository tokenRepository;
+    protected TokenProvider tokenRepository;
 
     /**
-     * Setup method called once before all benchmark iterations.
-     * Extends parent setup and initializes or reuses the shared token repository.
+     * Additional setup for integration benchmarks.
+     * Called by parent's setupBenchmark after base initialization.
      */
-    @Override @Setup(Level.Trial) public void setupBenchmark() {
-        // Call parent setup first
-        super.setupBenchmark();
+    @Override protected void performAdditionalSetup() {
+        // Call parent's additional setup first
+        super.performAdditionalSetup();
 
         LOGGER.info("Setting up integration benchmark with token repository");
-
-        // Get Keycloak configuration
-        var config = BenchmarkConfiguration.fromSystemProperties().build();
-        keycloakUrl = config.keycloakUrl().orElse("https://localhost:1443");
 
         // Initialize token repository using shared instance if available
         initializeTokenRepository();
@@ -64,36 +56,14 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
     }
 
     /**
-     * Initializes the token repository, using the shared instance if available
-     * or creating a new one if needed (for forked JVM processes).
+     * Initializes the token repository with property-based configuration.
      */
     private void initializeTokenRepository() {
-        if (TokenRepository.isSharedInstanceInitialized()) {
-            LOGGER.debug("Using existing shared TokenRepository instance");
-            tokenRepository = TokenRepository.getSharedInstance();
-        } else {
-            LOGGER.debug("Initializing new TokenRepository for forked benchmark process");
-
-            TokenRepositoryConfig config = TokenRepositoryConfig.builder()
-                    .keycloakBaseUrl(keycloakUrl)
-                    .realm("benchmark")
-                    .clientId("benchmark-client")
-                    .clientSecret("benchmark-secret")
-                    .username("benchmark-user")
-                    .password("benchmark-password")
-                    .connectionTimeoutMs(5000)
-                    .requestTimeoutMs(10000)
-                    .verifySsl(false)
-                    .tokenRefreshThresholdSeconds(300)
-                    .build();
-
-            TokenRepository.initializeSharedInstance(config);
-            tokenRepository = TokenRepository.getSharedInstance();
-        }
+        TokenRepositoryConfig config = TokenRepositoryConfig.fromProperties();
+        tokenRepository = new KeycloakTokenRepository(config);
 
         LOGGER.info("Token repository initialized with {} tokens", tokenRepository.getTokenPoolSize());
     }
-
 
     /**
      * Creates an authenticated HTTP request builder with a JWT token.
@@ -103,7 +73,7 @@ public abstract class AbstractIntegrationBenchmark extends AbstractBaseBenchmark
      * @return configured request builder with Authorization header
      */
     protected HttpRequest.Builder createAuthenticatedRequest(String path, String token) {
-        return createBaseRequest(path)
+        return createRequestForPath(path)
                 .header("Authorization", "Bearer " + token);
     }
 

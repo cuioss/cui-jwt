@@ -15,9 +15,11 @@
  */
 package de.cuioss.jwt.quarkus.producer;
 
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.config.RetryStrategyConfigResolver;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenValidator;
@@ -53,12 +55,13 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * <ul>
  *   <li>{@link TokenValidator} - Main JWT validation component (includes SecurityEventCounter)</li>
  *   <li>{@link List}&lt;{@link IssuerConfig}&gt; - Resolved issuer configurations</li>
+ *   <li>{@link RetryStrategy} - HTTP retry strategy for resilient operations</li>
  * </ul>
  *
  * @since 1.0
  */
 @ApplicationScoped
-@RegisterForReflection(fields = true, methods = false)
+@RegisterForReflection(methods = false)
 public class TokenValidatorProducer {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorProducer.class);
@@ -80,6 +83,11 @@ public class TokenValidatorProducer {
     @NonNull
     SecurityEventCounter securityEventCounter;
 
+    @Produces
+    @ApplicationScoped
+    @NonNull
+    RetryStrategy retryStrategy;
+
     @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
         this.config = config;
@@ -96,10 +104,22 @@ public class TokenValidatorProducer {
     void init() {
         LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS::format);
 
+        // Create RetryStrategy from configuration
+        RetryStrategyConfigResolver retryResolver = new RetryStrategyConfigResolver(config);
+        retryStrategy = retryResolver.resolveRetryStrategy();
+
         // Resolve issuer configurations using the dedicated resolver
         // (Keycloak mappers are now configured per-issuer in IssuerConfigResolver)
-        IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(config);
+        IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(config, retryStrategy);
         issuerConfigs = issuerConfigResolver.resolveIssuerConfigs();
+
+        // Create SecurityEventCounter for proper initialization
+        SecurityEventCounter eventCounter = new SecurityEventCounter();
+
+        // Initialize each IssuerConfig with SecurityEventCounter so JwksLoader can be used
+        for (IssuerConfig issuerConfig : issuerConfigs) {
+            issuerConfig.initSecurityEventCounter(eventCounter);
+        }
 
         // Resolve parser config using the dedicated resolver
         ParserConfigResolver parserConfigResolver = new ParserConfigResolver(config);
@@ -122,8 +142,9 @@ public class TokenValidatorProducer {
 
         tokenValidator = builder.build();
 
-        // Extract SecurityEventCounter from the TokenValidator
-        securityEventCounter = tokenValidator.getSecurityEventCounter();
+        // Use the same SecurityEventCounter instance we used for initialization
+        // Note: tokenValidator.getSecurityEventCounter() returns the same instance
+        this.securityEventCounter = eventCounter;
 
         LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
     }

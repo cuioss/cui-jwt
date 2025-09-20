@@ -1,0 +1,4 @@
+de.cuioss.jwt.validation.json._WellKnownResult_DslJsonConverter
+de.cuioss.jwt.validation.json._Jwks_DslJsonConverter
+de.cuioss.jwt.validation.json._JwkKey_DslJsonConverter
+de.cuioss.jwt.validation.json._JwtHeader_DslJsonConverter

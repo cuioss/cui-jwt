@@ -15,9 +15,15 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
-import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.retry.RetryStrategy;
+import de.cuioss.jwt.validation.json.WellKnownResult;
+import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
+import de.cuioss.test.mockwebserver.EnableMockWebServer;
+import de.cuioss.test.mockwebserver.URIBuilder;
+import lombok.Getter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,120 +32,203 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test suite for {@link HttpWellKnownResolver}.
- * 
+ * Test suite for {@link HttpWellKnownResolver} with MockWebServer integration.
+ * <p>
+ * These tests verify the resolver works correctly with real HTTP operations,
+ * including timing variants, error scenarios, and caching behavior.
+ *
  * @author Oliver Wolff
  */
 @EnableTestLogger
-@EnableGeneratorController
-@DisplayName("HttpWellKnownResolver")
+@DisplayName("HttpWellKnownResolver MockWebServer Tests")
+@EnableMockWebServer
 class HttpWellKnownResolverTest {
 
-    @Test
-    @DisplayName("Should create resolver and start with UNDEFINED status")
-    void shouldCreateResolverAndStartWithUndefinedStatus() {
-        WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl("https://example.com/.well-known/openid-configuration")
-                .build();
+    @Getter
+    private final WellKnownDispatcher moduleDispatcher = new WellKnownDispatcher();
 
-        HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
-        assertNotNull(resolver);
+    private HttpWellKnownResolver resolver;
 
-        // Attempting to get endpoints without a valid server will result in empty results
-        assertFalse(resolver.getJwksUri().isPresent());
-        assertFalse(resolver.getAuthorizationEndpoint().isPresent());
-        assertFalse(resolver.getTokenEndpoint().isPresent());
-        assertFalse(resolver.getUserinfoEndpoint().isPresent());
-        assertFalse(resolver.getIssuer().isPresent());
-
-        // Health status should be ERROR after failed loading attempts
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+    @BeforeEach
+    void setUp() {
+        moduleDispatcher.setCallCounter(0);
     }
 
     @Test
-    @DisplayName("Should handle malformed URLs gracefully")
-    void shouldHandleMalformedUrlsGracefully() {
+    @DisplayName("Should successfully resolve JWKS URI from well-known endpoint")
+    void shouldSuccessfullyResolveJwksUri(URIBuilder uriBuilder) {
+        // Setup well-known dispatcher to return valid response
+        moduleDispatcher.returnDefault();
+
+        String baseUrl = uriBuilder.buildAsString();
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+        String expectedJwksUri = baseUrl + "/oidc/jwks.json";
+
         WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl("invalid-url")
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
                 .build();
 
-        HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
-        assertNotNull(resolver);
+        resolver = config.createResolver();
 
-        // Should not crash, but return empty results
-        assertFalse(resolver.getJwksUri().isPresent());
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+        // Test JWKS URI resolution
+        Optional<String> jwksUri = resolver.getJwksUri();
+        assertTrue(jwksUri.isPresent(), "JWKS URI should be discovered");
+        assertEquals(expectedJwksUri, jwksUri.get(), "JWKS URI should match expected URL");
+
+        // Verify health status is OK after successful resolution
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
+
+        // Verify well-known endpoint was called once
+        assertEquals(1, moduleDispatcher.getCallCounter(), "Well-known endpoint should be called once");
     }
 
     @Test
-    @DisplayName("Should test all getter methods for coverage")
-    void shouldTestAllGetterMethodsForCoverage() {
+    @DisplayName("Should successfully resolve issuer from well-known endpoint")
+    void shouldSuccessfullyResolveIssuer(URIBuilder uriBuilder) {
+        // Setup well-known dispatcher to return valid response
+        moduleDispatcher.returnDefault();
+
+        String baseUrl = uriBuilder.buildAsString();
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
         WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl("https://nonexistent-server.example.com/.well-known/openid-configuration")
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
                 .build();
 
-        HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
+        resolver = config.createResolver();
 
-        // Call all getter methods to ensure they are covered by tests
-        // These will fail with network errors but exercise the code paths
-        assertFalse(resolver.getJwksUri().isPresent());
-        assertFalse(resolver.getAuthorizationEndpoint().isPresent());
-        assertFalse(resolver.getTokenEndpoint().isPresent());
-        assertFalse(resolver.getUserinfoEndpoint().isPresent());
-        assertFalse(resolver.getIssuer().isPresent());
-
-        // Health status should be ERROR
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
-    }
-
-    @Test
-    @DisplayName("Should handle concurrent access without crashing")
-    void shouldHandleConcurrentAccessWithoutCrashing() throws InterruptedException {
-        WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl("https://example.com/.well-known/openid-configuration")
-                .build();
-
-        HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
-
-        int threadCount = 5;
-        Thread[] threads = new Thread[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            threads[i] = new Thread(() -> {
-                // Each thread tries to access endpoints - will fail but shouldn't crash
-                resolver.getJwksUri();
-                resolver.isHealthy();
-            });
-        }
-
-        for (Thread thread : threads) {
-            thread.start();
-        }
-
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        // Should complete without exceptions
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
-    }
-
-    @Test
-    @DisplayName("Should return empty issuer when not available")
-    void shouldReturnEmptyIssuerWhenNotAvailable() {
-        WellKnownConfig config = WellKnownConfig.builder()
-                .wellKnownUrl("https://nonexistent.example.com/.well-known/openid-configuration")
-                .build();
-
-        HttpWellKnownResolver resolver = new HttpWellKnownResolver(config);
-
-        // Call getIssuer() which will trigger ensureLoaded()
+        // Test issuer resolution
         Optional<String> issuer = resolver.getIssuer();
+        assertTrue(issuer.isPresent(), "Issuer should be discovered");
+        assertEquals(baseUrl, issuer.get(), "Issuer should match base URL");
 
-        // Should return empty since the server doesn't exist
-        assertFalse(issuer.isPresent(), "Issuer should not be present when server is unavailable");
+        // Verify health status is OK
+        assertEquals(LoaderStatus.OK, resolver.getLoaderStatus());
+    }
 
-        // Health status should be ERROR after failed loading
-        assertEquals(LoaderStatus.ERROR, resolver.isHealthy());
+    @Test
+    @DisplayName("Should resolve multiple endpoints correctly")
+    void shouldResolveMultipleEndpoints(URIBuilder uriBuilder) {
+        // Setup well-known dispatcher to return valid response
+        moduleDispatcher.returnDefault();
+
+        String baseUrl = uriBuilder.buildAsString();
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
+                .build();
+
+        resolver = config.createResolver();
+
+        // Test multiple endpoint resolutions
+        Optional<String> issuer = resolver.getIssuer();
+        Optional<String> jwksUri = resolver.getJwksUri();
+        Optional<String> authEndpoint = resolver.getAuthorizationEndpoint();
+        Optional<String> tokenEndpoint = resolver.getTokenEndpoint();
+        Optional<String> userinfoEndpoint = resolver.getUserinfoEndpoint();
+
+        // All endpoints should be available
+        assertTrue(issuer.isPresent(), "Issuer should be available");
+        assertTrue(jwksUri.isPresent(), "JWKS URI should be available");
+        assertTrue(authEndpoint.isPresent(), "Authorization endpoint should be available");
+        assertTrue(tokenEndpoint.isPresent(), "Token endpoint should be available");
+        assertTrue(userinfoEndpoint.isPresent(), "Userinfo endpoint should be available");
+
+        // Verify endpoint URLs
+        assertEquals(baseUrl, issuer.get());
+        assertEquals(baseUrl + "/oidc/jwks.json", jwksUri.get());
+        assertEquals(baseUrl + "/protocol/openid-connect/auth", authEndpoint.get());
+        assertEquals(baseUrl + "/protocol/openid-connect/token", tokenEndpoint.get());
+        assertEquals(baseUrl + "/protocol/openid-connect/userinfo", userinfoEndpoint.get());
+
+        // Should only call the well-known endpoint once due to caching
+        assertEquals(1, moduleDispatcher.getCallCounter(), "Well-known endpoint should be called once (cached)");
+    }
+
+    @Test
+    @DisplayName("Should handle error responses gracefully")
+    void shouldHandleErrorResponsesGracefully(URIBuilder uriBuilder) {
+        // Setup dispatcher to return error
+        moduleDispatcher.returnError();
+
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
+                .build();
+
+        resolver = config.createResolver();
+
+        // All endpoint resolutions should return empty
+        assertFalse(resolver.getJwksUri().isPresent(), "JWKS URI should not be available on error");
+        assertFalse(resolver.getIssuer().isPresent(), "Issuer should not be available on error");
+        assertFalse(resolver.getAuthorizationEndpoint().isPresent(), "Authorization endpoint should not be available on error");
+
+        // Health status should reflect error
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
+
+        // Well-known endpoint should be called
+        assertTrue(moduleDispatcher.getCallCounter() >= 1, "Well-known endpoint should be called at least once");
+    }
+
+    @Test
+    @DisplayName("Should handle missing JWKS URI gracefully")
+    void shouldHandleMissingJwksUriGracefully(URIBuilder uriBuilder) {
+        // Setup dispatcher with response missing JWKS URI
+        moduleDispatcher.returnMissingJwksUri();
+
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
+                .build();
+
+        resolver = config.createResolver();
+
+        // JWKS URI should not be available
+        assertFalse(resolver.getJwksUri().isPresent(), "JWKS URI should not be available when missing from response");
+
+        // No endpoints should be available since JWKS URI is a required field
+        assertFalse(resolver.getIssuer().isPresent(), "Issuer should not be available when JWKS URI is missing (invalid config)");
+
+        // Health status should be ERROR since JWKS URI is required for JWT validation
+        assertEquals(LoaderStatus.ERROR, resolver.getLoaderStatus());
+    }
+
+    @Test
+    @DisplayName("Should provide access to complete WellKnownResult")
+    void shouldProvideAccessToCompleteWellKnownResult(URIBuilder uriBuilder) {
+        // Setup well-known dispatcher to return valid response
+        moduleDispatcher.returnDefault();
+
+        String wellKnownUrl = uriBuilder.addPathSegment(".well-known")
+                .addPathSegment("openid-configuration").buildAsString();
+
+        WellKnownConfig config = WellKnownConfig.builder()
+                .wellKnownUrl(wellKnownUrl)
+                .retryStrategy(RetryStrategy.none())
+                .build();
+
+        resolver = config.createResolver();
+
+        // Test complete result access
+        Optional<WellKnownResult> result = resolver.getWellKnownResult();
+        assertTrue(result.isPresent(), "WellKnownResult should be available");
+
+        var wellKnown = result.get();
+        assertNotNull(wellKnown.getIssuer(), "Issuer should be present in result");
+        assertNotNull(wellKnown.getJwksUri(), "JWKS URI should be present in result");
+        assertNotNull(wellKnown.getAuthorizationEndpoint(), "Authorization endpoint should be present in result");
     }
 }

@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for {@link LoaderStatus} enum.
- * 
+ *
  * @author Oliver Wolff
  */
 @EnableGeneratorController
@@ -31,11 +32,12 @@ class LoaderStatusTest {
     @Test
     void shouldContainAllExpectedValues() {
         var values = LoaderStatus.values();
-        assertEquals(3, values.length);
+        assertEquals(4, values.length);
 
         assertArrayEquals(new LoaderStatus[]{
                 LoaderStatus.OK,
                 LoaderStatus.ERROR,
+                LoaderStatus.LOADING,
                 LoaderStatus.UNDEFINED
         }, values);
     }
@@ -44,6 +46,7 @@ class LoaderStatusTest {
     void shouldProvideCorrectStringRepresentation() {
         assertEquals("ok", LoaderStatus.OK.toString());
         assertEquals("error", LoaderStatus.ERROR.toString());
+        assertEquals("loading", LoaderStatus.LOADING.toString());
         assertEquals("undefined", LoaderStatus.UNDEFINED.toString());
     }
 
@@ -51,6 +54,7 @@ class LoaderStatusTest {
     void shouldProvideValueOfFunctionality() {
         assertEquals(LoaderStatus.OK, LoaderStatus.valueOf("OK"));
         assertEquals(LoaderStatus.ERROR, LoaderStatus.valueOf("ERROR"));
+        assertEquals(LoaderStatus.LOADING, LoaderStatus.valueOf("LOADING"));
         assertEquals(LoaderStatus.UNDEFINED, LoaderStatus.valueOf("UNDEFINED"));
     }
 
@@ -71,7 +75,8 @@ class LoaderStatusTest {
     void shouldProvideConsistentOrdinalValues() {
         assertEquals(0, LoaderStatus.OK.ordinal());
         assertEquals(1, LoaderStatus.ERROR.ordinal());
-        assertEquals(2, LoaderStatus.UNDEFINED.ordinal());
+        assertEquals(2, LoaderStatus.LOADING.ordinal());
+        assertEquals(3, LoaderStatus.UNDEFINED.ordinal());
     }
 
     @Test
@@ -81,6 +86,9 @@ class LoaderStatusTest {
 
         assertEquals("ERROR", LoaderStatus.ERROR.name());
         assertEquals("error", LoaderStatus.ERROR.toString());
+
+        assertEquals("LOADING", LoaderStatus.LOADING.name());
+        assertEquals("loading", LoaderStatus.LOADING.toString());
 
         assertEquals("UNDEFINED", LoaderStatus.UNDEFINED.name());
         assertEquals("undefined", LoaderStatus.UNDEFINED.toString());

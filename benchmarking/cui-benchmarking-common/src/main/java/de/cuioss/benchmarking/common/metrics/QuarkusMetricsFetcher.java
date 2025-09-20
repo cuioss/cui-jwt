@@ -26,7 +26,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,27 +38,24 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusMetricsFetcher.class);
     private static final int HTTP_OK = 200;
-    private static final int REQUEST_TIMEOUT_MS = 10000;
+    private static final int REQUEST_TIMEOUT_SECONDS = 10;
 
     private final String quarkusUrl;
     private final HttpClient httpClient;
 
     public QuarkusMetricsFetcher(String quarkusUrl) {
         this.quarkusUrl = quarkusUrl;
-        // Use insecure client for self-signed certificates in test environment
         this.httpClient = HttpClientFactory.getInsecureClient();
-        LOGGER.debug("Using insecure HttpClient from factory for metrics fetching");
     }
 
     @Override public Map<String, Double> fetchMetrics() {
         Map<String, Double> results = new HashMap<>();
+        String metricsUrl = quarkusUrl + "/q/metrics";
 
         try {
-            String metricsUrl = quarkusUrl + "/q/metrics";
-
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(metricsUrl))
-                    .timeout(Duration.ofMillis(REQUEST_TIMEOUT_MS))
+                    .timeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
                     .GET()
                     .build();
 
@@ -73,28 +69,35 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
 
                 parseQuarkusMetrics(responseBody, results);
             } else {
-                LOGGER.warn("Failed to query Quarkus metrics: HTTP {}", response.statusCode());
+                LOGGER.error("Failed to query Quarkus metrics: HTTP {} from {}",
+                        response.statusCode(), metricsUrl);
+                String errorBody = response.body();
+                if (errorBody != null && !errorBody.isEmpty()) {
+                    LOGGER.error("Error response body: {}", errorBody);
+                }
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.warn("Metrics query was interrupted", e);
-        } catch (IOException e) {
-            LOGGER.warn("Error querying Quarkus metrics", e);
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Exception querying Quarkus metrics from {}", metricsUrl, e);
         }
 
         return results;
     }
 
     /**
-     * Save raw metrics data with intelligent benchmark context
+     * Save raw metrics data to a fixed file name
      */
     private void saveRawMetricsData(String rawMetrics) {
         try {
-            // Create simple timestamp-based filename
-            String timestamp = Instant.now().toString().replace(":", "-").replace(".", "-");
-            File metricsDir = new File("target/metrics-download");
-            metricsDir.mkdirs();
-            File outputFile = new File(metricsDir, "quarkus-metrics-" + timestamp + ".txt");
+            // Use absolute path based on current working directory
+            File currentDir = new File(System.getProperty("user.dir"));
+            File metricsDir = new File(currentDir, "target/metrics-download");
+
+            if (!metricsDir.exists()) {
+                metricsDir.mkdirs();
+            }
+
+            // Use fixed file name without timestamp
+            File outputFile = new File(metricsDir, "quarkus-metrics.txt");
 
             try (FileWriter writer = new FileWriter(outputFile)) {
                 writer.write(rawMetrics);
@@ -103,7 +106,7 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
             LOGGER.debug("Saved raw Quarkus metrics to: {}", outputFile.getAbsolutePath());
 
         } catch (IOException e) {
-            LOGGER.warn("Failed to save raw metrics data", e);
+            LOGGER.error("Failed to save raw metrics data", e);
         }
     }
 

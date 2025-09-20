@@ -20,9 +20,10 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.TimeValue;
 
 import java.io.IOException;
+
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
  * Main class for running JWT validation library micro benchmarks.
@@ -41,32 +42,29 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(LibraryBenchmarkRunner.class);
 
-    @Override protected BenchmarkType getBenchmarkType() {
-        return BenchmarkType.MICRO;
+    @Override protected BenchmarkConfiguration createConfiguration() {
+        // Configuration from Maven system properties:
+        // - jmh.include: Pattern for benchmark classes to include
+        // - jmh.forks, jmh.iterations, jmh.time, etc.: JMH execution parameters
+        // Output directory is fixed: target/benchmark-results
+        // Result file is auto-generated as: target/benchmark-results/micro-result.json
+        
+        return BenchmarkConfiguration.builder()
+                .withBenchmarkType(BenchmarkType.MICRO)
+                .withThroughputBenchmarkName("measureThroughput")  // SimpleCoreValidationBenchmark.measureThroughput
+                .withLatencyBenchmarkName("measureAverageTime")    // SimpleCoreValidationBenchmark.measureAverageTime
+                .build();
     }
 
-    @Override protected String getIncludePattern() {
-        return "de\\.cuioss\\.jwt\\.validation\\.benchmark\\.standard\\..*";
-    }
-
-    @Override protected String getResultFileName() {
-        return "micro-benchmark-result.json";
-    }
-
-    @Override protected void beforeBenchmarks() {
+    @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
-        LOGGER.info("JWT validation micro benchmarks starting - Key cache initialized");
+        LOGGER.info(INFO.JWT_BENCHMARKS_STARTING.format());
     }
 
-    @Override protected BenchmarkConfiguration.Builder configureBenchmark(BenchmarkConfiguration.Builder builder) {
-        return builder
-                .withForks(1)
-                .withWarmupIterations(5)
-                .withMeasurementIterations(5)
-                .withMeasurementTime(TimeValue.seconds(2))
-                .withWarmupTime(TimeValue.seconds(2))
-                .withThreads(8);
+    @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
+        // No cleanup required for library benchmarks
+        LOGGER.debug("Library benchmark cleanup completed");
     }
 
     /**
@@ -77,6 +75,6 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
      * @throws RunnerException if benchmark execution fails
      */
     public static void main(String[] args) throws IOException, RunnerException {
-        new LibraryBenchmarkRunner().run();
+        new LibraryBenchmarkRunner().runBenchmark();
     }
 }

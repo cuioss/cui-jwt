@@ -15,12 +15,16 @@
  */
 package de.cuioss.jwt.validation.test;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.TokenContent;
+import de.cuioss.jwt.validation.json.JwtHeader;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
@@ -34,9 +38,9 @@ import de.cuioss.test.generator.domain.EmailGenerator;
 import de.cuioss.test.generator.domain.FullNameGenerator;
 import de.cuioss.test.generator.domain.UUIDStringGenerator;
 import io.jsonwebtoken.Jwts;
-import jakarta.json.Json;
 import lombok.Getter;
 
+import java.io.IOException;
 import java.security.PublicKey;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -228,32 +232,6 @@ public class TestTokenHolder implements TokenContent {
     }
 
     /**
-     * Sets the signing algorithm to ES384 for testing ECDSA signature format issues.
-     * 
-     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
-     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
-     * This causes signature validation failures until format conversion is implemented.</p>
-     * 
-     * @return this instance for method chaining
-     */
-    public TestTokenHolder withES384IeeeP1363Format() {
-        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES384);
-    }
-
-    /**
-     * Sets the signing algorithm to ES512 for testing ECDSA signature format issues.
-     * 
-     * <p><strong>Important:</strong> JJWT generates ECDSA signatures in IEEE P1363 format 
-     * (raw R,S concatenation), but the JDK ECDSA verification expects ASN.1/DER format.
-     * This causes signature validation failures until format conversion is implemented.</p>
-     * 
-     * @return this instance for method chaining
-     */
-    public TestTokenHolder withES512IeeeP1363Format() {
-        return withSigningAlgorithm(InMemoryKeyMaterialHandler.Algorithm.ES512);
-    }
-
-    /**
      * Gets the public key material associated with the current key ID and signing algorithm.
      *
      * @return the public key
@@ -297,7 +275,6 @@ public class TestTokenHolder implements TokenContent {
 
         // Always use the fixed TEST_CLIENT_ID as expected client ID to avoid circular dependency
         // Tests that need different expected client IDs should create their own IssuerConfig
-        String clientId = TEST_CLIENT_ID;
 
         // Create the JWKS content
         String jwksContent = InMemoryKeyMaterialHandler.createJwks(signingAlgorithm, keyId);
@@ -312,7 +289,7 @@ public class TestTokenHolder implements TokenContent {
         for (String aud : audience) {
             config.expectedAudience(aud);
         }
-        config.expectedClientId(clientId);
+        config.expectedClientId(TEST_CLIENT_ID);
 
         // Build the config
         return config.build();
@@ -440,30 +417,38 @@ public class TestTokenHolder implements TokenContent {
             // Get the raw token
             String signedJwt = getRawToken();
 
-            // Parse the JWT string to create a DecodedJwt
-            // Skip validation of expiration to handle expired tokens
-            var jwt = Jwts.parser()
-                    .verifyWith(getPublicKey())
-                    .clockSkewSeconds(Integer.MAX_VALUE) // Allow large clock skew to handle expired tokens
-                    .build()
-                    .parseSignedClaims(signedJwt);
-
-            // Extract header and claims
-            var header = Json.createObjectBuilder(jwt.getHeader()).build();
-            var body = Json.createObjectBuilder(jwt.getPayload()).build();
-
-            // Split the JWT string into parts
+            // Split the JWT string into parts to get JSON directly
             String[] parts = signedJwt.split("\\.");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid JWT format: missing header or payload");
+            }
+
+            // Decode the header and payload JSON strings directly
+            String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
+            String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]));
+
+            // Parse using DSL-JSON directly from JSON strings
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            byte[] headerBytes = headerJson.getBytes();
+            JwtHeader header = dslJson.deserialize(JwtHeader.class, headerBytes, headerBytes.length);
+            MapRepresentation body = MapRepresentation.fromJson(dslJson, payloadJson);
 
             // Get the signature from the parts
             var signature = parts.length > 2 ? parts[2] : "";
 
+            if (header == null) {
+                throw new IllegalStateException("Failed to parse JWT header from: " + headerJson);
+            }
+
             // Create and return the DecodedJwt
             return new DecodedJwt(header, body, signature, parts, signedJwt);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to convert TestTokenHolder to DecodedJwt", e);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to parse JWT with DSL-JSON", e);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid JWT format", e);
         }
     }
+
 
     /**
      * Converts this TestTokenHolder to an AccessTokenContent.
@@ -485,7 +470,49 @@ public class TestTokenHolder implements TokenContent {
             email = claims.get(ClaimName.EMAIL.getName()).getOriginalString();
         }
 
-        return new AccessTokenContent(claims, getRawToken(), email);
+        return new AccessTokenContent(claims, getRawToken(), email, createMapRepresentationFromClaims());
+    }
+
+    /**
+     * Creates a MapRepresentation from the current claims using DSL-JSON parsing.
+     * This converts claims to JSON and then parses with DSL-JSON for proper validation.
+     *
+     * @return a MapRepresentation containing the claims data
+     */
+    private MapRepresentation createMapRepresentationFromClaims() {
+        try {
+            // Build JSON from claims
+            StringBuilder jsonBuilder = new StringBuilder("{");
+            boolean first = true;
+            for (Map.Entry<String, ClaimValue> entry : claims.entrySet()) {
+                if (!first) {
+                    jsonBuilder.append(",");
+                }
+                jsonBuilder.append("\"").append(entry.getKey()).append("\":");
+                ClaimValue value = entry.getValue();
+                if (value.getOriginalString() != null) {
+                    jsonBuilder.append("\"").append(value.getOriginalString().replace("\"", "\\\"")).append("\"");
+                } else {
+                    // ClaimValue always has a list if it doesn't have a string
+                    jsonBuilder.append("[");
+                    boolean firstItem = true;
+                    for (String item : value.getAsList()) {
+                        if (!firstItem) jsonBuilder.append(",");
+                        jsonBuilder.append("\"").append(item.replace("\"", "\\\"")).append("\"");
+                        firstItem = false;
+                    }
+                    jsonBuilder.append("]");
+                }
+                first = false;
+            }
+            jsonBuilder.append("}");
+
+            // Parse with DSL-JSON
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, jsonBuilder.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create MapRepresentation from claims", e);
+        }
     }
 
     private Map<String, ClaimValue> generateClaims() {

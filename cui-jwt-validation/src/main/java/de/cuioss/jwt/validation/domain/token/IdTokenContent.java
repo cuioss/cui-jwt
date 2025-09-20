@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.domain.token;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
@@ -69,11 +70,13 @@ public class IdTokenContent extends BaseTokenContent {
     /**
      * Constructs a new IdTokenContent with the given claims and raw token.
      *
-     * @param claims   the token claims
-     * @param rawToken the raw token string
+     * @param claims     the token claims
+     * @param rawToken   the raw token string
+     * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
-    public IdTokenContent(Map<String, ClaimValue> claims, String rawToken) {
-        super(claims, rawToken, TokenType.ID_TOKEN);
+    public IdTokenContent(Map<String, ClaimValue> claims, String rawToken,
+            MapRepresentation rawPayload) {
+        super(claims, rawToken, TokenType.ID_TOKEN, rawPayload);
     }
 
     /**

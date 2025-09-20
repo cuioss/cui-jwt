@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.validation.jwks;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
@@ -64,13 +66,18 @@ class JwksLoaderFactoryTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .jwksUrl("https://example.com/.well-known/jwks.json")
+                .issuerIdentifier("test-issuer")
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ResilientHttpHandler
                 .build();
         JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
         assertEquals(JwksType.HTTP, loader.getJwksType(), "Loader should have HTTP type");
-        assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "HTTP loader should have ERROR status when unable to load from invalid URL");
+        // Trigger loading by attempting to get a key, then check health status
+        loader.getKeyInfo("test-key-id"); // This triggers loading attempt
+        // With retry capability, failed loads no longer set permanent ERROR status
+        assertNotEquals(LoaderStatus.ERROR, loader.getLoaderStatus(), "HTTP loader should not have permanent ERROR status (enables retry)");
     }
 
     @Test
@@ -79,13 +86,17 @@ class JwksLoaderFactoryTest {
 
         HttpJwksLoaderConfig config = HttpJwksLoaderConfig.builder()
                 .wellKnownUrl("https://example.com/.well-known/openid-configuration")
+                .retryStrategy(RetryStrategy.none()) // No retry to avoid delays - HTTP functionality tested in ResilientHttpHandler
                 .build();
         JwksLoader loader = JwksLoaderFactory.createHttpLoader(config);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(HttpJwksLoader.class, loader, "Loader should be an instance of HttpJwksLoader");
         assertEquals(JwksType.WELL_KNOWN, loader.getJwksType(), "Loader should have WELL_KNOWN type");
-        assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "Well-known loader should have ERROR status when unable to load from invalid URL");
+        // Trigger loading by attempting to get a key, then check health status
+        loader.getKeyInfo("test-key-id"); // This triggers loading attempt
+        // Without background refresh enabled (no refresh interval), failed loads set ERROR status
+        assertEquals(LoaderStatus.ERROR, loader.getLoaderStatus(), "Well-known loader should have ERROR status without background refresh");
     }
 
     @Test
@@ -95,11 +106,11 @@ class JwksLoaderFactoryTest {
         Path jwksFile = tempDir.resolve("jwks.json");
         Files.writeString(jwksFile, jwksContent);
         JwksLoader loader = JwksLoaderFactory.createFileLoader(jwksFile.toString());
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
         assertEquals(JwksType.FILE, loader.getJwksType(), "Loader should have FILE type");
-        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should have OK status for valid file");
+        assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should have OK status for valid file");
     }
 
     @Test
@@ -122,11 +133,11 @@ class JwksLoaderFactoryTest {
     void shouldCreateInMemoryLoader() {
 
         JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(jwksContent);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
         assertEquals(JwksType.MEMORY, loader.getJwksType(), "Loader should have MEMORY type");
-        assertEquals(LoaderStatus.OK, loader.isHealthy(), "Loader should have OK status for valid content");
+        assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should have OK status for valid content");
     }
 
     @Test
@@ -135,11 +146,11 @@ class JwksLoaderFactoryTest {
 
         String invalidContent = "invalid-json";
         JwksLoader loader = JwksLoaderFactory.createInMemoryLoader(invalidContent);
-        loader.initJWKSLoader(securityEventCounter);
+        loader.initJWKSLoader(securityEventCounter).join();
         assertNotNull(loader, "Loader should not be null");
         assertInstanceOf(JWKSKeyLoader.class, loader, "Loader should be an instance of JWKSKeyLoader");
         assertEquals(JwksType.MEMORY, loader.getJwksType(), "Loader should have MEMORY type");
-        assertEquals(LoaderStatus.ERROR, loader.isHealthy(), "Loader should have ERROR status for invalid content");
+        assertEquals(LoaderStatus.ERROR, loader.getLoaderStatus(), "Loader should have ERROR status for invalid content");
 
         // The JWKSKeyLoader constructor now automatically increments the counter when it encounters invalid JSON content
 

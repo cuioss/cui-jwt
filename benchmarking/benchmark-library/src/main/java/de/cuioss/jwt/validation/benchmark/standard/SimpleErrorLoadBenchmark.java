@@ -30,9 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
 
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;

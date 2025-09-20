@@ -15,11 +15,11 @@
  */
 package de.cuioss.jwt.quarkus.health;
 
+import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.tools.logging.CuiLogger;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -106,13 +106,21 @@ public class JwksEndpointHealthCheck implements HealthCheck {
             results.get(i).addToResponse(responseBuilder, "issuer." + i + ".");
         }
 
-        // Set overall health status
-        boolean allUp = results.stream().allMatch(EndpointResult::isHealthy);
+        // Calculate overall readiness and loading status
+        boolean allReady = results.stream().allMatch(EndpointResult::isHealthy);
+        boolean anyLoading = results.stream().anyMatch(r -> r.status() == LoaderStatus.UNDEFINED);
+
+        // Set overall health status with enhanced readiness reporting
         responseBuilder.withData("checkedEndpoints", results.size());
 
-        if (!allUp) {
+        if (!allReady) {
             responseBuilder.down();
         }
+
+        // Add enhanced readiness reporting
+        responseBuilder
+                .withData("readiness", allReady ? "READY" : "NOT_READY")
+                .withData("loading", anyLoading ? "IN_PROGRESS" : "COMPLETE");
 
         return responseBuilder.build();
     }
@@ -149,7 +157,7 @@ public class JwksEndpointHealthCheck implements HealthCheck {
             try {
                 JwksLoader jwksLoader = issuerConfig.getJwksLoader();
 
-                LoaderStatus status = jwksLoader.isHealthy();
+                LoaderStatus status = jwksLoader.getLoaderStatus();
                 LOGGER.debug("JWKS loader status for issuer %s: %s", issuer, status);
 
                 return new EndpointResult(issuer, jwksLoader.getJwksType().toString(), status);

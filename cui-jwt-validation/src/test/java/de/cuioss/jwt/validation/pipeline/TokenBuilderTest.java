@@ -15,12 +15,15 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import com.dslplatform.json.DslJson;
 import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
@@ -31,13 +34,13 @@ import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.tools.logging.CuiLogger;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +60,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class TokenBuilderTest {
 
     private TokenBuilder tokenBuilder;
+
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -143,13 +160,14 @@ class TokenBuilderTest {
         @Test
         @DisplayName("extractClaimsForRefreshToken should extract claims from JsonObject")
         void extractClaimsForRefreshTokenShouldExtractClaims() {
-            JsonObjectBuilder builder = Json.createObjectBuilder();
-            builder.add("sub", "test-subject");
-            builder.add("iss", "test-issuer");
-            builder.add("custom-claim", "custom-value");
-            JsonObject jsonObject = builder.build();
 
-            Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
+            JsonObject jsonObject = Json.createObjectBuilder()
+                    .add("sub", "test-subject")
+                    .add("iss", "test-issuer")
+                    .add("custom-claim", "custom-value")
+                    .build();
+
+            Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(convertJsonObjectToMapRepresentation(jsonObject));
             assertNotNull(claims, "Claims should not be null");
             assertFalse(claims.isEmpty(), "Claims should not be empty");
             assertEquals(3, claims.size(), "Should extract all claims");
@@ -169,7 +187,7 @@ class TokenBuilderTest {
         void extractClaimsForRefreshTokenShouldHandleEmptyJsonObject() {
             JsonObject jsonObject = Json.createObjectBuilder().build();
 
-            Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(jsonObject);
+            Map<String, ClaimValue> claims = TokenBuilder.extractClaimsForRefreshToken(convertJsonObjectToMapRepresentation(jsonObject));
             assertNotNull(claims, "Claims should not be null");
             assertTrue(claims.isEmpty(), "Claims should be empty");
         }

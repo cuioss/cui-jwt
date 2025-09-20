@@ -216,6 +216,23 @@ Support local key configuration for testing or offline scenarios.
 
 _See specification: xref:specification/technical-components.adoc#_jwksloader[JwksLoader]_
 
+[#CUI-JWT-4.5]
+==== CUI-JWT-4.5: Key Rotation Grace Period
+
+The library must support a configurable grace period for retired keys during key rotation to ensure uninterrupted service during the transition period, as recommended by https://datatracker.ietf.org/doc/html/draft-ietf-oauth-jwt-bcp-09#section-3.9[OAuth 2.0 JWT Best Current Practices Section 3.9] (July 2023).
+
+Key requirements:
+
+* Retain retired keys for a configurable grace period (default: 5 minutes)
+* Support immediate key invalidation with zero grace period configuration
+* Automatically clean up expired keys beyond the grace period
+* Limit the number of retained retired key sets to prevent unbounded memory growth
+* Prevent unnecessary key rotation when JWKS content has not changed
+
+This ensures that tokens signed with recently rotated keys remain valid during the transition period, preventing service disruptions for in-flight requests.
+
+_See specification: xref:specification/technical-components.adoc#_jwksloader[JwksLoader]_
+
 [#CUI-JWT-5]
 === CUI-JWT-5: Token Parsing
 

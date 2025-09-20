@@ -56,7 +56,7 @@ The benchmark processing is automatically triggered in GitHub Actions:
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
 
 # Integration benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark-testing
+./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
 ----
 
 === Viewing Generated Artifacts
@@ -71,9 +71,13 @@ ls -la benchmarking/benchmark-library/target/benchmark-results/
 # View integration benchmark artifacts  
 ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/
 
-# Serve artifacts locally for viewing
-cd benchmarking/scripts
-./serve-local.sh
+# Generate comprehensive reports
+cd benchmarking/cui-benchmarking-common
+mvn test -Dtest=LocalReportGeneratorTest
+
+# Serve reports locally for viewing
+cd ../scripts
+./serve-reports.sh
 # Open http://localhost:8080
 ----
 
@@ -138,7 +142,7 @@ See link:performance-requirements.adoc[Performance Requirements] for specific ta
 Check that:
 - Benchmarks completed successfully
 - No compilation errors in cui-benchmarking-common
-- Correct profile used (`-Pbenchmark` or `-Pbenchmark-testing`)
+- Correct profile used (`-Pbenchmark`)
 
 === Quality Gates Failing
 
@@ -150,6 +154,6 @@ Review:
 === Local Viewing Issues
 
 Ensure:
-- Node.js installed for `serve-local.sh`
-- Port 8080 available
-- Generated artifacts exist in expected locations
+- Python installed for `serve-reports.sh` (Python 3 or 2)
+- Port 8080 available (or use `./serve-reports.sh stop` to stop existing server)
+- Generated reports exist in `cui-benchmarking-common/target/benchmark-reports-preview/`

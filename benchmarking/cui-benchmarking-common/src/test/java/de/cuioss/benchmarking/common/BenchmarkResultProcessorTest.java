@@ -17,6 +17,7 @@ package de.cuioss.benchmarking.common;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.runner.BenchmarkResultProcessor;
+import de.cuioss.benchmarking.common.test.TestResourceLoader;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.openjdk.jmh.results.RunResult;
@@ -26,6 +27,8 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
+import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,12 +40,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class BenchmarkResultProcessorTest {
 
     @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
-        // Use empty results instead of running actual benchmarks
-        // Full integration testing with real benchmarks should be done in separate integration tests
+        // Use TestResourceLoader to copy test JSON file to expected location
+        Path targetJson = tempDir.resolve("micro-result.json");
+        TestResourceLoader.copyResourceToFile("/library-benchmark-results/micro-result.json", targetJson.toFile());
+
+        // Use empty results - the processor will read from JSON file
         Collection<RunResult> results = List.of();
 
-        // Process results
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        // Process results - use actual benchmark names from the test data
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
+                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
 
@@ -53,16 +62,14 @@ class BenchmarkResultProcessorTest {
                 "Trend badge should be generated");
         assertTrue(Files.exists(Path.of(outputDir, "badges/last-run-badge.json")),
                 "Last run badge should be generated");
-        assertTrue(Files.exists(Path.of(outputDir, "data/metrics.json")),
-                "Metrics file should be generated");
+        assertTrue(Files.exists(Path.of(outputDir, "data/original-jmh-result.json")),
+                "Original JMH result file should be copied to data directory");
         assertTrue(Files.exists(Path.of(outputDir, "index.html")),
                 "Index HTML report should be generated");
         assertTrue(Files.exists(Path.of(outputDir, "trends.html")),
                 "Trends HTML report should be generated");
         assertTrue(Files.isDirectory(Path.of(outputDir, "gh-pages-ready")),
                 "GitHub Pages directory should be created");
-        assertTrue(Files.exists(Path.of(outputDir, "benchmark-summary.json")),
-                "Benchmark summary should be generated");
 
         // Verify badge content structure
         String badgeContent = Files.readString(Path.of(outputDir, "badges/performance-badge.json"));
@@ -75,14 +82,18 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test void emptyResultsHandling(@TempDir Path tempDir) {
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                DEFAULT_THROUGHPUT_BENCHMARK,
+                DEFAULT_LATENCY_BENCHMARK);
         List<RunResult> emptyResults = List.of();
 
         String outputDir = tempDir.toString();
 
-        // Should handle empty results gracefully
-        assertDoesNotThrow(() -> processor.processResults(emptyResults, outputDir),
-                "Processing empty results should not throw exception");
+        // Should FAIL FAST when JSON file doesn't exist
+        assertThrows(IllegalStateException.class,
+                () -> processor.processResults(emptyResults, outputDir),
+                "Processing should fail when JSON file doesn't exist");
 
         // Basic directory structure should still be created
         assertTrue(Files.exists(Path.of(outputDir, "badges")),
@@ -92,10 +103,20 @@ class BenchmarkResultProcessorTest {
     }
 
     @Test void directoryCreation(@TempDir Path tempDir) throws Exception {
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(BenchmarkType.MICRO);
-        String outputDir = tempDir.resolve("nested/benchmark/results").toString();
+        // Copy test JSON file to expected location
+        Path nestedDir = tempDir.resolve("nested/benchmark/results");
+        Files.createDirectories(nestedDir);
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path targetJson = nestedDir.resolve("micro-result.json");
+        Files.copy(sourceJson, targetJson);
 
-        // Use empty results to test directory creation
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                BenchmarkType.MICRO,
+                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
+                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
+        String outputDir = nestedDir.toString();
+
+        // Use empty results - processor will read from JSON
         processor.processResults(List.of(), outputDir);
 
         // Verify nested directories are created
@@ -103,8 +124,6 @@ class BenchmarkResultProcessorTest {
                 "Nested badges directory should be created");
         assertTrue(Files.exists(Path.of(outputDir, "data")),
                 "Nested data directory should be created");
-        assertTrue(Files.exists(Path.of(outputDir, "reports")),
-                "Nested reports directory should be created");
         assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready")),
                 "Nested GitHub Pages directory should be created");
     }

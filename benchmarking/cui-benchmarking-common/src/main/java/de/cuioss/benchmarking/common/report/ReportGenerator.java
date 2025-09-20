@@ -15,315 +15,141 @@
  */
 package de.cuioss.benchmarking.common.report;
 
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
-import org.openjdk.jmh.results.RunResult;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.Collection;
+import java.nio.file.StandardCopyOption;
 
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Html.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Support.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.NOT_FOUND_FORMAT;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.PATH_PREFIX;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
- * Generates self-contained HTML reports with embedded CSS and JavaScript.
+ * Generates HTML reports by creating a data JSON file and copying templates.
  * <p>
- * This generator creates complete HTML reports that don't require external dependencies,
- * making them suitable for offline viewing and deployment to static hosting services.
+ * This generator now works in conjunction with ReportDataGenerator to:
+ * <ol>
+ *   <li>Generate a standardized benchmark-data.json file with all report data</li>
+ *   <li>Copy HTML templates that load and render the JSON data</li>
+ * </ol>
  * <p>
- * Generated reports include:
- * <ul>
- *   <li>Performance overview with charts and tables</li>
- *   <li>Detailed benchmark results with statistical analysis</li>
- *   <li>Historical trends and comparisons</li>
- *   <li>Interactive visualizations</li>
- * </ul>
+ * Templates use JavaScript to dynamically load and display the JSON data,
+ * making the system more maintainable and flexible.
  */
 public class ReportGenerator {
 
-    private static final CuiLogger LOGGER =
-            new CuiLogger(ReportGenerator.class);
-    private static final DateTimeFormatter DISPLAY_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss 'UTC'");
+    private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
+    private final ReportDataGenerator dataGenerator;
+    private final BenchmarkMetrics metrics;
 
     /**
-     * Generates the main index page with performance overview.
-     *
-     * @param results the benchmark results
-     * @param outputDir the output directory for HTML files
-     * @throws IOException if writing HTML files fails
+     * Creates a ReportGenerator with pre-computed metrics.
+     * 
+     * @param metrics the pre-computed benchmark metrics
      */
-    public void generateIndexPage(Collection<RunResult> results, String outputDir) throws IOException {
-        LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(results.size()));
+    public ReportGenerator(BenchmarkMetrics metrics) {
+        this.metrics = metrics;
+        this.dataGenerator = new ReportDataGenerator();
+    }
 
-        String html = generateHtmlHeader("CUI Benchmarking Results", true) +
-                generateNavigationMenu() +
-                generateOverviewSection(results) +
-                generateBenchmarkTable(results) +
-                generateHtmlFooter();
+    /**
+     * Generates the main index page and benchmark data.
+     *
+     * @param jsonFile the path to the benchmark JSON results file
+     * @param benchmarkType the type of benchmark being processed  
+     * @param outputDir the output directory for HTML files
+     * @throws IOException if reading JSON or writing files fails
+     */
+    public void generateIndexPage(Path jsonFile, BenchmarkType benchmarkType, String outputDir) throws IOException {
+        // First generate the data file
+        dataGenerator.generateDataFile(jsonFile, metrics, benchmarkType, outputDir);
 
-        Path outputPath = Path.of(outputDir);
-        Files.createDirectories(outputPath);
-        Path indexFile = outputPath.resolve("index.html");
-        Files.writeString(indexFile, html);
+        // Then copy the index template
+        LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));
+        copyTemplate(INDEX, outputDir);
+
+        Path indexFile = Path.of(outputDir).resolve(INDEX);
         LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
     }
 
     /**
-     * Generates the trends page with historical performance analysis.
+     * Generates the trends page.
      *
-     * @param results the benchmark results
      * @param outputDir the output directory for HTML files
      * @throws IOException if writing HTML files fails
      */
-    public void generateTrendsPage(Collection<RunResult> results, String outputDir) throws IOException {
+    public void generateTrendsPage(String outputDir) throws IOException {
         LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
 
-        String html = generateHtmlHeader("Performance Trends", true) +
-                generateNavigationMenu() +
-                generateTrendsSection(results) +
-                generateHtmlFooter();
+        // Copy the trends template
+        copyTemplate(TRENDS, outputDir);
 
-        Path outputPath = Path.of(outputDir);
-        Files.createDirectories(outputPath);
-        Path trendsFile = outputPath.resolve("trends.html");
-        Files.writeString(trendsFile, html);
+        Path trendsFile = Path.of(outputDir).resolve(TRENDS);
         LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
     }
-    
+
     /**
-     * Generates the detailed visualizer page with JMH Visualizer integration.
+     * Generates the detailed visualizer page.
      *
-     * @param results the benchmark results
-     * @param benchmarkType the type of benchmarks (micro or integration)
      * @param outputDir the output directory for HTML files
      * @throws IOException if writing HTML files fails
      */
-    public void generateDetailedPage(Collection<RunResult> results, String benchmarkType, String outputDir) throws IOException {
-        LOGGER.info("Generating detailed visualizer page...");
+    public void generateDetailedPage(String outputDir) throws IOException {
+        LOGGER.info(INFO.GENERATING_REPORTS::format);
 
-        String html = generateHtmlHeader("Detailed Analysis", false) +
-                generateNavigationMenu() +
-                generateDetailedSection(results, benchmarkType) +
-                generateHtmlFooter();
+        // Copy the detailed template
+        copyTemplate(DETAILED, outputDir);
 
-        Path outputPath = Path.of(outputDir);
-        Files.createDirectories(outputPath);
-        Path detailedFile = outputPath.resolve("detailed.html");
-        Files.writeString(detailedFile, html);
-        LOGGER.info("Detailed page generated at: " + detailedFile);
-    }
-
-    private String generateHtmlHeader(String title, boolean includeCharts) throws IOException {
-        String template = loadTemplate("report-header.html");
-        String chartScript = includeCharts ? "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>" : "";
-        return template
-                .replace("${title}", title)
-                .replace("${css}", getEmbeddedCSS())
-                .replace("${chartScript}", chartScript);
-    }
-
-    private String generateHtmlFooter() throws IOException {
-        String template = loadTemplate("report-footer.html");
-        return template.replace("${timestamp}", getCurrentTimestamp());
-    }
-
-    private String generateNavigationMenu() throws IOException {
-        return loadTemplate("navigation-menu.html");
-    }
-
-    private String generateOverviewSection(Collection<RunResult> results) throws IOException {
-        String template = loadTemplate("overview-section.html");
-        double avgThroughput = calculateAverageThroughput(results);
-        double avgLatency = calculateAverageLatency(results);
-        return template
-                .replace("${totalBenchmarks}", String.valueOf(results.size()))
-                .replace("${avgThroughput}", formatThroughput(avgThroughput))
-                .replace("${avgLatency}", formatLatency(avgLatency))
-                .replace("${performanceGrade}", calculatePerformanceGrade(avgThroughput));
-    }
-
-    private String generateBenchmarkTable(Collection<RunResult> results) throws IOException {
-        String template = loadTemplate("benchmark-table.html");
-        StringBuilder rows = new StringBuilder();
-        for (RunResult result : results) {
-            rows.append(generateBenchmarkRow(result));
-        }
-        return template.replace("${tableRows}", rows.toString());
-    }
-
-    private String generateBenchmarkRow(RunResult result) {
-        try {
-            String template = loadTemplate("benchmark-row.html");
-            String benchmarkName = extractBenchmarkName(result.getParams().getBenchmark());
-
-            if (result.getPrimaryResult() != null) {
-                var primaryResult = result.getPrimaryResult();
-                String score = "%.2f".formatted(primaryResult.getScore());
-                String unit = primaryResult.getScoreUnit();
-                String error = "N/A";
-                String samples = "N/A";
-
-                if (primaryResult.getStatistics() != null) {
-                    error = "±%.2f".formatted(primaryResult.getStatistics().getStandardDeviation());
-                    samples = String.valueOf(primaryResult.getStatistics().getN());
-                }
-
-                return template
-                        .replace("${benchmarkName}", benchmarkName)
-                        .replace("${score}", score)
-                        .replace("${unit}", unit)
-                        .replace("${error}", error)
-                        .replace("${samples}", samples);
-            } else {
-                return template
-                        .replace("${benchmarkName}", benchmarkName)
-                        .replace("${score}", "No data")
-                        .replace("${unit}", "")
-                        .replace("${error}", "")
-                        .replace("${samples}", "");
-            }
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load benchmark row template, using fallback", e);
-            return "<tr><td>" + extractBenchmarkName(result.getParams().getBenchmark()) + "</td><td colspan='4'>Error</td></tr>";
-        }
-    }
-
-    private String generateTrendsSection(Collection<RunResult> results) throws IOException {
-        String template = loadTemplate("trends-section.html");
-        return template
-                .replace("${benchmarkCount}", String.valueOf(results.size()))
-                .replace("${performanceGrade}", calculatePerformanceGrade(calculateAverageThroughput(results)));
-    }
-    
-    private String generateDetailedSection(Collection<RunResult> results, String benchmarkType) throws IOException {
-        String template = loadTemplate("detailed-section.html");
-        return template
-                .replace("${benchmarkType}", benchmarkType)
-                .replace("${totalBenchmarks}", String.valueOf(results.size()));
-    }
-    
-    private double calculateAverageLatency(Collection<RunResult> results) {
-        return results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("/op"))
-                .mapToDouble(r -> {
-                    String unit = r.getPrimaryResult().getScoreUnit();
-                    double score = r.getPrimaryResult().getScore();
-                    // Convert to milliseconds
-                    if (unit.contains("ns/op")) {
-                        return score / 1_000_000.0; // ns to ms
-                    } else if (unit.contains("us/op")) {
-                        return score / 1_000.0; // us to ms  
-                    } else if (unit.contains("s/op")) {
-                        return score * 1_000.0; // s to ms
-                    }
-                    return score; // assume ms/op
-                })
-                .average()
-                .orElse(0.0);
-    }
-    
-    private String formatLatency(double latencyMs) {
-        if (latencyMs == 0) {
-            return "N/A";
-        } else if (latencyMs < 1.0) {
-            return "%.2f ms".formatted(latencyMs);
-        } else if (latencyMs < 1000) {
-            return "%.1f ms".formatted(latencyMs);
-        } else {
-            return "%.1f s".formatted(latencyMs / 1000);
-        }
-    }
-
-    private String getEmbeddedCSS() {
-        try {
-            return loadTemplate("report-styles.css");
-        } catch (IOException e) {
-            LOGGER.warn("Failed to load CSS template, using fallback", e);
-            return "/* CSS loading failed */";
-        }
-    }
-
-    private String extractBenchmarkName(String fullName) {
-        if (fullName == null) return "Unknown";
-        String[] parts = fullName.split("\\.");
-        return parts.length > 0 ? parts[parts.length - 1] : fullName;
-    }
-
-    private double calculateAverageThroughput(Collection<RunResult> results) {
-        return results.stream()
-                .filter(r -> r.getPrimaryResult() != null)
-                .filter(r -> r.getPrimaryResult().getScoreUnit().contains("ops"))
-                .mapToDouble(r -> {
-                    String unit = r.getPrimaryResult().getScoreUnit();
-                    double score = r.getPrimaryResult().getScore();
-                    // Convert ops/ms to ops/s
-                    if (unit.contains("ops/ms")) {
-                        return score * 1000;
-                    }
-                    return score;
-                })
-                .average()
-                .orElse(0.0);
-    }
-
-    private String formatThroughput(double throughput) {
-        if (throughput >= 1_000_000) {
-            return "%.1fM ops/s".formatted(throughput / 1_000_000);
-        } else if (throughput >= 1_000) {
-            return "%.1fK ops/s".formatted(throughput / 1_000);
-        } else {
-            return "%.0f ops/s".formatted(throughput);
-        }
-    }
-
-    private String calculatePerformanceGrade(double throughput) {
-        String grade = switch ((int) Math.log10(Math.max(1, throughput))) {
-            case 6, 7, 8, 9 -> "A+";
-            case 5 -> "A";
-            case 4 -> "B";
-            case 3 -> "C";
-            case 2 -> "D";
-            default -> "F";
-        };
-
-        // Apply CSS class based on grade
-        String cssClass = switch (grade) {
-            case "A+" -> "grade-a-plus";
-            case "A" -> "grade-a";
-            case "B" -> "grade-b";
-            case "C" -> "grade-c";
-            case "D" -> "grade-d";
-            default -> "grade-f";
-        };
-
-        return "<span class=\"" + cssClass + "\">" + grade + "</span>";
-    }
-
-    private String getCurrentTimestamp() {
-        return DISPLAY_FORMATTER.format(Instant.now().atOffset(ZoneOffset.UTC));
+        Path detailedFile = Path.of(outputDir).resolve(DETAILED);
+        LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(detailedFile));
     }
 
     /**
-     * Loads a template from the classpath resources.
+     * Copies all necessary support files (CSS, JS, etc.) to the output directory.
+     *
+     * @param outputDir the output directory
+     * @throws IOException if copying files fails
+     */
+    public void copySupportFiles(String outputDir) throws IOException {
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+
+        // Copy CSS file
+        copyTemplate(REPORT_STYLES_CSS, outputDir);
+
+        // Copy the data loader JavaScript
+        copyTemplate(DATA_LOADER_JS, outputDir);
+
+        // Copy robots.txt and sitemap if needed
+        copyTemplate(ROBOTS_TXT, outputDir);
+        copyTemplate(SITEMAP_XML, outputDir);
+    }
+
+    /**
+     * Copies a template file from resources to the output directory.
      *
      * @param templateName the name of the template file
-     * @return the template content as a string
-     * @throws IOException if the template cannot be loaded
+     * @param outputDir the output directory
+     * @throws IOException if copying fails
      */
-    private String loadTemplate(String templateName) throws IOException {
-        String resourcePath = "/templates/" + templateName;
+    private void copyTemplate(String templateName, String outputDir) throws IOException {
+        Path outputPath = Path.of(outputDir);
+        Files.createDirectories(outputPath);
+
+        String resourcePath = PATH_PREFIX + templateName;
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
             if (is == null) {
-                throw new IOException("Template not found: " + resourcePath);
+                throw new IOException(NOT_FOUND_FORMAT.formatted(resourcePath));
             }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            Path targetFile = outputPath.resolve(templateName);
+            Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
+
 }

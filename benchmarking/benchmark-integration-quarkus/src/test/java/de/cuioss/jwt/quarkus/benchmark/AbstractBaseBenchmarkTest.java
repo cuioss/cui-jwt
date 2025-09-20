@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.benchmark;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,46 +36,50 @@ class AbstractBaseBenchmarkTest {
 
     @BeforeEach void setUp() {
         benchmark = new TestBenchmark();
+        // Set default required properties for tests
+        System.setProperty("integration.service.url", "https://localhost:10443");
+        System.setProperty("keycloak.url", "https://keycloak:8180");
+        System.setProperty("quarkus.metrics.url", "https://localhost:10443");
+    }
+
+    @AfterEach void tearDown() {
+        // Clean up system properties
+        System.clearProperty("integration.service.url");
+        System.clearProperty("keycloak.url");
+        System.clearProperty("quarkus.metrics.url");
     }
 
     @Test void setupBenchmark() {
         // Setup with default values
         assertDoesNotThrow(() -> benchmark.setupBenchmark());
 
-        assertNotNull(benchmark.serviceUrl);
+        assertNotNull(benchmark.getServiceUrl());
         assertNotNull(benchmark.quarkusMetricsUrl);
         assertNotNull(benchmark.metricsExporter);
-        assertNotNull(benchmark.benchmarkResultsDir);
+        assertNotNull(benchmark.getBenchmarkResultsDir());
 
         // Check default values
-        assertEquals("https://localhost:10443", benchmark.serviceUrl);
+        assertEquals("https://localhost:10443", benchmark.getServiceUrl());
         assertEquals("https://localhost:10443", benchmark.quarkusMetricsUrl);
     }
 
     @Test void setupBenchmarkWithSystemProperties() {
-        // Set system properties
+        // Override with different properties
         System.setProperty("integration.service.url", "https://test:8080");
         System.setProperty("quarkus.metrics.url", "https://metrics:9090");
-        System.setProperty("benchmark.results.dir", "/test/results");
 
-        try {
-            benchmark.setupBenchmark();
+        benchmark.setupBenchmark();
 
-            assertEquals("https://test:8080", benchmark.serviceUrl);
-            assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
-            assertEquals("/test/results", benchmark.benchmarkResultsDir);
-        } finally {
-            // Clean up system properties
-            System.clearProperty("integration.service.url");
-            System.clearProperty("quarkus.metrics.url");
-            System.clearProperty("benchmark.results.dir");
-        }
+        assertEquals("https://test:8080", benchmark.getServiceUrl());
+        assertEquals("https://metrics:9090", benchmark.quarkusMetricsUrl);
+        // Output directory is now fixed, not configurable
+        assertEquals("target/benchmark-results", benchmark.getBenchmarkResultsDir());
     }
 
     @Test void createBaseRequest() {
         benchmark.setupBenchmark();
 
-        HttpRequest.Builder requestBuilder = benchmark.createBaseRequest("/test/path");
+        HttpRequest.Builder requestBuilder = benchmark.createRequestForPath("/test/path");
         HttpRequest request = requestBuilder.build();
 
         assertNotNull(request);
@@ -129,11 +134,32 @@ class AbstractBaseBenchmarkTest {
                 System.getProperty("java.util.logging.manager"));
     }
 
+    @Test void setupBenchmarkRequiresProperties() {
+        // Clear required properties to test that they are required
+        System.clearProperty("integration.service.url");
+        System.clearProperty("quarkus.metrics.url");
+
+        // Setup should fail without required properties
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> benchmark.setupBenchmark());
+
+        assertTrue(exception.getMessage().contains("Integration service URL is required"));
+        assertTrue(exception.getMessage().contains("integration.service.url"));
+    }
+
     // Test implementation of AbstractBaseBenchmark
     private static class TestBenchmark extends AbstractBaseBenchmark {
-        // Expose protected methods for testing
-        @Override public HttpRequest.Builder createBaseRequest(String path) {
-            return super.createBaseRequest(path);
+        // Expose protected fields and methods for testing
+        public String getServiceUrl() {
+            return serviceUrl;
+        }
+
+        public String getBenchmarkResultsDir() {
+            return benchmarkResultsDir;
+        }
+
+        @Override public HttpRequest.Builder createRequestForPath(String path) {
+            return super.createRequestForPath(path);
         }
 
         @Override public void validateResponse(HttpResponse<String> response, int expectedStatus) {

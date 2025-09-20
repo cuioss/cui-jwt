@@ -16,12 +16,11 @@
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
 import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
 
 import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Benchmark class for health endpoints to establish baseline performance.
@@ -29,21 +28,22 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.0
  */
-@Fork(value = 1)
-@Threads(1)
-@Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
 public class JwtHealthBenchmark extends AbstractBaseBenchmark {
 
+
     /**
-     * Benchmark for Quarkus health endpoint throughput.
+     * Benchmark for Quarkus liveness endpoint throughput.
      * Provides baseline throughput measurement without JWT processing.
+     * Uses liveness endpoint which is more suitable for performance testing.
      */
-    @Benchmark @BenchmarkMode({Mode.Throughput, Mode.SampleTime}) public void healthCheckThroughput() throws IOException, InterruptedException {
-        HttpRequest request = createBaseRequest("/q/health")
+    @Benchmark public void healthCheckThroughput() throws IOException, InterruptedException {
+        logger.debug("Starting liveness check request");
+        HttpRequest request = createRequestForPath("/q/health/live")
                 .GET()
                 .build();
+        logger.debug("Sending request to {}", request.uri());
         HttpResponse<String> response = sendRequest(request);
+        logger.debug("Received response with status: {}", response.statusCode());
         validateResponse(response, 200);
     }
 }

@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation.benchmark.base;
 
-import de.cuioss.jwt.validation.benchmark.jfr.JfrInstrumentation;
+import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.TearDown;
@@ -34,7 +34,7 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Get the phase name for JFR recording.
      * Subclasses can override this to provide specific phase names.
-     * 
+     *
      * @return Phase name for JFR events
      */
     protected String getJfrPhase() {
@@ -65,12 +65,15 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     }
 
     /**
-     * Shuts down JFR instrumentation at the end of the trial.
+     * Shuts down JFR instrumentation and exports metrics at the end of the trial.
      */
-    @TearDown(Level.Trial) public void tearDown() {
+    @Override @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {
             jfrInstrumentation.shutdown();
         }
+
+        // Call parent's export method
+        super.exportBenchmarkMetrics();
     }
 }

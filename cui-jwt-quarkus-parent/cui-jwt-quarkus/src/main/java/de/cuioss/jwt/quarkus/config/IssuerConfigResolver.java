@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
+import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
 import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
@@ -25,6 +26,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,6 +59,7 @@ public class IssuerConfigResolver {
     private static final CuiLogger LOGGER = new CuiLogger(IssuerConfigResolver.class);
 
     private final Config config;
+    private final RetryStrategy retryStrategy;
 
     /**
      * Creates a new IssuerConfigResolver with the specified configuration.
@@ -64,7 +67,18 @@ public class IssuerConfigResolver {
      * @param config the configuration instance to use for property resolution
      */
     public IssuerConfigResolver(@NonNull Config config) {
+        this(config, RetryStrategy.exponentialBackoff());
+    }
+
+    /**
+     * Creates a new IssuerConfigResolver with the specified configuration and retry strategy.
+     *
+     * @param config the configuration instance to use for property resolution
+     * @param retryStrategy the retry strategy to use for HTTP operations
+     */
+    public IssuerConfigResolver(@NonNull Config config, @NonNull RetryStrategy retryStrategy) {
         this.config = config;
+        this.retryStrategy = retryStrategy;
     }
 
     /**
@@ -342,6 +356,18 @@ public class IssuerConfigResolver {
     private HttpJwksLoaderConfig createHttpJwksLoaderConfig(String issuerName, String jwksUrl, String wellKnownUrl) {
         HttpJwksLoaderConfig.HttpJwksLoaderConfigBuilder builder = HttpJwksLoaderConfig.builder();
 
+        // Set the issuer identifier (required for direct JWKS configuration)
+        Optional<String> issuerIdentifier = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.ISSUER_IDENTIFIER.formatted(issuerName),
+                String.class
+        );
+        if (issuerIdentifier.isPresent()) {
+            builder.issuerIdentifier(issuerIdentifier.get());
+        } else {
+            // Use the issuer name as fallback if no explicit identifier is configured
+            builder.issuerIdentifier(issuerName);
+        }
+
         // Configure URLs - let the builder handle mutual exclusivity validation
         if (jwksUrl != null) {
             builder.jwksUrl(jwksUrl);
@@ -365,6 +391,28 @@ public class IssuerConfigResolver {
                 JwtPropertyKeys.ISSUERS.READ_TIMEOUT_SECONDS.formatted(issuerName),
                 Integer.class
         ).ifPresent(builder::readTimeoutSeconds);
+
+        // Configure key rotation grace period (Issue #110)
+        Optional<Integer> gracePeriodSeconds = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.KEY_ROTATION_GRACE_PERIOD_SECONDS.formatted(issuerName),
+                Integer.class
+        );
+        if (gracePeriodSeconds.isPresent()) {
+            builder.keyRotationGracePeriod(Duration.ofSeconds(gracePeriodSeconds.get()));
+            LOGGER.debug("Set key rotation grace period for %s: %s seconds", issuerName, gracePeriodSeconds.get());
+        }
+
+        Optional<Integer> maxRetiredSets = config.getOptionalValue(
+                JwtPropertyKeys.ISSUERS.MAX_RETIRED_KEY_SETS.formatted(issuerName),
+                Integer.class
+        );
+        if (maxRetiredSets.isPresent()) {
+            builder.maxRetiredKeySets(maxRetiredSets.get());
+            LOGGER.debug("Set max retired key sets for %s: %s", issuerName, maxRetiredSets.get());
+        }
+
+        // Set the retry strategy
+        builder.retryStrategy(retryStrategy);
 
         // Let the builder validate and create the instance
         return builder.build();

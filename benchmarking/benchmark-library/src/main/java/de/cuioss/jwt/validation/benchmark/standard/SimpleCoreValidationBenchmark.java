@@ -30,9 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread)
-@SuppressWarnings("java:S112")
-public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
+@State(Scope.Thread) @SuppressWarnings("java:S112") public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
 
     private CoreValidationDelegate validationDelegate;
 

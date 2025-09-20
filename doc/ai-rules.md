@@ -78,8 +78,9 @@ Before any code implementation:
 ### Pre-Commit Checklist
 Execute in sequence before ANY commit:
 
-1. **Quality Verification**: `./mvnw -Ppre-commit clean verify -DskipTests`
+1. **Quality Verification**: `./mvnw -Ppre-commit clean verify`
     - Fix ALL errors and warnings (mandatory)
+    - Some recipes may add markers: Either fix them, or suppress them with proper justification. Never commit the markers.
     - Address code quality, formatting, and linting issues
 
 2. **Final Verification**: `./mvnw clean install`

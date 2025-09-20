@@ -16,16 +16,14 @@
 package de.cuioss.jwt.validation.jwks.parser;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
-import de.cuioss.jwt.validation.jwks.key.JwkKeyConstants;
+import de.cuioss.jwt.validation.json.JwkKey;
 import de.cuioss.jwt.validation.jwks.key.JwkKeyHandler;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import jakarta.json.JsonObject;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.security.spec.InvalidKeySpecException;
 import java.util.Optional;
@@ -40,7 +38,6 @@ import java.util.Optional;
  *   <li>Error handling and logging</li>
  * </ul>
  */
-@RequiredArgsConstructor
 public class KeyProcessor {
 
     private static final CuiLogger LOGGER = new CuiLogger(KeyProcessor.class);
@@ -53,28 +50,33 @@ public class KeyProcessor {
     @NonNull
     private final JwkAlgorithmPreferences jwkAlgorithmPreferences;
 
+    public KeyProcessor(@NonNull SecurityEventCounter securityEventCounter,
+            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences) {
+        this.securityEventCounter = securityEventCounter;
+        this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
+    }
+
     /**
      * Process a JWK object and create a KeyInfo with validation.
-     * 
+     *
      * @param jwk the JWK object to process
      * @return an Optional containing the KeyInfo if processing succeeded, empty otherwise
      */
-    public Optional<KeyInfo> processKey(JsonObject jwk) {
+    public Optional<KeyInfo> processKey(JwkKey jwk) {
         // Validate key parameters first
         if (!validateKeyParameters(jwk)) {
             return Optional.empty();
         }
 
-        // Extract key type
-        var keyType = JwkKeyConstants.KeyType.getString(jwk);
-        if (keyType.isEmpty()) {
+        // Extract key type directly from JwkKey
+        String kty = jwk.kty();
+        if (kty == null || kty.trim().isEmpty()) {
             LOGGER.warn(WARN.JWK_MISSING_KTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return Optional.empty();
         }
 
-        String kty = keyType.get();
-        String kid = JwkKeyConstants.KeyId.from(jwk).orElse("default-key-id");
+        String kid = jwk.getKid().isPresent() ? jwk.kid() : "default-key-id";
 
         KeyInfo keyInfo = switch (kty) {
             case RSA_KEY_TYPE -> processRsaKey(jwk, kid);
@@ -90,19 +92,19 @@ public class KeyProcessor {
 
     /**
      * Validates individual key parameters and algorithms.
-     * 
-     * @param keyObject the individual key object to validate
+     *
+     * @param jwkKey the individual key object to validate
      * @return true if the key is valid, false otherwise
      */
-    private boolean validateKeyParameters(JsonObject keyObject) {
+    private boolean validateKeyParameters(JwkKey jwkKey) {
         // Validate required key type
-        if (!JwkKeyConstants.KeyType.isPresent(keyObject)) {
-            LOGGER.warn(WARN.JWK_KEY_MISSING_KTY::format);
+        if (jwkKey.kty() == null || jwkKey.kty().trim().isEmpty()) {
+            LOGGER.warn(WARN.JWK_MISSING_KTY::format);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return false;
         }
 
-        String keyType = keyObject.getString(JwkKeyConstants.KeyType.KEY);
+        String keyType = jwkKey.kty();
 
         // Validate key type is supported
         if (!"RSA".equals(keyType) && !"EC".equals(keyType)) {
@@ -112,8 +114,8 @@ public class KeyProcessor {
         }
 
         // Validate key ID if present (length check)
-        if (keyObject.containsKey(JwkKeyConstants.KeyId.KEY)) {
-            String keyId = keyObject.getString(JwkKeyConstants.KeyId.KEY);
+        if (jwkKey.getKid().isPresent()) {
+            String keyId = jwkKey.kid();
             if (keyId.length() > 100) {
                 LOGGER.warn(WARN.JWK_KEY_ID_TOO_LONG.format(keyId.length()));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
@@ -122,8 +124,8 @@ public class KeyProcessor {
         }
 
         // Validate algorithm if present
-        if (keyObject.containsKey(JwkKeyConstants.Algorithm.KEY)) {
-            String algorithm = keyObject.getString(JwkKeyConstants.Algorithm.KEY);
+        if (jwkKey.alg() != null) {
+            String algorithm = jwkKey.alg();
             if (!jwkAlgorithmPreferences.isSupported(algorithm)) {
                 LOGGER.warn(WARN.JWK_INVALID_ALGORITHM.format(algorithm));
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
@@ -141,11 +143,11 @@ public class KeyProcessor {
      * @param kid the key ID
      * @return the KeyInfo object or null if processing failed
      */
-    private KeyInfo processRsaKey(JsonObject jwk, String kid) {
+    private KeyInfo processRsaKey(JwkKey jwk, String kid) {
         try {
             var publicKey = JwkKeyHandler.parseRsaKey(jwk);
             // Determine algorithm if not specified
-            String alg = JwkKeyConstants.Algorithm.from(jwk).orElse("RS256"); // Default to RS256
+            String alg = jwk.alg() != null ? jwk.alg() : "RS256"; // Default to RS256
             LOGGER.debug("Parsed RSA key with ID: %s and algorithm: %s", kid, alg);
             return new KeyInfo(publicKey, alg, kid);
         } catch (InvalidKeySpecException | IllegalStateException e) {
@@ -162,7 +164,7 @@ public class KeyProcessor {
      * @param kid the key ID
      * @return the KeyInfo object or null if processing failed
      */
-    private KeyInfo processEcKey(JsonObject jwk, String kid) {
+    private KeyInfo processEcKey(JwkKey jwk, String kid) {
         try {
             var publicKey = JwkKeyHandler.parseEcKey(jwk);
             // Determine algorithm
@@ -178,18 +180,17 @@ public class KeyProcessor {
 
     /**
      * Determine the EC algorithm from the JWK.
-     * 
+     *
      * @param jwk the JWK object
      * @return the algorithm
      */
-    private String determineEcAlgorithm(JsonObject jwk) {
-        var algOption = JwkKeyConstants.Algorithm.from(jwk);
-        if (algOption.isPresent()) {
-            return algOption.get();
+    private String determineEcAlgorithm(JwkKey jwk) {
+        if (jwk.getAlg().isPresent()) {
+            return jwk.alg();
         }
 
         // Determine algorithm based on curve
-        String curve = JwkKeyConstants.Curve.from(jwk).orElse("P-256");
+        String curve = jwk.crv() != null ? jwk.crv() : "P-256";
         return JwkKeyHandler.determineEcAlgorithm(curve);
     }
 }

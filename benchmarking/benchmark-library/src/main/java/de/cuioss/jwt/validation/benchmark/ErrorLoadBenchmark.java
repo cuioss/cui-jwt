@@ -55,10 +55,7 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Benchmark)
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-public class ErrorLoadBenchmark {
+@State(Scope.Benchmark) @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public class ErrorLoadBenchmark {
 
     private static final String TEST_SUBJECT_PREFIX = "test-subject-";
 

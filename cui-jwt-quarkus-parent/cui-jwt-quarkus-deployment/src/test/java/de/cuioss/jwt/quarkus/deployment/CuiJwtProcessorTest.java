@@ -17,12 +17,12 @@ package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-
 import io.quarkus.test.QuarkusUnitTest;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 

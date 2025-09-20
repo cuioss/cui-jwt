@@ -15,12 +15,13 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
 import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -139,7 +141,8 @@ class TokenSignatureValidatorTest {
         assertEquals(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED, exception.getEventType());
 
         // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Invalid signature");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.resolveIdentifierString());
 
         // Verify security event was recorded
         assertTrue(securityEventCounter.getCount(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED) > initialCount);
@@ -174,7 +177,8 @@ class TokenSignatureValidatorTest {
         assertEquals(SecurityEventCounter.EventType.KEY_NOT_FOUND, exception.getEventType());
 
         // Verify log message
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "No key found with ID");
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.KEY_NOT_FOUND.resolveIdentifierString());
 
         // Verify security event was recorded
         assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.KEY_NOT_FOUND));
@@ -273,7 +277,7 @@ class TokenSignatureValidatorTest {
             }
 
             @Override
-            public LoaderStatus isHealthy() {
+            public LoaderStatus getLoaderStatus() {
                 return LoaderStatus.OK;
             }
 
@@ -283,8 +287,9 @@ class TokenSignatureValidatorTest {
             }
 
             @Override
-            public void initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+            public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
                 // This is a test implementation, no initialization needed
+                return CompletableFuture.completedFuture(LoaderStatus.OK);
             }
         };
 

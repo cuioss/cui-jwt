@@ -16,6 +16,7 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.jwks.JwksLoader;
+import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 
 import lombok.experimental.UtilityClass;
 
@@ -39,6 +40,7 @@ public final class JwtPropertyKeys {
      */
     public static final String PREFIX = "cui.jwt";
     public static final String DOT_JWKS = ".jwks";
+    public static final String DOT_ENABLED = ".enabled";
 
     /**
      * Properties related to JWT parser configuration.
@@ -327,6 +329,49 @@ public final class JwtPropertyKeys {
          */
         public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
 
+        /**
+         * The grace period in seconds for retired keys during rotation.
+         * Template: "cui.jwt.issuers.%s.jwks.http.key-rotation-grace-period-seconds"
+         * <p>
+         * Sets the grace period for which retired keys remain valid after key rotation.
+         * During this period, tokens signed with recently rotated keys can still be validated,
+         * preventing service disruptions for in-flight requests. Set to 0 to immediately
+         * invalidate old keys upon rotation.
+         * </p>
+         * <p>
+         * Default value is {@code 300} (5 minutes).
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see HttpJwksLoaderConfig#getKeyRotationGracePeriod()
+         * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
+         * @since 1.1
+         */
+        public static final String KEY_ROTATION_GRACE_PERIOD_SECONDS = HTTP_BASE + "key-rotation-grace-period-seconds";
+
+        /**
+         * The maximum number of retired key sets to retain.
+         * Template: "cui.jwt.issuers.%s.jwks.http.max-retired-key-sets"
+         * <p>
+         * Sets the maximum number of retired key sets to keep in memory during the grace period.
+         * This prevents unbounded memory growth when keys rotate frequently. Older retired
+         * key sets beyond this limit are removed even if still within the grace period.
+         * </p>
+         * <p>
+         * Default value is {@code 10}.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
+         * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
+         * @since 1.1
+         */
+        public static final String MAX_RETIRED_KEY_SETS = HTTP_BASE + "max-retired-key-sets";
+
         // === Keycloak Configuration ===
 
         /**
@@ -393,7 +438,7 @@ public final class JwtPropertyKeys {
         /**
          * Whether health checks are enabled.
          */
-        public static final String ENABLED = BASE + ".enabled";
+        public static final String ENABLED = BASE + DOT_ENABLED;
 
         /**
          * Properties related to JWKS endpoint health checks.
@@ -462,6 +507,172 @@ public final class JwtPropertyKeys {
          */
         public static final String JWKS_CACHE_SIZE = JWKS_BASE + ".cache.size";
 
+    }
+
+    /**
+     * Properties related to HTTP access log filtering configuration.
+     * <p>
+     * These properties control the custom access log filter that provides
+     * more granular logging control than Quarkus built-in access logging.
+     * The filter is controlled by DEBUG log level and can filter by status codes and paths.
+     * </p>
+     * <p>
+     * All properties are prefixed with "cui.http.access-log.filter".
+     * Control via log level: quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+     * </p>
+     */
+    @UtilityClass
+    public static final class ACCESSLOG {
+        /**
+         * Base path for access log filter configurations.
+         */
+        public static final String BASE = "cui.http.access-log.filter";
+
+        /**
+         * Minimum HTTP status code to log.
+         * Template: "cui.http.access-log.filter.min-status-code"
+         * <p>
+         * Only responses with status codes >= this value will be logged.
+         * Common values:
+         * - 200: Log all responses (equivalent to standard access log)
+         * - 400: Log only client and server errors (default)
+         * - 500: Log only server errors
+         * </p>
+         * <p>
+         * Default value is {@code 400}.
+         * </p>
+         */
+        public static final String MIN_STATUS_CODE = BASE + ".min-status-code";
+
+        /**
+         * Maximum HTTP status code to log.
+         * Template: "cui.http.access-log.filter.max-status-code"
+         * <p>
+         * Only responses with status codes {@code <=} this value will be logged.
+         * Set to 599 to include all error codes.
+         * </p>
+         * <p>
+         * Default value is {@code 599}.
+         * </p>
+         */
+        public static final String MAX_STATUS_CODE = BASE + ".max-status-code";
+
+        /**
+         * Specific HTTP status codes to always log (comma-separated).
+         * Template: "cui.http.access-log.filter.include-status-codes"
+         * <p>
+         * These status codes will be logged regardless of min/max range.
+         * Useful for logging specific success codes (like 201, 202) along with errors.
+         * </p>
+         * <p>
+         * Example: "201,202,204" to log created and accepted responses.
+         * </p>
+         */
+        public static final String INCLUDE_STATUS_CODES = BASE + ".include-status-codes";
+
+        /**
+         * URL path patterns to include in logging (comma-separated).
+         * Template: "cui.http.access-log.filter.include-paths"
+         * <p>
+         * If specified, only requests matching these patterns will be considered for logging.
+         * Uses simple glob patterns (* and **).
+         * Empty list means all paths are eligible.
+         * </p>
+         * <p>
+         * Example: "/api/**,/health/**" to log only API and health endpoints.
+         * </p>
+         */
+        public static final String INCLUDE_PATHS = BASE + ".include-paths";
+
+        /**
+         * URL path patterns to exclude from logging (comma-separated).
+         * Template: "cui.http.access-log.filter.exclude-paths"
+         * <p>
+         * These patterns override include patterns.
+         * Uses simple glob patterns (* and **).
+         * Common exclusions: /health/*, /metrics/*, /jwt/validate
+         * </p>
+         * <p>
+         * Example: "/health/**,/metrics/**" to exclude health and metrics endpoints.
+         * </p>
+         */
+        public static final String EXCLUDE_PATHS = BASE + ".exclude-paths";
+
+        /**
+         * Log format pattern.
+         * Template: "cui.http.access-log.filter.pattern"
+         * <p>
+         * Supports placeholders:
+         * - {method}: HTTP method (GET, POST, etc.)
+         * - {path}: Request path
+         * - {status}: HTTP status code
+         * - {duration}: Request duration in milliseconds
+         * - {remoteAddr}: Remote IP address
+         * - {userAgent}: User-Agent header
+         * </p>
+         * <p>
+         * Default pattern: "{remoteAddr} {method} {path} -> {status} ({duration}ms)"
+         * </p>
+         */
+        public static final String PATTERN = BASE + ".pattern";
+
+        /**
+         * Whether the access log filter is enabled.
+         * Template: "cui.http.access-log.filter.enabled"
+         * <p>
+         * When set to true, the access log filter will process HTTP requests and responses
+         * according to the configured filtering rules. When false, the filter is disabled
+         * and no access logging will occur.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
+         * </p>
+         */
+        public static final String ENABLED = BASE + DOT_ENABLED;
+    }
+
+    /**
+     * Properties related to HTTP retry configuration.
+     */
+    @UtilityClass
+    public static final class RETRY {
+        private static final String PREFIX_RETRY = PREFIX + ".retry";
+
+        /**
+         * Whether retry is enabled globally.
+         * Default: true
+         */
+        public static final String ENABLED = PREFIX_RETRY + DOT_ENABLED;
+
+        /**
+         * Maximum number of retry attempts.
+         * Default: 5
+         */
+        public static final String MAX_ATTEMPTS = PREFIX_RETRY + ".max-attempts";
+
+        /**
+         * Initial retry delay in milliseconds.
+         * Default: 1000
+         */
+        public static final String INITIAL_DELAY_MS = PREFIX_RETRY + ".initial-delay-ms";
+
+        /**
+         * Maximum retry delay in milliseconds.
+         * Default: 30000
+         */
+        public static final String MAX_DELAY_MS = PREFIX_RETRY + ".max-delay-ms";
+
+        /**
+         * Exponential backoff multiplier.
+         * Default: 2.0
+         */
+        public static final String BACKOFF_MULTIPLIER = PREFIX_RETRY + ".backoff-multiplier";
+
+        /**
+         * Jitter factor for randomization.
+         * Default: 0.1
+         */
+        public static final String JITTER_FACTOR = PREFIX_RETRY + ".jitter-factor";
     }
 
     /**

@@ -16,12 +16,12 @@
 package de.cuioss.benchmarking.common.runner;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,12 +33,17 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 /**
  * Abstract base class for JMH benchmark runners that integrates with CUI benchmarking infrastructure.
  * <p>
- * This runner generates all artifacts (badges, reports, metrics, GitHub Pages structure)
- * during JMH execution, eliminating the need for post-processing shell scripts.
+ * This runner uses the Template Method pattern to orchestrate benchmark execution while
+ * allowing concrete implementations to customize specific steps.
  * <p>
- * Concrete implementations should override {@link #getBenchmarkType()}, {@link #getIncludePattern()},
- * and {@link #beforeBenchmarks()} / {@link #afterBenchmarks(Collection, BenchmarkConfiguration)} for specific initialization
- * and cleanup logic.
+ * The template method {@link #runBenchmark()} defines the benchmark execution flow:
+ * <ol>
+ *   <li>Validation of configuration</li>
+ *   <li>Preparation phase ({@link #prepareBenchmark(BenchmarkConfiguration)})</li>
+ *   <li>Benchmark execution ({@link #executeBenchmark(Options)})</li>
+ *   <li>Results processing ({@link #processResults(Collection, BenchmarkConfiguration)})</li>
+ *   <li>Cleanup phase ({@link #cleanup(BenchmarkConfiguration)})</li>
+ * </ol>
  * <p>
  * Features:
  * <ul>
@@ -55,113 +60,216 @@ public abstract class AbstractBenchmarkRunner {
             new CuiLogger(AbstractBenchmarkRunner.class);
 
     /**
-     * Gets the benchmark type for this runner.
+     * Creates the benchmark configuration for this runner.
+     * This method must provide a complete configuration including:
+     * - Benchmark type
+     * - Include pattern
+     * - Result file name and directory
+     * - Throughput and latency benchmark names
+     * - Any other specific configuration
      * 
-     * @return the benchmark type (MICRO, INTEGRATION, etc.)
+     * @return the complete benchmark configuration
      */
-    protected abstract BenchmarkType getBenchmarkType();
+    protected abstract BenchmarkConfiguration createConfiguration();
 
     /**
-     * Gets the include pattern for benchmark classes.
+     * Prepares the benchmark environment.
+     * This method is called after configuration validation and before benchmark execution.
+     * Use this for initialization tasks like:
+     * - Setting up resources
+     * - Initializing caches
+     * - Configuring logging
      * 
-     * @return the regex pattern for including benchmark classes
+     * @param config the benchmark configuration
+     * @throws IOException if preparation fails
      */
-    protected abstract String getIncludePattern();
+    protected abstract void prepareBenchmark(BenchmarkConfiguration config) throws IOException;
 
     /**
-     * Gets the result file name for this benchmark type.
+     * Executes the benchmark with the given options.
+     * Default implementation uses JMH Runner, but can be overridden for custom execution.
      * 
-     * @return the result file name
+     * @param options the JMH options
+     * @return collection of benchmark results
+     * @throws RunnerException if benchmark execution fails
      */
-    protected abstract String getResultFileName();
-
-    /**
-     * Hook for initialization before running benchmarks.
-     * Override to add specific initialization logic.
-     * 
-     * @throws IOException if I/O operations fail during initialization
-     */
-    protected void beforeBenchmarks() throws IOException {
-        // Default implementation does nothing
+    protected Collection<RunResult> executeBenchmark(Options options) throws RunnerException {
+        return new Runner(options).run();
     }
 
     /**
-     * Hook for cleanup or additional processing after benchmarks.
-     * Override to add specific post-processing logic.
+     * Processes the benchmark results.
+     * Default implementation uses BenchmarkResultProcessor, but can be extended for additional processing.
      * 
      * @param results the benchmark results
      * @param config the benchmark configuration
-     * @throws IOException if I/O operations fail during post-processing
+     * @throws IOException if processing fails
      */
-    protected void afterBenchmarks(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
-        // Default implementation does nothing
+    protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
+        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
+                config.reportConfig().benchmarkType(),
+                config.reportConfig().throughputBenchmarkName(),
+                config.reportConfig().latencyBenchmarkName()
+        );
+        processor.processResults(results, config.resultsDirectory());
     }
 
     /**
-     * Configures the benchmark options.
-     * Override to customize benchmark configuration.
+     * Performs cleanup after benchmark execution.
+     * This method is called after results processing, regardless of success or failure.
+     * Use this for:
+     * - Releasing resources
+     * - Final metrics collection
+     * - Post-processing tasks
      * 
-     * @param builder the configuration builder
-     * @return the modified configuration builder
+     * @param config the benchmark configuration
+     * @throws IOException if cleanup fails
      */
-    protected BenchmarkConfiguration.Builder configureBenchmark(BenchmarkConfiguration.Builder builder) {
-        // Default implementation returns the builder as-is
+    protected abstract void cleanup(BenchmarkConfiguration config) throws IOException;
+
+    /**
+     * Hook method called before benchmark execution starts.
+     * Override to add custom pre-benchmark logic.
+     * Default implementation does nothing.
+     * 
+     * @param config the benchmark configuration
+     */
+    protected void beforeBenchmark(BenchmarkConfiguration config) {
+        // Hook for subclasses
+    }
+
+    /**
+     * Hook method called after benchmark execution completes.
+     * Override to add custom post-benchmark logic.
+     * Default implementation does nothing.
+     * 
+     * @param results the benchmark results
+     * @param config the benchmark configuration
+     */
+    protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
+        // Hook for subclasses
+    }
+
+    /**
+     * Builds JMH options from the benchmark configuration.
+     * This method extracts common option building logic that can be reused or extended.
+     * 
+     * @param config the benchmark configuration
+     * @return JMH options builder with common settings applied
+     */
+    protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
+        var builder = new OptionsBuilder();
+
+        builder.include(config.includePattern())
+                .resultFormat(config.reportConfig().resultFormat())
+                .result(config.reportConfig().getOrCreateResultFile())
+                .forks(config.forks())
+                .warmupIterations(config.warmupIterations())
+                .measurementIterations(config.measurementIterations())
+                .measurementTime(config.measurementTime())
+                .warmupTime(config.warmupTime())
+                .threads(config.threads());
+
+        // Pass all system properties from parent JVM to forked JVMs
+        // This ensures all Maven-provided properties are available in benchmark processes
+        var systemProperties = System.getProperties().entrySet().stream()
+                .map(e -> "-D" + e.getKey() + "=" + e.getValue())
+                .toArray(String[]::new);
+
+        builder.jvmArgsPrepend(systemProperties);
+
         return builder;
     }
 
     /**
-     * Gets the benchmark results directory from system property or defaults.
+     * Validates the benchmark configuration.
+     * Throws IllegalArgumentException if configuration is invalid.
      * 
-     * @return the benchmark results directory path
+     * @param config the configuration to validate
+     * @throws IllegalArgumentException if configuration is invalid
      */
-    protected String getBenchmarkResultsDir() {
-        return System.getProperty("benchmark.results.dir", "target/benchmark-results");
+    protected void validateConfiguration(BenchmarkConfiguration config) {
+        if (config == null) {
+            throw new IllegalArgumentException("Benchmark configuration cannot be null");
+        }
+
+        if (config.benchmarkType() == null) {
+            throw new IllegalArgumentException("Benchmark type must be specified");
+        }
+
+        if (config.includePattern() == null || config.includePattern().isEmpty()) {
+            throw new IllegalArgumentException("Include pattern must be specified");
+        }
+
+        if (config.resultsDirectory() == null || config.resultsDirectory().isEmpty()) {
+            throw new IllegalArgumentException("Results directory must be specified");
+        }
+
+        if (config.forks() < 0) {
+            throw new IllegalArgumentException("Forks must be non-negative");
+        }
+
+        if (config.warmupIterations() < 0) {
+            throw new IllegalArgumentException("Warmup iterations must be non-negative");
+        }
+
+        if (config.measurementIterations() <= 0) {
+            throw new IllegalArgumentException("Measurement iterations must be positive");
+        }
+
+        if (config.threads() <= 0) {
+            throw new IllegalArgumentException("Threads must be positive");
+        }
     }
 
     /**
-     * Main execution method that orchestrates the benchmark run.
+     * Template method that defines the benchmark execution flow.
+     * This is the main entry point that orchestrates all phases of benchmark execution.
      *
      * @throws IOException if I/O operations fail
      * @throws RunnerException if benchmark execution fails
      */
-    public void run() throws IOException, RunnerException {
-        String outputDir = getBenchmarkResultsDir();
+    public final void runBenchmark() throws IOException, RunnerException {
+        // Step 1: Create and validate configuration
+        BenchmarkConfiguration config = createConfiguration();
+        validateConfiguration(config);
 
-        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + getBenchmarkType() + ", Output: " + outputDir);
+        String outputDir = config.resultsDirectory();
+        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + config.benchmarkType() + ", Output: " + outputDir);
 
-        // Ensure output directory exists
+        // Step 2: Ensure output directory exists
         Path outputPath = Path.of(outputDir);
         Files.createDirectories(outputPath);
 
-        // Run initialization hook
-        beforeBenchmarks();
+        try {
+            // Step 3: Preparation phase
+            prepareBenchmark(config);
 
-        // Configure benchmark using template method pattern
-        BenchmarkConfiguration.Builder configBuilder = BenchmarkConfiguration.fromSystemProperties()
-                .withIncludePattern(getIncludePattern())
-                .withResultsDirectory(outputDir)
-                .withResultFile(outputDir + "/" + getResultFileName());
+            // Step 4: Pre-benchmark hook
+            beforeBenchmark(config);
 
-        // Allow subclasses to customize configuration
-        configBuilder = configureBenchmark(configBuilder);
-        BenchmarkConfiguration config = configBuilder.build();
+            // Step 5: Build options
+            Options options = buildCommonOptions(config).build();
 
-        Options options = config.toJmhOptions();
+            // Step 6: Execute benchmarks
+            Collection<RunResult> results = executeBenchmark(options);
 
-        // Run the benchmarks
-        Collection<RunResult> results = new Runner(options).run();
+            if (results.isEmpty()) {
+                throw new IllegalStateException("No benchmark results produced");
+            }
 
-        if (results.isEmpty()) {
-            throw new IllegalStateException("No benchmark results produced");
+            // Step 7: Process results
+            processResults(results, config);
+
+            // Step 8: Post-benchmark hook
+            afterBenchmark(results, config);
+
+            LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(results.size()) + ", artifacts in " + outputDir);
+
+        } finally {
+            // Step 9: Cleanup (always executed)
+            cleanup(config);
         }
-
-        // Process results to generate all artifacts
-        BenchmarkResultProcessor processor = new BenchmarkResultProcessor(getBenchmarkType());
-        processor.processResults(results, outputDir);
-
-        // Run post-processing hook
-        afterBenchmarks(results, config);
-
-        LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(results.size()) + ", artifacts in " + outputDir);
     }
+
 }

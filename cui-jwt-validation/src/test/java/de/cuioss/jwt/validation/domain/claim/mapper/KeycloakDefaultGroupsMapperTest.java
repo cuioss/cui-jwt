@@ -15,8 +15,11 @@
  */
 package de.cuioss.jwt.validation.domain.claim.mapper;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;
@@ -28,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -41,13 +45,27 @@ class KeycloakDefaultGroupsMapperTest {
     private static final String CLAIM_NAME = "groups";
     private final KeycloakDefaultGroupsMapper underTest = new KeycloakDefaultGroupsMapper();
 
+    /**
+     * Converts a JsonObject to MapRepresentation using DSL-JSON parsing.
+     * This ensures proper DSL-JSON validation and type handling.
+     */
+    private static MapRepresentation convertJsonObjectToMapRepresentation(JsonObject jsonObject) {
+        try {
+            String json = jsonObject.toString();
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, json);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+        }
+    }
+
     @Test
     @DisplayName("Map groups claim to group list")
     void shouldMapGroupsClaim() {
         List<String> expectedGroups = List.of("/test-group", "/admin-group", "/user-group");
         JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -60,7 +78,7 @@ class KeycloakDefaultGroupsMapperTest {
     @MethodSource("edgeCaseGroupsProvider")
     @DisplayName("Handle edge cases for groups claim")
     void shouldHandleGroupsEdgeCases(String testCase, JsonObject jsonObject, boolean shouldBePresent, String expectedOriginalString) {
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -111,7 +129,7 @@ class KeycloakDefaultGroupsMapperTest {
         List<String> expectedGroups = List.of("/admin-group");
         JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());
@@ -127,7 +145,7 @@ class KeycloakDefaultGroupsMapperTest {
     void shouldHandleVariousGroupNameFormats(String testCase, List<String> expectedGroups) {
         JsonObject jsonObject = createKeycloakTokenWithGroups(expectedGroups);
 
-        ClaimValue result = underTest.map(jsonObject, CLAIM_NAME);
+        ClaimValue result = underTest.map(convertJsonObjectToMapRepresentation(jsonObject), CLAIM_NAME);
 
         assertNotNull(result);
         assertEquals(ClaimValueType.STRING_LIST, result.getType());

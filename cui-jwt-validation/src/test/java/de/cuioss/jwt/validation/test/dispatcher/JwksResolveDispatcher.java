@@ -49,6 +49,8 @@ public class JwksResolveDispatcher implements ModuleDispatcherElement {
     private int callCounter = 0;
     private ResponseStrategy responseStrategy = ResponseStrategy.DEFAULT;
     private boolean useAlternativeKey = false;
+    @Getter
+    private String customResponse = null;
 
     public JwksResolveDispatcher() {
         // No initialization needed
@@ -101,12 +103,30 @@ public class JwksResolveDispatcher implements ModuleDispatcherElement {
      */
     public JwksResolveDispatcher returnDefault() {
         this.responseStrategy = ResponseStrategy.DEFAULT;
+        this.customResponse = null;
         return this;
+    }
+
+    /**
+     * Set a custom response to be returned by the dispatcher.
+     *
+     * @param response the custom response JSON string
+     */
+    public void setCustomResponse(String response) {
+        this.customResponse = response;
     }
 
     @Override
     public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
         callCounter++;
+
+        // Return custom response if set
+        if (customResponse != null) {
+            return Optional.of(new MockResponse(
+                    SC_OK,
+                    Headers.of("Content-Type", "application/json"),
+                    customResponse));
+        }
 
         switch (responseStrategy) {
             case ERROR:

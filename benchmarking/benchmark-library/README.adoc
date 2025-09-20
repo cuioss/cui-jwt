@@ -49,20 +49,28 @@ Performance benchmarking for JWT token validation core library using JMH.
 
 == Benchmarks
 
-* `TokenValidatorBenchmark` - Core JWT validation performance
-* `JwksClientBenchmark` - JWKS key retrieval performance
-* `MultiIssuerValidatorBenchmark` - Multi-issuer validation
-* `ErrorLoadBenchmark` - Error handling impact
-* `ConcurrentTokenValidationBenchmark` - Concurrent validation
-* `JfrInstrumentedBenchmark` - Detailed variance analysis (JFR profile only)
+=== Standard Benchmarks
+* `SimpleCoreValidationBenchmark` - Core JWT validation performance (throughput and latency)
+* `SimpleErrorLoadBenchmark` - Streamlined error handling scenarios
+* `ErrorLoadBenchmark` - Comprehensive error scenario testing with various token failures
+* `PerformanceIndicatorBenchmark` - Performance scoring metrics
+
+=== JFR-Enabled Benchmarks
+* `UnifiedJfrBenchmark` - Combined benchmark with Java Flight Recorder integration
+* `CoreJfrBenchmark` - Core validation with JFR profiling
+* `ErrorJfrBenchmark` - Error scenarios with JFR profiling
+* `MixedJfrBenchmark` - Mixed validation scenarios with JFR profiling
 
 == Output
 
-Results in `target/`:
+Results are generated in `target/benchmark-results/`:
 
-* `benchmark-results/jmh-result.json` - Raw JMH results
-* `benchmark-results/performance-<timestamp>.json` - Performance tracking data
-* `benchmark-results/jfr-benchmark.jfr` - JFR recording (with -Pbenchmark-jfr)
+* `micro-result.json` - Raw JMH results
+* `benchmark-summary.json` - Overall summary with quality gates
+* `badges/` - Performance badges (score, trend, last-run)
+* `data/` - Individual benchmark metrics JSON files
+* `gh-pages-ready/` - GitHub Pages deployment structure
+* `benchmark-run_*.log` - Execution logs
 
 == Performance Score
 
@@ -80,12 +88,16 @@ Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience ×
 
 [source,bash]
 ----
-# Throughput summary
-jq '.[] | {benchmark: .benchmark, score: .primaryMetric.score, unit: .primaryMetric.scoreUnit}' \
-  target/benchmark-results/jmh-result.json
+# Serve results locally with web UI
+cd benchmarking/scripts
+./serve-reports.sh library  # Opens http://localhost:8080
 
-# Performance score
-jq '.performanceScore' target/benchmark-results/performance-*.json
+# Or analyze JSON directly
+jq '.[] | {benchmark: .benchmark, score: .primaryMetric.score, unit: .primaryMetric.scoreUnit}' \
+  target/benchmark-results/micro-result.json
+
+# View performance summary
+jq '.overallScore, .grade' target/benchmark-results/benchmark-summary.json
 ----
 
 === JFR Analysis

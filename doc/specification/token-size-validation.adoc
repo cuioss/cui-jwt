@@ -44,7 +44,7 @@ The `NonValidatingJwtParser` class implements token size validation with the fol
 * Default maximum string size of 4KB (`DEFAULT_MAX_STRING_SIZE`)
 * Builder pattern using Lombok's `@Builder` annotation
 * Multi-layered size validation in the `decode()` and `decodeJsonPart()` methods
-* JSON parsing security limits through JsonReaderFactory configuration
+* JSON parsing security limits through DSL-JSON configuration
 
 === TokenValidator
 

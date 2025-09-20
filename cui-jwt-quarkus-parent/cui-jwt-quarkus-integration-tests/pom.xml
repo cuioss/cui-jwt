@@ -243,6 +243,21 @@
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>
+                            <!-- Dump container logs (Quarkus and Keycloak) before stopping containers -->
+                            <execution>
+                                <id>dump-quarkus-logs</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/dump-quarkus-logs.sh</executable>
+                                    <arguments>
+                                        <argument>target</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
                             <!-- Stop application after integration tests -->
                             <execution>
                                 <id>stop-integration-app</id>
@@ -354,6 +369,21 @@
                                 </goals>
                                 <configuration>
                                     <executable>./scripts/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Dump container logs (Quarkus and Keycloak) before stopping containers -->
+                            <execution>
+                                <id>dump-quarkus-logs</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>./scripts/dump-quarkus-logs.sh</executable>
+                                    <arguments>
+                                        <argument>target</argument>
+                                    </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
                             </execution>

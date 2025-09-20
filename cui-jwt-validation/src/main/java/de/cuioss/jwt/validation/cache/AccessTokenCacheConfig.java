@@ -135,4 +135,12 @@ public class AccessTokenCacheConfig {
             return thread;
         }));
     }
+
+    public int getMaxSize() {
+        return maxSize;
+    }
+
+    public long getEvictionIntervalSeconds() {
+        return evictionIntervalSeconds;
+    }
 }

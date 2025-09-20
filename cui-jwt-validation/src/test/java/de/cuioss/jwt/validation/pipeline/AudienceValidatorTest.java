@@ -15,15 +15,21 @@
  */
 package de.cuioss.jwt.validation.pipeline;
 
+import com.dslplatform.json.DslJson;
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,6 +57,18 @@ class AudienceValidatorTest {
     private static final String UNEXPECTED_AUDIENCE = "unknown-client";
     private static final Set<String> EXPECTED_AUDIENCES = Set.of(EXPECTED_AUDIENCE_1, EXPECTED_AUDIENCE_2);
 
+    /**
+     * Creates an empty MapRepresentation for tests that don't need specific payload data.
+     */
+    private static MapRepresentation createEmptyMapRepresentation() {
+        try {
+            DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
+            return MapRepresentation.fromJson(dslJson, "{}");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        }
+    }
+
     private SecurityEventCounter securityEventCounter;
     private AudienceValidator validator;
 
@@ -65,7 +83,7 @@ class AudienceValidatorTest {
     void shouldSkipValidationWhenNoExpectedAudienceConfigured() {
         AudienceValidator emptyValidator = new AudienceValidator(Set.of(), securityEventCounter);
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
-        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         assertDoesNotThrow(() -> emptyValidator.validateAudience(token));
     }
@@ -75,7 +93,7 @@ class AudienceValidatorTest {
     void shouldValidateSingleStringAudienceSuccessfully() {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forPlainString(EXPECTED_AUDIENCE_1));
-        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         assertDoesNotThrow(() -> validator.validateAudience(token));
     }
@@ -86,7 +104,7 @@ class AudienceValidatorTest {
         List<String> audienceList = List.of(UNEXPECTED_AUDIENCE, EXPECTED_AUDIENCE_1);
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forList(audienceList.toString(), audienceList));
-        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         assertDoesNotThrow(() -> validator.validateAudience(token));
     }
@@ -96,13 +114,15 @@ class AudienceValidatorTest {
     void shouldFailWhenSingleStringAudienceDoesNotMatch() {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forPlainString(UNEXPECTED_AUDIENCE));
-        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         TokenValidationException exception = assertThrows(TokenValidationException.class,
                 () -> validator.validateAudience(token));
         assertEquals(SecurityEventCounter.EventType.AUDIENCE_MISMATCH, exception.getEventType());
         assertTrue(exception.getMessage().contains("Audience mismatch"));
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.AUDIENCE_MISMATCH));
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH.resolveIdentifierString());
     }
 
     @Test
@@ -111,13 +131,15 @@ class AudienceValidatorTest {
         List<String> audienceList = List.of(UNEXPECTED_AUDIENCE, "another-unknown");
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forList(audienceList.toString(), audienceList));
-        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         TokenValidationException exception = assertThrows(TokenValidationException.class,
                 () -> validator.validateAudience(token));
         assertEquals(SecurityEventCounter.EventType.AUDIENCE_MISMATCH, exception.getEventType());
         assertTrue(exception.getMessage().contains("Audience mismatch"));
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.AUDIENCE_MISMATCH));
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH.resolveIdentifierString());
     }
 
     @Test
@@ -125,13 +147,15 @@ class AudienceValidatorTest {
     void shouldPassWhenAudienceClaimIsSingleStringEvenIfUnexpectedValue() {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.AUDIENCE.getName(), ClaimValue.forPlainString("123"));
-        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(tokenHolder.getClaims(), tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         TokenValidationException exception = assertThrows(TokenValidationException.class,
                 () -> validator.validateAudience(token));
         assertEquals(SecurityEventCounter.EventType.AUDIENCE_MISMATCH, exception.getEventType());
         assertTrue(exception.getMessage().contains("Audience mismatch"));
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.AUDIENCE_MISMATCH));
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH.resolveIdentifierString());
     }
 
     @Test
@@ -141,7 +165,7 @@ class AudienceValidatorTest {
         Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
         claims.remove(ClaimName.AUDIENCE.getName());
         claims.put(ClaimName.AUTHORIZED_PARTY.getName(), ClaimValue.forPlainString(EXPECTED_AUDIENCE_1));
-        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         assertDoesNotThrow(() -> validator.validateAudience(token));
     }
@@ -153,7 +177,7 @@ class AudienceValidatorTest {
         Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
         claims.remove(ClaimName.AUDIENCE.getName());
         claims.put(ClaimName.AUTHORIZED_PARTY.getName(), ClaimValue.forPlainString(EXPECTED_AUDIENCE_1));
-        IdTokenContent token = new IdTokenContent(claims, tokenHolder.getRawToken());
+        IdTokenContent token = new IdTokenContent(claims, tokenHolder.getRawToken(), MapRepresentation.empty());
 
         assertDoesNotThrow(() -> validator.validateAudience(token));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
@@ -166,7 +190,7 @@ class AudienceValidatorTest {
         Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
         claims.remove(ClaimName.AUDIENCE.getName());
         claims.remove(ClaimName.AUTHORIZED_PARTY.getName());
-        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         assertDoesNotThrow(() -> validator.validateAudience(token));
     }
@@ -178,7 +202,7 @@ class AudienceValidatorTest {
         Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
         claims.remove(ClaimName.AUDIENCE.getName());
         claims.put(ClaimName.AUTHORIZED_PARTY.getName(), ClaimValue.forPlainString(UNEXPECTED_AUDIENCE));
-        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com");
+        AccessTokenContent token = new AccessTokenContent(claims, tokenHolder.getRawToken(), "test@example.com", createEmptyMapRepresentation());
 
         assertDoesNotThrow(() -> validator.validateAudience(token));
     }
@@ -190,7 +214,7 @@ class AudienceValidatorTest {
         Map<String, ClaimValue> claims = new HashMap<>(tokenHolder.getClaims());
         claims.remove(ClaimName.AUDIENCE.getName());
         claims.remove(ClaimName.AUTHORIZED_PARTY.getName());
-        IdTokenContent token = new IdTokenContent(claims, tokenHolder.getRawToken());
+        IdTokenContent token = new IdTokenContent(claims, tokenHolder.getRawToken(), MapRepresentation.empty());
 
         TokenValidationException exception = assertThrows(TokenValidationException.class,
                 () -> validator.validateAudience(token));

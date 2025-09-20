@@ -15,135 +15,210 @@
  */
 package de.cuioss.benchmarking.common;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.openjdk.jmh.results.RunResult;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link ReportGenerator}.
  */
 class ReportGeneratorTest {
 
-    @Test void generateIndexPageWithResults(@TempDir Path tempDir) throws Exception {
-        // Use empty results instead of running actual benchmarks
-        // Testing HTML generation doesn't require actual benchmark data
-        Collection<RunResult> results = List.of();
+    private static final Gson gson = new Gson();
 
-        ReportGenerator generator = new ReportGenerator();
+    @Test void generateDataJsonWithResults(@TempDir Path tempDir) throws Exception {
+        // Use real micro benchmark test data
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
+        Files.copy(sourceJson, jsonFile);
+
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(results, outputDir);
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
 
-        // Verify index.html was created
-        Path indexFile = Path.of(outputDir, "index.html");
-        assertTrue(Files.exists(indexFile), "Index page should be created");
+        // Verify benchmark-data.json was created with correct structure
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
+        assertTrue(Files.exists(dataFile), "Data JSON file should be created");
 
-        // Verify HTML content
-        String content = Files.readString(indexFile);
-        assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
-        assertTrue(content.contains("<html"), "Should have HTML tag");
-        assertTrue(content.contains("Benchmark Results"), "Should have title");
-        assertTrue(content.contains("<style>"), "Should have embedded CSS");
+        // Parse and verify JSON structure
+        String jsonContent = Files.readString(dataFile);
+        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
+
+        assertNotNull(dataJson.get("metadata"), "Should have metadata section");
+        assertNotNull(dataJson.get("overview"), "Should have overview section");
+        assertNotNull(dataJson.get("benchmarks"), "Should have benchmarks array");
+        assertNotNull(dataJson.get("chartData"), "Should have chartData section");
+        assertNotNull(dataJson.get("trends"), "Should have trends section");
+
+        // Verify benchmarks were processed
+        assertTrue(dataJson.get("benchmarks").isJsonArray(), "benchmarks should be an array");
+        JsonArray benchmarks = dataJson.getAsJsonArray("benchmarks");
+        assertEquals(5, benchmarks.size(), "Should have 5 benchmarks from test data");
     }
 
-    @Test void generateIndexPageWithEmptyResults(@TempDir Path tempDir) throws Exception {
-        ReportGenerator generator = new ReportGenerator();
+    @Test void generateDataJsonWithEmptyResults(@TempDir Path tempDir) throws Exception {
+        // Create an empty JSON file
+        Path jsonFile = tempDir.resolve("empty-benchmark-result.json");
+        Files.writeString(jsonFile, "[]");
+
+        // With empty results, createTestMetrics should throw because no benchmarks are found
+        assertThrows(IllegalArgumentException.class, () -> {
+            createTestMetrics(jsonFile);
+        }, "Should fail when no benchmark results are provided");
+    }
+
+    @Test void generateDataJsonWithIntegrationBenchmarks(@TempDir Path tempDir) throws Exception {
+        // Use integration benchmark test data
+        Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
+        Path jsonFile = tempDir.resolve("integration-result.json");
+        Files.copy(sourceJson, jsonFile);
+
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
+        generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
 
-        generator.generateIndexPage(emptyResults, outputDir);
+        // Verify data JSON was created
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
+        assertTrue(Files.exists(dataFile), "Data JSON file should be created");
 
-        // Should still create index page
-        Path indexFile = Path.of(outputDir, "index.html");
-        assertTrue(Files.exists(indexFile), "Index page should be created with empty results");
+        // Parse and verify it's marked as integration
+        String jsonContent = Files.readString(dataFile);
+        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
 
-        // Verify basic HTML structure
-        String content = Files.readString(indexFile);
-        assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
-        assertTrue(content.contains("<html"), "Should have HTML tag");
+        JsonObject metadata = dataJson.getAsJsonObject("metadata");
+        assertEquals("Integration Performance", metadata.get("benchmarkType").getAsString(),
+                "Should be marked as Integration Performance");
     }
 
-    @Test void generateTrendsPage(@TempDir Path tempDir) throws Exception {
-        // Use empty results instead of running actual benchmarks
-        // Testing HTML generation doesn't require actual benchmark data
-        Collection<RunResult> results = List.of();
+    @Test void generateDataJsonInNestedDirectory(@TempDir Path tempDir) throws Exception {
+        // Test that generator creates directories as needed
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
+        Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator();
-        String outputDir = tempDir.toString();
-
-        generator.generateTrendsPage(results, outputDir);
-
-        // Verify trends.html was created
-        Path trendsFile = Path.of(outputDir, "trends.html");
-        assertTrue(Files.exists(trendsFile), "Trends page should be created");
-
-        // Verify HTML content
-        String content = Files.readString(trendsFile);
-        assertTrue(content.contains("<!DOCTYPE html>"), "Should be valid HTML");
-        assertTrue(content.contains("Performance Trends"), "Should have trends title");
-        assertTrue(content.contains("<style>"), "Should have embedded CSS");
-    }
-
-    @Test void generatePagesWithNestedDirectory(@TempDir Path tempDir) {
-        ReportGenerator generator = new ReportGenerator();
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String nestedDir = tempDir.resolve("reports/html/output").toString();
 
-        List<RunResult> emptyResults = List.of();
-
-        // Should create nested directories
+        // Should create nested directories for data JSON
         assertDoesNotThrow(() -> {
-            generator.generateIndexPage(emptyResults, nestedDir);
-            generator.generateTrendsPage(emptyResults, nestedDir);
+            generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, nestedDir);
         }, "Should create nested directories as needed");
 
-        assertTrue(Files.exists(Path.of(nestedDir, "index.html")),
-                "Index page should be created in nested directory");
-        assertTrue(Files.exists(Path.of(nestedDir, "trends.html")),
-                "Trends page should be created in nested directory");
+        // Verify data JSON was created in nested structure
+        assertTrue(Files.exists(Path.of(nestedDir, "data/benchmark-data.json")),
+                "Data JSON should be created in nested directory structure");
     }
 
-    @Test void generateResponsiveHtml(@TempDir Path tempDir) throws Exception {
-        ReportGenerator generator = new ReportGenerator();
+    @Test void verifyDataJsonContainsAllRequiredSections(@TempDir Path tempDir) throws Exception {
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
+        Files.copy(sourceJson, jsonFile);
+
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
 
-        generator.generateIndexPage(emptyResults, outputDir);
+        // Verify all required JSON sections are present and populated
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
+        String jsonContent = Files.readString(dataFile);
+        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
 
-        Path indexFile = Path.of(outputDir, "index.html");
-        String content = Files.readString(indexFile);
+        // Verify metadata
+        JsonObject metadata = dataJson.getAsJsonObject("metadata");
+        assertNotNull(metadata.get("timestamp"), "Should have timestamp");
+        assertNotNull(metadata.get("reportVersion"), "Should have report version");
 
-        // Verify responsive design elements
-        assertTrue(content.contains("viewport"), "Should have viewport meta tag for responsive design");
-        assertTrue(content.contains("max-width"), "Should have max-width for responsive layout");
+        // Verify overview metrics
+        JsonObject overview = dataJson.getAsJsonObject("overview");
+        assertTrue(overview.has("throughput"), "Should have throughput");
+        assertTrue(overview.has("latency"), "Should have latency");
+        assertTrue(overview.has("performanceScore"), "Should have performance score");
+        assertTrue(overview.has("performanceGrade"), "Should have performance grade");
     }
 
-    @Test void generateHtmlWithValidCss(@TempDir Path tempDir) throws Exception {
-        ReportGenerator generator = new ReportGenerator();
+    @Test void verifyPercentilesDataOnlyIncludesLatencyBenchmarks(@TempDir Path tempDir) throws Exception {
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
+        Files.copy(sourceJson, jsonFile);
+
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
         String outputDir = tempDir.toString();
 
-        List<RunResult> emptyResults = List.of();
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
 
-        generator.generateIndexPage(emptyResults, outputDir);
+        // Verify percentiles data only includes latency benchmarks (not throughput)
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
+        String jsonContent = Files.readString(dataFile);
+        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
 
-        Path indexFile = Path.of(outputDir, "index.html");
-        String content = Files.readString(indexFile);
+        JsonObject chartData = dataJson.getAsJsonObject("chartData");
+        JsonObject percentilesData = chartData.getAsJsonObject("percentilesData");
+        JsonArray benchmarkNames = percentilesData.getAsJsonArray("labels");
 
-        // Verify CSS is embedded and structured
-        assertTrue(content.contains("<style>"), "Should have opening style tag");
-        assertTrue(content.contains("</style>"), "Should have closing style tag");
-        assertTrue(content.contains("font-family"), "Should define font family");
-        assertTrue(content.contains("margin"), "Should have margin styles");
-        assertTrue(content.contains("padding"), "Should have padding styles");
+        // Should only include avgt benchmarks (latency), not thrpt (throughput)
+        for (JsonElement nameElement : benchmarkNames) {
+            String name = nameElement.getAsString();
+            // The test data has measureAverageTime and measureConcurrentValidation as latency benchmarks
+            assertTrue(name.contains("measure"),
+                    "Percentiles should only include latency benchmarks: " + name);
+        }
+    }
+
+    @Test void correctLatencyDisplayInGeneratedReport(@TempDir Path tempDir) throws Exception {
+        // Regression test for bug where us/op was incorrectly converted (multiplied by 1000 instead of divided)
+        Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
+        Path jsonFile = tempDir.resolve("micro-result.json");
+        Files.copy(sourceJson, jsonFile);
+
+        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
+        String outputDir = tempDir.toString();
+
+        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+
+        // Parse the generated JSON data
+        Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");
+        String jsonContent = Files.readString(dataFile);
+        JsonObject dataJson = gson.fromJson(jsonContent, JsonObject.class);
+
+        // Verify the overview section has correct average latency
+        JsonObject overview = dataJson.getAsJsonObject("overview");
+        assertNotNull(overview, "Overview section must exist");
+
+        // The latency is now a formatted string (e.g., "0.80ms")
+        String latencyStr = overview.get("latency").getAsString();
+        assertNotNull(latencyStr, "Latency string should not be null");
+        assertFalse(latencyStr.isEmpty(), "Latency string should not be empty");
+        assertTrue(latencyStr.contains("ms") || latencyStr.contains("s"),
+                "Latency should have unit: " + latencyStr);
+
+        // Verify individual benchmark scores are reasonable
+        JsonArray benchmarksArray = dataJson.getAsJsonArray("benchmarks");
+        for (JsonElement element : benchmarksArray) {
+            JsonObject benchmark = element.getAsJsonObject();
+            String mode = benchmark.get("mode").getAsString();
+
+            // For latency benchmarks (avgt mode), verify score is present and formatted
+            if ("avgt".equals(mode)) {
+                String scoreStr = benchmark.get("score").getAsString();
+                String unit = benchmark.get("scoreUnit").getAsString();
+                assertNotNull(scoreStr, "Score should not be null");
+                assertFalse(scoreStr.isEmpty(), "Score should not be empty");
+                assertNotNull(unit, "Unit should not be null");
+            }
+        }
     }
 }

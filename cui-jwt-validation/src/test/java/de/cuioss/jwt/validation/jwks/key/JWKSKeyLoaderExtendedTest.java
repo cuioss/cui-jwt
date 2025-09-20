@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation.jwks.key;
 
+import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
@@ -112,7 +113,7 @@ class JWKSKeyLoaderExtendedTest {
             keyLoader.initJWKSLoader(securityEventCounter);
 
             assertFalse(keyLoader.isNotEmpty(), "Loader should reject JWKS with excessive properties");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "JWKS object has excessive number of properties");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.RSA_KEY_PARSE_FAILED.resolveIdentifierString());
         }
 
         @Test
@@ -126,7 +127,7 @@ class JWKSKeyLoaderExtendedTest {
             keyLoader.initJWKSLoader(securityEventCounter);
 
             assertFalse(keyLoader.isNotEmpty(), "Loader should reject JWKS with empty keys array");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "JWKS keys array is empty");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY.resolveIdentifierString());
         }
 
         @Test
@@ -147,7 +148,7 @@ class JWKSKeyLoaderExtendedTest {
             keyLoader.initJWKSLoader(securityEventCounter);
 
             assertFalse(keyLoader.isNotEmpty(), "Loader should reject JWKS with excessive keys");
-            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "JWKS keys array exceeds maximum size");
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_TOO_LARGE.resolveIdentifierString());
         }
     }
 

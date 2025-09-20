@@ -36,8 +36,9 @@ class HttpJwksLoaderConfigWellKnownTest {
                 .wellKnownUrl(TEST_WELL_KNOWN_URL)
                 .build();
 
-        assertNotNull(config.getWellKnownResolver());
-        assertNull(config.getHttpHandler());
+        assertNotNull(config.getWellKnownConfig());
+        // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
+        assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }
 
     @Test
@@ -47,8 +48,9 @@ class HttpJwksLoaderConfigWellKnownTest {
                 .wellKnownUri(TEST_WELL_KNOWN_URI)
                 .build();
 
-        assertNotNull(config.getWellKnownResolver());
-        assertNull(config.getHttpHandler());
+        assertNotNull(config.getWellKnownConfig());
+        // HttpJwksLoaderConfig now implements HttpHandlerProvider, so getHttpHandler() returns the HttpHandler from WellKnownConfig
+        assertNotNull(config.getHttpHandler(), "HttpHandler should be accessible via HttpHandlerProvider interface in well-known mode");
     }
 
     @Test

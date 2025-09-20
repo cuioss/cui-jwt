@@ -36,7 +36,7 @@ The log messages can be used for troubleshooting issues with the JWT Token Valid
 
 For more details about security events related to these log messages, see the SecurityEventCounter implementation in xref:specification/technical-components.adoc#_securityeventcounter[Technical Components].
 
-== INFO Level (001-099)
+== INFO Level (001-008)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -47,12 +47,11 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-004 |JWKS |Background JWKS refresh started with interval: %s seconds |Logged when background JWKS refresh is started with specified interval
 |JWTValidation-005 |JWKS |Background JWKS refresh updated keys, load state: %s |Logged when background JWKS refresh successfully updates keys
 |JWTValidation-006 |TOKEN |Skipping disabled issuer configuration %s |Logged when an issuer configuration is skipped because it's disabled
-|JWTValidation-007 |HTTP |Loaded fresh HTTP content from %s |Logged when fresh HTTP content is successfully loaded from an endpoint
-|JWTValidation-008 |JWKS |Successfully resolved JWKS URI from well-known endpoint: %s |Logged when JWKS URI is successfully resolved via well-known discovery
-|JWTValidation-009 |WELLKNOWN |Successfully loaded well-known endpoints from: %s |Logged when well-known endpoints are successfully loaded from discovery document
+|JWTValidation-007 |JWKS |Successfully resolved JWKS URI from well-known endpoint: %s |Logged when JWKS URI is successfully resolved via well-known discovery
+|JWTValidation-008 |RETRY |Retry operation '%s' completed successfully after %s attempts in %sms |Logged when a retry operation completes successfully with timing information
 |===
 
-== WARN Level (100-199)
+== WARN Level (100-134)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -60,53 +59,41 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-100 |TOKEN |Token exceeds maximum size limit of %s bytes, validation will be rejected |Logged when a token is rejected due to size constraints
 |JWTValidation-101 |TOKEN |The given validation was empty, request will be rejected |Logged when an empty or null token is provided
 |JWTValidation-102 |TOKEN |No key found with ID: %s |Logged when a key with the specified ID cannot be found in the JWKS
-|JWTValidation-103 |TOKEN |Token issuer '%s' does not match expected issuer '%s' |Logged when the issuer in the token does not match the expected issuer
-|JWTValidation-104 |JWKS |Failed to fetch JWKS: HTTP %s |Logged when there is an HTTP error fetching the JWKS
-|JWTValidation-105 |JWKS |Failed to parse JWKS JSON: %s |Logged when there is an error parsing the JWKS JSON
-|JWTValidation-106 |TOKEN |Failed to decode JWT Token |Logged when the JWT token cannot be decoded
-|JWTValidation-107 |TOKEN |Invalid JWT Token format: expected 3 parts but got %s |Logged when the JWT token format is invalid
-|JWTValidation-108 |TOKEN |Failed to decode header part |Logged when the header part of the JWT token cannot be decoded
-|JWTValidation-109 |TOKEN |Failed to decode payload part |Logged when the payload part of the JWT token cannot be decoded
-|JWTValidation-110 |TOKEN |Decoded part exceeds maximum size limit of %s bytes |Logged when a decoded part of the token exceeds the maximum size limit
-|JWTValidation-111 |TOKEN |Unsupported algorithm: %s |Logged when an unsupported algorithm is encountered
-|JWTValidation-112 |JWKS |JWKS JSON does not contain 'keys' array or 'kty' field |Logged when the JWKS JSON is missing required fields
-|JWTValidation-113 |TOKEN |Token has a 'not before' claim that is more than 60 seconds in the future |Logged when a token has a 'not before' claim that is too far in the future
-|JWTValidation-114 |TOKEN |Unknown validation type: %s |Logged when an unknown token type is encountered
-|JWTValidation-115 |JWKS |Failed to read JWKS from file: %s |Logged when there is an error reading the JWKS from a file
-|JWTValidation-116 |TOKEN |Token is missing required claim: %s |Logged when a token is missing a required claim
-|JWTValidation-117 |TOKEN |Token has expired |Logged when a token has expired
-|JWTValidation-118 |TOKEN |Token authorized party '%s' does not match expected client ID '%s' |Logged when the azp claim in the token does not match the expected client ID
-|JWTValidation-119 |TOKEN |Missing recommended element: %s |Logged when a recommended element is missing from the token
-|JWTValidation-120 |TOKEN |Token audience %s does not match any of the expected audiences %s |Logged when the audience in the token does not match any of the expected audiences
-|JWTValidation-121 |TOKEN |No configuration found for issuer: %s |Logged when no configuration is found for the issuer
-|JWTValidation-122 |JWKS |Given contentKey '%s' does not resolve to a non base64 encoded String, actual content = %s |Logged when a content key does not resolve to a base64 encoded string
-|JWTValidation-123 |TOKEN |Algorithm %s is explicitly rejected for security reasons |Logged when an algorithm is explicitly rejected for security reasons
-|JWTValidation-124 |JWKS |Key rotation detected: JWKS content has changed |Logged when key rotation is detected in the JWKS content
-|JWTValidation-125 |WELLKNOWN |Accessibility check for %s URL '%s' returned HTTP status %s. It might be inaccessible. |Logged when an accessibility check for a URL returns a non-successful HTTP status code
-|JWTValidation-126 |JWKS |Creating HttpJwksLoaderConfig with invalid JWKS URI. The loader will return empty results. |Logged when an invalid JWKS URI is provided to HttpJwksLoaderConfig
-|JWTValidation-127 |JWKS |Load operation failed but using cached content |Logged when JWKS load operation fails but cached content is available and used
-|JWTValidation-128 |JWKS |Load operation failed with no cached content available |Logged when JWKS load operation fails and no cached content is available
-|JWTValidation-129 |JWKS |Key missing required 'kty' parameter |Logged when a JWK key is missing the required 'kty' parameter
-|JWTValidation-130 |JWKS |Unsupported key type: %s |Logged when an unsupported JWK key type is encountered
-|JWTValidation-131 |JWKS |Key ID exceeds maximum length: %s |Logged when a JWK key ID exceeds the maximum allowed length
-|JWTValidation-132 |JWKS |Invalid or unsupported algorithm: %s |Logged when an invalid or unsupported algorithm is encountered in a JWK
-|JWTValidation-133 |TOKEN |Found unhealthy issuer config: %s |Logged when an issuer configuration is found to be unhealthy during health checks
-|JWTValidation-134 |JWKS |Background refresh skipped - no HTTP cache available |Logged when background JWKS refresh is skipped due to missing HTTP cache
-|JWTValidation-135 |JWKS |Background JWKS refresh failed: %s |Logged when background JWKS refresh operation fails
-|JWTValidation-136 |JWKS |Failed to resolve JWKS URI from well-known resolver |Logged when JWKS URI resolution fails from well-known discovery
-|JWTValidation-137 |HTTP |HTTP %s (%s) from %s |Logged when HTTP requests return non-success status codes
-|JWTValidation-138 |HTTP |Failed to fetch HTTP content from %s |Logged when HTTP content fetching fails due to IOException
-|JWTValidation-139 |HTTP |Interrupted while fetching HTTP content from %s |Logged when HTTP content fetching is interrupted
-|JWTValidation-140 |JWKS |JWKS object is null |Logged when JWKS object validation fails due to null object
-|JWTValidation-141 |JWKS |JWKS object has excessive number of properties: %s |Logged when JWKS object has too many top-level properties
-|JWTValidation-142 |JWKS |JWKS keys array exceeds maximum size: %s |Logged when JWKS keys array exceeds the maximum allowed size
-|JWTValidation-143 |JWKS |JWKS keys array is empty |Logged when JWKS keys array is empty
-|JWTValidation-144 |JWKS |JWK is missing required field 'kty' |Logged when a JWK entry is missing the required 'kty' field
-|JWTValidation-145 |JWKS |Failed to parse RSA key with ID %s: %s |Logged when RSA key parsing fails for a specific key ID
-|JWTValidation-146 |JWKS |Failed to parse EC key with ID %s: %s |Logged when EC key parsing fails for a specific key ID
+|JWTValidation-103 |TOKEN |Failed to decode JWT Token |Logged when the JWT token cannot be decoded
+|JWTValidation-104 |TOKEN |Invalid JWT Token format: expected 3 parts but got %s |Logged when the JWT token format is invalid
+|JWTValidation-105 |TOKEN |Decoded part exceeds maximum size limit of %s bytes |Logged when a decoded part of the token exceeds the maximum size limit
+|JWTValidation-106 |TOKEN |Unsupported algorithm: %s |Logged when an unsupported algorithm is encountered
+|JWTValidation-107 |TOKEN |Token has a 'not before' claim that is more than 60 seconds in the future |Logged when a token has a 'not before' claim that is too far in the future
+|JWTValidation-108 |TOKEN |Unknown validation type: %s |Logged when an unknown token type is encountered
+|JWTValidation-109 |TOKEN |Token is missing required claim: %s |Logged when a token is missing a required claim
+|JWTValidation-110 |TOKEN |Token has expired |Logged when a token has expired
+|JWTValidation-111 |TOKEN |Token authorized party '%s' does not match expected client ID '%s' |Logged when the azp claim in the token does not match the expected client ID
+|JWTValidation-112 |TOKEN |Missing recommended element: %s |Logged when a recommended element is missing from the token
+|JWTValidation-113 |TOKEN |Token audience %s does not match any of the expected audiences %s |Logged when the audience in the token does not match any of the expected audiences
+|JWTValidation-114 |TOKEN |No configuration found for issuer: %s |Logged when no configuration is found for the issuer
+|JWTValidation-115 |TOKEN |Algorithm %s is explicitly rejected for security reasons |Logged when an algorithm is explicitly rejected for security reasons
+|JWTValidation-116 |JWKS |Creating HttpJwksLoaderConfig with invalid JWKS URI. The loader will return empty results. |Logged when an invalid JWKS URI is provided to HttpJwksLoaderConfig
+|JWTValidation-117 |JWKS |Load operation failed but using cached content |Logged when JWKS load operation fails but cached content is available and used
+|JWTValidation-118 |JWKS |Load operation failed with no cached content available |Logged when JWKS load operation fails and no cached content is available
+|JWTValidation-119 |JWKS |JWK is missing required field 'kty' |Logged when a JWK key is missing the required 'kty' parameter
+|JWTValidation-120 |JWKS |Unsupported key type: %s |Logged when an unsupported JWK key type is encountered
+|JWTValidation-121 |JWKS |Key ID exceeds maximum length: %s |Logged when a JWK key ID exceeds the maximum allowed length
+|JWTValidation-122 |JWKS |Invalid or unsupported algorithm: %s |Logged when an invalid or unsupported algorithm is encountered in a JWK
+|JWTValidation-123 |TOKEN |Found unhealthy issuer config: %s |Logged when an issuer configuration is found to be unhealthy during health checks
+|JWTValidation-124 |JWKS |Background refresh skipped - no HTTP cache available |Logged when background JWKS refresh is skipped due to missing HTTP cache
+|JWTValidation-125 |JWKS |Background JWKS refresh failed: %s |Logged when background JWKS refresh operation fails
+|JWTValidation-126 |JWKS |Failed to resolve JWKS URI from well-known resolver |Logged when JWKS URI resolution fails from well-known discovery
+|JWTValidation-127 |JWKS |JWKS object is null |Logged when JWKS object validation fails due to null object
+|JWTValidation-128 |JWKS |JWKS keys array exceeds maximum size: %s |Logged when JWKS keys array exceeds the maximum allowed size
+|JWTValidation-129 |JWKS |JWKS keys array is empty |Logged when JWKS keys array is empty
+|JWTValidation-130 |JWKS |Failed to parse RSA key with ID %s: %s |Logged when RSA key parsing fails for a specific key ID
+|JWTValidation-131 |JWKS |Failed to parse EC key with ID %s: %s |Logged when EC key parsing fails for a specific key ID
+|JWTValidation-132 |RETRY |Retry operation '%s' failed after %s attempts in %sms |Logged when a retry operation fails after exhausting all attempts
+|JWTValidation-133 |JSON |Failed to parse JWKS JSON: %s |Logged when JSON parsing fails for JWKS content and an empty result is returned as fallback
+|JWTValidation-134 |ISSUER |IssuerConfig for issuer '%s' has claimSubOptional=true. This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. Use this setting only when necessary and ensure appropriate alternative validation mechanisms. |Logged when an issuer configuration has the subject claim marked as optional, which violates RFC 7519 requirements
 |===
 
-== ERROR Level (200-299)
+== ERROR Level (200-209)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -114,16 +101,76 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-200 |TOKEN |Failed to validate validation signature: %s |Logged when a token signature validation fails
 |JWTValidation-201 |JWKS |JWKS content size exceeds maximum allowed size (upperLimit=%s, actual=%s) |Logged when the JWKS content size exceeds the maximum allowed size, showing both the configured upper limit and the actual content size
 |JWTValidation-202 |JWKS |Failed to parse JWKS JSON: %s |Logged when there is an error parsing the JWKS JSON
-|JWTValidation-203 |WELLKNOWN |Issuer validation failed. Document issuer '%s' (normalized to base URL for .well-known: %s://%s%s%s) does not match the .well-known URL '%s'. Expected path for .well-known: '%s'. SchemeMatch=%s, HostMatch=%s, PortMatch=%s (IssuerPort=%s, WellKnownPort=%s), PathMatch=%s (WellKnownPath='%s') |Logged when the issuer validation fails because the issuer in the discovery document does not match the well-known URL
-|JWTValidation-204 |JWKS |Failed to load JWKS |Logged when a JWKS load operation fails
-|JWTValidation-205 |WELLKNOWN |Failed to load well-known endpoints from: %s after %s attempts |Logged when loading well-known endpoints fails after multiple retry attempts
-|JWTValidation-206 |JWKS |Unsupported JwksType for HttpJwksLoader: %s |Logged when an unsupported JWKS type is encountered in HttpJwksLoader
-|JWTValidation-207 |WELLKNOWN |Required URL field '%s' is missing in discovery document from %s |Logged when a required URL field is missing from the well-known discovery document
-|JWTValidation-208 |WELLKNOWN |Malformed URL for field '%s': %s from %s - %s |Logged when a URL field in the discovery document is malformed
-|JWTValidation-209 |WELLKNOWN |Failed to parse JSON from %s: %s |Logged when JSON parsing fails for a well-known discovery document
-|JWTValidation-210 |WELLKNOWN |Issuer URL from discovery document is malformed: %s - %s |Logged when the issuer URL in the discovery document is malformed
-|JWTValidation-211 |CACHE |Token passed validation but has no expiration time - this indicates a validation bug |Logged when a validated token unexpectedly has no expiration time, indicating a validation pipeline bug
-|JWTValidation-212 |CACHE |Unexpected error while caching token |Logged when an unexpected error occurs while storing a validated token in the cache
-|JWTValidation-213 |CACHE |Validation function returned null instead of throwing exception |Logged when a validation function unexpectedly returns null instead of throwing an exception on failure
-|JWTValidation-214 |CACHE |Error during cache eviction |Logged when an error occurs during background cache eviction operations
+|JWTValidation-203 |JWKS |Failed to load JWKS |Logged when a JWKS load operation fails
+|JWTValidation-204 |JWKS |Unsupported JwksType for HttpJwksLoader: %s |Logged when an unsupported JWKS type is encountered in HttpJwksLoader
+|JWTValidation-205 |WELLKNOWN |Failed to parse JSON from %s: %s |Logged when JSON parsing fails for a well-known discovery document
+|JWTValidation-206 |CACHE |Token passed validation but has no expiration time - this indicates a validation bug |Logged when a validated token unexpectedly has no expiration time, indicating a validation pipeline bug
+|JWTValidation-207 |CACHE |Unexpected error while caching token |Logged when an unexpected error occurs while storing a validated token in the cache
+|JWTValidation-208 |CACHE |Validation function returned null instead of throwing exception |Logged when a validation function unexpectedly returns null instead of throwing an exception on failure
+|JWTValidation-209 |CACHE |Error during cache eviction |Logged when an error occurs during background cache eviction operations
+|===
+
+== Quarkus Integration Messages
+
+This section documents log messages specific to the Quarkus integration module (cui-jwt-quarkus).
+
+=== Quarkus INFO Level (001-099)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+
+|CUI_JWT_QUARKUS-001 |CONFIG |Resolving issuer configurations from properties |Logged when starting to resolve issuer configurations from Quarkus properties
+|CUI_JWT_QUARKUS-002 |CONFIG |Resolved issuer configuration: %s |Logged when an issuer configuration is successfully resolved
+|CUI_JWT_QUARKUS-003 |CONFIG |Resolved %s enabled issuer configurations |Logged with the total number of enabled issuer configurations
+|CUI_JWT_QUARKUS-004 |CONFIG |Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s |Logged when parser configuration is resolved with its limits
+
+|CUI_JWT_QUARKUS-011 |VALIDATION |Initializing JWT validation components from configuration |Logged when JWT validation components initialization starts
+|CUI_JWT_QUARKUS-012 |VALIDATION |JWT validation components initialized successfully with %s issuers |Logged when JWT validation components are successfully initialized
+|CUI_JWT_QUARKUS-013 |VALIDATION |Resolving access log filter configuration from properties |Logged when access log filter configuration resolution starts
+
+|CUI_JWT_QUARKUS-021 |METRICS |Initializing JwtMetricsCollector |Logged when JWT metrics collector initialization starts
+|CUI_JWT_QUARKUS-022 |METRICS |JwtMetricsCollector initialized with %s event types |Logged when JWT metrics collector is successfully initialized
+
+|CUI_JWT_QUARKUS-041 |CACHE |Resolving access token cache configuration from properties |Logged when access token cache configuration resolution starts
+|CUI_JWT_QUARKUS-042 |CACHE |Access token cache disabled (maxSize=0) |Logged when access token cache is disabled due to zero max size
+|CUI_JWT_QUARKUS-043 |CACHE |Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s |Logged when access token cache is successfully configured
+
+|CUI_JWT_QUARKUS-051 |METRICS |Clearing all JWT metrics |Logged when JWT metrics clearing starts
+|CUI_JWT_QUARKUS-052 |METRICS |JWT metrics cleared successfully |Logged when JWT metrics are successfully cleared
+
+|CUI_JWT_QUARKUS-060 |JWKS |JWKS startup service activated for background key loading |Logged when JWKS startup service is activated
+|CUI_JWT_QUARKUS-061 |JWKS |Starting asynchronous JWKS initialization for %s issuer(s) |Logged when asynchronous JWKS initialization starts
+|CUI_JWT_QUARKUS-062 |JWKS |No issuer configurations found - skipping JWKS initialization |Logged when no issuer configurations are found
+|CUI_JWT_QUARKUS-063 |JWKS |Background JWKS initialization completed successfully |Logged when background JWKS initialization completes successfully
+|CUI_JWT_QUARKUS-064 |JWKS |Background JWKS loading completed for issuer: %s with status: %s |Logged when background JWKS loading completes for a specific issuer
+
+|CUI_JWT_QUARKUS-065 |ACCESS_LOG |CustomAccessLogFilter initialized: %s |Logged when custom access log filter is initialized
+|CUI_JWT_QUARKUS-066 |ACCESS_LOG |%s |Logged for access log entries
+|===
+
+=== Quarkus WARN Level (100-199)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+
+|CUI_JWT_QUARKUS-100 |HEALTH |Error checking JWKS loader for issuer %s: %s |Logged when error occurs checking JWKS loader during health check
+
+|CUI_JWT_QUARKUS-128 |BEARER_TOKEN |Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s |Logged when bearer token doesn't meet all requirements
+
+|CUI_JWT_QUARKUS-131 |JWKS |Background JWKS loading failed for issuer %s: %s |Logged when background JWKS loading fails for an issuer
+
+|CUI_JWT_QUARKUS-133 |METRICS |No Micrometer counter found for event type %s, delta %s lost |Logged when Micrometer counter is not found for an event type
+|CUI_JWT_QUARKUS-134 |JWKS |JWKS loading failed for issuer %s: %s - will retry via background refresh |Logged when JWKS loading fails and will be retried
+|CUI_JWT_QUARKUS-135 |JWKS |Background JWKS initialization encountered issues: %s - on-demand loading will handle this |Logged when background JWKS initialization has issues
+|===
+
+=== Quarkus ERROR Level (200-299)
+
+[cols="1,1,2,2", options="header"]
+|===
+|ID |Component |Message |Description
+
+|CUI_JWT_QUARKUS-201 |INFRASTRUCTURE |Vertx HttpServerRequest context is unavailable - no active request context found |Logged when Vertx request context is not available
 |===

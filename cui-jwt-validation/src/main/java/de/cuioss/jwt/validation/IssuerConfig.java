@@ -15,10 +15,11 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.http.client.LoaderStatus;
+import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
-import de.cuioss.jwt.validation.jwks.LoaderStatus;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
@@ -79,7 +80,7 @@ import java.util.*;
 @Getter
 @EqualsAndHashCode
 @ToString
-public class IssuerConfig implements HealthStatusProvider {
+public class IssuerConfig implements LoadingStatusProvider {
 
     private static final CuiLogger LOGGER = new CuiLogger(IssuerConfig.class);
 
@@ -189,7 +190,8 @@ public class IssuerConfig implements HealthStatusProvider {
         }
 
         // Initialize the JwksLoader with the SecurityEventCounter
-        jwksLoader.initJWKSLoader(securityEventCounter);
+        // For now, we block on completion - proper async handling will be in C6
+        jwksLoader.initJWKSLoader(securityEventCounter).join();
     }
 
 
@@ -214,7 +216,7 @@ public class IssuerConfig implements HealthStatusProvider {
     @NonNull
     public String getIssuerIdentifier() {
         // First try to get issuer identifier from JwksLoader (for well-known discovery)
-        if (jwksLoader.isHealthy() == LoaderStatus.OK) {
+        if (jwksLoader.isLoaderStatusOK()) {
             Optional<String> jwksLoaderIssuer = jwksLoader.getIssuerIdentifier();
             if (jwksLoaderIssuer.isPresent()) {
                 return jwksLoaderIssuer.get();
@@ -236,7 +238,7 @@ public class IssuerConfig implements HealthStatusProvider {
      * <ol>
      *   <li>Returns {@link LoaderStatus#UNDEFINED} immediately if the issuer is disabled</li>
      *   <li>Returns {@link LoaderStatus#UNDEFINED} if the JwksLoader is not initialized</li>
-     *   <li>Delegates to the underlying {@link JwksLoader#isHealthy()} method</li>
+     *   <li>Delegates to the underlying {@link JwksLoader#getLoaderStatus()} method</li>
      * </ol>
      * <p>
      * For HTTP-based loaders, this may trigger lazy loading of JWKS content if not already loaded.
@@ -253,13 +255,13 @@ public class IssuerConfig implements HealthStatusProvider {
      * @since 1.0
      */
     @Override
-    public LoaderStatus isHealthy() {
+    public LoaderStatus getLoaderStatus() {
         // Return UNDEFINED if the issuer is disabled
         if (!enabled) {
             return LoaderStatus.UNDEFINED;
         }
         // Delegate to the underlying JwksLoader
-        return jwksLoader.isHealthy();
+        return jwksLoader.getLoaderStatus();
     }
 
     /**
@@ -285,6 +287,7 @@ public class IssuerConfig implements HealthStatusProvider {
      *   <li>Algorithm preferences and claim mappers are properly initialized</li>
      * </ul>
      */
+    @SuppressWarnings("JavadocLinkAsPlainText")
     public static class IssuerConfigBuilder {
         // Lombok-generated fields
         private boolean enabled = true;
@@ -736,10 +739,8 @@ public class IssuerConfig implements HealthStatusProvider {
 
             // Warn about RFC compliance when subject claim is made optional
             if (claimSubOptional) {
-                LOGGER.warn("IssuerConfig for issuer '%s' has claimSubOptional=true. " +
-                        "This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. " +
-                        "Use this setting only when necessary and ensure appropriate alternative validation mechanisms.",
-                        issuerIdentifier != null ? issuerIdentifier : "unknown");
+                LOGGER.warn(JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING.format(
+                        issuerIdentifier != null ? issuerIdentifier : "unknown"));
             }
 
             return new IssuerConfig(enabled, issuerIdentifier, expectedAudience, expectedClientId,
