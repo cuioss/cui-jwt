@@ -42,10 +42,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -430,13 +426,10 @@ class HttpJwksLoaderGracePeriodTest {
         @Getter
         private final JwksResolveDispatcher moduleDispatcher = new JwksResolveDispatcher();
 
-        private SecurityEventCounter securityEventCounter;
-
         @BeforeEach
         void setUp() {
             moduleDispatcher.setCallCounter(0);
             moduleDispatcher.returnDefault();
-            securityEventCounter = new SecurityEventCounter();
         }
 
         @Test
@@ -587,7 +580,7 @@ class HttpJwksLoaderGracePeriodTest {
             await("Loader initialization")
                     .atMost(3, SECONDS)
                     .until(() -> loader.getLoaderStatus() == LoaderStatus.OK &&
-                               loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent());
+                            loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent());
 
             // Verify the loader has the original key after initialization
             assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
