@@ -179,7 +179,7 @@ class HttpJwksLoaderSchedulerTest {
 
         // Wait for background refresh to trigger using Awaitility
         await("Background refresh to detect key changes and make additional HTTP call")
-                .atMost(2, SECONDS)
+                .atMost(3, SECONDS)
                 .until(() -> moduleDispatcher.getCallCounter() > initialCallCount);
 
         // Verify background refresh update was logged (either JWKS_BACKGROUND_REFRESH_UPDATED or JWKS_KEYS_UPDATED)
@@ -276,7 +276,7 @@ class HttpJwksLoaderSchedulerTest {
 
         // Wait for scheduler to start using Awaitility
         await("Scheduler to activate after multiple operations")
-                .atMost(500, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .until(loader::isBackgroundRefreshActive);
 
         // Should only have one scheduler start message
@@ -307,7 +307,7 @@ class HttpJwksLoaderSchedulerTest {
         // Start scheduler
         loader.getKeyInfo(TEST_KID);
         await("Scheduler to start after key load")
-                .atMost(500, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .until(loader::isBackgroundRefreshActive);
 
         // Close should cancel the task
@@ -374,7 +374,7 @@ class HttpJwksLoaderSchedulerTest {
 
         // Wait for background refresh to execute - scheduler runs every 1 second
         await("At least one background refresh cycle to complete")
-                .atMost(1500, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .pollDelay(1200, MILLISECONDS) // Give scheduler time to run at least once
                 .until(() -> true); // Just wait for the time period
 

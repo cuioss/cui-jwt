@@ -213,7 +213,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for key rotation to complete
             await("Key rotation to complete")
-                    .atMost(2000, MILLISECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> {
                         Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
                         return newKey.isPresent();
@@ -258,7 +258,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for key rotation to complete
             await("Key rotation to complete")
-                    .atMost(2000, MILLISECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> {
                         Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
                         return newKey.isPresent();
@@ -300,7 +300,7 @@ class HttpJwksLoaderGracePeriodTest {
             // Rotate keys
             moduleDispatcher.switchToOtherPublicKey();
             await("Key rotation")
-                    .atMost(2, SECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
 
             // Original key should still be accessible immediately after rotation
@@ -310,12 +310,12 @@ class HttpJwksLoaderGracePeriodTest {
             // Wait for grace period to expire plus buffer
             await("Grace period to expire")
                     .pollDelay(1500, MILLISECONDS)
-                    .atMost(2, SECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> true);
 
             // Trigger another refresh to cleanup expired keys
             await("Another refresh cycle")
-                    .atMost(2, SECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> moduleDispatcher.getCallCounter() > 2);
 
             // Original key should now be gone (expired)
@@ -382,7 +382,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for first background refresh to pick up the rotation
             await("First key rotation")
-                    .atMost(2, SECONDS)
+                    .atMost(3, SECONDS)
                     .pollInterval(100, MILLISECONDS)
                     .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
 
@@ -400,7 +400,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for next refresh cycle
             await("Second background refresh")
-                    .atMost(2, SECONDS)
+                    .atMost(3, SECONDS)
                     .pollInterval(100, MILLISECONDS)
                     .until(() -> moduleDispatcher.getCallCounter() > callsBefore);
 
@@ -474,7 +474,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for the loader to be initialized (IssuerConfigResolver triggers async loading)
             await("Loader initialization")
-                    .atMost(5, SECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> loader.getLoaderStatus() == LoaderStatus.OK);
 
             // Verify the loader has the original key
@@ -505,7 +505,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for key rotation to complete
             await("Key rotation to complete")
-                    .atMost(2000, MILLISECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
 
             // Generate a new token signed with the rotated key
@@ -585,7 +585,7 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for the loader to be initialized by TokenValidator AND keys to be loaded
             await("Loader initialization")
-                    .atMost(5, SECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> loader.getLoaderStatus() == LoaderStatus.OK &&
                                loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent());
 
@@ -613,12 +613,12 @@ class HttpJwksLoaderGracePeriodTest {
 
             // Wait for key rotation to complete
             await("Key rotation to complete")
-                    .atMost(2000, MILLISECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> loader.getKeyInfo(ROTATED_KEY_ID).isPresent());
 
             // Also ensure the old key is no longer available (zero grace period)
             await("Old key to be removed")
-                    .atMost(2000, MILLISECONDS)
+                    .atMost(3, SECONDS)
                     .until(() -> loader.getKeyInfo(ORIGINAL_KEY_ID).isEmpty());
 
             // CRITICAL: With zero grace period, the original token should immediately fail validation

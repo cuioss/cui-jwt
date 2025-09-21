@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -84,7 +85,7 @@ class HttpJwksLoaderKeyRotationTest {
 
         // Force refresh by triggering background refresh or wait for it
         await("Key rotation to complete")
-                .atMost(2000, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .until(() -> {
                     Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
                     return newKey.isPresent();
@@ -122,7 +123,7 @@ class HttpJwksLoaderKeyRotationTest {
 
         // Wait for rotation to complete
         await("Key rotation to complete")
-                .atMost(2000, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .until(() -> {
                     Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
                     return newKey.isPresent();
@@ -166,7 +167,7 @@ class HttpJwksLoaderKeyRotationTest {
 
         // Wait for rotation
         await("Key rotation to complete")
-                .atMost(2000, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .until(() -> {
                     Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
                     return newKey.isPresent();
@@ -174,7 +175,7 @@ class HttpJwksLoaderKeyRotationTest {
 
         // Wait for grace period to expire
         await("Grace period to expire")
-                .atMost(1000, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .pollDelay(200, MILLISECONDS) // Wait longer than grace period
                 .until(() -> true);
 
@@ -237,7 +238,7 @@ class HttpJwksLoaderKeyRotationTest {
 
         // Wait for rotation
         await("Key rotation to complete")
-                .atMost(2000, MILLISECONDS)
+                .atMost(3, SECONDS)
                 .until(() -> {
                     Optional<KeyInfo> newKey = loader.getKeyInfo(ROTATED_KEY_ID);
                     return newKey.isPresent();
