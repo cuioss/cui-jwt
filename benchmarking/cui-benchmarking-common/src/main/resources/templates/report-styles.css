@@ -246,11 +246,22 @@ body {
 
 .visualizer-container {
     margin-top: 1rem;
-    min-height: 600px;
+    height: calc(100vh - 300px); /* Adjust for header and footer */
+    min-height: 500px;
+    max-height: 900px;
+    display: flex;
+    flex-direction: column;
 }
 
-.jmh-visualizer iframe {
+.jmh-visualizer iframe,
+#jmh-visualizer-frame {
     background: white;
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    min-height: 500px;
 }
 
 #visualizer-error h3 {
