@@ -36,8 +36,7 @@ class AbstractMetricsExporterTest {
     @TempDir
     Path tempDir;
 
-    @Test
-    void shouldFormatNumbersCorrectlyWithoutDecimalForLargeValues() throws IOException {
+    @Test void shouldFormatNumbersCorrectlyWithoutDecimalForLargeValues() throws IOException {
         // Given - a test implementation of AbstractMetricsExporter
         TestMetricsExporter exporter = new TestMetricsExporter(tempDir.toString());
 
@@ -96,8 +95,7 @@ class AbstractMetricsExporterTest {
             super(outputDirectory);
         }
 
-        @Override
-        public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) {
+        @Override public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) {
             // Not needed for this test
         }
 

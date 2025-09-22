@@ -92,11 +92,11 @@ Performance Score = (839.09 × 0.5) + (285.71 × 0.5)
 
 [source,text]
 ----
-Performance Score: 32000 (45k ops/s, 0.15ms)
-                   ↑      ↑            ↑
-                   |      |            └─ Average validation time
-                   |      └─ Throughput (rounded)
-                   └─ Weighted score
+Performance Score: Grade A (45k ops/s, 0.15ms)
+                      ↑      ↑            ↑
+                      |      |            └─ Average validation time
+                      |      └─ Throughput (rounded)
+                      └─ Grade based on score
 ----
 
 == Usage
