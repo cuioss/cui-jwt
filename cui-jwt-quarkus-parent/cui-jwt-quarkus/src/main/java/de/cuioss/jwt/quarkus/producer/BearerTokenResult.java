@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import jakarta.ws.rs.core.Response;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
@@ -53,14 +54,12 @@ import java.util.Set;
  * BearerTokenResult tokenResult;
  *
  * public Response handleRequest() {
- *     if (tokenResult.isSuccessfullyAuthorized()) {
- *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
- *         // Use validated token
- *         return Response.ok().build();
- *     } else {
- *         // Return appropriate error response
- *         return BearerTokenResponseFactory.createResponse(tokenResult);
+ *     if (tokenResult.isNotSuccessfullyAuthorized()) {
+ *         return tokenResult.createErrorResponse();
  *     }
+ *     AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *     // Use validated token
+ *     return Response.ok().build();
  * }
  * }</pre>
  *
@@ -286,6 +285,32 @@ public class BearerTokenResult implements Serializable {
      */
     public boolean isNotSuccessfullyAuthorized() {
         return status != BearerTokenStatus.FULLY_VERIFIED;
+    }
+
+    /**
+     * Creates an appropriate error response based on the token validation result.
+     * <p>
+     * This method simplifies error handling by directly creating the HTTP response
+     * for failed validations. It follows OAuth 2.0 Bearer Token specification (RFC 6750)
+     * and OAuth Step-Up Authentication Challenge best practices.
+     * <p>
+     * Standard usage pattern:
+     * <pre>{@code
+     * if (tokenResult.isNotSuccessfullyAuthorized()) {
+     *     return tokenResult.createErrorResponse();
+     * }
+     * // ... positive case business logic
+     * }</pre>
+     *
+     * @return Response object with appropriate HTTP status code, headers, and body
+     * @throws IllegalStateException if called on a successfully authorized token
+     * @since 1.0
+     */
+    public Response createErrorResponse() {
+        if (isSuccessfullyAuthorized()) {
+            throw new IllegalStateException("Cannot create error response for successfully authorized token");
+        }
+        return BearerTokenResponseFactory.createResponse(this);
     }
 
 }

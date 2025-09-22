@@ -25,7 +25,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  * token validation and respond appropriately.
  * <p>
  * Each status corresponds to a specific validation scenario, and appropriate
- * HTTP responses can be created using the {@link BearerTokenResponseFactory}.
+ * HTTP responses can be created using {@link BearerTokenResult#createErrorResponse()}.
  *
  * @author Oliver Wolff
  * @since 1.0

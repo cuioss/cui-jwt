@@ -44,14 +44,12 @@ import java.lang.annotation.Target;
  *
  *     @GET
  *     public Response getData() {
- *         if (tokenResult.isSuccessfullyAuthorized()) {
- *             AccessTokenContent token = tokenResult.getAccessTokenContent().get();
- *             // Use validated token
- *             return Response.ok(token.getSubject()).build();
- *         } else {
- *             // Return appropriate OAuth-compliant error response
- *             return BearerTokenResponseFactory.createResponse(tokenResult);
+ *         if (tokenResult.isNotSuccessfullyAuthorized()) {
+ *             return tokenResult.createErrorResponse();
  *         }
+ *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *         // Use validated token
+ *         return Response.ok(token.getSubject()).build();
  *     }
  * }
  * }</pre>

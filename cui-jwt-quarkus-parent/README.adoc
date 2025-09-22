@@ -111,16 +111,12 @@ public class InstanceEndpoint {
     @GET
     @Path("/data")
     public Response getData() {
-        if (tokenResult.isSuccessfullyAuthorized()) {
-            var tokenOpt = tokenResult.getAccessTokenContent();
-            if (tokenOpt.isPresent()) {
-                AccessTokenContent token = tokenOpt.get();
-                // Token is valid and has required scopes
-                return Response.ok("Data for user: " + token.getSubject().orElse("none")).build();
-            }
+        if (tokenResult.isNotSuccessfullyAuthorized()) {
+            return tokenResult.createErrorResponse();
         }
-        // Token missing, invalid, or lacks required scope
-        return BearerTokenResponseFactory.createResponse(tokenResult);
+        AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+        // Token is valid and has required scopes
+        return Response.ok("Data for user: " + token.getSubject().orElse("none")).build();
     }
 }
 

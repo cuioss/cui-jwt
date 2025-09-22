@@ -57,14 +57,12 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *
  *     @GET
  *     public Response getData() {
- *         if (tokenResult.isSuccessfullyAuthorized()) {
- *             AccessTokenContent token = tokenResult.getAccessTokenContent().get();
- *             // Use validated token - getSubject() returns Optional<String>
- *             return Response.ok(token.getSubject().orElse("unknown")).build();
- *         } else {
- *             // Return appropriate error response
- *             return BearerTokenResponseFactory.createResponse(tokenResult);
+ *         if (tokenResult.isNotSuccessfullyAuthorized()) {
+ *             return tokenResult.createErrorResponse();
  *         }
+ *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *         // Use validated token - getSubject() returns Optional<String>
+ *         return Response.ok(token.getSubject().orElse("unknown")).build();
  *     }
  * }
  * }</pre>
@@ -90,14 +88,13 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * @BearerToken(requiredScopes = {"read"}, requiredRoles = {"user"})
  * BearerTokenResult tokenResult;
  *
- * public void someMethod() {
- *     if (tokenResult.isSuccessfullyAuthorized()) {
- *         AccessTokenContent content = tokenResult.getAccessTokenContent().get();
- *         // Use validated token
- *     } else {
- *         // Handle validation failure with detailed status information
- *         return BearerTokenResponseFactory.createResponse(tokenResult);
+ * public Response someMethod() {
+ *     if (tokenResult.isNotSuccessfullyAuthorized()) {
+ *         return tokenResult.createErrorResponse();
  *     }
+ *     AccessTokenContent content = tokenResult.getAccessTokenContent().get();
+ *     // Use validated token
+ *     return Response.ok().build();
  * }
  * }</pre>
  *
