@@ -59,6 +59,34 @@ jobs:
           # Build validation module first to ensure test artifact is available for benchmarking
           ./mvnw --no-transfer-progress clean install -DskipTests
 
+      - name: Fetch Previous History
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: cuioss/cuioss.github.io
+          ref: main
+          path: previous-pages
+          sparse-checkout: |
+            cui-jwt/benchmarks/micro/history
+            cui-jwt/benchmarks/integration/history
+        continue-on-error: true
+
+      - name: Prepare Historical Data for Benchmarks
+        run: |
+          # Copy previous history to benchmark directories so trend calculation can use it
+          if [ -d "previous-pages/cui-jwt/benchmarks/micro/history" ]; then
+            echo "📜 Preparing micro benchmark history..."
+            mkdir -p benchmarking/benchmark-library/target/benchmark-results/history
+            cp previous-pages/cui-jwt/benchmarks/micro/history/*.json \
+               benchmarking/benchmark-library/target/benchmark-results/history/ 2>/dev/null || true
+          fi
+
+          if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
+            echo "📜 Preparing integration benchmark history..."
+            mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/history
+            cp previous-pages/cui-jwt/benchmarks/integration/history/*.json \
+               benchmarking/benchmark-integration-quarkus/target/benchmark-results/history/ 2>/dev/null || true
+          fi
+
       - name: Run Micro Benchmarks
         run: |
           # Run micro benchmarks using configuration from pom.xml
@@ -105,27 +133,16 @@ jobs:
                "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
           fi
 
-      - name: Fetch Previous History
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: cuioss/cuioss.github.io
-          ref: main
-          path: previous-pages
-          sparse-checkout: |
-            cui-jwt/benchmarks/micro/history
-            cui-jwt/benchmarks/integration/history
-        continue-on-error: true
-        
       - name: Merge Historical Data
         run: |
-          # Copy previous history if it exists
+          # Copy previous history to gh-pages-ready if it exists (already fetched before benchmarks)
           if [ -d "previous-pages/cui-jwt/benchmarks/micro/history" ]; then
             echo "📜 Merging micro benchmark history..."
             mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
             cp -n previous-pages/cui-jwt/benchmarks/micro/history/*.json \
                benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
           fi
-          
+
           if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
             echo "📜 Merging integration benchmark history..."
             mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history
