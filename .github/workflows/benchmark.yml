@@ -170,8 +170,8 @@ jobs:
             cp -r benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/* gh-pages/integration/
             # Copy integration badges to root badges directory
             if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges" ]; then
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/performance-badge.json gh-pages/badges/integration-performance-badge.json 2>/dev/null || true
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/trend-badge.json gh-pages/badges/integration-trend-badge.json 2>/dev/null || true
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/integration-performance-badge.json gh-pages/badges/integration-performance-badge.json 2>/dev/null || true
+              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/integration-trend-badge.json gh-pages/badges/integration-trend-badge.json 2>/dev/null || true
               cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/last-run-badge.json gh-pages/badges/integration-last-run-badge.json 2>/dev/null || true
             fi
           fi
