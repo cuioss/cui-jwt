@@ -325,6 +325,33 @@ class BearerTokenResultTest {
         }
     }
 
+    @Nested
+    @DisplayName("createErrorResponse() Method")
+    class CreateErrorResponseMethod {
+
+        @Test
+        @DisplayName("should throw IllegalStateException when called on successfully authorized token")
+        void shouldThrowExceptionForSuccessfullyAuthorizedToken() {
+            var result = BearerTokenResult.success(createTestToken(), Set.of(), Set.of(), Set.of());
+
+            var exception = assertThrows(IllegalStateException.class, result::createErrorResponse);
+
+            assertTrue(exception.getMessage().contains("Cannot create error response for successfully authorized token"));
+            assertTrue(exception.getMessage().contains("status=" + BearerTokenStatus.FULLY_VERIFIED));
+        }
+
+        @Test
+        @DisplayName("should delegate to BearerTokenResponseFactory for failed authorization")
+        void shouldDelegateToResponseFactoryForFailedAuthorization() {
+            var result = BearerTokenResult.constraintViolation(Set.of("read"), Set.of(), Set.of());
+
+            var response = result.createErrorResponse();
+
+            assertNotNull(response);
+            // Detailed response testing is covered by BearerTokenResponseFactoryTest
+        }
+    }
+
     private AccessTokenContent createTestToken() {
         var holder = new TestTokenHolder(TokenType.ACCESS_TOKEN,
                 ClaimControlParameter.defaultForTokenType(TokenType.ACCESS_TOKEN));
