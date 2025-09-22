@@ -43,6 +43,9 @@
     </footer>
 
     <script>
+        // Store chart instance globally for potential updates or cleanup
+        let trendChartInstance = null;
+
         // Initialize trends page when DOM is loaded
         document.addEventListener('DOMContentLoaded', async function() {
             const loader = new BenchmarkDataLoader();
@@ -79,7 +82,12 @@
             if (ctx && trends.available && trends.chartData) {
                 const chartData = trends.chartData;
 
-                new Chart(ctx, {
+                // Destroy existing chart if it exists
+                if (trendChartInstance) {
+                    trendChartInstance.destroy();
+                }
+
+                trendChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: chartData.labels || [],
