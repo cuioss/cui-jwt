@@ -72,26 +72,32 @@ jobs:
 
       - name: Prepare Historical Data for Benchmarks
         run: |
-          # Copy previous history to benchmark directories so trend calculation can use it
+          # Copy previous history to a separate directory (not under target which gets cleaned)
+          # This directory path will be passed to the benchmarks as a system property
+          export HISTORY_BASE_DIR="${GITHUB_WORKSPACE}/benchmark-history"
+
           if [ -d "previous-pages/cui-jwt/benchmarks/micro/history" ]; then
             echo "📜 Preparing micro benchmark history..."
-            mkdir -p benchmarking/benchmark-library/target/benchmark-results/history
+            mkdir -p "${HISTORY_BASE_DIR}/micro"
             cp previous-pages/cui-jwt/benchmarks/micro/history/*.json \
-               benchmarking/benchmark-library/target/benchmark-results/history/ 2>/dev/null || true
+               "${HISTORY_BASE_DIR}/micro/" 2>/dev/null || true
+            echo "✅ Copied $(ls -1 ${HISTORY_BASE_DIR}/micro/*.json 2>/dev/null | wc -l) micro history files"
           fi
 
           if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
             echo "📜 Preparing integration benchmark history..."
-            mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/history
+            mkdir -p "${HISTORY_BASE_DIR}/integration"
             cp previous-pages/cui-jwt/benchmarks/integration/history/*.json \
-               benchmarking/benchmark-integration-quarkus/target/benchmark-results/history/ 2>/dev/null || true
+               "${HISTORY_BASE_DIR}/integration/" 2>/dev/null || true
+            echo "✅ Copied $(ls -1 ${HISTORY_BASE_DIR}/integration/*.json 2>/dev/null | wc -l) integration history files"
           fi
 
       - name: Run Micro Benchmarks
         run: |
           # Run micro benchmarks using configuration from pom.xml
-          # The benchmarks now automatically generate artifacts in target/benchmark-results
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-library -Pbenchmark
+          # Pass history directory as system property for trend calculation
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+            -Dbenchmark.history.dir="${GITHUB_WORKSPACE}/benchmark-history/micro"
           
           # Verify artifacts were generated
           echo "📊 Micro benchmark artifacts generated:"
@@ -103,9 +109,10 @@ jobs:
       - name: Run Integration Benchmarks
         run: |
           # Run integration benchmarks with native image using profile that includes container startup
-          # The benchmarks now automatically generate artifacts in target/benchmark-results
+          # Pass history directory as system property for trend calculation
           echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark \
+            -Dbenchmark.history.dir="${GITHUB_WORKSPACE}/benchmark-history/integration"
           
           # Verify artifacts were generated
           echo "📊 Integration benchmark artifacts generated:"

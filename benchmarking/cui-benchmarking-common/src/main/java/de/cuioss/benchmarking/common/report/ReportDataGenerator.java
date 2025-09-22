@@ -376,10 +376,22 @@ public class ReportDataGenerator {
     }
 
     private Map<String, Object> createTrendData(String outputDir, BenchmarkMetrics metrics) {
-        Path historyDir = Path.of(outputDir, "history");
+        // Check if external history directory is provided via system property
+        String externalHistoryPath = System.getProperty("benchmark.history.dir");
+        Path historyDir;
+
+        if (externalHistoryPath != null && !externalHistoryPath.isEmpty()) {
+            // Use external history directory (e.g., for CI/CD workflows)
+            historyDir = Path.of(externalHistoryPath);
+            LOGGER.info(INFO.PROCESSING_METRICS.format("Using external history directory: " + historyDir));
+        } else {
+            // Default to output directory/history (for local runs and tests)
+            historyDir = Path.of(outputDir, "history");
+        }
 
         if (!Files.exists(historyDir)) {
             // First run, no history available
+            LOGGER.info(INFO.PROCESSING_METRICS.format("History directory not found: " + historyDir));
             return createNoHistoryResponse();
         }
 
