@@ -129,7 +129,7 @@ public class ReportDataGenerator {
                 trendMetrics = trendProcessor.calculateTrends(metrics, historicalData);
             }
         }
-        badgeGenerator.writeBadgeFiles(metrics, trendMetrics, outputDir);
+        badgeGenerator.writeBadgeFiles(metrics, trendMetrics, type, outputDir);
     }
 
     private Map<String, Object> createMetadata(BenchmarkType type) {

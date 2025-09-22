@@ -38,59 +38,77 @@ class BadgeGeneratorEnhancedTest {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
-    @Test void performanceBadgeGradeColors() {
+    @Test void performanceBadgeWithMetrics() {
         BadgeGenerator generator = new BadgeGenerator();
 
-        // Test A+ grade (brightgreen)
+        // Test A+ grade with high throughput and low latency
         BenchmarkMetrics metricsAPlus = new BenchmarkMetrics(
-                "test", "test", 1000.0, 10.0, 96.0, "A+"
+                "test", "test", 50000.0, 0.12, 96.0, "A+"
         );
         String badgeAPlus = generator.generatePerformanceBadge(metricsAPlus);
         JsonObject jsonAPlus = GSON.fromJson(badgeAPlus, JsonObject.class);
         assertEquals("brightgreen", jsonAPlus.get("color").getAsString());
-        assertEquals("Grade A+", jsonAPlus.get("message").getAsString());
+        assertEquals("Grade A+ (50k ops/s, 0.12ms)", jsonAPlus.get("message").getAsString());
 
-        // Test A grade (green)
+        // Test A grade with formatted metrics
         BenchmarkMetrics metricsA = new BenchmarkMetrics(
-                "test", "test", 1000.0, 10.0, 86.0, "A"
+                "test", "test", 45123.0, 0.145, 86.0, "A"
         );
         String badgeA = generator.generatePerformanceBadge(metricsA);
         JsonObject jsonA = GSON.fromJson(badgeA, JsonObject.class);
         assertEquals("green", jsonA.get("color").getAsString());
-        assertEquals("Grade A", jsonA.get("message").getAsString());
+        assertEquals("Grade A (45k ops/s, 0.15ms)", jsonA.get("message").getAsString());
 
-        // Test B grade (yellowgreen)
+        // Test B grade
         BenchmarkMetrics metricsB = new BenchmarkMetrics(
-                "test", "test", 800.0, 15.0, 76.0, "B"
+                "test", "test", 30000.0, 0.25, 76.0, "B"
         );
         String badgeB = generator.generatePerformanceBadge(metricsB);
         JsonObject jsonB = GSON.fromJson(badgeB, JsonObject.class);
         assertEquals("yellowgreen", jsonB.get("color").getAsString());
-        assertEquals("Grade B", jsonB.get("message").getAsString());
+        assertEquals("Grade B (30k ops/s, 0.25ms)", jsonB.get("message").getAsString());
 
-        // Test C grade (yellow)
+        // Test C grade
         BenchmarkMetrics metricsC = new BenchmarkMetrics(
-                "test", "test", 600.0, 20.0, 66.0, "C"
+                "test", "test", 20000.0, 0.5, 66.0, "C"
         );
         String badgeC = generator.generatePerformanceBadge(metricsC);
         JsonObject jsonC = GSON.fromJson(badgeC, JsonObject.class);
         assertEquals("yellow", jsonC.get("color").getAsString());
+        assertEquals("Grade C (20k ops/s, 0.50ms)", jsonC.get("message").getAsString());
 
-        // Test D grade (orange)
+        // Test D grade
         BenchmarkMetrics metricsD = new BenchmarkMetrics(
-                "test", "test", 400.0, 30.0, 56.0, "D"
+                "test", "test", 10000.0, 1.0, 56.0, "D"
         );
         String badgeD = generator.generatePerformanceBadge(metricsD);
         JsonObject jsonD = GSON.fromJson(badgeD, JsonObject.class);
         assertEquals("orange", jsonD.get("color").getAsString());
+        assertEquals("Grade D (10k ops/s, 1.00ms)", jsonD.get("message").getAsString());
 
-        // Test F grade (red)
+        // Test F grade
         BenchmarkMetrics metricsF = new BenchmarkMetrics(
-                "test", "test", 200.0, 50.0, 45.0, "F"
+                "test", "test", 5000.0, 2.5, 45.0, "F"
         );
         String badgeF = generator.generatePerformanceBadge(metricsF);
         JsonObject jsonF = GSON.fromJson(badgeF, JsonObject.class);
         assertEquals("red", jsonF.get("color").getAsString());
+        assertEquals("Grade F (5k ops/s, 2.50ms)", jsonF.get("message").getAsString());
+
+        // Test edge cases with different throughput ranges
+        BenchmarkMetrics metricsLowThroughput = new BenchmarkMetrics(
+                "test", "test", 500.0, 5.0, 30.0, "F"
+        );
+        String badgeLow = generator.generatePerformanceBadge(metricsLowThroughput);
+        JsonObject jsonLow = GSON.fromJson(badgeLow, JsonObject.class);
+        assertEquals("Grade F (500 ops/s, 5.00ms)", jsonLow.get("message").getAsString());
+
+        BenchmarkMetrics metricsHighThroughput = new BenchmarkMetrics(
+                "test", "test", 150000.0, 0.05, 98.0, "A+"
+        );
+        String badgeHigh = generator.generatePerformanceBadge(metricsHighThroughput);
+        JsonObject jsonHigh = GSON.fromJson(badgeHigh, JsonObject.class);
+        assertEquals("Grade A+ (150k ops/s, 0.05ms)", jsonHigh.get("message").getAsString());
     }
 
     @Test void trendBadgeWithMetrics() {
@@ -180,7 +198,7 @@ class BadgeGeneratorEnhancedTest {
         // Verify performance badge content
         String perfContent = Files.readString(perfBadge);
         JsonObject perfJson = GSON.fromJson(perfContent, JsonObject.class);
-        assertEquals("Grade A", perfJson.get("message").getAsString());
+        assertEquals("Grade A (1k ops/s, 10.00ms)", perfJson.get("message").getAsString());
 
         // Verify trend badge content
         String trendContent = Files.readString(trendBadge);
@@ -234,6 +252,11 @@ class BadgeGeneratorEnhancedTest {
 
         assertTrue(json.has("message"));
         assertFalse(json.get("message").getAsString().isEmpty());
+        // Verify message contains grade and metrics
+        String message = json.get("message").getAsString();
+        assertTrue(message.contains("Grade A"));
+        assertTrue(message.contains("ops/s"));
+        assertTrue(message.contains("ms"));
 
         assertTrue(json.has("color"));
         assertFalse(json.get("color").getAsString().isEmpty());

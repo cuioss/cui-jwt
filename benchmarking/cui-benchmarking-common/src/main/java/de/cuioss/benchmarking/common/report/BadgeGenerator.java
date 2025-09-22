@@ -17,6 +17,7 @@ package de.cuioss.benchmarking.common.report;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
@@ -64,6 +65,7 @@ public class BadgeGenerator {
 
     /**
      * Generates a performance badge JSON based on the benchmark metrics.
+     * Format: "Grade A (45k ops/s, 0.15ms)"
      *
      * @param metrics the current benchmark metrics
      * @return JSON string for the performance badge
@@ -72,7 +74,13 @@ public class BadgeGenerator {
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put(SCHEMA_VERSION, 1);
         badge.put(LABEL, Labels.PERFORMANCE);
-        badge.put(MESSAGE, "Grade " + metrics.performanceGrade());
+
+        String formattedThroughput = formatThroughput(metrics.throughput());
+        String formattedLatency = formatLatency(metrics.latency());
+        String message = String.format(Locale.US, "Grade %s (%s ops/s, %sms)",
+                metrics.performanceGrade(), formattedThroughput, formattedLatency);
+
+        badge.put(MESSAGE, message);
         badge.put(COLOR, getGradeColor(metrics.performanceGrade()));
 
         return gson.toJson(badge);
@@ -129,7 +137,8 @@ public class BadgeGenerator {
     }
 
     /**
-     * Writes all badge files to the specified directory.
+     * Writes all badge files to the specified directory using default MICRO benchmark type.
+     * This method is provided for backward compatibility with tests.
      *
      * @param metrics the current benchmark metrics
      * @param trendMetrics the trend metrics (can be null)
@@ -139,24 +148,40 @@ public class BadgeGenerator {
     public void writeBadgeFiles(BenchmarkMetrics metrics,
             TrendDataProcessor.TrendMetrics trendMetrics,
             String outputDir) throws IOException {
+        writeBadgeFiles(metrics, trendMetrics, BenchmarkType.MICRO, outputDir);
+    }
+
+    /**
+     * Writes all badge files to the specified directory.
+     *
+     * @param metrics the current benchmark metrics
+     * @param trendMetrics the trend metrics (can be null)
+     * @param type the benchmark type (MICRO or INTEGRATION)
+     * @param outputDir the output directory path
+     * @throws IOException if writing badge files fails
+     */
+    public void writeBadgeFiles(BenchmarkMetrics metrics,
+            TrendDataProcessor.TrendMetrics trendMetrics,
+            BenchmarkType type,
+            String outputDir) throws IOException {
         Path badgesDir = Path.of(outputDir, "badges");
         Files.createDirectories(badgesDir);
 
-        // Write performance badge
+        // Write performance badge with appropriate file name based on benchmark type
         String perfBadge = generatePerformanceBadge(metrics);
-        Path perfBadgePath = badgesDir.resolve(FileNames.PERFORMANCE_BADGE_JSON);
+        Path perfBadgePath = badgesDir.resolve(type.getPerformanceBadgeFileName());
         Files.writeString(perfBadgePath, perfBadge);
         LOGGER.info(INFO.GENERATING_REPORTS.format("Performance badge written to " + perfBadgePath));
 
-        // Write trend badge
+        // Write trend badge with appropriate file name based on benchmark type
         String trendBadge = trendMetrics != null
                 ? generateTrendBadge(trendMetrics)
                 : generateDefaultTrendBadge();
-        Path trendBadgePath = badgesDir.resolve(FileNames.TREND_BADGE_JSON);
+        Path trendBadgePath = badgesDir.resolve(type.getTrendBadgeFileName());
         Files.writeString(trendBadgePath, trendBadge);
         LOGGER.info(INFO.GENERATING_REPORTS.format("Trend badge written to " + trendBadgePath));
 
-        // Write last run badge
+        // Write last run badge (same for both types)
         String lastRunBadge = generateLastRunBadge(Instant.now());
         Path lastRunBadgePath = badgesDir.resolve(FileNames.LAST_RUN_BADGE_JSON);
         Files.writeString(lastRunBadgePath, lastRunBadge);
@@ -200,5 +225,35 @@ public class BadgeGenerator {
             case TrendDirection.STABLE -> Arrows.RIGHT;
             default -> Arrows.BULLET;
         };
+    }
+
+    /**
+     * Formats throughput value with appropriate unit (k for thousands).
+     * Examples: 500 -> "500", 1500 -> "1.5k", 45000 -> "45k"
+     */
+    private String formatThroughput(double throughput) {
+        if (throughput >= 1000) {
+            double kThroughput = throughput / 1000.0;
+            if (kThroughput >= 10) {
+                // For values >= 10k, no decimal places
+                return String.format(Locale.US, "%.0fk", kThroughput);
+            } else {
+                // For values < 10k, show one decimal if not .0
+                String formatted = String.format(Locale.US, "%.1fk", kThroughput);
+                return formatted.endsWith(".0k") ?
+                        formatted.substring(0, formatted.length() - 3) + "k" : formatted;
+            }
+        } else {
+            // For values < 1000, show as integer
+            return String.format(Locale.US, "%.0f", throughput);
+        }
+    }
+
+    /**
+     * Formats latency value with appropriate precision.
+     * For values < 1ms: 2 decimals, for values >= 1ms: 2 decimals with trailing zeros
+     */
+    private String formatLatency(double latency) {
+        return String.format(Locale.US, "%.2f", latency);
     }
 }
