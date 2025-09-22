@@ -269,7 +269,7 @@ public class JwtValidationEndpoint {
             return Response.ok(createTokenResponse(token, description + " is valid")).build();
         } else {
             // This shouldn't happen in normal cases with successful authorization
-            LOGGER.warn("Bearer token authorized but no AccessTokenContent present for: %s", description);
+            LOGGER.error("Bearer token authorized but no AccessTokenContent present for: %s", description);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ValidationResponse(false, "Internal error: token content missing"))
                     .build();

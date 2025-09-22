@@ -60,7 +60,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *         if (tokenResult.isNotSuccessfullyAuthorized()) {
  *             return tokenResult.createErrorResponse();
  *         }
- *         AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *         AccessTokenContent token = tokenResult.getAccessTokenContent()
+ *                 .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
  *         // Use validated token - getSubject() returns Optional<String>
  *         return Response.ok(token.getSubject().orElse("unknown")).build();
  *     }
@@ -92,7 +93,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  *     if (tokenResult.isNotSuccessfullyAuthorized()) {
  *         return tokenResult.createErrorResponse();
  *     }
- *     AccessTokenContent content = tokenResult.getAccessTokenContent().get();
+ *     AccessTokenContent content = tokenResult.getAccessTokenContent()
+ *             .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
  *     // Use validated token
  *     return Response.ok().build();
  * }

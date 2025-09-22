@@ -57,7 +57,8 @@ import java.util.Set;
  *     if (tokenResult.isNotSuccessfullyAuthorized()) {
  *         return tokenResult.createErrorResponse();
  *     }
- *     AccessTokenContent token = tokenResult.getAccessTokenContent().get();
+ *     AccessTokenContent token = tokenResult.getAccessTokenContent()
+ *             .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
  *     // Use validated token
  *     return Response.ok().build();
  * }
@@ -308,7 +309,7 @@ public class BearerTokenResult implements Serializable {
      */
     public Response createErrorResponse() {
         if (isSuccessfullyAuthorized()) {
-            throw new IllegalStateException("Cannot create error response for successfully authorized token");
+            throw new IllegalStateException("Cannot create error response for successfully authorized token, status=" + status);
         }
         return BearerTokenResponseFactory.createResponse(this);
     }
