@@ -190,6 +190,14 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(66)
                 .build();
+
+        // Integration Test Endpoint Messages (071-080)
+
+        public static final LogRecord JWT_VALIDATION_ENDPOINT_INITIALIZED = LogRecordModel.builder()
+                .template("JwtValidationEndpoint initialized with TokenValidator and lazy BearerTokenResult instances")
+                .prefix(PREFIX)
+                .identifier(71)
+                .build();
     }
 
     /**
@@ -241,6 +249,26 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(135)
                 .build();
+
+        // Integration Test Token Validation Warnings (141-150)
+
+        public static final LogRecord EXPLICIT_TOKEN_VALIDATION_FAILED = LogRecordModel.builder()
+                .template("Explicit token validation failed: %s")
+                .prefix(PREFIX)
+                .identifier(141)
+                .build();
+
+        public static final LogRecord ID_TOKEN_VALIDATION_FAILED = LogRecordModel.builder()
+                .template("ID token validation failed: %s")
+                .prefix(PREFIX)
+                .identifier(142)
+                .build();
+
+        public static final LogRecord REFRESH_TOKEN_VALIDATION_FAILED = LogRecordModel.builder()
+                .template("Refresh token validation failed: %s")
+                .prefix(PREFIX)
+                .identifier(143)
+                .build();
     }
 
     /**
@@ -255,6 +283,14 @@ public final class CuiJwtQuarkusLogMessages {
                 .template("Vertx HttpServerRequest context is unavailable - no active request context found")
                 .prefix(PREFIX)
                 .identifier(201)
+                .build();
+
+        // Integration Test Token Validation Errors (202-210)
+
+        public static final LogRecord BEARER_TOKEN_CONTENT_MISSING_AFTER_SUCCESS = LogRecordModel.builder()
+                .template("Bearer token authorized but no AccessTokenContent present for: %s")
+                .prefix(PREFIX)
+                .identifier(202)
                 .build();
 
     }
