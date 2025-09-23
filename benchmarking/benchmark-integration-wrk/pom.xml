@@ -163,9 +163,9 @@
                             <outputFile>${wrk.results.dir}/wrk-health-output.txt</outputFile>
                         </configuration>
                     </execution>
-                    <!-- Run OPTIMIZED WRK JWT benchmark with in-memory tokens -->
+                    <!-- Run WRK JWT benchmark with in-memory tokens -->
                     <execution>
-                        <id>run-wrk-jwt-optimized-benchmark</id>
+                        <id>run-wrk-jwt-benchmark</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>exec</goal>
@@ -174,9 +174,9 @@
                             <skip>${skip.benchmark}</skip>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>${wrk.script.dir}/run_optimized_benchmark.sh</argument>
+                                <argument>${wrk.script.dir}/run_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-jwt-optimized-output.txt</outputFile>
+                            <outputFile>${wrk.results.dir}/wrk-jwt-output.txt</outputFile>
                             <environmentVariables>
                                 <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
                                 <REALM>benchmark</REALM>
@@ -223,9 +223,9 @@
                             </systemProperties>
                         </configuration>
                     </execution>
-                    <!-- Run Java post-processing for OPTIMIZED JWT results -->
+                    <!-- Run Java post-processing for JWT results -->
                     <execution>
-                        <id>process-wrk-jwt-optimized-results</id>
+                        <id>process-wrk-jwt-results</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>java</goal>
@@ -234,8 +234,8 @@
                             <skip>${skip.benchmark}</skip>
                             <mainClass>${benchmark.runner}</mainClass>
                             <arguments>
-                                <argument>${wrk.results.dir}/wrk-jwt-optimized-output.txt</argument>
-                                <argument>${wrk.results.dir}/wrk-jwt-optimized-results.json</argument>
+                                <argument>${wrk.results.dir}/wrk-jwt-output.txt</argument>
+                                <argument>${wrk.results.dir}/wrk-jwt-results.json</argument>
                             </arguments>
                             <systemProperties>
                                 <systemProperty>

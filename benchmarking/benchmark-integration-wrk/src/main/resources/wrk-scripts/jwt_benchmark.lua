@@ -120,7 +120,7 @@ function done(summary, latency, requests)
     local req_per_sec = summary.requests / duration_sec
 
     print("=================================================================")
-    print("=== JWT Validation Benchmark Results (OPTIMIZED IN-MEMORY) ===")
+    print("=== JWT Validation Benchmark Results (IN-MEMORY TOKENS) ===")
     print("=================================================================")
     print(string.format("Token pool size:       %d", #tokens))
     print(string.format("Total requests:        %d", summary.requests))

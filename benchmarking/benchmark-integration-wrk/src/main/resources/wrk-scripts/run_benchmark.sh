@@ -19,7 +19,7 @@ WRK_THREADS="${WRK_THREADS:-4}"
 WRK_CONNECTIONS="${WRK_CONNECTIONS:-20}"
 WRK_DURATION="${WRK_DURATION:-30s}"
 WRK_TIMEOUT="${WRK_TIMEOUT:-2s}"
-WRK_SCRIPT="${WRK_SCRIPT:-jwt_optimized.lua}"
+WRK_SCRIPT="${WRK_SCRIPT:-jwt_benchmark.lua}"
 
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -35,7 +35,7 @@ echo ""
 
 # Step 1: Fetch tokens directly to environment variable (no file I/O)
 echo "Fetching $TOKEN_COUNT tokens from Keycloak (in-memory)..."
-TOKEN_DATA=$(bash "$SCRIPT_DIR/fetch_tokens_optimized.sh" \
+TOKEN_DATA=$(bash "$SCRIPT_DIR/fetch_tokens.sh" \
     "$KEYCLOAK_URL" \
     "$REALM" \
     "$CLIENT_ID" \
