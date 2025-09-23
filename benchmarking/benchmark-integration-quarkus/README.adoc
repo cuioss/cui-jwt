@@ -12,6 +12,9 @@ Real-world JWT validation performance testing against live Quarkus applications 
 # Run benchmarks with automatic container management (from project root)
 ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
 
+# Fast mode - skip container start/stop (containers must be running)
+./mvnw clean verify -Pbenchmark -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-quarkus
+
 # Quick validation run
 ./mvnw clean verify -Pbenchmark -Djmh.iterations=1 -Djmh.threads=1 -pl benchmarking/benchmark-integration-quarkus
 
@@ -20,6 +23,10 @@ Real-world JWT validation performance testing against live Quarkus applications 
 
 # Force rebuild of Quarkus native container
 ./mvnw clean verify -Prebuild-container,benchmark -pl benchmarking/benchmark-integration-quarkus
+
+# Start containers manually for fast mode
+cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./scripts/start-integration-container.sh
 ----
 
 == Architecture
@@ -39,6 +46,23 @@ Pre-initialized `TokenRepository` with 100-token pool for realistic cache testin
 * Keycloak: https://localhost:1443
 
 == Configuration
+
+=== Container Lifecycle Management
+
+The `skip.container.lifecycle` property optimizes benchmark iteration:
+
+[options="header"]
+|===
+|Value|Behavior|Use Case
+
+|`false` (default)
+|Full lifecycle: build, start, stop containers
+|CI/CD, first run, clean environment
+
+|`true`
+|Skip container operations, only run benchmarks
+|Fast iteration, containers already running
+|===
 
 === JMH Settings
 

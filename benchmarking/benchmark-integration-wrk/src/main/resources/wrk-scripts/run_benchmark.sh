@@ -55,12 +55,51 @@ TOKEN_LINE_COUNT=$(echo "$TOKEN_DATA" | grep -c '^' || true)
 echo "Successfully loaded $TOKEN_LINE_COUNT tokens in memory"
 echo ""
 
-# Step 2: Run wrk benchmark with tokens in environment
-echo "Starting WRK benchmark with in-memory tokens..."
+# Step 2: Run wrk benchmark with tokens in environment and system monitoring
+echo "Starting WRK benchmark with in-memory tokens and system monitoring..."
 echo "-------------------------------------------------------------------"
 
 # Export token data for the Lua script
 export TOKEN_DATA
+
+# Start system monitoring in background
+MONITORING_LOG="${SCRIPT_DIR}/../../target/benchmark-results/system-metrics.log"
+mkdir -p "$(dirname "$MONITORING_LOG")"
+
+echo "Starting system monitoring (CPU, memory, disk I/O)..."
+(
+    echo "timestamp,cpu_percent,memory_percent,memory_used_mb,processes,load_avg_1min"
+    while true; do
+        # Get current timestamp
+        TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+        # Get CPU and memory stats using ps and vm_stat on macOS
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS monitoring
+            CPU_PERCENT=$(ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
+            MEMORY_PRESSURE=$(memory_pressure | grep "System-wide memory free percentage" | awk '{print $6}' | tr -d '%')
+            MEMORY_PERCENT=$(echo "100 - $MEMORY_PRESSURE" | bc -l 2>/dev/null || echo "0")
+            VM_STATS=$(vm_stat | head -6)
+            FREE_PAGES=$(echo "$VM_STATS" | grep "Pages free" | awk '{print $3}' | tr -d '.')
+            MEMORY_USED_MB=$(echo "($FREE_PAGES * 4096) / 1048576" | bc -l 2>/dev/null || echo "0")
+            PROCESSES=$(ps aux | wc -l)
+            LOAD_AVG=$(uptime | awk -F'load averages: ' '{print $2}' | awk '{print $1}' | tr -d ',')
+        else
+            # Linux monitoring
+            CPU_PERCENT=$(grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$3+$4+$5)} END {print usage}')
+            MEMORY_PERCENT=$(free | grep Mem | awk '{printf("%.1f", $3/$2 * 100.0)}')
+            MEMORY_USED_MB=$(free -m | grep Mem | awk '{print $3}')
+            PROCESSES=$(ps aux | wc -l)
+            LOAD_AVG=$(cat /proc/loadavg | awk '{print $1}')
+        fi
+
+        echo "$TIMESTAMP,$CPU_PERCENT,$MEMORY_PERCENT,$MEMORY_USED_MB,$PROCESSES,$LOAD_AVG"
+        sleep 2
+    done
+) > "$MONITORING_LOG" &
+MONITORING_PID=$!
+
+echo "System monitoring started (PID: $MONITORING_PID)"
 
 # Run wrk with the optimized script
 wrk \
@@ -71,6 +110,13 @@ wrk \
     --latency \
     -s "$SCRIPT_DIR/$WRK_SCRIPT" \
     "$SERVICE_URL/jwt/validate"
+
+# Stop system monitoring
+kill $MONITORING_PID 2>/dev/null
+wait $MONITORING_PID 2>/dev/null
+
+echo "System monitoring stopped"
+echo "System metrics saved to: $MONITORING_LOG"
 
 echo "-------------------------------------------------------------------"
 echo "Benchmark complete!"

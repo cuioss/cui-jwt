@@ -294,43 +294,30 @@ class SimpleMetricsExporterTest {
 
     private static class TestMetricsFetcher implements MetricsFetcher {
 
-        @Override public Map<String, Double> fetchMetrics() {
-            try {
-                String testDataPath = "src/test/resources/sample-jwt-validation-metrics.txt";
-                String content = Files.readString(Path.of(testDataPath));
+        @Override public Map<String, Double> fetchMetrics() throws IOException {
+            Map<String, Double> metrics = new HashMap<>();
+            Path metricsFile = Path.of("src/test/resources/sample-jwt-validation-metrics.txt");
 
-                Map<String, Double> metrics = new HashMap<>();
-                parseQuarkusMetrics(content, metrics);
-                return metrics;
+            String content = Files.readString(metricsFile);
 
-            } catch (IOException e) {
-                LOGGER.error("Failed to load test metrics: %s", e.getMessage());
-                return new HashMap<>();
-            }
-        }
-
-        private void parseQuarkusMetrics(String responseBody, Map<String, Double> results) {
-            String[] lines = responseBody.split("\n");
-            for (String line : lines) {
+            for (String line : content.split("\n")) {
                 line = line.trim();
-
                 if (line.startsWith("#") || line.isEmpty()) {
                     continue;
                 }
 
-                int spaceIndex = line.lastIndexOf(' ');
-                if (spaceIndex > 0) {
-                    String metricPart = line.substring(0, spaceIndex);
-                    String valuePart = line.substring(spaceIndex + 1);
-
+                String[] parts = line.split(" ");
+                if (parts.length >= 2) {
+                    String metricName = parts[0];
                     try {
-                        double value = Double.parseDouble(valuePart);
-                        results.put(metricPart, value);
+                        double value = Double.parseDouble(parts[1]);
+                        metrics.put(metricName, value);
                     } catch (NumberFormatException e) {
-                        // Ignore invalid metrics
+                        // Skip invalid metrics
                     }
                 }
             }
+            return metrics;
         }
     }
 }

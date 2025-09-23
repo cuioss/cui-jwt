@@ -16,6 +16,7 @@
 package de.cuioss.benchmarking.common.report;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
@@ -46,29 +47,25 @@ public class ReportGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ReportGenerator.class);
     private final ReportDataGenerator dataGenerator;
-    private final BenchmarkMetrics metrics;
 
     /**
-     * Creates a ReportGenerator with pre-computed metrics.
-     * 
-     * @param metrics the pre-computed benchmark metrics
+     * Creates a ReportGenerator.
      */
-    public ReportGenerator(BenchmarkMetrics metrics) {
-        this.metrics = metrics;
+    public ReportGenerator() {
         this.dataGenerator = new ReportDataGenerator();
     }
 
     /**
      * Generates the main index page and benchmark data.
      *
-     * @param jsonFile the path to the benchmark JSON results file
-     * @param benchmarkType the type of benchmark being processed  
+     * @param benchmarkData the benchmark data to generate reports from
+     * @param benchmarkType the type of benchmark being processed
      * @param outputDir the output directory for HTML files
-     * @throws IOException if reading JSON or writing files fails
+     * @throws IOException if writing files fails
      */
-    public void generateIndexPage(Path jsonFile, BenchmarkType benchmarkType, String outputDir) throws IOException {
+    public void generateIndexPage(BenchmarkData benchmarkData, BenchmarkType benchmarkType, String outputDir) throws IOException {
         // First generate the data file
-        dataGenerator.generateDataFile(jsonFile, metrics, benchmarkType, outputDir);
+        dataGenerator.generateDataFile(benchmarkData, benchmarkType, outputDir);
 
         // Then copy the index template
         LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));

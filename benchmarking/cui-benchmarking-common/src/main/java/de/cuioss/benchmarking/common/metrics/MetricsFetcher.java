@@ -15,19 +15,21 @@
  */
 package de.cuioss.benchmarking.common.metrics;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
  * Interface for fetching metrics data from various sources.
- * 
+ *
  * @since 1.0
  */
 public interface MetricsFetcher {
 
     /**
      * Fetch metrics data as key-value pairs.
-     * 
+     *
      * @return map of metric names to values
+     * @throws IOException if an I/O error occurs while fetching metrics
      */
-    Map<String, Double> fetchMetrics();
+    Map<String, Double> fetchMetrics() throws IOException;
 }

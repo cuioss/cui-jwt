@@ -48,7 +48,7 @@ public class QuarkusMetricsFetcher implements MetricsFetcher {
         this.httpClient = HttpClientFactory.getInsecureClient();
     }
 
-    @Override public Map<String, Double> fetchMetrics() {
+    @Override public Map<String, Double> fetchMetrics() throws IOException {
         Map<String, Double> results = new HashMap<>();
         String metricsUrl = quarkusUrl + "/q/metrics";
 

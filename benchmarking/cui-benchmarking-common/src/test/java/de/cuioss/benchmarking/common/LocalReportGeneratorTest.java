@@ -16,6 +16,8 @@
 package de.cuioss.benchmarking.common;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.converter.JmhBenchmarkConverter;
+import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
@@ -133,7 +135,23 @@ class LocalReportGeneratorTest {
     }
 
     private void generateIndividualReports(Path jsonFile, BenchmarkType type, Path outputDir) throws IOException {
-        // Generate reports using individual generators for testing
+        // Convert JMH JSON to BenchmarkData
+        JmhBenchmarkConverter converter = new JmhBenchmarkConverter(type);
+        BenchmarkData benchmarkData = converter.convert(jsonFile);
+
+        // Generate reports using new API
+        ReportGenerator reportGen = new ReportGenerator();
+        BadgeGenerator badgeGen = new BadgeGenerator();
+
+        String outputDirStr = outputDir.toString();
+
+        // Generate HTML reports
+        reportGen.generateIndexPage(benchmarkData, type, outputDirStr);
+        reportGen.generateTrendsPage(outputDirStr);
+        reportGen.generateDetailedPage(outputDirStr);
+        reportGen.copySupportFiles(outputDirStr);
+
+        // Generate badges using metrics (still need metrics for badges)
         BenchmarkMetrics metrics;
         if (type == BenchmarkType.INTEGRATION) {
             // For integration tests, use the specific validateJwtThroughput benchmark
@@ -142,18 +160,7 @@ class LocalReportGeneratorTest {
             // For micro benchmarks, auto-detect
             metrics = createTestMetrics(jsonFile);
         }
-        ReportGenerator reportGen = new ReportGenerator(metrics);
-        BadgeGenerator badgeGen = new BadgeGenerator();
 
-        String outputDirStr = outputDir.toString();
-
-        // Generate HTML reports
-        reportGen.generateIndexPage(jsonFile, type, outputDirStr);
-        reportGen.generateTrendsPage(outputDirStr);
-        reportGen.generateDetailedPage(outputDirStr);
-        reportGen.copySupportFiles(outputDirStr);
-
-        // Generate badges using new API
         Path badgesDir = outputDir.resolve("badges");
         Files.createDirectories(badgesDir);
 

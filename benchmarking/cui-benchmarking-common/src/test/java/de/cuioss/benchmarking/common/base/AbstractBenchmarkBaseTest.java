@@ -67,12 +67,10 @@ class AbstractBenchmarkBaseTest {
         String customDir = tempDir.toString() + "/custom-results";
         System.setProperty("benchmark.results.dir", customDir);
 
-        try {
-            testBenchmark.setupBase();
-            assertEquals(customDir, testBenchmark.benchmarkResultsDir);
-        } finally {
-            System.clearProperty("benchmark.results.dir");
-        }
+        testBenchmark.setupBase();
+        assertEquals(customDir, testBenchmark.benchmarkResultsDir);
+
+        System.clearProperty("benchmark.results.dir");
     }
 
     @Test void shouldUseDefaultBenchmarkResultsDir() {

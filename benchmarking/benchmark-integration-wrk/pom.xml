@@ -24,9 +24,6 @@
         <!-- Scripts location -->
         <integration.scripts.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts</integration.scripts.dir>
 
-        <!-- Default benchmark runner -->
-        <benchmark.runner>de.cuioss.jwt.wrk.benchmark.WrkIntegrationRunner</benchmark.runner>
-
         <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
@@ -193,100 +190,23 @@
                             </environmentVariables>
                         </configuration>
                     </execution>
-                    <!-- Run Java post-processing for health results -->
+                    <!-- Process WRK results and generate reports -->
                     <execution>
-                        <id>process-wrk-health-results</id>
+                        <id>process-wrk-results</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
                             <skip>${skip.benchmark}</skip>
-                            <mainClass>${benchmark.runner}</mainClass>
+                            <mainClass>de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor</mainClass>
                             <arguments>
-                                <argument>${wrk.results.dir}/wrk-health-output.txt</argument>
-                                <argument>${wrk.results.dir}/wrk-health-results.json</argument>
+                                <argument>${wrk.results.dir}</argument>
                             </arguments>
                             <systemProperties>
                                 <systemProperty>
-                                    <key>integration.service.url</key>
-                                    <value>${integration.service.url}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>keycloak.url</key>
-                                    <value>${keycloak.url}</value>
-                                </systemProperty>
-                                <systemProperty>
                                     <key>quarkus.metrics.url</key>
                                     <value>${quarkus.metrics.url}</value>
-                                </systemProperty>
-                            </systemProperties>
-                        </configuration>
-                    </execution>
-                    <!-- Run Java post-processing for JWT results -->
-                    <execution>
-                        <id>process-wrk-jwt-results</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <mainClass>${benchmark.runner}</mainClass>
-                            <arguments>
-                                <argument>${wrk.results.dir}/wrk-jwt-output.txt</argument>
-                                <argument>${wrk.results.dir}/wrk-jwt-results.json</argument>
-                            </arguments>
-                            <systemProperties>
-                                <systemProperty>
-                                    <key>integration.service.url</key>
-                                    <value>${integration.service.url}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>keycloak.url</key>
-                                    <value>${keycloak.url}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>quarkus.metrics.url</key>
-                                    <value>${quarkus.metrics.url}</value>
-                                </systemProperty>
-                            </systemProperties>
-                        </configuration>
-                    </execution>
-                    <!-- Generate complete benchmark reports and gh-pages structure -->
-                    <execution>
-                        <id>generate-benchmark-reports</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <mainClass>de.cuioss.jwt.wrk.benchmark.WrkBenchmarkRunner</mainClass>
-                            <systemProperties>
-                                <systemProperty>
-                                    <key>wrk.results.dir</key>
-                                    <value>${wrk.results.dir}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>integration.service.url</key>
-                                    <value>${integration.service.url}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>keycloak.url</key>
-                                    <value>${keycloak.url}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>quarkus.metrics.url</key>
-                                    <value>${quarkus.metrics.url}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>benchmark.history.dir</key>
-                                    <value>${benchmark.history.dir}</value>
-                                </systemProperty>
-                                <systemProperty>
-                                    <key>benchmark.include</key>
-                                    <value>.*</value>
                                 </systemProperty>
                             </systemProperties>
                         </configuration>

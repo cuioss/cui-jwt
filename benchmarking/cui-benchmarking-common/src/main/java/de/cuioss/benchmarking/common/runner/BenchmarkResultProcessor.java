@@ -17,11 +17,10 @@ package de.cuioss.benchmarking.common.runner;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
-import de.cuioss.benchmarking.common.report.BenchmarkMetrics;
+import de.cuioss.benchmarking.common.converter.JmhBenchmarkConverter;
+import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
-import de.cuioss.benchmarking.common.report.MetricsComputer;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
@@ -113,20 +112,21 @@ public class BenchmarkResultProcessor {
                     ". The benchmark runner should have created this file.");
         }
 
-        // Compute metrics once using the pipeline
-        String jsonContent = Files.readString(jsonFile);
-        JsonArray benchmarks = GSON.fromJson(jsonContent, JsonArray.class);
-
-        MetricsComputer computer = new MetricsComputer(throughputBenchmarkName, latencyBenchmarkName);
-        BenchmarkMetrics metrics = computer.computeMetrics(benchmarks);
+        // Convert JMH JSON to BenchmarkData using converter
+        JmhBenchmarkConverter converter = new JmhBenchmarkConverter(benchmarkType);
+        BenchmarkData benchmarkData;
+        try {
+            benchmarkData = converter.convert(jsonFile);
+        } catch (IOException e) {
+            throw new IOException("Failed to convert JMH results to BenchmarkData", e);
+        }
 
         // Copy JMH result to data directory with unified name
         Files.copy(jsonFile, targetJsonFile, StandardCopyOption.REPLACE_EXISTING);
         LOGGER.info(INFO.JMH_RESULT_COPIED.format(targetJsonFile));
 
-        // Generate HTML reports using pre-computed metrics
-        // Note: Badge generation is now handled by ReportDataGenerator inside generateIndexPage
-        generateReports(jsonFile, outputDir, metrics);
+        // Generate HTML reports using BenchmarkData
+        generateReports(benchmarkData, outputDir);
 
         // Generate GitHub Pages structure
         generateGitHubPagesStructure(outputDir);
@@ -154,11 +154,11 @@ public class BenchmarkResultProcessor {
     /**
      * Generates HTML reports with embedded CSS.
      */
-    private void generateReports(Path jsonFile, String outputDir, BenchmarkMetrics metrics) throws IOException {
-        ReportGenerator reportGen = new ReportGenerator(metrics);
+    private void generateReports(BenchmarkData benchmarkData, String outputDir) throws IOException {
+        ReportGenerator reportGen = new ReportGenerator();
 
         LOGGER.info(INFO.GENERATING_REPORTS::format);
-        reportGen.generateIndexPage(jsonFile, benchmarkType, outputDir);
+        reportGen.generateIndexPage(benchmarkData, benchmarkType, outputDir);
         reportGen.generateTrendsPage(outputDir);
         reportGen.generateDetailedPage(outputDir);
         reportGen.copySupportFiles(outputDir);

@@ -15,11 +15,9 @@
  */
 package de.cuioss.benchmarking.common.report;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.constants.BenchmarkConstants;
+import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -70,35 +68,26 @@ public class ReportDataGenerator {
     private final HistoricalDataManager historyManager = new HistoricalDataManager();
 
     /**
-     * Generates a comprehensive data file for report templates using pre-computed metrics.
+     * Generates a comprehensive data file for report templates using BenchmarkData.
      *
-     * @param jsonFile the path to the benchmark JSON results
-     * @param metrics the pre-computed benchmark metrics
+     * @param benchmarkData the benchmark data to generate reports from
      * @param type the benchmark type
      * @param outputDir the output directory
      * @throws IOException if writing fails
      */
-    public void generateDataFile(Path jsonFile, BenchmarkMetrics metrics, BenchmarkType type, String outputDir)
+    public void generateDataFile(BenchmarkData benchmarkData, BenchmarkType type, String outputDir)
             throws IOException {
-
-        String jsonContent = Files.readString(jsonFile);
-        JsonArray benchmarks = JsonSerializationHelper.fromJson(jsonContent, JsonArray.class);
 
         Map<String, Object> data = new LinkedHashMap<>();
 
-        // Add metadata
-        data.put(METADATA, createMetadata(type));
+        // Convert BenchmarkData to report format
+        data.put(METADATA, convertMetadata(benchmarkData.getMetadata()));
+        data.put(OVERVIEW, convertOverview(benchmarkData.getOverview()));
+        data.put(BENCHMARKS, convertBenchmarks(benchmarkData.getBenchmarks()));
+        data.put(CHART_DATA, createChartData(benchmarkData.getBenchmarks()));
 
-        // Add overview using pre-computed metrics
-        data.put(OVERVIEW, createOverview(metrics));
-
-        // Add detailed results
-        data.put(BENCHMARKS, createBenchmarkResults(benchmarks));
-
-        // Add chart data (JavaScript expects "chartData" not "charts")
-        data.put(CHART_DATA, createChartData(benchmarks));
-
-        // Add trend data with real processing
+        // Extract metrics for trend processing
+        BenchmarkMetrics metrics = extractMetrics(benchmarkData.getOverview());
         data.put(TRENDS, createTrendData(outputDir, metrics));
 
         // Write data file to data subdirectory
@@ -132,7 +121,19 @@ public class ReportDataGenerator {
         badgeGenerator.writeBadgeFiles(metrics, trendMetrics, type, outputDir);
     }
 
-    private Map<String, Object> createMetadata(BenchmarkType type) {
+    private Map<String, Object> convertMetadata(BenchmarkData.Metadata metadata) {
+        if (metadata == null) {
+            return createDefaultMetadata(BenchmarkType.MICRO);
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put(TIMESTAMP, metadata.getTimestamp());
+        result.put(DISPLAY_TIMESTAMP, metadata.getDisplayTimestamp());
+        result.put(BENCHMARK_TYPE, metadata.getBenchmarkType());
+        result.put(BenchmarkConstants.Report.JsonFields.REPORT_VERSION, metadata.getReportVersion());
+        return result;
+    }
+
+    private Map<String, Object> createDefaultMetadata(BenchmarkType type) {
         Map<String, Object> metadata = new LinkedHashMap<>();
         Instant now = Instant.now();
         metadata.put(TIMESTAMP, ISO_FORMATTER.format(now.atOffset(ZoneOffset.UTC)));
@@ -143,21 +144,65 @@ public class ReportDataGenerator {
         return metadata;
     }
 
-    private Map<String, Object> createOverview(BenchmarkMetrics metrics) {
+    private Map<String, Object> convertOverview(BenchmarkData.Overview overview) {
+        if (overview == null) {
+            return createDefaultOverview();
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put(BenchmarkConstants.Report.JsonFields.THROUGHPUT, overview.getThroughput());
+        result.put(LATENCY, overview.getLatency());
+        result.put(THROUGHPUT_BENCHMARK_NAME, overview.getThroughputBenchmarkName());
+        result.put(LATENCY_BENCHMARK_NAME, overview.getLatencyBenchmarkName());
+        result.put(PERFORMANCE_SCORE, overview.getPerformanceScore());
+        result.put(PERFORMANCE_GRADE, overview.getPerformanceGrade());
+        result.put(PERFORMANCE_GRADE_CLASS, overview.getPerformanceGradeClass());
+        return result;
+    }
+
+    private Map<String, Object> createDefaultOverview() {
         Map<String, Object> overview = new LinkedHashMap<>();
-
-        // Using pre-computed metrics directly
-        overview.put(BenchmarkConstants.Report.JsonFields.THROUGHPUT, MetricConversionUtil.formatThroughput(metrics.throughput()));
-        overview.put(LATENCY, MetricConversionUtil.formatLatency(metrics.latency()));
-        overview.put(THROUGHPUT_BENCHMARK_NAME, metrics.throughputBenchmarkName());
-        overview.put(LATENCY_BENCHMARK_NAME, metrics.latencyBenchmarkName());
-
-        // Performance metrics (performanceScore is already rounded)
-        overview.put(PERFORMANCE_SCORE, metrics.performanceScore());
-        overview.put(PERFORMANCE_GRADE, metrics.performanceGrade());
-        overview.put(PERFORMANCE_GRADE_CLASS, getGradeClass(metrics.performanceGrade()));
-
+        overview.put(BenchmarkConstants.Report.JsonFields.THROUGHPUT, "N/A");
+        overview.put(LATENCY, "N/A");
+        overview.put(THROUGHPUT_BENCHMARK_NAME, "");
+        overview.put(LATENCY_BENCHMARK_NAME, "");
+        overview.put(PERFORMANCE_SCORE, 0);
+        overview.put(PERFORMANCE_GRADE, "F");
+        overview.put(PERFORMANCE_GRADE_CLASS, GRADE_F);
         return overview;
+    }
+
+    private BenchmarkMetrics extractMetrics(BenchmarkData.Overview overview) {
+        if (overview == null) {
+            return new BenchmarkMetrics("N/A", "N/A", 0.0, 0.0, 0, "F");
+        }
+
+        // Extract numeric values from formatted strings
+        double throughput = parseNumericValue(overview.getThroughput());
+        double latency = parseNumericValue(overview.getLatency());
+
+        return new BenchmarkMetrics(
+                overview.getThroughputBenchmarkName() != null ? overview.getThroughputBenchmarkName() : "N/A",
+                overview.getLatencyBenchmarkName() != null ? overview.getLatencyBenchmarkName() : "N/A",
+                throughput,
+                latency,
+                overview.getPerformanceScore(),
+                overview.getPerformanceGrade() != null ? overview.getPerformanceGrade() : "F"
+        );
+    }
+
+    private double parseNumericValue(String formatted) {
+        if (formatted == null || "N/A".equals(formatted)) {
+            return 0.0;
+        }
+        String numeric = formatted.replaceAll("[^0-9.]", "");
+        if (formatted.contains("K")) {
+            return Double.parseDouble(numeric) * 1000;
+        }
+        try {
+            return Double.parseDouble(numeric);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
     }
 
     private String getGradeClass(String grade) {
@@ -172,63 +217,39 @@ public class ReportDataGenerator {
         };
     }
 
-    private List<Map<String, Object>> createBenchmarkResults(JsonArray benchmarks) {
-        List<Map<String, Object>> results = new ArrayList<>();
+    private List<Map<String, Object>> convertBenchmarks(List<BenchmarkData.Benchmark> benchmarks) {
+        if (benchmarks == null) {
+            return new ArrayList<>();
+        }
 
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (BenchmarkData.Benchmark benchmark : benchmarks) {
             Map<String, Object> result = new LinkedHashMap<>();
 
-            // Basic info
-            String fullName = benchmark.get(BENCHMARK).getAsString();
-            String simpleName = extractSimpleName(fullName);
-            result.put(NAME, simpleName);
-            result.put(FULL_NAME, fullName);
+            result.put(NAME, benchmark.getName());
+            result.put(FULL_NAME, benchmark.getFullName());
+            result.put(MODE, benchmark.getMode());
+            result.put(SCORE, benchmark.getScore());
+            result.put(SCORE_UNIT, benchmark.getScoreUnit());
 
-            // Mode and metrics
-            String mode = benchmark.get(MODE).getAsString();
-            result.put(MODE, mode);
-
-            JsonObject primaryMetric = benchmark.getAsJsonObject(PRIMARY_METRIC);
-            double score = primaryMetric.get(SCORE).getAsDouble();
-            String unit = primaryMetric.get(SCORE_UNIT).getAsString();
-
-            result.put(SCORE, formatScore(score, unit));
-            result.put(SCORE_UNIT, unit);
-
-            // Add throughput or latency fields based on mode
-            if (BenchmarkConstants.Metrics.Modes.THROUGHPUT.equals(mode) || unit.contains(OPS)) {
-                double throughputOps = MetricConversionUtil.convertToOpsPerSecond(score, unit);
-                result.put(BenchmarkConstants.Report.JsonFields.THROUGHPUT, MetricConversionUtil.formatThroughput(throughputOps));
-            } else if (AVERAGE_TIME.equals(mode) || SAMPLE.equals(mode) || unit.contains(SUFFIX_OP)) {
-                double latencyMs = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
-                result.put(BenchmarkConstants.Report.JsonFields.LATENCY, MetricConversionUtil.formatLatency(latencyMs));
+            if (benchmark.getThroughput() != null) {
+                result.put(BenchmarkConstants.Report.JsonFields.THROUGHPUT, benchmark.getThroughput());
+            }
+            if (benchmark.getLatency() != null) {
+                result.put(BenchmarkConstants.Report.JsonFields.LATENCY, benchmark.getLatency());
             }
 
-            // Error margin
-            double error = primaryMetric.get(SCORE_ERROR).getAsDouble();
-            result.put(ERROR, error);
-            result.put(ERROR_PERCENTAGE, calculateErrorPercentage(score, error));
+            result.put(ERROR, benchmark.getError());
+            result.put(ERROR_PERCENTAGE, benchmark.getErrorPercentage());
+            result.put(CONFIDENCE_LOW, benchmark.getConfidenceLow());
+            result.put(CONFIDENCE_HIGH, benchmark.getConfidenceHigh());
 
-            // Confidence intervals
-            JsonArray confidence = primaryMetric.getAsJsonArray(SCORE_CONFIDENCE);
-            if (confidence != null && confidence.size() == 2) {
-                result.put(CONFIDENCE_LOW, confidence.get(0).getAsDouble());
-                result.put(CONFIDENCE_HIGH, confidence.get(1).getAsDouble());
-            }
-
-            // Percentiles (if available)
-            JsonObject percentiles = primaryMetric.getAsJsonObject(SCORE_PERCENTILES);
-            if (percentiles != null) {
-                Map<String, Double> percentileMap = new LinkedHashMap<>();
-                percentiles.entrySet().forEach(entry ->
-                        percentileMap.put(entry.getKey(), entry.getValue().getAsDouble()));
-                result.put(PERCENTILES, percentileMap);
+            if (benchmark.getPercentiles() != null && !benchmark.getPercentiles().isEmpty()) {
+                result.put(PERCENTILES, benchmark.getPercentiles());
             }
 
             results.add(result);
         }
-
         return results;
     }
 
@@ -263,90 +284,70 @@ public class ReportDataGenerator {
         return (error / score) * 100;
     }
 
-    private Map<String, Object> createChartData(JsonArray benchmarks) {
-        Map<String, Object> chartData = new LinkedHashMap<>();
+    private Map<String, Object> createChartData(List<BenchmarkData.Benchmark> benchmarks) {
+        if (benchmarks == null) {
+            benchmarks = new ArrayList<>();
+        }
 
-        // Create data for overview chart - matching JavaScript expectations
+        Map<String, Object> chartData = new LinkedHashMap<>();
         List<String> labels = new ArrayList<>();
         List<Double> throughput = new ArrayList<>();
         List<Double> latency = new ArrayList<>();
 
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            String name = extractSimpleName(benchmark.get(BENCHMARK).getAsString());
-            String mode = benchmark.get(MODE).getAsString();
+        for (BenchmarkData.Benchmark benchmark : benchmarks) {
+            labels.add(benchmark.getName());
 
-            JsonObject primaryMetric = benchmark.getAsJsonObject(PRIMARY_METRIC);
-            double score = primaryMetric.get(SCORE).getAsDouble();
-            String unit = primaryMetric.get(SCORE_UNIT).getAsString();
-
-            labels.add(name);
-
-            if (BenchmarkConstants.Metrics.Modes.THROUGHPUT.equals(mode) || unit.contains(OPS)) {
-                throughput.add(MetricConversionUtil.convertToOpsPerSecond(score, unit));
-                latency.add(null);  // No latency for throughput benchmark
-            } else if (AVERAGE_TIME.equals(mode) || SAMPLE.equals(mode) || unit.contains(SUFFIX_OP)) {
-                throughput.add(null);  // No throughput for latency benchmark
-                latency.add(MetricConversionUtil.convertToMillisecondsPerOp(score, unit));
+            if (BenchmarkConstants.Metrics.Modes.THROUGHPUT.equals(benchmark.getMode()) ||
+                    (benchmark.getScoreUnit() != null && benchmark.getScoreUnit().contains(OPS))) {
+                throughput.add(benchmark.getRawScore());
+                latency.add(null);
+            } else if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode()) ||
+                    (benchmark.getScoreUnit() != null && benchmark.getScoreUnit().contains(SUFFIX_OP))) {
+                throughput.add(null);
+                latency.add(benchmark.getRawScore());
             } else {
-                // Unknown benchmark type, add nulls
                 throughput.add(null);
                 latency.add(null);
             }
         }
 
-        // Direct structure matching JavaScript expectations
         chartData.put(LABELS, labels);
         chartData.put(BenchmarkConstants.Report.JsonFields.THROUGHPUT, throughput);
         chartData.put(BenchmarkConstants.Report.JsonFields.LATENCY, latency);
-
-        // Add percentiles data separately
         chartData.put(PERCENTILES_DATA, createPercentilesChartData(benchmarks));
 
         return chartData;
     }
 
-    private Map<String, Object> createPercentilesChartData(JsonArray benchmarks) {
+    private Map<String, Object> createPercentilesChartData(List<BenchmarkData.Benchmark> benchmarks) {
         Map<String, Object> percentilesChart = new LinkedHashMap<>();
         List<String> percentileLabels = Arrays.asList(LABEL_P0, LABEL_P50, LABEL_P90, LABEL_P95, LABEL_P99, LABEL_P99_9, LABEL_P99_99, LABEL_P100);
         List<String> benchmarkNames = new ArrayList<>();
         Map<String, List<Double>> dataByBenchmark = new LinkedHashMap<>();
 
-        // Standard percentile keys mapping to labels
         String[] percentileKeys = {P_0, P_50, P_90, P_95, P_99, P_99_9, P_99_99, P_100};
 
-        for (JsonElement element : benchmarks) {
-            JsonObject benchmark = element.getAsJsonObject();
-            String mode = benchmark.get(MODE).getAsString();
+        if (benchmarks != null) {
+            for (BenchmarkData.Benchmark benchmark : benchmarks) {
+                if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode())) {
+                    benchmarkNames.add(benchmark.getName());
 
-            // Only process latency benchmarks for percentiles
-            if (AVERAGE_TIME.equals(mode) || SAMPLE.equals(mode)) {
-                String name = extractSimpleName(benchmark.get(BENCHMARK).getAsString());
-                benchmarkNames.add(name);
+                    List<Double> benchmarkData = new ArrayList<>();
+                    Map<String, Double> percentiles = benchmark.getPercentiles();
 
-                List<Double> benchmarkData = new ArrayList<>();
-                JsonObject primaryMetric = benchmark.getAsJsonObject(PRIMARY_METRIC);
-                JsonObject percentiles = primaryMetric.getAsJsonObject(SCORE_PERCENTILES);
-
-                if (percentiles != null) {
-                    String unit = primaryMetric.get(SCORE_UNIT).getAsString();
-                    for (String key : percentileKeys) {
-                        if (percentiles.has(key)) {
-                            double value = percentiles.get(key).getAsDouble();
-                            double msValue = MetricConversionUtil.convertToMillisecondsPerOp(value, unit);
-                            benchmarkData.add(msValue);
-                        } else {
+                    if (percentiles != null && !percentiles.isEmpty()) {
+                        for (String key : percentileKeys) {
+                            Double value = percentiles.get(key);
+                            benchmarkData.add(value);
+                        }
+                    } else {
+                        for (int i = 0; i < percentileKeys.length; i++) {
                             benchmarkData.add(null);
                         }
                     }
-                } else {
-                    // No percentiles data, fill with nulls
-                    for (int i = 0; i < percentileKeys.length; i++) {
-                        benchmarkData.add(null);
-                    }
-                }
 
-                dataByBenchmark.put(name, benchmarkData);
+                    dataByBenchmark.put(benchmark.getName(), benchmarkData);
+                }
             }
         }
 

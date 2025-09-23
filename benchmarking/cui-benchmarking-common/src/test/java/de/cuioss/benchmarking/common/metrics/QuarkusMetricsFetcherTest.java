@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common.metrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,14 +39,14 @@ class QuarkusMetricsFetcherTest {
         assertNotNull(fetcher2);
     }
 
-    @Test void fetchMetricsWithUnreachableServer() {
+    @Test void fetchMetricsWithUnreachableServer() throws IOException {
         // Should return empty map when server is unreachable
         Map<String, Double> metrics = fetcher.fetchMetrics();
         assertNotNull(metrics);
         assertTrue(metrics.isEmpty());
     }
 
-    @Test void fetchMetricsMultipleTimes() {
+    @Test void fetchMetricsMultipleTimes() throws IOException {
         // Test that multiple calls don't cause issues
         Map<String, Double> metrics1 = fetcher.fetchMetrics();
         Map<String, Double> metrics2 = fetcher.fetchMetrics();
@@ -55,7 +56,7 @@ class QuarkusMetricsFetcherTest {
     }
 
 
-    @Test void fetchMetricsWithDifferentUrls() {
+    @Test void fetchMetricsWithDifferentUrls() throws IOException {
         // Test with different URL formats
         QuarkusMetricsFetcher httpFetcher = new QuarkusMetricsFetcher("http://localhost:8080");
         Map<String, Double> httpMetrics = httpFetcher.fetchMetrics();

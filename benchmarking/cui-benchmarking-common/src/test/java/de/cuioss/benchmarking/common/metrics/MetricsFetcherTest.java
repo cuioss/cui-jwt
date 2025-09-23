@@ -17,6 +17,7 @@ package de.cuioss.benchmarking.common.metrics;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MetricsFetcherTest {
 
-    @Test void interfaceImplementation() {
+    @Test void interfaceImplementation() throws IOException {
         // Test that we can implement the interface
         MetricsFetcher fetcher = () -> {
             Map<String, Double> metrics = new HashMap<>();
@@ -38,7 +39,7 @@ class MetricsFetcherTest {
         assertEquals(42.0, result.get("test.metric"));
     }
 
-    @Test void emptyMetricsImplementation() {
+    @Test void emptyMetricsImplementation() throws IOException {
         MetricsFetcher emptyFetcher = HashMap::new;
 
         Map<String, Double> result = emptyFetcher.fetchMetrics();
@@ -46,14 +47,14 @@ class MetricsFetcherTest {
         assertTrue(result.isEmpty());
     }
 
-    @Test void nullReturnImplementation() {
+    @Test void nullReturnImplementation() throws IOException {
         MetricsFetcher nullFetcher = () -> null;
 
         Map<String, Double> result = nullFetcher.fetchMetrics();
         assertNull(result);
     }
 
-    @Test void multipleMetricsImplementation() {
+    @Test void multipleMetricsImplementation() throws IOException {
         MetricsFetcher multipleFetcher = () -> {
             Map<String, Double> metrics = new HashMap<>();
             metrics.put("cpu.usage", 75.5);

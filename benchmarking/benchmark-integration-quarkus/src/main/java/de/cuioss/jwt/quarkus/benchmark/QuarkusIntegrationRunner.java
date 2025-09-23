@@ -26,6 +26,7 @@ import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -107,6 +108,23 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
         // Clean up any integration test resources if needed
         LOGGER.debug("Integration benchmark cleanup completed");
+    }
+
+    @Override protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
+        OptionsBuilder builder = super.buildCommonOptions(config);
+
+        // Add profilers for CPU and memory metrics collection
+        // GC profiler: Tracks garbage collection statistics
+        builder.addProfiler("gc");
+
+        // Stack profiler: Shows hot methods and call stacks
+        builder.addProfiler("stack");
+
+        // Compiler profiler: Tracks JIT compilation activity
+        builder.addProfiler("comp");
+
+        LOGGER.info("JMH profilers enabled: gc, stack, comp");
+        return builder;
     }
 
     /**

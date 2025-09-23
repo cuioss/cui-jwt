@@ -1,0 +1,24 @@
+Running 10s test @ https://localhost:10443/q/health/live
+  4 threads and 20 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     0.98ms  806.06us  33.50ms   93.06%
+    Req/Sec     4.31k   740.35     5.59k    76.98%
+  Latency Distribution
+     50%  805.00us
+     75%    1.08ms
+     90%    1.54ms
+     99%    4.01ms
+  173358 requests in 10.10s, 144.99MB read
+Requests/sec:  17162.79
+Transfer/sec:     14.35MB
+=== Health Check Benchmark Results ===
+Total requests:    0
+Successful:        0 (nan%)
+Errors:            0 (nan%)
+Duration:          10.10s
+Requests/sec:      17162.79
+Avg Latency:       0.98ms
+Max Latency:       33.50ms
+50th percentile:   0.81ms
+90th percentile:   1.54ms
+99th percentile:   4.01ms

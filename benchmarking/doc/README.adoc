@@ -26,8 +26,11 @@ For local development and testing of benchmark results:
 # Run micro benchmarks
 ./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
 
-# Run integration benchmarks  
+# Run integration benchmarks
 ./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
+
+# Run WRK load testing benchmarks
+./mvnw verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
 
 # Generate and view benchmark reports locally
 cd benchmarking/cui-benchmarking-common
@@ -54,7 +57,8 @@ See link:local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 === Performance Analysis
 
-* link:../benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Latest performance metrics and optimization insights
+* link:Analysis-09.2025.adoc[Resource Monitoring Enhancement Analysis (September 2025)] - CPU and RAM utilization monitoring implementation and comparative analysis
+* link:../benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Performance metrics and optimization insights
 
 == Benchmarks
 
@@ -77,6 +81,17 @@ Located in `benchmarking/benchmark-integration-quarkus`:
 * `JwtValidationBenchmark` - Real-world JWT validation performance
 * `JwtHealthBenchmark` - Health check endpoint baseline
 * Network overhead and containerization impact measurement
+* JMH profilers for GC, stack, and compilation analysis
+
+=== Load Testing Benchmarks (benchmark-integration-wrk)
+
+Located in `benchmarking/benchmark-integration-wrk`:
+
+* External HTTP load testing using WRK
+* JWT validation endpoint stress testing
+* Health check endpoint baseline comparison
+* System-level CPU and memory monitoring
+* Cross-platform monitoring support (macOS/Linux)
 
 === Common Infrastructure (cui-benchmarking-common)
 
