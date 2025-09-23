@@ -19,6 +19,7 @@
         <module>cui-benchmarking-common</module>
         <module>benchmark-library</module>
         <module>benchmark-integration-quarkus</module>
+        <module>benchmark-integration-wrk</module>
     </modules>
 
     <properties>
