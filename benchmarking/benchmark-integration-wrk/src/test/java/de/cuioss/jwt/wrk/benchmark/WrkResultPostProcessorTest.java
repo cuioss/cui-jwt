@@ -39,13 +39,11 @@ class WrkResultPostProcessorTest {
 
     private WrkResultPostProcessor processor;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         processor = new WrkResultPostProcessor();
     }
 
-    @Test
-    void comprehensiveStructureGeneration() throws IOException {
+    @Test void comprehensiveStructureGeneration() throws IOException {
         // Copy real benchmark outputs to temp directory
         Path healthSource = Path.of("src/test/resources/wrk-health-output.txt");
         Path jwtSource = Path.of("src/test/resources/wrk-jwt-output.txt");
@@ -60,8 +58,7 @@ class WrkResultPostProcessorTest {
         verifyComprehensiveStructure();
     }
 
-    @Test
-    void parseWrkHealthOutput() throws IOException {
+    @Test void parseWrkHealthOutput() throws IOException {
         // Copy real health output to temp directory
         Path sourceFile = Path.of("src/test/resources/wrk-health-output.txt");
         Path targetFile = tempDir.resolve("wrk-health-output.txt");
@@ -112,8 +109,7 @@ class WrkResultPostProcessorTest {
         assertTrue(p90 <= p99, "P90 should be <= P99");
     }
 
-    @Test
-    void parseWrkJwtOutput() throws IOException {
+    @Test void parseWrkJwtOutput() throws IOException {
         // Copy real JWT output to temp directory
         Path sourceFile = Path.of("src/test/resources/wrk-jwt-output.txt");
         Path targetFile = tempDir.resolve("wrk-jwt-output.txt");
@@ -164,8 +160,7 @@ class WrkResultPostProcessorTest {
         assertTrue(p90 <= p99, "P90 should be <= P99");
     }
 
-    @Test
-    void handlesCompleteWrkOutput() throws IOException {
+    @Test void handlesCompleteWrkOutput() throws IOException {
         // Test with actual WRK output that includes shell wrapper output
         Path jwtFile = tempDir.resolve("wrk-jwt-output.txt");
         Files.copy(Path.of("src/test/resources/wrk-jwt-output.txt"), jwtFile);
@@ -191,8 +186,7 @@ class WrkResultPostProcessorTest {
         assertTrue(foundJwt, "Should parse JWT benchmark from wrapped output");
     }
 
-    @Test
-    void generateGitHubPagesStructure() throws IOException {
+    @Test void generateGitHubPagesStructure() throws IOException {
         // Setup test files
         Path healthFile = tempDir.resolve("wrk-health-output.txt");
         Path jwtFile = tempDir.resolve("wrk-jwt-output.txt");
@@ -215,13 +209,12 @@ class WrkResultPostProcessorTest {
         assertTrue(htmlContent.contains("data-loader.js"), "HTML should reference data loader");
     }
 
-    @Test
-    void overviewGeneration() throws IOException {
+    @Test void overviewGeneration() throws IOException {
         // Setup test files
         Files.copy(Path.of("src/test/resources/wrk-health-output.txt"),
-            tempDir.resolve("wrk-health-output.txt"));
+                tempDir.resolve("wrk-health-output.txt"));
         Files.copy(Path.of("src/test/resources/wrk-jwt-output.txt"),
-            tempDir.resolve("wrk-jwt-output.txt"));
+                tempDir.resolve("wrk-jwt-output.txt"));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -241,8 +234,7 @@ class WrkResultPostProcessorTest {
         assertTrue(overview.has("performanceGrade"));
     }
 
-    @Test
-    void missingFileHandling() throws IOException {
+    @Test void missingFileHandling() throws IOException {
         // Process with no WRK output files - should throw exception
         Path outputDir = tempDir.resolve("output");
         assertThrows(IllegalArgumentException.class, () -> processor.process(tempDir, outputDir));
@@ -252,8 +244,7 @@ class WrkResultPostProcessorTest {
         assertFalse(Files.exists(jsonFile), "JSON should not be created with missing inputs");
     }
 
-    @Test
-    void parseRealWrkFormatVariations() throws IOException {
+    @Test void parseRealWrkFormatVariations() throws IOException {
         // Test with actual WRK output showing various time units
         String wrkOutput = """
             Running 10s test @ https://localhost:10443/test
@@ -293,11 +284,10 @@ class WrkResultPostProcessorTest {
         assertTrue(p50 > 0, "P50 should be positive");
     }
 
-    @Test
-    void systemMetricsIntegration() throws IOException {
+    @Test void systemMetricsIntegration() throws IOException {
         // Setup test files
         Files.copy(Path.of("src/test/resources/wrk-health-output.txt"),
-            tempDir.resolve("wrk-health-output.txt"));
+                tempDir.resolve("wrk-health-output.txt"));
 
         // Set system property to skip metrics fetching (since no server is running)
         System.setProperty("quarkus.metrics.url", "https://nonexistent:10443");

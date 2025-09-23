@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
-
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 

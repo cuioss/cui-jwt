@@ -16,7 +16,6 @@
 package de.cuioss.jwt.integration;
 
 import de.cuioss.tools.logging.CuiLogger;
-
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -173,7 +172,7 @@ class HealthCheckResponsivenessIT extends BaseIntegrationTest {
     }
 
     private record HealthCheckTimingResult(int checkId, String type, Duration responseTime,
-                                         boolean success, String status) {
+    boolean success, String status) {
     }
 
     private record HealthCheckType(String name, String url) {

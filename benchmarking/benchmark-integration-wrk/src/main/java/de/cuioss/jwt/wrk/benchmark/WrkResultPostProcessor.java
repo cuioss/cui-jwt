@@ -17,6 +17,7 @@ package de.cuioss.jwt.wrk.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.WrkBenchmarkConverter;
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
@@ -26,6 +27,7 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.stream.Stream;
 
 /**
@@ -59,8 +61,8 @@ public class WrkResultPostProcessor {
         try {
             Path inputDir = Path.of(args[0]);
             Path outputDir = args.length > 1 ?
-                Path.of(args[1]) :
-                inputDir.getParent().resolve("benchmark-results");
+                    Path.of(args[1]) :
+                    inputDir.getParent().resolve("benchmark-results");
 
             WrkResultPostProcessor processor = new WrkResultPostProcessor();
             processor.process(inputDir, outputDir);
@@ -98,8 +100,8 @@ public class WrkResultPostProcessor {
         boolean hasWrkFiles = false;
         try (Stream<Path> files = Files.list(inputDir)) {
             hasWrkFiles = files.anyMatch(p ->
-                p.getFileName().toString().contains("wrk") &&
-                    p.getFileName().toString().endsWith(".txt")
+                    p.getFileName().toString().contains("wrk") &&
+                            p.getFileName().toString().endsWith(".txt")
             );
         }
 
@@ -141,6 +143,9 @@ public class WrkResultPostProcessor {
 
         LOGGER.info("Generated complete benchmark reports in: " + outputDir);
 
+        // Process Quarkus metrics if available
+        processQuarkusMetrics(inputDir.getParent());
+
         // Log summary
         logSummary(benchmarkData, outputDir);
     }
@@ -171,5 +176,53 @@ public class WrkResultPostProcessor {
         LOGGER.info("  - Badges: " + outputDir.resolve("badges"));
         LOGGER.info("  - API Endpoints: " + outputDir.resolve("api"));
         LOGGER.info("  - GitHub Pages: " + outputDir.resolve("gh-pages-ready"));
+    }
+
+    /**
+     * Process Quarkus metrics if they were downloaded during the benchmark run.
+     *
+     * @param targetDir The target directory containing metrics-download subdirectory
+     */
+    private void processQuarkusMetrics(Path targetDir) {
+        Path metricsDownloadDir = targetDir.resolve("metrics-download");
+
+        if (!Files.exists(metricsDownloadDir)) {
+            LOGGER.info("No Quarkus metrics found (directory not present: " + metricsDownloadDir + ")");
+            return;
+        }
+
+        try {
+            // Check if metrics files exist
+            boolean hasMetricsFiles = false;
+            try (Stream<Path> files = Files.list(metricsDownloadDir)) {
+                hasMetricsFiles = files.anyMatch(p ->
+                        p.getFileName().toString().endsWith(".txt") &&
+                                (p.getFileName().toString().contains("before") ||
+                                        p.getFileName().toString().contains("after") ||
+                                        p.getFileName().toString().contains("quarkus"))
+                );
+            }
+
+            if (!hasMetricsFiles) {
+                LOGGER.info("No Quarkus metrics files found in: " + metricsDownloadDir);
+                return;
+            }
+
+            LOGGER.info("Processing Quarkus metrics from: " + metricsDownloadDir);
+
+            // Process metrics using the common processor
+            QuarkusMetricsPostProcessor metricsProcessor = new QuarkusMetricsPostProcessor(
+                    metricsDownloadDir.toString(),
+                    targetDir.toString()
+            );
+            metricsProcessor.parseAndExportQuarkusMetrics(Instant.now());
+
+            LOGGER.info("Successfully processed Quarkus resource usage metrics");
+            LOGGER.info("Metrics output available at: " + targetDir.resolve("quarkus-metrics.json"));
+
+        } catch (IOException e) {
+            LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());
+            // Don't fail the build, just log the warning
+        }
     }
 }

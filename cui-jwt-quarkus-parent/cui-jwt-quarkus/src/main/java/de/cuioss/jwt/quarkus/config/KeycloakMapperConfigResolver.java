@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.tools.logging.CuiLogger;
-
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;

@@ -136,6 +136,24 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
+                    <!-- Download Quarkus metrics before WRK benchmarks -->
+                    <execution>
+                        <id>download-metrics-before-wrk</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <mainClass>de.cuioss.jwt.wrk.benchmark.QuarkusMetricsFetcher</mainClass>
+                            <arguments>
+                                <argument>${quarkus.metrics.url}</argument>
+                                <argument>${project.build.directory}/metrics-download</argument>
+                                <argument>before-wrk</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
                     <!-- Run WRK health endpoint benchmark -->
                     <execution>
                         <id>run-wrk-health-benchmark</id>
@@ -190,6 +208,24 @@
                             </environmentVariables>
                         </configuration>
                     </execution>
+                    <!-- Download Quarkus metrics after WRK benchmarks -->
+                    <execution>
+                        <id>download-metrics-after-wrk</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <mainClass>de.cuioss.jwt.wrk.benchmark.QuarkusMetricsFetcher</mainClass>
+                            <arguments>
+                                <argument>${quarkus.metrics.url}</argument>
+                                <argument>${project.build.directory}/metrics-download</argument>
+                                <argument>after-wrk</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
                     <!-- Process WRK results and generate reports -->
                     <execution>
                         <id>process-wrk-results</id>
@@ -282,6 +318,23 @@
                                     <arguments>
                                         <argument>-p</argument>
                                         <argument>${wrk.results.dir}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- Create metrics download directory -->
+                            <execution>
+                                <id>create-metrics-download-dir</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.benchmark}</skip>
+                                    <executable>mkdir</executable>
+                                    <arguments>
+                                        <argument>-p</argument>
+                                        <argument>${project.build.directory}/metrics-download</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.servlet;
 
 import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.enterprise.context.RequestScoped;

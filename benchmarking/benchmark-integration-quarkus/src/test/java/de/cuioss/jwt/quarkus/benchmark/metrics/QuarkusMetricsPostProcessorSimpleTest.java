@@ -15,6 +15,8 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;

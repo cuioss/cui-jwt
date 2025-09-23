@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus;
 
 import de.cuioss.tools.logging.LogRecord;
 import de.cuioss.tools.logging.LogRecordModel;
-
 import lombok.experimental.UtilityClass;
 
 /**

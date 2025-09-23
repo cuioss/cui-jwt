@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.servlet.adapter;
 
 import de.cuioss.jwt.quarkus.servlet.VertxHttpServletRequestAdapter;
-
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;

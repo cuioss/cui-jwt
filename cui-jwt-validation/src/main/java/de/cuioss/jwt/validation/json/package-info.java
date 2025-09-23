@@ -35,5 +35,3 @@
  */
 @NullUnmarked
 package de.cuioss.jwt.validation.json;
-
-import org.jspecify.annotations.NullUnmarked;

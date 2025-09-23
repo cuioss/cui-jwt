@@ -18,7 +18,6 @@ package de.cuioss.jwt.integration;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
 import io.restassured.RestAssured;
-
 import org.junit.jupiter.api.BeforeAll;
 
 /**

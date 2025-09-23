@@ -19,11 +19,12 @@ import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
 import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
-import de.cuioss.jwt.quarkus.benchmark.metrics.MetricsPostProcessor;
 import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
+
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -156,10 +157,14 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         LOGGER.info(INFO.EXPORT_JWT_METRICS_COMPLETED.format());
 
         // Process JMH benchmark results to create both http-metrics.json and quarkus-metrics.json
-        // MetricsPostProcessor uses synchronous file I/O, so no delay is needed
-        String benchmarkResultsFile = config.reportConfig().getOrCreateResultFile();
-        MetricsPostProcessor metricsPostProcessor = new MetricsPostProcessor(benchmarkResultsFile, outputDirectory);
-        metricsPostProcessor.parseAndExportAllMetrics(Instant.now());
+        // QuarkusMetricsPostProcessor uses synchronous file I/O, so no delay is needed
+        try {
+            String benchmarkResultsFile = config.reportConfig().getOrCreateResultFile();
+            QuarkusMetricsPostProcessor metricsPostProcessor = new QuarkusMetricsPostProcessor(benchmarkResultsFile, outputDirectory);
+            metricsPostProcessor.parseAndExportQuarkusMetrics(Instant.now());
+        } catch (IOException e) {
+            LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());
+        }
     }
 
     /**

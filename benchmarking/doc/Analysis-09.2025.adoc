@@ -1,159 +1,177 @@
-= Resource Monitoring Enhancement Analysis - September 2025
+= Resource Utilization Comparison Analysis - September 2025
 :source-highlighter: highlight.js
 
-Analysis of benchmark infrastructure enhancements to support comprehensive CPU and RAM utilization monitoring across different benchmark types.
+Analysis of actual CPU and RAM resource consumption by the three key components during benchmark execution: Quarkus system under test, WRK load driver, and JMH benchmark runner.
 
 == Overview
 
-This analysis documents the implementation of resource monitoring capabilities for both JMH-based Quarkus benchmarks and WRK-based load testing benchmarks, providing comprehensive CPU and RAM utilization metrics comparison.
+This analysis compares the actual resource utilization (CPU and RAM) of:
 
-== Infrastructure Enhancements
+1. **Quarkus System Under Test** - The target JWT validation application
+2. **WRK Load Driver** - The HTTP load generation tool
+3. **JMH Benchmark Runner** - The microbenchmark execution environment
 
-=== Quarkus JMH Benchmark Enhancements
+== Resource Utilization Data
 
-Enhanced the `QuarkusIntegrationRunner` to include JMH profilers for detailed JVM-level resource monitoring:
+=== Quarkus System Under Test (from /metrics endpoint)
 
-[source,java]
-----
-@Override
-protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
-    OptionsBuilder builder = super.buildCommonOptions(config);
+**CPU Usage During Different Benchmarks:**
 
-    // Add profilers for CPU and memory metrics collection
-    builder.addProfiler("gc");       // GC statistics
-    builder.addProfiler("stack");    // Hot method analysis
-    builder.addProfiler("comp");     // JIT compilation tracking
+.JMH Integration Benchmarks (benchmark-integration-quarkus)
+- Process CPU Usage: **40.74%** (process_cpu_usage 0.40740279833176374)
+- System CPU Usage: **41%** (from metrics JSON)
+- Available CPUs: **4 cores** (system_cpu_count 4.0)
+- Source: `/benchmarking/benchmark-integration-quarkus/target/metrics-download/quarkus-metrics.txt`
 
-    return builder;
-}
-----
+.WRK Load Testing (benchmark-integration-wrk)
+- Process CPU Usage: **NOT COLLECTED** (metrics download not implemented)
+- System CPU Usage: **NOT COLLECTED** (metrics download not implemented)
+- Available CPUs: **4 cores** (assumed)
+- **CRITICAL GAP**: WRK benchmarks do not download Quarkus metrics, only system-wide data available
 
-=== WRK Benchmark System Monitoring
+**Memory Usage:**
+- Heap Memory Used: **17.3 MB** (7,864,320 + 9,437,184 bytes)
+  - Old Generation: 7.86 MB
+  - Eden Space: 9.44 MB
+  - Survivor Space: 0 MB
+- Heap Memory Committed: **17.3 MB** (same as used - fully utilized)
+- Non-Heap Memory: **0 MB** (runtime code cache unused in native image)
 
-Implemented comprehensive system-level monitoring in the WRK benchmark script with cross-platform support:
+**Validation Performance:**
+- JWT Validations: **5,864,975 operations**
+- Validation Latency P50: **237 microseconds**
+- Validation Latency P99: **6.969 milliseconds**
 
-[source,bash]
-----
-# Cross-platform system monitoring implementation
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS-specific monitoring using ps, vm_stat, memory_pressure
-    CPU_PERCENT=$(ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
-    MEMORY_PRESSURE=$(memory_pressure | grep "System-wide memory free percentage" | awk '{print $6}' | tr -d '%')
-    MEMORY_PERCENT=$(echo "100 - $MEMORY_PRESSURE" | bc -l 2>/dev/null || echo "0")
-else
-    # Linux monitoring using /proc filesystem
-    CPU_PERCENT=$(grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$3+$4+$5)} END {print usage}')
-    MEMORY_PERCENT=$(free | grep Mem | awk '{printf("%.1f", $3/$2 * 100.0)}')
-fi
-----
+=== System-Wide Metrics (from system monitoring during WRK runs)
 
-== Benchmark Results Analysis
+**Total System Load:**
+- CPU Usage: **242.8% - 756.8%** (multi-core utilization)
+- Memory Usage: **17-81 MB**
+- Process Count: **884-898 processes**
+- Load Average: **6.60 - 8.71**
 
-=== Performance Metrics Comparison
+=== JMH Benchmark Runner Performance
 
-==== JWT Validation Performance
+**Throughput Results:**
+- Health Check: **10,238 ops/sec** (1,134,061 samples)
+- JWT Validation: **7,841 ops/sec** (826,126 samples)
 
-* **WRK Load Testing Results**:
-** Throughput: 8,246.55 requests/sec
-** Average Latency: 5.62ms
-** 99th Percentile: 36.65ms
-** Test Duration: 30 seconds with 4 threads, 20 connections
+**Latency Results:**
+- Health Check P50: **1.901 ms**, P99: **5.210 ms**
+- JWT Validation P50: **2.621 ms**, P99: **7.430 ms**
 
-* **Quarkus JMH Results**:
-** Throughput: 7,841 ops/sec
-** 50th Percentile: 2.621µs (2,621 nanoseconds)
-** 99th Percentile: 7.430µs (7,430 nanoseconds)
+=== WRK Load Driver Performance
 
-==== Health Check Performance
+**HTTP Load Generation:**
+- JWT Endpoint: **8,247 req/sec** with 5.62ms average latency
+- Health Endpoint: **14,617 req/sec** with 0.83ms average latency
+- Test Configuration: 4 threads, 20 connections, 30-second duration
 
-* **WRK Health Check**:
-** Throughput: 14,616.74 requests/sec
-** Average Latency: 827.59µs
-** 99th Percentile: 3.36ms
+== Resource Consumption Analysis
 
-* **Quarkus Health Check**:
-** Throughput: 10,238 ops/sec
-** 50th Percentile: 1.901µs
-** 99th Percentile: 5.210µs
+=== CPU Utilization Comparison
 
-=== Resource Utilization Analysis
+.JMH Integration Benchmarks
+|===
+|Component |CPU Usage |Notes
 
-==== CPU and Memory Metrics
+|**Quarkus System**
+|**40.74%**
+|Moderate usage during JMH benchmarks
 
-* **WRK System-Level Metrics**:
-** CPU Utilization: 242.8% - 756.8% (multi-core system)
-** Memory Usage: 15.1 - 81.9 MB system memory
-** System Load Average: 6.60 - 8.71 (1-minute average)
-** Process Count: 884-898 active processes
+|**JMH Runner + Overhead**
+|~**60-200%**
+|JMH framework and OS overhead
+|===
 
-* **Quarkus JMH Profiler Metrics**:
-** GC Allocation Rate: ~358 MB/sec
-** Memory per Operation: ~36.7 KB per JWT validation
-** GC Events: 122 collections during benchmark run
-** Low GC overhead with efficient memory management
+.WRK Load Testing Benchmarks
+|===
+|Component |CPU Usage |Notes
 
-== Key Findings
+|**Quarkus System**
+|**UNKNOWN**
+|Metrics not collected during WRK benchmarks
 
-=== Performance Characteristics
+|**System Total**
+|**242-756%**
+|Includes Quarkus + WRK + OS overhead
 
-1. **Latency Differences**: JMH microsecond-level measurements vs. WRK millisecond HTTP round-trip times
-2. **Throughput Comparison**: Similar ranges (7K-8K ops/sec for JWT validation) but different measurement contexts
-3. **Health Check Efficiency**: Both show health endpoints significantly outperform JWT validation
+|**WRK Load Driver Impact**
+|**Cannot Calculate**
+|Missing Quarkus-specific metrics
+|===
 
-=== Resource Monitoring Insights
+**Key Finding**:
+- **JMH benchmarks**: ~41% CPU with proper metrics collection
+- **WRK benchmarks**: Missing Quarkus metrics - only total system CPU available
+- **Critical Gap**: WRK benchmarks need metrics download implementation to enable proper resource comparison
 
-1. **Monitoring Approaches**:
-   - **WRK**: System-level monitoring showing external load impact
-   - **Quarkus**: JVM-internal profiling revealing allocation patterns
+=== Memory Utilization Comparison
 
-2. **CPU Usage Patterns**:
-   - **WRK**: High multi-core utilization due to external HTTP requests
-   - **Quarkus**: Focused JIT compilation and GC activity analysis
+|===
+|Component |RAM Usage |Efficiency
 
-3. **Memory Characteristics**:
-   - **WRK**: System memory pressure from concurrent connections
-   - **Quarkus**: Detailed allocation patterns (36.7 KB per operation)
+|**Quarkus System**
+|**17.3 MB**
+|Extremely efficient native image
 
-=== Cross-Platform Compatibility
+|**System Total**
+|**17-81 MB**
+|Includes all processes
 
-The enhanced monitoring infrastructure supports both macOS and Linux environments with platform-specific optimizations:
+|**Load Driver Impact**
+|~**0-64 MB**
+|WRK + JMH memory overhead varies
+|===
 
-* **macOS**: Uses `ps`, `vm_stat`, `memory_pressure` commands
-* **Linux**: Leverages `/proc` filesystem for efficient metrics collection
+**Key Finding**: The Quarkus native application uses a tiny, stable 17.3 MB of memory, while the benchmarking infrastructure memory usage fluctuates significantly (0-64 MB additional).
 
-== Technical Implementation
+=== Performance Efficiency
 
-=== JMH Profiler Integration
+**Quarkus System Efficiency (JMH Benchmarks):**
+- **Throughput**: 7,841 ops/sec at 41% CPU
+- **Memory**: 17.3 MB RAM (stable)
+- **CPU per Request**: ~0.005% CPU per operation
 
-The GC, stack, and compilation profilers provide comprehensive JVM insights:
+**Quarkus System Efficiency (WRK Load Testing):**
+- **Throughput**: 8,247 req/sec (from WRK output)
+- **CPU Usage**: UNKNOWN (metrics not collected)
+- **Memory Usage**: UNKNOWN (metrics not collected)
+- **Critical Gap**: Cannot calculate efficiency without Quarkus metrics
 
-* **GC Profiler**: Tracks allocation rates, collection frequency, and memory efficiency
-* **Stack Profiler**: Identifies hot methods and call patterns
-* **Compiler Profiler**: Monitors JIT compilation activity and optimization
-
-=== System Monitoring Implementation
-
-Cross-platform shell script implementation collecting:
-
-* CPU utilization across all cores
-* Memory usage and pressure indicators
-* System load averages
-* Process counts and resource contention
+**Load Generation Overhead:**
+- **JMH**: Estimated 1.5-5x more CPU than the application (based on 41% app usage)
+- **WRK**: Cannot calculate - missing Quarkus-specific metrics
+- **Memory Overhead**: Cannot determine without proper metrics collection
+- **Infrastructure Cost**: Testing infrastructure likely consumes significantly more resources, but cannot quantify for WRK
 
 == Conclusions
 
-The enhanced benchmark infrastructure successfully provides complementary resource monitoring capabilities:
+=== Resource Utilization Findings
 
-1. **JMH Profiling** offers deep JVM-level insights into memory allocation and garbage collection patterns
-2. **System Monitoring** captures external load impact and overall system resource utilization
-3. **Cross-Platform Support** ensures consistent monitoring across development and deployment environments
-4. **Performance Validation** confirms efficient JWT validation with reasonable resource consumption
+1. **JMH Benchmarks Show Efficiency**: Quarkus uses 41% CPU and 17.3 MB RAM for 7,841 ops/sec
+2. **WRK Benchmarks Missing Critical Data**: No Quarkus-specific metrics collected, only system-wide data available
+3. **Memory Footprint is Minimal**: JMH benchmarks confirm stable 17.3 MB memory usage
+4. **Testing Overhead Cannot Be Fully Quantified**: JMH shows ~1.5-5x overhead, WRK unknown due to missing metrics
 
-This dual-approach monitoring provides comprehensive visibility into both internal JVM efficiency and external system impact, enabling thorough performance analysis and optimization opportunities.
+=== Practical Implications
 
-== Recommendations
+- **Production Efficiency**: Quarkus JWT validation service is resource-efficient based on JMH data
+- **Testing Resources**: JMH data suggests 3-5x resource overhead for testing
+- **Scaling Characteristics**: Low memory footprint (17.3 MB) enables high container density
+- **Incomplete Analysis**: WRK benchmarks need metrics download implementation for full comparison
 
-1. **Continue JMH profiling** for internal optimization insights
-2. **Maintain system monitoring** for deployment and scaling decisions
-3. **Regular comparison analysis** to ensure performance consistency
-4. **Consider memory allocation optimization** based on the 36.7 KB per operation finding
+=== Recommendations
+
+1. **Implement Metrics Download for WRK**: Add Quarkus metrics collection during WRK benchmarks
+   - Download metrics from `/q/metrics` endpoint before and after WRK runs
+   - Store in `target/metrics-download/` similar to JMH benchmarks
+   - Calculate delta values for accurate resource consumption
+
+2. **Enhance System Monitoring**: Current system metrics don't distinguish between processes
+   - Consider per-process CPU/memory tracking
+   - Separate Quarkus, WRK, and system overhead measurements
+
+3. **Unified Metrics Format**: Standardize metrics collection across all benchmark types
+   - Use consistent JSON format for both JMH and WRK benchmarks
+   - Enable direct comparison of resource utilization

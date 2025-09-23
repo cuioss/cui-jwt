@@ -15,11 +15,12 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
+import de.cuioss.benchmarking.common.metrics.MetricsFetcher;
+import de.cuioss.tools.logging.CuiLogger;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import de.cuioss.benchmarking.common.metrics.MetricsFetcher;
-import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
