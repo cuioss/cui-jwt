@@ -163,9 +163,9 @@
                             <outputFile>${wrk.results.dir}/wrk-health-output.txt</outputFile>
                         </configuration>
                     </execution>
-                    <!-- Pre-fetch JWT tokens -->
+                    <!-- Run OPTIMIZED WRK JWT benchmark with in-memory tokens -->
                     <execution>
-                        <id>fetch-jwt-tokens</id>
+                        <id>run-wrk-jwt-optimized-benchmark</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>exec</goal>
@@ -174,42 +174,22 @@
                             <skip>${skip.benchmark}</skip>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>${wrk.script.dir}/fetch_tokens.sh</argument>
-                                <argument>${keycloak.url}</argument>
-                                <argument>benchmark</argument>
-                                <argument>benchmark-client</argument>
-                                <argument>benchmark-secret</argument>
-                                <argument>benchmark-user</argument>
-                                <argument>benchmark-password</argument>
-                                <argument>100</argument>
-                                <argument>${wrk.results.dir}/tokens.txt</argument>
+                                <argument>${wrk.script.dir}/run_optimized_benchmark.sh</argument>
                             </arguments>
-                        </configuration>
-                    </execution>
-                    <!-- Run WRK JWT endpoint benchmark -->
-                    <execution>
-                        <id>run-wrk-jwt-benchmark</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>wrk</executable>
-                            <arguments>
-                                <argument>-t${wrk.threads}</argument>
-                                <argument>-c${wrk.connections}</argument>
-                                <argument>-d${wrk.duration}</argument>
-                                <argument>--timeout</argument>
-                                <argument>${wrk.timeout}</argument>
-                                <argument>--latency</argument>
-                                <argument>-s</argument>
-                                <argument>${wrk.script.dir}/jwt_with_tokens.lua</argument>
-                                <argument>${integration.service.url}/jwt/validate</argument>
-                            </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-jwt-output.txt</outputFile>
+                            <outputFile>${wrk.results.dir}/wrk-jwt-optimized-output.txt</outputFile>
                             <environmentVariables>
-                                <TOKEN_FILE>${wrk.results.dir}/tokens.txt</TOKEN_FILE>
+                                <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
+                                <REALM>benchmark</REALM>
+                                <CLIENT_ID>benchmark-client</CLIENT_ID>
+                                <CLIENT_SECRET>benchmark-secret</CLIENT_SECRET>
+                                <USERNAME>benchmark-user</USERNAME>
+                                <PASSWORD>benchmark-password</PASSWORD>
+                                <TOKEN_COUNT>100</TOKEN_COUNT>
+                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <WRK_THREADS>${wrk.threads}</WRK_THREADS>
+                                <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
+                                <WRK_DURATION>${wrk.duration}</WRK_DURATION>
+                                <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
                             </environmentVariables>
                         </configuration>
                     </execution>
@@ -243,9 +223,9 @@
                             </systemProperties>
                         </configuration>
                     </execution>
-                    <!-- Run Java post-processing for JWT results -->
+                    <!-- Run Java post-processing for OPTIMIZED JWT results -->
                     <execution>
-                        <id>process-wrk-jwt-results</id>
+                        <id>process-wrk-jwt-optimized-results</id>
                         <phase>integration-test</phase>
                         <goals>
                             <goal>java</goal>
@@ -254,8 +234,8 @@
                             <skip>${skip.benchmark}</skip>
                             <mainClass>${benchmark.runner}</mainClass>
                             <arguments>
-                                <argument>${wrk.results.dir}/wrk-jwt-output.txt</argument>
-                                <argument>${wrk.results.dir}/wrk-jwt-results.json</argument>
+                                <argument>${wrk.results.dir}/wrk-jwt-optimized-output.txt</argument>
+                                <argument>${wrk.results.dir}/wrk-jwt-optimized-results.json</argument>
                             </arguments>
                             <systemProperties>
                                 <systemProperty>

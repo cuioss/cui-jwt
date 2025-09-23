@@ -128,7 +128,7 @@ class WrkIntegrationRunnerTest {
     }
 
     @Test
-    void createBenchmarkReport() throws IOException {
+    void createBenchmarkReport() {
         // Create mock WRK results
         WrkIntegrationRunner.WrkResults wrkResults = new WrkIntegrationRunner.WrkResults();
         wrkResults.setRequestsPerSecond(25000.0);
@@ -184,7 +184,7 @@ class WrkIntegrationRunnerTest {
         return Files.readString(resourcePath);
     }
 
-    private WrkIntegrationRunner.WrkResults parseWrkOutputUsingReflection(String filePath) throws IOException {
+    private WrkIntegrationRunner.WrkResults parseWrkOutputUsingReflection(String filePath) {
         try {
             var method = WrkIntegrationRunner.class.getDeclaredMethod("parseWrkOutput", String.class);
             method.setAccessible(true);
