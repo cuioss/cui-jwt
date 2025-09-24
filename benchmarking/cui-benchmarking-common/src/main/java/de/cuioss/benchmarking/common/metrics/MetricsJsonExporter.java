@@ -143,6 +143,7 @@ public class MetricsJsonExporter {
 
     /**
      * Updates an aggregated metrics file with new benchmark data.
+     * For quarkus-metrics.json files, applies special transformation to create the new structure.
      *
      * @param fileName The name of the aggregated metrics file
      * @param benchmarkName The name of the benchmark
@@ -152,9 +153,31 @@ public class MetricsJsonExporter {
     public void updateAggregatedMetrics(String fileName, String benchmarkName,
             Map<String, Object> benchmarkData) throws IOException {
         Map<String, Object> allMetrics = readExistingMetrics(fileName);
-        allMetrics.put(benchmarkName, benchmarkData);
+
+        if ("quarkus-metrics.json".equals(fileName)) {
+            // Apply special transformation for Quarkus runtime metrics
+            String transformedKey = "quarkus-runtime-metrics";
+            Map<String, Object> transformedData = transformToQuarkusRuntimeMetrics(benchmarkData);
+            allMetrics.put(transformedKey, transformedData);
+        } else {
+            allMetrics.put(benchmarkName, benchmarkData);
+        }
+
         exportToFile(fileName, allMetrics);
         LOGGER.debug("Updated {} with {} benchmarks", fileName, allMetrics.size());
+    }
+
+    /**
+     * Transforms benchmark data into the new Quarkus runtime metrics structure.
+     * Removes the "benchmark" field and ensures proper structure.
+     */
+    private Map<String, Object> transformToQuarkusRuntimeMetrics(Map<String, Object> originalData) {
+        Map<String, Object> transformed = new LinkedHashMap<>(originalData);
+
+        // Remove the "benchmark" field if present
+        transformed.remove("benchmark");
+
+        return transformed;
     }
 
     /**

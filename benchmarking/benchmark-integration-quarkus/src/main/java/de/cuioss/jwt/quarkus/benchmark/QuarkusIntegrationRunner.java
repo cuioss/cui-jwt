@@ -146,7 +146,7 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         );
 
         try {
-            orchestrator.downloadAndExportMetrics("JwtValidation", Instant.now());
+            orchestrator.processQuarkusMetrics("JwtValidation");
         } catch (IOException e) {
             LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());
         }

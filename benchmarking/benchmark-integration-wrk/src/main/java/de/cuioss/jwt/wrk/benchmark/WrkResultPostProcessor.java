@@ -153,8 +153,8 @@ public class WrkResultPostProcessor {
 
         LOGGER.info("Generated complete benchmark reports in: " + outputDir);
 
-        // Process Quarkus metrics if available
-        processQuarkusMetrics(inputDir.getParent());
+        // Process Quarkus metrics if available - use outputDir since gh-pages-ready directory was created there
+        processQuarkusMetrics(outputDir);
 
         // Log summary
         logSummary(benchmarkData, outputDir);
@@ -213,8 +213,8 @@ public class WrkResultPostProcessor {
                     targetDir
             );
 
-            // This will download metrics from the URL and process them
-            orchestrator.downloadAndExportMetrics("WrkBenchmark", java.time.Instant.now());
+            // This will download metrics from the URL and process them, including creating quarkus-metrics.json
+            orchestrator.processQuarkusMetrics("WrkBenchmark");
 
             LOGGER.info("Successfully downloaded and processed Quarkus metrics");
             LOGGER.info("Metrics output available at: " + targetDir.resolve("jwt-validation-metrics.json"));

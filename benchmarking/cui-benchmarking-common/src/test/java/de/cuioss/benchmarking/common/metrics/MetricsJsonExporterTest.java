@@ -398,6 +398,73 @@ class MetricsJsonExporterTest {
         assertEquals("test", parsedData.get("valid_value"));
     }
 
+    @Test void shouldCreateQuarkusRuntimeMetricsStructure() throws IOException {
+        // Load real metrics data from test resources
+        Map<String, Double> realMetrics = loadRealMetricsFromTestResources();
+
+        // Create the expected structured data using real metrics
+        Map<String, Object> quarkusData = createQuarkusRuntimeMetricsFromRealData(realMetrics);
+
+        exporter.updateAggregatedMetrics("quarkus-metrics.json", "WrkBenchmark", quarkusData);
+
+        Path quarkusFile = targetDir.resolve("quarkus-metrics.json");
+        assertTrue(Files.exists(quarkusFile), "Quarkus metrics file should exist");
+
+        String content = Files.readString(quarkusFile);
+        Type mapType = new TypeToken<Map<String, Object>>(){
+        }.getType();
+        Map<String, Object> parsedData = gson.fromJson(content, mapType);
+
+        // Should use "quarkus-runtime-metrics" as key instead of "WrkBenchmark"
+        assertTrue(parsedData.containsKey("quarkus-runtime-metrics"), "Should contain quarkus-runtime-metrics key");
+        assertFalse(parsedData.containsKey("WrkBenchmark"), "Should not contain WrkBenchmark key");
+
+        @SuppressWarnings("unchecked") Map<String, Object> runtimeData = (Map<String, Object>) parsedData.get("quarkus-runtime-metrics");
+
+        // Should not contain "benchmark" field
+        assertFalse(runtimeData.containsKey("benchmark"), "Should not contain benchmark field");
+
+        // Should contain timestamp
+        assertTrue(runtimeData.containsKey("timestamp"), "Should contain timestamp");
+
+        // Should contain four main nodes
+        assertTrue(runtimeData.containsKey("system"), "Should contain system node");
+        assertTrue(runtimeData.containsKey("http_server_requests"), "Should contain http_server_requests node");
+        assertTrue(runtimeData.containsKey("cui_jwt_validation_success_operations_total"), "Should contain JWT success operations");
+        assertTrue(runtimeData.containsKey("cui_jwt_validation_errors"), "Should contain JWT validation errors");
+
+        // Verify system node structure with real values
+        @SuppressWarnings("unchecked") Map<String, Object> systemMetrics = (Map<String, Object>) runtimeData.get("system");
+        assertTrue(systemMetrics.containsKey("process_cpu_usage"), "Should contain process CPU usage");
+        assertTrue(systemMetrics.containsKey("system_cpu_usage"), "Should contain system CPU usage");
+        assertTrue(systemMetrics.containsKey("system_load_average_1m"), "Should contain load average");
+        assertTrue(systemMetrics.containsKey("jvm_threads_peak_threads"), "Should contain peak threads");
+        assertTrue(systemMetrics.containsKey("jvm_memory_used_total"), "Should contain total memory used");
+
+        // Verify values are from real data
+        assertEquals(0.5073059617547806, ((Number) systemMetrics.get("process_cpu_usage")).doubleValue(), 0.0001);
+        assertEquals(3.53564453125, ((Number) systemMetrics.get("system_load_average_1m")).doubleValue(), 0.0001);
+        assertEquals(140.0, ((Number) systemMetrics.get("jvm_threads_peak_threads")).doubleValue());
+
+        // Verify JWT success operations structure with real values
+        @SuppressWarnings("unchecked") Map<String, Object> successOps = (Map<String, Object>) runtimeData.get("cui_jwt_validation_success_operations_total");
+        assertTrue(successOps.containsKey("ACCESS_TOKEN_CREATED"), "Should contain ACCESS_TOKEN_CREATED");
+        assertEquals(1.2673101E7, ((Number) successOps.get("ACCESS_TOKEN_CREATED")).doubleValue());
+
+        // Verify JWT validation errors structure
+        @SuppressWarnings("unchecked") java.util.List<Map<String, Object>> errors = (java.util.List<Map<String, Object>>) runtimeData.get("cui_jwt_validation_errors");
+        assertFalse(errors.isEmpty(), "Should contain error entries");
+
+        // Verify errors are sorted by category and event_type
+        Map<String, Object> firstError = errors.get(0);
+        assertTrue(firstError.containsKey("category"), "Error should contain category");
+        assertTrue(firstError.containsKey("event_type"), "Error should contain event_type");
+        assertTrue(firstError.containsKey("count"), "Error should contain count");
+
+        // Verify specific error ordering (should start with INVALID_SIGNATURE category)
+        assertEquals("INVALID_SIGNATURE", firstError.get("category"));
+    }
+
     private Map<String, Double> createJwtValidationMetrics() {
         Map<String, Double> metrics = new HashMap<>();
         metrics.put("cui_jwt_bearer_token_validation_seconds_count{class=\"de.cuioss.jwt.quarkus.producer.BearerTokenProducer\",exception=\"none\",method=\"getBearerTokenResult\"}", 5000.0);
@@ -416,5 +483,145 @@ class MetricsJsonExporterTest {
         metrics.put("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}", 200000.0);
         metrics.put("jvm_memory_used_bytes{area=\"nonheap\",id=\"metaspace\"}", 100000.0);
         return metrics;
+    }
+
+    private Map<String, Double> loadRealMetricsFromTestResources() throws IOException {
+        // Load the real metrics file from test resources
+        try (var inputStream = getClass().getResourceAsStream("/metrics/quarkus-runtime-metrics.txt")) {
+            assertNotNull(inputStream, "Test metrics file should exist in resources");
+
+            Map<String, Double> metrics = new HashMap<>();
+            String content = new String(inputStream.readAllBytes());
+
+            // Parse Prometheus format metrics
+            String[] lines = content.split("\n");
+            for (String line : lines) {
+                if (line.startsWith("#") || line.trim().isEmpty()) {
+                    continue; // Skip comments and empty lines
+                }
+
+                // Parse metric line: metric_name{labels} value
+                int spaceIndex = line.lastIndexOf(' ');
+                if (spaceIndex > 0) {
+                    String metricKey = line.substring(0, spaceIndex);
+                    String valueStr = line.substring(spaceIndex + 1);
+                    try {
+                        double value = Double.parseDouble(valueStr);
+                        metrics.put(metricKey, value);
+                    } catch (NumberFormatException e) {
+                        // Skip non-numeric values
+                    }
+                }
+            }
+
+            assertTrue(metrics.size() > 100, "Should load many metrics from real data");
+            return metrics;
+        }
+    }
+
+    private Map<String, Object> createQuarkusRuntimeMetricsFromRealData(Map<String, Double> realMetrics) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("timestamp", "2025-09-24T15:06:02.082992Z");
+
+        // System metrics node - extract from real data
+        Map<String, Object> systemMetrics = new HashMap<>();
+        systemMetrics.put("process_cpu_usage", realMetrics.getOrDefault("process_cpu_usage", 0.0));
+        systemMetrics.put("system_cpu_usage", realMetrics.getOrDefault("system_cpu_usage", 0.0));
+        systemMetrics.put("system_load_average_1m", realMetrics.getOrDefault("system_load_average_1m", 0.0));
+        systemMetrics.put("jvm_threads_peak_threads", realMetrics.getOrDefault("jvm_threads_peak_threads", 0.0));
+
+        // Calculate total memory used from heap and non-heap areas
+        double heapUsed = realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("jvm_memory_used_bytes") && e.getKey().contains("area=\"heap\""))
+                .mapToDouble(Map.Entry::getValue)
+                .sum();
+        double nonHeapUsed = realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("jvm_memory_used_bytes") && e.getKey().contains("area=\"nonheap\""))
+                .mapToDouble(Map.Entry::getValue)
+                .sum();
+        systemMetrics.put("jvm_memory_used_total", heapUsed + nonHeapUsed);
+
+        data.put("system", systemMetrics);
+
+        // HTTP server requests node - extract from real data
+        Map<String, Object> httpMetrics = new HashMap<>();
+        httpMetrics.put("request_count", realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("http_server_requests_seconds_count"))
+                .mapToDouble(Map.Entry::getValue)
+                .sum());
+        httpMetrics.put("request_duration_sum", realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("http_server_requests_seconds_sum"))
+                .mapToDouble(Map.Entry::getValue)
+                .sum());
+        httpMetrics.put("request_duration_max", realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("http_server_requests_seconds_max"))
+                .mapToDouble(Map.Entry::getValue)
+                .max().orElse(0.0));
+        httpMetrics.put("active_connections_http", realMetrics.getOrDefault("http_server_active_requests{server_port=\"8080\",url_scheme=\"http\"}", 0.0));
+        httpMetrics.put("active_connections_https", realMetrics.getOrDefault("http_server_active_requests{server_port=\"8443\",url_scheme=\"https\"}", 0.0));
+        data.put("http_server_requests", httpMetrics);
+
+        // JWT validation success operations - extract from real data
+        Map<String, Object> successOps = new HashMap<>();
+        realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("cui_jwt_validation_success_operations_total"))
+                .forEach(e -> {
+                    String eventType = extractEventType(e.getKey());
+                    if (eventType != null) {
+                        successOps.put(eventType, e.getValue());
+                    }
+                });
+        data.put("cui_jwt_validation_success_operations_total", successOps);
+
+        // JWT validation errors - extract from real data and structure as array
+        java.util.List<Map<String, Object>> errors = new java.util.ArrayList<>();
+        realMetrics.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("cui_jwt_validation_errors_total"))
+                .sorted(java.util.Map.Entry.comparingByKey()) // Sort by metric name for consistent ordering
+                .forEach(e -> {
+                    String category = extractCategory(e.getKey());
+                    String eventType = extractEventType(e.getKey());
+                    if (category != null && eventType != null) {
+                        errors.add(createErrorEntry(category, eventType, e.getValue()));
+                    }
+                });
+
+        // Sort errors by category, then by event_type
+        errors.sort((e1, e2) -> {
+            int categoryCompare = ((String) e1.get("category")).compareTo((String) e2.get("category"));
+            if (categoryCompare != 0) return categoryCompare;
+            return ((String) e1.get("event_type")).compareTo((String) e2.get("event_type"));
+        });
+
+        data.put("cui_jwt_validation_errors", errors);
+        return data;
+    }
+
+    private String extractEventType(String metricKey) {
+        // Extract event_type from metric labels like: event_type="ACCESS_TOKEN_CREATED"
+        int eventTypeStart = metricKey.indexOf("event_type=\"");
+        if (eventTypeStart == -1) return null;
+        eventTypeStart += "event_type=\"".length();
+        int eventTypeEnd = metricKey.indexOf("\"", eventTypeStart);
+        if (eventTypeEnd == -1) return null;
+        return metricKey.substring(eventTypeStart, eventTypeEnd);
+    }
+
+    private String extractCategory(String metricKey) {
+        // Extract category from metric labels like: category="INVALID_STRUCTURE"
+        int categoryStart = metricKey.indexOf("category=\"");
+        if (categoryStart == -1) return null;
+        categoryStart += "category=\"".length();
+        int categoryEnd = metricKey.indexOf("\"", categoryStart);
+        if (categoryEnd == -1) return null;
+        return metricKey.substring(categoryStart, categoryEnd);
+    }
+
+    private Map<String, Object> createErrorEntry(String category, String eventType, Double count) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("category", category);
+        error.put("event_type", eventType);
+        error.put("count", count);
+        return error;
     }
 }

@@ -21,7 +21,6 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,15 +39,29 @@ class MetricsOrchestratorTest {
     @Getter
     private final MetricsModuleDispatcher moduleDispatcher = new MetricsModuleDispatcher();
 
-    @TempDir
-    Path tempDir;
-
     private Path downloadsDir;
     private Path targetDir;
 
-    @BeforeEach void setUp() {
-        downloadsDir = tempDir.resolve("downloads");
-        targetDir = tempDir.resolve("target");
+    @BeforeEach void setUp() throws IOException {
+        // Use target directory so output can be inspected
+        targetDir = Path.of("target/test-output/metrics-orchestrator");
+        downloadsDir = targetDir.resolve("downloads");
+
+        // Clean and recreate directories for each test
+        if (Files.exists(targetDir)) {
+            Files.walk(targetDir)
+                .sorted((a, b) -> b.compareTo(a)) // reverse order for deletion
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        // Ignore deletion errors
+                    }
+                });
+        }
+        Files.createDirectories(targetDir);
+        Files.createDirectories(downloadsDir);
+
         moduleDispatcher.setCallCounter(0);
         moduleDispatcher.returnDefault();
     }
@@ -58,34 +71,55 @@ class MetricsOrchestratorTest {
         moduleDispatcher.returnDefault();
 
         MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, downloadsDir, targetDir);
-        Map<String, Double> metrics = orchestrator.downloadAndExportMetrics("TestBenchmark", Instant.now());
+        orchestrator.processQuarkusMetrics("TestBenchmark");
 
-        assertNotNull(metrics, "Returned metrics should not be null");
-        assertFalse(metrics.isEmpty(), "Returned metrics should not be empty");
-
-        // Verify specific JWT validation metrics are present (with labels)
-        boolean hasSuccessOperations = metrics.keySet().stream()
-                .anyMatch(key -> key.startsWith("cui_jwt_validation_success_operations_total"));
-        assertTrue(hasSuccessOperations, "Should contain JWT validation success operations");
-
-        boolean hasBearerTokenCount = metrics.keySet().stream()
-                .anyMatch(key -> key.startsWith("cui_jwt_bearer_token_validation_seconds_count"));
-        assertTrue(hasBearerTokenCount, "Should contain JWT bearer token validation count");
-
-        boolean hasBearerTokenSum = metrics.keySet().stream()
-                .anyMatch(key -> key.startsWith("cui_jwt_bearer_token_validation_seconds_sum"));
-        assertTrue(hasBearerTokenSum, "Should contain JWT bearer token validation sum");
-
-        // Verify files were created
+        // Verify download files were created
         assertTrue(Files.exists(downloadsDir), "Downloads directory should exist");
         assertTrue(Files.list(downloadsDir).findAny().isPresent(), "Downloads directory should contain files");
 
-        Path jsonFile = targetDir.resolve("jwt-validation-metrics.json");
-        assertTrue(Files.exists(jsonFile), "JSON metrics file should be created");
+        // Verify quarkus-metrics.json was created in gh-pages-ready/data
+        Path ghPagesDir = targetDir.resolve("gh-pages-ready").resolve("data");
+        Path jsonFile = ghPagesDir.resolve("quarkus-metrics.json");
+        assertTrue(Files.exists(jsonFile), "quarkus-metrics.json should be created in gh-pages-ready/data");
 
         String jsonContent = Files.readString(jsonFile);
-        assertTrue(jsonContent.contains("TestBenchmark"), "JSON should contain benchmark name");
-        assertTrue(jsonContent.contains("cui_jwt_validation"), "JSON should contain JWT validation metrics");
+        assertFalse(jsonContent.contains("TestBenchmark"), "JSON should NOT contain benchmark name in new structure");
+        assertTrue(jsonContent.contains("quarkus-runtime-metrics"), "JSON should contain quarkus-runtime-metrics key");
+
+        // Verify the new structured format with 4 main nodes
+        assertTrue(jsonContent.contains("system"), "Should contain system metrics node");
+        assertTrue(jsonContent.contains("http_server_requests"), "Should contain http_server_requests metrics node");
+        assertTrue(jsonContent.contains("cui_jwt_validation_success_operations_total"), "Should contain JWT validation success operations node");
+        assertTrue(jsonContent.contains("cui_jwt_validation_errors"), "Should contain JWT validation errors node");
+
+        // Verify specific system metrics with new naming
+        assertTrue(jsonContent.contains("cpu_usage_percent") || jsonContent.contains("cpu_cores_available"), "Should contain CPU metrics");
+        assertTrue(jsonContent.contains("memory_heap_used_mb") || jsonContent.contains("memory_total_used_mb"), "Should contain meaningful memory metrics in MB");
+
+        // Parse and verify the JSON structure
+        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().create();
+        java.util.Map<String, Object> parsedJson = gson.fromJson(jsonContent, java.util.Map.class);
+
+        // Verify top-level structure
+        assertTrue(parsedJson.containsKey("quarkus-runtime-metrics"), "Should have quarkus-runtime-metrics top-level key");
+        java.util.Map<String, Object> runtimeMetrics = (java.util.Map<String, Object>) parsedJson.get("quarkus-runtime-metrics");
+
+        // Verify timestamp exists
+        assertTrue(runtimeMetrics.containsKey("timestamp"), "Should have timestamp");
+
+        // Verify all 4 main nodes exist
+        assertTrue(runtimeMetrics.containsKey("system"), "Should have system node");
+        assertTrue(runtimeMetrics.containsKey("http_server_requests"), "Should have http_server_requests node");
+        assertTrue(runtimeMetrics.containsKey("cui_jwt_validation_success_operations_total"), "Should have success operations node");
+        assertTrue(runtimeMetrics.containsKey("cui_jwt_validation_errors"), "Should have errors node");
+
+        // Verify system metrics structure with new naming
+        java.util.Map<String, Object> systemMetrics = (java.util.Map<String, Object>) runtimeMetrics.get("system");
+        assertNotNull(systemMetrics, "System metrics should not be null");
+        assertTrue(systemMetrics.containsKey("process_cpu_usage_percent") || systemMetrics.containsKey("cpu_cores_available"),
+                   "System should have CPU metrics");
+        assertTrue(systemMetrics.containsKey("memory_heap_used_mb") || systemMetrics.containsKey("memory_total_used_mb"),
+                   "System should have meaningful memory metrics");
 
         moduleDispatcher.assertCallsAnswered(1);
     }
@@ -116,7 +150,7 @@ class MetricsOrchestratorTest {
         MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, downloadsDir, targetDir);
 
         IOException exception = assertThrows(IOException.class, () ->
-                orchestrator.downloadAndExportMetrics("ErrorTest", Instant.now())
+                orchestrator.processQuarkusMetrics("ErrorTest")
         );
 
         assertTrue(exception.getMessage().contains("500") ||
@@ -148,29 +182,53 @@ class MetricsOrchestratorTest {
         moduleDispatcher.returnEmptyMetrics();
 
         MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, downloadsDir, targetDir);
-        Map<String, Double> metrics = orchestrator.downloadAndExportMetrics("EmptyTest", Instant.now());
-
-        assertNotNull(metrics, "Returned metrics should not be null");
-        assertTrue(metrics.isEmpty(), "Should return empty metrics map for empty metrics response");
+        orchestrator.processQuarkusMetrics("EmptyTest");
 
         // Verify download file was still created
         assertTrue(Files.exists(downloadsDir), "Downloads directory should exist");
         assertTrue(Files.list(downloadsDir).findAny().isPresent(), "Downloads directory should contain files");
+
+        // Verify quarkus-metrics.json was created in gh-pages-ready/data (even if empty metrics)
+        Path ghPagesDir = targetDir.resolve("gh-pages-ready").resolve("data");
+        Path jsonFile = ghPagesDir.resolve("quarkus-metrics.json");
+        assertTrue(Files.exists(jsonFile), "quarkus-metrics.json should be created even for empty metrics");
+
+        String jsonContent = Files.readString(jsonFile);
+        assertFalse(jsonContent.contains("EmptyTest"), "JSON should NOT contain benchmark name in new structure");
+        assertTrue(jsonContent.contains("quarkus-runtime-metrics"), "JSON should contain quarkus-runtime-metrics key even for empty metrics");
 
         moduleDispatcher.assertCallsAnswered(1);
     }
 
     @Test void shouldCreateDirectoriesWhenProcessing(URIBuilder uriBuilder) throws IOException {
         String metricsUrl = uriBuilder.addPathSegment(MetricsModuleDispatcher.LOCAL_PATH).buildAsString();
-        assertFalse(Files.exists(downloadsDir), "Downloads directory should not exist initially");
-        assertFalse(Files.exists(targetDir), "Target directory should not exist initially");
 
-        MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, downloadsDir, targetDir);
+        // Use a different directory that doesn't exist yet
+        Path newTargetDir = Path.of("target/test-output/metrics-orchestrator-new");
+        Path newDownloadsDir = newTargetDir.resolve("downloads");
+
+        // Clean up if exists from previous run
+        if (Files.exists(newTargetDir)) {
+            Files.walk(newTargetDir)
+                .sorted((a, b) -> b.compareTo(a))
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        // Ignore
+                    }
+                });
+        }
+
+        assertFalse(Files.exists(newDownloadsDir), "Downloads directory should not exist initially");
+        assertFalse(Files.exists(newTargetDir), "Target directory should not exist initially");
+
+        MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, newDownloadsDir, newTargetDir);
 
         // Directories are created when processing, not during construction
         orchestrator.processQuarkusMetrics("test");
 
-        assertTrue(Files.exists(downloadsDir), "Downloads directory should be created during processing");
+        assertTrue(Files.exists(newDownloadsDir), "Downloads directory should be created during processing");
         assertNotNull(orchestrator, "Orchestrator should be constructed successfully");
     }
 
@@ -223,10 +281,35 @@ class MetricsOrchestratorTest {
         MetricsOrchestrator orchestrator = new MetricsOrchestrator("http://127.0.0.1:1", downloadsDir, targetDir);
 
         IOException exception = assertThrows(IOException.class, () ->
-                orchestrator.downloadAndExportMetrics("ConnectionTest", Instant.now())
+                orchestrator.processQuarkusMetrics("ConnectionTest")
         );
 
         assertNotNull(exception, "Should throw IOException for connection refused");
         // The exception itself is proof that connection failed
+    }
+
+    @Test void shouldCreateMetricsDirectlyInGhPagesReadyDirectory(URIBuilder uriBuilder) throws IOException {
+        String metricsUrl = uriBuilder.addPathSegment(MetricsModuleDispatcher.LOCAL_PATH).buildAsString();
+        moduleDispatcher.returnDefault();
+
+        MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, downloadsDir, targetDir);
+        orchestrator.processQuarkusMetrics("test-benchmark");
+
+        // Verify quarkus-metrics.json was created directly in gh-pages-ready/data
+        Path ghPagesDir = targetDir.resolve("gh-pages-ready").resolve("data");
+        Path ghPagesMetricsFile = ghPagesDir.resolve("quarkus-metrics.json");
+        assertTrue(Files.exists(ghPagesMetricsFile), "quarkus-metrics.json should be created directly in gh-pages-ready/data");
+
+        // Verify the metrics content is correct
+        String content = Files.readString(ghPagesMetricsFile);
+        assertFalse(content.contains("test-benchmark"), "JSON should NOT contain benchmark name in new structure");
+        assertTrue(content.contains("quarkus-runtime-metrics"), "JSON should contain quarkus-runtime-metrics key");
+        assertTrue(content.contains("cui_jwt_validation"), "JSON should contain JWT validation metrics");
+
+        // Verify NO main metrics file was created in the root target directory
+        Path oldMainMetricsFile = targetDir.resolve("jwt-validation-metrics.json");
+        assertFalse(Files.exists(oldMainMetricsFile), "No jwt-validation-metrics.json should be created in root target directory");
+
+        moduleDispatcher.assertCallsAnswered(1);
     }
 }
