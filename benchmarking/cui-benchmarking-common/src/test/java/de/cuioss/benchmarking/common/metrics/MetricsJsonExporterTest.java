@@ -437,6 +437,7 @@ class MetricsJsonExporterTest {
 
         // Verify system node structure with new naming conventions
         @SuppressWarnings("unchecked") Map<String, Object> systemMetrics = (Map<String, Object>) runtimeData.get("system");
+        assertTrue(systemMetrics.containsKey("quarkus_cpu_usage_percent"), "Should contain Quarkus CPU usage");
         assertTrue(systemMetrics.containsKey("system_cpu_usage_percent"), "Should contain system CPU usage");
         assertTrue(systemMetrics.containsKey("cpu_load_average"), "Should contain CPU load average");
         assertTrue(systemMetrics.containsKey("threads_peak"), "Should contain peak threads");
@@ -444,8 +445,8 @@ class MetricsJsonExporterTest {
         assertTrue(systemMetrics.containsKey("cpu_cores_available"), "Should contain CPU cores");
 
         // Verify values are reasonable (not hardcoded since we're using real data)
-        Number cpuUsage = (Number) systemMetrics.get("system_cpu_usage_percent");
-        assertNotNull(cpuUsage, "System CPU usage should not be null");
+        Number cpuUsage = (Number) systemMetrics.get("quarkus_cpu_usage_percent");
+        assertNotNull(cpuUsage, "Quarkus CPU usage should not be null");
         assertTrue(cpuUsage.doubleValue() >= 0 && cpuUsage.doubleValue() <= 100,
                 "CPU usage should be between 0 and 100 percent");
 
@@ -537,7 +538,12 @@ class MetricsJsonExporterTest {
         // System metrics node with NEW naming conventions to match MetricsOrchestrator
         Map<String, Object> systemMetrics = new HashMap<>();
 
-        // Convert CPU to percentage (only system CPU now)
+        // Convert CPU to percentages with new names
+        double processCpu = realMetrics.getOrDefault("process_cpu_usage", 0.0);
+        if (processCpu > 0.0001) {
+            systemMetrics.put("quarkus_cpu_usage_percent", processCpu * 100);
+        }
+
         double systemCpu = realMetrics.getOrDefault("system_cpu_usage", 0.0);
         if (systemCpu > 0.0001) {
             systemMetrics.put("system_cpu_usage_percent", systemCpu * 100);
