@@ -159,10 +159,6 @@ public class MetricsOrchestrator {
                 }
             } else if (metricName.startsWith("system_cpu_count")) {
                 systemMetrics.put("cpu_cores_available", value.intValue());
-            } else if (metricName.startsWith("system_load_average_1m")) {
-                if (value > 0) {
-                    systemMetrics.put("cpu_load_average", formatNumber(value));
-                }
             } else if (metricName.startsWith("jvm_threads_peak_threads")) {
                 systemMetrics.put("threads_peak", value.intValue());
             } else if (metricName.startsWith("jvm_threads_live_threads")) {

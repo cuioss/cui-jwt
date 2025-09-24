@@ -439,7 +439,6 @@ class MetricsJsonExporterTest {
         @SuppressWarnings("unchecked") Map<String, Object> systemMetrics = (Map<String, Object>) runtimeData.get("system");
         assertTrue(systemMetrics.containsKey("quarkus_cpu_usage_percent"), "Should contain Quarkus CPU usage");
         assertTrue(systemMetrics.containsKey("system_cpu_usage_percent"), "Should contain system CPU usage");
-        assertTrue(systemMetrics.containsKey("cpu_load_average"), "Should contain CPU load average");
         assertTrue(systemMetrics.containsKey("threads_peak"), "Should contain peak threads");
         assertTrue(systemMetrics.containsKey("memory_heap_used_mb"), "Should contain memory metrics");
         assertTrue(systemMetrics.containsKey("cpu_cores_available"), "Should contain CPU cores");
@@ -548,8 +547,6 @@ class MetricsJsonExporterTest {
         if (systemCpu > 0.0001) {
             systemMetrics.put("system_cpu_usage_percent", systemCpu * 100);
         }
-
-        systemMetrics.put("cpu_load_average", realMetrics.getOrDefault("system_load_average_1m", 0.0));
         systemMetrics.put("threads_peak", realMetrics.getOrDefault("jvm_threads_peak_threads", 0.0).intValue());
         systemMetrics.put("cpu_cores_available", 4);  // From real data
 
