@@ -66,9 +66,15 @@
                 <artifactId>commons-io</artifactId>
                 <version>${version.commons-io}</version>
             </dependency>
+                <dependency>
+                    <groupId>de.cuioss.jwt</groupId>
+                    <artifactId>bom</artifactId>
+                    <version>${project.version}</version>
+                    <type>pom</type>
+                    <scope>import</scope>
+                </dependency>
         </dependencies>
     </dependencyManagement>
-
     <build>
         <pluginManagement>
             <plugins>

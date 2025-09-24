@@ -17,7 +17,7 @@ package de.cuioss.jwt.wrk.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.WrkBenchmarkConverter;
-import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
+import de.cuioss.benchmarking.common.metrics.MetricsOrchestrator;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
@@ -27,7 +27,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.stream.Stream;
 
 /**
@@ -47,31 +46,42 @@ public class WrkResultPostProcessor {
 
     /**
      * Main entry point for processing WRK benchmark results.
+     * Usage:
+     *   - args[0]=inputDir, args[1]=outputDir (optional)
+     *   - args[0]=inputDir, args[1]="download-after" (metrics download only)
      *
-     * @param args Command line arguments:
-     *             args[0] - Input directory containing WRK output files
-     *             args[1] - (Optional) Output directory for reports (defaults to input + "/reports")
+     * @param args Command line arguments
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            LOGGER.error("Usage: WrkResultPostProcessor <input-dir> [output-dir]");
+            LOGGER.error("Usage: WrkResultPostProcessor <input-dir> [output-dir|download-after]");
             System.exit(1);
         }
 
         try {
             Path inputDir = Path.of(args[0]);
+            WrkResultPostProcessor processor = new WrkResultPostProcessor();
+
+            // Check if this is metrics-only mode
+            if (args.length > 1 && "download-after".equals(args[1])) {
+                LOGGER.info("Running in metrics-download-only mode");
+                processor.processQuarkusMetrics(inputDir.getParent());
+                LOGGER.info("Metrics download completed successfully");
+                return;
+            }
+
+            // Normal processing mode
             Path outputDir = args.length > 1 ?
                     Path.of(args[1]) :
                     inputDir.getParent().resolve("benchmark-results");
 
-            WrkResultPostProcessor processor = new WrkResultPostProcessor();
             processor.process(inputDir, outputDir);
 
             LOGGER.info("WRK benchmark processing completed successfully");
             LOGGER.info("Results available at: " + outputDir);
 
         } catch (IOException e) {
-            LOGGER.error("Failed to process WRK benchmark results", e);
+            LOGGER.error("Failed to execute WRK result processor", e);
             System.exit(1);
         }
     }
@@ -184,17 +194,18 @@ public class WrkResultPostProcessor {
      * @param targetDir The target directory containing metrics-download subdirectory
      */
     private void processQuarkusMetrics(Path targetDir) {
-        Path metricsDownloadDir = targetDir.resolve("metrics-download");
+        String metricsUrl = System.getProperty("quarkus.metrics.url", "https://localhost:10443");
+        Path downloadsDir = targetDir.resolve("metrics-download");
 
-        if (!Files.exists(metricsDownloadDir)) {
-            LOGGER.info("No Quarkus metrics found (directory not present: " + metricsDownloadDir + ")");
+        if (!Files.exists(downloadsDir)) {
+            LOGGER.info("No Quarkus metrics found (directory not present: " + downloadsDir + ")");
             return;
         }
 
         try {
             // Check if metrics files exist
             boolean hasMetricsFiles = false;
-            try (Stream<Path> files = Files.list(metricsDownloadDir)) {
+            try (Stream<Path> files = Files.list(downloadsDir)) {
                 hasMetricsFiles = files.anyMatch(p ->
                         p.getFileName().toString().endsWith(".txt") &&
                                 (p.getFileName().toString().contains("before") ||
@@ -204,21 +215,21 @@ public class WrkResultPostProcessor {
             }
 
             if (!hasMetricsFiles) {
-                LOGGER.info("No Quarkus metrics files found in: " + metricsDownloadDir);
+                LOGGER.info("No Quarkus metrics files found in: " + downloadsDir);
                 return;
             }
 
-            LOGGER.info("Processing Quarkus metrics from: " + metricsDownloadDir);
+            LOGGER.info("Processing Quarkus metrics from: " + downloadsDir);
 
-            // Process metrics using the common processor
-            QuarkusMetricsPostProcessor metricsProcessor = new QuarkusMetricsPostProcessor(
-                    metricsDownloadDir.toString(),
-                    targetDir.toString()
+            MetricsOrchestrator orchestrator = new MetricsOrchestrator(
+                    metricsUrl,
+                    downloadsDir,
+                    targetDir
             );
-            metricsProcessor.parseAndExportQuarkusMetrics(Instant.now());
+            orchestrator.processQuarkusMetrics("after-wrk");
 
             LOGGER.info("Successfully processed Quarkus resource usage metrics");
-            LOGGER.info("Metrics output available at: " + targetDir.resolve("quarkus-metrics.json"));
+            LOGGER.info("Metrics output available at: " + targetDir.resolve("jwt-validation-metrics.json"));
 
         } catch (IOException e) {
             LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());

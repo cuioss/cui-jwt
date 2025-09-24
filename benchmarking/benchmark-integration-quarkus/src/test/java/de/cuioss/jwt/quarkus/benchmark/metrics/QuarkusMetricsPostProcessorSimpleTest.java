@@ -15,10 +15,9 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
-import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,22 +46,21 @@ class QuarkusMetricsPostProcessorSimpleTest {
     @BeforeEach void setUp() throws IOException {
         gson = new GsonBuilder().create();
 
-        // Create test metrics directory structure
+        // Create test metrics directory structure (directly in metrics-download, no subdirectories)
         Path testMetricsDir = tempDir.resolve("metrics-download");
-        Path testSubDir = testMetricsDir.resolve("1-test");
-        Files.createDirectories(testSubDir);
+        Files.createDirectories(testMetricsDir);
 
         // Copy sample metrics file to test directory with production naming pattern
         Path sampleMetrics = Path.of("src/test/resources/quarkus-metrics-test.txt");
         if (Files.exists(sampleMetrics)) {
-            Files.copy(sampleMetrics, testSubDir.resolve("quarkus-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sampleMetrics, testMetricsDir.resolve("quarkus-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
     @Test void shouldParseMetricsAndCreateOutputFile() throws IOException {
-        // Given - processor with the subdirectory containing the metrics file
-        String testSubDir = tempDir.resolve("metrics-download").resolve("1-test").toString();
-        QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(testSubDir, tempDir.toString());
+        // Given - processor with the directory containing the metrics file
+        String testMetricsDir = tempDir.resolve("metrics-download").toString();
+        QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(testMetricsDir, tempDir.toString());
 
         // When - parse metrics data
         Instant testTimestamp = Instant.parse("2025-08-01T14:00:00.000Z");

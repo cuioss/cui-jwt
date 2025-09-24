@@ -19,7 +19,6 @@ import de.cuioss.benchmarking.common.repository.KeycloakTokenRepository;
 import de.cuioss.benchmarking.common.repository.TokenRepositoryConfig;
 import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.tools.logging.CuiLogger;
-
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 

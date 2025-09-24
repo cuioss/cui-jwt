@@ -27,8 +27,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -406,39 +406,19 @@ public class QuarkusMetricsPostProcessor {
     /**
      * Convenience method to parse and export using default directory locations
      * Automatically detects and processes benchmark context directories
+     * Processes existing files in the metrics-download directory
      */
     public static void parseAndExport(String baseDirectory) throws IOException {
-        String metricsDownloadBaseDir = baseDirectory + "/metrics-download";
-        File baseDir = new File(metricsDownloadBaseDir);
+        Path metricsDownloadPath = Path.of(baseDirectory, "metrics-download");
+        Path targetPath = Path.of(baseDirectory);
 
-        if (!baseDir.exists()) {
-            throw new IOException("Metrics download directory not found: " + metricsDownloadBaseDir);
-        }
+        // Create processor to parse existing files (not download new ones)
+        QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(
+                metricsDownloadPath.toString(),
+                targetPath.toString()
+        );
 
-        // Look for context directories (numbered format)
-        File[] contextDirs = baseDir.listFiles(file ->
-                file.isDirectory() && file.getName().matches("\\d+-.*"));
-
-        if (contextDirs != null && contextDirs.length > 0) {
-            // Process the most recent directory
-            File latestDir = Arrays.stream(contextDirs)
-                    .max((a, b) -> {
-                        int numA = Integer.parseInt(a.getName().split("-")[0]);
-                        int numB = Integer.parseInt(b.getName().split("-")[0]);
-                        return Integer.compare(numA, numB);
-                    })
-                    .orElse(contextDirs[0]);
-
-            LOGGER.debug("Processing metrics directory: {}", latestDir.getName());
-            QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(
-                    latestDir.getAbsolutePath(), baseDirectory);
-            processor.parseAndExportQuarkusMetrics(Instant.now());
-        } else {
-            // Use flat directory structure
-            LOGGER.debug("No numbered directories found, using flat metrics-download structure");
-            QuarkusMetricsPostProcessor processor = new QuarkusMetricsPostProcessor(
-                    metricsDownloadBaseDir, baseDirectory);
-            processor.parseAndExportQuarkusMetrics(Instant.now());
-        }
+        // Process the existing metrics files
+        processor.parseAndExportQuarkusMetrics(Instant.now());
     }
 }

@@ -15,9 +15,8 @@
  */
 package de.cuioss.jwt.quarkus.benchmark.metrics;
 
-import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
-
 import com.google.gson.reflect.TypeToken;
+import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.Arguments;
 

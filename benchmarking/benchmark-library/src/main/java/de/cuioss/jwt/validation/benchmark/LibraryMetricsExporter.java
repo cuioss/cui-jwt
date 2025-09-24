@@ -15,12 +15,14 @@
  */
 package de.cuioss.jwt.validation.benchmark;
 
-import de.cuioss.benchmarking.common.metrics.AbstractMetricsExporter;
+import de.cuioss.benchmarking.common.metrics.MetricsJsonExporter;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
+import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -31,12 +33,13 @@ import java.util.Optional;
 
 /**
  * Metrics exporter for library benchmarks that exports StripedRingBufferStatistics
- * from TokenValidatorMonitor.
- * 
+ * from TokenValidatorMonitor. This handles JVM-level performance metrics.
+ *
  * @since 1.0
  */
-public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
+public class LibraryMetricsExporter {
 
+    private static final CuiLogger LOGGER = new CuiLogger(LibraryMetricsExporter.class);
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
     public static final String MEASURE = "measure";
     public static final String VALIDATE = "validate";
@@ -45,31 +48,33 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
     private static final String DEFAULT_OUTPUT_DIR = "target/benchmark-results";
     private static final String METRICS_FILE = "jwt-validation-metrics.json";
 
-    private static SimplifiedMetricsExporter instance;
+    private static LibraryMetricsExporter instance;
+    private final MetricsJsonExporter jsonExporter;
 
     /**
      * Private constructor for singleton pattern.
-     * 
+     *
      * @param outputDirectory The output directory for metrics files
      */
-    private SimplifiedMetricsExporter(String outputDirectory) {
-        super(outputDirectory);
+    private LibraryMetricsExporter(String outputDirectory) {
+        Path targetPath = Path.of(outputDirectory);
+        this.jsonExporter = new MetricsJsonExporter(targetPath);
     }
 
     /**
-     * Get the singleton instance of SimplifiedMetricsExporter.
-     * 
+     * Get the singleton instance of LibraryMetricsExporter.
+     *
      * @return The singleton instance
      */
-    public static synchronized SimplifiedMetricsExporter getInstance() {
+    public static synchronized LibraryMetricsExporter getInstance() {
         if (instance == null) {
-            instance = new SimplifiedMetricsExporter(DEFAULT_OUTPUT_DIR);
+            instance = new LibraryMetricsExporter(DEFAULT_OUTPUT_DIR);
         }
         return instance;
     }
 
 
-    @Override public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
+    public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
         if (!(metricsData instanceof TokenValidatorMonitor)) {
             LOGGER.warn("Invalid metrics data type: expected TokenValidatorMonitor, got {}",
                     metricsData != null ? metricsData.getClass().getName() : "null");
@@ -106,9 +111,8 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
 
         benchmarkMetrics.put("steps", steps);
 
-        // Update aggregated metrics file
-        String filepath = outputDirectory + "/" + METRICS_FILE;
-        updateAggregatedMetrics(filepath, benchmarkMethodName, benchmarkMetrics);
+        // Update aggregated metrics file using the new concrete class
+        jsonExporter.updateAggregatedMetrics(METRICS_FILE, benchmarkMethodName, benchmarkMetrics);
     }
 
     /**
@@ -146,7 +150,7 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
             String methodName = element.getMethodName();
 
             // Look for benchmark class names (more reliable than method names)
-            if (className.contains("Benchmark") && !className.equals(SimplifiedMetricsExporter.class.getName())) {
+            if (className.contains("Benchmark") && !className.equals(LibraryMetricsExporter.class.getName())) {
                 String simpleName = className.substring(className.lastIndexOf('.') + 1);
                 // Remove "Benchmark" suffix if present for cleaner names
                 if (simpleName.endsWith("Benchmark")) {
@@ -208,5 +212,19 @@ public class SimplifiedMetricsExporter extends AbstractMetricsExporter {
     private Object durationToRoundedMicros(Duration duration) {
         double micros = duration.toNanos() / 1000.0;
         return formatNumber(micros);
+    }
+
+    /**
+     * Format number with appropriate precision for JSON export.
+     *
+     * @param value The value to format
+     * @return Formatted number (Long for values >= 10, Double for values < 10)
+     */
+    private Object formatNumber(double value) {
+        if (value < 10) {
+            return Math.round(value * 10.0) / 10.0;
+        } else {
+            return Math.round(value);
+        }
     }
 }

@@ -18,18 +18,16 @@ package de.cuioss.jwt.quarkus.benchmark;
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
-import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
-import de.cuioss.benchmarking.common.metrics.QuarkusMetricsPostProcessor;
+import de.cuioss.benchmarking.common.metrics.MetricsOrchestrator;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
-import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
 import de.cuioss.tools.logging.CuiLogger;
-
 import org.openjdk.jmh.results.RunResult;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -130,38 +128,25 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     /**
      * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
-     * Uses QuarkusMetricsFetcher to download metrics and SimpleMetricsExporter to export them.
-     * Also processes JMH benchmark results to create http-metrics.json.
+     * Uses MetricsOrchestrator to coordinate metrics download and processing.
      *
      * @param config the benchmark configuration
      */
     private void processQuarkusMetrics(BenchmarkConfiguration config) {
-        LOGGER.info(INFO.PROCESS_QUARKUS_METRICS_ENTRY.format());
         String outputDirectory = config.resultsDirectory();
-
-        // Get integration configuration to access URLs
         IntegrationConfiguration integrationConfig = config.integrationConfig();
 
-        LOGGER.info(INFO.PROCESSING_METRICS_FROM_URL.format(
-                integrationConfig.integrationServiceUrl(), outputDirectory));
+        Path downloadsDir = Path.of(outputDirectory, "metrics-download");
+        Path targetDir = Path.of(outputDirectory);
 
-        // Use QuarkusMetricsFetcher to download metrics (this also saves raw metrics)
-        LOGGER.info(INFO.CREATING_METRICS_FETCHER.format());
-        QuarkusMetricsFetcher metricsFetcher = new QuarkusMetricsFetcher(integrationConfig.integrationServiceUrl());
+        MetricsOrchestrator orchestrator = new MetricsOrchestrator(
+                integrationConfig.integrationServiceUrl(),
+                downloadsDir,
+                targetDir
+        );
 
-        // Use SimpleMetricsExporter to export JWT validation metrics
-        LOGGER.info(INFO.CREATING_METRICS_EXPORTER.format());
-        SimpleMetricsExporter exporter = new SimpleMetricsExporter(outputDirectory, metricsFetcher);
-        LOGGER.info(INFO.CALLING_EXPORT_JWT_METRICS.format());
-        exporter.exportJwtValidationMetrics("JwtValidation", Instant.now());
-        LOGGER.info(INFO.EXPORT_JWT_METRICS_COMPLETED.format());
-
-        // Process JMH benchmark results to create both http-metrics.json and quarkus-metrics.json
-        // QuarkusMetricsPostProcessor uses synchronous file I/O, so no delay is needed
         try {
-            String benchmarkResultsFile = config.reportConfig().getOrCreateResultFile();
-            QuarkusMetricsPostProcessor metricsPostProcessor = new QuarkusMetricsPostProcessor(benchmarkResultsFile, outputDirectory);
-            metricsPostProcessor.parseAndExportQuarkusMetrics(Instant.now());
+            orchestrator.downloadAndExportMetrics("JwtValidation", Instant.now());
         } catch (IOException e) {
             LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());
         }

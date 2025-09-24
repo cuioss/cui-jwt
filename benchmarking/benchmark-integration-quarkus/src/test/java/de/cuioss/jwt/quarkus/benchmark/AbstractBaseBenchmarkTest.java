@@ -55,7 +55,6 @@ class AbstractBaseBenchmarkTest {
 
         assertNotNull(benchmark.getServiceUrl());
         assertNotNull(benchmark.quarkusMetricsUrl);
-        assertNotNull(benchmark.metricsExporter);
         assertNotNull(benchmark.getBenchmarkResultsDir());
 
         // Check default values

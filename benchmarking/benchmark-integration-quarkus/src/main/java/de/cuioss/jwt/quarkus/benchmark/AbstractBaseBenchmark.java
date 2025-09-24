@@ -17,10 +17,6 @@ package de.cuioss.jwt.quarkus.benchmark;
 
 import de.cuioss.benchmarking.common.base.AbstractBenchmarkBase;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
-import de.cuioss.benchmarking.common.metrics.MetricsExporter;
-import de.cuioss.benchmarking.common.metrics.QuarkusMetricsFetcher;
-import de.cuioss.jwt.quarkus.benchmark.metrics.SimpleMetricsExporter;
-
 import org.openjdk.jmh.annotations.*;
 
 import java.net.http.HttpRequest;
@@ -40,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.All) @OutputTimeUnit(TimeUnit.MILLISECONDS) @State(Scope.Benchmark) public abstract class AbstractBaseBenchmark extends AbstractBenchmarkBase {
 
     protected String quarkusMetricsUrl;
-    protected MetricsExporter metricsExporter;
 
     /**
      * Setup method called once before all benchmark iterations.
@@ -67,10 +62,6 @@ import java.util.concurrent.TimeUnit;
 
         logger.debug("Service URL: {}", serviceUrl);
         logger.debug("Quarkus Metrics URL: {}", quarkusMetricsUrl);
-
-        // Initialize metrics exporter
-        metricsExporter = new SimpleMetricsExporter(benchmarkResultsDir,
-                new QuarkusMetricsFetcher(quarkusMetricsUrl));
     }
 
 

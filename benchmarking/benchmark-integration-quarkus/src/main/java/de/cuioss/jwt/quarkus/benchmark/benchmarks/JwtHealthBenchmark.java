@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.benchmark.benchmarks;
 
 import de.cuioss.jwt.quarkus.benchmark.AbstractBaseBenchmark;
-
 import org.openjdk.jmh.annotations.Benchmark;
 
 import java.io.IOException;

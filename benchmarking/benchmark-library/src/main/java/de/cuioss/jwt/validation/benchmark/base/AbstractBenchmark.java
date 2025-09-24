@@ -16,8 +16,8 @@
 package de.cuioss.jwt.validation.benchmark.base;
 
 import de.cuioss.jwt.validation.TokenValidator;
+import de.cuioss.jwt.validation.benchmark.LibraryMetricsExporter;
 import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
-import de.cuioss.jwt.validation.benchmark.SimplifiedMetricsExporter;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
@@ -78,7 +78,7 @@ public abstract class AbstractBenchmark {
     @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
         if (tokenValidator != null) {
             try {
-                SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+                LibraryMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
                 logger.error(e, ERROR.EXPORT_FAILED.format());
             }

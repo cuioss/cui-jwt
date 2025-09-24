@@ -112,10 +112,12 @@ wrk \
     "$SERVICE_URL/jwt/validate"
 
 # Stop system monitoring
-kill $MONITORING_PID 2>/dev/null
-wait $MONITORING_PID 2>/dev/null
-
-echo "System monitoring stopped"
+if [ -n "$MONITORING_PID" ] && kill -0 $MONITORING_PID 2>/dev/null; then
+    kill $MONITORING_PID 2>/dev/null || true
+    # Don't wait for the killed process as it may hang
+    sleep 1
+    echo "System monitoring stopped"
+fi
 echo "System metrics saved to: $MONITORING_LOG"
 
 echo "-------------------------------------------------------------------"

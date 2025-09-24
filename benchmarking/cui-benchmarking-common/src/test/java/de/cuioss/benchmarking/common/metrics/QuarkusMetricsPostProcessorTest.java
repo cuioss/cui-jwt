@@ -145,13 +145,12 @@ class QuarkusMetricsPostProcessorTest {
     }
 
     @Test void shouldParseAndExportWithNumberedDirectoryStructure() throws IOException {
-        // Create numbered directory structure
-        Path numberedDir = metricsDownloadDir.resolve("1-context");
-        Files.createDirectories(numberedDir);
+        // Note: Numbered directory structure is no longer supported in simplified design
+        // This test now verifies that files must be directly in metrics-download directory
 
-        // Copy test metrics file to numbered directory
+        // Copy test metrics file directly to metrics-download directory
         Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
-        Path targetFile = numberedDir.resolve("quarkus-metrics.txt");
+        Path targetFile = metricsDownloadDir.resolve("quarkus-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
         // Use convenience method
@@ -162,22 +161,16 @@ class QuarkusMetricsPostProcessorTest {
         assertTrue(outputFile.exists(), "Output file should exist in base directory");
     }
 
-    @Test void shouldProcessMultipleNumberedDirectoriesAndSelectLatest() throws IOException {
-        // Create multiple numbered directories
-        Path dir1 = metricsDownloadDir.resolve("1-old");
-        Path dir2 = metricsDownloadDir.resolve("5-latest");
-        Path dir3 = metricsDownloadDir.resolve("3-middle");
-        Files.createDirectories(dir1);
-        Files.createDirectories(dir2);
-        Files.createDirectories(dir3);
+    @Test void shouldProcessMultipleMetricsFiles() throws IOException {
+        // Note: Numbered directory structure is no longer supported in simplified design
+        // This test now verifies processing of metrics file directly in metrics-download
 
-        // Copy test metrics file to all directories (different content would be better but not necessary for this test)
+        // Copy test metrics file directly to metrics-download directory
         Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
-        Files.copy(sourceFile, dir1.resolve("quarkus-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(sourceFile, dir2.resolve("quarkus-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(sourceFile, dir3.resolve("quarkus-metrics.txt"), StandardCopyOption.REPLACE_EXISTING);
+        Path targetFile = metricsDownloadDir.resolve("quarkus-metrics.txt");
+        Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
-        // Use convenience method - should process directory "5-latest"
+        // Use convenience method
         QuarkusMetricsPostProcessor.parseAndExport(tempDir.toString());
 
         // Verify output file exists

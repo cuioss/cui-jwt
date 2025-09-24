@@ -136,23 +136,6 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
-                    <!-- Download Quarkus metrics before WRK benchmarks -->
-                    <execution>
-                        <id>download-metrics-before-wrk</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <mainClass>de.cuioss.jwt.wrk.benchmark.QuarkusMetricsFetcher</mainClass>
-                            <arguments>
-                                <argument>${quarkus.metrics.url}</argument>
-                                <argument>${project.build.directory}/metrics-download</argument>
-                                <argument>before-wrk</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
 
                     <!-- Run WRK health endpoint benchmark -->
                     <execution>
@@ -192,6 +175,7 @@
                                 <argument>${wrk.script.dir}/run_benchmark.sh</argument>
                             </arguments>
                             <outputFile>${wrk.results.dir}/wrk-jwt-output.txt</outputFile>
+                            <timeout>60000</timeout> <!-- 60 second timeout to prevent hanging -->
                             <environmentVariables>
                                 <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
                                 <REALM>benchmark</REALM>
@@ -208,28 +192,34 @@
                             </environmentVariables>
                         </configuration>
                     </execution>
-                    <!-- Download Quarkus metrics after WRK benchmarks -->
+
+                    <!-- Download metrics after WRK benchmarks (always runs, even if benchmarks fail) -->
                     <execution>
                         <id>download-metrics-after-wrk</id>
-                        <phase>integration-test</phase>
+                        <phase>post-integration-test</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
                             <skip>${skip.benchmark}</skip>
-                            <mainClass>de.cuioss.jwt.wrk.benchmark.QuarkusMetricsFetcher</mainClass>
+                            <mainClass>de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor</mainClass>
                             <arguments>
-                                <argument>${quarkus.metrics.url}</argument>
-                                <argument>${project.build.directory}/metrics-download</argument>
-                                <argument>after-wrk</argument>
+                                <argument>${wrk.results.dir}</argument>
+                                <argument>download-after</argument>
                             </arguments>
+                            <systemProperties>
+                                <systemProperty>
+                                    <key>quarkus.metrics.url</key>
+                                    <value>${quarkus.metrics.url}</value>
+                                </systemProperty>
+                            </systemProperties>
                         </configuration>
                     </execution>
 
                     <!-- Process WRK results and generate reports -->
                     <execution>
                         <id>process-wrk-results</id>
-                        <phase>integration-test</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>

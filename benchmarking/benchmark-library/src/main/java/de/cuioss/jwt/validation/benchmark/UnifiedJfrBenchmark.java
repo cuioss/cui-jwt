@@ -107,7 +107,7 @@ import java.util.concurrent.TimeUnit;
         // Export metrics
         if (tokenValidator != null) {
             try {
-                SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+                LibraryMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
                 LOGGER.debug("Failed to export metrics during teardown", e);
             }

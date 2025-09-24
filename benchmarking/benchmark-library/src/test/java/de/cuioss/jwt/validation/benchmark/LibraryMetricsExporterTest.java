@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-class SimplifiedMetricsExporterTest {
+class LibraryMetricsExporterTest {
 
     @TempDir
     Path tempDir;
@@ -72,7 +72,7 @@ class SimplifiedMetricsExporterTest {
         monitor.recordMeasurement(MeasurementType.HEADER_VALIDATION, headerDuration);
 
         // When
-        SimplifiedMetricsExporter.exportMetrics(monitor);
+        LibraryMetricsExporter.exportMetrics(monitor);
 
         // Then - metrics are exported to hardcoded target/benchmark-results
         Path resultsDir = Path.of("target/benchmark-results");
@@ -112,7 +112,7 @@ class SimplifiedMetricsExporterTest {
     }
 
     @Test void shouldHandleNullMonitor() {
-        assertDoesNotThrow(() -> SimplifiedMetricsExporter.exportMetrics(null));
+        assertDoesNotThrow(() -> LibraryMetricsExporter.exportMetrics(null));
     }
 
     @Test void shouldFormatNumbersCorrectly() throws IOException {
@@ -131,7 +131,7 @@ class SimplifiedMetricsExporterTest {
         monitor.recordMeasurement(MeasurementType.SIGNATURE_VALIDATION, 13000); // 13 microseconds
 
         // When
-        SimplifiedMetricsExporter.exportMetrics(monitor);
+        LibraryMetricsExporter.exportMetrics(monitor);
 
         // Then - metrics are exported to hardcoded target/benchmark-results
         Path jsonFile = Path.of("target/benchmark-results/jwt-validation-metrics.json");
