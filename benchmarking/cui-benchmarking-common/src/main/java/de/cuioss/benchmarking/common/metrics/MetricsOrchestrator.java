@@ -145,13 +145,7 @@ public class MetricsOrchestrator {
             String metricName = entry.getKey();
             Double value = entry.getValue();
 
-            if (metricName.startsWith("process_cpu_usage")) {
-                // Convert to percentage for better readability - this is the Quarkus JVM process CPU
-                double cpuPercent = value * 100;
-                if (cpuPercent > 0.01) {  // Only show if meaningful
-                    systemMetrics.put("quarkus_cpu_usage_percent", formatNumber(cpuPercent));
-                }
-            } else if (metricName.startsWith("system_cpu_usage")) {
+            if (metricName.startsWith("system_cpu_usage")) {
                 // Convert to percentage for better readability - this is total system CPU
                 double cpuPercent = value * 100;
                 if (cpuPercent > 0.01) {  // Only show if meaningful
