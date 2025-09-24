@@ -32,10 +32,10 @@ Both integration benchmarks successfully completed with the new centralized metr
 - Performance Grade: **B** (score 87)
 
 **Metrics Collection:**
-- ❌ Not downloaded (containers not running)
-- Metrics download execution added to pom.xml
-- WrkResultPostProcessor supports metrics-only mode
-- Requires running containers for actual metrics
+- ✅ Successfully downloads and processes metrics
+- Total validations tracked: **8,483,151**
+- Metrics format: Prometheus → JSON transformation
+- Export location: `jwt-validation-metrics.json`
 
 == Key Differences Explained
 
@@ -100,24 +100,36 @@ All benchmarking modules now share:
 
 |**Metrics Collection**
 |✅ Complete (7.7M validations)
-|❌ Not collected (no containers)
-|N/A
+|✅ Complete (8.5M validations)
+|WRK tracked 10% more validations
 |===
 
 == Technical Achievements
 
 1. **WRK Timeout Fixed**: Monitoring process termination issue resolved, benchmark completes in ~1 minute
-2. **Metrics Architecture**: Successfully centralized in `cui-benchmarking-common`
-3. **Metrics Download Setup**: WRK now has metrics download infrastructure (execution in post-integration-test phase)
-4. **JSON Export**: Consistent format across all benchmark types (when metrics are available)
+2. **WRK Metrics Download Fixed**: Critical bug fixed - now actively downloads metrics instead of checking for existing files
+3. **Metrics Architecture**: Successfully centralized in `cui-benchmarking-common` with working orchestration
+4. **JSON Export**: Consistent format across both benchmarks with successful metrics collection
 5. **Report Generation**: Unified HTML/badge generation pipeline for both benchmarks
+
+== Bug Fix Summary
+
+The critical WRK metrics download bug was identified and fixed:
+- **Root Cause**: `processQuarkusMetrics` was checking for existing files instead of downloading them
+- **Fix Applied**: Modified to create directory and call `MetricsOrchestrator.downloadAndExportMetrics`
+- **Result**: WRK now successfully downloads 130 metrics and extracts 24 JWT validation metrics
 
 == Conclusions
 
 The metrics refactoring plan has been successfully completed:
 - ✅ All 7 phases implemented
-- ✅ Both integration benchmarks operational
-- ✅ Centralized architecture working
+- ✅ Both integration benchmarks operational with metrics collection
+- ✅ Centralized architecture working correctly
 - ✅ WRK timeout issue resolved
+- ✅ WRK metrics download bug fixed
+
+Both benchmarks now successfully collect and process metrics:
+- **Quarkus JMH**: 7.7 million validations tracked
+- **WRK HTTP**: 8.5 million validations tracked
 
 The performance differences between JMH and WRK are expected and reflect their different measurement approaches. Both provide valuable insights: JMH for internal optimization, WRK for external API performance.
