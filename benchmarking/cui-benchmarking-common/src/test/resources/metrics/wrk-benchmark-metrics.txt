@@ -9,11 +9,11 @@ jvm_classes_unloaded_classes_total 0.0
 process_files_max_files 1048576.0
 # TYPE jvm_memory_committed_bytes gauge
 # HELP jvm_memory_committed_bytes The amount of memory in bytes that is committed for the Java virtual machine to use
-jvm_memory_committed_bytes{area="heap",id="old generation space"} 1.048576E7
-jvm_memory_committed_bytes{area="heap",id="eden space"} 6815744.0
+jvm_memory_committed_bytes{area="heap",id="old generation space"} 1.6777216E7
+jvm_memory_committed_bytes{area="heap",id="eden space"} 1.048576E7
 jvm_memory_committed_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
 jvm_memory_committed_bytes{area="nonheap",id="runtime code cache (native metadata)"} 0.0
-jvm_memory_committed_bytes{area="heap",id="survivor space"} 0.0
+jvm_memory_committed_bytes{area="heap",id="survivor space"} 3145728.0
 # TYPE jvm_memory_max_bytes gauge
 # HELP jvm_memory_max_bytes The maximum amount of memory in bytes that can be used for memory management
 jvm_memory_max_bytes{area="heap",id="old generation space"} -1.0
@@ -29,43 +29,43 @@ netty_allocator_pooled_chunk_size{allocator_type="PooledByteBufAllocator",name="
 # HELP worker_pool_usage_seconds Time spent using resources from the pool
 worker_pool_usage_seconds_count{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.0
 worker_pool_usage_seconds_sum{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.114954568
-worker_pool_usage_seconds_count{pool_name="vert.x-worker-thread",pool_type="worker"} 3.4328045E7
-worker_pool_usage_seconds_sum{pool_name="vert.x-worker-thread",pool_type="worker"} 413.274643739
+worker_pool_usage_seconds_count{pool_name="vert.x-worker-thread",pool_type="worker"} 3.1720363E7
+worker_pool_usage_seconds_sum{pool_name="vert.x-worker-thread",pool_type="worker"} 389.843576248
 # TYPE worker_pool_usage_seconds_max gauge
 # HELP worker_pool_usage_seconds_max Time spent using resources from the pool
 worker_pool_usage_seconds_max{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
-worker_pool_usage_seconds_max{pool_name="vert.x-worker-thread",pool_type="worker"} 0.0063022
+worker_pool_usage_seconds_max{pool_name="vert.x-worker-thread",pool_type="worker"} 0.041303803
 # TYPE jvm_memory_used_bytes gauge
 # HELP jvm_memory_used_bytes The amount of used memory
-jvm_memory_used_bytes{area="heap",id="old generation space"} 1.048576E7
-jvm_memory_used_bytes{area="heap",id="eden space"} 6815744.0
+jvm_memory_used_bytes{area="heap",id="old generation space"} 1.6777216E7
+jvm_memory_used_bytes{area="heap",id="eden space"} 1.1010048E7
 jvm_memory_used_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
 jvm_memory_used_bytes{area="nonheap",id="runtime code cache (native metadata)"} 0.0
-jvm_memory_used_bytes{area="heap",id="survivor space"} 0.0
+jvm_memory_used_bytes{area="heap",id="survivor space"} 3145728.0
 # TYPE netty_allocator_memory_used gauge
 # HELP netty_allocator_memory_used  
 netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="direct",name="vertx-unpooled"} 0.0
 netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="heap",name="pooled"} 0.0
 netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="direct",name="unpooled"} 286.0
 netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="heap",name="vertx-pooled"} 0.0
-netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="direct",name="pooled"} 2752512.0
-netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="heap",name="unpooled"} 256.0
-netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="heap",name="vertx-unpooled"} 0.0
-netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="direct",name="vertx-pooled"} 2555904.0
+netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="direct",name="pooled"} 1900544.0
+netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="heap",name="unpooled"} 6400.0
+netty_allocator_memory_used{allocator_type="UnpooledByteBufAllocator",memory_type="heap",name="vertx-unpooled"} 16935.0
+netty_allocator_memory_used{allocator_type="PooledByteBufAllocator",memory_type="direct",name="vertx-pooled"} 2359296.0
 # TYPE worker_pool_queue_size gauge
 # HELP worker_pool_queue_size Number of pending elements in the waiting queue
 worker_pool_queue_size{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
-worker_pool_queue_size{pool_name="vert.x-worker-thread",pool_type="worker"} 0.0
+worker_pool_queue_size{pool_name="vert.x-worker-thread",pool_type="worker"} 3.0
 # TYPE worker_pool_rejected counter
 # HELP worker_pool_rejected Number of times submissions to the pool have been rejected
 worker_pool_rejected_total{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
 worker_pool_rejected_total{pool_name="vert.x-worker-thread",pool_type="worker"} 0.0
 # TYPE jvm_threads_live_threads gauge
 # HELP jvm_threads_live_threads The current number of live threads including both daemon and non-daemon threads
-jvm_threads_live_threads 38.0
+jvm_threads_live_threads 57.0
 # TYPE cui_jwt_validation_success_operations counter
 # HELP cui_jwt_validation_success_operations Number of successful JWT operations by type
-cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CREATED",result="success"} 1.2673101E7
+cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CREATED",result="success"} 1.0960018E7
 cui_jwt_validation_success_operations_total{event_type="ID_TOKEN_CREATED",result="success"} 0.0
 cui_jwt_validation_success_operations_total{event_type="REFRESH_TOKEN_CREATED",result="success"} 0.0
 cui_jwt_validation_success_operations_total{event_type="ACCESS_TOKEN_CACHE_HIT",result="success"} 0.0
@@ -75,20 +75,20 @@ worker_pool_active{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
 worker_pool_active{pool_name="vert.x-worker-thread",pool_type="worker"} 1.0
 # TYPE process_cpu_time_ns counter
 # HELP process_cpu_time_ns The \"cpu time\" used by the Java Virtual Machine process
-process_cpu_time_ns_total 9.33523E12
+process_cpu_time_ns_total 8.43325E12
 # TYPE http_server_active_connections gauge
 # HELP http_server_active_connections Number of opened connections to the HTTP Server
 http_server_active_connections 0.0
 # TYPE process_uptime_seconds gauge
 # HELP process_uptime_seconds The uptime of the Java virtual machine
-process_uptime_seconds 104154.534
+process_uptime_seconds 103690.58
 # TYPE netty_eventexecutor_tasks_pending gauge
 # HELP netty_eventexecutor_tasks_pending  
 netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-2"} 0.0
 netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-1"} 0.0
 netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-0"} 0.0
 netty_eventexecutor_tasks_pending{name="vert.x-acceptor-thread-0"} 0.0
-netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-3"} 0.0
+netty_eventexecutor_tasks_pending{name="vert.x-eventloop-thread-3"} 6.0
 # TYPE netty_allocator_pooled_arenas gauge
 # HELP netty_allocator_pooled_arenas  
 netty_allocator_pooled_arenas{allocator_type="PooledByteBufAllocator",memory_type="heap",name="pooled"} 20.0
@@ -120,13 +120,13 @@ jvm_gc_overhead 0.0
 # TYPE worker_pool_queue_delay_seconds_max gauge
 # HELP worker_pool_queue_delay_seconds_max Time spent in the waiting queue before being processed
 worker_pool_queue_delay_seconds_max{pool_name="vert.x-internal-blocking",pool_type="worker"} 0.0
-worker_pool_queue_delay_seconds_max{pool_name="vert.x-worker-thread",pool_type="worker"} 0.005880532
+worker_pool_queue_delay_seconds_max{pool_name="vert.x-worker-thread",pool_type="worker"} 0.043257057
 # TYPE worker_pool_queue_delay_seconds summary
 # HELP worker_pool_queue_delay_seconds Time spent in the waiting queue before being processed
 worker_pool_queue_delay_seconds_count{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.0
 worker_pool_queue_delay_seconds_sum{pool_name="vert.x-internal-blocking",pool_type="worker"} 1.86251E-4
-worker_pool_queue_delay_seconds_count{pool_name="vert.x-worker-thread",pool_type="worker"} 3.4328046E7
-worker_pool_queue_delay_seconds_sum{pool_name="vert.x-worker-thread",pool_type="worker"} 1237.075435502
+worker_pool_queue_delay_seconds_count{pool_name="vert.x-worker-thread",pool_type="worker"} 3.1720373E7
+worker_pool_queue_delay_seconds_sum{pool_name="vert.x-worker-thread",pool_type="worker"} 1179.713043834
 # TYPE netty_allocator_pooled_cache_size gauge
 # HELP netty_allocator_pooled_cache_size  
 netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_type="small",name="pooled"} 256.0
@@ -135,27 +135,27 @@ netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_
 netty_allocator_pooled_cache_size{allocator_type="PooledByteBufAllocator",cache_type="small",name="vertx-pooled"} 256.0
 # TYPE jvm_threads_daemon_threads gauge
 # HELP jvm_threads_daemon_threads The current number of live daemon threads
-jvm_threads_daemon_threads 30.0
+jvm_threads_daemon_threads 49.0
 # TYPE system_cpu_count gauge
 # HELP system_cpu_count The number of processors available to the Java virtual machine
 system_cpu_count 4.0
 # TYPE worker_pool_completed counter
 # HELP worker_pool_completed Number of times resources from the pool have been acquired
 worker_pool_completed_total{pool_name="vert.x-internal-blocking",pool_type="worker"} 2.0
-worker_pool_completed_total{pool_name="vert.x-worker-thread",pool_type="worker"} 3.4328045E7
+worker_pool_completed_total{pool_name="vert.x-worker-thread",pool_type="worker"} 3.1720373E7
 # TYPE jvm_threads_peak_threads gauge
 # HELP jvm_threads_peak_threads The peak live thread count since the Java virtual machine started or peak was reset
 jvm_threads_peak_threads 140.0
 # TYPE system_cpu_usage gauge
 # HELP system_cpu_usage The \"recent cpu usage\" of the system the application is running in
-system_cpu_usage 0.5073020894263217
+system_cpu_usage 0.517065
 # TYPE http_server_bytes_written_max gauge
 # HELP http_server_bytes_written_max Number of bytes sent by the server
-http_server_bytes_written_max 199.0
+http_server_bytes_written_max 16384.0
 # TYPE http_server_bytes_written summary
 # HELP http_server_bytes_written Number of bytes sent by the server
-http_server_bytes_written_count 4.0550372E7
-http_server_bytes_written_sum 1.1702588138E10
+http_server_bytes_written_count 3.6229848E7
+http_server_bytes_written_sum 1.0842787041E10
 # TYPE http_server_bytes_read summary
 # HELP http_server_bytes_read Number of bytes received by the server
 http_server_bytes_read_count 0.0
@@ -165,35 +165,35 @@ http_server_bytes_read_sum 0.0
 http_server_bytes_read_max 0.0
 # TYPE http_server_connections_seconds_max gauge
 # HELP http_server_connections_seconds_max The duration of the connections
-http_server_connections_seconds_max 0.004045137
+http_server_connections_seconds_max 15.503474784
 # TYPE http_server_connections_seconds summary
 # HELP http_server_connections_seconds The duration of the connections
-http_server_connections_seconds_active_count 1.0
-http_server_connections_seconds_duration_sum 0.00402697
+http_server_connections_seconds_active_count 25.0
+http_server_connections_seconds_duration_sum 369.705716556
 # TYPE cui_jwt_bearer_token_validation_seconds summary
 # HELP cui_jwt_bearer_token_validation_seconds Bearer token validation duration
-cui_jwt_bearer_token_validation_seconds_count{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 1.2673101E7
-cui_jwt_bearer_token_validation_seconds_sum{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 3293.313524037
+cui_jwt_bearer_token_validation_seconds_count{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 1.0960018E7
+cui_jwt_bearer_token_validation_seconds_sum{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 2925.613733438
 # TYPE cui_jwt_bearer_token_validation_seconds_max gauge
 # HELP cui_jwt_bearer_token_validation_seconds_max Bearer token validation duration
-cui_jwt_bearer_token_validation_seconds_max{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 0.021560119
+cui_jwt_bearer_token_validation_seconds_max{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 0.04655367
 # TYPE system_load_average_1m gauge
 # HELP system_load_average_1m The sum of the number of runnable entities queued to available processors and the number of runnable entities running on the available processors averaged over a period of time
-system_load_average_1m 3.53564453125
+system_load_average_1m 2.41015625
 # TYPE http_server_requests_seconds summary
 # HELP http_server_requests_seconds HTTP server request processing time
-http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 1.2673101E7
-http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 16096.194661607
+http_server_requests_seconds_count{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 1.0960018E7
+http_server_requests_seconds_sum{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 14153.065043254
 # TYPE http_server_requests_seconds_max gauge
 # HELP http_server_requests_seconds_max HTTP server request processing time
-http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 0.024859996
+http_server_requests_seconds_max{method="POST",outcome="SUCCESS",status="200",uri="/jwt/validate"} 0.047454678
 # TYPE process_files_open_files gauge
 # HELP process_files_open_files The open file descriptor count
-process_files_open_files 19.0
+process_files_open_files 43.0
 # TYPE netty_allocator_pooled_threadlocal_caches gauge
 # HELP netty_allocator_pooled_threadlocal_caches  
 netty_allocator_pooled_threadlocal_caches{allocator_type="PooledByteBufAllocator",name="vertx-pooled"} 4.0
-netty_allocator_pooled_threadlocal_caches{allocator_type="PooledByteBufAllocator",name="pooled"} 24.0
+netty_allocator_pooled_threadlocal_caches{allocator_type="PooledByteBufAllocator",name="pooled"} 42.0
 # TYPE netty_allocator_memory_pinned gauge
 # HELP netty_allocator_memory_pinned  
 netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_type="heap",name="pooled"} 0.0
@@ -202,14 +202,14 @@ netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_typ
 netty_allocator_memory_pinned{allocator_type="PooledByteBufAllocator",memory_type="direct",name="vertx-pooled"} 0.0
 # TYPE jvm_threads_started_threads counter
 # HELP jvm_threads_started_threads The total number of application threads started in the JVM
-jvm_threads_started_threads_total 164001.0
+jvm_threads_started_threads_total 163159.0
 # TYPE jvm_classes_loaded_classes gauge
 # HELP jvm_classes_loaded_classes The number of classes that are currently loaded in the Java virtual machine
 jvm_classes_loaded_classes 0.0
 # TYPE http_server_active_requests gauge
 # HELP http_server_active_requests  
 http_server_active_requests{server_port="8080",url_scheme="http"} 0.0
-http_server_active_requests{server_port="8443",url_scheme="https"} 1.0
+http_server_active_requests{server_port="8443",url_scheme="https"} 7.0
 # TYPE cui_jwt_validation_errors counter
 # HELP cui_jwt_validation_errors Number of JWT validation errors by type
 cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="TOKEN_SIZE_EXCEEDED",result="failure"} 0.0
@@ -231,5 +231,5 @@ cui_jwt_validation_errors_total{category="INVALID_STRUCTURE",event_type="DECODED
 cui_jwt_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_NBF_FUTURE",result="failure"} 0.0
 # TYPE process_cpu_usage gauge
 # HELP process_cpu_usage The \"recent cpu usage\" for the Java Virtual Machine process
-process_cpu_usage 0.5073059617547806
+process_cpu_usage 0.5
 # EOF

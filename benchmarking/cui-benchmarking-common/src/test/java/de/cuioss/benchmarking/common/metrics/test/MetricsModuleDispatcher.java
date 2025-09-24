@@ -158,7 +158,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
     private String loadDefaultMetrics() {
         try {
-            Path metricsFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+            // Use the single real WRK benchmark metrics file
+            Path metricsFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
             return Files.readString(metricsFile);
         } catch (IOException e) {
             // Fallback to minimal valid metrics if file not found
