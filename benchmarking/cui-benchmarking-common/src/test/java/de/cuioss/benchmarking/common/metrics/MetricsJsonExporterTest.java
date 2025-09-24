@@ -26,7 +26,9 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -446,7 +448,7 @@ class MetricsJsonExporterTest {
         Number cpuUsage = (Number) systemMetrics.get("quarkus_cpu_usage_percent");
         assertNotNull(cpuUsage, "Quarkus CPU usage should not be null");
         assertTrue(cpuUsage.doubleValue() >= 0 && cpuUsage.doubleValue() <= 100,
-                   "CPU usage should be between 0 and 100 percent");
+                "CPU usage should be between 0 and 100 percent");
 
         Number cores = (Number) systemMetrics.get("cpu_cores_available");
         assertNotNull(cores, "CPU cores should not be null");
@@ -461,11 +463,11 @@ class MetricsJsonExporterTest {
         assertTrue(tokenCount.longValue() > 0, "Should have created at least one token");
 
         // Verify JWT validation errors structure
-        @SuppressWarnings("unchecked") java.util.List<Map<String, Object>> errors = (java.util.List<Map<String, Object>>) runtimeData.get("cui_jwt_validation_errors");
+        @SuppressWarnings("unchecked") List<Map<String, Object>> errors = (List<Map<String, Object>>) runtimeData.get("cui_jwt_validation_errors");
         assertFalse(errors.isEmpty(), "Should contain error entries");
 
         // Verify errors are sorted by category and event_type
-        Map<String, Object> firstError = errors.get(0);
+        Map<String, Object> firstError = errors.getFirst();
         assertTrue(firstError.containsKey("category"), "Error should contain category");
         assertTrue(firstError.containsKey("event_type"), "Error should contain event_type");
         assertTrue(firstError.containsKey("count"), "Error should contain count");
@@ -557,7 +559,7 @@ class MetricsJsonExporterTest {
                 .mapToDouble(Map.Entry::getValue)
                 .sum();
         if (heapUsed > 0) {
-            systemMetrics.put("memory_heap_used_mb", (long)(heapUsed / (1024 * 1024)));
+            systemMetrics.put("memory_heap_used_mb", (long) (heapUsed / (1024 * 1024)));
         }
 
         data.put("system", systemMetrics);
@@ -568,7 +570,7 @@ class MetricsJsonExporterTest {
                 .filter(e -> e.getKey().startsWith("http_server_requests_seconds_count"))
                 .mapToDouble(Map.Entry::getValue)
                 .sum();
-        httpMetrics.put("total_requests", (long)count);
+        httpMetrics.put("total_requests", (long) count);
 
         double sum = realMetrics.entrySet().stream()
                 .filter(e -> e.getKey().startsWith("http_server_requests_seconds_sum"))
@@ -607,10 +609,10 @@ class MetricsJsonExporterTest {
         data.put("cui_jwt_validation_success_operations_total", successOps);
 
         // JWT validation errors - extract from real data and structure as array
-        java.util.List<Map<String, Object>> errors = new java.util.ArrayList<>();
+        List<Map<String, Object>> errors = new ArrayList<>();
         realMetrics.entrySet().stream()
                 .filter(e -> e.getKey().startsWith("cui_jwt_validation_errors_total"))
-                .sorted(java.util.Map.Entry.comparingByKey()) // Sort by metric name for consistent ordering
+                .sorted(Map.Entry.comparingByKey()) // Sort by metric name for consistent ordering
                 .forEach(e -> {
                     String category = extractCategory(e.getKey());
                     String eventType = extractEventType(e.getKey());

@@ -15,6 +15,8 @@
  */
 package de.cuioss.benchmarking.common.metrics;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.metrics.test.MetricsModuleDispatcher;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
@@ -25,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,14 +51,14 @@ class MetricsOrchestratorTest {
         // Clean and recreate directories for each test
         if (Files.exists(targetDir)) {
             Files.walk(targetDir)
-                .sorted((a, b) -> b.compareTo(a)) // reverse order for deletion
-                .forEach(path -> {
-                    try {
-                        Files.delete(path);
-                    } catch (IOException e) {
-                        // Ignore deletion errors
-                    }
-                });
+                    .sorted((a, b) -> b.compareTo(a)) // reverse order for deletion
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            // Ignore deletion errors
+                        }
+                    });
         }
         Files.createDirectories(targetDir);
         Files.createDirectories(downloadsDir);
@@ -97,12 +98,12 @@ class MetricsOrchestratorTest {
         assertTrue(jsonContent.contains("memory_heap_used_mb") || jsonContent.contains("memory_total_used_mb"), "Should contain meaningful memory metrics in MB");
 
         // Parse and verify the JSON structure
-        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().create();
-        java.util.Map<String, Object> parsedJson = gson.fromJson(jsonContent, java.util.Map.class);
+        Gson gson = new GsonBuilder().create();
+        Map<String, Object> parsedJson = gson.fromJson(jsonContent, Map.class);
 
         // Verify top-level structure
         assertTrue(parsedJson.containsKey("quarkus-runtime-metrics"), "Should have quarkus-runtime-metrics top-level key");
-        java.util.Map<String, Object> runtimeMetrics = (java.util.Map<String, Object>) parsedJson.get("quarkus-runtime-metrics");
+        Map<String, Object> runtimeMetrics = (Map<String, Object>) parsedJson.get("quarkus-runtime-metrics");
 
         // Verify timestamp exists
         assertTrue(runtimeMetrics.containsKey("timestamp"), "Should have timestamp");
@@ -114,12 +115,12 @@ class MetricsOrchestratorTest {
         assertTrue(runtimeMetrics.containsKey("cui_jwt_validation_errors"), "Should have errors node");
 
         // Verify system metrics structure with new naming
-        java.util.Map<String, Object> systemMetrics = (java.util.Map<String, Object>) runtimeMetrics.get("system");
+        Map<String, Object> systemMetrics = (Map<String, Object>) runtimeMetrics.get("system");
         assertNotNull(systemMetrics, "System metrics should not be null");
         assertTrue(systemMetrics.containsKey("quarkus_cpu_usage_percent") || systemMetrics.containsKey("cpu_cores_available"),
-                   "System should have CPU metrics");
+                "System should have CPU metrics");
         assertTrue(systemMetrics.containsKey("memory_heap_used_mb") || systemMetrics.containsKey("memory_total_used_mb"),
-                   "System should have meaningful memory metrics");
+                "System should have meaningful memory metrics");
 
         moduleDispatcher.assertCallsAnswered(1);
     }
@@ -210,14 +211,14 @@ class MetricsOrchestratorTest {
         // Clean up if exists from previous run
         if (Files.exists(newTargetDir)) {
             Files.walk(newTargetDir)
-                .sorted((a, b) -> b.compareTo(a))
-                .forEach(path -> {
-                    try {
-                        Files.delete(path);
-                    } catch (IOException e) {
-                        // Ignore
-                    }
-                });
+                    .sorted((a, b) -> b.compareTo(a))
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            // Ignore
+                        }
+                    });
         }
 
         assertFalse(Files.exists(newDownloadsDir), "Downloads directory should not exist initially");

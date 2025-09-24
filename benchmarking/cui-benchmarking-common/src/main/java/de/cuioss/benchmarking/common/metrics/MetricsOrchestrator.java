@@ -20,12 +20,16 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Minimal orchestrator for metrics processing.
@@ -335,14 +339,14 @@ public class MetricsOrchestrator {
 
     private String extractTag(String metricName, String tagName) {
         String pattern = tagName + "=\"([^\"]+)\"";
-        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
-        java.util.regex.Matcher matcher = regex.matcher(metricName);
+        Pattern regex = Pattern.compile(pattern);
+        Matcher matcher = regex.matcher(metricName);
         return matcher.find() ? matcher.group(1) : null;
     }
 
     private Object formatNumber(double value) {
         if (value < 10) {
-            java.text.DecimalFormat df = new java.text.DecimalFormat("0.0", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.US));
+            DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.US));
             return Double.parseDouble(df.format(value));
         } else {
             return Long.valueOf(Math.round(value));

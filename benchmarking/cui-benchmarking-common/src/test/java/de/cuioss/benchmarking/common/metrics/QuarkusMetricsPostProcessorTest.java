@@ -52,7 +52,7 @@ class QuarkusMetricsPostProcessorTest {
 
     @Test void shouldProcessQuarkusMetricsSuccessfully() throws IOException {
         // Copy test metrics file to temp directory
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = metricsDownloadDir.resolve("quarkus-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -132,7 +132,7 @@ class QuarkusMetricsPostProcessorTest {
 
     @Test void shouldParseAndExportWithFlatDirectoryStructure() throws IOException {
         // Copy test metrics file to temp directory
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = metricsDownloadDir.resolve("quarkus-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -149,7 +149,7 @@ class QuarkusMetricsPostProcessorTest {
         // This test now verifies that files must be directly in metrics-download directory
 
         // Copy test metrics file directly to metrics-download directory
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = metricsDownloadDir.resolve("quarkus-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -166,7 +166,7 @@ class QuarkusMetricsPostProcessorTest {
         // This test now verifies processing of metrics file directly in metrics-download
 
         // Copy test metrics file directly to metrics-download directory
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = metricsDownloadDir.resolve("quarkus-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 

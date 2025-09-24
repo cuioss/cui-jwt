@@ -46,7 +46,7 @@ class MetricsFileProcessorTest {
     @Test void shouldProcessAllMetricsFilesSuccessfully() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("test-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -60,10 +60,10 @@ class MetricsFileProcessorTest {
         assertTrue(metrics.containsKey("system_cpu_count"), "Should contain CPU count");
         assertTrue(metrics.containsKey("system_load_average_1m"), "Should contain load average");
 
-        assertEquals(0.4074119443697027, metrics.get("system_cpu_usage"));
-        assertEquals(0.40740279833176374, metrics.get("process_cpu_usage"));
+        assertEquals(0.517065, metrics.get("system_cpu_usage"));
+        assertEquals(0.5, metrics.get("process_cpu_usage"));  // Value from real WRK benchmark data
         assertEquals(4.0, metrics.get("system_cpu_count"));
-        assertEquals(2.775390625, metrics.get("system_load_average_1m"));
+        assertEquals(2.41015625, metrics.get("system_load_average_1m"));  // Value from real WRK benchmark data
     }
 
     @Test void shouldReturnEmptyMapWhenDirectoryDoesNotExist() throws IOException {
@@ -86,7 +86,7 @@ class MetricsFileProcessorTest {
     @Test void shouldProcessSpecificFileByName() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("specific-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -107,7 +107,7 @@ class MetricsFileProcessorTest {
     @Test void shouldProcessSpecificFileByPath() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("path-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -120,7 +120,7 @@ class MetricsFileProcessorTest {
     @Test void shouldExtractJwtValidationMetrics() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("jwt-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -134,14 +134,14 @@ class MetricsFileProcessorTest {
         assertTrue(jwtMetrics.containsKey("cui_jwt_bearer_token_validation_seconds_count{class=\"de.cuioss.jwt.quarkus.producer.BearerTokenProducer\",exception=\"none\",method=\"getBearerTokenResult\"}"),
                 "Should contain bearer token validation metrics");
 
-        assertEquals(5864975.0, jwtMetrics.get("cui_jwt_validation_success_operations_total{event_type=\"ACCESS_TOKEN_CREATED\",result=\"success\"}"));
-        assertEquals(5864975.0, jwtMetrics.get("cui_jwt_bearer_token_validation_seconds_count{class=\"de.cuioss.jwt.quarkus.producer.BearerTokenProducer\",exception=\"none\",method=\"getBearerTokenResult\"}"));
+        assertEquals(1.0960018E7, jwtMetrics.get("cui_jwt_validation_success_operations_total{event_type=\"ACCESS_TOKEN_CREATED\",result=\"success\"}"));
+        assertEquals(1.0960018E7, jwtMetrics.get("cui_jwt_bearer_token_validation_seconds_count{class=\"de.cuioss.jwt.quarkus.producer.BearerTokenProducer\",exception=\"none\",method=\"getBearerTokenResult\"}"));
     }
 
     @Test void shouldExtractResourceMetrics() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("resource-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -156,9 +156,9 @@ class MetricsFileProcessorTest {
         assertTrue(resourceMetrics.containsKey("system_load_average_1m"), "Should contain load average");
         assertTrue(resourceMetrics.containsKey("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}"), "Should contain memory metrics");
 
-        assertEquals(0.4074119443697027, resourceMetrics.get("system_cpu_usage"));
+        assertEquals(0.517065, resourceMetrics.get("system_cpu_usage"));
         assertEquals(4.0, resourceMetrics.get("system_cpu_count"));
-        assertEquals(3.0408704E7, resourceMetrics.get("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}"));
+        assertEquals(1.1010048E7, resourceMetrics.get("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}"));
     }
 
     @Test void shouldExtractTagFromMetricName() {
@@ -181,7 +181,7 @@ class MetricsFileProcessorTest {
         Files.createDirectories(downloadsDir);
         assertFalse(processor.hasMetricsFiles(), "Should return false when directory is empty");
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("test.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
         assertTrue(processor.hasMetricsFiles(), "Should return true when .txt files exist");
@@ -194,7 +194,7 @@ class MetricsFileProcessorTest {
     @Test void shouldHandleMultipleMetricsFiles() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path file1 = downloadsDir.resolve("metrics1.txt");
         Path file2 = downloadsDir.resolve("metrics2.txt");
 
@@ -248,7 +248,7 @@ class MetricsFileProcessorTest {
     @Test void shouldHandleMemoryMetricsWithLabels() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path targetFile = downloadsDir.resolve("memory-metrics.txt");
         Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 
@@ -259,14 +259,14 @@ class MetricsFileProcessorTest {
         assertTrue(allMetrics.containsKey("jvm_memory_used_bytes{area=\"nonheap\",id=\"runtime code cache (code and data)\"}"),
                 "Should contain non-heap memory metrics");
 
-        assertEquals(3.0408704E7, allMetrics.get("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}"));
+        assertEquals(1.1010048E7, allMetrics.get("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}"));
         assertEquals(0.0, allMetrics.get("jvm_memory_used_bytes{area=\"nonheap\",id=\"runtime code cache (code and data)\"}"));
     }
 
     @Test void shouldProcessOnlyTxtFiles() throws IOException {
         Files.createDirectories(downloadsDir);
 
-        Path sourceFile = Path.of("src/test/resources/metrics-test-data/quarkus-metrics.txt");
+        Path sourceFile = Path.of("src/test/resources/metrics/wrk-benchmark-metrics.txt");
         Path txtFile = downloadsDir.resolve("metrics.txt");
         Path logFile = downloadsDir.resolve("metrics.log");
         Path csvFile = downloadsDir.resolve("metrics.csv");
