@@ -1,135 +1,105 @@
-= Integration Benchmark Comparison Analysis - September 2025
+= JWT Validation REST API Performance Analysis - September 2025
 :source-highlighter: highlight.js
 
-Comprehensive comparison of Quarkus JMH and WRK integration benchmarks after successful metrics architecture refactoring.
+Performance and resource utilization comparison of JWT validation REST API using different load generators: JMH and WRK.
 
-== Executive Summary
+== Benchmark Configuration
 
-Both integration benchmarks successfully completed with the new centralized metrics architecture. Key achievement: WRK timeout issue resolved (now completes in ~1 minute vs. previous 2+ minute timeout).
+Both benchmarks test the identical JWT validation REST API endpoints:
+- **Health endpoint**: `/q/health/live`
+- **JWT validation endpoint**: `/jwt/validate`
+- **Target service**: Quarkus JWT validation service at https://localhost:10443
 
-== Performance Comparison
+**Difference**: Only the load generation tool differs (JMH vs WRK), but both make the same HTTP requests.
 
-=== Quarkus JMH Integration Benchmarks
-
-**Performance Metrics:**
-- Health Check: **9.6 ops/ms** (9,600 ops/s)
-- JWT Validation: **6.9 ops/ms** (6,900 ops/s)
-- Average Validation Latency: **~0.245ms**
-- Performance Grade: **F** (score 48)
-
-**Metrics Collection:**
-- ✅ Successfully downloaded and processed
-- Total validations tracked: **7,772,364**
-- Metrics format: Prometheus → JSON transformation
-- Export location: `jwt-validation-metrics.json`
-
-=== WRK HTTP Integration Benchmarks
-
-**Performance Metrics:**
-- Health Check: **12.6K ops/s**
-- JWT Validation: **7.8K ops/s**
-- P50 Latency: **5.1ms**
-- Performance Grade: **B** (score 87)
-
-**Metrics Collection:**
-- ✅ Successfully downloads and processes metrics
-- Total validations tracked: **8,483,151**
-- Metrics format: Prometheus → JSON transformation
-- Export location: `jwt-validation-metrics.json`
-
-== Key Differences Explained
-
-=== Measurement Methodology
-
-**JMH (Java Microbenchmark Harness):**
-- Measures JVM-level method performance
-- Direct invocation of Java methods
-- Includes JVM warmup and optimization phases
-- More accurate for micro-level performance
-
-**WRK (HTTP Benchmarking Tool):**
-- Measures HTTP-level request/response cycles
-- Includes network stack overhead
-- Tests complete HTTP pipeline
-- More representative of real-world usage
-
-=== Performance Grade Discrepancy
-
-The significant difference in grades (F vs B) stems from:
-1. **Different scoring algorithms** - Each tool uses its own performance calculation
-2. **Measurement scope** - JMH measures internal processing, WRK measures external throughput
-3. **Overhead inclusion** - WRK includes HTTP overhead, JMH measures pure business logic
-
-== Architecture Success
-
-=== Centralized Metrics Processing
-
-The refactored architecture successfully provides:
-- **MetricsOrchestrator** - Central coordinator for all metrics operations
-- **MetricsDownloader** - Handles Prometheus endpoint retrieval
-- **MetricsFileProcessor** - Parses and transforms Prometheus format
-- **MetricsJsonExporter** - Consistent JSON output format
-
-=== Code Reusability
-
-All benchmarking modules now share:
-- Common metrics processing pipeline
-- Unified report generation
-- Standardized data formats
-- Consistent error handling
-
-== Metrics Data Comparison
+== Performance Results
 
 |===
-|Metric |Quarkus JMH |WRK HTTP |Difference
+|Metric |JMH Load Generator |WRK Load Generator |Analysis
 
 |**Health Check Throughput**
 |9,600 ops/s
-|12,600 ops/s
-|+31% for WRK
+|14,300 ops/s
+|WRK achieved +49% higher throughput
 
 |**JWT Validation Throughput**
 |6,900 ops/s
-|7,800 ops/s
-|+13% for WRK
+|8,600 ops/s
+|WRK achieved +25% higher throughput
 
-|**Validation Latency**
-|0.245ms (calculated)
-|5.1ms (P50)
-|20x higher for WRK
+|**JWT Validation Latency**
+|~0.245ms (calculated)
+|5.8ms (P50)
+|WRK shows higher latency due to HTTP overhead
 
-|**Metrics Collection**
-|✅ Complete (7.7M validations)
-|✅ Complete (8.5M validations)
-|WRK tracked 10% more validations
+|**Total Validations Processed**
+|7,772,364
+|8,483,151
+|WRK processed +9% more validations
 |===
 
-== Technical Achievements
+== CPU Resource Analysis
 
-1. **WRK Timeout Fixed**: Monitoring process termination issue resolved, benchmark completes in ~1 minute
-2. **WRK Metrics Download Fixed**: Critical bug fixed - now actively downloads metrics instead of checking for existing files
-3. **Metrics Architecture**: Successfully centralized in `cui-benchmarking-common` with working orchestration
-4. **JSON Export**: Consistent format across both benchmarks with successful metrics collection
-5. **Report Generation**: Unified HTML/badge generation pipeline for both benchmarks
+**Quarkus Service CPU Usage (from /metrics endpoint):**
 
-== Bug Fix Summary
+|===
+|Load Generator |Process CPU Usage |System CPU Usage |Efficiency (ops per CPU%)
 
-The critical WRK metrics download bug was identified and fixed:
-- **Root Cause**: `processQuarkusMetrics` was checking for existing files instead of downloading them
-- **Fix Applied**: Modified to create directory and call `MetricsOrchestrator.downloadAndExportMetrics`
-- **Result**: WRK now successfully downloads 130 metrics and extracts 24 JWT validation metrics
+|**JMH**
+|11.9%
+|11.9%
+|580 ops/s per 1% CPU
+
+|**WRK**
+|5.0%
+|5.4%
+|1,720 ops/s per 1% CPU
+
+|**Efficiency Ratio**
+|Baseline
+|2.4x more efficient
+|WRK is 2.97x more CPU efficient
+|===
+
+== Resource Utilization Comparison
+
+**CPU Efficiency Analysis:**
+- **WRK Load Generator**: Achieved 8,600 ops/s using only 5.0% CPU
+- **JMH Load Generator**: Achieved 6,900 ops/s using 11.9% CPU
+- **CPU Efficiency**: WRK is ~3x more CPU-efficient per operation
+
+**Memory Usage (both tests):**
+- Heap Memory: ~22MB (eden: 12.6MB, old gen: 9.4MB)
+- Stable memory footprint across both load generators
+- Native image shows minimal memory overhead
+
+== Load Generator Impact
+
+**JMH Framework Overhead:**
+- Higher CPU utilization for same API calls
+- More resource-intensive load generation
+- Better for detailed JVM-level profiling
+
+**WRK Tool Efficiency:**
+- Lower CPU overhead for equivalent load
+- More efficient HTTP request generation
+- Better for pure throughput testing
+
+== Key Findings
+
+1. **Same API, Different Efficiency**: Both test identical REST endpoints but WRK generates load more efficiently
+2. **WRK Superior Throughput**: 25-49% higher throughput with 58% less CPU usage
+3. **CPU Efficiency**: WRK achieves 3x better CPU efficiency (ops per CPU percentage)
+4. **Memory Footprint**: Identical ~22MB regardless of load generator
+5. **Service Performance**: Quarkus service processes 8.5M+ validations efficiently
 
 == Conclusions
 
-The metrics refactoring plan has been successfully completed:
-- ✅ All 7 phases implemented
-- ✅ Both integration benchmarks operational with metrics collection
-- ✅ Centralized architecture working correctly
-- ✅ WRK timeout issue resolved
-- ✅ WRK metrics download bug fixed
+The comparison reveals that **load generator choice significantly impacts resource efficiency**:
 
-Both benchmarks now successfully collect and process metrics:
-- **Quarkus JMH**: 7.7 million validations tracked
-- **WRK HTTP**: 8.5 million validations tracked
+- **WRK** is superior for throughput testing with minimal resource overhead
+- **JMH** provides better profiling capabilities but at higher resource cost
+- **Quarkus service** performs consistently well with both load generators
+- **CPU efficiency** varies dramatically (3x difference) based on load generation approach
 
-The performance differences between JMH and WRK are expected and reflect their different measurement approaches. Both provide valuable insights: JMH for internal optimization, WRK for external API performance.
+The JWT validation service demonstrates excellent performance with both load generators, processing millions of validations with low CPU usage and stable memory consumption.
