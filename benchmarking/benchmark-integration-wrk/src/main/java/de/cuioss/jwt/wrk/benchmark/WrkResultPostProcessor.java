@@ -189,50 +189,39 @@ public class WrkResultPostProcessor {
     }
 
     /**
-     * Process Quarkus metrics if they were downloaded during the benchmark run.
+     * Download and process Quarkus metrics from the running service.
      *
-     * @param targetDir The target directory containing metrics-download subdirectory
+     * @param targetDir The target directory to store metrics
      */
     private void processQuarkusMetrics(Path targetDir) {
         String metricsUrl = System.getProperty("quarkus.metrics.url", "https://localhost:10443");
         Path downloadsDir = targetDir.resolve("metrics-download");
 
-        if (!Files.exists(downloadsDir)) {
-            LOGGER.info("No Quarkus metrics found (directory not present: " + downloadsDir + ")");
-            return;
-        }
-
         try {
-            // Check if metrics files exist
-            boolean hasMetricsFiles = false;
-            try (Stream<Path> files = Files.list(downloadsDir)) {
-                hasMetricsFiles = files.anyMatch(p ->
-                        p.getFileName().toString().endsWith(".txt") &&
-                                (p.getFileName().toString().contains("before") ||
-                                        p.getFileName().toString().contains("after") ||
-                                        p.getFileName().toString().contains("quarkus"))
-                );
+            // Create downloads directory if it doesn't exist
+            if (!Files.exists(downloadsDir)) {
+                Files.createDirectories(downloadsDir);
+                LOGGER.info("Created metrics download directory: " + downloadsDir);
             }
 
-            if (!hasMetricsFiles) {
-                LOGGER.info("No Quarkus metrics files found in: " + downloadsDir);
-                return;
-            }
+            LOGGER.info("Downloading and processing Quarkus metrics from: " + metricsUrl);
 
-            LOGGER.info("Processing Quarkus metrics from: " + downloadsDir);
-
+            // Create orchestrator and download metrics
             MetricsOrchestrator orchestrator = new MetricsOrchestrator(
                     metricsUrl,
                     downloadsDir,
                     targetDir
             );
-            orchestrator.processQuarkusMetrics("after-wrk");
 
-            LOGGER.info("Successfully processed Quarkus resource usage metrics");
+            // This will download metrics from the URL and process them
+            orchestrator.downloadAndExportMetrics("WrkBenchmark", java.time.Instant.now());
+
+            LOGGER.info("Successfully downloaded and processed Quarkus metrics");
             LOGGER.info("Metrics output available at: " + targetDir.resolve("jwt-validation-metrics.json"));
 
         } catch (IOException e) {
-            LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());
+            LOGGER.warn("Failed to download/process Quarkus metrics: " + e.getMessage());
+            LOGGER.warn("Make sure the Quarkus service is running at: " + metricsUrl);
             // Don't fail the build, just log the warning
         }
     }
