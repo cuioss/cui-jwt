@@ -32,9 +32,10 @@ Both integration benchmarks successfully completed with the new centralized metr
 - Performance Grade: **B** (score 87)
 
 **Metrics Collection:**
-- ⚠️ Configured but skipped (containers not running)
-- Metrics download infrastructure in place
-- Ready for container-based testing
+- ❌ Not downloaded (containers not running)
+- Metrics download execution added to pom.xml
+- WrkResultPostProcessor supports metrics-only mode
+- Requires running containers for actual metrics
 
 == Key Differences Explained
 
@@ -99,16 +100,17 @@ All benchmarking modules now share:
 
 |**Metrics Collection**
 |✅ Complete (7.7M validations)
-|⚠️ Not available (no containers)
+|❌ Not collected (no containers)
 |N/A
 |===
 
 == Technical Achievements
 
-1. **WRK Timeout Fixed**: Monitoring process termination issue resolved
+1. **WRK Timeout Fixed**: Monitoring process termination issue resolved, benchmark completes in ~1 minute
 2. **Metrics Architecture**: Successfully centralized in `cui-benchmarking-common`
-3. **JSON Export**: Consistent format across all benchmark types
-4. **Report Generation**: Unified HTML/badge generation pipeline
+3. **Metrics Download Setup**: WRK now has metrics download infrastructure (execution in post-integration-test phase)
+4. **JSON Export**: Consistent format across all benchmark types (when metrics are available)
+5. **Report Generation**: Unified HTML/badge generation pipeline for both benchmarks
 
 == Conclusions
 
