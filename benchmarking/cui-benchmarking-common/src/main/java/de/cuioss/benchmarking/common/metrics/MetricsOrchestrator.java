@@ -142,13 +142,13 @@ public class MetricsOrchestrator {
             Double value = entry.getValue();
 
             if (metricName.startsWith("process_cpu_usage")) {
-                // Convert to percentage for better readability
+                // Convert to percentage for better readability - this is the Quarkus JVM process CPU
                 double cpuPercent = value * 100;
                 if (cpuPercent > 0.01) {  // Only show if meaningful
-                    systemMetrics.put("process_cpu_usage_percent", formatNumber(cpuPercent));
+                    systemMetrics.put("quarkus_cpu_usage_percent", formatNumber(cpuPercent));
                 }
             } else if (metricName.startsWith("system_cpu_usage")) {
-                // Convert to percentage for better readability
+                // Convert to percentage for better readability - this is total system CPU
                 double cpuPercent = value * 100;
                 if (cpuPercent > 0.01) {  // Only show if meaningful
                     systemMetrics.put("system_cpu_usage_percent", formatNumber(cpuPercent));
@@ -157,14 +157,14 @@ public class MetricsOrchestrator {
                 systemMetrics.put("cpu_cores_available", value.intValue());
             } else if (metricName.startsWith("system_load_average_1m")) {
                 if (value > 0) {
-                    systemMetrics.put("load_average_1min", formatNumber(value));
+                    systemMetrics.put("cpu_load_average", formatNumber(value));
                 }
             } else if (metricName.startsWith("jvm_threads_peak_threads")) {
                 systemMetrics.put("threads_peak", value.intValue());
             } else if (metricName.startsWith("jvm_threads_live_threads")) {
-                liveThreads = value.intValue();
+                // Skip - not needed per user request
             } else if (metricName.startsWith("jvm_threads_daemon_threads")) {
-                daemonThreads = value.intValue();
+                // Skip - not needed per user request
             } else if (metricName.startsWith("jvm_gc_overhead")) {
                 // Convert to percentage only if meaningful
                 double gcPercent = value * 100;
@@ -186,26 +186,11 @@ public class MetricsOrchestrator {
                     totalHeapMax += value.longValue();
                 }
             } else if (metricName.startsWith("process_uptime_seconds")) {
-                // Add process uptime in a readable format
-                if (value > 0) {
-                    if (value < 60) {
-                        systemMetrics.put("uptime_seconds", formatNumber(value));
-                    } else if (value < 3600) {
-                        systemMetrics.put("uptime_minutes", formatNumber(value / 60));
-                    } else {
-                        systemMetrics.put("uptime_hours", formatNumber(value / 3600));
-                    }
-                }
+                // Skip uptime - not needed per user request
             }
         }
 
-        // Add thread metrics if available
-        if (liveThreads > 0) {
-            systemMetrics.put("threads_live", liveThreads);
-        }
-        if (daemonThreads > 0) {
-            systemMetrics.put("threads_daemon", daemonThreads);
-        }
+        // Skip thread counts - not needed per user request
 
         // Only add memory metrics that are actually meaningful (non-zero)
         if (totalHeapUsed > 0) {
@@ -262,7 +247,7 @@ public class MetricsOrchestrator {
                     }
                 }
             } else if (metricName.startsWith("http_server_active_requests")) {
-                httpMetrics.put("active_requests", value.longValue());
+                // Skip active_requests - not needed per user request
             }
         }
 

@@ -116,7 +116,7 @@ class MetricsOrchestratorTest {
         // Verify system metrics structure with new naming
         java.util.Map<String, Object> systemMetrics = (java.util.Map<String, Object>) runtimeMetrics.get("system");
         assertNotNull(systemMetrics, "System metrics should not be null");
-        assertTrue(systemMetrics.containsKey("process_cpu_usage_percent") || systemMetrics.containsKey("cpu_cores_available"),
+        assertTrue(systemMetrics.containsKey("quarkus_cpu_usage_percent") || systemMetrics.containsKey("cpu_cores_available"),
                    "System should have CPU metrics");
         assertTrue(systemMetrics.containsKey("memory_heap_used_mb") || systemMetrics.containsKey("memory_total_used_mb"),
                    "System should have meaningful memory metrics");
