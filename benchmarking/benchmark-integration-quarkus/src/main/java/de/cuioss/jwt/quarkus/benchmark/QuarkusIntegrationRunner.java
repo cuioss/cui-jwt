@@ -28,7 +28,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Collection;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;

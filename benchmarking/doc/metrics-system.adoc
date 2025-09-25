@@ -1,0 +1,237 @@
+= Real-Time Metrics Collection System
+:toc:
+:toc-placement: preamble
+
+== Overview
+
+The metrics system captures real-time CPU and memory utilization from the Quarkus application during benchmark execution, not after. This ensures accurate performance data by monitoring the application under test, not the load generator.
+
+== Problem Statement
+
+Previous approach captured metrics AFTER benchmarks completed, showing idle CPU (~2.5%). Additionally, WRK's system-metrics.log measured the load generator's CPU usage (600-800%), not the application being tested.
+
+== Solution Architecture
+
+=== Components
+
+[source]
+----
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│                 │     │                  │     │                 │
+│   WRK/JMH       │────▶│  Quarkus App     │◀────│   Prometheus    │
+│  (Load Gen)     │     │  :10443/jwt      │     │   :9090         │
+│                 │     │  :10443/q/metrics│     │  (Scraper)      │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+        │                                                  │
+        │                                                  │
+        ▼                                                  ▼
+┌─────────────────┐                          ┌─────────────────────┐
+│  Benchmark      │                          │  Time-Series        │
+│  Results        │                          │  Metrics Data       │
+└─────────────────┘                          └─────────────────────┘
+        │                                                  │
+        └──────────────────┬───────────────────────────────┘
+                           ▼
+                ┌──────────────────────┐
+                │  MetricsOrchestrator │
+                │  (Post-Processing)   │
+                └──────────────────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │  Unified Reports     │
+                │  with CPU Metrics    │
+                └──────────────────────┘
+----
+
+=== Data Flow
+
+[source]
+----
+1. Start Prometheus (docker-compose)
+     │
+     ▼
+2. Start Quarkus Application
+     │
+     ▼
+3. Benchmark Runner (WRK/JMH):
+     │
+     ├─► Record Start Timestamp
+     ├─► Run Benchmark
+     ├─► Record End Timestamp
+     └─► Pass timestamps to MetricsOrchestrator
+              │
+              ▼
+4. MetricsOrchestrator (Java):
+     │
+     ├─► Query Prometheus API for exact time range
+     ├─► Fetch CPU, memory, request metrics
+     ├─► Calculate system statistics (avg, max)
+     └─► Store as {benchmark}-metrics.json
+              │
+              ▼
+5. Generate unified reports with real-time metrics
+----
+
+== Implementation Details
+
+=== Docker Compose Configuration
+
+Prometheus service added to scrape Quarkus metrics every 2 seconds during benchmarks.
+
+=== Java-Based Metrics Collection
+
+Both WRK and JMH record benchmark execution timestamps and pass them to MetricsOrchestrator:
+
+[source,java]
+----
+public class MetricsOrchestrator {
+
+    public void collectBenchmarkMetrics(
+            String benchmarkName,    // "jwt-validation" or "health"
+            Instant startTime,        // Benchmark start timestamp
+            Instant endTime,          // Benchmark end timestamp
+            Path outputDir) {         // Where to store metrics
+
+        // Query Prometheus for exact time window
+        PrometheusClient client = new PrometheusClient("http://localhost:9090");
+
+        // Fetch all relevant metrics for time range
+        Map<String, TimeSeries> metrics = client.queryRange(
+            List.of("process_cpu_usage",
+                    "system_cpu_usage",
+                    "jvm_memory_used_bytes",
+                    "http_server_requests_seconds_count"),
+            startTime,
+            endTime,
+            Duration.ofSeconds(2)
+        );
+
+        // Calculate system statistics (no percentiles for system resources)
+        Map<String, Object> statistics = calculateSystemStatistics(metrics);
+
+        // Store results separately from benchmark data
+        Path metricsFile = outputDir.resolve(benchmarkName + "-metrics.json");
+        exportMetrics(statistics, metricsFile);
+    }
+}
+----
+
+=== Directory Structure
+
+[source]
+----
+target/
+├── benchmark-results/
+│   └── benchmark-data.json      # Throughput/latency results (client-side)
+└── prometheus/
+    ├── health-metrics.json      # Health check CPU/memory statistics (server-side)
+    └── jwt-validation-metrics.json  # JWT validation CPU/memory statistics (server-side)
+----
+
+=== Metrics Processing Pipeline
+
+[source]
+----
+PrometheusMetricsCollector
+         │
+         ├─► Fetch time-series data from Prometheus API
+         │
+         ├─► Parse JSON response
+         │
+         ├─► Calculate system statistics (avg, max only)
+         │
+         └─► Export to common format
+                    │
+                    ▼
+         MetricsTransformer
+         (Existing infrastructure)
+----
+
+== Key Metrics Captured
+
+[cols="2,3,1"]
+|===
+|Metric |Description |Source
+
+|process_cpu_usage
+|Quarkus application CPU utilization
+|Prometheus
+
+|system_cpu_usage
+|Total system CPU (container/host)
+|Prometheus
+
+|jvm_memory_used_bytes
+|Heap and non-heap memory usage
+|Prometheus
+
+|http_server_requests_seconds
+|Request latency distribution
+|Prometheus
+
+|jvm_threads_current
+|Active thread count during load
+|Prometheus
+|===
+
+== Integration Examples
+
+=== WRK Integration
+
+[source,java]
+----
+// In WrkBenchmarkConverter or WrkResultPostProcessor
+public void processBenchmark(Path wrkOutputFile) {
+    // Parse WRK output
+    BenchmarkResult result = parseWrkOutput(wrkOutputFile);
+
+    // Record timestamps from WRK output or wrapper script
+    Instant startTime = result.getStartTime();
+    Instant endTime = result.getEndTime();
+    String benchmarkName = result.getBenchmarkName(); // "jwt-validation" or "health"
+
+    // Delegate to MetricsOrchestrator
+    metricsOrchestrator.collectBenchmarkMetrics(
+        benchmarkName, startTime, endTime, outputDir);
+}
+----
+
+=== JMH Integration
+
+[source,java]
+----
+// In QuarkusIntegrationRunner
+@Override
+protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) {
+    for (RunResult result : results) {
+        String benchmarkName = extractBenchmarkName(result);
+
+        // JMH provides iteration timestamps
+        Instant startTime = Instant.ofEpochMilli(result.getParams().getStartTime());
+        Instant endTime = Instant.ofEpochMilli(result.getParams().getEndTime());
+
+        // Same MetricsOrchestrator call as WRK
+        metricsOrchestrator.collectBenchmarkMetrics(
+            benchmarkName, startTime, endTime, outputDir);
+    }
+}
+----
+
+== Benefits
+
+1. **Accurate**: Measures actual application CPU, not load generator
+2. **Time-aligned**: Correlates metrics with benchmark execution phases
+3. **Unified**: Single MetricsOrchestrator handles both WRK and JMH
+4. **No duplication**: Prometheus querying logic in one place
+5. **Professional**: Industry-standard Prometheus/Grafana stack
+6. **Historical**: Time-series data enables trend analysis
+
+== Migration Path
+
+1. Phase 1: Add Prometheus to Docker Compose
+2. Phase 2: Implement PrometheusClient and extend MetricsOrchestrator
+3. Phase 3: Integrate with WRK benchmark runner
+4. Phase 4: Integrate with JMH benchmark runner
+5. Phase 5: Completely remove post-benchmark metrics collection
+6. Phase 6: Update reports to show CPU utilization graphs

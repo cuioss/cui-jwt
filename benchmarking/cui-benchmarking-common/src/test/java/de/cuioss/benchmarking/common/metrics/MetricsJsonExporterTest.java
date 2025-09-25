@@ -579,17 +579,12 @@ class MetricsJsonExporterTest {
                 .mapToDouble(Map.Entry::getValue)
                 .max().orElse(0.0);
 
-        // Convert to appropriate units like MetricsOrchestrator does
-        if (max > 0 && max < 1) {
-            httpMetrics.put("max_duration_ms", max * 1000);
+        // Just pass through raw values
+        if (max > 0) {
+            httpMetrics.put("max_duration_seconds", max);
         }
-
-        if (count > 0 && sum > 0) {
-            double avgSeconds = sum / count;
-            if (avgSeconds < 1) {
-                httpMetrics.put("average_duration_ms", avgSeconds * 1000);
-                httpMetrics.put("requests_per_second", count / sum);
-            }
+        if (sum > 0) {
+            httpMetrics.put("total_duration_seconds", sum);
         }
         data.put("http_server_requests", httpMetrics);
 
