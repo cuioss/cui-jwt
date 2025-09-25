@@ -71,27 +71,18 @@ public class WrkResultPostProcessor {
      * Main entry point for processing WRK benchmark results.
      * Usage:
      *   - args[0]=inputDir, args[1]=outputDir (optional)
-     *   - args[0]=inputDir, args[1]="download-after" (metrics download only)
      *
      * @param args Command line arguments
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            LOGGER.error("Usage: WrkResultPostProcessor <input-dir> [output-dir|download-after]");
+            LOGGER.error("Usage: WrkResultPostProcessor <input-dir> [output-dir]");
             System.exit(1);
         }
 
         try {
             Path inputDir = Path.of(args[0]);
             WrkResultPostProcessor processor = new WrkResultPostProcessor();
-
-            // Check if this is metrics-only mode
-            if (args.length > 1 && "download-after".equals(args[1])) {
-                LOGGER.info("Running in metrics-download-only mode");
-                processor.processQuarkusMetrics(inputDir.getParent());
-                LOGGER.info("Metrics download completed successfully");
-                return;
-            }
 
             // Normal processing mode
             Path outputDir = args.length > 1 ?
@@ -179,9 +170,6 @@ public class WrkResultPostProcessor {
 
         LOGGER.info("Generated complete benchmark reports in: " + outputDir);
 
-        // Process Quarkus metrics if available - use outputDir since gh-pages-ready directory was created there
-        processQuarkusMetrics(outputDir);
-
         // Collect real-time Prometheus metrics for the benchmark execution
         collectPrometheusMetrics(benchmarkData, outputDir);
 
@@ -217,43 +205,6 @@ public class WrkResultPostProcessor {
         LOGGER.info("  - GitHub Pages: " + outputDir.resolve("gh-pages-ready"));
     }
 
-    /**
-     * Download and process Quarkus metrics from the running service.
-     *
-     * @param targetDir The target directory to store metrics
-     */
-    private void processQuarkusMetrics(Path targetDir) {
-        String metricsUrl = System.getProperty("quarkus.metrics.url", "https://localhost:10443");
-        Path downloadsDir = targetDir.resolve("metrics-download");
-
-        try {
-            // Create downloads directory if it doesn't exist
-            if (!Files.exists(downloadsDir)) {
-                Files.createDirectories(downloadsDir);
-                LOGGER.info("Created metrics download directory: " + downloadsDir);
-            }
-
-            LOGGER.info("Downloading and processing Quarkus metrics from: " + metricsUrl);
-
-            // Create orchestrator and download metrics
-            MetricsOrchestrator orchestrator = new MetricsOrchestrator(
-                    metricsUrl,
-                    downloadsDir,
-                    targetDir
-            );
-
-            // This will download metrics from the URL and process them, including creating quarkus-metrics.json
-            orchestrator.processQuarkusMetrics("WrkBenchmark");
-
-            LOGGER.info("Successfully downloaded and processed Quarkus metrics");
-            LOGGER.info("Metrics output available at: " + targetDir.resolve("jwt-validation-metrics.json"));
-
-        } catch (IOException e) {
-            LOGGER.warn("Failed to download/process Quarkus metrics: " + e.getMessage());
-            LOGGER.warn("Make sure the Quarkus service is running at: " + metricsUrl);
-            // Don't fail the build, just log the warning
-        }
-    }
 
     /**
      * Collect real-time metrics from Prometheus for the benchmark execution.

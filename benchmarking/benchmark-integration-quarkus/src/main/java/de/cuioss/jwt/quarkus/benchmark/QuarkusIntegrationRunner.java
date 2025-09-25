@@ -91,11 +91,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         // Call parent implementation for standard processing
         super.processResults(results, config);
 
-        // Additional Quarkus-specific metrics processing (snapshot after benchmark)
-        LOGGER.info(INFO.CALLING_PROCESS_QUARKUS_METRICS.format());
-        processQuarkusMetrics(config);
-        LOGGER.info(INFO.PROCESS_QUARKUS_METRICS_COMPLETED.format());
-
         // Collect real-time Prometheus metrics for each benchmark
         collectPrometheusMetrics(results, config);
     }
@@ -141,32 +136,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
         LOGGER.info("JMH profilers enabled: gc, stack, comp");
         return builder;
-    }
-
-    /**
-     * Downloads and processes final cumulative metrics from Quarkus after benchmarks complete.
-     * Uses MetricsOrchestrator to coordinate metrics download and processing.
-     *
-     * @param config the benchmark configuration
-     */
-    private void processQuarkusMetrics(BenchmarkConfiguration config) {
-        String outputDirectory = config.resultsDirectory();
-        IntegrationConfiguration integrationConfig = config.integrationConfig();
-
-        Path downloadsDir = Path.of(outputDirectory, "metrics-download");
-        Path targetDir = Path.of(outputDirectory);
-
-        MetricsOrchestrator orchestrator = new MetricsOrchestrator(
-                integrationConfig.integrationServiceUrl(),
-                downloadsDir,
-                targetDir
-        );
-
-        try {
-            orchestrator.processQuarkusMetrics("JwtValidation");
-        } catch (IOException e) {
-            LOGGER.warn("Failed to process Quarkus metrics: " + e.getMessage());
-        }
     }
 
     /**
