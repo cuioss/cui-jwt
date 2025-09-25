@@ -45,10 +45,10 @@ class WrkResultPostProcessorTest {
 
     @Test void comprehensiveStructureGeneration() throws IOException {
         // Copy real benchmark outputs to temp directory
-        Path healthSource = Path.of("src/test/resources/wrk-health-output.txt");
-        Path jwtSource = Path.of("src/test/resources/wrk-jwt-output.txt");
-        Files.copy(healthSource, tempDir.resolve("wrk-health-output.txt"));
-        Files.copy(jwtSource, tempDir.resolve("wrk-jwt-output.txt"));
+        Path healthSource = Path.of("src/test/resources/wrk-health-results.txt");
+        Path jwtSource = Path.of("src/test/resources/wrk-jwt-results.txt");
+        Files.copy(healthSource, tempDir.resolve("wrk-health-results.txt"));
+        Files.copy(jwtSource, tempDir.resolve("wrk-jwt-results.txt"));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -60,8 +60,8 @@ class WrkResultPostProcessorTest {
 
     @Test void parseWrkHealthOutput() throws IOException {
         // Copy real health output to temp directory
-        Path sourceFile = Path.of("src/test/resources/wrk-health-output.txt");
-        Path targetFile = tempDir.resolve("wrk-health-output.txt");
+        Path sourceFile = Path.of("src/test/resources/wrk-health-results.txt");
+        Path targetFile = tempDir.resolve("wrk-health-results.txt");
         Files.copy(sourceFile, targetFile);
 
         // Process results
@@ -111,8 +111,8 @@ class WrkResultPostProcessorTest {
 
     @Test void parseWrkJwtOutput() throws IOException {
         // Copy real JWT output to temp directory
-        Path sourceFile = Path.of("src/test/resources/wrk-jwt-output.txt");
-        Path targetFile = tempDir.resolve("wrk-jwt-output.txt");
+        Path sourceFile = Path.of("src/test/resources/wrk-jwt-results.txt");
+        Path targetFile = tempDir.resolve("wrk-jwt-results.txt");
         Files.copy(sourceFile, targetFile);
 
         // Process results
@@ -162,8 +162,8 @@ class WrkResultPostProcessorTest {
 
     @Test void handlesCompleteWrkOutput() throws IOException {
         // Test with actual WRK output that includes shell wrapper output
-        Path jwtFile = tempDir.resolve("wrk-jwt-output.txt");
-        Files.copy(Path.of("src/test/resources/wrk-jwt-output.txt"), jwtFile);
+        Path jwtFile = tempDir.resolve("wrk-jwt-results.txt");
+        Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"), jwtFile);
 
         Path outputDir = tempDir.resolve("output");
         processor.process(tempDir, outputDir);
@@ -188,10 +188,10 @@ class WrkResultPostProcessorTest {
 
     @Test void generateGitHubPagesStructure() throws IOException {
         // Setup test files
-        Path healthFile = tempDir.resolve("wrk-health-output.txt");
-        Path jwtFile = tempDir.resolve("wrk-jwt-output.txt");
-        Files.copy(Path.of("src/test/resources/wrk-health-output.txt"), healthFile);
-        Files.copy(Path.of("src/test/resources/wrk-jwt-output.txt"), jwtFile);
+        Path healthFile = tempDir.resolve("wrk-health-results.txt");
+        Path jwtFile = tempDir.resolve("wrk-jwt-results.txt");
+        Files.copy(Path.of("src/test/resources/wrk-health-results.txt"), healthFile);
+        Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"), jwtFile);
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -211,10 +211,10 @@ class WrkResultPostProcessorTest {
 
     @Test void overviewGeneration() throws IOException {
         // Setup test files
-        Files.copy(Path.of("src/test/resources/wrk-health-output.txt"),
-                tempDir.resolve("wrk-health-output.txt"));
-        Files.copy(Path.of("src/test/resources/wrk-jwt-output.txt"),
-                tempDir.resolve("wrk-jwt-output.txt"));
+        Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
+                tempDir.resolve("wrk-health-results.txt"));
+        Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"),
+                tempDir.resolve("wrk-jwt-results.txt"));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -237,7 +237,7 @@ class WrkResultPostProcessorTest {
     @Test void missingFileHandling() throws IOException {
         // Process with no WRK output files - should throw exception
         Path outputDir = tempDir.resolve("output");
-        assertThrows(IllegalArgumentException.class, () -> processor.process(tempDir, outputDir));
+        assertThrows(IllegalStateException.class, () -> processor.process(tempDir, outputDir));
 
         // Should not create output structure
         Path jsonFile = outputDir.resolve("data/benchmark-data.json");
@@ -247,6 +247,12 @@ class WrkResultPostProcessorTest {
     @Test void parseRealWrkFormatVariations() throws IOException {
         // Test with actual WRK output showing various time units
         String wrkOutput = """
+            === BENCHMARK METADATA ===
+            benchmark_name: format-test
+            start_time: 1700000000
+            start_time_iso: 2023-11-14T22:13:20Z
+            === WRK OUTPUT ===
+
             Running 10s test @ https://localhost:10443/test
               4 threads and 20 connections
               Thread Stats   Avg      Stdev     Max   +/- Stdev
@@ -260,9 +266,14 @@ class WrkResultPostProcessorTest {
               100000 requests in 10.00s, 50.00MB read
             Requests/sec:  10000.00
             Transfer/sec:      5.00MB
+
+            === BENCHMARK COMPLETE ===
+            end_time: 1700000010
+            end_time_iso: 2023-11-14T22:13:30Z
+            duration_seconds: 10
             """;
 
-        Path testFile = tempDir.resolve("wrk-health-output.txt");
+        Path testFile = tempDir.resolve("wrk-health-results.txt");
         Files.writeString(testFile, wrkOutput);
 
         Path outputDir = tempDir.resolve("output");
@@ -286,8 +297,8 @@ class WrkResultPostProcessorTest {
 
     @Test void systemMetricsIntegration() throws IOException {
         // Setup test files
-        Files.copy(Path.of("src/test/resources/wrk-health-output.txt"),
-                tempDir.resolve("wrk-health-output.txt"));
+        Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
+                tempDir.resolve("wrk-health-results.txt"));
 
         // Set system property to skip metrics fetching (since no server is running)
         System.setProperty("quarkus.metrics.url", "https://nonexistent:10443");

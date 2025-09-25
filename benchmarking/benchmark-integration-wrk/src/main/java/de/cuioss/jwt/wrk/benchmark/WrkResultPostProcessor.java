@@ -18,6 +18,7 @@ package de.cuioss.jwt.wrk.benchmark;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.WrkBenchmarkConverter;
 import de.cuioss.benchmarking.common.metrics.MetricsOrchestrator;
+import de.cuioss.benchmarking.common.metrics.PrometheusClient;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
@@ -285,7 +286,7 @@ public class WrkResultPostProcessor {
                     metricsUrl,
                     downloadsDir,
                     targetDir,
-                    new de.cuioss.benchmarking.common.metrics.PrometheusClient(prometheusUrl)
+                    new PrometheusClient(prometheusUrl)
             );
 
             // Process each benchmark result
@@ -331,14 +332,14 @@ public class WrkResultPostProcessor {
         // Find all WRK result files
         try (Stream<Path> files = Files.list(inputDir)) {
             List<Path> wrkFiles = files
-                .filter(p -> p.getFileName().toString().endsWith("-results.txt"))
-                .toList();
+                    .filter(p -> p.getFileName().toString().endsWith("-results.txt"))
+                    .toList();
 
             if (wrkFiles.isEmpty()) {
-                String message = String.format(
-                    "CRITICAL: No WRK result files (*-results.txt) found in %s\n" +
-                    "Ensure benchmarks were run with the updated run_benchmark.sh script.",
-                    inputDir
+                String message = """
+                        CRITICAL: No WRK result files (*-results.txt) found in %s
+                        Ensure benchmarks were run with the updated run_benchmark.sh script.""".formatted(
+                        inputDir
                 );
                 LOGGER.error(message);
                 throw new IllegalStateException(message);
@@ -373,9 +374,9 @@ public class WrkResultPostProcessor {
             boolean inMetadata = false;
 
             for (String line : lines) {
-                if (line.equals("=== BENCHMARK METADATA ===")) {
+                if ("=== BENCHMARK METADATA ===".equals(line)) {
                     inMetadata = true;
-                } else if (line.equals("=== WRK OUTPUT ===")) {
+                } else if ("=== WRK OUTPUT ===".equals(line)) {
                     inMetadata = false;
                 } else if (inMetadata || line.startsWith("end_time:")) {
                     if (line.startsWith("benchmark_name: ")) {
@@ -392,9 +393,8 @@ public class WrkResultPostProcessor {
 
             // Validate we have all required metadata
             if (benchmarkName == null || startTime == null || endTime == null) {
-                String message = String.format(
-                    "WARNING: Incomplete metadata in file %s (name=%s, start=%s, end=%s)",
-                    resultFile, benchmarkName, startTime, endTime
+                String message = "WARNING: Incomplete metadata in file %s (name=%s, start=%s, end=%s)".formatted(
+                        resultFile, benchmarkName, startTime, endTime
                 );
                 LOGGER.warn(message);
                 return;
@@ -405,8 +405,8 @@ public class WrkResultPostProcessor {
             benchmarkMetadataMap.put(benchmarkName, metadata);
 
             LOGGER.info("Parsed metadata for benchmark '{}': start={}, end={}, duration={}s",
-                benchmarkName, startTime, endTime,
-                endTime.getEpochSecond() - startTime.getEpochSecond());
+                    benchmarkName, startTime, endTime,
+                    endTime.getEpochSecond() - startTime.getEpochSecond());
 
         } catch (IOException | NumberFormatException e) {
             LOGGER.warn("Failed to parse metadata from {}: {}", resultFile, e.getMessage());
@@ -437,8 +437,8 @@ public class WrkResultPostProcessor {
         // Try to find by matching base name
         for (Map.Entry<String, BenchmarkMetadata> entry : benchmarkMetadataMap.entrySet()) {
             if (entry.getKey().equals(baseName) ||
-                entry.getKey().contains(baseName) ||
-                baseName.contains(entry.getKey())) {
+                    entry.getKey().contains(baseName) ||
+                    baseName.contains(entry.getKey())) {
                 return entry.getValue();
             }
         }
