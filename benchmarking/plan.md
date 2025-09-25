@@ -121,21 +121,21 @@
   - Store results in target/prometheus/ directory
 
 
-## Phase 5: JMH Integration
+## Phase 5: JMH Integration ✅
 
-- [ ] Update QuarkusIntegrationRunner to capture timestamps
+- [x] Update QuarkusIntegrationRunner to capture timestamps
   - Add private Instant benchmarkStartTime field
   - Record start time in prepareBenchmark() method before JMH execution
   - Add private Instant benchmarkEndTime field
   - Record end time in processResults() method after JMH execution
 
-- [ ] Modify processResults to call MetricsOrchestrator
+- [x] Modify processResults to call MetricsOrchestrator
   - Use captured benchmarkStartTime and benchmarkEndTime fields
   - Extract benchmark name from RunResult
   - Call collectBenchmarkMetrics for each benchmark
   - Store results in target/prometheus/ directory
 
-- [ ] Run pre-commit build for benchmark-integration-quarkus
+- [x] Run pre-commit build for benchmark-integration-quarkus
   ```bash
   ./mvnw clean install -Ppre-commit -pl benchmarking/benchmark-integration-quarkus
   ```
