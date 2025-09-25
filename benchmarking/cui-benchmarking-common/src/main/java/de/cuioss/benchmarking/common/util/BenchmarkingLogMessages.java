@@ -268,61 +268,6 @@ public final class BenchmarkingLogMessages {
                 .template("QuarkusIntegrationRunner.processResults() - Starting with %s results")
                 .build();
 
-        /** Message when calling processQuarkusMetrics. */
-        public static final LogRecord CALLING_PROCESS_QUARKUS_METRICS = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(33)
-                .template("QuarkusIntegrationRunner.processResults() - Calling processQuarkusMetrics()")
-                .build();
-
-        /** Message when processQuarkusMetrics completes. */
-        public static final LogRecord PROCESS_QUARKUS_METRICS_COMPLETED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(34)
-                .template("QuarkusIntegrationRunner.processResults() - Completed processQuarkusMetrics()")
-                .build();
-
-        /** Message when processQuarkusMetrics entry point. */
-        public static final LogRecord PROCESS_QUARKUS_METRICS_ENTRY = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(35)
-                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - ENTRY POINT")
-                .build();
-
-        /** Message when processing metrics from URL to directory. */
-        public static final LogRecord PROCESSING_METRICS_FROM_URL = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(36)
-                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Processing metrics from %s to %s")
-                .build();
-
-        /** Message when creating QuarkusMetricsFetcher. */
-        public static final LogRecord CREATING_METRICS_FETCHER = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(37)
-                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Creating QuarkusMetricsFetcher")
-                .build();
-
-        /** Message when creating SimpleMetricsExporter. */
-        public static final LogRecord CREATING_METRICS_EXPORTER = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(38)
-                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Creating SimpleMetricsExporter")
-                .build();
-
-        /** Message when calling exporter.exportJwtValidationMetrics. */
-        public static final LogRecord CALLING_EXPORT_JWT_METRICS = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(39)
-                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Calling exporter.exportJwtValidationMetrics()")
-                .build();
-
-        /** Message when exporter.exportJwtValidationMetrics completes. */
-        public static final LogRecord EXPORT_JWT_METRICS_COMPLETED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(40)
-                .template("QuarkusIntegrationRunner.processQuarkusMetrics() - Completed exporter.exportJwtValidationMetrics()")
-                .build();
     }
 
     /**

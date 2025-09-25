@@ -69,45 +69,6 @@ public class MetricsOrchestrator {
         this.prometheusClient = prometheusClient;
     }
 
-    /**
-     * Downloads, processes and exports Quarkus metrics.
-     * This is the main entry point for Quarkus integration metrics.
-     *
-     * @param prefix Prefix for downloaded file naming
-     * @throws IOException if I/O operations fail
-     */
-    public void processQuarkusMetrics(String prefix) throws IOException {
-        LOGGER.info("Starting processQuarkusMetrics for prefix: {}", prefix);
-
-        // 1. Download metrics
-        MetricsDownloader downloader = new MetricsDownloader(metricsURL, downloadsDirectory);
-        Path downloadedFile = downloader.downloadMetrics(prefix);
-        LOGGER.info("Downloaded metrics to: {}", downloadedFile);
-
-        // 2. Process metrics
-        MetricsFileProcessor processor = new MetricsFileProcessor(downloadsDirectory);
-        Map<String, Double> allMetrics = processor.processAllMetricsFiles();
-        LOGGER.info("Processed {} total metrics", allMetrics.size());
-
-        // 3. Create gh-pages-ready/data directory and export directly there
-        Path ghPagesDataDir = targetDirectory.resolve("gh-pages-ready").resolve("data");
-        Files.createDirectories(ghPagesDataDir);
-        LOGGER.info("Created gh-pages data directory: {}", ghPagesDataDir);
-
-        // 4. Transform raw metrics to structured format
-        MetricsTransformer transformer = new MetricsTransformer();
-        Map<String, Object> structuredMetrics = transformer.transformToQuarkusRuntimeMetrics(allMetrics);
-
-        // 5. Wrap in the expected structure for export
-        Map<String, Object> exportData = Map.of("quarkus-runtime-metrics", structuredMetrics);
-
-        // 6. Export to JSON directly in the target location
-        MetricsJsonExporter exporter = new MetricsJsonExporter(ghPagesDataDir);
-        exporter.exportToFile("quarkus-metrics.json", exportData);
-
-        Path ghPagesMetricsFile = ghPagesDataDir.resolve("quarkus-metrics.json");
-        LOGGER.info("Exported Quarkus metrics directly to: {}", ghPagesMetricsFile);
-    }
 
     /**
      * Collects real-time metrics from Prometheus for a benchmark execution.
