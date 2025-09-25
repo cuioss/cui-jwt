@@ -109,10 +109,11 @@
 
 ## Phase 4: WRK Integration
 
-- [ ] Update WrkBenchmarkConverter to capture timestamps
-  - Parse benchmark start/end times from output
-  - Store timestamps in BenchmarkResult
-  - Ensure backward compatibility
+- [ ] Update WrkResultPostProcessor to capture timestamps
+  - Record timestamp before starting benchmark execution
+  - Record timestamp after benchmark completion
+  - Extract benchmark name from WRK output file path
+  - Store timestamps for MetricsOrchestrator integration
 
 - [ ] Modify WrkResultPostProcessor to use MetricsOrchestrator
   - Call collectBenchmarkMetrics for each benchmark
@@ -130,14 +131,16 @@
 ## Phase 5: JMH Integration
 
 - [ ] Update QuarkusIntegrationRunner to capture timestamps
-  - Record start time before benchmark execution
-  - Record end time after benchmark completion
-  - Store per-benchmark timestamps
+  - Add private Instant benchmarkStartTime field
+  - Record start time in prepareBenchmark() method before JMH execution
+  - Add private Instant benchmarkEndTime field
+  - Record end time in processResults() method after JMH execution
 
 - [ ] Modify processResults to call MetricsOrchestrator
-  - Extract timestamps from RunResult
+  - Use captured benchmarkStartTime and benchmarkEndTime fields
+  - Extract benchmark name from RunResult
   - Call collectBenchmarkMetrics for each benchmark
-  - Use same output format as WRK
+  - Store results in target/prometheus/ directory
 
 - [ ] Run pre-commit build for benchmark-integration-quarkus
   ```bash

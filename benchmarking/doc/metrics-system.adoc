@@ -79,6 +79,51 @@ Previous approach captured metrics AFTER benchmarks completed, showing idle CPU 
 
 Prometheus service added to scrape Quarkus metrics every 2 seconds during benchmarks.
 
+==== prometheus.yml Configuration
+
+[source,yaml]
+----
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+scrape_configs:
+  - job_name: 'quarkus-benchmark'
+    static_configs:
+      - targets: ['quarkus-app:10443']
+    metrics_path: '/q/metrics'
+    scrape_interval: 2s
+    scrape_timeout: 1s
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true  # For self-signed certificates
+    honor_labels: true
+    honor_timestamps: true
+----
+
+==== Docker Compose Service
+
+[source,yaml]
+----
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=1h'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - benchmark-network
+----
+
 === Java-Based Metrics Collection
 
 Both WRK and JMH record benchmark execution timestamps and pass them to MetricsOrchestrator:
@@ -96,24 +141,88 @@ public class MetricsOrchestrator {
         // Query Prometheus for exact time window
         PrometheusClient client = new PrometheusClient("http://localhost:9090");
 
-        // Fetch all relevant metrics for time range
-        Map<String, TimeSeries> metrics = client.queryRange(
-            List.of("process_cpu_usage",
-                    "system_cpu_usage",
-                    "jvm_memory_used_bytes",
-                    "http_server_requests_seconds_count"),
-            startTime,
-            endTime,
-            Duration.ofSeconds(2)
-        );
+        try {
+            // Fetch all relevant metrics for time range
+            Map<String, TimeSeries> metrics = client.queryRange(
+                List.of("process_cpu_usage",
+                        "system_cpu_usage",
+                        "jvm_memory_used_bytes",
+                        "http_server_requests_seconds_count"),
+                startTime,
+                endTime,
+                Duration.ofSeconds(2)
+            );
 
-        // Calculate system statistics (no percentiles for system resources)
-        Map<String, Object> statistics = calculateSystemStatistics(metrics);
+            // Calculate system statistics (no percentiles for system resources)
+            Map<String, Object> statistics = calculateSystemStatistics(metrics);
 
-        // Store results separately from benchmark data
-        Path metricsFile = outputDir.resolve(benchmarkName + "-metrics.json");
-        exportMetrics(statistics, metricsFile);
+            // Store results separately from benchmark data
+            Path metricsFile = outputDir.resolve(benchmarkName + "-metrics.json");
+            exportMetrics(statistics, metricsFile);
+
+        } catch (PrometheusException e) {
+            // Create error result JSON with same structure
+            Map<String, Object> errorResult = createErrorResult(benchmarkName, e);
+            Path errorFile = outputDir.resolve(benchmarkName + "-metrics.json");
+            exportMetrics(errorResult, errorFile);
+
+            // Log detailed error but do not fail the build
+            LOGGER.warn("Failed to collect Prometheus metrics for {}: {}", benchmarkName, e.getMessage());
+        }
     }
+}
+
+public class PrometheusClient {
+
+    private final String prometheusUrl;
+    private final Duration timeout;
+
+    public PrometheusClient(String prometheusUrl) {
+        this.prometheusUrl = prometheusUrl;
+        this.timeout = Duration.ofSeconds(30);
+    }
+
+    /**
+     * Query Prometheus for time-series data in a specific time range.
+     *
+     * @param metricNames List of metric names to query
+     * @param startTime Start of time range (inclusive)
+     * @param endTime End of time range (inclusive)
+     * @param step Step size between data points
+     * @return Map of metric name to time series data
+     * @throws PrometheusException if query fails or Prometheus unavailable
+     */
+    public Map<String, TimeSeries> queryRange(
+            List<String> metricNames,
+            Instant startTime,
+            Instant endTime,
+            Duration step) throws PrometheusException {
+        // Implementation details handled in Phase 2
+    }
+}
+
+public static class TimeSeries {
+    private final String metricName;
+    private final Map<String, String> labels;
+    private final List<DataPoint> values;
+
+    public static class DataPoint {
+        private final Instant timestamp;
+        private final double value;
+        // getters, constructors
+    }
+}
+
+public static class PrometheusException extends Exception {
+    private final int statusCode;
+    private final String prometheusError;
+
+    // Constructor variants for different error scenarios:
+    // - Network timeout
+    // - HTTP error (404, 500, 503)
+    // - Invalid JSON response
+    // - Empty result set
+    // - Prometheus service unavailable
 }
 ----
 
@@ -202,19 +311,139 @@ public void processBenchmark(Path wrkOutputFile) {
 [source,java]
 ----
 // In QuarkusIntegrationRunner
-@Override
-protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) {
-    for (RunResult result : results) {
-        String benchmarkName = extractBenchmarkName(result);
+public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
-        // JMH provides iteration timestamps
-        Instant startTime = Instant.ofEpochMilli(result.getParams().getStartTime());
-        Instant endTime = Instant.ofEpochMilli(result.getParams().getEndTime());
+    private Instant benchmarkStartTime;
+    private Instant benchmarkEndTime;
 
-        // Same MetricsOrchestrator call as WRK
-        metricsOrchestrator.collectBenchmarkMetrics(
-            benchmarkName, startTime, endTime, outputDir);
+    @Override
+    protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
+        super.prepareBenchmark(config);
+        benchmarkStartTime = Instant.now(); // Capture before JMH execution
     }
+
+    @Override
+    protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) {
+        benchmarkEndTime = Instant.now(); // Capture after JMH execution
+
+        for (RunResult result : results) {
+            String benchmarkName = extractBenchmarkName(result);
+
+            // Use captured timestamps for entire benchmark duration
+            metricsOrchestrator.collectBenchmarkMetrics(
+                benchmarkName, benchmarkStartTime, benchmarkEndTime, outputDir);
+        }
+    }
+}
+----
+
+== Error Handling and Resilience
+
+The system implements comprehensive error handling to ensure build stability while maintaining result integrity.
+
+=== Error Scenarios and Responses
+
+[cols="2,2,3"]
+|===
+|Error Type |Detection |Response
+
+|Prometheus Unavailable
+|Connection timeout/refused
+|Create error-metrics.json with connection status, log warning, continue build
+
+|HTTP Error (404, 500, 503)
+|HTTP status codes
+|Create error-metrics.json with HTTP details, log warning, continue build
+
+|Invalid JSON Response
+|JSON parse failure
+|Create error-metrics.json with parse error, log warning, continue build
+
+|Empty Metrics Data
+|Zero data points returned
+|Create error-metrics.json with empty data notice, log warning, continue build
+
+|Network Timeout
+|Request timeout (30s)
+|Create error-metrics.json with timeout details, log warning, continue build
+|===
+
+=== Error Result JSON Structure
+
+When Prometheus metrics collection fails, the system creates a compliant JSON file with error information:
+
+[source,json]
+----
+{
+  "quarkus-runtime-metrics": {
+    "timestamp": "2025-09-25T10:30:45.123Z",
+    "status": "error",
+    "error": {
+      "type": "PrometheusUnavailable",
+      "message": "Connection to Prometheus failed: Connection refused",
+      "details": {
+        "prometheusUrl": "http://localhost:9090",
+        "httpStatus": null,
+        "timeout": "30s",
+        "benchmarkName": "jwt-validation",
+        "timeRange": {
+          "start": "2025-09-25T10:25:00.000Z",
+          "end": "2025-09-25T10:30:00.000Z"
+        }
+      }
+    },
+    "system": {},
+    "http_server_requests": {},
+    "cui_jwt_validation_success_operations_total": {},
+    "cui_jwt_validation_errors": {}
+  }
+}
+----
+
+=== Build Failure Prevention
+
+Critical design principle: **Prometheus failures NEVER fail the build**.
+
+1. **Catch all PrometheusException**: Comprehensive exception handling
+2. **Log warnings, not errors**: Use LOGGER.warn() to avoid build failures
+3. **Create compliant output**: Always produce expected JSON structure
+4. **Preserve file naming**: Same file name/location as successful metrics
+5. **Continue processing**: Other benchmarks proceed normally
+
+=== Error Logging Strategy
+
+[source,java]
+----
+// Error logging examples that do not fail builds
+LOGGER.warn("Prometheus metrics collection failed for {}: {}", benchmarkName, e.getMessage());
+LOGGER.warn("Using empty metrics structure due to Prometheus unavailability");
+LOGGER.warn("Benchmark {} completed without real-time metrics", benchmarkName);
+
+// Detailed error written to error-metrics.json, not console
+private Map<String, Object> createErrorResult(String benchmarkName, PrometheusException e) {
+    return Map.of(
+        "quarkus-runtime-metrics", Map.of(
+            "timestamp", Instant.now().toString(),
+            "status", "error",
+            "error", Map.of(
+                "type", e.getClass().getSimpleName(),
+                "message", e.getMessage(),
+                "details", Map.of(
+                    "prometheusUrl", prometheusUrl,
+                    "httpStatus", e.getStatusCode(),
+                    "benchmarkName", benchmarkName,
+                    "timeRange", Map.of(
+                        "start", startTime.toString(),
+                        "end", endTime.toString()
+                    )
+                )
+            ),
+            "system", Map.of(),
+            "http_server_requests", Map.of(),
+            "cui_jwt_validation_success_operations_total", Map.of(),
+            "cui_jwt_validation_errors", Map.of()
+        )
+    );
 }
 ----
 
@@ -226,6 +455,8 @@ protected void processResults(Collection<RunResult> results, BenchmarkConfigurat
 4. **No duplication**: Prometheus querying logic in one place
 5. **Professional**: Industry-standard Prometheus/Grafana stack
 6. **Historical**: Time-series data enables trend analysis
+7. **Build-safe**: Prometheus failures never break builds
+8. **Transparent**: Error details captured in JSON for debugging
 
 == Migration Path
 
