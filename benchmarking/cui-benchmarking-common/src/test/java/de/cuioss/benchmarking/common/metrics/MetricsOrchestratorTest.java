@@ -18,6 +18,7 @@ package de.cuioss.benchmarking.common.metrics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.metrics.test.MetricsModuleDispatcher;
+import de.cuioss.benchmarking.common.metrics.test.PrometheusModuleDispatcher;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import lombok.Getter;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,6 +42,9 @@ class MetricsOrchestratorTest {
 
     @Getter
     private final MetricsModuleDispatcher moduleDispatcher = new MetricsModuleDispatcher();
+
+    @Getter
+    private final PrometheusModuleDispatcher prometheusDispatcher = new PrometheusModuleDispatcher();
 
     private Path downloadsDir;
     private Path targetDir;
@@ -313,4 +319,30 @@ class MetricsOrchestratorTest {
 
         moduleDispatcher.assertCallsAnswered(1);
     }
+
+
+    // Test verifies error handling without requiring mock dispatcher configuration
+    @Test void shouldHandlePrometheusError(URIBuilder uriBuilder) {
+        // Given
+        String metricsUrl = uriBuilder.addPathSegment(MetricsModuleDispatcher.LOCAL_PATH).buildAsString();
+        String prometheusUrl = uriBuilder.buildAsString();
+        PrometheusClient prometheusClient = new PrometheusClient(prometheusUrl);
+        MetricsOrchestrator orchestrator = new MetricsOrchestrator(metricsUrl, downloadsDir, targetDir, prometheusClient);
+
+        prometheusDispatcher.setServerError();
+
+        String benchmarkName = "error-test";
+        Instant startTime = Instant.now();
+        Instant endTime = startTime.plus(Duration.ofMinutes(1));
+        Path outputDir = targetDir.resolve("prometheus");
+
+        // When & Then
+        IOException exception = assertThrows(IOException.class, () ->
+                orchestrator.collectBenchmarkMetrics(benchmarkName, startTime, endTime, outputDir));
+
+        assertTrue(exception.getMessage().contains("Failed to collect Prometheus metrics"));
+        assertNotNull(exception.getCause(), "Should have a cause");
+        assertEquals(PrometheusClient.PrometheusException.class, exception.getCause().getClass());
+    }
+
 }

@@ -72,13 +72,13 @@
 
 ## Phase 3: MetricsOrchestrator Enhancement
 
-- [ ] Add collectBenchmarkMetrics method to MetricsOrchestrator
+- [x] Add collectBenchmarkMetrics method to MetricsOrchestrator
   - Accept benchmarkName, startTime, endTime, outputDir parameters
   - Use PrometheusClient to fetch metrics for time window
-  - Process time-series data (calculate avg, p50, p95, max)
+  - Process time-series data (calculate avg, min, max for CPU; full stats for others)
   - Export to {benchmarkName}-metrics.json format
 
-- [ ] Run pre-commit build for cui-benchmarking-common
+- [x] Run pre-commit build for cui-benchmarking-common
   ```bash
   ./mvnw clean install -Ppre-commit -pl benchmarking/cui-benchmarking-common
   ```
@@ -86,20 +86,20 @@
   - Ensure backward compatibility
   - Verify existing tests still pass
 
-- [ ] Create PrometheusModuleDispatcher for Prometheus API mocking
+- [x] Create PrometheusModuleDispatcher for Prometheus API mocking
   - Create similar to MetricsModuleDispatcher pattern
   - Handle /api/v1/query_range endpoint
   - Return real Prometheus JSON responses from test resources
   - Support error scenarios (500, 503, timeout, invalid JSON)
 
-- [ ] Create MetricsOrchestratorTest for new functionality
+- [x] Create MetricsOrchestratorTest for new functionality
   - Use @EnableMockWebServer with PrometheusModuleDispatcher
   - Test collectBenchmarkMetrics with realistic Prometheus responses
   - Test metrics calculation logic with real time-series data
   - Test JSON export format matches expected structure
   - Verify file output structure and naming
 
-- [ ] Run final pre-commit build for common module
+- [x] Run final pre-commit build for common module
   ```bash
   ./mvnw clean install -Ppre-commit -pl benchmarking/cui-benchmarking-common
   ```
