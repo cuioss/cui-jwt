@@ -27,6 +27,8 @@ import de.cuioss.tools.logging.CuiLogger;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -43,6 +45,10 @@ public class WrkResultPostProcessor {
     private final ReportGenerator reportGenerator = new ReportGenerator();
     private final BadgeGenerator badgeGenerator = new BadgeGenerator();
     private final GitHubPagesGenerator gitHubPagesGenerator = new GitHubPagesGenerator();
+
+    // Timestamps for benchmark execution tracking
+    private Instant benchmarkStartTime;
+    private Instant benchmarkEndTime;
 
     /**
      * Main entry point for processing WRK benchmark results.
@@ -96,6 +102,9 @@ public class WrkResultPostProcessor {
     public void process(Path inputDir, Path outputDir) throws IOException {
         LOGGER.info("Processing WRK results from: " + inputDir);
         LOGGER.info("Output directory: " + outputDir);
+
+        // Try to read actual benchmark timestamps from file
+        readBenchmarkTimestamps(inputDir);
 
         // Validate input directory
         if (!Files.exists(inputDir)) {
@@ -155,6 +164,9 @@ public class WrkResultPostProcessor {
 
         // Process Quarkus metrics if available - use outputDir since gh-pages-ready directory was created there
         processQuarkusMetrics(outputDir);
+
+        // Collect real-time Prometheus metrics for the benchmark execution
+        collectPrometheusMetrics(benchmarkData, outputDir);
 
         // Log summary
         logSummary(benchmarkData, outputDir);
@@ -224,5 +236,168 @@ public class WrkResultPostProcessor {
             LOGGER.warn("Make sure the Quarkus service is running at: " + metricsUrl);
             // Don't fail the build, just log the warning
         }
+    }
+
+    /**
+     * Collect real-time metrics from Prometheus for the benchmark execution.
+     * This captures time-series data during the actual benchmark run.
+     *
+     * @param benchmarkData The benchmark data containing benchmark names
+     * @param targetDir The target directory to store metrics
+     */
+    private void collectPrometheusMetrics(BenchmarkData benchmarkData, Path targetDir) {
+        // Skip if timestamps are not properly set
+        if (benchmarkStartTime == null || benchmarkEndTime == null) {
+            LOGGER.warn("Cannot collect Prometheus metrics: timestamps not captured during benchmark execution");
+            return;
+        }
+
+        try {
+            // Get Prometheus URL from system property or use default
+            String prometheusUrl = System.getProperty("prometheus.url", "http://localhost:9090");
+            String metricsUrl = System.getProperty("quarkus.metrics.url", "https://localhost:10443");
+            Path downloadsDir = targetDir.resolve("metrics-download");
+            Path prometheusDir = targetDir.resolve("prometheus");
+
+            // Create Prometheus output directory
+            Files.createDirectories(prometheusDir);
+
+            LOGGER.info("Collecting real-time metrics from Prometheus at: {}", prometheusUrl);
+
+            // Create orchestrator with Prometheus client
+            MetricsOrchestrator orchestrator = new MetricsOrchestrator(
+                    metricsUrl,
+                    downloadsDir,
+                    targetDir,
+                    new de.cuioss.benchmarking.common.metrics.PrometheusClient(prometheusUrl)
+            );
+
+            // Process each benchmark result
+            if (benchmarkData.getBenchmarks() != null) {
+                for (BenchmarkData.Benchmark benchmark : benchmarkData.getBenchmarks()) {
+                    String benchmarkName = extractBenchmarkName(benchmark.getName());
+
+                    LOGGER.info("Collecting Prometheus metrics for benchmark: {}", benchmarkName);
+
+                    // Collect real-time metrics for this benchmark
+                    orchestrator.collectBenchmarkMetrics(
+                            benchmarkName,
+                            benchmarkStartTime,
+                            benchmarkEndTime,
+                            prometheusDir
+                    );
+
+                    LOGGER.info("Prometheus metrics saved to: {}/{}-metrics.json",
+                            prometheusDir, benchmarkName);
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.warn("Failed to collect Prometheus metrics: {}", e.getMessage());
+            // Don't fail the build, just log the warning
+        }
+    }
+
+    /**
+     * Read benchmark timestamps from the timestamp file created by run_benchmark.sh.
+     *
+     * @param inputDir The directory containing benchmark results
+     * @throws IllegalStateException if timestamps cannot be read
+     */
+    private void readBenchmarkTimestamps(Path inputDir) {
+        Path timestampFile = inputDir.resolve("benchmark-timestamps.txt");
+
+        if (!Files.exists(timestampFile)) {
+            // Try parent directory (common location for benchmark-results)
+            timestampFile = inputDir.getParent().resolve("benchmark-results").resolve("benchmark-timestamps.txt");
+        }
+
+        if (!Files.exists(timestampFile)) {
+            String message = String.format(
+                "CRITICAL: Benchmark timestamp file not found at: %s\n" +
+                "Real-time metrics collection requires actual benchmark timestamps.\n" +
+                "Ensure the benchmark was run with the updated run_benchmark.sh script that captures timestamps.",
+                timestampFile
+            );
+            LOGGER.error(message);
+            throw new IllegalStateException(message);
+        }
+
+        try {
+            List<String> lines = Files.readAllLines(timestampFile);
+            boolean foundStartTime = false;
+            boolean foundEndTime = false;
+
+            for (String line : lines) {
+                if (line.startsWith("benchmark_start_time=")) {
+                    long epochSeconds = Long.parseLong(line.substring(21));
+                    benchmarkStartTime = Instant.ofEpochSecond(epochSeconds);
+                    foundStartTime = true;
+                    LOGGER.info("Read benchmark start time: {}", benchmarkStartTime);
+                } else if (line.startsWith("benchmark_end_time=")) {
+                    long epochSeconds = Long.parseLong(line.substring(19));
+                    benchmarkEndTime = Instant.ofEpochSecond(epochSeconds);
+                    foundEndTime = true;
+                    LOGGER.info("Read benchmark end time: {}", benchmarkEndTime);
+                }
+            }
+
+            if (!foundStartTime || !foundEndTime) {
+                String message = String.format(
+                    "CRITICAL: Incomplete timestamp data in file %s\n" +
+                    "Found start time: %s, Found end time: %s\n" +
+                    "Both timestamps are required for real-time metrics collection.",
+                    timestampFile, foundStartTime, foundEndTime
+                );
+                LOGGER.error(message);
+                throw new IllegalStateException(message);
+            }
+
+        } catch (IOException e) {
+            String message = String.format(
+                "CRITICAL: Failed to read benchmark timestamps from file %s: %s",
+                timestampFile, e.getMessage()
+            );
+            LOGGER.error(message, e);
+            throw new IllegalStateException(message, e);
+        } catch (NumberFormatException e) {
+            String message = String.format(
+                "CRITICAL: Invalid timestamp format in file %s: %s",
+                timestampFile, e.getMessage()
+            );
+            LOGGER.error(message, e);
+            throw new IllegalStateException(message, e);
+        }
+    }
+
+    /**
+     * Extract a clean benchmark name from the WRK output file path.
+     *
+     * @param fullPath The full benchmark name/path from WRK output
+     * @return A clean benchmark name suitable for file naming
+     */
+    private String extractBenchmarkName(String fullPath) {
+        // Extract just the benchmark name from the full path
+        // Example: "wrk-benchmark-results.txt" -> "wrk-benchmark"
+        String name = fullPath;
+
+        // Remove file extension
+        int extIndex = name.lastIndexOf('.');
+        if (extIndex > 0) {
+            name = name.substring(0, extIndex);
+        }
+
+        // Remove common suffixes
+        if (name.endsWith("-results")) {
+            name = name.substring(0, name.length() - 8);
+        }
+
+        // Remove path if present
+        int pathIndex = name.lastIndexOf('/');
+        if (pathIndex >= 0) {
+            name = name.substring(pathIndex + 1);
+        }
+
+        return name;
     }
 }

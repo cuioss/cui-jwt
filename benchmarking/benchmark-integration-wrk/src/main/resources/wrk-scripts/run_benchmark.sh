@@ -64,7 +64,13 @@ export TOKEN_DATA
 
 # Start system monitoring in background
 MONITORING_LOG="${SCRIPT_DIR}/../../target/benchmark-results/system-metrics.log"
+TIMESTAMP_FILE="${SCRIPT_DIR}/../../target/benchmark-results/benchmark-timestamps.txt"
 mkdir -p "$(dirname "$MONITORING_LOG")"
+
+# Record benchmark start time
+BENCHMARK_START_TIME=$(date +%s)
+echo "benchmark_start_time=$BENCHMARK_START_TIME" > "$TIMESTAMP_FILE"
+echo "benchmark_start_iso=$(date -Iseconds)" >> "$TIMESTAMP_FILE"
 
 echo "Starting system monitoring (CPU, memory, disk I/O)..."
 (
@@ -118,7 +124,15 @@ if [ -n "$MONITORING_PID" ] && kill -0 $MONITORING_PID 2>/dev/null; then
     sleep 1
     echo "System monitoring stopped"
 fi
+
+# Record benchmark end time
+BENCHMARK_END_TIME=$(date +%s)
+echo "benchmark_end_time=$BENCHMARK_END_TIME" >> "$TIMESTAMP_FILE"
+echo "benchmark_end_iso=$(date -Iseconds)" >> "$TIMESTAMP_FILE"
+echo "duration_seconds=$((BENCHMARK_END_TIME - BENCHMARK_START_TIME))" >> "$TIMESTAMP_FILE"
+
 echo "System metrics saved to: $MONITORING_LOG"
+echo "Benchmark timestamps saved to: $TIMESTAMP_FILE"
 
 echo "-------------------------------------------------------------------"
 echo "Benchmark complete!"

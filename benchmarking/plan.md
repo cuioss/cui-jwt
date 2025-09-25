@@ -109,13 +109,13 @@
 
 ## Phase 4: WRK Integration
 
-- [ ] Update WrkResultPostProcessor to capture timestamps
+- [x] Update WrkResultPostProcessor to capture timestamps
   - Record timestamp before starting benchmark execution
   - Record timestamp after benchmark completion
   - Extract benchmark name from WRK output file path
   - Store timestamps for MetricsOrchestrator integration
 
-- [ ] Modify WrkResultPostProcessor to use MetricsOrchestrator
+- [x] Modify WrkResultPostProcessor to use MetricsOrchestrator
   - Call collectBenchmarkMetrics for each benchmark
   - Pass correct timestamps and benchmark names
   - Store results in target/prometheus/ directory
