@@ -28,6 +28,16 @@
   - Configure TLS for self-signed certificates
   - Verify configuration with docker-compose up
 
+- [ ] Run full WRK benchmark to verify Prometheus integration
+  - Execute WRK benchmark in full mode (not quick mode - takes up to 10 minutes)
+  - WHILE benchmark is running, verify:
+    - Prometheus is running correctly (check docker logs)
+    - No errors or warnings in Prometheus logs
+    - REST request `/api/v1/query_range` returns sensible data for our metrics
+    - Quarkus metrics endpoint is being scraped successfully
+  - This verification is MANDATORY before proceeding to Phase 2
+  - Without verified Prometheus integration, implementation cannot continue
+
 ## Phase 2: PrometheusClient Implementation
 
 - [ ] Create PrometheusClient class in cui-benchmarking-common
