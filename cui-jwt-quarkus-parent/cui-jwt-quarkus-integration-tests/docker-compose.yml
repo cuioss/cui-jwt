@@ -2,6 +2,23 @@
 # Purpose: Test with production-equivalent settings to catch issues early
 
 services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=1h'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - jwt-integration
+
   keycloak:
     # NOTE: Dependabot cannot automatically update this image version.
     # Manual updates required. Check: https://quay.io/keycloak/keycloak

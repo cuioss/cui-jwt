@@ -16,19 +16,19 @@
 
 ## Phase 1: Infrastructure Setup
 
-- [ ] Add Prometheus service to Docker Compose
+- [x] Add Prometheus service to Docker Compose
   - Add prometheus service definition
   - Configure scraping for Quarkus metrics endpoint
   - Set scrape interval to 2 seconds
   - Test that Prometheus can access Quarkus metrics
 
-- [ ] Create prometheus.yml configuration
+- [x] Create prometheus.yml configuration
   - Configure job for quarkus-benchmark
   - Set target to quarkus-app:10443/q/metrics
   - Configure TLS for self-signed certificates
   - Verify configuration with docker-compose up
 
-- [ ] Run full WRK benchmark to verify Prometheus integration
+- [x] Run full WRK benchmark to verify Prometheus integration
   - Execute WRK benchmark in full mode (not quick mode - takes up to 10 minutes)
   - WHILE benchmark is running, verify:
     - Prometheus is running correctly (check docker logs)
