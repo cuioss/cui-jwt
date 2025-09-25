@@ -120,13 +120,6 @@
   - Pass correct timestamps and benchmark names
   - Store results in target/prometheus/ directory
 
-- [ ] Run pre-commit build for benchmark-integration-wrk
-  ```bash
-  ./mvnw clean install -Ppre-commit -pl benchmarking/benchmark-integration-wrk
-  ```
-  - Fix ALL SonarQube violations
-  - Ensure integration tests pass
-  - Verify no regressions
 
 ## Phase 5: JMH Integration
 
