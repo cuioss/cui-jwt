@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -46,9 +48,23 @@ public class WrkResultPostProcessor {
     private final BadgeGenerator badgeGenerator = new BadgeGenerator();
     private final GitHubPagesGenerator gitHubPagesGenerator = new GitHubPagesGenerator();
 
-    // Timestamps for benchmark execution tracking
-    private Instant benchmarkStartTime;
-    private Instant benchmarkEndTime;
+    // Map to store benchmark metadata (name -> timestamps)
+    private final Map<String, BenchmarkMetadata> benchmarkMetadataMap = new HashMap<>();
+
+    /**
+     * Holds metadata for a benchmark execution.
+     */
+    private static class BenchmarkMetadata {
+        final String name;
+        final Instant startTime;
+        final Instant endTime;
+
+        BenchmarkMetadata(String name, Instant startTime, Instant endTime) {
+            this.name = name;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+    }
 
     /**
      * Main entry point for processing WRK benchmark results.
@@ -103,8 +119,8 @@ public class WrkResultPostProcessor {
         LOGGER.info("Processing WRK results from: " + inputDir);
         LOGGER.info("Output directory: " + outputDir);
 
-        // Try to read actual benchmark timestamps from file
-        readBenchmarkTimestamps(inputDir);
+        // Parse all WRK result files to extract metadata
+        parseBenchmarkMetadata(inputDir);
 
         // Validate input directory
         if (!Files.exists(inputDir)) {
@@ -246,9 +262,9 @@ public class WrkResultPostProcessor {
      * @param targetDir The target directory to store metrics
      */
     private void collectPrometheusMetrics(BenchmarkData benchmarkData, Path targetDir) {
-        // Skip if timestamps are not properly set
-        if (benchmarkStartTime == null || benchmarkEndTime == null) {
-            LOGGER.warn("Cannot collect Prometheus metrics: timestamps not captured during benchmark execution");
+        // Skip if no metadata available
+        if (benchmarkMetadataMap.isEmpty()) {
+            LOGGER.warn("Cannot collect Prometheus metrics: no benchmark metadata available");
             return;
         }
 
@@ -275,20 +291,26 @@ public class WrkResultPostProcessor {
             // Process each benchmark result
             if (benchmarkData.getBenchmarks() != null) {
                 for (BenchmarkData.Benchmark benchmark : benchmarkData.getBenchmarks()) {
-                    String benchmarkName = extractBenchmarkName(benchmark.getName());
+                    // Try to find metadata by matching the benchmark name
+                    BenchmarkMetadata metadata = findMetadataForBenchmark(benchmark.getName());
 
-                    LOGGER.info("Collecting Prometheus metrics for benchmark: {}", benchmarkName);
+                    if (metadata == null) {
+                        LOGGER.warn("No metadata found for benchmark: {}", benchmark.getName());
+                        continue;
+                    }
+
+                    LOGGER.info("Collecting Prometheus metrics for benchmark '{}'", metadata.name);
 
                     // Collect real-time metrics for this benchmark
                     orchestrator.collectBenchmarkMetrics(
-                            benchmarkName,
-                            benchmarkStartTime,
-                            benchmarkEndTime,
+                            metadata.name,
+                            metadata.startTime,
+                            metadata.endTime,
                             prometheusDir
                     );
 
                     LOGGER.info("Prometheus metrics saved to: {}/{}-metrics.json",
-                            prometheusDir, benchmarkName);
+                            prometheusDir, metadata.name);
                 }
             }
 
@@ -299,105 +321,134 @@ public class WrkResultPostProcessor {
     }
 
     /**
-     * Read benchmark timestamps from the timestamp file created by run_benchmark.sh.
+     * Parse benchmark metadata from WRK result files.
+     * Each result file contains embedded metadata including name, start time, and end time.
      *
      * @param inputDir The directory containing benchmark results
-     * @throws IllegalStateException if timestamps cannot be read
+     * @throws IllegalStateException if no valid benchmark metadata is found
      */
-    private void readBenchmarkTimestamps(Path inputDir) {
-        Path timestampFile = inputDir.resolve("benchmark-timestamps.txt");
+    private void parseBenchmarkMetadata(Path inputDir) throws IOException {
+        // Find all WRK result files
+        try (Stream<Path> files = Files.list(inputDir)) {
+            List<Path> wrkFiles = files
+                .filter(p -> p.getFileName().toString().endsWith("-results.txt"))
+                .toList();
 
-        if (!Files.exists(timestampFile)) {
-            // Try parent directory (common location for benchmark-results)
-            timestampFile = inputDir.getParent().resolve("benchmark-results").resolve("benchmark-timestamps.txt");
-        }
-
-        if (!Files.exists(timestampFile)) {
-            String message = String.format(
-                "CRITICAL: Benchmark timestamp file not found at: %s\n" +
-                "Real-time metrics collection requires actual benchmark timestamps.\n" +
-                "Ensure the benchmark was run with the updated run_benchmark.sh script that captures timestamps.",
-                timestampFile
-            );
-            LOGGER.error(message);
-            throw new IllegalStateException(message);
-        }
-
-        try {
-            List<String> lines = Files.readAllLines(timestampFile);
-            boolean foundStartTime = false;
-            boolean foundEndTime = false;
-
-            for (String line : lines) {
-                if (line.startsWith("benchmark_start_time=")) {
-                    long epochSeconds = Long.parseLong(line.substring(21));
-                    benchmarkStartTime = Instant.ofEpochSecond(epochSeconds);
-                    foundStartTime = true;
-                    LOGGER.info("Read benchmark start time: {}", benchmarkStartTime);
-                } else if (line.startsWith("benchmark_end_time=")) {
-                    long epochSeconds = Long.parseLong(line.substring(19));
-                    benchmarkEndTime = Instant.ofEpochSecond(epochSeconds);
-                    foundEndTime = true;
-                    LOGGER.info("Read benchmark end time: {}", benchmarkEndTime);
-                }
-            }
-
-            if (!foundStartTime || !foundEndTime) {
+            if (wrkFiles.isEmpty()) {
                 String message = String.format(
-                    "CRITICAL: Incomplete timestamp data in file %s\n" +
-                    "Found start time: %s, Found end time: %s\n" +
-                    "Both timestamps are required for real-time metrics collection.",
-                    timestampFile, foundStartTime, foundEndTime
+                    "CRITICAL: No WRK result files (*-results.txt) found in %s\n" +
+                    "Ensure benchmarks were run with the updated run_benchmark.sh script.",
+                    inputDir
                 );
                 LOGGER.error(message);
                 throw new IllegalStateException(message);
             }
 
-        } catch (IOException e) {
-            String message = String.format(
-                "CRITICAL: Failed to read benchmark timestamps from file %s: %s",
-                timestampFile, e.getMessage()
-            );
-            LOGGER.error(message, e);
-            throw new IllegalStateException(message, e);
-        } catch (NumberFormatException e) {
-            String message = String.format(
-                "CRITICAL: Invalid timestamp format in file %s: %s",
-                timestampFile, e.getMessage()
-            );
-            LOGGER.error(message, e);
-            throw new IllegalStateException(message, e);
+            // Parse metadata from each file
+            for (Path wrkFile : wrkFiles) {
+                parseSingleBenchmarkMetadata(wrkFile);
+            }
+
+            if (benchmarkMetadataMap.isEmpty()) {
+                String message = "CRITICAL: No valid benchmark metadata found in any result files";
+                LOGGER.error(message);
+                throw new IllegalStateException(message);
+            }
+
+            LOGGER.info("Successfully parsed metadata for {} benchmarks", benchmarkMetadataMap.size());
         }
     }
 
     /**
-     * Extract a clean benchmark name from the WRK output file path.
+     * Parse metadata from a single WRK result file.
      *
-     * @param fullPath The full benchmark name/path from WRK output
-     * @return A clean benchmark name suitable for file naming
+     * @param resultFile Path to the WRK result file
      */
-    private String extractBenchmarkName(String fullPath) {
-        // Extract just the benchmark name from the full path
-        // Example: "wrk-benchmark-results.txt" -> "wrk-benchmark"
-        String name = fullPath;
+    private void parseSingleBenchmarkMetadata(Path resultFile) {
+        try {
+            List<String> lines = Files.readAllLines(resultFile);
+            String benchmarkName = null;
+            Instant startTime = null;
+            Instant endTime = null;
+            boolean inMetadata = false;
 
-        // Remove file extension
-        int extIndex = name.lastIndexOf('.');
-        if (extIndex > 0) {
-            name = name.substring(0, extIndex);
+            for (String line : lines) {
+                if (line.equals("=== BENCHMARK METADATA ===")) {
+                    inMetadata = true;
+                } else if (line.equals("=== WRK OUTPUT ===")) {
+                    inMetadata = false;
+                } else if (inMetadata || line.startsWith("end_time:")) {
+                    if (line.startsWith("benchmark_name: ")) {
+                        benchmarkName = line.substring(16).trim();
+                    } else if (line.startsWith("start_time: ")) {
+                        long epochSeconds = Long.parseLong(line.substring(12).trim());
+                        startTime = Instant.ofEpochSecond(epochSeconds);
+                    } else if (line.startsWith("end_time: ")) {
+                        long epochSeconds = Long.parseLong(line.substring(10).trim());
+                        endTime = Instant.ofEpochSecond(epochSeconds);
+                    }
+                }
+            }
+
+            // Validate we have all required metadata
+            if (benchmarkName == null || startTime == null || endTime == null) {
+                String message = String.format(
+                    "WARNING: Incomplete metadata in file %s (name=%s, start=%s, end=%s)",
+                    resultFile, benchmarkName, startTime, endTime
+                );
+                LOGGER.warn(message);
+                return;
+            }
+
+            // Store the metadata
+            BenchmarkMetadata metadata = new BenchmarkMetadata(benchmarkName, startTime, endTime);
+            benchmarkMetadataMap.put(benchmarkName, metadata);
+
+            LOGGER.info("Parsed metadata for benchmark '{}': start={}, end={}, duration={}s",
+                benchmarkName, startTime, endTime,
+                endTime.getEpochSecond() - startTime.getEpochSecond());
+
+        } catch (IOException | NumberFormatException e) {
+            LOGGER.warn("Failed to parse metadata from {}: {}", resultFile, e.getMessage());
+        }
+    }
+
+    /**
+     * Find metadata for a benchmark based on its result file name.
+     *
+     * @param benchmarkFileName The benchmark file name from BenchmarkData
+     * @return The matching metadata or null if not found
+     */
+    private BenchmarkMetadata findMetadataForBenchmark(String benchmarkFileName) {
+        // First try exact match
+        if (benchmarkMetadataMap.containsKey(benchmarkFileName)) {
+            return benchmarkMetadataMap.get(benchmarkFileName);
         }
 
-        // Remove common suffixes
-        if (name.endsWith("-results")) {
-            name = name.substring(0, name.length() - 8);
+        // Try to extract base name and match
+        String baseName = benchmarkFileName;
+        if (baseName.endsWith(".txt")) {
+            baseName = baseName.substring(0, baseName.length() - 4);
+        }
+        if (baseName.endsWith("-results")) {
+            baseName = baseName.substring(0, baseName.length() - 8);
         }
 
-        // Remove path if present
-        int pathIndex = name.lastIndexOf('/');
-        if (pathIndex >= 0) {
-            name = name.substring(pathIndex + 1);
+        // Try to find by matching base name
+        for (Map.Entry<String, BenchmarkMetadata> entry : benchmarkMetadataMap.entrySet()) {
+            if (entry.getKey().equals(baseName) ||
+                entry.getKey().contains(baseName) ||
+                baseName.contains(entry.getKey())) {
+                return entry.getValue();
+            }
         }
 
-        return name;
+        // If still not found and we only have one benchmark, use it
+        if (benchmarkMetadataMap.size() == 1) {
+            LOGGER.info("Using single available benchmark metadata for: {}", benchmarkFileName);
+            return benchmarkMetadataMap.values().iterator().next();
+        }
+
+        return null;
     }
 }

@@ -64,13 +64,10 @@ export TOKEN_DATA
 
 # Start system monitoring in background
 MONITORING_LOG="${SCRIPT_DIR}/../../target/benchmark-results/system-metrics.log"
-TIMESTAMP_FILE="${SCRIPT_DIR}/../../target/benchmark-results/benchmark-timestamps.txt"
 mkdir -p "$(dirname "$MONITORING_LOG")"
 
 # Record benchmark start time
 BENCHMARK_START_TIME=$(date +%s)
-echo "benchmark_start_time=$BENCHMARK_START_TIME" > "$TIMESTAMP_FILE"
-echo "benchmark_start_iso=$(date -Iseconds)" >> "$TIMESTAMP_FILE"
 
 echo "Starting system monitoring (CPU, memory, disk I/O)..."
 (
@@ -107,7 +104,19 @@ MONITORING_PID=$!
 
 echo "System monitoring started (PID: $MONITORING_PID)"
 
-# Run wrk with the optimized script
+# Define benchmark name and output file
+BENCHMARK_NAME="${BENCHMARK_NAME:-wrk-jwt-validation}"
+OUTPUT_FILE="${SCRIPT_DIR}/../../target/benchmark-results/${BENCHMARK_NAME}-results.txt"
+
+# Write metadata header to output file
+echo "=== BENCHMARK METADATA ===" > "$OUTPUT_FILE"
+echo "benchmark_name: $BENCHMARK_NAME" >> "$OUTPUT_FILE"
+echo "start_time: $BENCHMARK_START_TIME" >> "$OUTPUT_FILE"
+echo "start_time_iso: $(date -Iseconds)" >> "$OUTPUT_FILE"
+echo "=== WRK OUTPUT ===" >> "$OUTPUT_FILE"
+echo "" >> "$OUTPUT_FILE"
+
+# Run wrk with the optimized script and append output to file
 wrk \
     -t"$WRK_THREADS" \
     -c"$WRK_CONNECTIONS" \
@@ -115,7 +124,7 @@ wrk \
     --timeout "$WRK_TIMEOUT" \
     --latency \
     -s "$SCRIPT_DIR/$WRK_SCRIPT" \
-    "$SERVICE_URL/jwt/validate"
+    "$SERVICE_URL/jwt/validate" >> "$OUTPUT_FILE" 2>&1
 
 # Stop system monitoring
 if [ -n "$MONITORING_PID" ] && kill -0 $MONITORING_PID 2>/dev/null; then
@@ -125,14 +134,16 @@ if [ -n "$MONITORING_PID" ] && kill -0 $MONITORING_PID 2>/dev/null; then
     echo "System monitoring stopped"
 fi
 
-# Record benchmark end time
+# Record benchmark end time and append to output file
 BENCHMARK_END_TIME=$(date +%s)
-echo "benchmark_end_time=$BENCHMARK_END_TIME" >> "$TIMESTAMP_FILE"
-echo "benchmark_end_iso=$(date -Iseconds)" >> "$TIMESTAMP_FILE"
-echo "duration_seconds=$((BENCHMARK_END_TIME - BENCHMARK_START_TIME))" >> "$TIMESTAMP_FILE"
+echo "" >> "$OUTPUT_FILE"
+echo "=== BENCHMARK COMPLETE ===" >> "$OUTPUT_FILE"
+echo "end_time: $BENCHMARK_END_TIME" >> "$OUTPUT_FILE"
+echo "end_time_iso: $(date -Iseconds)" >> "$OUTPUT_FILE"
+echo "duration_seconds: $((BENCHMARK_END_TIME - BENCHMARK_START_TIME))" >> "$OUTPUT_FILE"
 
 echo "System metrics saved to: $MONITORING_LOG"
-echo "Benchmark timestamps saved to: $TIMESTAMP_FILE"
+echo "Benchmark results saved to: $OUTPUT_FILE"
 
 echo "-------------------------------------------------------------------"
 echo "Benchmark complete!"
