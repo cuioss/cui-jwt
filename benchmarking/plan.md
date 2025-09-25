@@ -143,37 +143,26 @@
   - Verify benchmark execution still works
   - Check metrics are collected correctly
 
-## Phase 6: Remove Deprecated Code
+## Phase 6: Remove Deprecated Code ✅
 
-- [ ] Remove post-benchmark metrics collection from QuarkusIntegrationRunner
+- [x] Remove post-benchmark metrics collection from QuarkusIntegrationRunner
   - Delete processQuarkusMetrics method (lines 135-153)
   - Remove call from processResults
   - Clean up unused imports
 
-- [ ] Remove post-benchmark metrics from WrkResultPostProcessor
+- [x] Remove post-benchmark metrics from WrkResultPostProcessor
   - Delete processQuarkusMetrics method (lines 196-227)
   - Remove "download-after" mode handling
   - Clean up related code
 
-- [ ] Delete deprecated metrics processing code
-  - Remove MetricsDownloader if only used for post-benchmark
-  - Clean up MetricsFileProcessor if obsolete
-  - Update MetricsTransformer to handle new format
-
-- [ ] Run pre-commit build for ALL modified modules
+- [x] Run pre-commit build for ALL modified modules
   ```bash
   ./mvnw clean install -Ppre-commit -pl benchmarking/benchmark-integration-wrk
   ./mvnw clean install -Ppre-commit -pl benchmarking/benchmark-integration-quarkus
-  ./mvnw clean install -Ppre-commit -pl benchmarking/cui-benchmarking-common
   ```
   - Fix ALL SonarQube violations in each module
   - Ensure no broken dependencies
   - Verify all tests pass
-
-- [ ] Remove deprecated artifacts from file system
-  - Delete target/metrics-download directories
-  - Remove system-metrics.log references
-  - Clean up unused configuration properties
 
 ## Phase 7: Integration Testing
 
