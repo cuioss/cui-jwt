@@ -40,13 +40,13 @@
 
 ## Phase 2: PrometheusClient Implementation
 
-- [ ] Create PrometheusClient class in cui-benchmarking-common
+- [x] Create PrometheusClient class in cui-benchmarking-common
   - Implement HTTP client for Prometheus API
   - Add query_range endpoint support
   - Parse JSON response to TimeSeries objects
   - Add proper error handling
 
-- [ ] Run pre-commit build for cui-benchmarking-common
+- [x] Run pre-commit build for cui-benchmarking-common
   ```bash
   ./mvnw clean install -Ppre-commit -pl benchmarking/cui-benchmarking-common
   ```
@@ -54,7 +54,7 @@
   - Follow project code quality rules
   - Repeat until build passes with ZERO issues
 
-- [ ] Create PrometheusClientTest with comprehensive tests
+- [x] Create PrometheusClientTest with comprehensive tests
   - Use @EnableMockWebServer annotation (follow MetricsDownloaderTest pattern)
   - Use real Prometheus test data (fetch actual responses for verification)
   - Test query_range with authentic JSON responses
@@ -62,7 +62,7 @@
   - Test time range calculations with realistic timestamps
   - Add final integration verification step with live Prometheus data
 
-- [ ] Run pre-commit build again after tests
+- [x] Run pre-commit build again after tests
   ```bash
   ./mvnw clean install -Ppre-commit -pl benchmarking/cui-benchmarking-common
   ```

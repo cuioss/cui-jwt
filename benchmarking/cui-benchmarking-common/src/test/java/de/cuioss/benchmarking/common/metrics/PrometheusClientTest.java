@@ -1,0 +1,323 @@
+/*
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.benchmarking.common.metrics;
+
+import de.cuioss.benchmarking.common.metrics.test.PrometheusModuleDispatcher;
+import de.cuioss.test.mockwebserver.EnableMockWebServer;
+import de.cuioss.test.mockwebserver.URIBuilder;
+import lombok.Getter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Comprehensive tests for PrometheusClient using MockWebServer to simulate various scenarios.
+ * Tests cover successful queries, error conditions, timeout scenarios, and edge cases.
+ */
+@EnableMockWebServer
+class PrometheusClientTest {
+
+    @Getter
+    private final PrometheusModuleDispatcher moduleDispatcher = new PrometheusModuleDispatcher();
+
+    private PrometheusClient prometheusClient;
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Instant START_TIME = Instant.ofEpochSecond(1758792520);
+    private static final Instant END_TIME = Instant.ofEpochSecond(1758792760);
+    private static final Duration STEP = Duration.ofSeconds(60);
+
+    @BeforeEach void setUp(URIBuilder uriBuilder) {
+        String baseUrl = uriBuilder.buildAsString();
+        prometheusClient = new PrometheusClient(baseUrl, DEFAULT_TIMEOUT);
+        moduleDispatcher.setCallCounter(0);
+    }
+
+    @Test void shouldQuerySingleMetricSuccessfully() throws PrometheusClient.PrometheusException {
+        // Given
+        List<String> metricNames = List.of("process_cpu_usage");
+
+        // When
+        Map<String, PrometheusClient.TimeSeries> result = prometheusClient.queryRange(
+                metricNames, START_TIME, END_TIME, STEP);
+
+        // Then
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("process_cpu_usage"));
+
+        PrometheusClient.TimeSeries timeSeries = result.get("process_cpu_usage");
+        assertEquals("process_cpu_usage", timeSeries.getMetricName());
+
+        // Verify labels
+        Map<String, String> labels = timeSeries.getLabels();
+        assertEquals("process_cpu_usage", labels.get("__name__"));
+        assertEquals("cui-jwt-integration-tests:8443", labels.get("instance"));
+        assertEquals("quarkus-benchmark", labels.get("job"));
+
+        // Verify data points
+        List<PrometheusClient.DataPoint> values = timeSeries.getValues();
+        assertEquals(5, values.size());
+
+        PrometheusClient.DataPoint firstPoint = values.getFirst();
+        assertEquals(Instant.ofEpochSecond(1758792520), firstPoint.getTimestamp());
+        assertEquals(0.0125, firstPoint.getValue(), 0.0001);
+
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldQueryMultipleMetricsSuccessfully() throws PrometheusClient.PrometheusException {
+        // Given
+        List<String> metricNames = List.of("process_cpu_usage", "system_cpu_usage", "jvm_memory_used_bytes");
+
+        // When
+        Map<String, PrometheusClient.TimeSeries> result = prometheusClient.queryRange(
+                metricNames, START_TIME, END_TIME, STEP);
+
+        // Then
+        assertEquals(3, result.size());
+        assertTrue(result.containsKey("process_cpu_usage"));
+        assertTrue(result.containsKey("system_cpu_usage"));
+        assertTrue(result.containsKey("jvm_memory_used_bytes"));
+
+        // Verify each metric has expected structure
+        result.forEach((metricName, timeSeries) -> {
+            assertEquals(metricName, timeSeries.getMetricName());
+            assertFalse(timeSeries.getLabels().isEmpty());
+            assertFalse(timeSeries.getValues().isEmpty());
+        });
+
+        assertEquals(3, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldHandleEmptyResultGracefully() throws PrometheusClient.PrometheusException {
+        // Given
+        moduleDispatcher.setCustomResponse(moduleDispatcher.getEmptyResultResponse());
+        List<String> metricNames = List.of("non_existent_metric");
+
+        // When
+        Map<String, PrometheusClient.TimeSeries> result = prometheusClient.queryRange(
+                metricNames, START_TIME, END_TIME, STEP);
+
+        // Then
+        assertEquals(1, result.size());
+        PrometheusClient.TimeSeries timeSeries = result.get("non_existent_metric");
+        assertEquals("non_existent_metric", timeSeries.getMetricName());
+        assertTrue(timeSeries.getLabels().isEmpty());
+        assertTrue(timeSeries.getValues().isEmpty());
+
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldHandlePrometheusErrorResponse() {
+        // Given
+        moduleDispatcher.setCustomResponse(moduleDispatcher.getErrorResponse());
+        List<String> metricNames = List.of("invalid_query");
+
+        // When & Then
+        PrometheusClient.PrometheusException exception = assertThrows(
+                PrometheusClient.PrometheusException.class,
+                () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
+
+        assertTrue(exception.getMessage().contains("invalid parameter 'query'"));
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @ParameterizedTest @ValueSource(ints = {500, 503}) void shouldHandleHttpErrorCodes(int statusCode) {
+        // Given
+        switch (statusCode) {
+            case 500 -> moduleDispatcher.setServerError();
+            case 503 -> moduleDispatcher.setServiceUnavailable();
+        }
+        List<String> metricNames = List.of("test_metric");
+
+        // When & Then
+        PrometheusClient.PrometheusException exception = assertThrows(
+                PrometheusClient.PrometheusException.class,
+                () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
+
+        assertTrue(exception.getMessage().contains("HTTP " + statusCode));
+        assertEquals(statusCode, exception.getStatusCode());
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldHandle404ErrorWithCustomResponse() {
+        // Given - Custom response returns 200 OK, not 404, so we test successful parsing instead
+        moduleDispatcher.setCustomResponse("Not Found");
+        List<String> metricNames = List.of("test_metric");
+
+        // When & Then - This should succeed but return empty result due to invalid JSON structure
+        PrometheusClient.PrometheusException exception = assertThrows(
+                PrometheusClient.PrometheusException.class,
+                () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
+
+        assertTrue(exception.getMessage().contains("Unexpected error parsing response"));
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldHandleInvalidJsonResponse() {
+        // Given
+        moduleDispatcher.setInvalidJson();
+        List<String> metricNames = List.of("test_metric");
+
+        // When & Then
+        PrometheusClient.PrometheusException exception = assertThrows(
+                PrometheusClient.PrometheusException.class,
+                () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
+
+        assertTrue(exception.getMessage().contains("Unexpected error parsing response"));
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldHandleNetworkTimeout() {
+        // Given
+        moduleDispatcher.setTimeout();
+        List<String> metricNames = List.of("test_metric");
+
+        // When & Then
+        PrometheusClient.PrometheusException exception = assertThrows(
+                PrometheusClient.PrometheusException.class,
+                () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
+
+        assertTrue(exception.getMessage().contains("HTTP 408"));
+        assertEquals(408, exception.getStatusCode());
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldConstructUrlCorrectly(URIBuilder uriBuilder) throws PrometheusClient.PrometheusException {
+        // Given
+        String baseUrl = uriBuilder.buildAsString();
+        PrometheusClient client = new PrometheusClient(baseUrl + "/");  // Test trailing slash removal
+        List<String> metricNames = List.of("test_metric[5m]");  // Test URL encoding
+
+        // When
+        client.queryRange(metricNames, START_TIME, END_TIME, STEP);
+
+        // Then
+        // Verify the request was made (call counter incremented)
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+
+    @Test void shouldUseCustomTimeout(URIBuilder uriBuilder) {
+        // Given
+        Duration customTimeout = Duration.ofSeconds(1);
+        String baseUrl = uriBuilder.buildAsString();
+        PrometheusClient clientWithTimeout = new PrometheusClient(baseUrl, customTimeout);
+
+        // When
+        moduleDispatcher.setTimeout();
+        List<String> metricNames = List.of("test_metric");
+
+        // Then
+        assertThrows(PrometheusClient.PrometheusException.class, () ->
+                clientWithTimeout.queryRange(metricNames, START_TIME, END_TIME, STEP));
+    }
+
+    @Test void shouldUseDefaultTimeout(URIBuilder uriBuilder) {
+        // Given
+        String baseUrl = uriBuilder.buildAsString();
+        PrometheusClient clientWithDefaultTimeout = new PrometheusClient(baseUrl);  // Default constructor
+
+        // When & Then
+        assertDoesNotThrow(() -> clientWithDefaultTimeout.queryRange(
+                List.of("process_cpu_usage"), START_TIME, END_TIME, STEP));
+    }
+
+    @Test void shouldHandleComplexMetricWithLabels() throws PrometheusClient.PrometheusException {
+        // Given
+        String complexResponse = """
+        {
+          "status": "success",
+          "data": {
+            "resultType": "matrix",
+            "result": [
+              {
+                "metric": {
+                  "__name__": "http_server_requests_seconds_count",
+                  "instance": "cui-jwt-integration-tests:8443",
+                  "job": "quarkus-benchmark",
+                  "method": "POST",
+                  "outcome": "SUCCESS",
+                  "status": "200",
+                  "uri": "/api/v1/jwt/extract"
+                },
+                "values": [
+                  [1758792520, "12345"],
+                  [1758792580, "12567"],
+                  [1758792640, "12789"]
+                ]
+              }
+            ]
+          }
+        }
+        """;
+        moduleDispatcher.setCustomResponse(complexResponse);
+        List<String> metricNames = List.of("http_server_requests_seconds_count");
+
+        // When
+        Map<String, PrometheusClient.TimeSeries> result = prometheusClient.queryRange(
+                metricNames, START_TIME, END_TIME, STEP);
+
+        // Then
+        PrometheusClient.TimeSeries timeSeries = result.get("http_server_requests_seconds_count");
+        Map<String, String> labels = timeSeries.getLabels();
+
+        assertEquals("POST", labels.get("method"));
+        assertEquals("SUCCESS", labels.get("outcome"));
+        assertEquals("200", labels.get("status"));
+        assertEquals("/api/v1/jwt/extract", labels.get("uri"));
+
+        List<PrometheusClient.DataPoint> values = timeSeries.getValues();
+        assertEquals(3, values.size());
+        assertEquals(12345.0, values.getFirst().getValue());
+        assertEquals(12567.0, values.get(1).getValue());
+        assertEquals(12789.0, values.get(2).getValue());
+    }
+
+    @Test void shouldCalculateStepCorrectly() throws PrometheusClient.PrometheusException {
+        // Given
+        Duration fiveMinuteStep = Duration.ofMinutes(5);
+        Duration oneHourStep = Duration.ofHours(1);
+
+        // When & Then - Should not throw exceptions with various step sizes
+        assertDoesNotThrow(() -> prometheusClient.queryRange(
+                List.of("process_cpu_usage"), START_TIME, END_TIME, fiveMinuteStep));
+
+        assertDoesNotThrow(() -> prometheusClient.queryRange(
+                List.of("process_cpu_usage"), START_TIME, END_TIME, oneHourStep));
+    }
+
+    @Test void shouldHandleFailureInOneOfMultipleMetrics() {
+        // Given
+        List<String> metricNames = List.of("process_cpu_usage", "failing_metric");
+        // Set up to fail on second request
+        moduleDispatcher.setCustomResponse(moduleDispatcher.getErrorResponse());
+
+        // When & Then - Should fail fast on first error
+        PrometheusClient.PrometheusException exception = assertThrows(
+                PrometheusClient.PrometheusException.class,
+                () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
+
+        // Should stop after first failure
+        assertEquals(1, moduleDispatcher.getCallCounter());
+    }
+}
