@@ -30,7 +30,7 @@
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
 
         <!-- WRK Configuration Properties -->
-        <wrk.duration>30s</wrk.duration>
+        <wrk.duration>420s</wrk.duration>  <!-- 7 minutes full benchmark -->
         <wrk.threads>4</wrk.threads>
         <wrk.connections>20</wrk.connections>
         <wrk.timeout>2s</wrk.timeout>

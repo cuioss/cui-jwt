@@ -28,12 +28,12 @@
         <jmh.include>de\.cuioss\.jwt\.quarkus\.benchmark\.benchmarks\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>${project.build.directory}/benchmark-results/integration-result</jmh.result.filePrefix>
-        <jmh.iterations>5</jmh.iterations>
-        <jmh.warmupIterations>1</jmh.warmupIterations>
+        <jmh.iterations>10</jmh.iterations>  <!-- 10 iterations for ~7 minutes total -->
+        <jmh.warmupIterations>2</jmh.warmupIterations>  <!-- 2 warmup iterations -->
         <jmh.forks>2</jmh.forks>
         <jmh.threads>24</jmh.threads>
-        <jmh.time>10s</jmh.time>
-        <jmh.warmupTime>1s</jmh.warmupTime>
+        <jmh.time>20s</jmh.time>  <!-- 20s per iteration -->
+        <jmh.warmupTime>10s</jmh.warmupTime>  <!-- 10s warmup -->
 
         <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
         <integration.service.url>https://localhost:10443</integration.service.url>

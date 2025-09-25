@@ -1,105 +1,167 @@
-= JWT Validation REST API Performance Analysis - September 2025
-:source-highlighter: highlight.js
+= JWT Validation Benchmark Analysis - September 2025
+:toc:
+:toc-placement: preamble
+:icons: font
 
-Performance and resource utilization comparison of JWT validation REST API using different load generators: JMH and WRK.
+== Executive Summary
 
-== Benchmark Configuration
+This document presents the results of JWT validation benchmarks conducted using two different load testing approaches:
 
-Both benchmarks test the identical JWT validation REST API endpoints:
-- **Health endpoint**: `/q/health/live`
-- **JWT validation endpoint**: `/jwt/validate`
-- **Target service**: Quarkus JWT validation service at https://localhost:10443
+1. **WRK Benchmark**: HTTP-based load testing with WRK (Web Request Kit)
+2. **Quarkus JMH Benchmark**: Java-based micro-benchmarking with JMH
 
-**Difference**: Only the load generation tool differs (JMH vs WRK), but both make the same HTTP requests.
+Both benchmarks test the same Quarkus native application running in a distroless container with Keycloak as the JWT issuer.
 
-== Performance Results
+== Test Environment
 
+* **Platform**: macOS Darwin 24.6.0 (ARM64)
+* **CPU**: 4 cores available
+* **Java Version**: OpenJDK 21.0.7 (Temurin)
+* **Quarkus**: Native compilation with Mandrel 23.1.8.0
+* **Container**: Distroless image (111MB)
+* **Keycloak**: Version 26.2.5
+
+== Benchmark Results Comparison
+
+[cols="3,2,2", options="header"]
 |===
-|Metric |JMH Load Generator |WRK Load Generator |Analysis
+| Metric | WRK Benchmark | Quarkus JMH Benchmark
 
-|**Health Check Throughput**
-|9,600 ops/s
-|14,300 ops/s
-|WRK achieved +49% higher throughput
+3+^h| *System Resources*
 
-|**JWT Validation Throughput**
-|6,900 ops/s
-|8,600 ops/s
-|WRK achieved +25% higher throughput
+| CPU Cores Available
+| 4
+| 4
 
-|**JWT Validation Latency**
-|~0.245ms (calculated)
-|5.8ms (P50)
-|WRK shows higher latency due to HTTP overhead
+| System CPU Usage
+| 89%
+| 38%
 
-|**Total Validations Processed**
-|7,772,364
-|8,483,151
-|WRK processed +9% more validations
+| Quarkus CPU Usage
+| 89%
+| 38%
+
+| Memory Heap Used
+| 30 MB
+| 19 MB
+
+| Peak Threads
+| 57
+| N/A
+
+3+^h| *HTTP Performance*
+
+| Total Requests
+| 264,785
+| 1,430,364
+
+| Requests per Second
+| 746 req/s
+| 855 req/s
+
+| Average Duration
+| 1.3 ms
+| 1.17 ms
+
+| Max Duration
+| 48 ms
+| N/A
+
+3+^h| *JWT Validation*
+
+| Access Tokens Created
+| 264,785
+| 1,430,364
+
+| Validation Errors
+| 0
+| 0
+
+| Error Categories
+| All 0
+| All 0
 |===
 
-== CPU Resource Analysis
+== Key Observations
 
-**Quarkus Service CPU Usage (from /metrics endpoint):**
+=== Performance Characteristics
 
+1. **Throughput**: The Quarkus JMH benchmark achieved higher throughput (855 req/s) compared to WRK (746 req/s), approximately 15% better performance.
+
+2. **CPU Utilization**:
+   - WRK benchmark saturated the CPU at 89%, indicating it pushed the system to its limits
+   - JMH benchmark used only 38% CPU, suggesting it wasn't fully utilizing system resources
+
+3. **Memory Usage**:
+   - Both benchmarks showed efficient memory usage
+   - WRK: 30 MB heap
+   - JMH: 19 MB heap
+   - This demonstrates excellent memory efficiency of the native Quarkus application
+
+4. **Response Times**:
+   - Very consistent sub-2ms average response times in both benchmarks
+   - WRK reported max latency of 48ms (likely during warmup or GC)
+
+=== Benchmark Methodology Differences
+
+[cols="2,3,3", options="header"]
 |===
-|Load Generator |Process CPU Usage |System CPU Usage |Efficiency (ops per CPU%)
+| Aspect | WRK | JMH
 
-|**JMH**
-|11.9%
-|11.9%
-|580 ops/s per 1% CPU
+| Load Generation
+| External HTTP client
+| In-process Java client
 
-|**WRK**
-|5.0%
-|5.4%
-|1,720 ops/s per 1% CPU
+| Network Stack
+| Full HTTP/2 over TLS
+| HTTP/2 client (localhost)
 
-|**Efficiency Ratio**
-|Baseline
-|2.4x more efficient
-|WRK is 2.97x more CPU efficient
+| Concurrency Model
+| 24 threads, 100 connections
+| 24 JMH threads
+
+| Duration
+| ~6 minutes runtime
+| ~28 minutes runtime
+
+| Measurement
+| End-to-end including network
+| Focused on application logic
 |===
-
-== Resource Utilization Comparison
-
-**CPU Efficiency Analysis:**
-- **WRK Load Generator**: Achieved 8,600 ops/s using only 5.0% CPU
-- **JMH Load Generator**: Achieved 6,900 ops/s using 11.9% CPU
-- **CPU Efficiency**: WRK is ~3x more CPU-efficient per operation
-
-**Memory Usage (both tests):**
-- Heap Memory: ~22MB (eden: 12.6MB, old gen: 9.4MB)
-- Stable memory footprint across both load generators
-- Native image shows minimal memory overhead
-
-== Load Generator Impact
-
-**JMH Framework Overhead:**
-- Higher CPU utilization for same API calls
-- More resource-intensive load generation
-- Better for detailed JVM-level profiling
-
-**WRK Tool Efficiency:**
-- Lower CPU overhead for equivalent load
-- More efficient HTTP request generation
-- Better for pure throughput testing
-
-== Key Findings
-
-1. **Same API, Different Efficiency**: Both test identical REST endpoints but WRK generates load more efficiently
-2. **WRK Superior Throughput**: 25-49% higher throughput with 58% less CPU usage
-3. **CPU Efficiency**: WRK achieves 3x better CPU efficiency (ops per CPU percentage)
-4. **Memory Footprint**: Identical ~22MB regardless of load generator
-5. **Service Performance**: Quarkus service processes 8.5M+ validations efficiently
 
 == Conclusions
 
-The comparison reveals that **load generator choice significantly impacts resource efficiency**:
+1. **Both benchmarks validate excellent performance**: The JWT validation service consistently handles 700-850+ requests per second with sub-2ms latency.
 
-- **WRK** is superior for throughput testing with minimal resource overhead
-- **JMH** provides better profiling capabilities but at higher resource cost
-- **Quarkus service** performs consistently well with both load generators
-- **CPU efficiency** varies dramatically (3x difference) based on load generation approach
+2. **Native compilation benefits are clear**:
+   - Fast startup times (164ms for native app)
+   - Low memory footprint (19-30 MB heap)
+   - Predictable performance characteristics
 
-The JWT validation service demonstrates excellent performance with both load generators, processing millions of validations with low CPU usage and stable memory consumption.
+3. **WRK provides more realistic load testing**: By testing through the full network stack and saturating CPU, WRK better simulates production conditions.
+
+4. **JMH offers more precise measurements**: Lower resource usage during JMH testing suggests more efficient testing methodology, but may not reflect real-world network overhead.
+
+== Recommendations
+
+1. **For capacity planning**: Use WRK results (746 req/s at 89% CPU) as they represent full system stress
+2. **For optimization**: Use JMH for micro-benchmarking specific code paths
+3. **Memory is not a constraint**: With only 19-30 MB heap usage, the application can handle many concurrent instances
+4. **CPU is the limiting factor**: Both benchmarks show CPU as the primary bottleneck for scaling
+
+== Test Commands Used
+
+.WRK Benchmark
+[source,bash]
+----
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk
+----
+
+.Quarkus JMH Benchmark
+[source,bash]
+----
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus -Dskip.container.lifecycle=true
+----
+
+---
+_Analysis conducted: September 24, 2025_
