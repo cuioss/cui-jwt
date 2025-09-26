@@ -162,7 +162,7 @@ public abstract class AbstractBenchmarkRunner {
             prometheusMetricsManager.recordBenchmarkStart(config.throughputBenchmarkName());
         }
         if (config.latencyBenchmarkName() != null &&
-            !config.latencyBenchmarkName().equals(config.throughputBenchmarkName())) {
+                !config.latencyBenchmarkName().equals(config.throughputBenchmarkName())) {
             prometheusMetricsManager.recordBenchmarkStart(config.latencyBenchmarkName());
         }
     }
@@ -308,7 +308,7 @@ public abstract class AbstractBenchmarkRunner {
             for (RunResult result : results) {
                 String benchmarkName = extractBenchmarkName(result);
                 prometheusMetricsManager.recordBenchmarkTimestamps(
-                    benchmarkName, benchmarkStartTime, benchmarkEndTime);
+                        benchmarkName, benchmarkStartTime, benchmarkEndTime);
             }
 
             // Step 8: Process results (including Prometheus metrics collection)

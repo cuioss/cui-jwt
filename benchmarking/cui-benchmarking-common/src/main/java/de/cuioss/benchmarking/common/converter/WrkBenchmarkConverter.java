@@ -67,10 +67,12 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
     private BenchmarkData convertDirectory(Path dir) throws IOException {
         List<BenchmarkData.Benchmark> benchmarks = new ArrayList<>();
 
+        // Process all .txt files in the directory (should only contain WRK results)
         Files.list(dir)
                 .filter(p -> p.getFileName().toString().endsWith(".txt"))
                 .forEach(file -> {
                     try {
+                        LOGGER.debug("Processing WRK result file: " + file.getFileName());
                         BenchmarkData.Benchmark benchmark = parseWrkFile(file);
                         if (benchmark != null) {
                             benchmarks.add(benchmark);
@@ -150,12 +152,32 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
 
     private String extractBenchmarkName(Path file) {
         String fileName = file.getFileName().toString();
+
+        // First, try to extract from embedded metadata if available
+        try {
+            List<String> lines = Files.readAllLines(file);
+            for (String line : lines) {
+                if (line.startsWith("benchmark_name: ")) {
+                    return line.substring(16).trim();
+                }
+                // Stop looking after WRK output starts
+                if ("=== WRK OUTPUT ===".equals(line)) {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.debug("Could not read metadata from file: " + file, e);
+        }
+
+        // Fallback to filename-based extraction
         if (fileName.contains("jwt")) {
             return "jwtValidation";
+        } else if (fileName.contains("health-live")) {
+            return "healthLiveCheck";
         } else if (fileName.contains("health")) {
             return "healthCheck";
         }
-        return fileName.replace(".txt", "").replace("wrk-", "").replace("-output", "");
+        return fileName.replace("-results.txt", "").replace("wrk-", "").replace("-output", "");
     }
 
     private double convertToMs(double value, String unit) {

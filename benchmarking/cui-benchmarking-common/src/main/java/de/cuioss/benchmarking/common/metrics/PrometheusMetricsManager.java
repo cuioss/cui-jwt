@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
-
 /**
  * Centralized manager for Prometheus metrics collection during benchmark execution.
  * This class provides a unified approach to collecting real-time metrics from Prometheus
@@ -200,7 +198,7 @@ public class PrometheusMetricsManager {
      * @param outputDirectory the directory to save metrics
      */
     public void collectMetricsForWrkBenchmark(String benchmarkName, Instant startTime,
-                                               Instant endTime, String outputDirectory) {
+            Instant endTime, String outputDirectory) {
         if (!metricsEnabled) {
             LOGGER.debug("Skipping Prometheus metrics collection - not enabled");
             return;
@@ -243,7 +241,7 @@ public class PrometheusMetricsManager {
     }
 
     private void collectMetricsForBenchmark(String benchmarkName, MetricsOrchestrator orchestrator,
-                                             Path prometheusDir) {
+            Path prometheusDir) {
         LOGGER.debug("Collecting metrics for benchmark: '{}', available keys: {}",
                 benchmarkName, timestampTracker.keySet());
 
