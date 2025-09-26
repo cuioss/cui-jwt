@@ -12,7 +12,10 @@ Performance benchmarking for JWT token validation core library using JMH.
 # Run all benchmarks
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
 
-# Quick validation run (faster)
+# Quick validation run (2 iterations, 1 fork, 5s per iteration)
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark,quick
+
+# Manual quick validation run (faster)
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
   -Djmh.iterations=1 -Djmh.warmupIterations=1
 
@@ -33,6 +36,12 @@ Performance benchmarking for JWT token validation core library using JMH.
 -Djmh.time=10s              # Time per iteration
 -Djmh.includes=*Benchmark   # Benchmark pattern filter
 ----
+
+=== Profiles
+
+* `benchmark` - Runs the benchmarks with default settings
+* `benchmark,quick` - Fast validation with reduced iterations (2), forks (1), and time (5s)
+* `benchmark-jfr` - Runs benchmarks with Java Flight Recorder profiling
 
 === Running Specific Benchmarks
 

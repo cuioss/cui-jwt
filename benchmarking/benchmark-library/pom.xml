@@ -261,5 +261,18 @@
                 <benchmark.runner>de.cuioss.jwt.validation.benchmark.JfrBenchmarkRunner</benchmark.runner>
             </properties>
         </profile>
+
+        <!-- Quick benchmark profile for faster testing -->
+        <profile>
+            <id>quick</id>
+            <properties>
+                <!-- Override JMH parameters for quick benchmarks -->
+                <jmh.iterations>2</jmh.iterations>
+                <jmh.warmupIterations>1</jmh.warmupIterations>
+                <jmh.forks>1</jmh.forks>
+                <jmh.time>5s</jmh.time>
+                <jmh.warmupTime>2s</jmh.warmupTime>
+            </properties>
+        </profile>
     </profiles>
 </project>
