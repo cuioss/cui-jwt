@@ -19,13 +19,15 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.WrkBenchmarkConverter;
 import de.cuioss.benchmarking.common.metrics.PrometheusMetricsManager;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
-import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
+import de.cuioss.benchmarking.common.output.OutputDirectoryStructure;
+import de.cuioss.benchmarking.common.report.GitHubPagesGeneratorSimplified;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +57,7 @@ public class WrkResultPostProcessor {
 
     private final WrkBenchmarkConverter converter = new WrkBenchmarkConverter();
     private final ReportGenerator reportGenerator = new ReportGenerator();
-    private final GitHubPagesGenerator gitHubPagesGenerator = new GitHubPagesGenerator();
+    private final GitHubPagesGeneratorSimplified gitHubPagesGenerator = new GitHubPagesGeneratorSimplified();
     private final PrometheusMetricsManager prometheusMetricsManager = new PrometheusMetricsManager();
 
     // Map to store benchmark metadata (name -> timestamps)
@@ -178,22 +180,26 @@ public class WrkResultPostProcessor {
             LOGGER.info("Extracted " + benchmarkData.getBenchmarks().size() + " benchmark results");
         }
 
-        // Generate reports using refactored infrastructure
-        LOGGER.info("Generating benchmark reports...");
+        // Generate reports using new OutputDirectoryStructure (no duplication)
+        LOGGER.info("Generating benchmark reports using OutputDirectoryStructure...");
         Files.createDirectories(outputDir);
 
-        // Generate HTML reports
-        reportGenerator.generateIndexPage(benchmarkData, BenchmarkType.INTEGRATION, outputDir.toString());
-        reportGenerator.generateTrendsPage(outputDir.toString());
-        reportGenerator.generateDetailedPage(outputDir.toString());
-        reportGenerator.copySupportFiles(outputDir.toString());
+        // Create OutputDirectoryStructure for organized file generation
+        OutputDirectoryStructure structure = new OutputDirectoryStructure(outputDir);
+        structure.ensureDirectories();
 
-        // Collect real-time Prometheus metrics for the benchmark execution BEFORE GitHub Pages generation
-        collectPrometheusMetrics(benchmarkData, outputDir);
+        // Generate HTML reports directly to gh-pages-ready directory
+        String deploymentPath = structure.getDeploymentDir().toString();
+        reportGenerator.generateIndexPage(benchmarkData, BenchmarkType.INTEGRATION, deploymentPath);
+        reportGenerator.generateTrendsPage(deploymentPath);
+        reportGenerator.generateDetailedPage(deploymentPath);
+        reportGenerator.copySupportFiles(deploymentPath);
 
-        // Generate GitHub Pages structure (now includes Prometheus metrics copying)
-        Path ghPagesDir = outputDir.resolve("gh-pages-ready");
-        gitHubPagesGenerator.prepareDeploymentStructure(outputDir.toString(), ghPagesDir.toString());
+        // Collect real-time Prometheus metrics for the benchmark execution
+        collectPrometheusMetrics(benchmarkData, structure);
+
+        // Generate GitHub Pages deployment-specific assets (404.html, robots.txt, sitemap.xml)
+        gitHubPagesGenerator.generateDeploymentAssets(structure);
 
         LOGGER.info("Generated complete benchmark reports in: " + outputDir);
 
@@ -233,11 +239,12 @@ public class WrkResultPostProcessor {
     /**
      * Collect real-time metrics from Prometheus for the benchmark execution.
      * This captures time-series data during the actual benchmark run.
+     * Metrics are stored in the raw prometheus directory and copied to deployment data directory.
      *
      * @param benchmarkData The benchmark data containing benchmark names
-     * @param targetDir The target directory to store metrics
+     * @param structure The output directory structure
      */
-    private void collectPrometheusMetrics(BenchmarkData benchmarkData, Path targetDir) {
+    private void collectPrometheusMetrics(BenchmarkData benchmarkData, OutputDirectoryStructure structure) {
         // Skip if no metadata available
         if (benchmarkMetadataMap.isEmpty()) {
             LOGGER.warn("Cannot collect Prometheus metrics: no benchmark metadata available");
@@ -256,13 +263,53 @@ public class WrkResultPostProcessor {
                 }
 
                 // Use centralized PrometheusMetricsManager to collect metrics
+                // Metrics are collected to the main benchmark results directory
                 prometheusMetricsManager.collectMetricsForWrkBenchmark(
                         metadata.name,
                         metadata.startTime,
                         metadata.endTime,
-                        targetDir.toString()
+                        structure.getBenchmarkResultsDir().toString()
                 );
             }
+        }
+
+        // Copy Prometheus metrics from raw directory to deployment data directory
+        copyPrometheusMetricsToDeployment(structure);
+    }
+
+    /**
+     * Copies Prometheus metrics from the raw prometheus directory to the deployment data directory.
+     * This ensures metrics are available in the deployable GitHub Pages structure.
+     *
+     * @param structure The output directory structure
+     */
+    private void copyPrometheusMetricsToDeployment(OutputDirectoryStructure structure) {
+        try {
+            Path prometheusRawDir = structure.getPrometheusRawDir();
+            Path deploymentDataDir = structure.getDataDir();
+
+            if (!Files.exists(prometheusRawDir)) {
+                LOGGER.info("No Prometheus raw directory found, skipping metrics copy");
+                return;
+            }
+
+            // Copy all JSON files from prometheus/ to gh-pages-ready/data/
+            try (Stream<Path> files = Files.list(prometheusRawDir)) {
+                files.filter(file -> file.getFileName().toString().endsWith(".json"))
+                        .forEach(sourceFile -> {
+                            try {
+                                Path targetFile = deploymentDataDir.resolve(sourceFile.getFileName());
+                                Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                                LOGGER.info("Copied Prometheus metrics: {} -> {}", sourceFile.getFileName(), targetFile);
+                            } catch (IOException e) {
+                                LOGGER.warn("Failed to copy Prometheus metrics file: {}", sourceFile, e);
+                            }
+                        });
+            }
+
+            LOGGER.info("Prometheus metrics copied to deployment directory");
+        } catch (IOException e) {
+            LOGGER.warn("Failed to copy Prometheus metrics to deployment directory", e);
         }
     }
 

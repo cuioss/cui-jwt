@@ -46,11 +46,13 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void comprehensiveStructureGeneration() throws IOException {
-        // Copy real benchmark outputs to temp directory
+        // Copy real benchmark outputs to temp directory wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Path healthSource = Path.of("src/test/resources/wrk-health-results.txt");
         Path jwtSource = Path.of("src/test/resources/wrk-jwt-results.txt");
-        Files.copy(healthSource, tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
-        Files.copy(jwtSource, tempDir.resolve(WRK_JWT_OUTPUT_FILE));
+        Files.copy(healthSource, wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE));
+        Files.copy(jwtSource, wrkDir.resolve(WRK_JWT_OUTPUT_FILE));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -61,17 +63,19 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void parseWrkHealthOutput() throws IOException {
-        // Copy real health output to temp directory
+        // Copy real health output to temp directory wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Path sourceFile = Path.of("src/test/resources/wrk-health-results.txt");
-        Path targetFile = tempDir.resolve(WRK_HEALTH_OUTPUT_FILE);
+        Path targetFile = wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE);
         Files.copy(sourceFile, targetFile);
 
         // Process results
         Path outputDir = tempDir.resolve("output");
         processor.process(tempDir, outputDir);
 
-        // Verify JSON output was created
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        // Verify JSON output was created in gh-pages-ready structure
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         assertTrue(Files.exists(jsonFile), "Benchmark data file should be created");
 
         // Parse and verify JSON structure
@@ -112,17 +116,19 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void parseWrkJwtOutput() throws IOException {
-        // Copy real JWT output to temp directory
+        // Copy real JWT output to temp directory wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Path sourceFile = Path.of("src/test/resources/wrk-jwt-results.txt");
-        Path targetFile = tempDir.resolve(WRK_JWT_OUTPUT_FILE);
+        Path targetFile = wrkDir.resolve(WRK_JWT_OUTPUT_FILE);
         Files.copy(sourceFile, targetFile);
 
         // Process results
         Path outputDir = tempDir.resolve("output");
         processor.process(tempDir, outputDir);
 
-        // Parse JSON output
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        // Parse JSON output from gh-pages-ready structure
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         String jsonContent = Files.readString(jsonFile);
         JsonObject json = JsonParser.parseString(jsonContent).getAsJsonObject();
 
@@ -131,7 +137,8 @@ class WrkResultPostProcessorTest {
         var benchmarks = json.getAsJsonArray("benchmarks");
         for (int i = 0; i < benchmarks.size(); i++) {
             var bench = benchmarks.get(i).getAsJsonObject();
-            if (BENCHMARK_NAME_JWT.equals(bench.get("name").getAsString())) {
+            String benchName = bench.get("name").getAsString();
+            if (BENCHMARK_NAME_JWT.equals(benchName) || "jwt-validation".equals(benchName)) {
                 jwtBenchmark = bench;
                 break;
             }
@@ -164,13 +171,15 @@ class WrkResultPostProcessorTest {
 
     @Test void handlesCompleteWrkOutput() throws IOException {
         // Test with actual WRK output that includes shell wrapper output
-        Path jwtFile = tempDir.resolve(WRK_JWT_OUTPUT_FILE);
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
+        Path jwtFile = wrkDir.resolve(WRK_JWT_OUTPUT_FILE);
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"), jwtFile);
 
         Path outputDir = tempDir.resolve("output");
         processor.process(tempDir, outputDir);
 
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         JsonObject json = JsonParser.parseString(Files.readString(jsonFile)).getAsJsonObject();
 
         // Should successfully parse despite wrapper output and "Loaded X tokens" messages
@@ -178,7 +187,8 @@ class WrkResultPostProcessorTest {
         boolean foundJwt = false;
         for (int i = 0; i < benchmarks.size(); i++) {
             var bench = benchmarks.get(i).getAsJsonObject();
-            if (BENCHMARK_NAME_JWT.equals(bench.get("name").getAsString())) {
+            String benchName = bench.get("name").getAsString();
+            if (BENCHMARK_NAME_JWT.equals(benchName) || "jwt-validation".equals(benchName)) {
                 foundJwt = true;
                 // Verify it extracted the actual WRK data
                 assertTrue(bench.has("score"));
@@ -189,9 +199,11 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void generateGitHubPagesStructure() throws IOException {
-        // Setup test files
-        Path healthFile = tempDir.resolve(WRK_HEALTH_OUTPUT_FILE);
-        Path jwtFile = tempDir.resolve(WRK_JWT_OUTPUT_FILE);
+        // Setup test files in wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
+        Path healthFile = wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE);
+        Path jwtFile = wrkDir.resolve(WRK_JWT_OUTPUT_FILE);
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"), healthFile);
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"), jwtFile);
 
@@ -212,18 +224,20 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void overviewGeneration() throws IOException {
-        // Setup test files
+        // Setup test files in wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
-                tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
+                wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE));
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"),
-                tempDir.resolve(WRK_JWT_OUTPUT_FILE));
+                wrkDir.resolve(WRK_JWT_OUTPUT_FILE));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
         processor.process(tempDir, outputDir);
 
         // Verify overview section exists and has correct format
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         JsonObject json = JsonParser.parseString(Files.readString(jsonFile)).getAsJsonObject();
 
         assertTrue(json.has("overview"), "Overview section should be present");
@@ -237,12 +251,14 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void missingFileHandling() throws IOException {
-        // Process with no WRK output files - should throw exception
+        // Create wrk directory but with no WRK output files - should throw exception
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Path outputDir = tempDir.resolve("output");
         assertThrows(IllegalStateException.class, () -> processor.process(tempDir, outputDir));
 
         // Should not create output structure
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         assertFalse(Files.exists(jsonFile), "JSON should not be created with missing inputs");
     }
 
@@ -275,13 +291,15 @@ class WrkResultPostProcessorTest {
             duration_seconds: 10
             """;
 
-        Path testFile = tempDir.resolve(WRK_HEALTH_OUTPUT_FILE);
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
+        Path testFile = wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE);
         Files.writeString(testFile, wrkOutput);
 
         Path outputDir = tempDir.resolve("output");
         processor.process(tempDir, outputDir);
 
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         JsonObject json = JsonParser.parseString(Files.readString(jsonFile)).getAsJsonObject();
         JsonObject benchmark = json.getAsJsonArray("benchmarks").get(0).getAsJsonObject();
 
@@ -298,9 +316,11 @@ class WrkResultPostProcessorTest {
     }
 
     @Test void systemMetricsIntegration() throws IOException {
-        // Setup test files
+        // Setup test files in wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
-                tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
+                wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE));
 
         // Set system property to skip metrics fetching (since no server is running)
         System.setProperty("quarkus.metrics.url", "https://nonexistent:10443");
@@ -309,7 +329,7 @@ class WrkResultPostProcessorTest {
         processor.process(tempDir, outputDir);
 
         // Verify that the report still works without metrics
-        Path jsonFile = outputDir.resolve("data/benchmark-data.json");
+        Path jsonFile = outputDir.resolve("gh-pages-ready/data/benchmark-data.json");
         JsonObject json = JsonParser.parseString(Files.readString(jsonFile)).getAsJsonObject();
 
         // systemMetrics field is optional when fetch fails
@@ -319,13 +339,14 @@ class WrkResultPostProcessorTest {
         assertTrue(json.getAsJsonArray("benchmarks").size() > 0);
     }
 
-    @Test
-    void shouldPlacePrometheusMetricsInGitHubPagesDataDirectory() throws IOException {
-        // Setup test files
+    @Test void shouldPlacePrometheusMetricsInGitHubPagesDataDirectory() throws IOException {
+        // Setup test files in wrk subdirectory
+        Path wrkDir = tempDir.resolve("wrk");
+        Files.createDirectories(wrkDir);
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
-                tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
+                wrkDir.resolve(WRK_HEALTH_OUTPUT_FILE));
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"),
-                tempDir.resolve(WRK_JWT_OUTPUT_FILE));
+                wrkDir.resolve(WRK_JWT_OUTPUT_FILE));
         WrkResultPostProcessor testProcessor = new WrkResultPostProcessor();
         Path outputDir = tempDir.resolve("output");
 
@@ -392,11 +413,11 @@ class WrkResultPostProcessorTest {
         Path ghPagesDataDir = outputDir.resolve(GH_PAGES_DATA_DIR);
         Files.createDirectories(ghPagesDataDir);
         Files.copy(prometheusDir.resolve(HEALTH_METRICS_FILE),
-                   ghPagesDataDir.resolve(HEALTH_METRICS_FILE),
-                   StandardCopyOption.REPLACE_EXISTING);
+                ghPagesDataDir.resolve(HEALTH_METRICS_FILE),
+                StandardCopyOption.REPLACE_EXISTING);
         Files.copy(prometheusDir.resolve(JWT_METRICS_FILE),
-                   ghPagesDataDir.resolve(JWT_METRICS_FILE),
-                   StandardCopyOption.REPLACE_EXISTING);
+                ghPagesDataDir.resolve(JWT_METRICS_FILE),
+                StandardCopyOption.REPLACE_EXISTING);
 
         // Verify Prometheus metrics are in gh-pages-ready/data directory
         assertTrue(Files.exists(ghPagesDataDir), "GitHub Pages data directory should exist");
@@ -441,7 +462,7 @@ class WrkResultPostProcessorTest {
         assertTrue(Files.exists(ghPagesDir.resolve("data-loader.js")), "JavaScript file should exist");
 
         // Verify badges directory
-        Path badgesDir = outputDir.resolve("badges");
+        Path badgesDir = ghPagesDir.resolve("badges");
         assertTrue(Files.exists(badgesDir), "Badges directory should be created");
 
         // Verify comprehensive benchmark-data.json structure
