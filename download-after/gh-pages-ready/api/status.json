@@ -1,9 +1,0 @@
-{
-  "status": "healthy",
-  "timestamp": "2025-09-26T07:34:19.663871Z",
-  "last_run": "2025-09-26T07:34:19.663890Z",
-  "services": {
-    "benchmarks": "operational",
-    "reports": "operational"
-  }
-}

@@ -351,6 +351,7 @@ benchmark-results/
   - Check no external dependencies
   - Remove old ReportGenerator methods
   - Remove old GitHubPagesGenerator
+  - Refactor to sensible names
 
 - [ ] Update documentation
   - Update README files in each module
