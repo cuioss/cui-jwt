@@ -123,30 +123,54 @@ public class WrkResultPostProcessor {
             throw new IllegalArgumentException("Input path is not a directory: " + inputDir);
         }
 
-        // Check for WRK output files
+        // Check for WRK output files in wrk subdirectory
+        Path wrkDir = inputDir.resolve("wrk");
         boolean hasWrkFiles = false;
-        try (Stream<Path> files = Files.list(inputDir)) {
-            hasWrkFiles = files.anyMatch(p ->
-                    p.getFileName().toString().contains("wrk") &&
-                            p.getFileName().toString().endsWith(".txt")
-            );
+        if (Files.exists(wrkDir)) {
+            try (Stream<Path> files = Files.list(wrkDir)) {
+                hasWrkFiles = files.anyMatch(p -> p.getFileName().toString().endsWith(".txt"));
+            }
         }
 
         if (!hasWrkFiles) {
-            LOGGER.warn("No WRK output files found in: " + inputDir);
-            LOGGER.info("Looking for files matching pattern: *wrk*.txt");
-
-            // List available files for debugging
-            try (Stream<Path> files = Files.list(inputDir)) {
-                files.forEach(f -> LOGGER.info("  Found: " + f.getFileName()));
+            LOGGER.warn("No WRK output files found in: " + wrkDir);
+            if (Files.exists(wrkDir)) {
+                LOGGER.info("Looking for files matching pattern: *.txt in " + wrkDir);
+                try (Stream<Path> files = Files.list(wrkDir)) {
+                    files.forEach(f -> LOGGER.info("  Found: " + f.getFileName()));
+                }
+            } else {
+                LOGGER.warn("WRK directory does not exist: " + wrkDir);
             }
-
-            throw new IllegalArgumentException("No WRK output files found in directory");
         }
 
-        // Convert WRK output to BenchmarkData
-        LOGGER.info("Converting WRK output to benchmark data format...");
-        BenchmarkData benchmarkData = converter.convert(inputDir);
+        // Convert WRK output to BenchmarkData from wrk subdirectory
+        BenchmarkData benchmarkData;
+        if (!Files.exists(wrkDir)) {
+            LOGGER.warn("WRK output directory does not exist: " + wrkDir);
+            LOGGER.info("Creating empty benchmark data structure");
+            benchmarkData = BenchmarkData.builder()
+                    .metadata(BenchmarkData.Metadata.builder()
+                            .reportVersion("2.0")
+                            .timestamp(Instant.now().toString())
+                            .displayTimestamp(Instant.now().toString())
+                            .benchmarkType("Integration Performance")
+                            .build())
+                    .overview(BenchmarkData.Overview.builder()
+                            .throughput("0 ops/s")
+                            .latency("0ms")
+                            .throughputBenchmarkName("N/A")
+                            .latencyBenchmarkName("N/A")
+                            .performanceScore(0)
+                            .performanceGrade("F")
+                            .performanceGradeClass("grade-f")
+                            .build())
+                    .benchmarks(List.of())
+                    .build();
+        } else {
+            LOGGER.info("Converting WRK output to benchmark data format from: " + wrkDir);
+            benchmarkData = converter.convert(wrkDir);
+        }
 
         if (benchmarkData.getBenchmarks() == null || benchmarkData.getBenchmarks().isEmpty()) {
             LOGGER.warn("No benchmark data extracted from WRK output files");
@@ -250,8 +274,14 @@ public class WrkResultPostProcessor {
      * @throws IllegalStateException if no valid benchmark metadata is found
      */
     private void parseBenchmarkMetadata(Path inputDir) throws IOException {
-        // Find all WRK result files
-        try (Stream<Path> files = Files.list(inputDir)) {
+        // Find all WRK result files in the wrk subdirectory
+        Path wrkDir = inputDir.resolve("wrk");
+        if (!Files.exists(wrkDir)) {
+            LOGGER.warn("WRK output directory does not exist: " + wrkDir);
+            return;
+        }
+
+        try (Stream<Path> files = Files.list(wrkDir)) {
             List<Path> wrkFiles = files
                     .filter(p -> p.getFileName().toString().endsWith(WRK_OUTPUT_FILE_SUFFIX))
                     .toList();

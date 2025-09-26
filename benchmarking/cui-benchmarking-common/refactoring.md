@@ -156,9 +156,13 @@ benchmark-results/
   - Fix ALL SpotBugs issues
   - Ensure 100% test pass rate
 
-## Phase 2: Create Unified Report Generator
+## Phase 2: Create Unified Report Generator ⚠️
 
-- [ ] Create `UnifiedReportGenerator` class that combines functionality
+**Status**: Partially implemented, pivoted to simpler approach
+**Reason**: UnifiedReportGenerator had too many API mismatches with existing code.
+**New Approach**: Update existing generators to use OutputDirectoryStructure directly.
+
+- [x] ~~Create `UnifiedReportGenerator` class that combines functionality~~ (Removed - too complex)
   ```java
   package de.cuioss.benchmarking.common.report;
 

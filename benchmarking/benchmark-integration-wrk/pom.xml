@@ -37,6 +37,7 @@
         <wrk.latency>true</wrk.latency>
         <wrk.script.dir>${project.basedir}/src/main/resources/wrk-scripts</wrk.script.dir>
         <wrk.results.dir>${project.build.directory}/benchmark-results</wrk.results.dir>
+        <wrk.output.dir>${wrk.results.dir}/wrk</wrk.output.dir>
 
         <!-- Benchmark history directory for trend analysis -->
         <benchmark.history.dir>${wrk.results.dir}/history</benchmark.history.dir>
@@ -150,7 +151,7 @@
                             <arguments>
                                 <argument>${wrk.script.dir}/health_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-health-results.txt</outputFile>
+                            <outputFile>${wrk.output.dir}/wrk-health-results.txt</outputFile>
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
                                 <SERVICE_URL>${integration.service.url}</SERVICE_URL>
@@ -174,7 +175,7 @@
                             <arguments>
                                 <argument>${wrk.script.dir}/health_live_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-health-live-results.txt</outputFile>
+                            <outputFile>${wrk.output.dir}/wrk-health-live-results.txt</outputFile>
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
                                 <SERVICE_URL>${integration.service.url}</SERVICE_URL>
@@ -199,7 +200,7 @@
                             <arguments>
                                 <argument>${wrk.script.dir}/jwt_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-jwt-results.txt</outputFile>
+                            <outputFile>${wrk.output.dir}/wrk-jwt-results.txt</outputFile>
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
                                 <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
@@ -310,6 +311,7 @@
                                     <arguments>
                                         <argument>-p</argument>
                                         <argument>${wrk.results.dir}</argument>
+                                        <argument>${wrk.output.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

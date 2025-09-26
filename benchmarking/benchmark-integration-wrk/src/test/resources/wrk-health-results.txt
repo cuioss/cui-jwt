@@ -1,5 +1,5 @@
 === BENCHMARK METADATA ===
-benchmark_name: health-check
+benchmark_name: healthCheck
 start_time: 1758797205
 start_time_iso: 2025-09-25T12:46:45+02:00
 === WRK OUTPUT ===

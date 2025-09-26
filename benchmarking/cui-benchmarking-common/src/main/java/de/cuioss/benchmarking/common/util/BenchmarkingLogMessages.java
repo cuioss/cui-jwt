@@ -247,6 +247,104 @@ public final class BenchmarkingLogMessages {
                 .template("BenchmarkKeyCache: Pre-generated keys for %s issuer configurations in %s ms")
                 .build();
 
+        /** Message when unified report generation starts. */
+        public static final LogRecord UNIFIED_REPORT_GENERATION_START = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(30)
+                .template("Starting unified report generation")
+                .build();
+
+        /** Message when unified report generation completes. */
+        public static final LogRecord UNIFIED_REPORT_GENERATION_COMPLETE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(31)
+                .template("Unified report generation completed")
+                .build();
+
+        /** Message when generating data file. */
+        public static final LogRecord GENERATING_DATA_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(32)
+                .template("Generating benchmark data JSON file")
+                .build();
+
+        /** Message when data file is generated. */
+        public static final LogRecord DATA_FILE_GENERATED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(33)
+                .template("Generated data file: %s")
+                .build();
+
+        /** Message when generating HTML files. */
+        public static final LogRecord GENERATING_HTML_FILES = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(34)
+                .template("Generating HTML report files")
+                .build();
+
+        /** Message when HTML files are generated. */
+        public static final LogRecord HTML_FILES_GENERATED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(35)
+                .template("Generated HTML files in: %s")
+                .build();
+
+        /** Message when generating badges (unified). */
+        public static final LogRecord GENERATING_BADGES_UNIFIED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(36)
+                .template("Generating performance badges")
+                .build();
+
+        /** Message when badges are generated. */
+        public static final LogRecord BADGES_GENERATED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(37)
+                .template("Generated badges in: %s")
+                .build();
+
+        /** Message when generating API endpoints. */
+        public static final LogRecord GENERATING_API_ENDPOINTS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(38)
+                .template("Generating API endpoint files")
+                .build();
+
+        /** Message when API endpoints are generated. */
+        public static final LogRecord API_ENDPOINTS_GENERATED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(39)
+                .template("Generated API endpoints in: %s")
+                .build();
+
+        /** Message when copying Prometheus metrics. */
+        public static final LogRecord COPYING_PROMETHEUS_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(40)
+                .template("Copying Prometheus metrics to deployment directory")
+                .build();
+
+        /** Message when Prometheus metrics are copied. */
+        public static final LogRecord PROMETHEUS_METRICS_COPIED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(41)
+                .template("Copied Prometheus metrics to: %s")
+                .build();
+
+        /** Message when copying support files. */
+        public static final LogRecord COPYING_SUPPORT_FILES = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(42)
+                .template("Copying support files (CSS, JS)")
+                .build();
+
+        /** Message when support files are copied. */
+        public static final LogRecord SUPPORT_FILES_COPIED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(43)
+                .template("Copied support files to: %s")
+                .build();
+
         /** Message when key cache is initialized. */
         public static final LogRecord KEY_CACHE_INITIALIZED = LogRecordModel.builder()
                 .prefix(PREFIX)
