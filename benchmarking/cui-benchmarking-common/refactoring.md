@@ -255,7 +255,7 @@ benchmark-results/
 
 - [x] Test benchmark-library module (through unit tests)
   ```bash
-  ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library
+  ./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-library
   ```
   - Verify no duplicate files
   - Verify all files in correct locations
@@ -350,8 +350,8 @@ benchmark-results/
 
 - [ ] Final verification - run all benchmarks
   ```bash
-  # Library benchmarks
-  ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library
+  # Library benchmarks (quick mode for faster validation)
+  ./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-library
 
   # Integration benchmarks (quick mode)
   ./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-quarkus
