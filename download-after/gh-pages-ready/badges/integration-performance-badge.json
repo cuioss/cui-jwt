@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "label": "Performance",
+  "message": "Grade A (98k ops/s, 21.00ms)",
+  "color": "green"
+}

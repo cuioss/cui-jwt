@@ -18,8 +18,6 @@ package de.cuioss.jwt.quarkus.benchmark;
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
-import de.cuioss.benchmarking.common.metrics.MetricsOrchestrator;
-import de.cuioss.benchmarking.common.metrics.PrometheusClient;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
 import de.cuioss.tools.logging.CuiLogger;
@@ -28,9 +26,6 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Collection;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
@@ -52,10 +47,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(QuarkusIntegrationRunner.class);
 
-    // Timestamps for benchmark execution tracking
-    private Instant benchmarkStartTime;
-    private Instant benchmarkEndTime;
-
     @Override protected BenchmarkConfiguration createConfiguration() {
         // Load integration configuration from system properties
         IntegrationConfiguration integrationConfig = IntegrationConfiguration.fromProperties();
@@ -75,24 +66,14 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         IntegrationConfiguration integrationConfig = config.integrationConfig();
         LOGGER.info(INFO.QUARKUS_BENCHMARKS_STARTING.format(
                 integrationConfig.integrationServiceUrl(), integrationConfig.keycloakUrl()));
-
-        // Record benchmark start time for real-time metrics collection
-        benchmarkStartTime = Instant.now();
-        LOGGER.info("Benchmark execution started at: {}", benchmarkStartTime);
     }
 
     @Override protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
         LOGGER.info(INFO.PROCESSING_RESULTS_STARTING.format(results.size()));
 
-        // Record benchmark end time for real-time metrics collection
-        benchmarkEndTime = Instant.now();
-        LOGGER.info("Benchmark execution completed at: {}", benchmarkEndTime);
-
         // Call parent implementation for standard processing
+        // The parent now handles Prometheus metrics collection centrally
         super.processResults(results, config);
-
-        // Collect real-time Prometheus metrics for each benchmark
-        collectPrometheusMetrics(results, config);
     }
 
     @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
@@ -138,81 +119,6 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         return builder;
     }
 
-    /**
-     * Collects real-time metrics from Prometheus for each benchmark execution.
-     * Uses the captured start and end timestamps to fetch time-series data.
-     *
-     * @param results the benchmark results
-     * @param config the benchmark configuration
-     */
-    private void collectPrometheusMetrics(Collection<RunResult> results, BenchmarkConfiguration config) {
-        // Skip if timestamps are not available
-        if (benchmarkStartTime == null || benchmarkEndTime == null) {
-            LOGGER.warn("Cannot collect Prometheus metrics: timestamps not captured");
-            return;
-        }
-
-        try {
-            // Get Prometheus URL from system property or use default
-            String prometheusUrl = System.getProperty("prometheus.url", "http://localhost:9090");
-            String outputDirectory = config.resultsDirectory();
-            IntegrationConfiguration integrationConfig = config.integrationConfig();
-
-            Path prometheusDir = Path.of(outputDirectory, "prometheus");
-            Files.createDirectories(prometheusDir);
-
-            LOGGER.info("Collecting real-time metrics from Prometheus at: {}", prometheusUrl);
-
-            // Create orchestrator with Prometheus client
-            MetricsOrchestrator orchestrator = new MetricsOrchestrator(
-                    integrationConfig.integrationServiceUrl(),
-                    Path.of(outputDirectory, "metrics-download"),
-                    Path.of(outputDirectory),
-                    new PrometheusClient(prometheusUrl)
-            );
-
-            // Process each benchmark result
-            for (RunResult result : results) {
-                String benchmarkName = extractBenchmarkName(result);
-
-                LOGGER.info("Collecting Prometheus metrics for benchmark '{}'", benchmarkName);
-
-                // Collect real-time metrics for this benchmark
-                orchestrator.collectBenchmarkMetrics(
-                        benchmarkName,
-                        benchmarkStartTime,
-                        benchmarkEndTime,
-                        prometheusDir
-                );
-
-                LOGGER.info("Prometheus metrics saved to: {}/{}-metrics.json",
-                        prometheusDir, benchmarkName);
-            }
-
-        } catch (Exception e) {
-            LOGGER.warn("Failed to collect Prometheus metrics: {}", e.getMessage());
-            // Don't fail the build, just log the warning
-        }
-    }
-
-    /**
-     * Extracts a clean benchmark name from the JMH RunResult.
-     *
-     * @param result the JMH run result
-     * @return a clean benchmark name suitable for file naming
-     */
-    private String extractBenchmarkName(RunResult result) {
-        // Get the benchmark label which contains the full benchmark method name
-        String label = result.getPrimaryResult().getLabel();
-
-        // Extract just the method name (e.g., "validateJwtThroughput" from full class path)
-        int lastDot = label.lastIndexOf('.');
-        if (lastDot >= 0 && lastDot < label.length() - 1) {
-            return label.substring(lastDot + 1);
-        }
-
-        return label;
-    }
 
     /**
      * Main method to run all integration benchmarks.

@@ -1,0 +1,134 @@
+{
+  "benchmark_name": "jwtValidation",
+  "start_time": "2025-09-26T07:31:16Z",
+  "end_time": "2025-09-26T07:34:19Z",
+  "duration_seconds": 183,
+  "metrics": {
+    "system_cpu_usage": {
+      "labels": {
+        "instance": "cui-jwt-integration-tests:8443",
+        "job": "quarkus-benchmark",
+        "__name__": "system_cpu_usage"
+      },
+      "data_points": 92,
+      "statistics": {
+        "min": 0.006135,
+        "avg": 0.708175582201087,
+        "max": 0.75742475
+      }
+    },
+    "http_server_requests_seconds_sum": {
+      "labels": {
+        "__name__": "http_server_requests_seconds_sum",
+        "uri": "/jwt/validate",
+        "status": "401",
+        "job": "quarkus-benchmark",
+        "instance": "cui-jwt-integration-tests:8443",
+        "outcome": "CLIENT_ERROR",
+        "method": "POST"
+      },
+      "data_points": 89,
+      "statistics": {
+        "max": 2600.306574205,
+        "p95": 2482.810440677,
+        "p50": 1309.828743606,
+        "avg": 1309.7325323974494
+      }
+    },
+    "http_server_requests_seconds_count": {
+      "labels": {
+        "__name__": "http_server_requests_seconds_count",
+        "uri": "/jwt/validate",
+        "status": "401",
+        "job": "quarkus-benchmark",
+        "instance": "cui-jwt-integration-tests:8443",
+        "outcome": "CLIENT_ERROR",
+        "method": "POST"
+      },
+      "data_points": 89,
+      "statistics": {
+        "max": 1730232.0,
+        "p95": 1646413.0,
+        "p50": 860744.0,
+        "avg": 860310.8651685393
+      }
+    },
+    "cui_jwt_validation_success_operations_total": {
+      "labels": {
+        "instance": "cui-jwt-integration-tests:8443",
+        "event_type": "ACCESS_TOKEN_CACHE_HIT",
+        "job": "quarkus-benchmark",
+        "result": "success",
+        "__name__": "cui_jwt_validation_success_operations_total"
+      },
+      "data_points": 92,
+      "statistics": {
+        "max": 0.0,
+        "p95": 0.0,
+        "p50": 0.0,
+        "avg": 0.0
+      }
+    },
+    "jvm_memory_committed_bytes": {
+      "labels": {
+        "area": "heap",
+        "instance": "cui-jwt-integration-tests:8443",
+        "job": "quarkus-benchmark",
+        "id": "eden space",
+        "__name__": "jvm_memory_committed_bytes"
+      },
+      "data_points": 92,
+      "statistics": {
+        "max": 6.8681728E7,
+        "p95": 5.7147392E7,
+        "p50": 2.9360128E7,
+        "avg": 3.0232041739130434E7
+      }
+    },
+    "jvm_memory_used_bytes": {
+      "labels": {
+        "area": "heap",
+        "instance": "cui-jwt-integration-tests:8443",
+        "job": "quarkus-benchmark",
+        "id": "eden space",
+        "__name__": "jvm_memory_used_bytes"
+      },
+      "data_points": 92,
+      "statistics": {
+        "max": 6.7633152E7,
+        "p95": 5.5574528E7,
+        "p50": 2.7787264E7,
+        "avg": 2.8904225391304348E7
+      }
+    },
+    "process_cpu_usage": {
+      "labels": {
+        "instance": "cui-jwt-integration-tests:8443",
+        "job": "quarkus-benchmark",
+        "__name__": "process_cpu_usage"
+      },
+      "data_points": 92,
+      "statistics": {
+        "min": 0.0,
+        "avg": 0.7081295289855072,
+        "max": 0.75625
+      }
+    },
+    "jvm_memory_max_bytes": {
+      "labels": {
+        "area": "heap",
+        "instance": "cui-jwt-integration-tests:8443",
+        "job": "quarkus-benchmark",
+        "id": "eden space",
+        "__name__": "jvm_memory_max_bytes"
+      },
+      "data_points": 92,
+      "statistics": {
+        "max": -1.0,
+        "p95": -1.0,
+        "p50": -1.0,
+        "avg": -1.0
+      }
+    }
+  }
+}

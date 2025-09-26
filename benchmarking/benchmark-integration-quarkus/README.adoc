@@ -9,13 +9,16 @@ Real-world JWT validation performance testing against live Quarkus applications 
 
 [source,bash]
 ----
-# Run benchmarks with automatic container management (from project root)
+# Quick benchmark (1 fork, 2 iterations, 5s each, skip container lifecycle)
+./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-quarkus
+
+# Full benchmarks with automatic container management (from project root)
 ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
 
-# Fast mode - skip container start/stop (containers must be running)
+# Full benchmarks - skip container start/stop (containers must be running)
 ./mvnw clean verify -Pbenchmark -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-quarkus
 
-# Quick validation run
+# Custom validation run
 ./mvnw clean verify -Pbenchmark -Djmh.iterations=1 -Djmh.threads=1 -pl benchmarking/benchmark-integration-quarkus
 
 # With JFR profiling (local development only - not available in CI)
@@ -47,6 +50,41 @@ Pre-initialized `TokenRepository` with 100-token pool for realistic cache testin
 
 == Configuration
 
+=== Maven Profiles
+
+[cols="2,3,3", options="header"]
+|===
+|Profile
+|Description
+|Properties Set
+
+|`benchmark`
+|Enables benchmarking
+|`skip.benchmark=false`
+
+|`quick`
+|Quick testing mode
+|`jmh.iterations=2`, `jmh.forks=1`, `jmh.time=5s`, `jmh.warmupTime=2s`, `skip.container.lifecycle=true`
+
+|`benchmark-jfr`
+|Benchmarks with JFR profiling
+|Enables JFR recording
+
+|`rebuild-container`
+|Forces container rebuild
+|Cleans integration tests
+|===
+
+Example usage:
+[source,bash]
+----
+# Quick benchmarks (total ~30s, assumes containers are running)
+./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-quarkus
+
+# Custom duration with container skip
+./mvnw clean verify -Pbenchmark -Djmh.time=30s -Djmh.iterations=2 -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-quarkus
+----
+
 === Container Lifecycle Management
 
 The `skip.container.lifecycle` property optimizes benchmark iteration:
@@ -68,11 +106,13 @@ The `skip.container.lifecycle` property optimizes benchmark iteration:
 
 [source,bash]
 ----
--Djmh.iterations=5         # Measurement iterations (default: 5)
+# Default settings
+-Djmh.iterations=4         # Measurement iterations (default: 4, quick: 2)
 -Djmh.warmupIterations=1   # Warmup iterations (default: 1)
 -Djmh.threads=24          # Concurrent threads (default: 24)
--Djmh.time=10s            # Time per iteration (default: 10s)
--Djmh.forks=2             # JVM forks (default: 2)
+-Djmh.time=12s            # Time per iteration (default: 12s, quick: 5s)
+-Djmh.warmupTime=3s       # Warmup time (default: 3s, quick: 2s)
+-Djmh.forks=2             # JVM forks (default: 2, quick: 1)
 ----
 
 == Output

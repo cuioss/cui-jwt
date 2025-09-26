@@ -30,7 +30,7 @@
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
 
         <!-- WRK Configuration Properties -->
-        <wrk.duration>420s</wrk.duration>  <!-- 7 minutes full benchmark -->
+        <wrk.duration>180s</wrk.duration>  <!-- 3 minutes per benchmark -->
         <wrk.threads>4</wrk.threads>
         <wrk.connections>20</wrk.connections>
         <wrk.timeout>2s</wrk.timeout>
@@ -146,21 +146,46 @@
                         </goals>
                         <configuration>
                             <skip>${skip.benchmark}</skip>
-                            <executable>wrk</executable>
+                            <executable>bash</executable>
                             <arguments>
-                                <argument>-t${wrk.threads}</argument>
-                                <argument>-c${wrk.connections}</argument>
-                                <argument>-d${wrk.duration}</argument>
-                                <argument>--timeout</argument>
-                                <argument>${wrk.timeout}</argument>
-                                <argument>--latency</argument>
-                                <argument>-s</argument>
-                                <argument>${wrk.script.dir}/health_check.lua</argument>
-                                <argument>${integration.service.url}/q/health/live</argument>
+                                <argument>${wrk.script.dir}/health_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-health-output.txt</outputFile>
+                            <outputFile>${wrk.results.dir}/wrk-health-results.txt</outputFile>
+                            <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
+                            <environmentVariables>
+                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <WRK_THREADS>${wrk.threads}</WRK_THREADS>
+                                <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
+                                <WRK_DURATION>${wrk.duration}</WRK_DURATION>
+                                <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                            </environmentVariables>
                         </configuration>
                     </execution>
+                    <!-- Run WRK health/live endpoint benchmark -->
+                    <execution>
+                        <id>run-wrk-health-live-benchmark</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${wrk.script.dir}/health_live_benchmark.sh</argument>
+                            </arguments>
+                            <outputFile>${wrk.results.dir}/wrk-health-live-results.txt</outputFile>
+                            <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
+                            <environmentVariables>
+                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <WRK_THREADS>${wrk.threads}</WRK_THREADS>
+                                <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
+                                <WRK_DURATION>${wrk.duration}</WRK_DURATION>
+                                <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+
                     <!-- Run WRK JWT benchmark with in-memory tokens -->
                     <execution>
                         <id>run-wrk-jwt-benchmark</id>
@@ -172,10 +197,10 @@
                             <skip>${skip.benchmark}</skip>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>${wrk.script.dir}/run_benchmark.sh</argument>
+                                <argument>${wrk.script.dir}/jwt_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.results.dir}/wrk-jwt-output.txt</outputFile>
-                            <timeout>480000</timeout> <!-- 8 minute timeout for 7 minute benchmark -->
+                            <outputFile>${wrk.results.dir}/wrk-jwt-results.txt</outputFile>
+                            <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
                                 <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
                                 <REALM>benchmark</REALM>
@@ -193,30 +218,7 @@
                         </configuration>
                     </execution>
 
-                    <!-- Download metrics after WRK benchmarks (always runs, even if benchmarks fail) -->
-                    <execution>
-                        <id>download-metrics-after-wrk</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <mainClass>de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor</mainClass>
-                            <arguments>
-                                <argument>${wrk.results.dir}</argument>
-                                <argument>download-after</argument>
-                            </arguments>
-                            <systemProperties>
-                                <systemProperty>
-                                    <key>quarkus.metrics.url</key>
-                                    <value>${quarkus.metrics.url}</value>
-                                </systemProperty>
-                            </systemProperties>
-                        </configuration>
-                    </execution>
-
-                    <!-- Process WRK results and generate reports -->
+                    <!-- Process WRK results, collect metrics, and generate reports -->
                     <execution>
                         <id>process-wrk-results</id>
                         <phase>verify</phase>
@@ -386,6 +388,17 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!-- Quick benchmark profile for faster testing -->
+        <profile>
+            <id>quick</id>
+            <properties>
+                <!-- Override duration for quick benchmarks -->
+                <wrk.duration>30s</wrk.duration>
+                <!-- Skip container lifecycle management (assumes containers are already running) -->
+                <skip.container.lifecycle>true</skip.container.lifecycle>
+            </properties>
         </profile>
     </profiles>
 </project>

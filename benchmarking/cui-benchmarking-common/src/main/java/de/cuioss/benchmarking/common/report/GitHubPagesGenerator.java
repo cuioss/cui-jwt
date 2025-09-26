@@ -98,6 +98,9 @@ public class GitHubPagesGenerator {
         // Copy data files
         copyDataFiles(sourcePath, deployPath);
 
+        // Copy prometheus metrics to data directory
+        copyPrometheusMetrics(sourcePath, deployPath);
+
         // Generate additional pages
         generateAdditionalPages(deployPath);
 
@@ -278,6 +281,37 @@ public class GitHubPagesGenerator {
                                 Files.copy(dataFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
                             } catch (IOException e) {
                                 LOGGER.warn(WARN.FAILED_COPY_DATA.format(dataFile), e);
+                            }
+                        });
+            }
+        }
+    }
+
+    /**
+     * Copies Prometheus metrics files to the deployment data directory.
+     * <p>
+     * This method looks for prometheus/*.json files in the source directory
+     * and copies them to the data/ directory in the deployment structure,
+     * making them available for GitHub Pages deployment.
+     */
+    private void copyPrometheusMetrics(Path sourceDir, Path deployDir) throws IOException {
+        LOGGER.debug(DEBUG.COPYING_DATA_FILES::format);
+
+        Path sourcePrometheus = sourceDir.resolve("prometheus");
+        Path deployData = deployDir.resolve("data");
+
+        if (Files.exists(sourcePrometheus)) {
+            Files.createDirectories(deployData);
+
+            try (var stream = Files.walk(sourcePrometheus)) {
+                stream.filter(path -> path.toString().endsWith(".json"))
+                        .forEach(metricsFile -> {
+                            try {
+                                Path targetFile = deployData.resolve(sourcePrometheus.relativize(metricsFile));
+                                Files.copy(metricsFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                                LOGGER.debug("Copied Prometheus metrics file: {} -> {}", metricsFile, targetFile);
+                            } catch (IOException e) {
+                                LOGGER.warn("Failed to copy Prometheus metrics file: {}", metricsFile, e);
                             }
                         });
             }

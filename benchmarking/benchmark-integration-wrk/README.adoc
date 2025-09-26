@@ -9,10 +9,13 @@ High-performance HTTP benchmarking for JWT validation endpoints using WRK, addre
 
 [source,bash]
 ----
-# Run full benchmark with container lifecycle management
+# Quick benchmark (30s duration, skip container lifecycle)
+./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-wrk
+
+# Full benchmark with container lifecycle management (3 minutes per benchmark)
 ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk
 
-# Fast mode - skip container start/stop (containers must be running)
+# Full benchmark - skip container start/stop (containers must be running)
 ./mvnw clean verify -Pbenchmark -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-wrk
 
 # Start containers manually for fast mode
@@ -47,11 +50,38 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 == Configuration
 
+=== Maven Profiles
+
+[cols="2,3,3", options="header"]
+|===
+|Profile
+|Description
+|Properties Set
+
+|`benchmark`
+|Enables benchmarking
+|`skip.benchmark=false`
+
+|`quick`
+|Quick testing mode (30s benchmarks)
+|`wrk.duration=30s`, `skip.container.lifecycle=true`
+|===
+
+Example usage:
+[source,bash]
+----
+# Quick 30-second benchmarks (assumes containers are running)
+./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-wrk
+
+# Custom duration with container skip
+./mvnw clean verify -Pbenchmark -Dwrk.duration=60s -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-wrk
+----
+
 === WRK Parameters
 
 [source,xml]
 ----
-<wrk.duration>30s</wrk.duration>          <!-- Test duration -->
+<wrk.duration>180s</wrk.duration>         <!-- Test duration (default: 3 minutes, quick: 30s) -->
 <wrk.threads>4</wrk.threads>              <!-- Number of threads -->
 <wrk.connections>20</wrk.connections>     <!-- Concurrent connections -->
 <wrk.timeout>2s</wrk.timeout>             <!-- Request timeout -->
@@ -172,7 +202,9 @@ diff <(jq '.performance' baseline/wrk-jwt-results.json) \
 ====
 * **Threads**: 4 (matches typical CPU cores)
 * **Connections**: 20 (avoids pool saturation)
-* **Duration**: 30s (stable results)
+* **Duration**:
+  - Quick mode: 30s (fast iteration)
+  - Full mode: 180s (stable results)
 * **Timeout**: 2s (local testing)
 ====
 

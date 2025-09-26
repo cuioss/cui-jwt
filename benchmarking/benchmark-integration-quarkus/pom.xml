@@ -28,18 +28,18 @@
         <jmh.include>de\.cuioss\.jwt\.quarkus\.benchmark\.benchmarks\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>${project.build.directory}/benchmark-results/integration-result</jmh.result.filePrefix>
-        <jmh.iterations>10</jmh.iterations>  <!-- 10 iterations for ~7 minutes total -->
-        <jmh.warmupIterations>2</jmh.warmupIterations>  <!-- 2 warmup iterations -->
+        <jmh.iterations>4</jmh.iterations>  <!-- 4 iterations for 7-minute target -->
+        <jmh.warmupIterations>1</jmh.warmupIterations>  <!-- 1 warmup iteration -->
         <jmh.forks>2</jmh.forks>
         <jmh.threads>24</jmh.threads>
-        <jmh.time>20s</jmh.time>  <!-- 20s per iteration -->
-        <jmh.warmupTime>10s</jmh.warmupTime>  <!-- 10s warmup -->
+        <jmh.time>12s</jmh.time>
+        <jmh.warmupTime>3s</jmh.warmupTime>
 
         <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
-        
+
         <!-- Token Repository Configuration Properties -->
         <token.keycloak.url>https://localhost:1443</token.keycloak.url>
         <token.keycloak.realm>benchmark</token.keycloak.realm>
@@ -98,7 +98,7 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- Apache Commons IO for TeeOutputStream -->
         <dependency>
             <groupId>commons-io</groupId>
@@ -112,7 +112,7 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <!-- Awaitility for better async testing -->
         <dependency>
             <groupId>org.awaitility</groupId>
@@ -513,6 +513,20 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <!-- Quick benchmark profile for faster testing -->
+        <profile>
+            <id>quick</id>
+            <properties>
+                <!-- Override JMH parameters for quick benchmarks -->
+                <jmh.iterations>2</jmh.iterations>
+                <jmh.forks>1</jmh.forks>
+                <jmh.time>5s</jmh.time>
+                <jmh.warmupTime>2s</jmh.warmupTime>
+                <!-- Skip container lifecycle management (assumes containers are already running) -->
+                <skip.container.lifecycle>true</skip.container.lifecycle>
+            </properties>
         </profile>
     </profiles>
 </project>

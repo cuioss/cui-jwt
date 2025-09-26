@@ -1,0 +1,110 @@
+{
+  "metadata": {
+    "timestamp": "2025-09-25T15:35:12.681951Z",
+    "displayTimestamp": "2025-09-25 15:35:12 UTC",
+    "benchmarkType": "Integration Performance",
+    "reportVersion": "2.0"
+  },
+  "overview": {
+    "throughput": "8,5K ops/s",
+    "latency": "5,6ms",
+    "throughputBenchmarkName": "jwtValidation",
+    "latencyBenchmarkName": "jwtValidation",
+    "performanceScore": 91,
+    "performanceGrade": "A",
+    "performanceGradeClass": "grade-a"
+  },
+  "benchmarks": [
+    {
+      "name": "healthCheck",
+      "fullName": "wrk.healthCheck",
+      "mode": "thrpt",
+      "score": "13,6K ops/s",
+      "scoreUnit": "ops/s",
+      "throughput": "13,6K ops/s",
+      "latency": "880μs",
+      "error": 0.74034,
+      "errorPercentage": 84.12954545454545,
+      "confidenceLow": 0.13966,
+      "confidenceHigh": 1.6203400000000001,
+      "percentiles": {
+        "50.0": 0.713,
+        "75.0": 0.97,
+        "90.0": 1.38,
+        "99.0": 3.67,
+        "0.0": 0.1396599999999999,
+        "95.0": 2.212612,
+        "99.9": 2.3577186400000003,
+        "99.99": 2.3603838639999997,
+        "100.0": 2.3606800000000003
+      }
+    },
+    {
+      "name": "jwtValidation",
+      "fullName": "wrk.jwtValidation",
+      "mode": "thrpt",
+      "score": "8,5K ops/s",
+      "scoreUnit": "ops/s",
+      "throughput": "8,5K ops/s",
+      "latency": "5,6ms",
+      "error": 8.48,
+      "errorPercentage": 151.69946332737032,
+      "confidenceLow": 0,
+      "confidenceHigh": 14.07,
+      "percentiles": {
+        "50.0": 1.67,
+        "75.0": 3.61,
+        "90.0": 20.36,
+        "99.0": 34.49,
+        "0.0": 0,
+        "95.0": 20.854,
+        "99.9": 22.516080000000002,
+        "99.99": 22.546608,
+        "100.0": 22.55
+      }
+    }
+  ],
+  "chartData": {
+    "labels": [
+      "healthCheck",
+      "jwtValidation"
+    ],
+    "throughput": [
+      13551.19,
+      8473.93
+    ],
+    "latency": [
+      null,
+      null
+    ],
+    "percentilesData": {
+      "percentileLabels": [
+        "P0",
+        "P50",
+        "P90",
+        "P95",
+        "P99",
+        "P99.9",
+        "P99.99",
+        "P100"
+      ],
+      "benchmarks": [],
+      "data": {},
+      "labels": [],
+      "datasets": {
+        "0.0th": [],
+        "50.0th": [],
+        "90.0th": [],
+        "95.0th": [],
+        "99.0th": [],
+        "99.9th": [],
+        "99.99th": [],
+        "100.0th": []
+      }
+    }
+  },
+  "trends": {
+    "available": false,
+    "message": "Historical data not yet available"
+  }
+}

@@ -17,10 +17,8 @@ package de.cuioss.jwt.wrk.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.WrkBenchmarkConverter;
-import de.cuioss.benchmarking.common.metrics.MetricsOrchestrator;
-import de.cuioss.benchmarking.common.metrics.PrometheusClient;
+import de.cuioss.benchmarking.common.metrics.PrometheusMetricsManager;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
-import de.cuioss.benchmarking.common.report.BadgeGenerator;
 import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
@@ -44,27 +42,29 @@ public class WrkResultPostProcessor {
 
     private static final CuiLogger LOGGER = new CuiLogger(WrkResultPostProcessor.class);
 
+    // File naming constants
+    public static final String WRK_OUTPUT_FILE_SUFFIX = "-results.txt";
+    public static final String WRK_HEALTH_OUTPUT_FILE = "wrk-health-results.txt";
+    public static final String WRK_JWT_OUTPUT_FILE = "wrk-jwt-results.txt";
+    public static final String BENCHMARK_NAME_HEALTH = "healthCheck";
+    public static final String BENCHMARK_NAME_JWT = "jwtValidation";
+    public static final String PROMETHEUS_METRICS_DIR = "prometheus";
+    public static final String GH_PAGES_DATA_DIR = "gh-pages-ready/data";
+    public static final String HEALTH_METRICS_FILE = BENCHMARK_NAME_HEALTH + "-metrics.json";
+    public static final String JWT_METRICS_FILE = BENCHMARK_NAME_JWT + "-metrics.json";
+
     private final WrkBenchmarkConverter converter = new WrkBenchmarkConverter();
     private final ReportGenerator reportGenerator = new ReportGenerator();
-    private final BadgeGenerator badgeGenerator = new BadgeGenerator();
     private final GitHubPagesGenerator gitHubPagesGenerator = new GitHubPagesGenerator();
+    private final PrometheusMetricsManager prometheusMetricsManager = new PrometheusMetricsManager();
 
     // Map to store benchmark metadata (name -> timestamps)
     private final Map<String, BenchmarkMetadata> benchmarkMetadataMap = new HashMap<>();
 
     /**
-     * Holds metadata for a benchmark execution.
-     */
-    private static class BenchmarkMetadata {
-        final String name;
-        final Instant startTime;
-        final Instant endTime;
-
-        BenchmarkMetadata(String name, Instant startTime, Instant endTime) {
-            this.name = name;
-            this.startTime = startTime;
-            this.endTime = endTime;
-        }
+         * Holds metadata for a benchmark execution.
+         */
+        private record BenchmarkMetadata(String name, Instant startTime, Instant endTime) {
     }
 
     /**
@@ -164,14 +164,14 @@ public class WrkResultPostProcessor {
         reportGenerator.generateDetailedPage(outputDir.toString());
         reportGenerator.copySupportFiles(outputDir.toString());
 
-        // Generate GitHub Pages structure
+        // Collect real-time Prometheus metrics for the benchmark execution BEFORE GitHub Pages generation
+        collectPrometheusMetrics(benchmarkData, outputDir);
+
+        // Generate GitHub Pages structure (now includes Prometheus metrics copying)
         Path ghPagesDir = outputDir.resolve("gh-pages-ready");
         gitHubPagesGenerator.prepareDeploymentStructure(outputDir.toString(), ghPagesDir.toString());
 
         LOGGER.info("Generated complete benchmark reports in: " + outputDir);
-
-        // Collect real-time Prometheus metrics for the benchmark execution
-        collectPrometheusMetrics(benchmarkData, outputDir);
 
         // Log summary
         logSummary(benchmarkData, outputDir);
@@ -220,55 +220,25 @@ public class WrkResultPostProcessor {
             return;
         }
 
-        try {
-            // Get Prometheus URL from system property or use default
-            String prometheusUrl = System.getProperty("prometheus.url", "http://localhost:9090");
-            String metricsUrl = System.getProperty("quarkus.metrics.url", "https://localhost:10443");
-            Path downloadsDir = targetDir.resolve("metrics-download");
-            Path prometheusDir = targetDir.resolve("prometheus");
+        // Process each benchmark result
+        if (benchmarkData.getBenchmarks() != null) {
+            for (BenchmarkData.Benchmark benchmark : benchmarkData.getBenchmarks()) {
+                // Try to find metadata by matching the benchmark name
+                BenchmarkMetadata metadata = findMetadataForBenchmark(benchmark.getName());
 
-            // Create Prometheus output directory
-            Files.createDirectories(prometheusDir);
-
-            LOGGER.info("Collecting real-time metrics from Prometheus at: {}", prometheusUrl);
-
-            // Create orchestrator with Prometheus client
-            MetricsOrchestrator orchestrator = new MetricsOrchestrator(
-                    metricsUrl,
-                    downloadsDir,
-                    targetDir,
-                    new PrometheusClient(prometheusUrl)
-            );
-
-            // Process each benchmark result
-            if (benchmarkData.getBenchmarks() != null) {
-                for (BenchmarkData.Benchmark benchmark : benchmarkData.getBenchmarks()) {
-                    // Try to find metadata by matching the benchmark name
-                    BenchmarkMetadata metadata = findMetadataForBenchmark(benchmark.getName());
-
-                    if (metadata == null) {
-                        LOGGER.warn("No metadata found for benchmark: {}", benchmark.getName());
-                        continue;
-                    }
-
-                    LOGGER.info("Collecting Prometheus metrics for benchmark '{}'", metadata.name);
-
-                    // Collect real-time metrics for this benchmark
-                    orchestrator.collectBenchmarkMetrics(
-                            metadata.name,
-                            metadata.startTime,
-                            metadata.endTime,
-                            prometheusDir
-                    );
-
-                    LOGGER.info("Prometheus metrics saved to: {}/{}-metrics.json",
-                            prometheusDir, metadata.name);
+                if (metadata == null) {
+                    LOGGER.warn("No metadata found for benchmark: {}", benchmark.getName());
+                    continue;
                 }
-            }
 
-        } catch (Exception e) {
-            LOGGER.warn("Failed to collect Prometheus metrics: {}", e.getMessage());
-            // Don't fail the build, just log the warning
+                // Use centralized PrometheusMetricsManager to collect metrics
+                prometheusMetricsManager.collectMetricsForWrkBenchmark(
+                        metadata.name,
+                        metadata.startTime,
+                        metadata.endTime,
+                        targetDir.toString()
+                );
+            }
         }
     }
 
@@ -283,14 +253,14 @@ public class WrkResultPostProcessor {
         // Find all WRK result files
         try (Stream<Path> files = Files.list(inputDir)) {
             List<Path> wrkFiles = files
-                    .filter(p -> p.getFileName().toString().endsWith("-results.txt"))
+                    .filter(p -> p.getFileName().toString().endsWith(WRK_OUTPUT_FILE_SUFFIX))
                     .toList();
 
             if (wrkFiles.isEmpty()) {
                 String message = """
-                        CRITICAL: No WRK result files (*-results.txt) found in %s
-                        Ensure benchmarks were run with the updated run_benchmark.sh script.""".formatted(
-                        inputDir
+                        CRITICAL: No WRK result files (*%s) found in %s
+                        Ensure benchmarks were run successfully.""".formatted(
+                        WRK_OUTPUT_FILE_SUFFIX, inputDir
                 );
                 LOGGER.error(message);
                 throw new IllegalStateException(message);

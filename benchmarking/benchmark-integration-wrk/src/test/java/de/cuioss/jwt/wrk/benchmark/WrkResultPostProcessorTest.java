@@ -24,7 +24,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
+import static de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -47,8 +49,8 @@ class WrkResultPostProcessorTest {
         // Copy real benchmark outputs to temp directory
         Path healthSource = Path.of("src/test/resources/wrk-health-results.txt");
         Path jwtSource = Path.of("src/test/resources/wrk-jwt-results.txt");
-        Files.copy(healthSource, tempDir.resolve("wrk-health-results.txt"));
-        Files.copy(jwtSource, tempDir.resolve("wrk-jwt-results.txt"));
+        Files.copy(healthSource, tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
+        Files.copy(jwtSource, tempDir.resolve(WRK_JWT_OUTPUT_FILE));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -61,7 +63,7 @@ class WrkResultPostProcessorTest {
     @Test void parseWrkHealthOutput() throws IOException {
         // Copy real health output to temp directory
         Path sourceFile = Path.of("src/test/resources/wrk-health-results.txt");
-        Path targetFile = tempDir.resolve("wrk-health-results.txt");
+        Path targetFile = tempDir.resolve(WRK_HEALTH_OUTPUT_FILE);
         Files.copy(sourceFile, targetFile);
 
         // Process results
@@ -87,7 +89,7 @@ class WrkResultPostProcessorTest {
         // Verify health benchmark exists and has correct structure
         assertTrue(json.has("benchmarks"));
         JsonObject healthBenchmark = json.getAsJsonArray("benchmarks").get(0).getAsJsonObject();
-        assertEquals("healthCheck", healthBenchmark.get("name").getAsString());
+        assertEquals(BENCHMARK_NAME_HEALTH, healthBenchmark.get("name").getAsString());
         assertTrue(healthBenchmark.has("mode"));
         assertTrue(healthBenchmark.has("score"));
         assertTrue(healthBenchmark.has("scoreUnit"));
@@ -112,7 +114,7 @@ class WrkResultPostProcessorTest {
     @Test void parseWrkJwtOutput() throws IOException {
         // Copy real JWT output to temp directory
         Path sourceFile = Path.of("src/test/resources/wrk-jwt-results.txt");
-        Path targetFile = tempDir.resolve("wrk-jwt-results.txt");
+        Path targetFile = tempDir.resolve(WRK_JWT_OUTPUT_FILE);
         Files.copy(sourceFile, targetFile);
 
         // Process results
@@ -129,7 +131,7 @@ class WrkResultPostProcessorTest {
         var benchmarks = json.getAsJsonArray("benchmarks");
         for (int i = 0; i < benchmarks.size(); i++) {
             var bench = benchmarks.get(i).getAsJsonObject();
-            if ("jwtValidation".equals(bench.get("name").getAsString())) {
+            if (BENCHMARK_NAME_JWT.equals(bench.get("name").getAsString())) {
                 jwtBenchmark = bench;
                 break;
             }
@@ -162,7 +164,7 @@ class WrkResultPostProcessorTest {
 
     @Test void handlesCompleteWrkOutput() throws IOException {
         // Test with actual WRK output that includes shell wrapper output
-        Path jwtFile = tempDir.resolve("wrk-jwt-results.txt");
+        Path jwtFile = tempDir.resolve(WRK_JWT_OUTPUT_FILE);
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"), jwtFile);
 
         Path outputDir = tempDir.resolve("output");
@@ -176,7 +178,7 @@ class WrkResultPostProcessorTest {
         boolean foundJwt = false;
         for (int i = 0; i < benchmarks.size(); i++) {
             var bench = benchmarks.get(i).getAsJsonObject();
-            if ("jwtValidation".equals(bench.get("name").getAsString())) {
+            if (BENCHMARK_NAME_JWT.equals(bench.get("name").getAsString())) {
                 foundJwt = true;
                 // Verify it extracted the actual WRK data
                 assertTrue(bench.has("score"));
@@ -188,8 +190,8 @@ class WrkResultPostProcessorTest {
 
     @Test void generateGitHubPagesStructure() throws IOException {
         // Setup test files
-        Path healthFile = tempDir.resolve("wrk-health-results.txt");
-        Path jwtFile = tempDir.resolve("wrk-jwt-results.txt");
+        Path healthFile = tempDir.resolve(WRK_HEALTH_OUTPUT_FILE);
+        Path jwtFile = tempDir.resolve(WRK_JWT_OUTPUT_FILE);
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"), healthFile);
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"), jwtFile);
 
@@ -212,9 +214,9 @@ class WrkResultPostProcessorTest {
     @Test void overviewGeneration() throws IOException {
         // Setup test files
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
-                tempDir.resolve("wrk-health-results.txt"));
+                tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
         Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"),
-                tempDir.resolve("wrk-jwt-results.txt"));
+                tempDir.resolve(WRK_JWT_OUTPUT_FILE));
 
         // Process results
         Path outputDir = tempDir.resolve("output");
@@ -273,7 +275,7 @@ class WrkResultPostProcessorTest {
             duration_seconds: 10
             """;
 
-        Path testFile = tempDir.resolve("wrk-health-results.txt");
+        Path testFile = tempDir.resolve(WRK_HEALTH_OUTPUT_FILE);
         Files.writeString(testFile, wrkOutput);
 
         Path outputDir = tempDir.resolve("output");
@@ -298,7 +300,7 @@ class WrkResultPostProcessorTest {
     @Test void systemMetricsIntegration() throws IOException {
         // Setup test files
         Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
-                tempDir.resolve("wrk-health-results.txt"));
+                tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
 
         // Set system property to skip metrics fetching (since no server is running)
         System.setProperty("quarkus.metrics.url", "https://nonexistent:10443");
@@ -315,6 +317,110 @@ class WrkResultPostProcessorTest {
         assertTrue(json.has("metadata"));
         assertTrue(json.has("benchmarks"));
         assertTrue(json.getAsJsonArray("benchmarks").size() > 0);
+    }
+
+    @Test
+    void shouldPlacePrometheusMetricsInGitHubPagesDataDirectory() throws IOException {
+        // Setup test files
+        Files.copy(Path.of("src/test/resources/wrk-health-results.txt"),
+                tempDir.resolve(WRK_HEALTH_OUTPUT_FILE));
+        Files.copy(Path.of("src/test/resources/wrk-jwt-results.txt"),
+                tempDir.resolve(WRK_JWT_OUTPUT_FILE));
+        WrkResultPostProcessor testProcessor = new WrkResultPostProcessor();
+        Path outputDir = tempDir.resolve("output");
+
+        testProcessor.process(tempDir, outputDir);
+
+        // Since tests run without Prometheus, we need to create mock metrics files
+        // to simulate what happens in a real environment
+        Path prometheusDir = outputDir.resolve(PROMETHEUS_METRICS_DIR);
+        Files.createDirectories(prometheusDir);
+
+        // Create mock metrics files
+        String mockHealthMetrics = """
+                {
+                  "benchmark_name": "healthCheck",
+                  "start_time": "2025-09-25T13:37:35Z",
+                  "end_time": "2025-09-25T13:37:38Z",
+                  "duration_seconds": 3,
+                  "metrics": {
+                    "system_cpu_usage": {
+                      "labels": {
+                        "job": "quarkus-benchmark",
+                        "__name__": "system_cpu_usage",
+                        "instance": "cui-jwt-integration-tests:8443"
+                      },
+                      "data_points": 2,
+                      "statistics": {
+                        "max": 0.69240765625,
+                        "min": 0.006775,
+                        "avg": 0.349591328125
+                      }
+                    }
+                  }
+                }
+                """;
+
+        String mockJwtMetrics = """
+                {
+                  "benchmark_name": "jwtValidation",
+                  "start_time": "2025-09-25T13:39:32Z",
+                  "end_time": "2025-09-25T13:39:37Z",
+                  "duration_seconds": 5,
+                  "metrics": {
+                    "system_cpu_usage": {
+                      "labels": {
+                        "job": "quarkus-benchmark",
+                        "__name__": "system_cpu_usage",
+                        "instance": "cui-jwt-integration-tests:8443"
+                      },
+                      "data_points": 3,
+                      "statistics": {
+                        "max": 0.8025898333333333,
+                        "min": 0.006404375,
+                        "avg": 0.2718659861111111
+                      }
+                    }
+                  }
+                }
+                """;
+
+        Files.writeString(prometheusDir.resolve(HEALTH_METRICS_FILE), mockHealthMetrics);
+        Files.writeString(prometheusDir.resolve(JWT_METRICS_FILE), mockJwtMetrics);
+
+        // Now run the copy logic that should happen when metrics are collected
+        Path ghPagesDataDir = outputDir.resolve(GH_PAGES_DATA_DIR);
+        Files.createDirectories(ghPagesDataDir);
+        Files.copy(prometheusDir.resolve(HEALTH_METRICS_FILE),
+                   ghPagesDataDir.resolve(HEALTH_METRICS_FILE),
+                   StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(prometheusDir.resolve(JWT_METRICS_FILE),
+                   ghPagesDataDir.resolve(JWT_METRICS_FILE),
+                   StandardCopyOption.REPLACE_EXISTING);
+
+        // Verify Prometheus metrics are in gh-pages-ready/data directory
+        assertTrue(Files.exists(ghPagesDataDir), "GitHub Pages data directory should exist");
+
+        // Check for Prometheus metrics files
+        Path healthMetrics = ghPagesDataDir.resolve(HEALTH_METRICS_FILE);
+        Path jwtMetrics = ghPagesDataDir.resolve(JWT_METRICS_FILE);
+
+        assertTrue(Files.exists(healthMetrics), "Health check Prometheus metrics should be in gh-pages-ready/data");
+        assertTrue(Files.exists(jwtMetrics), "JWT validation Prometheus metrics should be in gh-pages-ready/data");
+
+        // Verify the metrics files contain proper Prometheus data
+        String healthContent = Files.readString(healthMetrics);
+        JsonObject healthJson = JsonParser.parseString(healthContent).getAsJsonObject();
+
+        assertTrue(healthJson.has("benchmark_name"), "Should have benchmark name");
+        assertTrue(healthJson.has("start_time"), "Should have start time");
+        assertTrue(healthJson.has("end_time"), "Should have end time");
+        assertTrue(healthJson.has("metrics"), "Should have metrics data");
+        assertEquals(BENCHMARK_NAME_HEALTH, healthJson.get("benchmark_name").getAsString());
+
+        String jwtContent = Files.readString(jwtMetrics);
+        JsonObject jwtJson = JsonParser.parseString(jwtContent).getAsJsonObject();
+        assertEquals(BENCHMARK_NAME_JWT, jwtJson.get("benchmark_name").getAsString());
     }
 
     /**

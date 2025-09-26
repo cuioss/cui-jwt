@@ -143,4 +143,35 @@ class GitHubPagesGeneratorTest {
         assertTrue(Files.exists(deployDir.resolve("badges/trend-badge.json")),
                 "Trend badge should be copied");
     }
+
+    @Test void prepareDeploymentStructureCopiesPrometheusMetrics(@TempDir Path tempDir) throws Exception {
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
+
+        Path sourceDir = tempDir.resolve("source");
+        Path deployDir = tempDir.resolve("deploy");
+
+        // Create prometheus metrics files
+        Files.createDirectories(sourceDir.resolve("prometheus"));
+        Files.writeString(sourceDir.resolve("prometheus/healthCheck-metrics.json"),
+                "{\"benchmark_name\": \"healthCheck\", \"metrics\": {\"cpu_usage\": {\"value\": 0.3}}}");
+        Files.writeString(sourceDir.resolve("prometheus/jwtValidation-metrics.json"),
+                "{\"benchmark_name\": \"jwtValidation\", \"metrics\": {\"cpu_usage\": {\"value\": 0.5}}}");
+        Files.writeString(sourceDir.resolve("prometheus/other-file.txt"),
+                "This should not be copied");
+
+        generator.prepareDeploymentStructure(sourceDir.toString(), deployDir.toString());
+
+        // Verify prometheus metrics were copied to data directory
+        assertTrue(Files.exists(deployDir.resolve("data/healthCheck-metrics.json")),
+                "HealthCheck metrics should be copied to data directory");
+        assertTrue(Files.exists(deployDir.resolve("data/jwtValidation-metrics.json")),
+                "JWT validation metrics should be copied to data directory");
+        assertFalse(Files.exists(deployDir.resolve("data/other-file.txt")),
+                "Non-JSON files should not be copied");
+
+        // Verify content is preserved
+        String healthContent = Files.readString(deployDir.resolve("data/healthCheck-metrics.json"));
+        assertTrue(healthContent.contains("\"benchmark_name\": \"healthCheck\""),
+                "Health metrics content should be preserved");
+    }
 }

@@ -1,0 +1,141 @@
+{
+  "metadata": {
+    "timestamp": "2025-09-25T16:10:23.255333Z",
+    "displayTimestamp": "2025-09-25 16:10:23 UTC",
+    "benchmarkType": "Integration Performance",
+    "reportVersion": "2.0"
+  },
+  "overview": {
+    "throughput": "5,6K ops/s",
+    "latency": "7,2ms",
+    "throughputBenchmarkName": "jwtValidation",
+    "latencyBenchmarkName": "jwtValidation",
+    "performanceScore": 76,
+    "performanceGrade": "C",
+    "performanceGradeClass": "grade-c"
+  },
+  "benchmarks": [
+    {
+      "name": "healthCheck",
+      "fullName": "wrk.healthCheck",
+      "mode": "thrpt",
+      "score": "1,1K ops/s",
+      "scoreUnit": "ops/s",
+      "throughput": "1,1K ops/s",
+      "latency": "1,9ms",
+      "error": 2.16,
+      "errorPercentage": 114.89361702127661,
+      "confidenceLow": 0,
+      "confidenceHigh": 4.04,
+      "percentiles": {
+        "50.0": 1.16,
+        "75.0": 2.52,
+        "90.0": 4.09,
+        "99.0": 8.56,
+        "0.0": 0,
+        "95.0": 5.768,
+        "99.9": 6.19136,
+        "99.99": 6.199135999999999,
+        "100.0": 6.2
+      }
+    },
+    {
+      "name": "jwtValidation",
+      "fullName": "wrk.jwtValidation",
+      "mode": "thrpt",
+      "score": "5,6K ops/s",
+      "scoreUnit": "ops/s",
+      "throughput": "5,6K ops/s",
+      "latency": "7,2ms",
+      "error": 10.75,
+      "errorPercentage": 149.9302649930265,
+      "confidenceLow": 0,
+      "confidenceHigh": 17.92,
+      "percentiles": {
+        "50.0": 2.38,
+        "75.0": 6.99,
+        "90.0": 23.31,
+        "99.0": 40.41,
+        "0.0": 0,
+        "95.0": 26.520000000000003,
+        "99.9": 28.627000000000002,
+        "99.99": 28.665699999999994,
+        "100.0": 28.67
+      }
+    }
+  ],
+  "chartData": {
+    "labels": [
+      "healthCheck",
+      "jwtValidation"
+    ],
+    "throughput": [
+      1145.93,
+      5603.79
+    ],
+    "latency": [
+      null,
+      null
+    ],
+    "percentilesData": {
+      "percentileLabels": [
+        "P0",
+        "P50",
+        "P90",
+        "P95",
+        "P99",
+        "P99.9",
+        "P99.99",
+        "P100"
+      ],
+      "benchmarks": [],
+      "data": {},
+      "labels": [],
+      "datasets": {
+        "0.0th": [],
+        "50.0th": [],
+        "90.0th": [],
+        "95.0th": [],
+        "99.0th": [],
+        "99.9th": [],
+        "99.99th": [],
+        "100.0th": []
+      }
+    }
+  },
+  "trends": {
+    "available": true,
+    "direction": "down",
+    "changePercentage": -16.483516483516482,
+    "movingAverage": 83.5,
+    "throughputTrend": -34.11764705882353,
+    "latencyTrend": 28.57142857142857,
+    "chartData": {
+      "timestamps": [
+        "2025-09-25T15:35:12.681951Z",
+        "Current"
+      ],
+      "throughput": [
+        85000,
+        56000
+      ],
+      "latency": [
+        56,
+        72
+      ],
+      "performanceScores": [
+        91,
+        76
+      ],
+      "statistics": {
+        "throughputMin": 56000,
+        "throughputMax": 85000,
+        "throughputAvg": 70500,
+        "latencyMin": 56,
+        "latencyMax": 72,
+        "latencyAvg": 64
+      }
+    },
+    "summary": "Performance decreased by 16,5%"
+  }
+}
