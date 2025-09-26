@@ -26,15 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for {@link GitHubPagesGeneratorSimplified}.
+ * Unit tests for {@link GitHubPagesGenerator}.
  */
-class GitHubPagesGeneratorSimplifiedTest {
+class GitHubPagesGeneratorTest {
 
     @Test void generateDeploymentAssetsShouldCreateAllRequiredFiles(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         // Act
         generator.generateDeploymentAssets(structure);
@@ -55,7 +55,7 @@ class GitHubPagesGeneratorSimplifiedTest {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         // Act
         generator.generateDeploymentAssets(structure);
@@ -71,7 +71,7 @@ class GitHubPagesGeneratorSimplifiedTest {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         // Initially directories should not exist
         assertFalse(Files.exists(structure.getDeploymentDir()));
@@ -90,7 +90,7 @@ class GitHubPagesGeneratorSimplifiedTest {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         // Act - run twice
         generator.generateDeploymentAssets(structure);
@@ -108,7 +108,7 @@ class GitHubPagesGeneratorSimplifiedTest {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         // Act
         generator.generateDeploymentAssets(structure);
@@ -123,7 +123,7 @@ class GitHubPagesGeneratorSimplifiedTest {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator generator = new GitHubPagesGenerator();
 
         // Act
         generator.generateDeploymentAssets(structure);

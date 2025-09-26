@@ -20,7 +20,7 @@ import de.cuioss.benchmarking.common.converter.WrkBenchmarkConverter;
 import de.cuioss.benchmarking.common.metrics.PrometheusMetricsManager;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.output.OutputDirectoryStructure;
-import de.cuioss.benchmarking.common.report.GitHubPagesGeneratorSimplified;
+import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -57,7 +57,7 @@ public class WrkResultPostProcessor {
 
     private final WrkBenchmarkConverter converter = new WrkBenchmarkConverter();
     private final ReportGenerator reportGenerator = new ReportGenerator();
-    private final GitHubPagesGeneratorSimplified gitHubPagesGenerator = new GitHubPagesGeneratorSimplified();
+    private final GitHubPagesGenerator gitHubPagesGenerator = new GitHubPagesGenerator();
     private final PrometheusMetricsManager prometheusMetricsManager = new PrometheusMetricsManager();
 
     // Map to store benchmark metadata (name -> timestamps)

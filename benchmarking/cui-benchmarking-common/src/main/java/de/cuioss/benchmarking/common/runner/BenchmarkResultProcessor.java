@@ -21,8 +21,7 @@ import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.JmhBenchmarkConverter;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.output.OutputDirectoryStructure;
-import de.cuioss.benchmarking.common.report.GitHubPagesGeneratorSimplified;
-import de.cuioss.benchmarking.common.report.ReportDataGenerator;
+import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
@@ -155,7 +154,7 @@ public class BenchmarkResultProcessor {
      * Generates GitHub Pages deployment-specific assets.
      */
     private void generateGitHubPagesAssets(OutputDirectoryStructure structure) throws IOException {
-        GitHubPagesGeneratorSimplified ghGen = new GitHubPagesGeneratorSimplified();
+        GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
 
         LOGGER.info(INFO.GENERATING_GITHUB_PAGES::format);
         ghGen.generateDeploymentAssets(structure);
