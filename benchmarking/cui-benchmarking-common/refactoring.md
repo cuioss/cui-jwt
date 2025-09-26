@@ -351,7 +351,9 @@ benchmark-results/
   - Check no external dependencies
   - Remove old ReportGenerator methods
   - Remove old GitHubPagesGenerator
-  - Refactor to sensible names
+  - Refactor to sensible names: Now stuff like [GitHubPagesGeneratorSimplified.java](src/main/java/de/cuioss/benchmarking/common/report/GitHubPagesGeneratorSimplified.java): If the old one is removed ([GitHubPagesGenerator.java](src/main/java/de/cuioss/benchmarking/common/report/GitHubPagesGenerator.java)) then rename the new one to just GitHubPagesGenerator
+  - Verify with pre-commit build for all modules that nothing breaks
+  - Ensure 100% test pass rate
 
 - [ ] Update documentation
   - Update README files in each module
