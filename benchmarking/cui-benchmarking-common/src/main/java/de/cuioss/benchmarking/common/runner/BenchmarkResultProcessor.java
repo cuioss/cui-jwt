@@ -20,7 +20,9 @@ import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.JmhBenchmarkConverter;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
-import de.cuioss.benchmarking.common.report.GitHubPagesGenerator;
+import de.cuioss.benchmarking.common.output.OutputDirectoryStructure;
+import de.cuioss.benchmarking.common.report.GitHubPagesGeneratorSimplified;
+import de.cuioss.benchmarking.common.report.ReportDataGenerator;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
@@ -58,10 +60,6 @@ public class BenchmarkResultProcessor {
             .serializeSpecialFloatingPointValues()
             .create();
 
-    // Directory name constants
-    private static final String BADGES_DIR = "/badges";
-    private static final String DATA_DIR = "/data";
-    private static final String GH_PAGES_DIR = "/gh-pages-ready";
 
     private final BenchmarkType benchmarkType;
     private final String throughputBenchmarkName;
@@ -93,17 +91,18 @@ public class BenchmarkResultProcessor {
         LOGGER.info(INFO.PROCESSING_RESULTS.format(results.size()));
         LOGGER.info(INFO.BENCHMARK_TYPE_DETECTED.format(benchmarkType));
 
-        // Create output directories
-        createOutputDirectories(outputDir);
+        // Create OutputDirectoryStructure for organized file generation
+        Path benchmarkResultsPath = Path.of(outputDir);
+        OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsPath);
+        structure.ensureDirectories();
 
         // Determine JSON result file path based on benchmark type
         String jsonFileName = benchmarkType == BenchmarkType.MICRO ?
                 "micro-result.json" : "integration-result.json";
-        Path jsonFile = Path.of(outputDir, jsonFileName);
+        Path jsonFile = benchmarkResultsPath.resolve(jsonFileName);
 
-        // Target location in data directory with unified name
-        Path dataDir = Path.of(outputDir, DATA_DIR);
-        Path targetJsonFile = dataDir.resolve("original-jmh-result.json");
+        // Target location in gh-pages-ready/data directory with unified name
+        Path targetJsonFile = structure.getDataDir().resolve("original-jmh-result.json");
 
         // FAIL FAST: JSON file must exist (created by runner in production)
         // For testing, tests must provide proper JSON files
@@ -121,57 +120,49 @@ public class BenchmarkResultProcessor {
             throw new IOException("Failed to convert JMH results to BenchmarkData", e);
         }
 
-        // Copy JMH result to data directory with unified name
+        // Copy JMH result to gh-pages-ready/data directory with unified name
         Files.copy(jsonFile, targetJsonFile, StandardCopyOption.REPLACE_EXISTING);
         LOGGER.info(INFO.JMH_RESULT_COPIED.format(targetJsonFile));
 
-        // Generate HTML reports using BenchmarkData
-        generateReports(benchmarkData, outputDir);
+        // Generate reports directly to gh-pages-ready structure
+        generateReportsToDeploymentDir(benchmarkData, structure);
 
-        // Generate GitHub Pages structure
-        generateGitHubPagesStructure(outputDir);
+        // Generate deployment-specific assets (404.html, robots.txt, sitemap.xml)
+        generateGitHubPagesAssets(structure);
 
         LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
     }
 
 
     /**
-     * Creates all necessary output directories.
+     * Generates HTML reports directly to the deployment directory.
      */
-    private void createOutputDirectories(String outputDir) throws IOException {
-        String[] directories = {
-                outputDir + BADGES_DIR,
-                outputDir + DATA_DIR,
-                outputDir + GH_PAGES_DIR
-        };
-
-        for (String dir : directories) {
-            Files.createDirectories(Path.of(dir));
-        }
-    }
-
-
-    /**
-     * Generates HTML reports with embedded CSS.
-     */
-    private void generateReports(BenchmarkData benchmarkData, String outputDir) throws IOException {
-        ReportGenerator reportGen = new ReportGenerator();
-
+    private void generateReportsToDeploymentDir(BenchmarkData benchmarkData, OutputDirectoryStructure structure) throws IOException {
+        // Generate data file first (needed by HTML templates)
+        ReportDataGenerator dataGen = new ReportDataGenerator();
         LOGGER.info(INFO.GENERATING_REPORTS::format);
-        reportGen.generateIndexPage(benchmarkData, benchmarkType, outputDir);
-        reportGen.generateTrendsPage(outputDir);
-        reportGen.generateDetailedPage(outputDir);
-        reportGen.copySupportFiles(outputDir);
+
+        // Write data file to gh-pages-ready/data/
+        dataGen.generateDataFile(benchmarkData, benchmarkType, structure.getDeploymentDir().toString());
+
+        // Generate HTML reports to gh-pages-ready/
+        ReportGenerator reportGen = new ReportGenerator();
+        String deploymentPath = structure.getDeploymentDir().toString();
+        reportGen.generateIndexPage(benchmarkData, benchmarkType, deploymentPath);
+        reportGen.generateTrendsPage(deploymentPath);
+        reportGen.generateDetailedPage(deploymentPath);
+        reportGen.copySupportFiles(deploymentPath);
     }
 
+
     /**
-     * Generates GitHub Pages ready deployment structure.
+     * Generates GitHub Pages deployment-specific assets.
      */
-    private void generateGitHubPagesStructure(String outputDir) throws IOException {
-        GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
+    private void generateGitHubPagesAssets(OutputDirectoryStructure structure) throws IOException {
+        GitHubPagesGeneratorSimplified ghGen = new GitHubPagesGeneratorSimplified();
 
         LOGGER.info(INFO.GENERATING_GITHUB_PAGES::format);
-        ghGen.prepareDeploymentStructure(outputDir, outputDir + GH_PAGES_DIR);
+        ghGen.generateDeploymentAssets(structure);
     }
 
 }

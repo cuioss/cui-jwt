@@ -109,18 +109,4 @@ public class GitHubPagesGeneratorSimplified {
         }
     }
 
-    /**
-     * Backward compatibility wrapper for the old API.
-     * This method creates an OutputDirectoryStructure and delegates to the new method.
-     *
-     * @param sourceDir the source directory (used to derive benchmark-results dir)
-     * @param deployDir the deployment directory (should be sourceDir/gh-pages-ready)
-     * @throws IOException if file operations fail
-     * @deprecated Use {@link #generateDeploymentAssets(OutputDirectoryStructure)} instead
-     */
-    @Deprecated public void prepareDeploymentStructure(String sourceDir, String deployDir) throws IOException {
-        // For backward compatibility, assume sourceDir is the benchmark-results directory
-        OutputDirectoryStructure structure = new OutputDirectoryStructure(Path.of(sourceDir));
-        generateDeploymentAssets(structure);
-    }
 }

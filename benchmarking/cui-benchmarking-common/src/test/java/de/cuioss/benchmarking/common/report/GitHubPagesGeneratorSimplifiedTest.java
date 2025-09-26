@@ -103,22 +103,6 @@ class GitHubPagesGeneratorSimplifiedTest {
         assertTrue(Files.exists(deployDir.resolve("sitemap.xml")));
     }
 
-    @Test void backwardCompatibilityMethodShouldWork(@TempDir Path tempDir) throws Exception {
-        // Arrange
-        Path sourceDir = tempDir.resolve("benchmark-results");
-        Path deployDir = sourceDir.resolve("gh-pages-ready");
-        Files.createDirectories(sourceDir);
-
-        GitHubPagesGeneratorSimplified generator = new GitHubPagesGeneratorSimplified();
-
-        // Act - use deprecated method
-        generator.prepareDeploymentStructure(sourceDir.toString(), deployDir.toString());
-
-        // Assert - verify files are created
-        assertTrue(Files.exists(deployDir.resolve("404.html")), "404.html should be created");
-        assertTrue(Files.exists(deployDir.resolve("robots.txt")), "robots.txt should be created");
-        assertTrue(Files.exists(deployDir.resolve("sitemap.xml")), "sitemap.xml should be created");
-    }
 
     @Test void robotsTxtShouldContainBasicDirectives(@TempDir Path tempDir) throws Exception {
         // Arrange

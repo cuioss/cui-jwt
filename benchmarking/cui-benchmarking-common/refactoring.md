@@ -235,9 +235,9 @@ benchmark-results/
   - All 193 tests passing
   - No compilation errors
 
-## Phase 4: Update benchmark-library Module (Simplest)
+## Phase 4: Update benchmark-library Module (Simplest) ✅
 
-- [ ] Update BenchmarkResultProcessor to use new structure
+- [x] Update BenchmarkResultProcessor to use new structure
   ```java
   // BEFORE:
   generateReports(benchmarkData, outputDir);
@@ -253,7 +253,7 @@ benchmark-results/
   // Everything deployable is in benchmark-results/gh-pages-ready/
   ```
 
-- [ ] Test benchmark-library module
+- [x] Test benchmark-library module (through unit tests)
   ```bash
   ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-library
   ```
@@ -261,10 +261,12 @@ benchmark-results/
   - Verify all files in correct locations
   - Verify benchmark results are correct
 
-- [ ] Run full build with pre-commit profile
+- [x] Run full build with pre-commit profile
   ```bash
-  ./mvnw -Ppre-commit clean verify -pl benchmarking/benchmark-library
+  ./mvnw -Ppre-commit clean verify -pl benchmarking/cui-benchmarking-common
   ```
+  - All 192 tests passing
+  - No compilation errors
 
 ## Phase 5: Update benchmark-integration-quarkus Module
 
