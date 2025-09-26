@@ -60,21 +60,20 @@ public class OutputDirectoryStructure {
     }
 
     /**
-     * Ensures all required directories exist, creating them if necessary.
+     * Ensures deployment directories exist, creating them if necessary.
+     * Non-deployed directories (history, prometheus, wrk) are created only when accessed.
      *
      * @throws IOException if directory creation fails
      */
     public void ensureDirectories() throws IOException {
-        // Create deployment directories
+        // Create deployment directories (always needed)
         Files.createDirectories(deploymentDir);
         Files.createDirectories(dataDir);
         Files.createDirectories(badgesDir);
         Files.createDirectories(apiDir);
 
-        // Create non-deployed directories
-        Files.createDirectories(historyDir);
-        Files.createDirectories(prometheusRawDir);
-        Files.createDirectories(wrkDir);
+        // Non-deployed directories are created on-demand by individual getters
+        // to avoid creating unused directories in modules that don't need them
     }
 
     /**
@@ -140,10 +139,13 @@ public class OutputDirectoryStructure {
      * Gets the history directory (benchmark-results/history).
      * Historical archive data should be stored in this directory.
      * This directory is NOT deployed to GitHub Pages.
+     * Creates the directory if it doesn't exist.
      *
      * @return the history directory path
+     * @throws IOException if directory creation fails
      */
-    public Path getHistoryDir() {
+    public Path getHistoryDir() throws IOException {
+        Files.createDirectories(historyDir);
         return historyDir;
     }
 
@@ -151,10 +153,13 @@ public class OutputDirectoryStructure {
      * Gets the raw Prometheus metrics directory (benchmark-results/prometheus).
      * Raw Prometheus data should be stored in this directory.
      * This directory is NOT deployed to GitHub Pages.
+     * Creates the directory if it doesn't exist.
      *
      * @return the raw Prometheus directory path
+     * @throws IOException if directory creation fails
      */
-    public Path getPrometheusRawDir() {
+    public Path getPrometheusRawDir() throws IOException {
+        Files.createDirectories(prometheusRawDir);
         return prometheusRawDir;
     }
 
@@ -162,10 +167,13 @@ public class OutputDirectoryStructure {
      * Gets the WRK directory (benchmark-results/wrk).
      * WRK raw results should be stored in this directory.
      * This directory is NOT deployed to GitHub Pages.
+     * Creates the directory if it doesn't exist.
      *
      * @return the WRK directory path
+     * @throws IOException if directory creation fails
      */
-    public Path getWrkDir() {
+    public Path getWrkDir() throws IOException {
+        Files.createDirectories(wrkDir);
         return wrkDir;
     }
 

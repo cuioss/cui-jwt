@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class OutputDirectoryStructureTest {
 
-    @Test void constructorShouldSetAllPaths(@TempDir Path tempDir) {
+    @Test void constructorShouldSetAllPaths(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -52,19 +52,24 @@ class OutputDirectoryStructureTest {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
-        // Initially, directories should not exist
+        // Initially, deployment directories should not exist
         assertFalse(Files.exists(structure.getDeploymentDir()));
         assertFalse(Files.exists(structure.getDataDir()));
         assertFalse(Files.exists(structure.getBadgesDir()));
         assertFalse(Files.exists(structure.getApiDir()));
-        assertFalse(Files.exists(structure.getHistoryDir()));
-        assertFalse(Files.exists(structure.getPrometheusRawDir()));
-        assertFalse(Files.exists(structure.getWrkDir()));
 
-        // Ensure directories
+        // Non-deployed directories should not exist yet (created on-demand)
+        Path historyPath = benchmarkResultsDir.resolve("history");
+        Path prometheusPath = benchmarkResultsDir.resolve("prometheus");
+        Path wrkPath = benchmarkResultsDir.resolve("wrk");
+        assertFalse(Files.exists(historyPath));
+        assertFalse(Files.exists(prometheusPath));
+        assertFalse(Files.exists(wrkPath));
+
+        // Ensure deployment directories only
         structure.ensureDirectories();
 
-        // All directories should now exist
+        // Deployment directories should now exist
         assertTrue(Files.exists(structure.getDeploymentDir()));
         assertTrue(Files.isDirectory(structure.getDeploymentDir()));
         assertTrue(Files.exists(structure.getDataDir()));
@@ -73,12 +78,24 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.isDirectory(structure.getBadgesDir()));
         assertTrue(Files.exists(structure.getApiDir()));
         assertTrue(Files.isDirectory(structure.getApiDir()));
+
+        // Non-deployed directories should still not exist (only created when accessed)
+        assertFalse(Files.exists(historyPath));
+        assertFalse(Files.exists(prometheusPath));
+        assertFalse(Files.exists(wrkPath));
+
+        // Now access the directories to trigger creation
         assertTrue(Files.exists(structure.getHistoryDir()));
         assertTrue(Files.isDirectory(structure.getHistoryDir()));
         assertTrue(Files.exists(structure.getPrometheusRawDir()));
         assertTrue(Files.isDirectory(structure.getPrometheusRawDir()));
         assertTrue(Files.exists(structure.getWrkDir()));
         assertTrue(Files.isDirectory(structure.getWrkDir()));
+
+        // Verify they were created in the correct locations
+        assertTrue(Files.exists(historyPath));
+        assertTrue(Files.exists(prometheusPath));
+        assertTrue(Files.exists(wrkPath));
     }
 
     @Test void ensureDirectoriesShouldBeIdempotent(@TempDir Path tempDir) throws IOException {
@@ -224,7 +241,7 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.exists(structure.getWrkDir()));
     }
 
-    @Test void pathResolutionShouldBeConsistent(@TempDir Path tempDir) {
+    @Test void pathResolutionShouldBeConsistent(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 

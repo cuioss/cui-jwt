@@ -138,14 +138,10 @@ public class BenchmarkResultProcessor {
      * Generates HTML reports directly to the deployment directory.
      */
     private void generateReportsToDeploymentDir(BenchmarkData benchmarkData, OutputDirectoryStructure structure) throws IOException {
-        // Generate data file first (needed by HTML templates)
-        ReportDataGenerator dataGen = new ReportDataGenerator();
         LOGGER.info(INFO.GENERATING_REPORTS::format);
 
-        // Write data file to gh-pages-ready/data/
-        dataGen.generateDataFile(benchmarkData, benchmarkType, structure.getDeploymentDir().toString());
-
-        // Generate HTML reports to gh-pages-ready/
+        // Generate HTML reports to gh-pages-ready/ using standard API
+        // This will generate files in the deployment directory only
         ReportGenerator reportGen = new ReportGenerator();
         String deploymentPath = structure.getDeploymentDir().toString();
         reportGen.generateIndexPage(benchmarkData, benchmarkType, deploymentPath);
