@@ -77,11 +77,26 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
         double score = primaryMetric.get("score").getAsDouble();
         String scoreUnit = primaryMetric.get("scoreUnit").getAsString();
 
+        // Convert units for better readability
+        double convertedScore = score;
+        String convertedUnit = scoreUnit;
+
+        // Convert ops/ms to ops/s for throughput benchmarks
+        if ("thrpt".equals(mode) && "ops/ms".equals(scoreUnit)) {
+            convertedScore = score * 1000; // Convert ops/ms to ops/s
+            convertedUnit = "ops/s";
+        }
+
         Map<String, Double> percentiles = new LinkedHashMap<>();
         if (primaryMetric.has("scorePercentiles")) {
             JsonObject scorePercentiles = primaryMetric.getAsJsonObject("scorePercentiles");
             for (Map.Entry<String, JsonElement> entry : scorePercentiles.entrySet()) {
-                percentiles.put(entry.getKey(), entry.getValue().getAsDouble());
+                double percentileValue = entry.getValue().getAsDouble();
+                // Apply same conversion to percentiles
+                if ("thrpt".equals(mode) && "ops/ms".equals(scoreUnit)) {
+                    percentileValue = percentileValue * 1000;
+                }
+                percentiles.put(entry.getKey(), percentileValue);
             }
         }
 
@@ -89,10 +104,10 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
                 .name(extractSimpleName(name))
                 .fullName(name)
                 .mode(mode)
-                .rawScore(score)
-                .score(formatScore(score, scoreUnit))
-                .scoreUnit(scoreUnit)
-                .throughput("thrpt".equals(mode) ? formatScore(score, scoreUnit) : null)
+                .rawScore(convertedScore)
+                .score(formatScore(convertedScore, convertedUnit))
+                .scoreUnit(convertedUnit)
+                .throughput("thrpt".equals(mode) ? formatScore(convertedScore, convertedUnit) : null)
                 .latency("avgt".equals(mode) || "sample".equals(mode) ? formatScore(score, scoreUnit) : null)
                 .error(primaryMetric.has("scoreError") ? primaryMetric.get("scoreError").getAsDouble() : 0.0)
                 .percentiles(percentiles)

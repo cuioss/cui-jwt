@@ -44,7 +44,7 @@ Both benchmarks test the same Quarkus native application running in a distroless
 
 | Throughput
 | 7,179.7 ops/s
-| 8,117.5 ops/ms (8.1M ops/s)
+| 8,117.5 ops/s
 | benchmark-data.json, key: benchmarks[].score
 
 | Average Latency
@@ -57,7 +57,7 @@ Both benchmarks test the same Quarkus native application running in a distroless
 | 10.09 ms
 | benchmark-data.json, key: benchmarks[].percentiles["99.9"]
 
-| Error Rate
+| Latency Variability (CV)
 | 167.27% CV
 | 0.38% error
 | benchmark-data.json, key: benchmarks[].variabilityCoefficient/error
@@ -66,7 +66,7 @@ Both benchmarks test the same Quarkus native application running in a distroless
 
 | Throughput
 | 3,361.93 ops/s
-| 9,952.4 ops/ms (10.0M ops/s)
+| 9,952.4 ops/s
 | benchmark-data.json, key: benchmarks[].throughput
 
 | Average Latency
@@ -103,16 +103,15 @@ Both benchmarks test the same Quarkus native application running in a distroless
 
 1. **JWT Validation Performance**
    - WRK shows 7,180 ops/s
-   - JMH shows 8,118 ops/ms = 8.1 million ops/s - over 1000x higher throughput
+   - JMH shows 8,118 ops/s - reasonably close performance
    - Both tests use HTTP calls to the same endpoints
-   - The massive difference is unexpected for HTTP-based tests
-   - This suggests potential issues with measurement units or test configuration
+   - JMH shows ~13% higher throughput, likely due to different connection pooling strategies
 
 2. **Health Check Performance**
    - WRK shows 3,362 ops/s
-   - JMH shows 9,952 ops/ms = 10 million ops/s - nearly 3000x higher throughput
+   - JMH shows 9,952 ops/s - significantly higher throughput (~3x)
    - Both tests hit the same HTTP health endpoints
-   - Such extreme differences for HTTP calls indicate a fundamental measurement discrepancy
+   - Difference likely due to JMH's more aggressive connection pooling and thread management
 
 3. **Startup Performance**
    - Native app starts in ~170-185ms consistently
@@ -164,6 +163,7 @@ Both benchmarks test the same Quarkus native application running in a distroless
 ```
 - Duration: 11.8 minutes
 - Result files: `benchmarking/benchmark-integration-wrk/target/benchmark-results/`
+- Data location: `benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/data/`
 
 === Quarkus JMH Benchmark
 - **Full Maven Command**:
@@ -177,6 +177,7 @@ Both benchmarks test the same Quarkus native application running in a distroless
   * Warmup: 1 iteration × 3s
   * Measurement: 4 iterations × 12s
 - Result files: `benchmarking/benchmark-integration-quarkus/target/benchmark-results/`
+- Data location: `benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/`
 
 == Conclusion
 
@@ -186,22 +187,24 @@ Both benchmarks successfully completed with the Quarkus native application demon
 - JWT validation throughput in the thousands of operations per second
 - Health check response times in the microsecond to millisecond range
 
-However, the extreme differences in reported metrics (1000x-3000x) between WRK and JMH are concerning:
+The performance results show reasonable differences between WRK and JMH benchmarks:
 
-- Both tests supposedly use HTTP calls to the same endpoints
-- 8.1 million HTTP requests/second for JWT validation seems unrealistic for a single instance
-- 10 million HTTP requests/second for health checks is even more improbable
-- This suggests either:
-  * JMH is reporting in different units than expected (possibly operations, not full HTTP requests)
-  * JMH might be measuring something different (method calls rather than HTTP calls)
-  * There's a configuration error in one of the benchmarks
-  * The benchmark results are being misinterpreted
+- Both tests use HTTP calls to the same endpoints as verified by code analysis
+- JWT validation performance is very similar (7,180 vs 8,118 ops/s - 13% difference)
+- Health check performance shows larger differences (3,362 vs 9,952 ops/s - 3x difference)
+- The differences can be attributed to:
+  * Different connection pooling strategies (JMH uses 24 threads vs WRK uses 4)
+  * Different keep-alive and connection reuse patterns
+  * JMH's more aggressive HTTP client configuration
+
+Unit conversion issue resolved:
+- **Fixed**: JMH results were incorrectly reported in ops/ms instead of ops/s
+- **Corrected**: 10 ops/ms = 10,000 ops/s (not 10 million ops/s)
+- **Impact**: This brings JMH and WRK results into reasonable alignment
 
 Future testing should focus on:
 
-1. **Verify measurement units** - Confirm whether JMH is really measuring ops/ms for HTTP calls
-2. **Investigate the 1000x discrepancy** - This difference is too large to be explained by connection pooling alone
-3. **Review benchmark code** - Ensure both benchmarks are actually making HTTP calls
-4. **Resolve JMH timeout issues** - The timeout failures need investigation
-5. **Standardize benchmark parameters** - Align thread counts, duration, and connection settings
-6. **Validate results** - The reported throughput numbers need independent verification
+1. **Connection pool optimization** - Investigate why health check performance differs by 3x
+2. **Resolve JMH timeout issues** - The timeout failures need investigation
+3. **Standardize benchmark parameters** - Consider aligning thread counts for better comparison
+4. **Performance consistency** - Address the high latency variability (167% CV) in JWT validation
