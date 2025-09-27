@@ -76,11 +76,11 @@ class PrometheusClientTest {
 
         // Verify data points
         List<PrometheusClient.DataPoint> values = timeSeries.getValues();
-        assertEquals(5, values.size());
+        assertEquals(17, values.size());
 
         PrometheusClient.DataPoint firstPoint = values.getFirst();
-        assertEquals(Instant.ofEpochSecond(1758792520), firstPoint.getTimestamp());
-        assertEquals(0.0125, firstPoint.getValue(), 0.0001);
+        assertEquals(Instant.ofEpochSecond(1758909906), firstPoint.getTimestamp());
+        assertEquals(0.45, firstPoint.getValue(), 0.0001);
 
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
@@ -243,7 +243,7 @@ class PrometheusClientTest {
     }
 
     @Test void shouldHandleComplexMetricWithLabels() throws PrometheusClient.PrometheusException {
-        // Given
+        // Given - Using real JWT validation metrics from actual test data
         String complexResponse = """
         {
           "status": "success",
@@ -252,18 +252,16 @@ class PrometheusClientTest {
             "result": [
               {
                 "metric": {
-                  "__name__": "http_server_requests_seconds_count",
+                  "__name__": "cui_jwt_validation_success_operations_total",
                   "instance": "cui-jwt-integration-tests:8443",
                   "job": "quarkus-benchmark",
-                  "method": "POST",
-                  "outcome": "SUCCESS",
-                  "status": "200",
-                  "uri": "/api/v1/jwt/extract"
+                  "event_type": "ACCESS_TOKEN_CREATED",
+                  "result": "success"
                 },
                 "values": [
-                  [1758792520, "12345"],
-                  [1758792580, "12567"],
-                  [1758792640, "12789"]
+                  [1758909906, "10960018"],
+                  [1758909908, "10960018"],
+                  [1758909910, "10960018"]
                 ]
               }
             ]
@@ -271,26 +269,25 @@ class PrometheusClientTest {
         }
         """;
         moduleDispatcher.setCustomResponse(complexResponse);
-        List<String> metricNames = List.of("http_server_requests_seconds_count");
+        List<String> metricNames = List.of("cui_jwt_validation_success_operations_total");
 
         // When
         Map<String, PrometheusClient.TimeSeries> result = prometheusClient.queryRange(
                 metricNames, START_TIME, END_TIME, STEP);
 
         // Then
-        PrometheusClient.TimeSeries timeSeries = result.get("http_server_requests_seconds_count");
+        PrometheusClient.TimeSeries timeSeries = result.get("cui_jwt_validation_success_operations_total");
         Map<String, String> labels = timeSeries.getLabels();
 
-        assertEquals("POST", labels.get("method"));
-        assertEquals("SUCCESS", labels.get("outcome"));
-        assertEquals("200", labels.get("status"));
-        assertEquals("/api/v1/jwt/extract", labels.get("uri"));
+        assertEquals("ACCESS_TOKEN_CREATED", labels.get("event_type"));
+        assertEquals("success", labels.get("result"));
 
         List<PrometheusClient.DataPoint> values = timeSeries.getValues();
         assertEquals(3, values.size());
-        assertEquals(12345.0, values.getFirst().getValue());
-        assertEquals(12567.0, values.get(1).getValue());
-        assertEquals(12789.0, values.get(2).getValue());
+        // Using real values from actual test metrics
+        assertEquals(10960018.0, values.getFirst().getValue());
+        assertEquals(10960018.0, values.get(1).getValue());
+        assertEquals(10960018.0, values.get(2).getValue());
     }
 
     @Test void shouldCalculateStepCorrectly() throws PrometheusClient.PrometheusException {

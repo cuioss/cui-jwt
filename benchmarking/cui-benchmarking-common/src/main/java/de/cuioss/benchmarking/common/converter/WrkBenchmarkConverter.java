@@ -143,7 +143,7 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
                 .throughput(formatThroughput(requestsPerSec))
                 .latency(formatLatency(latencyAvg))
                 .error(latencyStdev)
-                .errorPercentage(latencyAvg > 0 ? (latencyStdev / latencyAvg * 100) : 0)
+                .variabilityCoefficient(latencyAvg > 0 ? (latencyStdev / latencyAvg * 100) : 0)
                 .confidenceLow(Math.max(0, latencyAvg - latencyStdev))
                 .confidenceHigh(latencyAvg + latencyStdev)
                 .percentiles(percentiles)

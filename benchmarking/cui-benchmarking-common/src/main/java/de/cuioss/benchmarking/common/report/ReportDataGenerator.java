@@ -240,7 +240,7 @@ public class ReportDataGenerator {
             }
 
             result.put(ERROR, benchmark.getError());
-            result.put(ERROR_PERCENTAGE, benchmark.getErrorPercentage());
+            result.put(VARIABILITY_COEFFICIENT, benchmark.getVariabilityCoefficient());
             result.put(CONFIDENCE_LOW, benchmark.getConfidenceLow());
             result.put(CONFIDENCE_HIGH, benchmark.getConfidenceHigh());
 

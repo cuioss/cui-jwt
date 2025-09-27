@@ -170,7 +170,7 @@ import lombok.experimental.UtilityClass;
             public static final String NAME = "name";
             public static final String FULL_NAME = "fullName";
             public static final String ERROR = "error";
-            public static final String ERROR_PERCENTAGE = "errorPercentage";
+            public static final String VARIABILITY_COEFFICIENT = "variabilityCoefficient";
             public static final String CONFIDENCE_LOW = "confidenceLow";
             public static final String CONFIDENCE_HIGH = "confidenceHigh";
             public static final String PERCENTILES = "percentiles";

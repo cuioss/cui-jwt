@@ -138,6 +138,30 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
 
+                    <!-- Pre-benchmark health check for all required services -->
+                    <execution>
+                        <id>pre-benchmark-health-check</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${wrk.script.dir}/pre-benchmark-health-check.sh</argument>
+                            </arguments>
+                            <environmentVariables>
+                                <INTEGRATION_SERVICE_URL>${integration.service.url}</INTEGRATION_SERVICE_URL>
+                                <PROMETHEUS_URL>http://localhost:9090</PROMETHEUS_URL>
+                                <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
+                            </environmentVariables>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                        </configuration>
+                    </execution>
+
                     <!-- Run WRK health endpoint benchmark -->
                     <execution>
                         <id>run-wrk-health-benchmark</id>

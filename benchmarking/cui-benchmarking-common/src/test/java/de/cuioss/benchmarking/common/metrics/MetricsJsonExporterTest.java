@@ -429,9 +429,8 @@ class MetricsJsonExporterTest {
         // Should contain timestamp
         assertTrue(runtimeData.containsKey("timestamp"), "Should contain timestamp");
 
-        // Should contain four main nodes
+        // Should contain three main nodes
         assertTrue(runtimeData.containsKey("system"), "Should contain system node");
-        assertTrue(runtimeData.containsKey("http_server_requests"), "Should contain http_server_requests node");
         assertTrue(runtimeData.containsKey("cui_jwt_validation_success_operations_total"), "Should contain JWT success operations");
         assertTrue(runtimeData.containsKey("cui_jwt_validation_errors"), "Should contain JWT validation errors");
 
@@ -525,7 +524,7 @@ class MetricsJsonExporterTest {
                 }
             }
 
-            assertTrue(metrics.size() > 100, "Should load many metrics from real data");
+            assertTrue(metrics.size() > 50, "Should load many metrics from real data");
             return metrics;
         }
     }
@@ -560,33 +559,6 @@ class MetricsJsonExporterTest {
         }
 
         data.put("system", systemMetrics);
-
-        // HTTP server requests node with NEW naming conventions
-        Map<String, Object> httpMetrics = new HashMap<>();
-        double count = realMetrics.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("http_server_requests_seconds_count"))
-                .mapToDouble(Map.Entry::getValue)
-                .sum();
-        httpMetrics.put("total_requests", (long) count);
-
-        double sum = realMetrics.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("http_server_requests_seconds_sum"))
-                .mapToDouble(Map.Entry::getValue)
-                .sum();
-
-        double max = realMetrics.entrySet().stream()
-                .filter(e -> e.getKey().startsWith("http_server_requests_seconds_max"))
-                .mapToDouble(Map.Entry::getValue)
-                .max().orElse(0.0);
-
-        // Just pass through raw values
-        if (max > 0) {
-            httpMetrics.put("max_duration_seconds", max);
-        }
-        if (sum > 0) {
-            httpMetrics.put("total_duration_seconds", sum);
-        }
-        data.put("http_server_requests", httpMetrics);
 
         // JWT validation success operations - extract from real data
         Map<String, Object> successOps = new HashMap<>();

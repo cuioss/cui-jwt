@@ -153,7 +153,7 @@ public class PrometheusClient {
             JsonArray resultArray = data.getAsJsonArray("result");
 
             if (resultArray == null || resultArray.size() == 0) {
-                LOGGER.warn("No data found for metric: {}", metricName);
+                // Metric may not be exported by the application - return empty series silently
                 return new TimeSeries(metricName, Map.of(), List.of());
             }
 

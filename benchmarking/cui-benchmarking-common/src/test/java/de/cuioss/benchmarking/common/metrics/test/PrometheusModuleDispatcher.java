@@ -24,6 +24,9 @@ import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 import okhttp3.Headers;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
@@ -119,8 +122,20 @@ import static jakarta.servlet.http.HttpServletResponse.*;
 
     /**
      * Returns a realistic Prometheus query_range response with CPU metrics data.
+     * Loads real data from test resources if available.
      */
     private String getDefaultPrometheusResponse() {
+        // Try to load real data from test resources
+        try {
+            Path metricsPath = Path.of("src/test/resources/metrics/process_cpu.json");
+            if (Files.exists(metricsPath)) {
+                return Files.readString(metricsPath);
+            }
+        } catch (IOException ignored) {
+            // Fall back to default response
+        }
+
+        // Fallback response with real data structure
         return """
         {
           "status": "success",
@@ -134,11 +149,11 @@ import static jakarta.servlet.http.HttpServletResponse.*;
                   "job": "quarkus-benchmark"
                 },
                 "values": [
-                  [1758792520, "0.0125"],
-                  [1758792580, "0.0125"],
-                  [1758792640, "0.016666666666666666"],
-                  [1758792700, "0.00625"],
-                  [1758792760, "0.008333333333333333"]
+                  [1758909906, "0.678181818181818"],
+                  [1758909908, "0.833653061224490"],
+                  [1758909910, "0.999"],
+                  [1758909912, "1.0"],
+                  [1758909914, "0.999"]
                 ]
               }
             ]

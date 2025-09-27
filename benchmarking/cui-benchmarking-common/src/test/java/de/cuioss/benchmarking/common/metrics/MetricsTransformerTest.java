@@ -39,13 +39,11 @@ class MetricsTransformerTest {
         assertNotNull(result);
         assertTrue(result.containsKey("timestamp"));
         assertTrue(result.containsKey("system"));
-        assertTrue(result.containsKey("http_server_requests"));
         assertTrue(result.containsKey("cui_jwt_validation_success_operations_total"));
         assertTrue(result.containsKey("cui_jwt_validation_errors"));
 
         // All sections should exist but be empty
         assertTrue(((Map<?, ?>) result.get("system")).isEmpty());
-        assertTrue(((Map<?, ?>) result.get("http_server_requests")).isEmpty());
         assertTrue(((Map<?, ?>) result.get("cui_jwt_validation_success_operations_total")).isEmpty());
         assertTrue(((Map<?, ?>) result.get("cui_jwt_validation_errors")).isEmpty());
     }
@@ -69,19 +67,6 @@ class MetricsTransformerTest {
         assertEquals(50L, system.get("system_cpu_usage_percent"));
         assertEquals(95L, system.get("memory_heap_used_mb"));  // ~95MB
         assertEquals(47L, system.get("memory_nonheap_used_mb"));  // ~47MB
-    }
-
-    @Test void shouldTransformHttpServerMetrics() {
-        testMetrics.put("http_server_requests_seconds_count", 1000.0);
-        testMetrics.put("http_server_requests_seconds_sum", 50.5);
-        testMetrics.put("http_server_requests_seconds_max", 0.103);
-
-        Map<String, Object> result = transformer.transformToQuarkusRuntimeMetrics(testMetrics);
-        Map<String, Object> httpRequests = (Map<String, Object>) result.get("http_server_requests");
-
-        assertEquals(1000L, httpRequests.get("total_requests"));
-        assertEquals(51L, httpRequests.get("total_duration_seconds"));
-        assertEquals(0.10, httpRequests.get("max_duration_seconds"));
     }
 
     @Test void shouldTransformJwtSuccessMetrics() {
@@ -118,7 +103,6 @@ class MetricsTransformerTest {
     @Test void shouldIgnoreZeroValues() {
         testMetrics.put("cui_jwt_validation_success_operations_total{event_type=\"ACCESS_TOKEN_CREATED\"}", 0.0);
         testMetrics.put("jvm_memory_used_bytes{area=\"heap\"}", 0.0);
-        testMetrics.put("http_server_requests_seconds_max", 0.0);
 
         Map<String, Object> result = transformer.transformToQuarkusRuntimeMetrics(testMetrics);
 
@@ -127,9 +111,6 @@ class MetricsTransformerTest {
 
         Map<String, Object> system = (Map<String, Object>) result.get("system");
         assertFalse(system.containsKey("memory_heap_used_mb"), "Should not include zero memory values");
-
-        Map<String, Object> httpRequests = (Map<String, Object>) result.get("http_server_requests");
-        assertFalse(httpRequests.containsKey("max_duration_seconds"), "Should not include zero max duration");
     }
 
     @Test void shouldHandleCompleteRealWorldMetrics() {
@@ -140,9 +121,6 @@ class MetricsTransformerTest {
         testMetrics.put("jdk_threads_peak_threads", 86.0);
         testMetrics.put("jvm_memory_used_bytes{area=\"heap\",id=\"G1 Eden Space\"}", 30_000_000.0);
         testMetrics.put("jvm_memory_used_bytes{area=\"heap\",id=\"G1 Old Gen\"}", 20_000_000.0);
-        testMetrics.put("http_server_requests_seconds_count{method=\"POST\",outcome=\"SUCCESS\",status=\"200\",uri=\"/jwt/validate\"}", 3584040.0);
-        testMetrics.put("http_server_requests_seconds_sum{method=\"POST\",outcome=\"SUCCESS\",status=\"200\",uri=\"/jwt/validate\"}", 4910.759);
-        testMetrics.put("http_server_requests_seconds_max{method=\"POST\",outcome=\"SUCCESS\",status=\"200\",uri=\"/jwt/validate\"}", 0.121);
         testMetrics.put("cui_jwt_validation_success_operations_total{event_type=\"ACCESS_TOKEN_CREATED\",result=\"success\"}", 3584040.0);
         testMetrics.put("cui_jwt_validation_errors_total{category=\"INVALID_SIGNATURE\",event_type=\"KEY_NOT_FOUND\"}", 279132.0);
 
@@ -158,12 +136,6 @@ class MetricsTransformerTest {
         assertEquals(2.2, system.get("system_cpu_usage_percent"));
         assertEquals(86, system.get("threads_peak"));
         assertEquals(47L, system.get("memory_heap_used_mb"));  // ~47MB total heap
-
-        // Verify HTTP metrics
-        Map<String, Object> httpRequests = (Map<String, Object>) result.get("http_server_requests");
-        assertEquals(3584040L, httpRequests.get("total_requests"));
-        assertEquals(4911L, httpRequests.get("total_duration_seconds"));
-        assertEquals(0.12, httpRequests.get("max_duration_seconds"));
 
         // Verify JWT success metrics
         Map<String, Object> successOps = (Map<String, Object>) result.get("cui_jwt_validation_success_operations_total");

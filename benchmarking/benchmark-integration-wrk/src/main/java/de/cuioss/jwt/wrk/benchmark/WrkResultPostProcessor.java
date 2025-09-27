@@ -93,7 +93,6 @@ public class WrkResultPostProcessor {
 
             processor.process(inputDir, outputDir);
 
-            LOGGER.info("WRK benchmark processing completed successfully");
             LOGGER.info("Results available at: " + outputDir);
 
         } catch (IOException e) {
@@ -110,8 +109,7 @@ public class WrkResultPostProcessor {
      * @throws IOException if processing fails
      */
     public void process(Path inputDir, Path outputDir) throws IOException {
-        LOGGER.info("Processing WRK results from: " + inputDir);
-        LOGGER.info("Output directory: " + outputDir);
+        LOGGER.info("Start processing WRK results");
 
         // Parse all WRK result files to extract metadata
         parseBenchmarkMetadata(inputDir);
@@ -135,22 +133,13 @@ public class WrkResultPostProcessor {
         }
 
         if (!hasWrkFiles) {
-            LOGGER.warn("No WRK output files found in: " + wrkDir);
-            if (Files.exists(wrkDir)) {
-                LOGGER.info("Looking for files matching pattern: *.txt in " + wrkDir);
-                try (Stream<Path> files = Files.list(wrkDir)) {
-                    files.forEach(f -> LOGGER.info("  Found: " + f.getFileName()));
-                }
-            } else {
-                LOGGER.warn("WRK directory does not exist: " + wrkDir);
-            }
+            LOGGER.error("No WRK output files found in: " + wrkDir);
         }
 
         // Convert WRK output to BenchmarkData from wrk subdirectory
         BenchmarkData benchmarkData;
         if (!Files.exists(wrkDir)) {
-            LOGGER.warn("WRK output directory does not exist: " + wrkDir);
-            LOGGER.info("Creating empty benchmark data structure");
+            LOGGER.error("WRK output directory does not exist: " + wrkDir);
             benchmarkData = BenchmarkData.builder()
                     .metadata(BenchmarkData.Metadata.builder()
                             .reportVersion("2.0")
@@ -170,18 +159,14 @@ public class WrkResultPostProcessor {
                     .benchmarks(List.of())
                     .build();
         } else {
-            LOGGER.info("Converting WRK output to benchmark data format from: " + wrkDir);
             benchmarkData = converter.convert(wrkDir);
         }
 
         if (benchmarkData.getBenchmarks() == null || benchmarkData.getBenchmarks().isEmpty()) {
-            LOGGER.warn("No benchmark data extracted from WRK output files");
-        } else {
-            LOGGER.info("Extracted " + benchmarkData.getBenchmarks().size() + " benchmark results");
+            LOGGER.error("No benchmark data extracted from WRK output files");
         }
 
         // Generate reports using new OutputDirectoryStructure (no duplication)
-        LOGGER.info("Generating benchmark reports using OutputDirectoryStructure...");
         Files.createDirectories(outputDir);
 
         // Create OutputDirectoryStructure for organized file generation
@@ -200,39 +185,6 @@ public class WrkResultPostProcessor {
 
         // Generate GitHub Pages deployment-specific assets (404.html, robots.txt, sitemap.xml)
         gitHubPagesGenerator.generateDeploymentAssets(structure);
-
-        LOGGER.info("Generated complete benchmark reports in: " + outputDir);
-
-        // Log summary
-        logSummary(benchmarkData, outputDir);
-    }
-
-    /**
-     * Logs a summary of the processed benchmark data.
-     */
-    private void logSummary(BenchmarkData data, Path outputDir) {
-        LOGGER.info("=== Benchmark Processing Summary ===");
-
-        if (data.getOverview() != null) {
-            BenchmarkData.Overview overview = data.getOverview();
-            LOGGER.info("Performance Grade: " + overview.getPerformanceGrade());
-            LOGGER.info("Performance Score: " + overview.getPerformanceScore());
-            LOGGER.info("Throughput: " + overview.getThroughput());
-            LOGGER.info("Latency: " + overview.getLatency());
-        }
-
-        if (data.getBenchmarks() != null && !data.getBenchmarks().isEmpty()) {
-            LOGGER.info("Benchmarks processed:");
-            for (BenchmarkData.Benchmark benchmark : data.getBenchmarks()) {
-                LOGGER.info("  - " + benchmark.getName() + ": " + benchmark.getScore());
-            }
-        }
-
-        LOGGER.info("Reports generated in: " + outputDir);
-        LOGGER.info("  - HTML Reports: " + outputDir.resolve("index.html"));
-        LOGGER.info("  - Badges: " + outputDir.resolve("badges"));
-        LOGGER.info("  - API Endpoints: " + outputDir.resolve("api"));
-        LOGGER.info("  - GitHub Pages: " + outputDir.resolve("gh-pages-ready"));
     }
 
 
@@ -247,7 +199,7 @@ public class WrkResultPostProcessor {
     private void collectPrometheusMetrics(BenchmarkData benchmarkData, OutputDirectoryStructure structure) {
         // Skip if no metadata available
         if (benchmarkMetadataMap.isEmpty()) {
-            LOGGER.warn("Cannot collect Prometheus metrics: no benchmark metadata available");
+            LOGGER.error("Cannot collect Prometheus metrics: no benchmark metadata available");
             return;
         }
 
@@ -258,7 +210,7 @@ public class WrkResultPostProcessor {
                 BenchmarkMetadata metadata = findMetadataForBenchmark(benchmark.getName());
 
                 if (metadata == null) {
-                    LOGGER.warn("No metadata found for benchmark: {}", benchmark.getName());
+                    LOGGER.error("No metadata found for benchmark: {}", benchmark.getName());
                     continue;
                 }
 
@@ -289,7 +241,6 @@ public class WrkResultPostProcessor {
             Path deploymentDataDir = structure.getDataDir();
 
             if (!Files.exists(prometheusRawDir)) {
-                LOGGER.info("No Prometheus raw directory found, skipping metrics copy");
                 return;
             }
 
@@ -300,16 +251,13 @@ public class WrkResultPostProcessor {
                             try {
                                 Path targetFile = deploymentDataDir.resolve(sourceFile.getFileName());
                                 Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-                                LOGGER.info("Copied Prometheus metrics: {} -> {}", sourceFile.getFileName(), targetFile);
                             } catch (IOException e) {
-                                LOGGER.warn("Failed to copy Prometheus metrics file: {}", sourceFile, e);
+                                LOGGER.error("Failed to copy Prometheus metrics file: {}", sourceFile, e);
                             }
                         });
             }
-
-            LOGGER.info("Prometheus metrics copied to deployment directory");
         } catch (IOException e) {
-            LOGGER.warn("Failed to copy Prometheus metrics to deployment directory", e);
+            LOGGER.error("Failed to copy Prometheus metrics to deployment directory", e);
         }
     }
 
@@ -324,7 +272,6 @@ public class WrkResultPostProcessor {
         // Find all WRK result files in the wrk subdirectory
         Path wrkDir = inputDir.resolve("wrk");
         if (!Files.exists(wrkDir)) {
-            LOGGER.warn("WRK output directory does not exist: " + wrkDir);
             return;
         }
 
@@ -353,8 +300,6 @@ public class WrkResultPostProcessor {
                 LOGGER.error(message);
                 throw new IllegalStateException(message);
             }
-
-            LOGGER.info("Successfully parsed metadata for {} benchmarks", benchmarkMetadataMap.size());
         }
     }
 
@@ -391,10 +336,8 @@ public class WrkResultPostProcessor {
 
             // Validate we have all required metadata
             if (benchmarkName == null || startTime == null || endTime == null) {
-                String message = "WARNING: Incomplete metadata in file %s (name=%s, start=%s, end=%s)".formatted(
-                        resultFile, benchmarkName, startTime, endTime
-                );
-                LOGGER.warn(message);
+                LOGGER.error("Incomplete metadata in file {} (name={}, start={}, end={})",
+                        resultFile, benchmarkName, startTime, endTime);
                 return;
             }
 
@@ -402,12 +345,8 @@ public class WrkResultPostProcessor {
             BenchmarkMetadata metadata = new BenchmarkMetadata(benchmarkName, startTime, endTime);
             benchmarkMetadataMap.put(benchmarkName, metadata);
 
-            LOGGER.info("Parsed metadata for benchmark '{}': start={}, end={}, duration={}s",
-                    benchmarkName, startTime, endTime,
-                    endTime.getEpochSecond() - startTime.getEpochSecond());
-
         } catch (IOException | NumberFormatException e) {
-            LOGGER.warn("Failed to parse metadata from {}: {}", resultFile, e.getMessage());
+            LOGGER.error("Failed to parse metadata from {}: {}", resultFile, e.getMessage());
         }
     }
 
@@ -443,7 +382,6 @@ public class WrkResultPostProcessor {
 
         // If still not found and we only have one benchmark, use it
         if (benchmarkMetadataMap.size() == 1) {
-            LOGGER.info("Using single available benchmark metadata for: {}", benchmarkFileName);
             return benchmarkMetadataMap.values().iterator().next();
         }
 

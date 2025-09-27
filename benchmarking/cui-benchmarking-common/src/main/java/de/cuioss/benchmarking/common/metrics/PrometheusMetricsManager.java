@@ -200,7 +200,8 @@ public class PrometheusMetricsManager {
     public void collectMetricsForWrkBenchmark(String benchmarkName, Instant startTime,
             Instant endTime, String outputDirectory) {
         if (!metricsEnabled) {
-            LOGGER.debug("Skipping Prometheus metrics collection - not enabled");
+            LOGGER.warn("Skipping Prometheus metrics collection - Prometheus not available at URL: {}", prometheusUrl);
+            LOGGER.debug("To enable metrics collection, ensure Prometheus is running and accessible at the configured URL");
             return;
         }
 
@@ -235,8 +236,9 @@ public class PrometheusMetricsManager {
                     prometheusDir, benchmarkName, METRICS_FILE_SUFFIX);
 
         } catch (Exception e) {
-            LOGGER.warn("Failed to collect Prometheus metrics for benchmark '{}': {}",
-                    benchmarkName, e.getMessage());
+            LOGGER.error("Failed to collect Prometheus metrics for benchmark '{}' from URL: {}",
+                    benchmarkName, prometheusUrl, e);
+            LOGGER.debug("Attempted to query metrics for time range: {} to {}", startTime, endTime);
         }
     }
 
@@ -290,11 +292,16 @@ public class PrometheusMetricsManager {
 
     private boolean isPrometheusAvailable() {
         try {
+            LOGGER.debug("Checking Prometheus availability at URL: {}", prometheusUrl);
             PrometheusClient client = new PrometheusClient(prometheusUrl);
             client.queryRange(List.of("up"), Instant.now().minusSeconds(60), Instant.now(), Duration.ofSeconds(10));
+            LOGGER.debug("Prometheus is available and responding at: {}", prometheusUrl);
             return true;
         } catch (Exception e) {
-            LOGGER.debug("Prometheus not available at {}: {}", prometheusUrl, e.getMessage());
+            LOGGER.error("Prometheus connectivity check failed at URL: {} - Error: {} ({})",
+                    prometheusUrl, e.getMessage(), e.getClass().getSimpleName());
+            LOGGER.info("Ensure Prometheus is running and accessible. You can verify with: curl {}/api/v1/query?query=up",
+                    prometheusUrl);
             return false;
         }
     }
@@ -315,4 +322,5 @@ public class PrometheusMetricsManager {
     public int getTrackedBenchmarkCount() {
         return timestampTracker.size();
     }
+
 }

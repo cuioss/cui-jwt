@@ -63,7 +63,7 @@ import java.util.Map;
         private String throughput; // For thrpt mode
         private String latency; // For avgt/sample mode
         private Double error;
-        private Double errorPercentage;
+        private Double variabilityCoefficient;
         private Double confidenceLow;
         private Double confidenceHigh;
         private Map<String, Double> percentiles;
