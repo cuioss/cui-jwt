@@ -7,200 +7,201 @@
 
 This document presents the results of JWT validation benchmarks conducted using two different load testing approaches:
 
-1. **WRK Benchmark**: HTTP-based load testing with WRK (3-minute duration)
-2. **Quarkus JMH Benchmark**: Java-based micro-benchmarking with JMH (10.7-minute duration)
+1. **WRK Benchmark**: HTTP-based load testing with WRK (11.8-minute duration)
+2. **Quarkus JMH Benchmark**: Java-based micro-benchmarking with JMH (8.5-minute duration)
 
 Both benchmarks test the same Quarkus native application running in a distroless container with Keycloak as the JWT issuer.
 
 == Test Environment
 
 * **Platform**: macOS Darwin 24.6.0 (ARM64)
-* **CPU**: 4 cores available
+* **CPU**: 10 cores available
 * **Java Version**: OpenJDK 21.0.7 (Temurin)
 * **Quarkus**: Native compilation with Mandrel 23.1.8.0
 * **Container**: Distroless image (111MB)
 * **Keycloak**: Version 26.2.5
+* **Test Date**: September 27, 2025
 
 == Benchmark Results Comparison
 
-[cols="3,2,2", options="header"]
+[cols="3,2,2,3", options="header"]
 |===
-| Metric | WRK Benchmark | Quarkus JMH Benchmark
+| Metric | WRK Benchmark | Quarkus JMH Benchmark | Source
 
-3+^h| *Performance Summary*
+3+^h| *Performance Summary* |
 
-| Throughput (JWT Validation)
-| 9,353 req/s
-| 9,000 req/s
-
-| Throughput (Health Check)
-| 5,681 req/s
-| 11,600 req/s
-
-| Average Latency (JWT)
-| 5.9 ms
-| 2.7 ms
-
-| Average Latency (Health)
-| 537 μs
-| 2.0 ms
-
-| Max Latency (P99.9)
-| 24.4 ms (JWT)
-| 9.5 ms (JWT)
-
-3+^h| *System Resources*
-
-| CPU Cores Available
-| 4
-| 4
-
-| System CPU Usage
-| 97.8% (avg), 100% (max)
-| 46.5% (avg), 86.3% (max)
-
-| Process CPU Usage
-| 97.8% (avg)
-| 46.5% (avg)
-
-| Memory Heap Used (Max)
-| 68 MB
-| 32 MB
-
-| Memory Heap Committed
-| 67 MB
-| 37 MB
-
-3+^h| *HTTP Performance*
-
-| Total Requests
-| 1.7M (JWT) + 1.0M (Health)
-| Millions+ (9.1 min runtime)
+| Performance Score
+| 83 (Grade B)
+| 48 (Grade F)
+| benchmark-data.json, key: overview.performanceScore
 
 | Test Duration
-| 3.0 minutes (182s)
-| 9.1 minutes (547s)
+| 11.8 minutes
+| 8.5 minutes
+| Build logs
 
-| JMH Throughput (ops/ms)
-| N/A
-| 9.0 (JWT) / 11.6 (Health)
+4+^h| *JWT Validation Performance*
 
-3+^h| *Reliability*
+| Throughput
+| 7,179.7 ops/s
+| 8,117.5 ops/ms (8.1M ops/s)
+| benchmark-data.json, key: benchmarks[].score
 
-| HTTP Timeouts
-| None
-| Minor connection resets
+| Average Latency
+| 5.0 ms
+| 3.0 ms
+| benchmark-data.json, key: benchmarks[].latency
 
-| Validation Errors
-| 0
-| 0
+| P99.9 Latency
+| 21.48 ms
+| 10.09 ms
+| benchmark-data.json, key: benchmarks[].percentiles["99.9"]
 
 | Error Rate
-| 0%
-| ~0% (minor connection issues)
+| 167.27% CV
+| 0.38% error
+| benchmark-data.json, key: benchmarks[].variabilityCoefficient/error
+
+4+^h| *Health Check Performance*
+
+| Throughput
+| 3,361.93 ops/s
+| 9,952.4 ops/ms (10.0M ops/s)
+| benchmark-data.json, key: benchmarks[].throughput
+
+| Average Latency
+| 732 μs
+| 2.2 ms
+| benchmark-data.json, key: benchmarks[].latency
+
+| P99.9 Latency
+| 1.78 ms
+| 8.39 ms
+| benchmark-data.json, key: benchmarks[].percentiles["99.9"]
+
+4+^h| *Health Live Check Performance (WRK only)*
+
+| Throughput
+| 2,604.98 ops/s
+| N/A
+| benchmark-data.json, key: benchmarks[].throughput
+
+| Average Latency
+| 940 μs
+| N/A
+| benchmark-data.json, key: benchmarks[].latency
+
+| P99.9 Latency
+| 2.44 ms
+| N/A
+| benchmark-data.json, key: benchmarks[].percentiles["99.9"]
 |===
 
-== Key Observations
+== Key Findings
 
 === Performance Characteristics
 
-1. **Throughput Performance**:
-   - **JWT Validation**: WRK benchmark (9,353 req/s) slightly outperformed JMH (9,000 req/s) by ~4%
-   - **Health Check**: JMH benchmark (11,600 req/s) significantly outperformed WRK (5,681 req/s) by ~2x
-   - Overall throughput is comparable for JWT validation, but JMH shows better health endpoint performance
+1. **JWT Validation Performance**
+   - WRK shows 7,180 ops/s
+   - JMH shows 8,118 ops/ms = 8.1 million ops/s - over 1000x higher throughput
+   - Both tests use HTTP calls to the same endpoints
+   - The massive difference is unexpected for HTTP-based tests
+   - This suggests potential issues with measurement units or test configuration
 
-2. **CPU Utilization Comparison**:
-   - **WRK**: High intensity approach with 97.8% average CPU, reaching 100% maximum
-   - **JMH**: More sustainable approach with 46.5% average CPU, maximum 86.3%
-   - WRK pushes system to saturation while JMH maintains headroom for stability
+2. **Health Check Performance**
+   - WRK shows 3,362 ops/s
+   - JMH shows 9,952 ops/ms = 10 million ops/s - nearly 3000x higher throughput
+   - Both tests hit the same HTTP health endpoints
+   - Such extreme differences for HTTP calls indicate a fundamental measurement discrepancy
 
-3. **Memory Efficiency**:
-   - Both benchmarks show excellent memory efficiency
-   - WRK: 68 MB max heap usage, 67 MB committed
-   - JMH: 32 MB max heap usage, 37 MB committed
-   - JMH demonstrates better memory efficiency with ~50% lower heap usage
+3. **Startup Performance**
+   - Native app starts in ~170-185ms consistently
+   - Container adds ~1 second to total startup time
 
-4. **Latency Characteristics**:
-   - **JWT Validation**: JMH (2.7 ms) significantly better than WRK (5.9 ms)
-   - **Health Check**: WRK (537 μs) better than JMH (2.0 ms) for simple endpoints
-   - **P99.9 Latency**: JMH (9.5 ms) significantly better than WRK (24.4 ms)
+=== Issues Detected
 
-=== Benchmark Methodology Differences
+==== WRK Test Issues
+- High coefficient of variation (167%) for JWT validation
+- Performance grade B (83/100)
+- No errors reported in logs
 
-[cols="2,3,3", options="header"]
-|===
-| Aspect | WRK | JMH
+==== JMH Test Issues
+- **HTTP Timeout Exception** during healthCheckThroughput iteration 4 of fork 1
+- Performance grade F (48/100) - likely due to the timeout failure
+- GC allocation rate of 348 MB/sec indicates memory pressure
 
-| Load Generation
-| External HTTP client
-| In-process Java client
-
-| Network Stack
-| Full HTTP/2 over TLS
-| HTTP/2 client (localhost)
-
-| Concurrency Model
-| Concurrent connections
-| 24 JMH threads
-
-| Duration
-| ~3 minutes runtime
-| ~9.1 minutes runtime
-
-| CPU Utilization
-| High intensity (97.8% avg)
-| Sustainable load (46.5% avg)
-
-| Measurement
-| End-to-end including network
-| Focused on application logic
-
-| Reliability
-| Stable (no timeouts)
-| Minor connection resets
-|===
-
-== Conclusions
-
-1. **Excellent throughput performance**: The JWT validation service handles 9,000-11,600 requests per second with millisecond-level latency across different load patterns.
-
-2. **Native compilation benefits confirmed**:
-   - Fast startup times (~200ms for native app)
-   - Minimal memory footprint (32-68 MB heap under high load)
-   - Efficient resource utilization with linear scaling characteristics
-
-3. **Benchmark methodology trade-offs revealed**:
-   - **WRK**: Achieves high system saturation (97.8% CPU) but shorter duration
-   - **JMH**: Provides sustainable load testing (46.5% CPU) with longer runtime and better latency profiles
-
-4. **Performance characteristics**:
-   - Both benchmarks show similar JWT validation throughput (~9,000-9,350 req/s)
-   - JMH shows ~54% better JWT latency (2.7 ms vs 5.9 ms)
-   - JMH demonstrates significantly better memory efficiency (32 MB vs 68 MB)
-   - Both approaches validate the application's reliability with zero validation errors
+==== Log Warnings
+- Gauge registration warning for http.server.active.connections metric
+- JWT validation warnings about missing audience claims (expected for test environment)
+- Keycloak SSL certificate warnings (using self-signed certificates)
 
 == Recommendations
 
-1. **For capacity planning**: Use JMH results (9,000 req/s JWT, 11,600 req/s health) as baseline for sustainable load, with WRK results (9,353 req/s) representing peak burst capacity
-2. **Load testing strategy**:
-   - Use JMH for sustained performance validation and SLA verification
-   - Use WRK for maximum throughput testing and system saturation analysis
-3. **Resource optimization**: Memory usage is highly efficient at 32-68MB, allowing for high-density deployments
-4. **Operational guidelines**: System can sustain 46.5% CPU under normal load with headroom for traffic spikes up to 97.8% CPU utilization
+1. **Investigate JMH Timeout Issues**
+   - The timeout during healthCheckThroughput suggests resource exhaustion
+   - Consider reducing thread count (currently 24) or increasing timeout values
 
-== Test Commands Used
+2. **Memory Optimization**
+   - High GC allocation rate (348 MB/sec) needs investigation
+   - Profile memory usage during JWT validation
 
-.WRK Benchmark
-[source,bash]
-----
+3. **Connection Pool Tuning**
+   - The 3x difference in health check throughput between WRK and JMH suggests connection management issues
+   - WRK may need connection pool tuning or keep-alive settings adjustment
+   - Consider investigating WRK's connection reuse patterns
+
+4. **Benchmark Configuration**
+   - The performance score difference (B vs F) needs investigation
+   - Consider aligning test parameters between WRK and JMH
+   - Both tests use HTTP, but connection strategies differ significantly
+
+== Test Execution Details
+
+=== WRK Benchmark
+- **Full Maven Command**:
+```bash
 ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk
-----
+```
+- Duration: 11.8 minutes
+- Result files: `benchmarking/benchmark-integration-wrk/target/benchmark-results/`
 
-.Quarkus JMH Benchmark
-[source,bash]
-----
-./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus -Dskip.container.lifecycle=true
-----
+=== Quarkus JMH Benchmark
+- **Full Maven Command**:
+```bash
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
+```
+- Duration: 8.5 minutes
+- Configuration:
+  * Threads: 24
+  * Forks: 2
+  * Warmup: 1 iteration × 3s
+  * Measurement: 4 iterations × 12s
+- Result files: `benchmarking/benchmark-integration-quarkus/target/benchmark-results/`
 
-''''
-_Analysis updated: September 26, 2025 - Based on latest benchmark results from both WRK and Quarkus JMH integration tests_
+== Conclusion
+
+Both benchmarks successfully completed with the Quarkus native application demonstrating:
+
+- Sub-200ms native startup times
+- JWT validation throughput in the thousands of operations per second
+- Health check response times in the microsecond to millisecond range
+
+However, the extreme differences in reported metrics (1000x-3000x) between WRK and JMH are concerning:
+
+- Both tests supposedly use HTTP calls to the same endpoints
+- 8.1 million HTTP requests/second for JWT validation seems unrealistic for a single instance
+- 10 million HTTP requests/second for health checks is even more improbable
+- This suggests either:
+  * JMH is reporting in different units than expected (possibly operations, not full HTTP requests)
+  * JMH might be measuring something different (method calls rather than HTTP calls)
+  * There's a configuration error in one of the benchmarks
+  * The benchmark results are being misinterpreted
+
+Future testing should focus on:
+
+1. **Verify measurement units** - Confirm whether JMH is really measuring ops/ms for HTTP calls
+2. **Investigate the 1000x discrepancy** - This difference is too large to be explained by connection pooling alone
+3. **Review benchmark code** - Ensure both benchmarks are actually making HTTP calls
+4. **Resolve JMH timeout issues** - The timeout failures need investigation
+5. **Standardize benchmark parameters** - Align thread counts, duration, and connection settings
+6. **Validate results** - The reported throughput numbers need independent verification

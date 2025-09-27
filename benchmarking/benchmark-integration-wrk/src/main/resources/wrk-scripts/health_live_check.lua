@@ -11,7 +11,7 @@ local stats = {
 -- WRK request function - called for each request
 function request()
     wrk.method = "GET"
-    wrk.path = "/q/health"
+    wrk.path = "/q/health/live"
     wrk.headers["Accept"] = "application/json"
     wrk.headers["User-Agent"] = "wrk-benchmark/1.0"
     wrk.headers["Connection"] = "keep-alive"

@@ -162,30 +162,6 @@
                         </configuration>
                     </execution>
 
-                    <!-- Run WRK health endpoint benchmark -->
-                    <execution>
-                        <id>run-wrk-health-benchmark</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skip.benchmark}</skip>
-                            <executable>bash</executable>
-                            <arguments>
-                                <argument>${wrk.script.dir}/health_benchmark.sh</argument>
-                            </arguments>
-                            <outputFile>${wrk.output.dir}/wrk-health-results.txt</outputFile>
-                            <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
-                            <environmentVariables>
-                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
-                                <WRK_THREADS>${wrk.threads}</WRK_THREADS>
-                                <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
-                                <WRK_DURATION>${wrk.duration}</WRK_DURATION>
-                                <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
-                            </environmentVariables>
-                        </configuration>
-                    </execution>
                     <!-- Run WRK health/live endpoint benchmark -->
                     <execution>
                         <id>run-wrk-health-live-benchmark</id>
