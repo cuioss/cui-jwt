@@ -220,9 +220,10 @@
                     </execution>
 
                     <!-- Process WRK results, collect metrics, and generate reports -->
+                    <!-- IMPORTANT: Must run BEFORE containers are stopped in post-integration-test phase -->
                     <execution>
                         <id>process-wrk-results</id>
-                        <phase>verify</phase>
+                        <phase>post-integration-test</phase>
                         <goals>
                             <goal>java</goal>
                         </goals>
@@ -236,6 +237,14 @@
                                 <systemProperty>
                                     <key>quarkus.metrics.url</key>
                                     <value>${quarkus.metrics.url}</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>prometheus.url</key>
+                                    <value>http://localhost:9090</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>integration.service.url</key>
+                                    <value>${integration.service.url}</value>
                                 </systemProperty>
                             </systemProperties>
                         </configuration>
