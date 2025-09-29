@@ -247,11 +247,8 @@ public class PrometheusMetricsManager {
         LOGGER.debug("Collecting metrics for benchmark: '{}', available keys: {}",
                 benchmarkName, timestampTracker.keySet());
 
-        // Simple approach: Use ANY valid timestamps we have, since all JMH benchmarks run in the same session
-        BenchmarkTimestamps timestamps = timestampTracker.values().stream()
-                .filter(BenchmarkTimestamps::isValid)
-                .findFirst()
-                .orElse(null);
+        // Get the specific timestamps for this benchmark
+        BenchmarkTimestamps timestamps = timestampTracker.get(benchmarkName);
 
         if (timestamps == null || !timestamps.isValid()) {
             LOGGER.warn("No valid timestamps found for benchmark '{}', skipping metrics collection. Available timestamps: {}",

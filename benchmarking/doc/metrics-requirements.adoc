@@ -51,6 +51,53 @@ All metrics MUST be collected from Prometheus after each benchmark run and store
 * Standard deviation
 * Percentiles (p50, p75, p90, p99)
 
+==== CPU Percentage Interpretation
+
+IMPORTANT: Understanding CPU percentages in containerized environments is crucial for correct analysis.
+
+===== Container CPU Scaling
+* **100% = All allocated cores fully utilized**
+* In a 4-core container: 100% means 4 cores at full capacity
+* In a 4-core container: 400% would be the theoretical maximum (if the metric allowed it)
+* Most metrics normalize to 100% as maximum regardless of core count
+
+===== Reading CPU Metrics
+[cols="1,2,3"]
+|===
+| Metric Value | 4-Core Container | Interpretation
+
+| 25%
+| 1 core fully utilized
+| Single-threaded workload or low load
+
+| 50%
+| 2 cores fully utilized
+| Moderate load, good headroom
+
+| 75%
+| 3 cores fully utilized
+| High load, limited headroom
+
+| 98-100%
+| ~4 cores fully utilized
+| CPU saturation, throughput limited by CPU
+
+| 11%
+| 0.44 cores utilized
+| Very light load (typical for health checks)
+
+| 85%
+| 3.4 cores utilized
+| Heavy load (typical for JWT validation)
+|===
+
+===== Key Points
+* **Docker/Container Metrics**: Always relative to allocated resources, not host
+* **process_cpu_usage**: JVM process only, as percentage of allocated cores
+* **system_cpu_usage**: Entire container, including all processes
+* **Saturation Point**: Near 100% indicates CPU-bound workload
+* **Efficiency**: Lower CPU for same throughput = better efficiency
+
 === 2. Memory Consumption
 
 [cols="1,2,1,3"]

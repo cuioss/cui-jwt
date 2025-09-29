@@ -18,6 +18,7 @@ package de.cuioss.jwt.quarkus.benchmark;
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
+import de.cuioss.benchmarking.common.profiler.TimestampProfiler;
 import de.cuioss.benchmarking.common.runner.AbstractBenchmarkRunner;
 import de.cuioss.benchmarking.common.util.BenchmarkLoggingSetup;
 import de.cuioss.tools.logging.CuiLogger;
@@ -71,6 +72,14 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
     @Override protected void processResults(Collection<RunResult> results, BenchmarkConfiguration config) throws IOException {
         LOGGER.info(INFO.PROCESSING_RESULTS_STARTING.format(results.size()));
 
+        // Write consolidated timestamp report
+        try {
+            TimestampProfiler.writeConsolidatedReport();
+            LOGGER.info("JMH iteration timestamps consolidated for precise metrics collection");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to write consolidated timestamp report: {}", e.getMessage());
+        }
+
         // Call parent implementation for standard processing
         // The parent now handles Prometheus metrics collection centrally
         super.processResults(results, config);
@@ -115,7 +124,10 @@ public class QuarkusIntegrationRunner extends AbstractBenchmarkRunner {
         // Compiler profiler: Tracks JIT compilation activity
         builder.addProfiler("comp");
 
-        LOGGER.info("JMH profilers enabled: gc, stack, comp");
+        // Timestamp profiler: Captures precise iteration timings
+        builder.addProfiler("de.cuioss.benchmarking.common.profiler.TimestampProfiler");
+
+        LOGGER.info("JMH profilers enabled: gc, stack, comp, TimestampProfiler");
         return builder;
     }
 

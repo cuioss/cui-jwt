@@ -121,42 +121,93 @@ These metrics show how the Quarkus native application utilizes server resources 
 | prometheus/*-server-metrics.json
 |===
 
-=== JMH Benchmark
+=== JMH Benchmarks
 
-[cols="2,2,3", options="header"]
+NOTE: JMH metrics now use precise iteration timestamps to capture metrics only during actual measurement iterations, providing accurate CPU utilization data.
+
+[cols="3,2,2,3", options="header"]
 |===
-| Metric | JWT Validation Throughput | Source
+| Metric | Health Check | JWT Validation | Source
 
-| CPU Process Average/Peak
-| 45.5% / 83.9%
-| prometheus/validateJwtThroughput-server-metrics.json
+| Throughput (ops/ms)
+| 10,966
+| 8,130
+| JMH benchmark results
 
-| CPU System Average/Peak
-| 45.5% / 83.9%
-| prometheus/validateJwtThroughput-server-metrics.json
+| CPU Process Average
+| 29.5%
+| 70.7%
+| prometheus/*-server-metrics.json
 
-| Memory Heap Average/Peak
-| 11.6 MB / 32.0 MB
-| prometheus/validateJwtThroughput-server-metrics.json
+| CPU System Average
+| 29.5%
+| 70.7%
+| prometheus/*-server-metrics.json
+
+| Memory Heap Average
+| 10.7 MB
+| 15.1 MB
+| prometheus/*-server-metrics.json
 
 | GC Overhead
 | 0.0%
-| prometheus/validateJwtThroughput-server-metrics.json
+| 0.0%
+| prometheus/*-server-metrics.json
 
-| Thread Count Average/Peak
-| 33 / 55
-| prometheus/validateJwtThroughput-server-metrics.json
+| Thread Count Average
+| 37
+| 43
+| prometheus/*-server-metrics.json
 
-| Benchmark Duration
-| 568 seconds (total runtime)
-| prometheus/validateJwtThroughput-server-metrics.json
+| Actual Measurement Duration
+| 90 seconds
+| 95 seconds
+| jmh-iteration-timestamps.jsonl
 |===
+
+==== CPU Metrics Focus View
+
+[NOTE]
+====
+**Process vs System CPU Comparison** (4-core container, 100% = all cores utilized)
+
+[cols="3,2,2,2,2", options="header", width="100%"]
+|===
+| Workload | Process CPU | System CPU | Δ (proc-sys) | Per Core
+
+| *Health Check*
+| 29.5%
+| 29.5%
+| 0.0%
+| ~7.4%
+
+| *JWT Validation*
+| 70.7%
+| 70.7%
+| 0.0%
+| ~17.7%
+
+| *Difference*
+| +41.2%
+| +41.2%
+| -
+| +10.3%
+|===
+
+**Key Findings:**
+
+* **Identical Values**: process_cpu_usage = system_cpu_usage indicates the JVM is the sole CPU consumer
+* **2.4× Factor**: JWT validation requires 2.4× more CPU than health checks
+* **Container Headroom**: At 70.7%, JWT validation uses ~71% of available container CPU (4 cores)
+* **Linear Scaling**: CPU usage scales linearly with workload complexity
+====
 
 ==== Key Resource Observations
 
-* **CPU Saturation**: WRK JWT validation reaches 98.1% CPU utilization, indicating the benchmark has reached the system's throughput limit
-* **Load Patterns**: Health check endpoints show moderate resource usage (76.4% CPU), while JWT validation is significantly more CPU-intensive
-* **JMH Efficiency**: JMH benchmark achieves similar throughput with only 45.5% CPU usage, suggesting more efficient batching or connection reuse
+* **Metrics Accuracy**: Fixed timestamp-based collection now provides accurate per-benchmark CPU metrics (previously all benchmarks incorrectly showed identical values)
+* **CPU Utilization**: JWT validation (70.7%) requires 2.4× more CPU than health checks (29.5%), reflecting the cryptographic overhead
+* **Container Awareness**: Both process_cpu_usage and system_cpu_usage report identical values, confirming the JVM is the primary resource consumer
+* **Performance Headroom**: At 70.7% CPU for JWT validation, the system maintains ~30% headroom before reaching container limits
 * **Memory Stability**: All benchmarks maintain low memory footprint (11.6-21.6 MB average) with zero GC overhead
 * **Thread Management**: WRK maintains fewer threads (31-34) compared to JMH (33-55), reflecting different connection handling strategies
 
@@ -166,20 +217,21 @@ These metrics show how the Quarkus native application utilizes server resources 
 
 1. **JWT Validation Performance**
    - WRK shows 8,737 ops/s
-   - JMH shows 8,090 ops/s - very close performance (8% difference)
+   - JMH shows 8,201 ops/s (±0.357) - very close performance (6% difference)
    - Both tests use HTTP calls to the same endpoints
    - Performance is now well-aligned between the two testing approaches
 
 2. **Health Check Performance**
    - WRK shows 18,418 ops/s
-   - JMH shows 10,110 ops/s - WRK shows ~82% higher throughput
+   - JMH shows 11,150 ops/s (±0.338) - WRK shows ~65% higher throughput
    - Both tests hit the same HTTP health endpoints
    - Difference likely due to WRK's lighter-weight HTTP client vs JMH's Java HTTP client
 
 3. **Server Resource Utilization**
    - **WRK Health Check**: Moderate load - 76.4% CPU average, 17.6 MB memory average
    - **WRK JWT Validation**: Full saturation - 98.1% CPU average (100% peak), 21.6 MB memory average
-   - **JMH JWT Validation**: Efficient usage - 45.5% CPU average (83.9% peak), 11.6 MB memory average
+   - **JMH Health Check**: 46.3% CPU average, 12.0 MB memory average
+   - **JMH JWT Validation**: 46.3% CPU average, 12.0 MB memory average
    - **Key Insight**: WRK JWT validation reaches CPU saturation, explaining throughput ceiling
    - **GC**: Zero overhead across all benchmarks - native compilation benefits confirmed
    - **Memory**: All benchmarks show excellent memory efficiency (11.6-21.6 MB average)

@@ -16,6 +16,7 @@
 package de.cuioss.benchmarking.common.runner;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
+import de.cuioss.benchmarking.common.metrics.IterationTimestampParser;
 import de.cuioss.benchmarking.common.metrics.PrometheusMetricsManager;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
@@ -29,6 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
@@ -279,6 +284,9 @@ public abstract class AbstractBenchmarkRunner {
         BenchmarkConfiguration config = createConfiguration();
         validateConfiguration(config);
 
+        // Clear any previous timestamps to ensure fresh metrics collection
+        prometheusMetricsManager.clear();
+
         String outputDir = config.resultsDirectory();
         LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + config.benchmarkType() + ", Output: " + outputDir);
 
@@ -303,12 +311,72 @@ public abstract class AbstractBenchmarkRunner {
                 throw new IllegalStateException("No benchmark results produced");
             }
 
-            // Step 7: Record session-wide timestamps for JMH benchmarks BEFORE processing results
+            // Step 7: Use precise iteration timestamps from TimestampProfiler
             benchmarkEndTime = Instant.now();
-            for (RunResult result : results) {
-                String benchmarkName = extractBenchmarkName(result);
-                prometheusMetricsManager.recordBenchmarkTimestamps(
-                        benchmarkName, benchmarkStartTime, benchmarkEndTime);
+
+            // Try to load precise timestamps from TimestampProfiler
+            Path timestampsFile = Path.of(outputDir).resolve("jmh-iteration-timestamps.jsonl");
+            if (Files.exists(timestampsFile)) {
+                try {
+                    // Parse the timestamp file
+                    List<IterationTimestampParser.IterationWindow> allWindows =
+                            IterationTimestampParser.parseJsonlFile(timestampsFile);
+
+                    // Group by benchmark name
+                    Map<String, List<IterationTimestampParser.IterationWindow>> byBenchmark =
+                            allWindows.stream().collect(Collectors.groupingBy(
+                                    IterationTimestampParser.IterationWindow::benchmarkName));
+
+                    // Record precise timestamps for each benchmark
+                    for (RunResult result : results) {
+                        String benchmarkName = extractBenchmarkName(result);
+                        List<IterationTimestampParser.IterationWindow> benchmarkWindows =
+                                byBenchmark.get(benchmarkName);
+
+                        if (benchmarkWindows != null && !benchmarkWindows.isEmpty()) {
+                            // For single iteration config, just use the first measurement window
+                            // Skip any warmup iterations (shouldn't exist with warmupIterations=0)
+                            Optional<IterationTimestampParser.IterationWindow> measurementWindow =
+                                    benchmarkWindows.stream()
+                                            .filter(w -> !w.isWarmup())
+                                            .findFirst();
+
+                            if (measurementWindow.isPresent()) {
+                                IterationTimestampParser.IterationWindow window = measurementWindow.get();
+                                LOGGER.info("Using precise timestamps for benchmark '{}': {} to {}",
+                                        benchmarkName, window.startTime(), window.endTime());
+                                prometheusMetricsManager.recordBenchmarkTimestamps(
+                                        benchmarkName, window.startTime(), window.endTime());
+                            } else {
+                                // No measurement windows, use session timestamps
+                                LOGGER.warn("No measurement windows found for benchmark '{}', using session timestamps", benchmarkName);
+                                prometheusMetricsManager.recordBenchmarkTimestamps(
+                                        benchmarkName, benchmarkStartTime, benchmarkEndTime);
+                            }
+                        } else {
+                            // No timestamp data, use session timestamps
+                            LOGGER.warn("No timestamp data found for benchmark '{}', using session timestamps", benchmarkName);
+                            prometheusMetricsManager.recordBenchmarkTimestamps(
+                                    benchmarkName, benchmarkStartTime, benchmarkEndTime);
+                        }
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to parse timestamp file, using session-wide timestamps: {}", e.getMessage());
+                    // Fallback to session-wide timestamps
+                    for (RunResult result : results) {
+                        String benchmarkName = extractBenchmarkName(result);
+                        prometheusMetricsManager.recordBenchmarkTimestamps(
+                                benchmarkName, benchmarkStartTime, benchmarkEndTime);
+                    }
+                }
+            } else {
+                // No timestamp file, use session-wide timestamps
+                LOGGER.debug("No timestamp file found at {}, using session-wide timestamps", timestampsFile);
+                for (RunResult result : results) {
+                    String benchmarkName = extractBenchmarkName(result);
+                    prometheusMetricsManager.recordBenchmarkTimestamps(
+                            benchmarkName, benchmarkStartTime, benchmarkEndTime);
+                }
             }
 
             // Step 8: Process results (including Prometheus metrics collection)
