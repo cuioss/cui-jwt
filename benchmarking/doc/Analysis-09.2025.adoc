@@ -340,3 +340,51 @@ Key achievements:
 3. **Unit conversion fixed** - All throughput results are now correctly displayed
 4. **Outstanding resource efficiency** - CPU utilization properly reflects workload, 9.1-15.9 MB heap average, 0% GC overhead
 5. **Stable performance** - Both tests demonstrate consistent native application behavior
+
+== Keycloak Baseline Performance
+
+To establish a baseline for comparison, a benchmark was run against Keycloak's `/realms/benchmark` endpoint, which returns realm configuration metadata without any JWT validation or cryptographic operations.
+
+=== Keycloak Realm Endpoint Benchmark
+
+[cols="2,3", options="header"]
+|===
+| Metric | Value
+| Endpoint | `/realms/benchmark`
+| Protocol | HTTPS (TLS 1.3)
+| Duration | 120 seconds
+| Threads | 4
+| Connections | 100
+| Total Requests | 2,202,982
+| Throughput | 18,355 ops/s
+| Transfer Rate | 15.16 MB/s
+| Average Latency | 11.22 ms
+| Latency Std Dev | 30.38 ms
+| P50 Latency | 4.94 ms
+| P75 Latency | 7.07 ms
+| P90 Latency | 9.98 ms
+| P99 Latency | 175.16 ms
+| Max Latency | 613.26 ms
+|===
+
+=== Performance Analysis
+
+The Keycloak realm endpoint benchmark provides important context:
+
+1. **Baseline Throughput**: At 18,355 ops/s, Keycloak's realm endpoint performs comparably to the Quarkus health check endpoint (18,418 ops/s for WRK, 11,292 ops/s for JMH)
+
+2. **Latency Characteristics**:
+   - P50-P90 latencies (4.94-9.98 ms) are higher than Quarkus health checks (1.1-3.96 ms)
+   - P99 shows significant tail latency (175.16 ms) suggesting occasional processing spikes
+   - High standard deviation (30.38 ms) indicates variable response times
+
+3. **Resource Impact**: This endpoint involves:
+   - TLS termination and encryption
+   - JSON serialization of realm configuration
+   - No JWT validation or cryptographic operations
+   - Static configuration retrieval
+
+4. **Comparison Insights**:
+   - Quarkus native health endpoints are 2-4× faster in latency
+   - JWT validation endpoints (8,333 ops/s) show ~55% throughput reduction compared to simple realm retrieval
+   - The performance difference highlights the computational cost of JWT cryptographic validation
