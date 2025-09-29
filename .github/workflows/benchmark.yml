@@ -106,17 +106,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.7.1
 
-      - name: Run Integration Benchmarks
+      - name: Install WRK
         run: |
-          # Run integration benchmarks with native image using profile that includes container startup
-          # Pass history directory as system property for trend calculation
-          echo "🚀 Running integration benchmarks with native Quarkus..."
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark \
+          # Install WRK for HTTP benchmarking
+          echo "🔧 Installing WRK..."
+          sudo apt-get update
+          sudo apt-get install -y wrk
+          wrk --version
+
+      - name: Run Integration Benchmarks with WRK
+        run: |
+          # Run WRK-based integration benchmarks with native image
+          # GitHub Actions has 4 vCPU for public repos, use default profile
+          echo "🚀 Running WRK integration benchmarks with native Quarkus..."
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark \
             -Dbenchmark.history.dir="${GITHUB_WORKSPACE}/benchmark-history/integration"
-          
+
           # Verify artifacts were generated
           echo "📊 Integration benchmark artifacts generated:"
-          ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/
+          ls -la benchmarking/benchmark-integration-wrk/target/benchmark-results/
 
       - name: Archive Historical Data
         run: |
@@ -127,17 +135,17 @@ jobs:
           
           # Create history directories if they don't exist
           mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
-          mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history
-          
+          mkdir -p benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history
+
           # Archive current benchmark data if it exists
           if [ -f "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
             cp benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
                "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
           fi
-          
-          if [ -f "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
-            cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
-               "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
+
+          if [ -f "benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
+            cp benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
+               "benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
           fi
 
       - name: Merge Historical Data
@@ -152,14 +160,14 @@ jobs:
 
           if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
             echo "📜 Merging integration benchmark history..."
-            mkdir -p benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history
+            mkdir -p benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history
             cp -n previous-pages/cui-jwt/benchmarks/integration/history/*.json \
-               benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
+               benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
           fi
-          
+
           # Enforce retention policy (keep only 10 most recent)
           for dir in benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history \
-                     benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/history; do
+                     benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history; do
             if [ -d "$dir" ]; then
               echo "🧹 Enforcing retention policy in $dir"
               cd "$dir"
@@ -189,14 +197,14 @@ jobs:
           fi
           
           # Copy integration benchmark artifacts to integration subdirectory
-          if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready" ]; then
+          if [ -d "benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready" ]; then
             echo "📦 Copying integration benchmark artifacts..."
-            cp -r benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/* gh-pages/integration/
+            cp -r benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/* gh-pages/integration/
             # Copy integration badges to root badges directory
-            if [ -d "benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges" ]; then
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/integration-performance-badge.json gh-pages/badges/integration-performance-badge.json 2>/dev/null || true
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/integration-trend-badge.json gh-pages/badges/integration-trend-badge.json 2>/dev/null || true
-              cp benchmarking/benchmark-integration-quarkus/target/benchmark-results/gh-pages-ready/badges/last-run-badge.json gh-pages/badges/integration-last-run-badge.json 2>/dev/null || true
+            if [ -d "benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/badges" ]; then
+              cp benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/badges/integration-performance-badge.json gh-pages/badges/integration-performance-badge.json 2>/dev/null || true
+              cp benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/badges/integration-trend-badge.json gh-pages/badges/integration-trend-badge.json 2>/dev/null || true
+              cp benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/badges/last-run-badge.json gh-pages/badges/integration-last-run-badge.json 2>/dev/null || true
             fi
           fi
           
