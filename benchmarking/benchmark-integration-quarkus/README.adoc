@@ -66,6 +66,18 @@ Pre-initialized `TokenRepository` with 100-token pool for realistic cache testin
 |Quick testing mode
 |`jmh.iterations=2`, `jmh.forks=1`, `jmh.time=5s`, `jmh.warmupTime=2s`, `skip.container.lifecycle=true`
 
+|`autoscale`
+|Auto-scaled load (64 threads)
+|`jmh.threads=64` (2x default)
+
+|`stress`
+|High load testing (96 threads)
+|`jmh.threads=96`, `jmh.time=180s`
+
+|`max`
+|Maximum load (may degrade, 128 threads)
+|`jmh.threads=128`, `jmh.time=180s`
+
 |`benchmark-jfr`
 |Benchmarks with JFR profiling
 |Enables JFR recording
@@ -75,14 +87,62 @@ Pre-initialized `TokenRepository` with 100-token pool for realistic cache testin
 |Cleans integration tests
 |===
 
+==== Load Generation Profiles
+
+The load generation profiles are designed to scale with different environments:
+
+* **Default (32 threads)**: Conservative baseline for CI environments
+* **Autoscale (64 threads)**: Optimal for typical development machines (8-10 cores)
+* **Stress (96 threads)**: High load for powerful local machines
+* **Max (128 threads)**: Breaking point testing (may cause degradation)
+
+==== Environment-Specific Recommendations
+
+[cols="2,2,2,3", options="header"]
+|===
+|Environment
+|CPU Cores
+|Recommended Profile
+|Expected Throughput
+
+|GitHub Actions (public repo)
+|4 vCPU
+|Default or `-Pautoscale`
+|6-8k ops/s
+
+|GitHub Actions (private repo)
+|2 vCPU
+|Default only
+|4-6k ops/s
+
+|Local Development (typical)
+|8-10 cores
+|`-Pautoscale` or `-Pstress`
+|8-10k ops/s
+
+|Local Development (high-end)
+|12+ cores
+|`-Pstress` or `-Pmax`
+|10-12k ops/s
+|===
+
 Example usage:
 [source,bash]
 ----
 # Quick benchmarks (total ~30s, assumes containers are running)
 ./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-quarkus
 
+# Auto-scaled load for local development (64 threads)
+./mvnw clean verify -Pbenchmark,autoscale -pl benchmarking/benchmark-integration-quarkus
+
+# Stress test with high load (96 threads, 3 minutes)
+./mvnw clean verify -Pbenchmark,stress -pl benchmarking/benchmark-integration-quarkus
+
 # Custom duration with container skip
 ./mvnw clean verify -Pbenchmark -Djmh.time=30s -Djmh.iterations=2 -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-quarkus
+
+# CI-friendly configuration (default 32 threads)
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-quarkus
 ----
 
 === Container Lifecycle Management

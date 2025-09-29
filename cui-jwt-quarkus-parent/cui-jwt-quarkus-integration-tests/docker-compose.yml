@@ -107,15 +107,15 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=100m
 
-    # Resource limitations (DoS protection - production values)
+    # Resource configuration for benchmarking - no CPU limits, autoscale to available resources
     deploy:
       resources:
         limits:
-          memory: 512M
-          cpus: '4.0'
+          memory: 512M  # More than sufficient - peak usage only 128MB
+          # No CPU limit - use all available cores
         reservations:
           memory: 256M
-          cpus: '1.0'
+          # No CPU reservation - flexible scaling
 
     # No health check for distroless - health endpoints are available at /q/health
 

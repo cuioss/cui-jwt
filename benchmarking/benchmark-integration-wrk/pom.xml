@@ -411,5 +411,35 @@
                 <skip.container.lifecycle>true</skip.container.lifecycle>
             </properties>
         </profile>
+        <!-- Auto-scaling profile for optimal load generation -->
+        <profile>
+            <id>autoscale</id>
+            <properties>
+                <!-- Auto-scale threads to 80% of available CPUs (conservative) -->
+                <wrk.threads>8</wrk.threads>  <!-- Assuming 10 cores, use 8 threads -->
+                <!-- 25 connections per thread for balanced load -->
+                <wrk.connections>200</wrk.connections>
+            </properties>
+        </profile>
+
+        <!-- High-load profile for stress testing -->
+        <profile>
+            <id>stress</id>
+            <properties>
+                <!-- Match threads to CPU count -->
+                <wrk.threads>10</wrk.threads>
+                <!-- 30 connections per thread for high load -->
+                <wrk.connections>300</wrk.connections>
+            </properties>
+        </profile>
+
+        <!-- Maximum load profile (may cause degradation) -->
+        <profile>
+            <id>max</id>
+            <properties>
+                <wrk.threads>12</wrk.threads>
+                <wrk.connections>400</wrk.connections>
+            </properties>
+        </profile>
     </profiles>
 </project>

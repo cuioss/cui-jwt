@@ -528,5 +528,34 @@
                 <skip.container.lifecycle>true</skip.container.lifecycle>
             </properties>
         </profile>
+
+        <!-- Auto-scaling profile for optimal load generation (8 cores typical) -->
+        <profile>
+            <id>autoscale</id>
+            <properties>
+                <!-- Scale threads to match typical development machines -->
+                <jmh.threads>64</jmh.threads>  <!-- 2x default for better concurrency -->
+            </properties>
+        </profile>
+
+        <!-- Stress profile for high load testing (10+ cores) -->
+        <profile>
+            <id>stress</id>
+            <properties>
+                <!-- High thread count for stress testing -->
+                <jmh.threads>96</jmh.threads>  <!-- 3x default for stress testing -->
+                <jmh.time>180s</jmh.time>  <!-- 3 minutes continuous load like WRK -->
+            </properties>
+        </profile>
+
+        <!-- Maximum load profile (may cause degradation) -->
+        <profile>
+            <id>max</id>
+            <properties>
+                <!-- Maximum thread count - may degrade performance -->
+                <jmh.threads>128</jmh.threads>  <!-- 4x default - saturation point -->
+                <jmh.time>180s</jmh.time>  <!-- 3 minutes continuous load -->
+            </properties>
+        </profile>
     </profiles>
 </project>

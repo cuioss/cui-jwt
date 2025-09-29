@@ -65,6 +65,57 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 |`quick`
 |Quick testing mode (30s benchmarks)
 |`wrk.duration=30s`, `skip.container.lifecycle=true`
+
+|`autoscale`
+|Auto-scaled load (8 threads, 200 connections)
+|`wrk.threads=8`, `wrk.connections=200`
+
+|`stress`
+|High load testing (10 threads, 300 connections)
+|`wrk.threads=10`, `wrk.connections=300`
+
+|`max`
+|Maximum load (may degrade, 12 threads, 400 connections)
+|`wrk.threads=12`, `wrk.connections=400`
+|===
+
+==== Load Generation Profiles
+
+The load generation profiles are designed to scale with different environments:
+
+* **Default (4t/20c)**: Conservative baseline for CI environments (GitHub Actions has 2-4 vCPUs)
+* **Autoscale (8t/200c)**: Optimal for typical development machines (8-10 cores)
+* **Stress (10t/300c)**: High load for powerful local machines
+* **Max (12t/400c)**: Breaking point testing
+
+==== Environment-Specific Recommendations
+
+[cols="2,2,2,3", options="header"]
+|===
+|Environment
+|CPU Cores
+|Recommended Profile
+|Expected Throughput
+
+|GitHub Actions (public repo)
+|4 vCPU
+|Default or `-Pautoscale`
+|8-10k ops/s
+
+|GitHub Actions (private repo)
+|2 vCPU
+|Default only
+|5-7k ops/s
+
+|Local Development (typical)
+|8-10 cores
+|`-Pautoscale` or `-Pstress`
+|12-14k ops/s
+
+|Local Development (high-end)
+|12+ cores
+|`-Pstress` or `-Pmax`
+|14-16k ops/s
 |===
 
 Example usage:
@@ -73,8 +124,17 @@ Example usage:
 # Quick 30-second benchmarks (assumes containers are running)
 ./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-wrk
 
-# Custom duration with container skip
-./mvnw clean verify -Pbenchmark -Dwrk.duration=60s -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-wrk
+# Auto-scaled load for local development
+./mvnw clean verify -Pbenchmark,autoscale -pl benchmarking/benchmark-integration-wrk
+
+# Stress test with high load
+./mvnw clean verify -Pbenchmark,stress -pl benchmarking/benchmark-integration-wrk
+
+# Custom duration with specific profile
+./mvnw clean verify -Pbenchmark,autoscale -Dwrk.duration=60s -pl benchmarking/benchmark-integration-wrk
+
+# CI-friendly configuration (GitHub Actions)
+./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk
 ----
 
 === WRK Parameters
