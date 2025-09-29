@@ -37,46 +37,46 @@ Both benchmarks test the same Quarkus native application running in a distroless
 
 | Test Duration
 | 8.5 minutes
-| 10.0 minutes
+| 8.1 minutes
 | Build logs
 
 4+^h| *JWT Validation Performance*
 
 | Throughput
 | 8,737 ops/s
-| 8,090 ops/s
+| 8,333 ops/s
 | benchmark-data.json, key: benchmarks[].score
 
 | Average Latency
 | 5.7 ms
-| 2.9 ms
+| 3.9 ms
 | benchmark-data.json, key: benchmarks[].latency
 
 | P99.9 Latency
 | 23.29 ms
-| 9.91 ms
+| 12.03 ms
 | benchmark-data.json, key: benchmarks[].percentiles["99.9"]
 
 | Latency Variability (CV)
 | 153.58% CV
-| 0.37% error
+| 0.41% error
 | benchmark-data.json, key: benchmarks[].variabilityCoefficient/error
 
 4+^h| *Health Check Performance*
 
 | Throughput
 | 18,418 ops/s
-| 10,110 ops/s
+| 11,292 ops/s
 | benchmark-data.json, key: benchmarks[].throughput
 
 | Average Latency
 | 1.1 ms
-| 2.1 ms
+| 2.9 ms
 | benchmark-data.json, key: benchmarks[].latency
 
 | P99.9 Latency
 | 3.96 ms
-| 7.43 ms
+| 9.72 ms
 | benchmark-data.json, key: benchmarks[].percentiles["99.9"]
 |===
 
@@ -129,24 +129,24 @@ NOTE: JMH metrics now use precise iteration timestamps to capture metrics only d
 |===
 | Metric | Health Check | JWT Validation | Source
 
-| Throughput (ops/ms)
-| 10,966
-| 8,130
+| Throughput (ops/s)
+| 11,292
+| 8,333
 | JMH benchmark results
 
 | CPU Process Average
-| 29.5%
-| 70.7%
+| 29.3%
+| 72.9%
 | prometheus/*-server-metrics.json
 
 | CPU System Average
-| 29.5%
-| 70.7%
+| 29.3%
+| 72.9%
 | prometheus/*-server-metrics.json
 
 | Memory Heap Average
-| 10.7 MB
-| 15.1 MB
+| 9.1 MB
+| 15.9 MB
 | prometheus/*-server-metrics.json
 
 | GC Overhead
@@ -155,14 +155,14 @@ NOTE: JMH metrics now use precise iteration timestamps to capture metrics only d
 | prometheus/*-server-metrics.json
 
 | Thread Count Average
-| 37
-| 43
+| 32
+| 42
 | prometheus/*-server-metrics.json
 
 | Actual Measurement Duration
-| 90 seconds
-| 95 seconds
-| jmh-iteration-timestamps.jsonl
+| 120 seconds
+| 124 seconds
+| prometheus/*-server-metrics.json
 |===
 
 ==== CPU Metrics Focus View
@@ -176,40 +176,40 @@ NOTE: JMH metrics now use precise iteration timestamps to capture metrics only d
 | Workload | Process CPU | System CPU | Δ (proc-sys) | Per Core
 
 | *Health Check*
-| 29.5%
-| 29.5%
+| 29.3%
+| 29.3%
 | 0.0%
-| ~7.4%
+| ~7.3%
 
 | *JWT Validation*
-| 70.7%
-| 70.7%
+| 72.9%
+| 72.9%
 | 0.0%
-| ~17.7%
+| ~18.2%
 
 | *Difference*
-| +41.2%
-| +41.2%
+| +43.6%
+| +43.6%
 | -
-| +10.3%
+| +10.9%
 |===
 
 **Key Findings:**
 
 * **Identical Values**: process_cpu_usage = system_cpu_usage indicates the JVM is the sole CPU consumer
-* **2.4× Factor**: JWT validation requires 2.4× more CPU than health checks
-* **Container Headroom**: At 70.7%, JWT validation uses ~71% of available container CPU (4 cores)
+* **2.5× Factor**: JWT validation requires 2.5× more CPU than health checks
+* **Container Headroom**: At 72.9%, JWT validation uses ~73% of available container CPU (4 cores)
 * **Linear Scaling**: CPU usage scales linearly with workload complexity
 ====
 
 ==== Key Resource Observations
 
 * **Metrics Accuracy**: Fixed timestamp-based collection now provides accurate per-benchmark CPU metrics (previously all benchmarks incorrectly showed identical values)
-* **CPU Utilization**: JWT validation (70.7%) requires 2.4× more CPU than health checks (29.5%), reflecting the cryptographic overhead
+* **CPU Utilization**: JWT validation (72.9%) requires 2.5× more CPU than health checks (29.3%), reflecting the cryptographic overhead
 * **Container Awareness**: Both process_cpu_usage and system_cpu_usage report identical values, confirming the JVM is the primary resource consumer
-* **Performance Headroom**: At 70.7% CPU for JWT validation, the system maintains ~30% headroom before reaching container limits
-* **Memory Stability**: All benchmarks maintain low memory footprint (11.6-21.6 MB average) with zero GC overhead
-* **Thread Management**: WRK maintains fewer threads (31-34) compared to JMH (33-55), reflecting different connection handling strategies
+* **Performance Headroom**: At 72.9% CPU for JWT validation, the system maintains ~27% headroom before reaching container limits
+* **Memory Stability**: All benchmarks maintain low memory footprint (9.1-15.9 MB average) with zero GC overhead
+* **Thread Management**: WRK maintains fewer threads (31-34) compared to JMH (32-42), reflecting different connection handling strategies
 
 == Key Findings
 
@@ -217,24 +217,24 @@ NOTE: JMH metrics now use precise iteration timestamps to capture metrics only d
 
 1. **JWT Validation Performance**
    - WRK shows 8,737 ops/s
-   - JMH shows 8,201 ops/s (±0.357) - very close performance (6% difference)
+   - JMH shows 8,333 ops/s (±0.414) - very close performance (5% difference)
    - Both tests use HTTP calls to the same endpoints
    - Performance is now well-aligned between the two testing approaches
 
 2. **Health Check Performance**
    - WRK shows 18,418 ops/s
-   - JMH shows 11,150 ops/s (±0.338) - WRK shows ~65% higher throughput
+   - JMH shows 11,292 ops/s (±0.275) - WRK shows ~63% higher throughput
    - Both tests hit the same HTTP health endpoints
    - Difference likely due to WRK's lighter-weight HTTP client vs JMH's Java HTTP client
 
 3. **Server Resource Utilization**
    - **WRK Health Check**: Moderate load - 76.4% CPU average, 17.6 MB memory average
    - **WRK JWT Validation**: Full saturation - 98.1% CPU average (100% peak), 21.6 MB memory average
-   - **JMH Health Check**: 46.3% CPU average, 12.0 MB memory average
-   - **JMH JWT Validation**: 46.3% CPU average, 12.0 MB memory average
+   - **JMH Health Check**: 29.3% CPU average, 9.1 MB memory average
+   - **JMH JWT Validation**: 72.9% CPU average, 15.9 MB memory average
    - **Key Insight**: WRK JWT validation reaches CPU saturation, explaining throughput ceiling
    - **GC**: Zero overhead across all benchmarks - native compilation benefits confirmed
-   - **Memory**: All benchmarks show excellent memory efficiency (11.6-21.6 MB average)
+   - **Memory**: All benchmarks show excellent memory efficiency (9.1-21.6 MB average)
 
 4. **Startup Performance**
    - Native app starts in ~170-185ms consistently
@@ -273,8 +273,8 @@ NOTE: JMH metrics now use precise iteration timestamps to capture metrics only d
 3. **Resource Efficiency Analysis**
    - **WRK Health Check**: 76.4% CPU shows good efficiency for simple endpoint
    - **WRK JWT Validation**: 98.1% CPU saturation indicates throughput ceiling reached
-   - **JMH JWT Validation**: 45.5% CPU suggests more efficient request handling pattern
-   - **Memory**: Excellent across all benchmarks (11.6-21.6 MB average)
+   - **JMH JWT Validation**: 72.9% CPU shows similar load characteristics
+   - **Memory**: Excellent across all benchmarks (9.1-21.6 MB average)
    - **Zero GC overhead**: Native compilation benefits confirmed
    - **Recommendation**: Consider scaling horizontally for WRK JWT validation workloads
 
@@ -321,8 +321,8 @@ Both benchmarks successfully completed with the Quarkus native application demon
 The performance results show excellent alignment between WRK and JMH benchmarks:
 
 - Both tests use HTTP calls to the same endpoints as verified by code analysis
-- JWT validation performance is very well-aligned (8,737 vs 8,090 ops/s - 8% difference)
-- Health check performance shows expected differences (18,418 vs 10,110 ops/s - 82% difference)
+- JWT validation performance is very well-aligned (8,737 vs 8,333 ops/s - 5% difference)
+- Health check performance shows expected differences (18,418 vs 11,292 ops/s - 63% difference)
 - The differences can be attributed to:
   * Different HTTP client implementations (WRK's C-based vs JMH's Java-based)
   * Different connection pooling strategies (JMH uses 24 threads vs WRK uses 4)
@@ -338,5 +338,5 @@ Key achievements:
 1. **Excellent performance grades** - Both benchmarks achieve Grade A performance
 2. **JWT validation alignment** - Only 8% difference between testing approaches
 3. **Unit conversion fixed** - All throughput results are now correctly displayed
-4. **Outstanding resource efficiency** - 45.5% CPU average, 11.6 MB heap average, 0% GC overhead
+4. **Outstanding resource efficiency** - CPU utilization properly reflects workload, 9.1-15.9 MB heap average, 0% GC overhead
 5. **Stable performance** - Both tests demonstrate consistent native application behavior

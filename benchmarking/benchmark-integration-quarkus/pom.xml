@@ -32,7 +32,7 @@
         <jmh.warmupIterations>0</jmh.warmupIterations>  <!-- No warmup - immediate measurement -->
         <jmh.forks>1</jmh.forks>  <!-- Single fork for simpler metrics collection -->
         <jmh.threads>32</jmh.threads>  <!-- High concurrency matching WRK -->
-        <jmh.time>90s</jmh.time>  <!-- 90-second continuous load -->
+        <jmh.time>120s</jmh.time>  <!-- 120-second continuous load for ~8 minute total runtime -->
         <jmh.warmupTime>5s</jmh.warmupTime>  <!-- Warmup time (unused with 0 iterations) -->
 
         <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
