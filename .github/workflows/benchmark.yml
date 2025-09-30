@@ -106,14 +106,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.7.1
 
-      - name: Install WRK
-        run: |
-          # Install WRK for HTTP benchmarking
-          echo "🔧 Installing WRK..."
-          sudo apt-get update
-          sudo apt-get install -y wrk
-          wrk --version
-
       - name: Run Integration Benchmarks with WRK
         run: |
           # Run WRK-based integration benchmarks with native image

@@ -15,6 +15,8 @@
  */
 package de.cuioss.http.client.result;
 
+import de.cuioss.test.valueobjects.junit5.contracts.ShouldHandleObjectContracts;
+
 /**
  * Contract test for {@link HttpErrorCategory} to verify proper enum implementation.
  */

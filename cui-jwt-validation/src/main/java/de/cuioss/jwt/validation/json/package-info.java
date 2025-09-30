@@ -30,8 +30,10 @@
  * <p>
  * The @NullUnmarked annotation removes JSpecify nullability enforcement,
  * allowing natural nullable-by-default behavior for JSON mapping scenarios.
- * 
+ *
  * @since 1.0
  */
 @NullUnmarked
 package de.cuioss.jwt.validation.json;
+
+import org.jspecify.annotations.NullUnmarked;
