@@ -30,9 +30,9 @@
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
 
         <!-- WRK Configuration Properties -->
-        <wrk.duration>180s</wrk.duration>  <!-- 3 minutes per benchmark -->
-        <wrk.threads>4</wrk.threads>
-        <wrk.connections>20</wrk.connections>
+        <wrk.duration>60s</wrk.duration>  <!-- Default: 1 minute per benchmark -->
+        <wrk.threads>5</wrk.threads>
+        <wrk.connections>50</wrk.connections>
         <wrk.timeout>2s</wrk.timeout>
         <wrk.latency>true</wrk.latency>
         <wrk.script.dir>${project.basedir}/src/main/resources/wrk-scripts</wrk.script.dir>
@@ -424,23 +424,24 @@
             </properties>
         </profile>
 
-        <!-- High-load profile for stress testing -->
+        <!-- Stress testing profile (moderate stress, good balance) -->
         <profile>
             <id>stress</id>
             <properties>
                 <!-- Match threads to CPU count -->
                 <wrk.threads>10</wrk.threads>
-                <!-- 30 connections per thread for high load -->
-                <wrk.connections>300</wrk.connections>
+                <!-- 150 connections - tests moderate stress without severe degradation -->
+                <wrk.connections>150</wrk.connections>
             </properties>
         </profile>
 
-        <!-- Maximum load profile (may cause degradation) -->
+        <!-- Maximum load profile (tests limits, expect degradation) -->
         <profile>
             <id>max</id>
             <properties>
-                <wrk.threads>12</wrk.threads>
-                <wrk.connections>400</wrk.connections>
+                <wrk.threads>10</wrk.threads>
+                <!-- 300 connections - tests maximum capacity, severe JWT degradation expected -->
+                <wrk.connections>300</wrk.connections>
             </properties>
         </profile>
     </profiles>

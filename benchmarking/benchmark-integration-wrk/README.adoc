@@ -12,13 +12,16 @@ High-performance HTTP benchmarking for JWT validation endpoints using WRK, addre
 # Quick benchmark (30s duration, skip container lifecycle)
 ./mvnw clean verify -Pbenchmark,quick -pl benchmarking/benchmark-integration-wrk
 
-# Full benchmark with container lifecycle management (3 minutes per benchmark)
+# Default benchmark (50 connections, 1 minute per benchmark - GitHub CI friendly)
 ./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk
 
-# Full benchmark - skip container start/stop (containers must be running)
-./mvnw clean verify -Pbenchmark -Dskip.container.lifecycle=true -pl benchmarking/benchmark-integration-wrk
+# Stress test (150 connections - moderate stress testing)
+./mvnw clean verify -Pbenchmark,stress -pl benchmarking/benchmark-integration-wrk
 
-# Start containers manually for fast mode
+# Maximum load test (300 connections - tests limits, expect JWT degradation)
+./mvnw clean verify -Pbenchmark,max -pl benchmarking/benchmark-integration-wrk
+
+# Start containers manually for fast iteration
 cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 ./scripts/start-integration-container.sh
 ----
@@ -82,22 +85,22 @@ The wrapper is minimal (36 lines) and necessary for image build logic, TOKEN_DAT
 |`wrk.threads=8`, `wrk.connections=200`
 
 |`stress`
-|High load testing (10 threads, 300 connections)
-|`wrk.threads=10`, `wrk.connections=300`
+|Moderate stress testing (10 threads, 150 connections)
+|`wrk.threads=10`, `wrk.connections=150`
 
 |`max`
-|Maximum load (may degrade, 12 threads, 400 connections)
-|`wrk.threads=12`, `wrk.connections=400`
+|Maximum load testing (10 threads, 300 connections)
+|`wrk.threads=10`, `wrk.connections=300`
 |===
 
 ==== Load Generation Profiles
 
-The load generation profiles are designed to scale with different environments:
+The load generation profiles are designed based on performance investigation results:
 
-* **Default (4t/20c)**: Conservative baseline for CI environments (GitHub Actions has 2-4 vCPUs)
-* **Autoscale (8t/200c)**: Optimal for typical development machines (8-10 cores)
-* **Stress (10t/300c)**: High load for powerful local machines
-* **Max (12t/400c)**: Breaking point testing
+* **Default (5t/50c)**: Optimal baseline for CI and local development - excellent performance with P90 < 6ms
+* **Autoscale (8t/200c)**: High load for development machines - tests moderate degradation
+* **Stress (10t/150c)**: Moderate stress testing - balanced performance without severe degradation
+* **Max (10t/300c)**: Maximum capacity testing - expect severe JWT validation degradation (P90 ~46ms)
 
 ==== Environment-Specific Recommendations
 
@@ -106,27 +109,27 @@ The load generation profiles are designed to scale with different environments:
 |Environment
 |CPU Cores
 |Recommended Profile
-|Expected Throughput
+|Expected Performance
 
-|GitHub Actions (public repo)
-|4 vCPU
-|Default or `-Pautoscale`
-|8-10k ops/s
-
-|GitHub Actions (private repo)
-|2 vCPU
-|Default only
-|5-7k ops/s
+|GitHub Actions
+|2-4 vCPU
+|Default (50 connections)
+|Health: 37K ops/s (P90 2.5ms), JWT: 16K ops/s (P90 5.8ms)
 
 |Local Development (typical)
 |8-10 cores
-|`-Pautoscale` or `-Pstress`
-|12-14k ops/s
+|`-Pstress` (150 connections)
+|Health: 50K ops/s (P90 7ms), JWT: 17K ops/s (P90 23ms)
 
 |Local Development (high-end)
-|12+ cores
-|`-Pstress` or `-Pmax`
-|14-16k ops/s
+|10+ cores
+|`-Pautoscale` (200 connections)
+|Health: 50K ops/s (P90 9ms), JWT: 17K ops/s (P90 31ms)
+
+|Stress Testing
+|10+ cores
+|`-Pmax` (300 connections)
+|Health: 46K ops/s (P90 15ms), JWT: 16K ops/s (P90 46ms - degraded)
 |===
 
 Example usage:
@@ -152,9 +155,9 @@ Example usage:
 
 [source,xml]
 ----
-<wrk.duration>180s</wrk.duration>         <!-- Test duration (default: 3 minutes, quick: 30s) -->
-<wrk.threads>4</wrk.threads>              <!-- Number of threads -->
-<wrk.connections>20</wrk.connections>     <!-- Concurrent connections -->
+<wrk.duration>60s</wrk.duration>          <!-- Test duration (default: 1 minute, quick: 30s) -->
+<wrk.threads>5</wrk.threads>              <!-- Number of threads (default: 5) -->
+<wrk.connections>50</wrk.connections>     <!-- Concurrent connections (default: 50) -->
 <wrk.timeout>2s</wrk.timeout>             <!-- Request timeout -->
 <wrk.latency>true</wrk.latency>           <!-- Record latency distribution -->
 ----
@@ -268,27 +271,34 @@ diff <(jq '.performance' baseline/wrk-jwt-results.json) \
 
 === Performance Tuning
 
-.Optimal Settings
+.Optimal Settings (Based on Performance Investigation)
 [NOTE]
 ====
-* **Threads**: 4 (matches typical CPU cores)
-* **Connections**: 20 (avoids pool saturation)
+* **Threads**: 5 (balanced for typical systems)
+* **Connections**: 50 (optimal performance without degradation)
 * **Duration**:
   - Quick mode: 30s (fast iteration)
-  - Full mode: 180s (stable results)
+  - Default: 60s (balanced results)
 * **Timeout**: 2s (local testing)
+
+**Performance Profile at 50 Connections:**
+* Health endpoint: P90 2.5ms, 37K ops/s
+* JWT validation: P90 5.8ms, 16K ops/s, CPU 75%
 ====
 
-.Connection Pool Saturation
+.Performance Degradation at High Load
 [WARNING]
 ====
-High connection counts (>50) can cause:
+JWT validation becomes CPU-bound at high connection counts:
 
-* Latency spike from 0.88ms to 39ms
-* Throughput degradation
-* Connection timeouts
+* **100 connections**: P90 15ms, CPU 87% - degradation begins
+* **150 connections**: P90 23ms, CPU 82% - moderate stress
+* **200 connections**: P90 31ms, CPU 82% - severe degradation
+* **300 connections**: P90 46ms, CPU 81% - critical degradation
 
-Solution: Keep connections ≤ 20 for local testing
+Health checks scale better but also degrade at 300 connections (P90 15ms vs 2.5ms at 50 connections).
+
+**Recommendation**: Use default (50 connections) for CI/CD and regular testing. Use stress/max profiles only for capacity planning.
 ====
 
 == Development

@@ -22,6 +22,7 @@ At 300 concurrent connections, BOTH simple health checks and JWT validation endp
 | 25 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=25 -Dwrk.threads=3 -Dwrk.duration=60s` |
 | 50 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=50 -Dwrk.threads=5 -Dwrk.duration=60s` |
 | 100 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=100 -Dwrk.threads=10 -Dwrk.duration=60s` |
+| 125 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=125 -Dwrk.threads=10 -Dwrk.duration=60s` |
 | 150 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=150 -Dwrk.threads=10 -Dwrk.duration=60s` |
 | 200 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=200 -Dwrk.threads=10 -Dwrk.duration=60s` |
 | 250 | `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk -Dwrk.connections=250 -Dwrk.threads=10 -Dwrk.duration=60s` |
@@ -65,34 +66,29 @@ At 300 concurrent connections, BOTH simple health checks and JWT validation endp
 
 | Connections | P50 (ms) | P75 (ms) | P90 (ms) | P99 (ms) | Throughput | Total Requests | CPU Peak % | Threads | Timeouts | Oddities/Notes |
 |------------|----------|----------|----------|----------|------------|----------------|------------|---------|----------|----------------|
-| 10         | 0.574    | 0.719    | 0.94     | 3.47     | 15.4K/s    | 926K           | 29.1       | 33      | 0        | Excellent baseline, no warnings/errors in logs |
-| 25         | 0.809    | 1.12     | 1.68     | 4.79     | 24.4K/s    | 1.47M          | 44.7       | 47      | 0        | Good performance, slight latency increase from 10 conns |
-| 50         | 1.2      | 3.74     | 116.51   | 195.9    | 27.1K/s    | 1.63M          | 49.5       | 62      | 0        | **🔴 BREAKING POINT! P90 latency explodes 72x (1.6ms→117ms)** |
-| 50-Second Run | 1.34     | 7.48     | 124.31   | 196.14   | 24.9K/s    | 1.49M          | 49.6       | 70      | 0        | **Confirms breaking point: P90=124ms, consistent degradation** |
-| 50-java25-Image | 1.25     | 4.44     | 118.83   | 196.63   | 26.4K/s    | 1.58M          | 46.5       | 66      | 0        | **Java 25 (JEP 491): Within measurement variance, no real improvement** |
-| 50-VertxConfig | 1.27     | 5.07     | 119.45   | 195.23   | 26.3K/s    | 1.58M          | 47.4       | 59      | 1        | **Vert.x tuning (io-threads=20, worker-pool=100): No improvement** |
-| 50-DockerNet | ~0.91    | ~1.5     | ~2-3     | ~10      | 74.3K/s    | 4.46M          | N/A        | N/A     | 19       | **🟢 INSIDE DOCKER NETWORK: 28x latency improvement! Bridge is bottleneck** |
-| 100        |          |          |          |          |            |                |            |         |          |                |
-| 150        |          |          |          |          |            |                |            |         |          |                |
-| 200        |          |          |          |          |            |                |            |         |          |                |
-| 250        |          |          |          |          |            |                |            |         |          |                |
-| 300        | 6.18     | 129      | 209      | 877      | 9.4K/s     | 846K           | 47.4       | 128     | 146      | Baseline from previous test |
+| 10         | 0.377    | 0.51     | 0.719    | 3.27     | 22.9K/s    | 1.37M          | 27.9       | 33      | 0        | Excellent baseline, no warnings/errors in logs |
+| 25         | 0.64     | 0.95     | 1.45     | 4.47     | 31.3K/s    | 1.88M          | 42.0       | 53      | 0        | Good performance, slight latency increase from 10 conns |
+| 50         | 1.0      | 1.6      | 2.48     | 6.27     | 37.6K/s    | 2.25M          | 52.4       | 70      | 0        | **🟢 EXCELLENT! Stable performance, similar to 25 conns, throughput +54%** |
+| 100        | 1.63     | 2.9      | 4.73     | 10.81    | 47.6K/s    | 2.86M          | 57.3       | 116     | 0        | **🟡 Latency increasing: P90 1.9x slower than 50 conns (2.5ms→4.7ms), throughput +27%** |
+| 125        | 1.97     | 3.6      | 5.85     | 12.78    | 46.2K/s    | 2.78M          | 59.6       | 127     | 0        | **🟢 STABLE! Similar to 100 conns, slight latency increase, throughput -3%** |
+| 150        | 2.35     | 4.31     | 7.0      | 14.75    | 50.3K/s    | 3.02M          | 59.3       | 166     | 0        | **🟢 EXCELLENT! Throughput +9% from 125, latency similar, system scaling well** |
+| 200        | 3.18     | 5.82     | 9.43     | 19.27    | 50.2K/s    | 3.02M          | 59.9       | 198     | 0        | **🟢 STABLE! Similar performance to 150 conns, throughput consistent** |
+| 250        | 4.09     | 7.53     | 12.11    | 23.92    | 48.8K/s    | 2.93M          | 58.4       | 225     | 0        | **🟢 STABLE! Latency increasing gradually, throughput -3%, still performing well** |
+| 300        | 5.29     | 9.42     | 15.0     | 31.32    | 45.9K/s    | 2.76M          | 59.6       | 223     | 0        | **🟢 GRADUAL DEGRADATION: P90 6.0x slower than 50 conns (2.5ms→15ms), throughput -9%** |
 
 **JWT Validation Endpoint (`/jwt/validate`)**
 
 | Connections | P50 (ms) | P75 (ms) | P90 (ms) | P99 (ms) | Throughput | Total Requests | CPU Peak % | Threads | Timeouts | Oddities/Notes |
 |------------|----------|----------|----------|----------|------------|----------------|------------|---------|----------|----------------|
-| 10         | 0.99     | 1.23     | 1.6      | 4.77     | 9.0K/s     | 541K           | 42.7       | 33      | 0        | Excellent performance, no issues |
-| 25         | 1.62     | 2.16     | 2.94     | 6.98     | 13.2K/s    | 789K           | 62.6       | 46      | 0        | Good performance, latency increasing slightly |
-| 50         | 2.7      | 4.67     | 73.71    | 192.13   | 14.5K/s    | 870K           | 73.6       | 68      | 0        | **🔴 BREAKING POINT! P90 latency explodes 25x (2.9ms→74ms)** |
-| 50-Second Run | 2.81     | 5.24     | 89.3     | 196.4    | 13.6K/s    | 817K           | 72.6       | 70      | 0        | **Confirms breaking point: P90=89ms, consistent degradation** |
-| 50-java25-Image | 2.81     | 4.82     | 66.86    | 192.36   | 14.0K/s    | 840K           | 73.4       | 70      | 0        | **Java 25 (JEP 491): Within measurement variance (67-89ms range), no real improvement** |
-| 50-VertxConfig | 2.84     | 5.1      | 80       | 193.26   | 13.6K/s    | 819K           | 73.4       | 70      | 0        | **Vert.x tuning (io-threads=20, worker-pool=100): No improvement** |
-| 100        |          |          |          |          |            |                |            |         |          |                |
-| 150        |          |          |          |          |            |                |            |         |          |                |
-| 200        |          |          |          |          |            |                |            |         |          |                |
-| 250        |          |          |          |          |            |                |            |         |          |                |
-| 300        | 13.77    | 142      | 222      | 784      | 9.4K/s     | 1.7M           | 78.5       | 124     | 146      | Baseline from previous test |
+| 10         | 0.96     | 1.26     | 1.7      | 4.84     | 9.3K/s     | 556K           | 41.3       | 33      | 0        | Excellent performance, no issues |
+| 25         | 1.64     | 2.33     | 3.35     | 7.98     | 12.7K/s    | 760K           | 60.2       | 44      | 0        | Good performance, latency increasing slightly |
+| 50         | 2.61     | 3.82     | 5.75     | 13.6     | 16.7K/s    | 1.00M          | 75.7       | 72      | 0        | **🟢 EXCELLENT! Stable performance, similar to 25 conns, throughput +26%** |
+| 100        | 5.23     | 8.79     | 14.97    | 36.42    | 16.2K/s    | 974K           | 87.1       | 109     | 0        | **🔴 DEGRADATION! P90 2.6x slower than 50 conns (5.8ms→15ms), CPU at 87.1%** |
+| 125        | 5.97     | 10.24    | 17.11    | 39.79    | 16.9K/s    | 1.01M          | 83.1       | 132     | 0        | **🟢 STABLE! Similar to 100 conns, slight latency increase, throughput +4%** |
+| 150        | 7.32     | 12.96    | 22.64    | 54.7     | 17.4K/s    | 1.04M          | 82.3       | 162     | 0        | **🟡 Degradation continues: P90 3.9x slower than 50 conns (5.8ms→23ms), CPU 82%** |
+| 200        | 9.95     | 17.97    | 31.25    | 72.38    | 17.1K/s    | 1.03M          | 81.8       | 200     | 0        | **🔴 SEVERE DEGRADATION: P90 5.4x slower than 50 conns (5.8ms→31ms), CPU 82%** |
+| 250        | 12.89    | 24.45    | 43.35    | 103.6    | 16.3K/s    | 978K           | 96.7       | 225     | 0        | **🔴 CRITICAL: P90 7.5x slower than 50 conns (5.8ms→43ms), CPU peaked at 96.7%!** |
+| 300        | 15.48    | 27.91    | 46.28    | 100.81   | 16.6K/s    | 998K           | 80.9       | 223     | 0        | **🔴 SEVERE: P90 8.0x slower than 50 conns (5.8ms→46ms), performance collapsed** |
 
 **Outcome Summary:**
 - Breaking point identified: Between 25-50 connections, P90 latency explodes from ~3ms to ~120ms (health) and ~70ms (JWT)
