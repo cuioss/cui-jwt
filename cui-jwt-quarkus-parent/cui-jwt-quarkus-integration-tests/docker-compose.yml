@@ -85,6 +85,8 @@ services:
       # JFR configuration handled by image variant (distroless vs JFR-enabled)
       - JAVA_OPTS_APPEND=-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.tls.rejectClientInitiatedRenegotiation=true -Djavax.net.ssl.sessionCacheSize=20480 -Djavax.net.ssl.sessionTimeout=300 -Djsse.enableSNIExtension=true -Djdk.tls.maxHandshakeMessageSize=65536 -Djdk.tls.maxCertificateChainLength=10 -Djdk.tls.useExtendedMasterSecret=true
       - QUARKUS_LOG_LEVEL=INFO
+      # Log file path configuration - write to mounted /logs directory
+      - LOG_FILE_PATH=/logs/quarkus.log
 
     depends_on:
       keycloak:
@@ -93,6 +95,8 @@ services:
     volumes:
       # Read-only certificate mount (production pattern)
       - ./src/main/docker/certificates:/app/certificates:ro
+      # Mount target directory for log files (defaults to ./target)
+      - ${LOG_TARGET_DIR:-./target}:/logs:rw
 
     # OWASP Security hardening (production-grade)
     security_opt:

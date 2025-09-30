@@ -305,6 +305,10 @@
                                     <skip>${skip.container.lifecycle}</skip>
                                     <executable>${integration.scripts.dir}/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
+                                    <environmentVariables>
+                                        <!-- Pass target directory for Quarkus file logging -->
+                                        <LOG_TARGET_DIR>${wrk.results.dir}</LOG_TARGET_DIR>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
 
@@ -343,20 +347,18 @@
                             </execution>
 
 
-                            <!-- Dump Quarkus logs for debugging -->
+                            <!-- Dump Keycloak logs for debugging -->
                             <execution>
-                                <id>dump-quarkus-logs</id>
+                                <id>dump-keycloak-logs</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>docker</executable>
+                                    <executable>${integration.scripts.dir}/dump-keycloak-logs.sh</executable>
                                     <arguments>
-                                        <argument>logs</argument>
-                                        <argument>cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1</argument>
+                                        <argument>${wrk.results.dir}</argument>
                                     </arguments>
-                                    <outputFile>${wrk.results.dir}/quarkus-logs.txt</outputFile>
                                 </configuration>
                             </execution>
 

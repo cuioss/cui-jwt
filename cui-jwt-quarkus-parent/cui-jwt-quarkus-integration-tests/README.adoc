@@ -323,8 +323,8 @@ DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
 
 [source,bash]
 ----
-# Dump all container logs (Quarkus + Keycloak with access logs)
-./scripts/dump-quarkus-logs.sh target
+# Dump Keycloak container logs (Quarkus logs are written to target/quarkus.log)
+./scripts/dump-keycloak-logs.sh target
 
 # Manual log inspection
 docker logs cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1

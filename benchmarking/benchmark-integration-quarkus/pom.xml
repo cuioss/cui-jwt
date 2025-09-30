@@ -278,20 +278,24 @@
                                     <skip>${skip.container.lifecycle}</skip>
                                     <executable>${integration.scripts.dir}/start-integration-container.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
+                                    <environmentVariables>
+                                        <!-- Pass target directory for Quarkus file logging -->
+                                        <LOG_TARGET_DIR>${project.build.directory}</LOG_TARGET_DIR>
+                                    </environmentVariables>
                                 </configuration>
                             </execution>
                             <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
                             <!-- No separate CLI execution needed anymore -->
-                            <!-- Dump Quarkus logs before stopping containers -->
+                            <!-- Dump Keycloak logs before stopping containers -->
                             <execution>
-                                <id>dump-quarkus-logs</id>
+                                <id>dump-keycloak-logs</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
                                     <skip>${skip.container.lifecycle}</skip>
-                                    <executable>${integration.scripts.dir}/dump-quarkus-logs.sh</executable>
+                                    <executable>${integration.scripts.dir}/dump-keycloak-logs.sh</executable>
                                     <arguments>
                                         <argument>target</argument>
                                     </arguments>
@@ -405,7 +409,7 @@
                                     <executable>bash</executable>
                                     <arguments>
                                         <argument>-c</argument>
-                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr ${integration.scripts.dir}/start-integration-container.sh</argument>
+                                        <argument>DOCKER_IMAGE_TAG=jfr DOCKERFILE=Dockerfile.native.jfr LOG_TARGET_DIR=${project.build.directory} ${integration.scripts.dir}/start-integration-container.sh</argument>
                                     </arguments>
                                     <workingDirectory>${project.basedir}</workingDirectory>
                                 </configuration>
@@ -477,15 +481,15 @@
                             <!-- Generate HTTP metrics from benchmark results (JFR profile) -->
                             <!-- Metrics processing is now integrated directly in QuarkusIntegrationRunner.java -->
                             <!-- No separate CLI execution needed anymore -->
-                            <!-- Dump Quarkus logs before stopping containers -->
+                            <!-- Dump Keycloak logs before stopping containers -->
                             <execution>
-                                <id>dump-quarkus-logs-jfr</id>
+                                <id>dump-keycloak-logs-jfr</id>
                                 <phase>post-integration-test</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>${integration.scripts.dir}/dump-quarkus-logs.sh</executable>
+                                    <executable>${integration.scripts.dir}/dump-keycloak-logs.sh</executable>
                                     <arguments>
                                         <argument>target</argument>
                                     </arguments>
