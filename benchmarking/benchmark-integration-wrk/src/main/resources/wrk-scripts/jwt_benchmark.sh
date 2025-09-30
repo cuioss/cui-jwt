@@ -22,6 +22,9 @@ BENCHMARK_NAME="jwtValidation"
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Use Docker-based wrk wrapper (supports ARM64 + x86_64)
+WRK_CMD="${SCRIPT_DIR}/wrk-docker-wrapper.sh"
+
 # Record benchmark start time
 BENCHMARK_START_TIME=$(date +%s)
 BENCHMARK_START_ISO=$(date -Iseconds)
@@ -58,14 +61,15 @@ echo ""
 # Export token data for the Lua script
 export TOKEN_DATA
 
-# Run wrk with the optimized script (output goes to stdout for Maven)
-wrk \
+# Run wrk with the optimized script (output goes to stdout for Maven, via Docker wrapper)
+# Lua script is embedded in Docker image at /scripts/
+"$WRK_CMD" \
     -t"$WRK_THREADS" \
     -c"$WRK_CONNECTIONS" \
     -d"$WRK_DURATION" \
     --timeout "$WRK_TIMEOUT" \
     --latency \
-    -s "$SCRIPT_DIR/jwt_benchmark.lua" \
+    -s /scripts/jwt_benchmark.lua \
     "$SERVICE_URL/jwt/validate"
 
 # Record benchmark end time and output to stdout

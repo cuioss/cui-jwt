@@ -32,6 +32,17 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 
 == Architecture
 
+=== WRK Execution
+
+WRK runs via Docker for multi-architecture support (ARM64 + x86_64):
+
+* **Docker Image**: `wrk:local` built from `Dockerfile.wrk` (Alpine-based, 10MB)
+* **Lua Scripts**: Embedded in image at `/scripts/` (health_live_check.lua, jwt_benchmark.lua)
+* **Wrapper**: `wrk-docker-wrapper.sh` handles one-time build and parameter pass-through
+* **No Installation Required**: Docker automatically selects correct architecture variant
+
+The wrapper is minimal (36 lines) and necessary for image build logic, TOKEN_DATA forwarding, and network configuration.
+
 === Components
 
 * **WRK Scripts** (`src/main/resources/wrk-scripts/`) - Lua scripts for request generation

@@ -1,0 +1,29 @@
+# Multi-architecture WRK Docker image with embedded Lua scripts
+# Supports: linux/amd64, linux/arm64
+#
+# Build: docker build -t wrk:local -f Dockerfile.wrk .
+# Usage: docker run --rm --network host wrk:local -t2 -c10 -d10s --latency https://example.com
+#        docker run --rm --network host wrk:local -t2 -c10 -d10s -s /scripts/health_live_check.lua https://example.com
+
+FROM alpine:latest
+
+# Install WRK from Alpine community repository
+# Works on both amd64 and arm64 architectures
+RUN apk add --no-cache wrk
+
+# Copy Lua benchmark scripts into image
+COPY benchmarking/benchmark-integration-wrk/src/main/resources/wrk-scripts/*.lua /scripts/
+
+# Set wrk as entrypoint
+ENTRYPOINT ["wrk"]
+
+# Default help message
+CMD ["--help"]
+
+# Labels
+LABEL org.opencontainers.image.title="WRK HTTP Benchmark Tool"
+LABEL org.opencontainers.image.description="Multi-architecture WRK image with embedded benchmark scripts"
+LABEL org.opencontainers.image.version="4.2.0-alpine"
+LABEL org.opencontainers.image.authors="CUI JWT Team"
+LABEL org.opencontainers.image.source="https://github.com/wg/wrk"
+LABEL multi-arch="linux/amd64,linux/arm64"
