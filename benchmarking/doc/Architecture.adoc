@@ -80,7 +80,7 @@ Foundation framework providing shared utilities, configuration, metrics processi
 |`BenchmarkConfiguration`, `BenchmarkType`, `IntegrationConfiguration`, `ReportConfiguration`
 
 |Metrics Collection
-|`PrometheusClient`, `PrometheusMetricsManager`, `MetricsOrchestrator`, `MetricsFileProcessor`
+|`PrometheusClient`, `PrometheusMetricsManager`, `MetricsOrchestrator`
 
 |Metrics Processing
 |`BenchmarkMetricsTransformer`, `MetricsTransformer`, `MetricsComputer`, `StatisticsCalculator`
