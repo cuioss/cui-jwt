@@ -49,9 +49,11 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-006 |TOKEN |Skipping disabled issuer configuration %s |Logged when an issuer configuration is skipped because it's disabled
 |JWTValidation-007 |JWKS |Successfully resolved JWKS URI from well-known endpoint: %s |Logged when JWKS URI is successfully resolved via well-known discovery
 |JWTValidation-008 |RETRY |Retry operation '%s' completed successfully after %s attempts in %sms |Logged when a retry operation completes successfully with timing information
+|JWTValidation-009 |JWKS |JWKS loaded successfully for issuer: %s |Logged when JWKS is successfully loaded for a specific issuer
+|JWTValidation-010 |ISSUER |Issuer configuration loaded successfully: %s |Logged when an issuer configuration is successfully loaded
 |===
 
-== WARN Level (100-134)
+== WARN Level (100-147)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -91,9 +93,22 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-132 |RETRY |Retry operation '%s' failed after %s attempts in %sms |Logged when a retry operation fails after exhausting all attempts
 |JWTValidation-133 |JSON |Failed to parse JWKS JSON: %s |Logged when JSON parsing fails for JWKS content and an empty result is returned as fallback
 |JWTValidation-134 |ISSUER |IssuerConfig for issuer '%s' has claimSubOptional=true. This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. Use this setting only when necessary and ensure appropriate alternative validation mechanisms. |Logged when an issuer configuration has the subject claim marked as optional, which violates RFC 7519 requirements
+|JWTValidation-135 |JWKS |Invalid Base64 URL encoding detected for JWK field: %s |Logged when Base64 URL encoding validation fails for a JWK field
+|JWTValidation-136 |JWKS |Background refresh skipped - no HTTP handler available |Logged when background JWKS refresh is skipped because no HTTP handler is available
+|JWTValidation-137 |JWKS |Background refresh IO error: %s for issuer: %s |Logged when an IO error occurs during background JWKS refresh for a specific issuer
+|JWTValidation-138 |JWKS |Background refresh parse error: %s for issuer: %s |Logged when a JSON parsing error occurs during background JWKS refresh for a specific issuer
+|JWTValidation-139 |JWKS |Background refresh key processing error: %s for issuer: %s |Logged when a key processing error occurs during background JWKS refresh for a specific issuer
+|JWTValidation-140 |ISSUER |Failed to load issuer configuration for %s, status: %s |Logged when issuer configuration loading fails with a specific status
+|JWTValidation-141 |JWKS |Timeout waiting for JWKS to load for issuer: %s |Logged when JWKS loading times out for a specific issuer
+|JWTValidation-142 |JWKS |Interrupted while waiting for JWKS to load for issuer: %s |Logged when the thread is interrupted while waiting for JWKS to load
+|JWTValidation-143 |JWKS |Configured issuer '%s' does not match discovered issuer '%s' from well-known document |Logged when there is a mismatch between configured and discovered issuer from well-known endpoint
+|JWTValidation-144 |JWKS |Using insecure HTTP protocol for JWKS endpoint: %s - HTTPS should be used in production |Logged when an insecure HTTP protocol is used for JWKS endpoint instead of HTTPS
+|JWTValidation-145 |JWKS |DSL-JSON returned null for JWKS parsing |Logged when DSL-JSON parser returns null while parsing JWKS content
+|JWTValidation-146 |JWKS |Failed to parse JWKS content: %s |Logged when JWKS content parsing fails due to IO error
+|JWTValidation-147 |JWKS |Invalid JWKS JSON structure: %s |Logged when JWKS JSON structure is invalid or malformed
 |===
 
-== ERROR Level (200-209)
+== ERROR Level (200-211)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -108,6 +123,8 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-207 |CACHE |Unexpected error while caching token |Logged when an unexpected error occurs while storing a validated token in the cache
 |JWTValidation-208 |CACHE |Validation function returned null instead of throwing exception |Logged when a validation function unexpectedly returns null instead of throwing an exception on failure
 |JWTValidation-209 |CACHE |Error during cache eviction |Logged when an error occurs during background cache eviction operations
+|JWTValidation-210 |JWKS |JWKS initialization failed: %s for issuer: %s |Logged when JWKS initialization fails for a specific issuer with error details
+|JWTValidation-211 |JWKS |JWKS load execution failed: %s for issuer: %s |Logged when JWKS load execution fails for a specific issuer with error details
 |===
 
 == Quarkus Integration Messages
@@ -193,15 +210,6 @@ This section documents log messages specific to the Quarkus integration module (
 |CUI_JWT_QUARKUS-066 |ACCESS_LOG_ENTRY |"%s" |Individual access log entry in the configured format
 |===
 
-==== Integration Test Endpoint Messages (071-080)
-
-[cols="1,2,3,4", options="header"]
-|===
-|ID |LogRecord |Template |Description
-
-|CUI_JWT_QUARKUS-071 |JWT_VALIDATION_ENDPOINT_INITIALIZED |"JwtValidationEndpoint initialized with TokenValidator and lazy BearerTokenResult instances" |Indicates successful initialization of the integration test JWT validation endpoint
-|===
-
 === Quarkus WARN Level (100-199)
 
 ==== Health Check Warnings (100-110)
@@ -234,17 +242,6 @@ This section documents log messages specific to the Quarkus integration module (
 |CUI_JWT_QUARKUS-135 |BACKGROUND_JWKS_ISSUES_WARNING |"Background JWKS initialization encountered issues: %s - on-demand loading will handle this" |Indicates issues during background JWKS initialization with fallback to on-demand loading
 |===
 
-==== Integration Test Token Validation Warnings (141-150)
-
-[cols="1,2,3,4", options="header"]
-|===
-|ID |LogRecord |Template |Description
-
-|CUI_JWT_QUARKUS-141 |EXPLICIT_TOKEN_VALIDATION_FAILED |"Explicit token validation failed: %s" |Indicates that explicit token validation failed in integration test endpoint
-|CUI_JWT_QUARKUS-142 |ID_TOKEN_VALIDATION_FAILED |"ID token validation failed: %s" |Indicates that ID token validation failed in integration test endpoint
-|CUI_JWT_QUARKUS-143 |REFRESH_TOKEN_VALIDATION_FAILED |"Refresh token validation failed: %s" |Indicates that refresh token validation failed in integration test endpoint
-|===
-
 === Quarkus ERROR Level (200-299)
 
 ==== Infrastructure Errors (200-210)
@@ -254,13 +251,4 @@ This section documents log messages specific to the Quarkus integration module (
 |ID |LogRecord |Template |Description
 
 |CUI_JWT_QUARKUS-201 |VERTX_REQUEST_CONTEXT_UNAVAILABLE |"Vertx HttpServerRequest context is unavailable - no active request context found" |Indicates that the Vertx HTTP server request context could not be resolved
-|===
-
-==== Integration Test Token Validation Errors (202-210)
-
-[cols="1,2,3,4", options="header"]
-|===
-|ID |LogRecord |Template |Description
-
-|CUI_JWT_QUARKUS-202 |BEARER_TOKEN_CONTENT_MISSING_AFTER_SUCCESS |"Bearer token authorized but no AccessTokenContent present for: %s" |Indicates an inconsistent state where token was authorized but content is missing
 |===
