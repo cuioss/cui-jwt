@@ -93,11 +93,11 @@ public class PrometheusMetricsManager {
         Instant startTime = Instant.now();
         timestampTracker.compute(benchmarkName, (key, existing) -> {
             if (existing != null) {
-                LOGGER.warn("Overwriting existing start time for benchmark: {}", benchmarkName);
+                LOGGER.warn("Overwriting existing start time for benchmark: %s", benchmarkName);
             }
             return new BenchmarkTimestamps(startTime, null);
         });
-        LOGGER.debug("Benchmark '{}' started at: {}", benchmarkName, startTime);
+        LOGGER.debug("Benchmark '%s' started at: %s", benchmarkName, startTime);
     }
 
     /**
@@ -110,13 +110,13 @@ public class PrometheusMetricsManager {
      */
     public void recordBenchmarkTimestamps(String benchmarkName, Instant startTime, Instant endTime) {
         if (startTime == null || endTime == null) {
-            LOGGER.warn("Invalid timestamps for benchmark '{}': start={}, end={}",
+            LOGGER.warn("Invalid timestamps for benchmark '%s': start=%s, end=%s",
                     benchmarkName, startTime, endTime);
             return;
         }
 
         timestampTracker.put(benchmarkName, new BenchmarkTimestamps(startTime, endTime));
-        LOGGER.debug("Recorded timestamps for benchmark '{}': {} to {}",
+        LOGGER.debug("Recorded timestamps for benchmark '%s': %s to %s",
                 benchmarkName, startTime, endTime);
     }
 
@@ -204,15 +204,15 @@ public class PrometheusMetricsManager {
                     prometheusDir, benchmarkName, METRICS_FILE_SUFFIX);
 
         } catch (Exception e) {
-            LOGGER.error("Failed to collect Prometheus metrics for benchmark '{}' from URL: {}",
+            LOGGER.error("Failed to collect Prometheus metrics for benchmark '%s' from URL: %s",
                     benchmarkName, prometheusUrl, e);
-            LOGGER.debug("Attempted to query metrics for time range: {} to {}", startTime, endTime);
+            LOGGER.debug("Attempted to query metrics for time range: %s to %s", startTime, endTime);
         }
     }
 
     private void collectMetricsForBenchmark(String benchmarkName, MetricsOrchestrator orchestrator,
             Path prometheusDir) {
-        LOGGER.debug("Collecting metrics for benchmark: '{}', available keys: {}",
+        LOGGER.debug("Collecting metrics for benchmark: '%s', available keys: %s",
                 benchmarkName, timestampTracker.keySet());
 
         // Get the specific timestamps for this benchmark
@@ -257,10 +257,10 @@ public class PrometheusMetricsManager {
 
     private boolean isPrometheusAvailable() {
         try {
-            LOGGER.debug("Checking Prometheus availability at URL: {}", prometheusUrl);
+            LOGGER.debug("Checking Prometheus availability at URL: %s", prometheusUrl);
             PrometheusClient client = new PrometheusClient(prometheusUrl);
             client.queryRange(List.of("up"), Instant.now().minusSeconds(60), Instant.now(), Duration.ofSeconds(10));
-            LOGGER.debug("Prometheus is available and responding at: {}", prometheusUrl);
+            LOGGER.debug("Prometheus is available and responding at: %s", prometheusUrl);
             return true;
         } catch (Exception e) {
             LOGGER.error("Prometheus connectivity check failed at URL: {} - Error: {} ({})",

@@ -158,7 +158,7 @@ public abstract class AbstractBenchmarkRunner {
     protected void beforeBenchmark(BenchmarkConfiguration config) {
         // Record benchmark start time for real-time metrics collection
         benchmarkStartTime = Instant.now();
-        LOGGER.debug("Benchmark execution started at: {}", benchmarkStartTime);
+        LOGGER.debug("Benchmark execution started at: %s", benchmarkStartTime);
 
         // Record start time for each benchmark if we know the names
         if (config.throughputBenchmarkName() != null) {
@@ -179,7 +179,7 @@ public abstract class AbstractBenchmarkRunner {
      * @param config the benchmark configuration
      */
     protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
-        LOGGER.debug("Benchmark execution completed at: {}", benchmarkEndTime);
+        LOGGER.debug("Benchmark execution completed at: %s", benchmarkEndTime);
     }
 
 
@@ -209,7 +209,7 @@ public abstract class AbstractBenchmarkRunner {
         Path timestampsFile = outputPath.resolve("jmh-iteration-timestamps.jsonl");
 
         if (!Files.exists(timestampsFile)) {
-            LOGGER.debug("No timestamp file found at {}, using session-wide timestamps", timestampsFile);
+            LOGGER.debug("No timestamp file found at %s, using session-wide timestamps", timestampsFile);
             recordSessionTimestamps(results);
             return;
         }

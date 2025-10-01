@@ -38,7 +38,6 @@ import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.JsonFields.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.NOT_FOUND_FORMAT;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Templates.PATH_PREFIX;
-import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.DEBUG;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
@@ -83,7 +82,7 @@ public class GitHubPagesGenerator {
      * Generates a 404 error page.
      */
     private void generate404Page(Path deployDir) throws IOException {
-        LOGGER.debug(DEBUG.GENERATING_ADDITIONAL_PAGES::format);
+        LOGGER.debug("Generating additional pages");
         String html404 = loadTemplate(ERROR_404);
         Files.writeString(deployDir.resolve(ERROR_404), html404);
     }
@@ -108,7 +107,7 @@ public class GitHubPagesGenerator {
      * Generates API endpoints for programmatic access.
      */
     private void generateApiEndpoints(OutputDirectoryStructure structure) throws IOException {
-        LOGGER.debug(DEBUG.CREATING_API_ENDPOINTS::format);
+        LOGGER.debug("Creating API endpoints");
 
         Path deployDir = structure.getDeploymentDir();
         Path apiDir = structure.getApiDir();
@@ -146,7 +145,7 @@ public class GitHubPagesGenerator {
         latestData.put(LINKS, links);
 
         Files.writeString(latestFile, JsonSerializationHelper.toJson(latestData));
-        LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(latestFile));
+        LOGGER.debug("Created API endpoint: %s", latestFile);
     }
 
     private void createBenchmarksEndpoint(Path deployDir, Path apiDir) throws IOException {
@@ -170,7 +169,7 @@ public class GitHubPagesGenerator {
             Files.writeString(benchmarksFile, JsonSerializationHelper.toJson(benchmarksData));
         }
 
-        LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(benchmarksFile));
+        LOGGER.debug("Created API endpoint: %s", benchmarksFile);
     }
 
     private void createStatusEndpoint(Path deployDir, Path apiDir) throws IOException {
@@ -190,7 +189,7 @@ public class GitHubPagesGenerator {
         }
 
         Files.writeString(statusFile, JsonSerializationHelper.toJson(statusData));
-        LOGGER.debug(DEBUG.API_ENDPOINT_CREATED.format(statusFile));
+        LOGGER.debug("Created API endpoint: %s", statusFile);
     }
 
     /**

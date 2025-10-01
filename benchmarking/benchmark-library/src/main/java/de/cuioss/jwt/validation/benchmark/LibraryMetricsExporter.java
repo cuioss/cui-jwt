@@ -31,6 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN;
+
 /**
  * Metrics exporter for library benchmarks that exports StripedRingBufferStatistics
  * from TokenValidatorMonitor. This handles JVM-level performance metrics.
@@ -76,8 +78,8 @@ public class LibraryMetricsExporter {
 
     public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
         if (!(metricsData instanceof TokenValidatorMonitor)) {
-            LOGGER.warn("Invalid metrics data type: expected TokenValidatorMonitor, got {}",
-                    metricsData != null ? metricsData.getClass().getName() : "null");
+            LOGGER.warn(WARN.INVALID_METRICS_TYPE.format(
+                    metricsData != null ? metricsData.getClass().getName() : "null"));
             return;
         }
 

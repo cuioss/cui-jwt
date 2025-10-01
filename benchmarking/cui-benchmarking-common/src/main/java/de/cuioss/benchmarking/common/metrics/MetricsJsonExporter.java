@@ -72,10 +72,10 @@ public class MetricsJsonExporter {
         this.targetDirectory = targetDirectory;
         try {
             Files.createDirectories(targetDirectory);
-            LOGGER.debug("MetricsJsonExporter initialized with target directory: {} (exists: {})",
+            LOGGER.debug("MetricsJsonExporter initialized with target directory: %s (exists: %s)",
                     targetDirectory.toAbsolutePath(), Files.exists(targetDirectory));
         } catch (IOException e) {
-            LOGGER.warn("Failed to create target directory: {}", targetDirectory, e);
+            LOGGER.warn("Failed to create target directory: %s", targetDirectory, e);
         }
     }
 
@@ -92,7 +92,7 @@ public class MetricsJsonExporter {
         try (FileWriter writer = new FileWriter(outputFile.toFile())) {
             GSON.toJson(metricsData, writer);
             writer.flush();
-            LOGGER.debug("Exported metrics to: {}", outputFile.toAbsolutePath());
+            LOGGER.debug("Exported metrics to: %s", outputFile.toAbsolutePath());
         }
     }
 
@@ -106,7 +106,7 @@ public class MetricsJsonExporter {
      */
     public void exportJwtValidationMetrics(String benchmarkMethodName, Instant timestamp,
             Map<String, Double> allMetrics) throws IOException {
-        LOGGER.debug("Exporting JWT validation metrics for: {}", benchmarkMethodName);
+        LOGGER.debug("Exporting JWT validation metrics for: %s", benchmarkMethodName);
 
         if (isJwtValidationBenchmark(benchmarkMethodName)) {
             Map<String, Object> timedMetrics = extractTimedMetrics(allMetrics);
@@ -120,7 +120,7 @@ public class MetricsJsonExporter {
             String simpleBenchmarkName = extractSimpleBenchmarkName(benchmarkMethodName);
             updateAggregatedMetrics("integration-metrics.json", simpleBenchmarkName, benchmarkData);
         } else {
-            LOGGER.debug("Benchmark {} is not JWT validation, raw metrics were saved", benchmarkMethodName);
+            LOGGER.debug("Benchmark %s is not JWT validation, raw metrics were saved", benchmarkMethodName);
         }
     }
 
@@ -165,7 +165,7 @@ public class MetricsJsonExporter {
         }
 
         exportToFile(fileName, allMetrics);
-        LOGGER.debug("Updated {} with {} benchmarks", fileName, allMetrics.size());
+        LOGGER.debug("Updated %s with %s benchmarks", fileName, allMetrics.size());
     }
 
     /**

@@ -109,14 +109,14 @@ public class KeycloakTokenRepository implements TokenProvider {
     }
 
     private void initializeTokenPool() {
-        LOGGER.debug("Initializing token pool with {} tokens", config.getTokenPoolSize());
+        LOGGER.debug("Initializing token pool with %s tokens", config.getTokenPoolSize());
 
         for (int i = 0; i < config.getTokenPoolSize(); i++) {
             String token = fetchSingleToken();
             tokenPool.add(new TokenInfo(token));
         }
 
-        LOGGER.debug("Token pool initialized with {} tokens", tokenPool.size());
+        LOGGER.debug("Token pool initialized with %s tokens", tokenPool.size());
     }
 
     private String fetchSingleToken() {
@@ -216,7 +216,7 @@ public class KeycloakTokenRepository implements TokenProvider {
      * @throws TokenFetchException if unable to fetch new tokens from Keycloak
      */
     @Override public void refreshTokens() {
-        LOGGER.debug("Refreshing token pool with {} tokens", config.getTokenPoolSize());
+        LOGGER.debug("Refreshing token pool with %s tokens", config.getTokenPoolSize());
 
         tokenPool.clear();
 
@@ -228,6 +228,6 @@ public class KeycloakTokenRepository implements TokenProvider {
         // Reset the index to start from the beginning
         tokenIndex.set(0);
 
-        LOGGER.debug("Token pool refreshed with {} tokens", tokenPool.size());
+        LOGGER.debug("Token pool refreshed with %s tokens", tokenPool.size());
     }
 }

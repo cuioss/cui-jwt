@@ -28,6 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+
 /**
  * JFR-enabled benchmark runner for JWT validation performance analysis with variance metrics.
  * <p>
@@ -71,8 +73,8 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
     @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
-        LOGGER.info("JFR-instrumented benchmarks starting - Key cache initialized");
-        LOGGER.info("JFR recording will be saved to: " + config.resultsDirectory() + "/jfr-benchmark.jfr");
+        LOGGER.info(INFO.JFR_BENCHMARKS_STARTING.format());
+        LOGGER.info(INFO.JFR_RECORDING_PATH.format(config.resultsDirectory() + "/jfr-benchmark.jfr"));
     }
 
     @Override protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
@@ -90,9 +92,8 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
     }
 
     @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
-        LOGGER.info("JFR benchmark completed. To analyze variance:");
-        LOGGER.info("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer " +
-                config.resultsDirectory() + "/jfr-benchmark.jfr");
+        LOGGER.info(INFO.JFR_BENCHMARK_COMPLETED.format());
+        LOGGER.info(INFO.JFR_VARIANCE_COMMAND.format(config.resultsDirectory() + "/jfr-benchmark.jfr"));
     }
 
     @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {

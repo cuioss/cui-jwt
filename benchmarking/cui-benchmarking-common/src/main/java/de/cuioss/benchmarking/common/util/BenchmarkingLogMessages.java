@@ -348,22 +348,64 @@ public final class BenchmarkingLogMessages {
         /** Message when key cache is initialized. */
         public static final LogRecord KEY_CACHE_INITIALIZED = LogRecordModel.builder()
                 .prefix(PREFIX)
-                .identifier(30)
+                .identifier(44)
                 .template("BenchmarkKeyCache: Initialized with %s configurations")
                 .build();
 
         /** Message when Quarkus JWT integration benchmarks start. */
         public static final LogRecord QUARKUS_BENCHMARKS_STARTING = LogRecordModel.builder()
                 .prefix(PREFIX)
-                .identifier(31)
+                .identifier(45)
                 .template("Quarkus JWT integration benchmarks starting - Service: %s, Keycloak: %s")
                 .build();
 
         /** Message when processing results starts. */
         public static final LogRecord PROCESSING_RESULTS_STARTING = LogRecordModel.builder()
                 .prefix(PREFIX)
-                .identifier(32)
+                .identifier(46)
                 .template("QuarkusIntegrationRunner.processResults() - Starting with %s results")
+                .build();
+
+        /** Message when results are available. */
+        public static final LogRecord RESULTS_AVAILABLE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(47)
+                .template("Results available at: %s")
+                .build();
+
+        /** Message when starting to process WRK results. */
+        public static final LogRecord WRK_PROCESSING_START = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(48)
+                .template("Start processing WRK results")
+                .build();
+
+        /** Message when JFR instrumented benchmarks start. */
+        public static final LogRecord JFR_BENCHMARKS_STARTING = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(49)
+                .template("JFR-instrumented benchmarks starting - Key cache initialized")
+                .build();
+
+        /** Message when JFR recording will be saved. */
+        public static final LogRecord JFR_RECORDING_PATH = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(50)
+                .template("JFR recording will be saved to: %s")
+                .build();
+
+        /** Message when JFR benchmark completed. */
+        public static final LogRecord JFR_BENCHMARK_COMPLETED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(51)
+                .template("JFR benchmark completed. To analyze variance:")
+                .build();
+
+        /** Message showing how to run variance analysis. */
+        public static final LogRecord JFR_VARIANCE_COMMAND = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(52)
+                .template("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer %s")
                 .build();
 
     }
@@ -412,6 +454,13 @@ public final class BenchmarkingLogMessages {
                 .identifier(104)
                 .template("BenchmarkKeyCache miss for count=%s. Generating keys during benchmark!")
                 .build();
+
+        /** Warning when invalid metrics data type. */
+        public static final LogRecord INVALID_METRICS_TYPE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(105)
+                .template("Invalid metrics data type: expected TokenValidatorMonitor, got %s")
+                .build();
     }
 
     /**
@@ -430,58 +479,90 @@ public final class BenchmarkingLogMessages {
                 .identifier(200)
                 .template("Failed to export benchmark metrics")
                 .build();
+
+        /** Error when WRK result processor fails. */
+        public static final LogRecord WRK_PROCESSOR_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(201)
+                .template("Failed to execute WRK result processor")
+                .build();
+
+        /** Error when WRK usage is incorrect. */
+        public static final LogRecord WRK_USAGE_ERROR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(202)
+                .template("Usage: WrkResultPostProcessor <input-dir> [output-dir]")
+                .build();
+
+        /** Error when no WRK output files found. */
+        public static final LogRecord NO_WRK_FILES = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(203)
+                .template("No WRK output files found in: %s")
+                .build();
+
+        /** Error when WRK output directory does not exist. */
+        public static final LogRecord WRK_DIR_NOT_EXIST = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(204)
+                .template("WRK output directory does not exist: %s")
+                .build();
+
+        /** Error when no benchmark data extracted. */
+        public static final LogRecord NO_BENCHMARK_DATA = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(205)
+                .template("No benchmark data extracted from WRK output files")
+                .build();
+
+        /** Error when cannot collect Prometheus metrics. */
+        public static final LogRecord NO_PROMETHEUS_METADATA = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(206)
+                .template("Cannot collect Prometheus metrics: no benchmark metadata available")
+                .build();
+
+        /** Error when no metadata found for benchmark. */
+        public static final LogRecord NO_METADATA_FOR_BENCHMARK = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(207)
+                .template("No metadata found for benchmark: %s")
+                .build();
+
+        /** Error when failed to copy Prometheus metrics file. */
+        public static final LogRecord FAILED_COPY_PROMETHEUS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(208)
+                .template("Failed to copy Prometheus metrics file: %s")
+                .build();
+
+        /** Error when failed to copy Prometheus metrics to deployment directory. */
+        public static final LogRecord FAILED_COPY_PROMETHEUS_DIR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(209)
+                .template("Failed to copy Prometheus metrics to deployment directory")
+                .build();
+
+        /** Error when missing timestamps in results. */
+        public static final LogRecord MISSING_TIMESTAMPS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(210)
+                .template("Missing start or end timestamp in result file: %s")
+                .build();
+
+        /** Error when failed to parse metadata. */
+        public static final LogRecord FAILED_PARSE_METADATA = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(211)
+                .template("Failed to parse metadata from %s: %s")
+                .build();
+
+        /** Error when incomplete metadata found. */
+        public static final LogRecord INCOMPLETE_METADATA = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(212)
+                .template("Incomplete metadata in file %s (name=%s, start=%s, end=%s)")
+                .build();
     }
 
-    /**
-     * DEBUG level messages for detailed diagnostic information.
-     */
-    public static final class DEBUG {
-
-        /** Private constructor to prevent instantiation. */
-        private DEBUG() {
-            // utility class
-        }
-
-        /** Debug message when copying HTML files. */
-        public static final LogRecord COPYING_HTML_FILES = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(500)
-                .template("Copying HTML files")
-                .build();
-
-        /** Debug message when creating API endpoints. */
-        public static final LogRecord CREATING_API_ENDPOINTS = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(501)
-                .template("Creating API endpoints")
-                .build();
-
-        /** Debug message when API endpoint is created. */
-        public static final LogRecord API_ENDPOINT_CREATED = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(502)
-                .template("Created API endpoint: %s")
-                .build();
-
-        /** Debug message when copying badge files. */
-        public static final LogRecord COPYING_BADGE_FILES = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(503)
-                .template("Copying badge files")
-                .build();
-
-        /** Debug message when copying data files. */
-        public static final LogRecord COPYING_DATA_FILES = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(504)
-                .template("Copying data files")
-                .build();
-
-        /** Debug message when generating additional pages. */
-        public static final LogRecord GENERATING_ADDITIONAL_PAGES = LogRecordModel.builder()
-                .prefix(PREFIX)
-                .identifier(505)
-                .template("Generating additional pages")
-                .build();
-    }
 }
