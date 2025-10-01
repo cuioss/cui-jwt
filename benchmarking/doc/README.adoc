@@ -13,7 +13,7 @@ The benchmarking infrastructure provides comprehensive performance testing for J
 * **Performance Tracking** - Historical trends and quality gates
 * **Common Infrastructure** - Shared utilities in cui-benchmarking-common for consistency
 
-For building and running benchmarks, see the link:../benchmark-library/README.adoc[benchmark library README] and link:../benchmark-integration-quarkus/README.adoc[integration benchmark README].
+For building and running benchmarks, see the link:../benchmark-library/README.adoc[benchmark library README] and link:../benchmark-integration-wrk/README.adoc[WRK integration benchmark README].
 
 == Quick Access
 
@@ -25,9 +25,6 @@ For local development and testing of benchmark results:
 ----
 # Run micro benchmarks
 ./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
-
-# Run integration benchmarks
-./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
 
 # Run WRK load testing benchmarks
 ./mvnw verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
@@ -72,16 +69,6 @@ Located in `benchmarking/benchmark-library`:
 * `SimpleErrorLoadBenchmark` - Error handling and resilience testing
 * Automatic generation of performance badges and reports
 * Quality gates for throughput and latency
-
-=== Integration Benchmarks (benchmark-integration-quarkus)
-
-Located in `benchmarking/benchmark-integration-quarkus`:
-
-* End-to-end JWT validation with Quarkus native image
-* `JwtValidationBenchmark` - Real-world JWT validation performance
-* `JwtHealthBenchmark` - Health check endpoint baseline
-* Network overhead and containerization impact measurement
-* JMH profilers for GC, stack, and compilation analysis
 
 === Load Testing Benchmarks (benchmark-integration-wrk)
 

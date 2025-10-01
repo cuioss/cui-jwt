@@ -24,8 +24,8 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules de
 |benchmark-library
 |Micro-benchmarks for JWT validation library performance testing
 
-|benchmark-integration-quarkus
-|End-to-end integration benchmarks against live Quarkus applications
+|benchmark-integration-wrk
+|HTTP load testing using WRK for real-world performance validation
 |===
 
 == Module Dependency Diagram
@@ -34,7 +34,7 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules de
 ----
 ┌─────────────────────────────────────────────────────────────┐
 │                    External Dependencies                    │
-│  (JMH, Keycloak, Docker, Quarkus, HdrHistogram, Apache IO) │
+│  (JMH, Keycloak, Docker, Quarkus, WRK, HdrHistogram)       │
 └─────────────────┬───────────────────────────────────────────┘
                   │
                   ▼
@@ -52,12 +52,12 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules de
          ┌─────────┴──────────┐
          ▼                    ▼
 ┌──────────────────┐  ┌───────────────────────────┐
-│ benchmark-library│  │benchmark-integration-     │
-│                  │  │         quarkus           │
-│ • Library perf   │  │                           │
-│ • JFR profiling  │  │ • E2E integration tests   │
-│ • Micro-bench    │  │ • Container management    │
-│                  │  │ • Service orchestration   │
+│ benchmark-library│  │benchmark-integration-wrk  │
+│                  │  │                           │
+│ • Library perf   │  │ • WRK load testing        │
+│ • JFR profiling  │  │ • HTTP benchmarks         │
+│ • Micro-bench    │  │ • Metrics collection      │
+│                  │  │                           │
 └──────────────────┘  └───────────────────────────┘
          │                           │
          ▼                           ▼
@@ -160,10 +160,10 @@ Executes micro-benchmarks directly against the JWT validation library to measure
 * `benchmark` - Standard micro-benchmarks (< 10 minutes)
 * `benchmark-jfr` - Benchmarks with JFR profiling enabled
 
-=== benchmark-integration-quarkus
+=== benchmark-integration-wrk
 
 ==== Primary Responsibility
-Performs end-to-end integration testing against containerized Quarkus applications to measure real-world performance including network overhead and service interactions.
+Performs HTTP-based load testing using WRK to measure real-world JWT validation performance under high load with accurate throughput and latency measurements.
 
 ==== Core Components
 
@@ -171,21 +171,21 @@ Performs end-to-end integration testing against containerized Quarkus applicatio
 |===
 |Component |Responsibility |Key Classes
 
-|Integration Benchmarks
-|End-to-end testing of JWT validation in Quarkus applications
-|`JwtValidationBenchmark`, `JwtHealthBenchmark`
+|WRK Benchmarks
+|HTTP load testing of JWT validation endpoints
+|`WrkBenchmarkRunner`
 
 |Container Management
 |Docker container lifecycle for Quarkus and Keycloak services
 |`ContainerManager`, `ServiceOrchestrator`
 
-|Integration Runners
-|Specialized runners for container-based benchmarks
-|`QuarkusIntegrationRunner`
-
 |Metrics Integration
-|Collection and processing of Quarkus application metrics
-|`MetricsPostProcessor`, `QuarkusMetricsCollector`
+|Collection of real-time metrics via Prometheus
+|`PrometheusClient`, `MetricsOrchestrator`
+
+|Result Processing
+|Processing and transformation of WRK results
+|`WrkResultProcessor`, `WrkResultPostProcessor`
 
 |Service Configuration
 |Management of service URLs and authentication
@@ -202,6 +202,9 @@ Quarkus Application:  https://localhost:10443
 
 Keycloak Server:      https://localhost:1443
 └── /auth/realms/...  # Token issuance
+
+Prometheus:           http://localhost:9090
+└── /api/v1/query     # Metrics API
 ----
 
 == Code Placement Rules
@@ -230,15 +233,15 @@ Is the code benchmark-specific?
         │       │
         │       └─NO──> Place in benchmark-library
         │
-        └─NO──> Is it for integration testing?
+        └─NO──> Is it for WRK load testing?
                 │
                 ├─YES─> Does it manage containers?
                 │       │
-                │       ├─YES─> Place in benchmark-integration-quarkus
+                │       ├─YES─> Place in benchmark-integration-wrk
                 │       │
-                │       └─NO──> Does it test endpoints?
+                │       └─NO──> Does it test HTTP endpoints?
                 │               │
-                │               ├─YES─> Place in benchmark-integration-quarkus
+                │               ├─YES─> Place in benchmark-integration-wrk
                 │               │
                 │               └─NO──> Place in cui-benchmarking-common
                 │
@@ -262,12 +265,12 @@ Is the code benchmark-specific?
 * Creating library-specific performance optimizations
 * Building micro-benchmark runners or scorers
 
-==== Place in benchmark-integration-quarkus when:
-* Code tests Quarkus application endpoints
-* Managing Docker containers or services
-* Implementing integration-specific benchmarks
-* Collecting Quarkus-specific metrics
-* Orchestrating multi-service test scenarios
+==== Place in benchmark-integration-wrk when:
+* Code performs WRK-based HTTP load testing
+* Managing Docker containers for integration tests
+* Processing WRK benchmark results
+* Collecting Prometheus metrics during benchmarks
+* Orchestrating multi-service test scenarios with WRK
 
 == Examples of Proper Code Placement
 
@@ -310,22 +313,21 @@ public class AlgorithmComparisonBenchmark {
 }
 ----
 
-=== Example 3: Quarkus Circuit Breaker Testing
+=== Example 3: WRK Load Testing Scenario
 
-*Scenario:* Testing JWT validation with Quarkus circuit breaker patterns
+*Scenario:* Testing JWT validation under high concurrent load with WRK
 
-*Correct Placement:* `benchmark-integration-quarkus/src/main/java/de/cuioss/benchmarking/integration/CircuitBreakerBenchmark.java`
+*Correct Placement:* `benchmark-integration-wrk/src/main/java/de/cuioss/benchmarking/wrk/WrkLoadTestBenchmark.java`
 
-*Rationale:* Tests Quarkus-specific features in containerized environment
+*Rationale:* HTTP load testing using WRK against containerized services
 
 [source,java]
 ----
-package de.cuioss.benchmarking.integration;
+package de.cuioss.benchmarking.wrk;
 
-public class CircuitBreakerBenchmark extends AbstractIntegrationBenchmark {
-    @Benchmark
-    public void measureCircuitBreakerResponse() {
-        // Test against running Quarkus container
+public class WrkLoadTestBenchmark extends AbstractWrkBenchmark {
+    public void measureHighLoadPerformance() {
+        // Run WRK against Quarkus container with high connection count
     }
 }
 ----
@@ -406,7 +408,7 @@ Different benchmark types use different strategies:
        └─> 3. Runner prepares resources (tokens, clients)
            └─> 4. Execute benchmark-specific tests
                ├─> Library: Direct JMH execution
-               └─> Integration: Container orchestration
+               └─> WRK: HTTP load testing via Docker
            └─> 5. Collect metrics via common interfaces
                └─> 6. Process results using common pipeline
                    └─> 7. Generate artifacts using common generators
@@ -473,6 +475,6 @@ This architecture provides clear separation of concerns with:
 
 * *cui-benchmarking-common* as the foundation layer
 * *benchmark-library* for focused library testing
-* *benchmark-integration-quarkus* for real-world validation
+* *benchmark-integration-wrk* for HTTP load testing with WRK
 
 Following these guidelines ensures maintainable, reusable, and well-organized benchmark infrastructure.

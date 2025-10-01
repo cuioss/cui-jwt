@@ -85,7 +85,6 @@ Previous approaches captured metrics AFTER benchmarks completed, showing idle CP
 === Integration Points
 
 * **link:../benchmark-integration-wrk/src/main/java/de/cuioss/jwt/wrk/benchmark/WrkResultPostProcessor.java[WrkResultPostProcessor]** - WRK benchmark integration
-* **link:../benchmark-integration-quarkus/src/main/java/de/cuioss/jwt/quarkus/benchmark/QuarkusIntegrationRunner.java[QuarkusIntegrationRunner]** - JMH/Quarkus integration
 
 == Docker Configuration
 

@@ -430,35 +430,6 @@ if (( $(echo "$CURRENT_RPS < $BASELINE_RPS * 0.9" | bc -l) )); then
 fi
 ----
 
-== Comparison with JMH Module
-
-[cols="2,2,2", options="header"]
-|===
-|Aspect
-|benchmark-integration-wrk (WRK)
-|benchmark-integration-quarkus (JMH)
-
-|Max throughput
-|20k+ req/s
-|10-13k req/s
-
-|Latency accuracy
-|Sub-millisecond
-|Limited by JMH overhead
-
-|Setup complexity
-|Simple (WRK + Lua)
-|Complex (JMH framework)
-
-|Report format
-|JSON + raw text
-|JMH JSON + badges
-
-|Best for
-|HTTP endpoint testing
-|Detailed JVM analysis
-|===
-
 == Future Enhancements
 
 * [ ] JWT token generation with proper authentication
@@ -471,6 +442,5 @@ fi
 == Related Documentation
 
 * link:../doc/README.adoc[Main Documentation Hub]
-* link:../benchmark-integration-quarkus/README.adoc[JMH Integration Benchmarks]
 * link:../benchmark-library/README.adoc[Library Benchmarks]
 * link:../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/README.adoc[Integration Test Infrastructure]

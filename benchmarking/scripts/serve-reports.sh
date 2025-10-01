@@ -6,7 +6,7 @@
 # Modules:
 #   common   - cui-benchmarking-common preview reports (default)
 #   library  - benchmark-library raw results
-#   quarkus  - benchmark-integration-quarkus raw results
+#   wrk      - benchmark-integration-wrk raw results
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -54,7 +54,7 @@ MODULE="$DEFAULT_MODULE"
 PORT="$DEFAULT_PORT"
 
 # Check if first parameter is a module name
-if [[ "$1" =~ ^(common|library|quarkus)$ ]]; then
+if [[ "$1" =~ ^(common|library|wrk)$ ]]; then
     MODULE="$1"
     PORT="${2:-$DEFAULT_PORT}"
 elif [[ "$1" =~ ^[0-9]+$ ]]; then
@@ -69,7 +69,7 @@ else
         echo "  ./serve-reports.sh [module] [port]"
         echo "  ./serve-reports.sh stop"
         echo ""
-        echo "Modules: common (default), library, quarkus"
+        echo "Modules: common (default), library, wrk"
         echo "Port: default is 8080"
         exit 1
     fi
@@ -85,9 +85,9 @@ case "$MODULE" in
         REPORTS_DIR="$PROJECT_ROOT/benchmarking/benchmark-library/target/benchmark-results"
         MODULE_DESC="Library Benchmark Results"
         ;;
-    quarkus)
-        REPORTS_DIR="$PROJECT_ROOT/benchmarking/benchmark-integration-quarkus/target/benchmark-results"
-        MODULE_DESC="Quarkus Integration Results"
+    wrk)
+        REPORTS_DIR="$PROJECT_ROOT/benchmarking/benchmark-integration-wrk/target/benchmark-results"
+        MODULE_DESC="WRK Load Testing Results"
         ;;
 esac
 
@@ -108,9 +108,9 @@ if [ ! -d "$REPORTS_DIR" ]; then
             echo "Please run library benchmarks first:"
             echo "  ./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark"
             ;;
-        quarkus)
-            echo "Please run Quarkus integration benchmarks first:"
-            echo "  ./mvnw verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark"
+        wrk)
+            echo "Please run WRK load testing benchmarks first:"
+            echo "  ./mvnw verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark"
             ;;
     esac
     exit 1
@@ -163,14 +163,13 @@ case "$MODULE" in
         echo "  - http://localhost:$PORT/data/                    (Metrics JSON files)"
         echo "  - http://localhost:$PORT/micro-result.json        (Raw JMH results)"
         ;;
-    quarkus)
+    wrk)
         echo "Available artifacts:"
         echo "  - http://localhost:$PORT                          (Directory listing)"
-        echo "  - http://localhost:$PORT/index.html               (Main results page)"
-        echo "  - http://localhost:$PORT/trends.html              (Historical trends)"
+        echo "  - http://localhost:$PORT/wrk/                     (WRK results)"
+        echo "  - http://localhost:$PORT/prometheus/              (Prometheus metrics)"
         echo "  - http://localhost:$PORT/badges/                  (Performance badges)"
         echo "  - http://localhost:$PORT/data/                    (Metrics JSON files)"
-        echo "  - http://localhost:$PORT/integration-result.json  (Raw JMH results)"
         ;;
 esac
 

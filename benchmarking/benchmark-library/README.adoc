@@ -170,4 +170,4 @@ For comprehensive documentation on benchmarking, analysis, and visualization:
 
 === Related
 
-* link:../benchmark-integration-quarkus/README.adoc[Integration Benchmarks]
+* link:../benchmark-integration-wrk/README.adoc[WRK Load Testing Benchmarks]

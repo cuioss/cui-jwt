@@ -402,7 +402,7 @@ Follows link:https://github.com/cuioss/cui-llm-rules/tree/main/standards/cdi-qua
 
 === Performance Benchmarking
 
-Performance benchmarking is available in the `benchmarking/benchmark-integration-quarkus` module. It builds upon this module's infrastructure patterns:
+Performance benchmarking is available in the `benchmarking/benchmark-integration-wrk` module. It builds upon this module's infrastructure patterns:
 
 * Docker Compose and container configuration
 * Keycloak realm setup and integration patterns

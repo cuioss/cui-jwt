@@ -5,11 +5,11 @@ Comprehensive performance testing infrastructure for JWT validation.
 == Modules
 
 |===
-|Module |Purpose |Execution Time 
+|Module |Purpose |Execution Time
 
-|link:cui-benchmarking-common/[cui-benchmarking-common] |Shared infrastructure and utilities |N/A (library) 
-|link:benchmark-library/[benchmark-library] |Micro-benchmarks for JWT library |&lt; 10 minutes 
-|link:benchmark-integration-quarkus/[benchmark-integration-quarkus] |Integration tests with Quarkus |&lt; 15 minutes 
+|link:cui-benchmarking-common/[cui-benchmarking-common] |Shared infrastructure and utilities |N/A (library)
+|link:benchmark-library/[benchmark-library] |Micro-benchmarks for JWT library |&lt; 10 minutes
+|link:benchmark-integration-wrk/[benchmark-integration-wrk] |WRK-based HTTP load testing |&lt; 5 minutes
 |===
 
 == Quick Start
@@ -21,8 +21,8 @@ Comprehensive performance testing infrastructure for JWT validation.
 # Library benchmarks
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
 
-# Integration benchmarks (requires Docker)
-./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
+# WRK load testing benchmarks (requires Docker)
+./mvnw clean verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
 ----
 
 === Run with Profiling

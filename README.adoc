@@ -174,7 +174,5 @@ For configuration details including runtime dependencies and test support, see t
 The library is continuously benchmarked with results published to GitHub Pages:
 
 * xref:benchmarking/benchmark-library/README.adoc[Micro-benchmarks] - In-memory performance testing
-* xref:benchmarking/benchmark-integration-quarkus/README.adoc[Integration benchmarks] - End-to-end containerized testing
+* xref:benchmarking/benchmark-integration-wrk/README.adoc[WRK Load Testing] - HTTP-based load testing with WRK
 * xref:benchmarking/doc/performance-scoring.adoc[Performance Metrics] - Understanding the scoring system
-
-Both benchmark types use identical weighted scoring for comparable results.

@@ -83,13 +83,6 @@
             <artifactId>cui-java-tools</artifactId>
         </dependency>
 
-        <!-- Metrics processing from integration-quarkus module -->
-        <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>benchmark-integration-quarkus</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- JUnit for basic testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
