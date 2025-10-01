@@ -16,7 +16,6 @@
 package de.cuioss.benchmarking.common.metrics;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
-import de.cuioss.benchmarking.common.config.IntegrationConfiguration;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.results.RunResult;
 
@@ -89,9 +88,8 @@ public class PrometheusMetricsManager {
      * This should be called just before benchmark execution begins.
      *
      * @param benchmarkName the name of the benchmark
-     * @return the recorded start time
      */
-    public Instant recordBenchmarkStart(String benchmarkName) {
+    public void recordBenchmarkStart(String benchmarkName) {
         Instant startTime = Instant.now();
         timestampTracker.compute(benchmarkName, (key, existing) -> {
             if (existing != null) {
@@ -100,27 +98,6 @@ public class PrometheusMetricsManager {
             return new BenchmarkTimestamps(startTime, null);
         });
         LOGGER.debug("Benchmark '{}' started at: {}", benchmarkName, startTime);
-        return startTime;
-    }
-
-    /**
-     * Records the end time for a benchmark execution.
-     * This should be called immediately after benchmark execution completes.
-     *
-     * @param benchmarkName the name of the benchmark
-     * @return the recorded end time
-     */
-    public Instant recordBenchmarkEnd(String benchmarkName) {
-        Instant endTime = Instant.now();
-        timestampTracker.compute(benchmarkName, (key, existing) -> {
-            if (existing == null) {
-                LOGGER.warn("No start time found for benchmark: {}", benchmarkName);
-                return new BenchmarkTimestamps(null, endTime);
-            }
-            return new BenchmarkTimestamps(existing.startTime(), endTime);
-        });
-        LOGGER.debug("Benchmark '{}' ended at: {}", benchmarkName, endTime);
-        return endTime;
     }
 
     /**
@@ -162,7 +139,6 @@ public class PrometheusMetricsManager {
         }
 
         String outputDirectory = config.resultsDirectory();
-        IntegrationConfiguration integrationConfig = config.integrationConfig();
 
         try {
             Path prometheusDir = Path.of(outputDirectory, PROMETHEUS_DIR_NAME);
@@ -210,8 +186,6 @@ public class PrometheusMetricsManager {
         try {
             Path prometheusDir = Path.of(outputDirectory, PROMETHEUS_DIR_NAME);
             Files.createDirectories(prometheusDir);
-
-            String serviceUrl = System.getProperty("integration.service.url", "https://localhost:10443");
 
             LOGGER.info("Collecting real-time metrics for WRK benchmark '{}' from Prometheus", benchmarkName);
 
@@ -303,15 +277,6 @@ public class PrometheusMetricsManager {
      */
     public void clear() {
         timestampTracker.clear();
-    }
-
-    /**
-     * Gets the current number of tracked benchmarks.
-     *
-     * @return the number of benchmarks with recorded timestamps
-     */
-    public int getTrackedBenchmarkCount() {
-        return timestampTracker.size();
     }
 
 }

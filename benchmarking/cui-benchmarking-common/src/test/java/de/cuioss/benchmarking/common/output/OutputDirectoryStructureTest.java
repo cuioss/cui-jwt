@@ -48,7 +48,7 @@ class OutputDirectoryStructureTest {
         assertThrows(NullPointerException.class, () -> new OutputDirectoryStructure(null));
     }
 
-    @Test void ensureDirectoriesShouldCreateAllDirectories(@TempDir Path tempDir) throws IOException {
+    @Test void ensureDirectoriesShouldCreateDeploymentDirectories(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -58,15 +58,7 @@ class OutputDirectoryStructureTest {
         assertFalse(Files.exists(structure.getBadgesDir()));
         assertFalse(Files.exists(structure.getApiDir()));
 
-        // Non-deployed directories should not exist yet (created on-demand)
-        Path historyPath = benchmarkResultsDir.resolve("history");
-        Path prometheusPath = benchmarkResultsDir.resolve("prometheus");
-        Path wrkPath = benchmarkResultsDir.resolve("wrk");
-        assertFalse(Files.exists(historyPath));
-        assertFalse(Files.exists(prometheusPath));
-        assertFalse(Files.exists(wrkPath));
-
-        // Ensure deployment directories only
+        // Ensure deployment directories
         structure.ensureDirectories();
 
         // Deployment directories should now exist
@@ -78,6 +70,22 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.isDirectory(structure.getBadgesDir()));
         assertTrue(Files.exists(structure.getApiDir()));
         assertTrue(Files.isDirectory(structure.getApiDir()));
+    }
+
+    @Test void ensureDirectoriesShouldNotCreateNonDeploymentDirectories(@TempDir Path tempDir) throws IOException {
+        Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
+        OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
+
+        // Non-deployed directories should not exist yet (created on-demand)
+        Path historyPath = benchmarkResultsDir.resolve("history");
+        Path prometheusPath = benchmarkResultsDir.resolve("prometheus");
+        Path wrkPath = benchmarkResultsDir.resolve("wrk");
+        assertFalse(Files.exists(historyPath));
+        assertFalse(Files.exists(prometheusPath));
+        assertFalse(Files.exists(wrkPath));
+
+        // Ensure deployment directories only
+        structure.ensureDirectories();
 
         // Non-deployed directories should still not exist (only created when accessed)
         assertFalse(Files.exists(historyPath));
@@ -112,7 +120,7 @@ class OutputDirectoryStructureTest {
         Files.writeString(testFile2, "test content 2");
 
         // Call ensureDirectories again - should not fail
-        assertDoesNotThrow(() -> structure.ensureDirectories());
+        assertDoesNotThrow(structure::ensureDirectories);
 
         // Verify files are still there
         assertTrue(Files.exists(testFile1));
@@ -164,7 +172,7 @@ class OutputDirectoryStructureTest {
         assertFalse(Files.exists(testFile3));
     }
 
-    @Test void cleanDeploymentDirectoryShouldWorkWhenDirectoryDoesNotExist(@TempDir Path tempDir) throws IOException {
+    @Test void cleanDeploymentDirectoryShouldWorkWhenDirectoryDoesNotExist(@TempDir Path tempDir) {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -172,7 +180,7 @@ class OutputDirectoryStructureTest {
         assertFalse(Files.exists(structure.getDeploymentDir()));
 
         // Clean should create it
-        assertDoesNotThrow(() -> structure.cleanDeploymentDirectory());
+        assertDoesNotThrow(structure::cleanDeploymentDirectory);
 
         // Verify directories were created
         assertTrue(Files.exists(structure.getDeploymentDir()));
@@ -229,7 +237,7 @@ class OutputDirectoryStructureTest {
         OutputDirectoryStructure structure = new OutputDirectoryStructure(deepPath);
 
         // Should create all parent directories as needed
-        assertDoesNotThrow(() -> structure.ensureDirectories());
+        assertDoesNotThrow(structure::ensureDirectories);
 
         // Verify all directories exist
         assertTrue(Files.exists(structure.getDeploymentDir()));

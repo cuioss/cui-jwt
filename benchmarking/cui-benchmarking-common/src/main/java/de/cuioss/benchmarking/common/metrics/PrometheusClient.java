@@ -21,6 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -55,7 +56,7 @@ public class PrometheusClient {
     /**
      * Creates a new Prometheus client with default timeout.
      *
-     * @param prometheusUrl Base URL of Prometheus server (e.g., "http://localhost:9090")
+     * @param prometheusUrl Base URL of Prometheus server (e.g., {@code http://localhost:9090})
      */
     public PrometheusClient(String prometheusUrl) {
         this(prometheusUrl, Duration.ofSeconds(30));
@@ -100,7 +101,7 @@ public class PrometheusClient {
     }
 
     private TimeSeries queryRangeForMetric(String metricName, Instant startTime, Instant endTime, Duration step) throws PrometheusException {
-        String stepSeconds = String.valueOf(step.getSeconds()) + "s";
+        String stepSeconds = step.getSeconds() + "s";
         String startEpoch = String.valueOf(startTime.getEpochSecond());
         String endEpoch = String.valueOf(endTime.getEpochSecond());
 
@@ -123,8 +124,7 @@ public class PrometheusClient {
             if (response.statusCode() != HTTP_OK) {
                 throw new PrometheusException(
                         response.statusCode(),
-                        "HTTP %d from Prometheus API".formatted(response.statusCode()),
-                        response.body()
+                        "HTTP %d from Prometheus API".formatted(response.statusCode())
                 );
             }
 
@@ -141,46 +141,19 @@ public class PrometheusClient {
     private TimeSeries parsePrometheusResponse(String metricName, String responseBody) throws PrometheusException {
         try {
             JsonObject root = GSON.fromJson(responseBody, JsonObject.class);
-            JsonElement statusElement = root.get("status");
-
-            if (statusElement == null || !"success".equals(statusElement.getAsString())) {
-                JsonElement errorElement = root.get("error");
-                String error = errorElement != null ? errorElement.getAsString() : "Unknown error";
-                throw new PrometheusException("Prometheus query failed: " + error);
-            }
+            validateStatus(root);
 
             JsonObject data = root.getAsJsonObject("data");
             JsonArray resultArray = data.getAsJsonArray("result");
 
-            if (resultArray == null || resultArray.size() == 0) {
+            if (resultArray == null || resultArray.isEmpty()) {
                 // Metric may not be exported by the application - return empty series silently
                 return new TimeSeries(metricName, Map.of(), List.of());
             }
 
             JsonObject firstResult = resultArray.get(0).getAsJsonObject();
-            JsonObject metric = firstResult.getAsJsonObject("metric");
-            JsonArray values = firstResult.getAsJsonArray("values");
-
-            Map<String, String> labels = new HashMap<>();
-            if (metric != null) {
-                for (Map.Entry<String, JsonElement> entry : metric.entrySet()) {
-                    labels.put(entry.getKey(), entry.getValue().getAsString());
-                }
-            }
-
-            List<DataPoint> dataPoints = new ArrayList<>();
-            if (values != null) {
-                for (JsonElement valueElement : values) {
-                    if (valueElement.isJsonArray()) {
-                        JsonArray valueArray = valueElement.getAsJsonArray();
-                        if (valueArray.size() >= 2) {
-                            long timestamp = valueArray.get(0).getAsLong();
-                            double val = Double.parseDouble(valueArray.get(1).getAsString());
-                            dataPoints.add(new DataPoint(Instant.ofEpochSecond(timestamp), val));
-                        }
-                    }
-                }
-            }
+            Map<String, String> labels = extractLabels(firstResult.getAsJsonObject("metric"));
+            List<DataPoint> dataPoints = extractDataPoints(firstResult.getAsJsonArray("values"));
 
             return new TimeSeries(metricName, labels, dataPoints);
 
@@ -189,60 +162,70 @@ public class PrometheusClient {
         }
     }
 
+    private void validateStatus(JsonObject root) throws PrometheusException {
+        JsonElement statusElement = root.get("status");
+        if (statusElement == null || !"success".equals(statusElement.getAsString())) {
+            JsonElement errorElement = root.get("error");
+            String error = errorElement != null ? errorElement.getAsString() : "Unknown error";
+            throw new PrometheusException("Prometheus query failed: " + error);
+        }
+    }
+
+    private Map<String, String> extractLabels(JsonObject metric) {
+        Map<String, String> labels = new HashMap<>();
+        if (metric != null) {
+            for (Map.Entry<String, JsonElement> entry : metric.entrySet()) {
+                labels.put(entry.getKey(), entry.getValue().getAsString());
+            }
+        }
+        return labels;
+    }
+
+    private List<DataPoint> extractDataPoints(JsonArray values) {
+        List<DataPoint> dataPoints = new ArrayList<>();
+        if (values != null) {
+            for (JsonElement valueElement : values) {
+                if (valueElement.isJsonArray()) {
+                    JsonArray valueArray = valueElement.getAsJsonArray();
+                    if (valueArray.size() >= 2) {
+                        long timestamp = valueArray.get(0).getAsLong();
+                        double val = Double.parseDouble(valueArray.get(1).getAsString());
+                        dataPoints.add(new DataPoint(Instant.ofEpochSecond(timestamp), val));
+                    }
+                }
+            }
+        }
+        return dataPoints;
+    }
+
     /**
      * Represents time-series data for a metric.
+     *
+     * @param metricName name of the metric
+     * @param labels metric labels as key-value pairs
+     * @param values list of data points
      */
-    public static class TimeSeries {
-        private final String metricName;
-        private final Map<String, String> labels;
-        private final List<DataPoint> values;
-
-        public TimeSeries(String metricName, Map<String, String> labels, List<DataPoint> values) {
-            this.metricName = metricName;
-            this.labels = Map.copyOf(labels);
-            this.values = List.copyOf(values);
-        }
-
-        public String getMetricName() {
-            return metricName;
-        }
-
-        public Map<String, String> getLabels() {
-            return labels;
-        }
-
-        public List<DataPoint> getValues() {
-            return values;
+    public record TimeSeries(String metricName, Map<String, String> labels, List<DataPoint> values) {
+        public TimeSeries {
+            labels = Map.copyOf(labels);
+            values = List.copyOf(values);
         }
     }
 
     /**
      * Represents a single data point in time-series data.
+     *
+     * @param timestamp point in time for this measurement
+     * @param value measured value at this timestamp
      */
-    public static class DataPoint {
-        private final Instant timestamp;
-        private final double value;
-
-        public DataPoint(Instant timestamp, double value) {
-            this.timestamp = timestamp;
-            this.value = value;
-        }
-
-        public Instant getTimestamp() {
-            return timestamp;
-        }
-
-        public double getValue() {
-            return value;
-        }
+    public record DataPoint(Instant timestamp, double value) {
     }
 
     /**
      * Exception thrown when Prometheus operations fail.
      */
-    public static class PrometheusException extends Exception {
+    @Getter public static class PrometheusException extends Exception {
         private final int statusCode;
-        private final String prometheusError;
 
         public PrometheusException(String message) {
             this(message, null);
@@ -251,21 +234,11 @@ public class PrometheusClient {
         public PrometheusException(String message, Throwable cause) {
             super(message, cause);
             this.statusCode = -1;
-            this.prometheusError = null;
         }
 
-        public PrometheusException(int statusCode, String message, String prometheusError) {
+        public PrometheusException(int statusCode, String message) {
             super(message);
             this.statusCode = statusCode;
-            this.prometheusError = prometheusError;
-        }
-
-        public int getStatusCode() {
-            return statusCode;
-        }
-
-        public String getPrometheusError() {
-            return prometheusError;
         }
     }
 }

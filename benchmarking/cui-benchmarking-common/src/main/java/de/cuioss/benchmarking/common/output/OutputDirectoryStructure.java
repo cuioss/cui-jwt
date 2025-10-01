@@ -15,23 +15,63 @@
  */
 package de.cuioss.benchmarking.common.output;
 
+import lombok.Getter;
+
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
  * Manages the output directory structure for benchmark results.
  * Provides clear separation between deployable content (gh-pages-ready)
  * and non-deployable raw data (history, prometheus, wrk).
+ * <p>
+ * Directory structure:
+ * <pre>
+ * benchmark-results/
+ * ├── gh-pages-ready/         (deploymentDir, htmlDir) - All content deployable to GitHub Pages
+ * │   ├── data/               (dataDir) - JSON data files
+ * │   ├── badges/             (badgesDir) - Badge JSON files
+ * │   └── api/                (apiDir) - API endpoint JSON files
+ * ├── history/                (historyDir) - Historical archive data (NOT deployed)
+ * ├── prometheus/             (prometheusRawDir) - Raw Prometheus metrics (NOT deployed)
+ * └── wrk/                    (wrkDir) - WRK raw results (NOT deployed)
+ * </pre>
  */
 public class OutputDirectoryStructure {
-    private final Path benchmarkResultsDir;  // Root benchmark-results directory
-    private final Path deploymentDir;        // gh-pages-ready directory
-    private final Path htmlDir;              // gh-pages-ready (for HTML files)
-    private final Path dataDir;              // gh-pages-ready/data
-    private final Path badgesDir;            // gh-pages-ready/badges
-    private final Path apiDir;               // gh-pages-ready/api
+
+    /** Root benchmark-results directory */
+    @Getter
+    private final Path benchmarkResultsDir;
+
+    /**
+     * Deployment directory (gh-pages-ready) - all content in this directory
+     * is deployable to GitHub Pages
+     */
+    @Getter
+    private final Path deploymentDir;
+
+    /**
+     * HTML directory (same as deployment directory) - HTML files should be
+     * written directly to this directory
+     */
+    @Getter
+    private final Path htmlDir;
+
+    /** Data directory (gh-pages-ready/data) - JSON data files location */
+    @Getter
+    private final Path dataDir;
+
+    /** Badges directory (gh-pages-ready/badges) - Badge JSON files location */
+    @Getter
+    private final Path badgesDir;
+
+    /** API directory (gh-pages-ready/api) - API endpoint JSON files location */
+    @Getter
+    private final Path apiDir;
 
     // Non-deployed directories (in benchmark-results root)
     private final Path historyDir;           // benchmark-results/history
@@ -74,65 +114,6 @@ public class OutputDirectoryStructure {
 
         // Non-deployed directories are created on-demand by individual getters
         // to avoid creating unused directories in modules that don't need them
-    }
-
-    /**
-     * Gets the root benchmark results directory.
-     *
-     * @return the benchmark results directory path
-     */
-    public Path getBenchmarkResultsDir() {
-        return benchmarkResultsDir;
-    }
-
-    /**
-     * Gets the deployment directory (gh-pages-ready).
-     * All content in this directory should be deployable to GitHub Pages.
-     *
-     * @return the deployment directory path
-     */
-    public Path getDeploymentDir() {
-        return deploymentDir;
-    }
-
-    /**
-     * Gets the HTML directory (same as deployment directory).
-     * HTML files should be written directly to this directory.
-     *
-     * @return the HTML directory path
-     */
-    public Path getHtmlDir() {
-        return htmlDir;
-    }
-
-    /**
-     * Gets the data directory (gh-pages-ready/data).
-     * JSON data files should be written to this directory.
-     *
-     * @return the data directory path
-     */
-    public Path getDataDir() {
-        return dataDir;
-    }
-
-    /**
-     * Gets the badges directory (gh-pages-ready/badges).
-     * Badge JSON files should be written to this directory.
-     *
-     * @return the badges directory path
-     */
-    public Path getBadgesDir() {
-        return badgesDir;
-    }
-
-    /**
-     * Gets the API directory (gh-pages-ready/api).
-     * API endpoint JSON files should be written to this directory.
-     *
-     * @return the API directory path
-     */
-    public Path getApiDir() {
-        return apiDir;
     }
 
     /**
@@ -210,15 +191,16 @@ public class OutputDirectoryStructure {
      */
     private void deleteDirectoryRecursively(Path path) throws IOException {
         if (Files.exists(path)) {
-            Files.walk(path)
-                    .sorted((a, b) -> b.compareTo(a)) // reverse order for deletion
-                    .forEach(p -> {
-                        try {
-                            Files.delete(p);
-                        } catch (IOException e) {
-                            throw new RuntimeException("Failed to delete: " + p, e);
-                        }
-                    });
+            try (var stream = Files.walk(path)) {
+                stream.sorted(Comparator.reverseOrder())
+                        .forEach(p -> {
+                            try {
+                                Files.delete(p);
+                            } catch (IOException e) {
+                                throw new UncheckedIOException("Failed to delete: " + p, e);
+                            }
+                        });
+            }
         }
     }
 

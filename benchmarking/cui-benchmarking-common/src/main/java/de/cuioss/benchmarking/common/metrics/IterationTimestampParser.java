@@ -15,8 +15,6 @@
  */
 package de.cuioss.benchmarking.common.metrics;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.cuioss.tools.logging.CuiLogger;
@@ -25,21 +23,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Parses JMH iteration timestamp files to extract precise timing windows
  * for Prometheus metrics collection.
  * <p>
- * Supports both:
- * - JSONL format (one JSON object per line) from TimestampProfiler
- * - Consolidated JSON format with all benchmarks
+ * Supports JSONL format (one JSON object per line) from TimestampProfiler.
  */
 public class IterationTimestampParser {
 
     private static final CuiLogger LOGGER = new CuiLogger(IterationTimestampParser.class);
-    private static final Gson GSON = new Gson();
 
     /**
      * Represents a time window for a benchmark iteration
@@ -73,117 +69,21 @@ public class IterationTimestampParser {
 
         List<IterationWindow> windows = new ArrayList<>();
 
-        Files.lines(timestampFile).forEach(line -> {
-            if (line.trim().isEmpty()) return;
+        try (var lines = Files.lines(timestampFile)) {
+            lines.forEach(line -> {
+                if (line.trim().isEmpty()) return;
 
-            try {
-                JsonObject node = JsonParser.parseString(line).getAsJsonObject();
-                windows.add(parseIterationNode(node));
-            } catch (Exception e) {
-                LOGGER.warn("Failed to parse timestamp line: {}", line, e);
-            }
-        });
+                try {
+                    JsonObject node = JsonParser.parseString(line).getAsJsonObject();
+                    windows.add(parseIterationNode(node));
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to parse timestamp line: {}", line, e);
+                }
+            });
+        }
 
         LOGGER.info("Parsed {} iteration windows from {}", windows.size(), timestampFile);
         return windows;
-    }
-
-    /**
-     * Parses consolidated JSON report file
-     */
-    public static Map<String, List<IterationWindow>> parseConsolidatedReport(Path reportFile) throws IOException {
-        if (!Files.exists(reportFile)) {
-            LOGGER.warn("Consolidated report file does not exist: {}", reportFile);
-            return Collections.emptyMap();
-        }
-
-        Map<String, List<IterationWindow>> result = new HashMap<>();
-        String json = Files.readString(reportFile);
-        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-
-        JsonObject benchmarks = root.getAsJsonObject("benchmarks");
-        if (benchmarks != null) {
-            for (var entry : benchmarks.entrySet()) {
-                String benchmarkName = entry.getKey();
-                List<IterationWindow> windows = new ArrayList<>();
-                JsonElement iterations = entry.getValue();
-
-                if (iterations.isJsonArray()) {
-                    for (JsonElement iteration : iterations.getAsJsonArray()) {
-                        try {
-                            IterationWindow window = parseIterationNode(iteration.getAsJsonObject(), benchmarkName);
-                            windows.add(window);
-                        } catch (Exception e) {
-                            LOGGER.warn("Failed to parse iteration for benchmark {}", benchmarkName, e);
-                        }
-                    }
-                }
-
-                result.put(benchmarkName, windows);
-            }
-        }
-
-        LOGGER.info("Parsed {} benchmarks with total {} iterations from {}",
-                result.size(),
-                result.values().stream().mapToInt(List::size).sum(),
-                reportFile);
-
-        return result;
-    }
-
-    /**
-     * Gets measurement windows only (excludes warmup)
-     */
-    public static List<IterationWindow> getMeasurementWindows(List<IterationWindow> windows) {
-        return windows.stream()
-                .filter(IterationWindow::isMeasurement)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Calculates aggregated time window for all measurement iterations
-     */
-    public static Optional<IterationWindow> getAggregatedMeasurementWindow(
-            String benchmarkName, List<IterationWindow> windows) {
-
-        List<IterationWindow> measurements = getMeasurementWindows(windows);
-        if (measurements.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // Find earliest start and latest end
-        Instant start = measurements.stream()
-                .map(IterationWindow::startTime)
-                .min(Instant::compareTo)
-                .orElse(null);
-
-        Instant end = measurements.stream()
-                .map(IterationWindow::endTime)
-                .max(Instant::compareTo)
-                .orElse(null);
-
-        if (start != null && end != null) {
-            long duration = end.toEpochMilli() - start.toEpochMilli();
-            return Optional.of(new IterationWindow(
-                    benchmarkName,
-                    "aggregated",
-                    "MEASUREMENT",
-                    -1,
-                    start,
-                    end,
-                    duration
-            ));
-        }
-
-        return Optional.empty();
-    }
-
-    /**
-     * Groups windows by fork ID
-     */
-    public static Map<String, List<IterationWindow>> groupByFork(List<IterationWindow> windows) {
-        return windows.stream()
-                .collect(Collectors.groupingBy(IterationWindow::forkId));
     }
 
     /**
@@ -208,23 +108,4 @@ public class IterationTimestampParser {
         );
     }
 
-    /**
-     * Finds the timestamp files in the results directory
-     */
-    public static Path findTimestampFile(Path resultsDir) {
-        // Try JSONL format first
-        Path jsonlFile = resultsDir.resolve("jmh-iteration-timestamps.jsonl");
-        if (Files.exists(jsonlFile)) {
-            return jsonlFile;
-        }
-
-        // Try consolidated report
-        Path reportFile = resultsDir.resolve("jmh-iteration-timing-report.json");
-        if (Files.exists(reportFile)) {
-            return reportFile;
-        }
-
-        LOGGER.warn("No JMH timestamp files found in {}", resultsDir);
-        return null;
-    }
 }

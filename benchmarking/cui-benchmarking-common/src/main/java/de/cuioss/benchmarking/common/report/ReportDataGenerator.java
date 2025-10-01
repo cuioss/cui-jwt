@@ -33,10 +33,11 @@ import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.D
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Directories.DATA_DIR;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Modes.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Percentiles.*;
-import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Units.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Units.OPS;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Metrics.Units.SUFFIX_OP;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Badge.MESSAGE;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.DateFormats.DISPLAY_TIMESTAMP_PATTERN;
-import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Grades.CssClasses.*;
+import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Grades.CssClasses.GRADE_F;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.JsonFields.*;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Report.Messages.HISTORICAL_DATA_NOT_AVAILABLE;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
@@ -123,7 +124,7 @@ public class ReportDataGenerator {
 
     private Map<String, Object> convertMetadata(BenchmarkData.Metadata metadata) {
         if (metadata == null) {
-            return createDefaultMetadata(BenchmarkType.MICRO);
+            return createDefaultMetadata();
         }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(TIMESTAMP, metadata.getTimestamp());
@@ -133,13 +134,13 @@ public class ReportDataGenerator {
         return result;
     }
 
-    private Map<String, Object> createDefaultMetadata(BenchmarkType type) {
+    private Map<String, Object> createDefaultMetadata() {
         Map<String, Object> metadata = new LinkedHashMap<>();
         Instant now = Instant.now();
         metadata.put(TIMESTAMP, ISO_FORMATTER.format(now.atOffset(ZoneOffset.UTC)));
         metadata.put(DISPLAY_TIMESTAMP, DateTimeFormatter.ofPattern(DISPLAY_TIMESTAMP_PATTERN)
                 .format(now.atOffset(ZoneOffset.UTC)));
-        metadata.put(BENCHMARK_TYPE, type.getDisplayName());
+        metadata.put(BENCHMARK_TYPE, BenchmarkType.MICRO.getDisplayName());
         metadata.put(BenchmarkConstants.Report.JsonFields.REPORT_VERSION, BenchmarkConstants.Report.Versions.REPORT_VERSION);
         return metadata;
     }
@@ -205,18 +206,6 @@ public class ReportDataGenerator {
         }
     }
 
-    private String getGradeClass(String grade) {
-        return switch (grade) {
-            case "A+" -> GRADE_A_PLUS;
-            case "A" -> GRADE_A;
-            case "B" -> GRADE_B;
-            case "C" -> GRADE_C;
-            case "D" -> GRADE_D;
-            case "F" -> GRADE_F;
-            default -> GRADE_UNKNOWN;
-        };
-    }
-
     private List<Map<String, Object>> convertBenchmarks(List<BenchmarkData.Benchmark> benchmarks) {
         if (benchmarks == null) {
             return new ArrayList<>();
@@ -251,37 +240,6 @@ public class ReportDataGenerator {
             results.add(result);
         }
         return results;
-    }
-
-    private String extractSimpleName(String fullName) {
-        int lastDot = fullName.lastIndexOf('.');
-        return lastDot >= 0 ? fullName.substring(lastDot + 1) : fullName;
-    }
-
-    private String formatScore(double score, String unit) {
-        if (unit.contains(OPS)) {
-            double opsPerSec = MetricConversionUtil.convertToOpsPerSecond(score, unit);
-            if (opsPerSec >= 1_000_000) {
-                return MetricConversionUtil.formatForDisplay(opsPerSec / 1_000_000) + M_OPS_S;
-            } else if (opsPerSec >= 1000) {
-                return MetricConversionUtil.formatForDisplay(opsPerSec / 1000) + K_OPS_S;
-            } else {
-                return MetricConversionUtil.formatForDisplay(opsPerSec) + SPACE_OPS_S;
-            }
-        } else if (unit.contains(SUFFIX_OP)) {
-            double msPerOp = MetricConversionUtil.convertToMillisecondsPerOp(score, unit);
-            if (msPerOp >= 1000) {
-                return MetricConversionUtil.formatForDisplay(msPerOp / 1000) + SUFFIX_S;
-            } else {
-                return MetricConversionUtil.formatForDisplay(msPerOp) + SUFFIX_MS;
-            }
-        }
-        return MetricConversionUtil.formatForDisplay(score) + " " + unit;
-    }
-
-    private double calculateErrorPercentage(double score, double error) {
-        if (score == 0) return 0;
-        return (error / score) * 100;
     }
 
     private Map<String, Object> createChartData(List<BenchmarkData.Benchmark> benchmarks) {
@@ -320,60 +278,83 @@ public class ReportDataGenerator {
     }
 
     private Map<String, Object> createPercentilesChartData(List<BenchmarkData.Benchmark> benchmarks) {
-        Map<String, Object> percentilesChart = new LinkedHashMap<>();
+        String[] percentileKeys = {P_0, P_50, P_90, P_95, P_99, P_99_9, P_99_99, P_100};
         List<String> percentileLabels = Arrays.asList(LABEL_P0, LABEL_P50, LABEL_P90, LABEL_P95, LABEL_P99, LABEL_P99_9, LABEL_P99_99, LABEL_P100);
+
         List<String> benchmarkNames = new ArrayList<>();
         Map<String, List<Double>> dataByBenchmark = new LinkedHashMap<>();
 
-        String[] percentileKeys = {P_0, P_50, P_90, P_95, P_99, P_99_9, P_99_99, P_100};
+        collectPercentileData(benchmarks, percentileKeys, benchmarkNames, dataByBenchmark);
 
-        if (benchmarks != null) {
-            for (BenchmarkData.Benchmark benchmark : benchmarks) {
-                if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode())) {
-                    benchmarkNames.add(benchmark.getName());
-
-                    List<Double> benchmarkData = new ArrayList<>();
-                    Map<String, Double> percentiles = benchmark.getPercentiles();
-
-                    if (percentiles != null && !percentiles.isEmpty()) {
-                        for (String key : percentileKeys) {
-                            Double value = percentiles.get(key);
-                            benchmarkData.add(value);
-                        }
-                    } else {
-                        for (int i = 0; i < percentileKeys.length; i++) {
-                            benchmarkData.add(null);
-                        }
-                    }
-
-                    dataByBenchmark.put(benchmark.getName(), benchmarkData);
-                }
-            }
-        }
-
-        // Structure matching JavaScript expectations
+        Map<String, Object> percentilesChart = new LinkedHashMap<>();
         percentilesChart.put(PERCENTILE_LABELS, percentileLabels);
         percentilesChart.put(BenchmarkConstants.Report.JsonFields.BENCHMARKS, benchmarkNames);
         percentilesChart.put(DATA, dataByBenchmark);
         percentilesChart.put(LABELS, benchmarkNames);
-
-        Map<String, List<Double>> datasets = new LinkedHashMap<>();
-        for (int i = 0; i < percentileKeys.length; i++) {
-            String percentileLabel = percentileKeys[i] + SUFFIX_TH;
-            List<Double> percentileValues = new ArrayList<>();
-            for (String benchmarkName : benchmarkNames) {
-                List<Double> benchmarkData = dataByBenchmark.get(benchmarkName);
-                if (benchmarkData != null && i < benchmarkData.size()) {
-                    percentileValues.add(benchmarkData.get(i));
-                } else {
-                    percentileValues.add(null);
-                }
-            }
-            datasets.put(percentileLabel, percentileValues);
-        }
-        percentilesChart.put(DATASETS, datasets);
+        percentilesChart.put(DATASETS, createPercentileDatasets(percentileKeys, benchmarkNames, dataByBenchmark));
 
         return percentilesChart;
+    }
+
+    private void collectPercentileData(List<BenchmarkData.Benchmark> benchmarks, String[] percentileKeys,
+            List<String> benchmarkNames, Map<String, List<Double>> dataByBenchmark) {
+        if (benchmarks == null) {
+            return;
+        }
+
+        for (BenchmarkData.Benchmark benchmark : benchmarks) {
+            if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode())) {
+                benchmarkNames.add(benchmark.getName());
+                List<Double> benchmarkData = extractPercentileValues(benchmark.getPercentiles(), percentileKeys);
+                dataByBenchmark.put(benchmark.getName(), benchmarkData);
+            }
+        }
+    }
+
+    private List<Double> extractPercentileValues(Map<String, Double> percentiles, String[] percentileKeys) {
+        List<Double> benchmarkData = new ArrayList<>();
+
+        if (percentiles != null && !percentiles.isEmpty()) {
+            for (String key : percentileKeys) {
+                benchmarkData.add(percentiles.get(key));
+            }
+        } else {
+            for (int i = 0; i < percentileKeys.length; i++) {
+                benchmarkData.add(null);
+            }
+        }
+
+        return benchmarkData;
+    }
+
+    private Map<String, List<Double>> createPercentileDatasets(String[] percentileKeys,
+            List<String> benchmarkNames,
+            Map<String, List<Double>> dataByBenchmark) {
+        Map<String, List<Double>> datasets = new LinkedHashMap<>();
+
+        for (int i = 0; i < percentileKeys.length; i++) {
+            String percentileLabel = percentileKeys[i] + SUFFIX_TH;
+            List<Double> percentileValues = extractValuesForPercentile(i, benchmarkNames, dataByBenchmark);
+            datasets.put(percentileLabel, percentileValues);
+        }
+
+        return datasets;
+    }
+
+    private List<Double> extractValuesForPercentile(int percentileIndex, List<String> benchmarkNames,
+            Map<String, List<Double>> dataByBenchmark) {
+        List<Double> percentileValues = new ArrayList<>();
+
+        for (String benchmarkName : benchmarkNames) {
+            List<Double> benchmarkData = dataByBenchmark.get(benchmarkName);
+            if (benchmarkData != null && percentileIndex < benchmarkData.size()) {
+                percentileValues.add(benchmarkData.get(percentileIndex));
+            } else {
+                percentileValues.add(null);
+            }
+        }
+
+        return percentileValues;
     }
 
     private Map<String, Object> createTrendData(String outputDir, BenchmarkMetrics metrics) {

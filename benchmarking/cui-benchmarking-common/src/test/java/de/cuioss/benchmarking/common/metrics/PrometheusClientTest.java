@@ -66,21 +66,21 @@ class PrometheusClientTest {
         assertTrue(result.containsKey("process_cpu_usage"));
 
         PrometheusClient.TimeSeries timeSeries = result.get("process_cpu_usage");
-        assertEquals("process_cpu_usage", timeSeries.getMetricName());
+        assertEquals("process_cpu_usage", timeSeries.metricName());
 
         // Verify labels
-        Map<String, String> labels = timeSeries.getLabels();
+        Map<String, String> labels = timeSeries.labels();
         assertEquals("process_cpu_usage", labels.get("__name__"));
         assertEquals("cui-jwt-integration-tests:8443", labels.get("instance"));
         assertEquals("quarkus-benchmark", labels.get("job"));
 
         // Verify data points
-        List<PrometheusClient.DataPoint> values = timeSeries.getValues();
+        List<PrometheusClient.DataPoint> values = timeSeries.values();
         assertEquals(17, values.size());
 
         PrometheusClient.DataPoint firstPoint = values.getFirst();
-        assertEquals(Instant.ofEpochSecond(1758909906), firstPoint.getTimestamp());
-        assertEquals(0.45, firstPoint.getValue(), 0.0001);
+        assertEquals(Instant.ofEpochSecond(1758909906), firstPoint.timestamp());
+        assertEquals(0.45, firstPoint.value(), 0.0001);
 
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
@@ -101,9 +101,9 @@ class PrometheusClientTest {
 
         // Verify each metric has expected structure
         result.forEach((metricName, timeSeries) -> {
-            assertEquals(metricName, timeSeries.getMetricName());
-            assertFalse(timeSeries.getLabels().isEmpty());
-            assertFalse(timeSeries.getValues().isEmpty());
+            assertEquals(metricName, timeSeries.metricName());
+            assertFalse(timeSeries.labels().isEmpty());
+            assertFalse(timeSeries.values().isEmpty());
         });
 
         assertEquals(3, moduleDispatcher.getCallCounter());
@@ -121,9 +121,9 @@ class PrometheusClientTest {
         // Then
         assertEquals(1, result.size());
         PrometheusClient.TimeSeries timeSeries = result.get("non_existent_metric");
-        assertEquals("non_existent_metric", timeSeries.getMetricName());
-        assertTrue(timeSeries.getLabels().isEmpty());
-        assertTrue(timeSeries.getValues().isEmpty());
+        assertEquals("non_existent_metric", timeSeries.metricName());
+        assertTrue(timeSeries.labels().isEmpty());
+        assertTrue(timeSeries.values().isEmpty());
 
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
@@ -147,6 +147,7 @@ class PrometheusClientTest {
         switch (statusCode) {
             case 500 -> moduleDispatcher.setServerError();
             case 503 -> moduleDispatcher.setServiceUnavailable();
+            default -> throw new IllegalArgumentException("Unexpected status code: " + statusCode);
         }
         List<String> metricNames = List.of("test_metric");
 
@@ -277,20 +278,20 @@ class PrometheusClientTest {
 
         // Then
         PrometheusClient.TimeSeries timeSeries = result.get("cui_jwt_validation_success_operations_total");
-        Map<String, String> labels = timeSeries.getLabels();
+        Map<String, String> labels = timeSeries.labels();
 
         assertEquals("ACCESS_TOKEN_CREATED", labels.get("event_type"));
         assertEquals("success", labels.get("result"));
 
-        List<PrometheusClient.DataPoint> values = timeSeries.getValues();
+        List<PrometheusClient.DataPoint> values = timeSeries.values();
         assertEquals(3, values.size());
         // Using real values from actual test metrics
-        assertEquals(10960018.0, values.getFirst().getValue());
-        assertEquals(10960018.0, values.get(1).getValue());
-        assertEquals(10960018.0, values.get(2).getValue());
+        assertEquals(10960018.0, values.getFirst().value());
+        assertEquals(10960018.0, values.get(1).value());
+        assertEquals(10960018.0, values.get(2).value());
     }
 
-    @Test void shouldCalculateStepCorrectly() throws PrometheusClient.PrometheusException {
+    @Test void shouldCalculateStepCorrectly() {
         // Given
         Duration fiveMinuteStep = Duration.ofMinutes(5);
         Duration oneHourStep = Duration.ofHours(1);
@@ -310,7 +311,7 @@ class PrometheusClientTest {
         moduleDispatcher.setCustomResponse(moduleDispatcher.getErrorResponse());
 
         // When & Then - Should fail fast on first error
-        PrometheusClient.PrometheusException exception = assertThrows(
+        assertThrows(
                 PrometheusClient.PrometheusException.class,
                 () -> prometheusClient.queryRange(metricNames, START_TIME, END_TIME, STEP));
 

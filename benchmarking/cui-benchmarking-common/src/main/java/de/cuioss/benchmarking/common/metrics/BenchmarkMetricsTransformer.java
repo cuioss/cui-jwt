@@ -76,8 +76,8 @@ public class BenchmarkMetricsTransformer {
 
         // Get CPU cores
         PrometheusClient.TimeSeries cpuCount = data.get("system_cpu_count");
-        if (cpuCount != null && !cpuCount.getValues().isEmpty()) {
-            cpu.put("cores_available", (int) cpuCount.getValues().getFirst().getValue());
+        if (cpuCount != null && !cpuCount.values().isEmpty()) {
+            cpu.put("cores_available", (int) cpuCount.values().getFirst().value());
         } else {
             cpu.put("cores_available", 4); // Default
         }
@@ -95,15 +95,15 @@ public class BenchmarkMetricsTransformer {
     private Map<String, Object> createCpuMetrics(PrometheusClient.TimeSeries series, String type) {
         Map<String, Object> cpuMetrics = new LinkedHashMap<>();
 
-        if (series == null || series.getValues().isEmpty()) {
+        if (series == null || series.values().isEmpty()) {
             cpuMetrics.put("average_percent", 0.0);
             cpuMetrics.put("peak_percent", 0.0);
             cpuMetrics.put("std_dev", 0.0);
             return cpuMetrics;
         }
 
-        List<Double> values = series.getValues().stream()
-                .map(dp -> dp.getValue() * 100) // Convert to percentage
+        List<Double> values = series.values().stream()
+                .map(dp -> dp.value() * 100) // Convert to percentage
                 .toList();
 
         Statistics stats = calculateStatistics(values);
@@ -130,9 +130,9 @@ public class BenchmarkMetricsTransformer {
         // Heap memory
         Map<String, Object> heap = new LinkedHashMap<>();
         PrometheusClient.TimeSeries heapUsed = findHeapMemory(data.get(METRIC_JVM_MEMORY_USED_BYTES));
-        if (heapUsed != null && !heapUsed.getValues().isEmpty()) {
-            List<Double> heapMbValues = heapUsed.getValues().stream()
-                    .map(dp -> dp.getValue() / 1024 / 1024) // Convert to MB
+        if (heapUsed != null && !heapUsed.values().isEmpty()) {
+            List<Double> heapMbValues = heapUsed.values().stream()
+                    .map(dp -> dp.value() / 1024 / 1024) // Convert to MB
                     .toList();
 
             Statistics stats = calculateStatistics(heapMbValues);
@@ -149,9 +149,9 @@ public class BenchmarkMetricsTransformer {
         // GC metrics
         Map<String, Object> gc = new LinkedHashMap<>();
         PrometheusClient.TimeSeries gcOverhead = data.get("jvm_gc_overhead");
-        if (gcOverhead != null && !gcOverhead.getValues().isEmpty()) {
-            double avgOverhead = gcOverhead.getValues().stream()
-                    .mapToDouble(PrometheusClient.DataPoint::getValue)
+        if (gcOverhead != null && !gcOverhead.values().isEmpty()) {
+            double avgOverhead = gcOverhead.values().stream()
+                    .mapToDouble(PrometheusClient.DataPoint::value)
                     .average().orElse(0.0);
             gc.put("overhead_percent", round(avgOverhead * 100, 2));
         } else {
@@ -166,15 +166,15 @@ public class BenchmarkMetricsTransformer {
         Map<String, Object> threads = new LinkedHashMap<>();
 
         PrometheusClient.TimeSeries liveThreads = data.get("jvm_threads_live_threads");
-        if (liveThreads != null && !liveThreads.getValues().isEmpty()) {
+        if (liveThreads != null && !liveThreads.values().isEmpty()) {
             Statistics stats = calculateStatistics(
-                    liveThreads.getValues().stream()
-                            .map(PrometheusClient.DataPoint::getValue)
+                    liveThreads.values().stream()
+                            .map(PrometheusClient.DataPoint::value)
                             .toList()
             );
             threads.put("average", (int) stats.mean);
             threads.put("peak", (int) stats.max);
-            threads.put("final", (int) liveThreads.getValues().getLast().getValue());
+            threads.put("final", (int) liveThreads.values().getLast().value());
         } else {
             threads.put("average", 0);
             threads.put("peak", 0);
@@ -182,8 +182,8 @@ public class BenchmarkMetricsTransformer {
         }
 
         PrometheusClient.TimeSeries daemonThreads = data.get("jvm_threads_daemon_threads");
-        if (daemonThreads != null && !daemonThreads.getValues().isEmpty()) {
-            threads.put("daemon", (int) daemonThreads.getValues().getFirst().getValue());
+        if (daemonThreads != null && !daemonThreads.values().isEmpty()) {
+            threads.put("daemon", (int) daemonThreads.values().getFirst().value());
         } else {
             threads.put("daemon", 0);
         }
@@ -202,11 +202,11 @@ public class BenchmarkMetricsTransformer {
         double totalSuccess = 0;
         double cacheHits = 0;
 
-        if (jwtSuccess != null && !jwtSuccess.getValues().isEmpty()) {
+        if (jwtSuccess != null && !jwtSuccess.values().isEmpty()) {
             totalSuccess = getDeltaValue(jwtSuccess);
             // Check if it's a cache hit based on metric labels
-            if (jwtSuccess.getLabels().containsKey("event_type") &&
-                    jwtSuccess.getLabels().get("event_type").contains("CACHE_HIT")) {
+            if (jwtSuccess.labels().containsKey("event_type") &&
+                    jwtSuccess.labels().get("event_type").contains("CACHE_HIT")) {
                 cacheHits = totalSuccess;
             }
         }
@@ -242,23 +242,23 @@ public class BenchmarkMetricsTransformer {
             return null;
         }
         // Check if this is heap memory based on labels
-        if (memorySeries.getLabels().containsKey("area") &&
-                "heap".equals(memorySeries.getLabels().get("area"))) {
+        if (memorySeries.labels().containsKey("area") &&
+                "heap".equals(memorySeries.labels().get("area"))) {
             return memorySeries;
         }
         return null;
     }
 
     private double getDeltaValue(PrometheusClient.TimeSeries series) {
-        if (series == null || series.getValues().isEmpty()) {
+        if (series == null || series.values().isEmpty()) {
             return 0;
         }
-        List<PrometheusClient.DataPoint> values = series.getValues();
+        List<PrometheusClient.DataPoint> values = series.values();
         if (values.size() == 1) {
-            return values.getFirst().getValue();
+            return values.getFirst().value();
         }
         // For counters, get the difference between last and first
-        return values.getLast().getValue() - values.getFirst().getValue();
+        return values.getLast().value() - values.getFirst().value();
     }
 
     private Statistics calculateStatistics(List<Double> values) {
