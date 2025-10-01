@@ -3,7 +3,7 @@
 
 services:
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.6.0
     container_name: prometheus
     ports:
       - "9090:9090"
@@ -22,7 +22,7 @@ services:
   keycloak:
     # NOTE: Dependabot cannot automatically update this image version.
     # Manual updates required. Check: https://quay.io/keycloak/keycloak
-    image: quay.io/keycloak/keycloak:26.2.5
+    image: quay.io/keycloak/keycloak:26.4.0
     command:
       - start-dev
       - --import-realm
