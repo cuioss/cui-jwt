@@ -55,6 +55,7 @@ public class HttpClientFactory {
         return CLIENT;
     }
 
+    @SuppressWarnings("java:S4830") // ok for testing purposes
     private static HttpClient createClient() {
         try {
             TrustManager[] trustAllCerts = new TrustManager[]{

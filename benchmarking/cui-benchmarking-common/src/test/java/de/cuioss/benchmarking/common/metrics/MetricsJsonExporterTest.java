@@ -400,7 +400,7 @@ class MetricsJsonExporterTest {
         assertEquals("test", parsedData.get("valid_value"));
     }
 
-    @Test void shouldCreateQuarkusRuntimeMetricsStructure() throws IOException {
+    @SuppressWarnings("java:S5961") @Test void shouldCreateQuarkusRuntimeMetricsStructure() throws IOException {
         // Load real metrics data from test resources
         Map<String, Double> realMetrics = loadRealMetricsFromTestResources();
 

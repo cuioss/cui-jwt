@@ -21,7 +21,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
-import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,8 +35,8 @@ import java.util.*;
  */
 public class JmhBenchmarkConverter implements BenchmarkConverter {
 
-    private static final CuiLogger LOGGER = new CuiLogger(JmhBenchmarkConverter.class);
     private static final Gson GSON = new Gson();
+    public static final String THRPT = "thrpt";
 
     private final BenchmarkType benchmarkType;
 
@@ -82,7 +81,7 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
         String convertedUnit = scoreUnit;
 
         // Convert ops/ms to ops/s for throughput benchmarks
-        if ("thrpt".equals(mode) && "ops/ms".equals(scoreUnit)) {
+        if (THRPT.equals(mode) && "ops/ms".equals(scoreUnit)) {
             convertedScore = score * 1000; // Convert ops/ms to ops/s
             convertedUnit = "ops/s";
         }
@@ -93,7 +92,7 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
             for (Map.Entry<String, JsonElement> entry : scorePercentiles.entrySet()) {
                 double percentileValue = entry.getValue().getAsDouble();
                 // Apply same conversion to percentiles
-                if ("thrpt".equals(mode) && "ops/ms".equals(scoreUnit)) {
+                if (THRPT.equals(mode) && "ops/ms".equals(scoreUnit)) {
                     percentileValue = percentileValue * 1000;
                 }
                 percentiles.put(entry.getKey(), percentileValue);
@@ -107,7 +106,7 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
                 .rawScore(convertedScore)
                 .score(formatScore(convertedScore, convertedUnit))
                 .scoreUnit(convertedUnit)
-                .throughput("thrpt".equals(mode) ? formatScore(convertedScore, convertedUnit) : null)
+                .throughput(THRPT.equals(mode) ? formatScore(convertedScore, convertedUnit) : null)
                 .latency("avgt".equals(mode) || "sample".equals(mode) ? formatScore(score, scoreUnit) : null)
                 .error(primaryMetric.has("scoreError") ? primaryMetric.get("scoreError").getAsDouble() : 0.0)
                 .percentiles(percentiles)
@@ -129,7 +128,7 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
     private BenchmarkData.Overview createOverview(List<BenchmarkData.Benchmark> benchmarks) {
         // Find best throughput and latency benchmarks
         Optional<BenchmarkData.Benchmark> bestThroughput = benchmarks.stream()
-                .filter(b -> "thrpt".equals(b.getMode()))
+                .filter(b -> THRPT.equals(b.getMode()))
                 .max(Comparator.comparing(BenchmarkData.Benchmark::getRawScore));
 
         Optional<BenchmarkData.Benchmark> bestLatency = benchmarks.stream()
