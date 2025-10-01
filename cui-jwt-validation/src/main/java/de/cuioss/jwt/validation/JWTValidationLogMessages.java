@@ -471,6 +471,18 @@ public final class JWTValidationLogMessages {
                 .identifier(144)
                 .template("Using insecure HTTP protocol for JWKS endpoint: %s - HTTPS should be used in production")
                 .build();
+
+        public static final LogRecord JWKS_PARSE_NULL_RESULT = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(145)
+                .template("DSL-JSON returned null for JWKS parsing")
+                .build();
+
+        public static final LogRecord JWKS_PARSE_IO_ERROR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(146)
+                .template("Failed to parse JWKS content: %s")
+                .build();
     }
 
 }
