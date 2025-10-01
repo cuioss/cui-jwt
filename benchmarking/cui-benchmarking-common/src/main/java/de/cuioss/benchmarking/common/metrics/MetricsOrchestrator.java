@@ -27,46 +27,21 @@ import java.util.Map;
 
 /**
  * Orchestrator for metrics processing.
- * Coordinates the download, transformation, and export of metrics.
- * Delegates all transformation logic to MetricsTransformer.
+ * Coordinates the transformation and export of real-time Prometheus metrics.
+ * Delegates all transformation logic to BenchmarkMetricsTransformer.
  */
 public class MetricsOrchestrator {
 
     private static final CuiLogger LOGGER = new CuiLogger(MetricsOrchestrator.class);
 
-    private final String metricsURL;
-    private final Path downloadsDirectory;
-    private final Path targetDirectory;
     private final PrometheusClient prometheusClient;
 
     /**
      * Creates a new metrics orchestrator.
      *
-     * @param metricsURL URL to download metrics from
-     * @param downloadsDirectory Directory to store downloaded metrics files
-     * @param targetDirectory Directory to write processed metrics JSON files
-     */
-    public MetricsOrchestrator(String metricsURL, Path downloadsDirectory, Path targetDirectory) {
-        this.metricsURL = metricsURL;
-        this.downloadsDirectory = downloadsDirectory;
-        this.targetDirectory = targetDirectory;
-        // Initialize PrometheusClient with default settings
-        // Assumes Prometheus is running at localhost:9090 (configurable in production)
-        this.prometheusClient = new PrometheusClient("http://localhost:9090");
-    }
-
-    /**
-     * Creates a new metrics orchestrator with custom Prometheus client.
-     *
-     * @param metricsURL URL to download metrics from
-     * @param downloadsDirectory Directory to store downloaded metrics files
-     * @param targetDirectory Directory to write processed metrics JSON files
      * @param prometheusClient PrometheusClient for real-time metrics collection
      */
-    public MetricsOrchestrator(String metricsURL, Path downloadsDirectory, Path targetDirectory, PrometheusClient prometheusClient) {
-        this.metricsURL = metricsURL;
-        this.downloadsDirectory = downloadsDirectory;
-        this.targetDirectory = targetDirectory;
+    public MetricsOrchestrator(PrometheusClient prometheusClient) {
         this.prometheusClient = prometheusClient;
     }
 

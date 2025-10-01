@@ -171,9 +171,6 @@ public class PrometheusMetricsManager {
             LOGGER.info("Collecting real-time metrics from Prometheus at: {}", prometheusUrl);
 
             MetricsOrchestrator orchestrator = new MetricsOrchestrator(
-                    integrationConfig.integrationServiceUrl(),
-                    Path.of(outputDirectory, "metrics-download"),
-                    Path.of(outputDirectory),
                     new PrometheusClient(prometheusUrl)
             );
 
@@ -219,9 +216,6 @@ public class PrometheusMetricsManager {
             LOGGER.info("Collecting real-time metrics for WRK benchmark '{}' from Prometheus", benchmarkName);
 
             MetricsOrchestrator orchestrator = new MetricsOrchestrator(
-                    serviceUrl,
-                    Path.of(outputDirectory, "metrics-download"),
-                    Path.of(outputDirectory),
                     new PrometheusClient(prometheusUrl)
             );
 

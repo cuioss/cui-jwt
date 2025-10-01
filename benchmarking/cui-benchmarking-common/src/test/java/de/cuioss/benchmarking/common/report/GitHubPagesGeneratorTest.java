@@ -46,9 +46,9 @@ class GitHubPagesGeneratorTest {
         assertTrue(Files.exists(deployDir.resolve("sitemap.xml")), "sitemap.xml should be created");
 
         // Verify content is not empty
-        assertTrue(Files.readString(deployDir.resolve("404.html")).length() > 0, "404.html should have content");
-        assertTrue(Files.readString(deployDir.resolve("robots.txt")).length() > 0, "robots.txt should have content");
-        assertTrue(Files.readString(deployDir.resolve("sitemap.xml")).length() > 0, "sitemap.xml should have content");
+        assertFalse(Files.readString(deployDir.resolve("404.html")).isEmpty(), "404.html should have content");
+        assertFalse(Files.readString(deployDir.resolve("robots.txt")).isEmpty(), "robots.txt should have content");
+        assertFalse(Files.readString(deployDir.resolve("sitemap.xml")).isEmpty(), "sitemap.xml should have content");
     }
 
     @Test void generateDeploymentAssetsShould404PageContainErrorMessage(@TempDir Path tempDir) throws Exception {

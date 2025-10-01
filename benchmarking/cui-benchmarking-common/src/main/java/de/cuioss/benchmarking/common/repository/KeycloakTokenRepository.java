@@ -146,8 +146,11 @@ public class KeycloakTokenRepository implements TokenProvider {
                 handleTokenFetchError(response);
                 throw new TokenFetchException("Unexpected error - handleTokenFetchError should have thrown");
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new TokenFetchException("Error fetching token from Keycloak", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TokenFetchException("Token fetch interrupted", e);
         }
     }
 

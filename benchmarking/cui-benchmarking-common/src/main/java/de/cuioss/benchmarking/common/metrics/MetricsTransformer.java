@@ -16,7 +16,6 @@
 package de.cuioss.benchmarking.common.metrics;
 
 import de.cuioss.benchmarking.common.report.MetricConversionUtil;
-import de.cuioss.tools.logging.CuiLogger;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -30,7 +29,7 @@ import java.util.Map;
  */
 public class MetricsTransformer {
 
-    private static final CuiLogger LOGGER = new CuiLogger(MetricsTransformer.class);
+    private static final String AREA_HEAP = "area=\"heap\"";
 
     /**
      * Transforms raw Prometheus metrics into the structured Quarkus runtime metrics format.
@@ -56,7 +55,13 @@ public class MetricsTransformer {
     private Map<String, Object> createSystemMetrics(Map<String, Double> allMetrics) {
         Map<String, Object> systemMetrics = new LinkedHashMap<>();
 
-        // Process system metrics
+        processCpuAndThreadMetrics(allMetrics, systemMetrics);
+        processMemoryMetrics(allMetrics, systemMetrics);
+
+        return systemMetrics;
+    }
+
+    private void processCpuAndThreadMetrics(Map<String, Double> allMetrics, Map<String, Object> systemMetrics) {
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
@@ -67,57 +72,49 @@ public class MetricsTransformer {
                 systemMetrics.put("cpu_load_average", formatNumber(value));
             } else if (metricName.startsWith("jdk_threads_peak_threads")) {
                 systemMetrics.put("threads_peak", value.intValue());
-            } else if (metricName.startsWith("process_cpu_usage")) {
-                // Rename process_cpu_usage to quarkus_cpu_usage_percent
-                if (value > 0) {
-                    double cpuPercent = value * 100;
-                    systemMetrics.put("quarkus_cpu_usage_percent", formatNumber(cpuPercent));
-                }
-            } else if (metricName.startsWith("system_cpu_usage")) {
-                // Keep system_cpu_usage as system_cpu_usage_percent
-                if (value > 0) {
-                    double cpuPercent = value * 100;
-                    systemMetrics.put("system_cpu_usage_percent", formatNumber(cpuPercent));
-                }
-            } else if (metricName.startsWith("jvm_gc_overhead_percent")) {
-                if (value > 0) {
-                    double gcPercent = value * 100;
-                    systemMetrics.put("gc_overhead_percent", formatNumber(gcPercent));
-                }
+            } else if (metricName.startsWith("process_cpu_usage") && value > 0) {
+                systemMetrics.put("quarkus_cpu_usage_percent", formatNumber(value * 100));
+            } else if (metricName.startsWith("system_cpu_usage") && value > 0) {
+                systemMetrics.put("system_cpu_usage_percent", formatNumber(value * 100));
+            } else if (metricName.startsWith("jvm_gc_overhead_percent") && value > 0) {
+                systemMetrics.put("gc_overhead_percent", formatNumber(value * 100));
             }
         }
+    }
 
-        // Process memory metrics
+    private void processMemoryMetrics(Map<String, Double> allMetrics, Map<String, Object> systemMetrics) {
         long totalHeapUsed = 0;
         long totalHeapCommitted = 0;
         long totalHeapMax = 0;
         long totalNonHeapUsed = 0;
 
+        // Collect memory values
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
             String metricName = entry.getKey();
             Double value = entry.getValue();
 
             if (metricName.startsWith("jvm_memory_used_bytes")) {
-                if (metricName.contains("area=\"heap\"")) {
+                if (metricName.contains(AREA_HEAP)) {
                     totalHeapUsed += value.longValue();
                 } else if (metricName.contains("area=\"nonheap\"")) {
                     totalNonHeapUsed += value.longValue();
                 }
-            } else if (metricName.startsWith("jvm_memory_committed_bytes")) {
-                if (metricName.contains("area=\"heap\"")) {
-                    totalHeapCommitted += value.longValue();
-                }
-            } else if (metricName.startsWith("jvm_memory_max_bytes")) {
-                if (metricName.contains("area=\"heap\"")) {
-                    long maxValue = value.longValue();
-                    if (maxValue > 0) {
-                        totalHeapMax += maxValue;
-                    }
+            } else if (metricName.startsWith("jvm_memory_committed_bytes") && metricName.contains(AREA_HEAP)) {
+                totalHeapCommitted += value.longValue();
+            } else if (metricName.startsWith("jvm_memory_max_bytes") && metricName.contains(AREA_HEAP)) {
+                long maxValue = value.longValue();
+                if (maxValue > 0) {
+                    totalHeapMax += maxValue;
                 }
             }
         }
 
-        // Add meaningful memory metrics
+        // Add memory metrics
+        addMemoryMetrics(systemMetrics, totalHeapUsed, totalHeapCommitted, totalHeapMax, totalNonHeapUsed);
+    }
+
+    private void addMemoryMetrics(Map<String, Object> systemMetrics, long totalHeapUsed,
+            long totalHeapCommitted, long totalHeapMax, long totalNonHeapUsed) {
         if (totalHeapUsed > 0) {
             systemMetrics.put("memory_heap_used_mb", totalHeapUsed / (1024 * 1024));
         }
@@ -125,7 +122,6 @@ public class MetricsTransformer {
             systemMetrics.put("memory_nonheap_used_mb", totalNonHeapUsed / (1024 * 1024));
         }
         if (totalHeapCommitted > 0 && totalHeapCommitted != totalHeapUsed) {
-            // Only add committed if it's different from used by more than 10%
             long diff = Math.abs(totalHeapCommitted - totalHeapUsed);
             if (diff > totalHeapUsed * 0.1) {
                 systemMetrics.put("memory_heap_committed_mb", totalHeapCommitted / (1024 * 1024));
@@ -134,21 +130,16 @@ public class MetricsTransformer {
         if (totalHeapMax > 0) {
             systemMetrics.put("memory_heap_max_mb", totalHeapMax / (1024 * 1024));
         }
-
-        // Calculate total memory used (heap + nonheap) only if both are meaningful
         if (totalHeapUsed > 0 && totalNonHeapUsed > 0) {
             long totalMemoryUsed = totalHeapUsed + totalNonHeapUsed;
             systemMetrics.put("memory_total_used_mb", totalMemoryUsed / (1024 * 1024));
         }
-
-        return systemMetrics;
     }
 
     private Map<String, Object> createHttpServerRequestsMetrics(Map<String, Double> allMetrics) {
         Map<String, Object> httpMetrics = new LinkedHashMap<>();
 
         double sumSeconds = 0;
-        long count = 0;
         double maxSeconds = 0;
 
         for (Map.Entry<String, Double> entry : allMetrics.entrySet()) {
@@ -157,7 +148,7 @@ public class MetricsTransformer {
 
             if (metricName.startsWith("http_server_requests_seconds")) {
                 if (metricName.contains("_count")) {
-                    count = value.longValue();
+                    long count = value.longValue();
                     httpMetrics.put("total_requests", count);
                 } else if (metricName.contains("_sum")) {
                     sumSeconds = value;

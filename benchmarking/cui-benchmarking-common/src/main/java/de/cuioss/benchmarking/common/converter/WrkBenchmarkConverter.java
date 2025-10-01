@@ -38,13 +38,11 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
 
     // Regex patterns for parsing WRK output
     private static final Pattern REQUESTS_PER_SEC = Pattern.compile("Requests/sec:\\s+([\\d.]+)");
-    private static final Pattern TRANSFER_PER_SEC = Pattern.compile("Transfer/sec:\\s+([\\d.]+)(\\w+)");
+    @SuppressWarnings("java:S5852") // ok for test-data
     private static final Pattern LATENCY_STATS = Pattern.compile(
             "Latency\\s+([\\d.]+)(\\w+)\\s+([\\d.]+)(\\w+)\\s+([\\d.]+)(\\w+)\\s+([\\d.]+)%");
     private static final Pattern LATENCY_PERCENTILE = Pattern.compile(
             "\\s+(\\d+(?:\\.\\d+)?)%\\s+([\\d.]+)(\\w+)");
-    private static final Pattern TOTAL_REQUESTS = Pattern.compile(
-            "\\s+(\\d+)\\s+requests in\\s+([\\d.]+)s");
 
     @Override public BenchmarkData convert(Path sourcePath) throws IOException {
         if (sourcePath.toFile().isDirectory()) {
@@ -68,19 +66,20 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
         List<BenchmarkData.Benchmark> benchmarks = new ArrayList<>();
 
         // Process all .txt files in the directory (should only contain WRK results)
-        Files.list(dir)
-                .filter(p -> p.getFileName().toString().endsWith(".txt"))
-                .forEach(file -> {
-                    try {
-                        LOGGER.debug("Processing WRK result file: " + file.getFileName());
-                        BenchmarkData.Benchmark benchmark = parseWrkFile(file);
-                        if (benchmark != null) {
-                            benchmarks.add(benchmark);
+        try (var stream = Files.list(dir)) {
+            stream.filter(p -> p.getFileName().toString().endsWith(".txt"))
+                    .forEach(file -> {
+                        try {
+                            LOGGER.debug("Processing WRK result file: " + file.getFileName());
+                            BenchmarkData.Benchmark benchmark = parseWrkFile(file);
+                            if (benchmark != null) {
+                                benchmarks.add(benchmark);
+                            }
+                        } catch (IOException e) {
+                            LOGGER.error("Failed to parse WRK file: " + file, e);
                         }
-                    } catch (IOException e) {
-                        LOGGER.error("Failed to parse WRK file: " + file, e);
-                    }
-                });
+                    });
+        }
 
         return BenchmarkData.builder()
                 .metadata(createMetadata())
@@ -183,10 +182,9 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
     private double convertToMs(double value, String unit) {
         return switch (unit.toLowerCase()) {
             case "us" -> value / 1000.0;
-            case "ms" -> value;
             case "s" -> value * 1000.0;
             case "m" -> value * 60000.0;
-            default -> value;
+            default -> value; // Handles "ms" and any other units as-is
         };
     }
 
@@ -194,12 +192,13 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
         String[] standard = {"0.0", "50.0", "90.0", "95.0", "99.0", "99.9", "99.99", "100.0"};
 
         for (String p : standard) {
-            if (!percentiles.containsKey(p)) {
-                double percentileValue = Double.parseDouble(p);
-                // Simple estimation based on normal distribution
-                double estimated = estimatePercentile(percentileValue, avg, stdev);
-                percentiles.put(p, estimated);
+            if (percentiles.containsKey(p)) {
+                continue;
             }
+            double percentileValue = Double.parseDouble(p);
+            // Simple estimation based on normal distribution
+            double estimated = estimatePercentile(percentileValue, avg, stdev);
+            percentiles.put(p, estimated);
         }
     }
 

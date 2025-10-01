@@ -85,7 +85,7 @@ public abstract class AbstractBenchmarkRunner {
      * - Result file name and directory
      * - Throughput and latency benchmark names
      * - Any other specific configuration
-     * 
+     *
      * @return the complete benchmark configuration
      */
     protected abstract BenchmarkConfiguration createConfiguration();
@@ -97,7 +97,7 @@ public abstract class AbstractBenchmarkRunner {
      * - Setting up resources
      * - Initializing caches
      * - Configuring logging
-     * 
+     *
      * @param config the benchmark configuration
      * @throws IOException if preparation fails
      */
@@ -106,7 +106,7 @@ public abstract class AbstractBenchmarkRunner {
     /**
      * Executes the benchmark with the given options.
      * Default implementation uses JMH Runner, but can be overridden for custom execution.
-     * 
+     *
      * @param options the JMH options
      * @return collection of benchmark results
      * @throws RunnerException if benchmark execution fails
@@ -130,9 +130,7 @@ public abstract class AbstractBenchmarkRunner {
 
         // Process results (generates reports and GitHub Pages)
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                config.reportConfig().benchmarkType(),
-                config.reportConfig().throughputBenchmarkName(),
-                config.reportConfig().latencyBenchmarkName()
+                config.reportConfig().benchmarkType()
         );
         processor.processResults(results, config.resultsDirectory());
     }
@@ -144,7 +142,7 @@ public abstract class AbstractBenchmarkRunner {
      * - Releasing resources
      * - Final metrics collection
      * - Post-processing tasks
-     * 
+     *
      * @param config the benchmark configuration
      * @throws IOException if cleanup fails
      */
@@ -201,9 +199,108 @@ public abstract class AbstractBenchmarkRunner {
     }
 
     /**
+     * Processes timestamp data from TimestampProfiler and records it in Prometheus metrics.
+     * Attempts to use precise iteration timestamps when available, falls back to session timestamps.
+     *
+     * @param results the benchmark results
+     * @param outputPath the directory containing the timestamp file
+     */
+    private void processTimestampData(Collection<RunResult> results, Path outputPath) {
+        Path timestampsFile = outputPath.resolve("jmh-iteration-timestamps.jsonl");
+
+        if (!Files.exists(timestampsFile)) {
+            LOGGER.debug("No timestamp file found at {}, using session-wide timestamps", timestampsFile);
+            recordSessionTimestamps(results);
+            return;
+        }
+
+        try {
+            processPreciseTimestamps(results, timestampsFile);
+        } catch (IOException e) {
+            LOGGER.warn("Failed to parse timestamp file, using session-wide timestamps: {}", e.getMessage());
+            recordSessionTimestamps(results);
+        }
+    }
+
+    /**
+     * Processes precise timestamps from the timestamp file.
+     *
+     * @param results the benchmark results
+     * @param timestampsFile the path to the timestamp file
+     * @throws IOException if reading the file fails
+     */
+    private void processPreciseTimestamps(Collection<RunResult> results, Path timestampsFile) throws IOException {
+        List<IterationTimestampParser.IterationWindow> allWindows =
+                IterationTimestampParser.parseJsonlFile(timestampsFile);
+
+        Map<String, List<IterationTimestampParser.IterationWindow>> byBenchmark =
+                allWindows.stream().collect(Collectors.groupingBy(
+                        IterationTimestampParser.IterationWindow::benchmarkName));
+
+        for (RunResult result : results) {
+            String benchmarkName = extractBenchmarkName(result);
+            List<IterationTimestampParser.IterationWindow> benchmarkWindows = byBenchmark.get(benchmarkName);
+
+            if (benchmarkWindows == null || benchmarkWindows.isEmpty()) {
+                LOGGER.warn("No timestamp data found for benchmark '{}', using session timestamps", benchmarkName);
+                recordBenchmarkTimestamp(benchmarkName);
+                continue;
+            }
+
+            recordPreciseBenchmarkTimestamp(benchmarkName, benchmarkWindows);
+        }
+    }
+
+    /**
+     * Records precise timestamps for a benchmark from its iteration windows.
+     *
+     * @param benchmarkName the name of the benchmark
+     * @param benchmarkWindows the iteration windows for this benchmark
+     */
+    private void recordPreciseBenchmarkTimestamp(String benchmarkName,
+            List<IterationTimestampParser.IterationWindow> benchmarkWindows) {
+        Optional<IterationTimestampParser.IterationWindow> measurementWindow =
+                benchmarkWindows.stream()
+                        .filter(w -> !w.isWarmup())
+                        .findFirst();
+
+        if (measurementWindow.isPresent()) {
+            IterationTimestampParser.IterationWindow window = measurementWindow.get();
+            LOGGER.info("Using precise timestamps for benchmark '{}': {} to {}",
+                    benchmarkName, window.startTime(), window.endTime());
+            prometheusMetricsManager.recordBenchmarkTimestamps(
+                    benchmarkName, window.startTime(), window.endTime());
+        } else {
+            LOGGER.warn("No measurement windows found for benchmark '{}', using session timestamps", benchmarkName);
+            recordBenchmarkTimestamp(benchmarkName);
+        }
+    }
+
+    /**
+     * Records session-wide timestamps for all results.
+     *
+     * @param results the benchmark results
+     */
+    private void recordSessionTimestamps(Collection<RunResult> results) {
+        for (RunResult result : results) {
+            recordBenchmarkTimestamp(extractBenchmarkName(result));
+        }
+    }
+
+    /**
+     * Records session-wide timestamps for a single benchmark.
+     *
+     * @param benchmarkName the name of the benchmark
+     */
+    private void recordBenchmarkTimestamp(String benchmarkName) {
+        prometheusMetricsManager.recordBenchmarkTimestamps(
+                benchmarkName, benchmarkStartTime, benchmarkEndTime);
+    }
+
+    /**
      * Builds JMH options from the benchmark configuration.
      * This method extracts common option building logic that can be reused or extended.
-     * 
+     *
      * @param config the benchmark configuration
      * @return JMH options builder with common settings applied
      */
@@ -234,7 +331,7 @@ public abstract class AbstractBenchmarkRunner {
     /**
      * Validates the benchmark configuration.
      * Throws IllegalArgumentException if configuration is invalid.
-     * 
+     *
      * @param config the configuration to validate
      * @throws IllegalArgumentException if configuration is invalid
      */
@@ -313,71 +410,7 @@ public abstract class AbstractBenchmarkRunner {
 
             // Step 7: Use precise iteration timestamps from TimestampProfiler
             benchmarkEndTime = Instant.now();
-
-            // Try to load precise timestamps from TimestampProfiler
-            Path timestampsFile = Path.of(outputDir).resolve("jmh-iteration-timestamps.jsonl");
-            if (Files.exists(timestampsFile)) {
-                try {
-                    // Parse the timestamp file
-                    List<IterationTimestampParser.IterationWindow> allWindows =
-                            IterationTimestampParser.parseJsonlFile(timestampsFile);
-
-                    // Group by benchmark name
-                    Map<String, List<IterationTimestampParser.IterationWindow>> byBenchmark =
-                            allWindows.stream().collect(Collectors.groupingBy(
-                                    IterationTimestampParser.IterationWindow::benchmarkName));
-
-                    // Record precise timestamps for each benchmark
-                    for (RunResult result : results) {
-                        String benchmarkName = extractBenchmarkName(result);
-                        List<IterationTimestampParser.IterationWindow> benchmarkWindows =
-                                byBenchmark.get(benchmarkName);
-
-                        if (benchmarkWindows != null && !benchmarkWindows.isEmpty()) {
-                            // For single iteration config, just use the first measurement window
-                            // Skip any warmup iterations (shouldn't exist with warmupIterations=0)
-                            Optional<IterationTimestampParser.IterationWindow> measurementWindow =
-                                    benchmarkWindows.stream()
-                                            .filter(w -> !w.isWarmup())
-                                            .findFirst();
-
-                            if (measurementWindow.isPresent()) {
-                                IterationTimestampParser.IterationWindow window = measurementWindow.get();
-                                LOGGER.info("Using precise timestamps for benchmark '{}': {} to {}",
-                                        benchmarkName, window.startTime(), window.endTime());
-                                prometheusMetricsManager.recordBenchmarkTimestamps(
-                                        benchmarkName, window.startTime(), window.endTime());
-                            } else {
-                                // No measurement windows, use session timestamps
-                                LOGGER.warn("No measurement windows found for benchmark '{}', using session timestamps", benchmarkName);
-                                prometheusMetricsManager.recordBenchmarkTimestamps(
-                                        benchmarkName, benchmarkStartTime, benchmarkEndTime);
-                            }
-                        } else {
-                            // No timestamp data, use session timestamps
-                            LOGGER.warn("No timestamp data found for benchmark '{}', using session timestamps", benchmarkName);
-                            prometheusMetricsManager.recordBenchmarkTimestamps(
-                                    benchmarkName, benchmarkStartTime, benchmarkEndTime);
-                        }
-                    }
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to parse timestamp file, using session-wide timestamps: {}", e.getMessage());
-                    // Fallback to session-wide timestamps
-                    for (RunResult result : results) {
-                        String benchmarkName = extractBenchmarkName(result);
-                        prometheusMetricsManager.recordBenchmarkTimestamps(
-                                benchmarkName, benchmarkStartTime, benchmarkEndTime);
-                    }
-                }
-            } else {
-                // No timestamp file, use session-wide timestamps
-                LOGGER.debug("No timestamp file found at {}, using session-wide timestamps", timestampsFile);
-                for (RunResult result : results) {
-                    String benchmarkName = extractBenchmarkName(result);
-                    prometheusMetricsManager.recordBenchmarkTimestamps(
-                            benchmarkName, benchmarkStartTime, benchmarkEndTime);
-                }
-            }
+            processTimestampData(results, outputPath);
 
             // Step 8: Process results (including Prometheus metrics collection)
             processResults(results, config);
@@ -391,34 +424,6 @@ public abstract class AbstractBenchmarkRunner {
             // Step 9: Cleanup (always executed)
             cleanup(config);
         }
-    }
-
-    /**
-     * Gets the Prometheus metrics manager instance.
-     * This allows subclasses to access the manager for custom metrics collection.
-     *
-     * @return the Prometheus metrics manager
-     */
-    protected PrometheusMetricsManager getPrometheusMetricsManager() {
-        return prometheusMetricsManager;
-    }
-
-    /**
-     * Gets the recorded benchmark start time.
-     *
-     * @return the benchmark start time, or null if not yet started
-     */
-    protected Instant getBenchmarkStartTime() {
-        return benchmarkStartTime;
-    }
-
-    /**
-     * Gets the recorded benchmark end time.
-     *
-     * @return the benchmark end time, or null if not yet completed
-     */
-    protected Instant getBenchmarkEndTime() {
-        return benchmarkEndTime;
     }
 
 }

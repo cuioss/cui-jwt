@@ -15,8 +15,6 @@
  */
 package de.cuioss.benchmarking.common.runner;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
 import de.cuioss.benchmarking.common.converter.JmhBenchmarkConverter;
 import de.cuioss.benchmarking.common.model.BenchmarkData;
@@ -54,29 +52,16 @@ public class BenchmarkResultProcessor {
     private static final CuiLogger LOGGER =
             new CuiLogger(BenchmarkResultProcessor.class);
 
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .serializeSpecialFloatingPointValues()
-            .create();
-
 
     private final BenchmarkType benchmarkType;
-    private final String throughputBenchmarkName;
-    private final String latencyBenchmarkName;
 
     /**
      * Creates a processor for the specified benchmark type.
      *
      * @param benchmarkType the type of benchmarks being processed
-     * @param throughputBenchmarkName the benchmark name to extract throughput from
-     * @param latencyBenchmarkName the benchmark name to extract latency from
      */
-    public BenchmarkResultProcessor(BenchmarkType benchmarkType,
-            String throughputBenchmarkName,
-            String latencyBenchmarkName) {
+    public BenchmarkResultProcessor(BenchmarkType benchmarkType) {
         this.benchmarkType = benchmarkType;
-        this.throughputBenchmarkName = throughputBenchmarkName;
-        this.latencyBenchmarkName = latencyBenchmarkName;
     }
 
     /**

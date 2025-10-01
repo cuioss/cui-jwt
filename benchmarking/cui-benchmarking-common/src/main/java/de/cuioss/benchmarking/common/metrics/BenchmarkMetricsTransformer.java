@@ -15,12 +15,9 @@
  */
 package de.cuioss.benchmarking.common.metrics;
 
-import de.cuioss.tools.logging.CuiLogger;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Transforms Prometheus time-series data into the benchmark server metrics format
@@ -30,7 +27,8 @@ import java.util.stream.Collectors;
  */
 public class BenchmarkMetricsTransformer {
 
-    private static final CuiLogger LOGGER = new CuiLogger(BenchmarkMetricsTransformer.class);
+    private static final String METRIC_PROCESS_CPU_USAGE = "process_cpu_usage";
+    private static final String METRIC_JVM_MEMORY_USED_BYTES = "jvm_memory_used_bytes";
 
     /**
      * Transforms Prometheus time-series data into benchmark server metrics.
@@ -64,11 +62,6 @@ public class BenchmarkMetricsTransformer {
         // Application metrics
         result.put("application", createApplicationMetrics(timeSeriesData));
 
-        // Optional: Include raw time-series data
-        if (includeTimeSeries()) {
-            result.put("time_series", createTimeSeriesData(timeSeriesData, duration));
-        }
-
         return result;
     }
 
@@ -78,7 +71,7 @@ public class BenchmarkMetricsTransformer {
 
         // CPU metrics
         Map<String, Object> cpu = new LinkedHashMap<>();
-        cpu.put("process", createCpuMetrics(data.get("process_cpu_usage"), "Process"));
+        cpu.put("process", createCpuMetrics(data.get(METRIC_PROCESS_CPU_USAGE), "Process"));
         cpu.put("system", createCpuMetrics(data.get("system_cpu_usage"), "System"));
 
         // Get CPU cores
@@ -111,7 +104,7 @@ public class BenchmarkMetricsTransformer {
 
         List<Double> values = series.getValues().stream()
                 .map(dp -> dp.getValue() * 100) // Convert to percentage
-                .collect(Collectors.toList());
+                .toList();
 
         Statistics stats = calculateStatistics(values);
 
@@ -136,11 +129,11 @@ public class BenchmarkMetricsTransformer {
 
         // Heap memory
         Map<String, Object> heap = new LinkedHashMap<>();
-        PrometheusClient.TimeSeries heapUsed = findHeapMemory(data.get("jvm_memory_used_bytes"));
+        PrometheusClient.TimeSeries heapUsed = findHeapMemory(data.get(METRIC_JVM_MEMORY_USED_BYTES));
         if (heapUsed != null && !heapUsed.getValues().isEmpty()) {
             List<Double> heapMbValues = heapUsed.getValues().stream()
                     .map(dp -> dp.getValue() / 1024 / 1024) // Convert to MB
-                    .collect(Collectors.toList());
+                    .toList();
 
             Statistics stats = calculateStatistics(heapMbValues);
             heap.put("average_mb", round(stats.mean, 1));
@@ -177,11 +170,11 @@ public class BenchmarkMetricsTransformer {
             Statistics stats = calculateStatistics(
                     liveThreads.getValues().stream()
                             .map(PrometheusClient.DataPoint::getValue)
-                            .collect(Collectors.toList())
+                            .toList()
             );
             threads.put("average", (int) stats.mean);
             threads.put("peak", (int) stats.max);
-            threads.put("final", (int) liveThreads.getValues().get(liveThreads.getValues().size() - 1).getValue());
+            threads.put("final", (int) liveThreads.getValues().getLast().getValue());
         } else {
             threads.put("average", 0);
             threads.put("peak", 0);
@@ -242,40 +235,6 @@ public class BenchmarkMetricsTransformer {
         application.put("jwt_validations", jwtValidations);
 
         return application;
-    }
-
-    private Map<String, Object> createTimeSeriesData(Map<String, PrometheusClient.TimeSeries> data, Duration duration) {
-        Map<String, Object> timeSeries = new LinkedHashMap<>();
-
-        timeSeries.put("sampling_interval_seconds", 2);
-        timeSeries.put("duration_seconds", duration.getSeconds());
-
-        Map<String, List<Double>> metrics = new LinkedHashMap<>();
-
-        // Include key time-series data
-        if (data.containsKey("process_cpu_usage")) {
-            metrics.put("cpu_usage", extractTimeSeriesValues(data.get("process_cpu_usage"), 100));
-        }
-
-        if (data.containsKey("jvm_memory_used_bytes")) {
-            PrometheusClient.TimeSeries heapMemory = findHeapMemory(data.get("jvm_memory_used_bytes"));
-            if (heapMemory != null) {
-                metrics.put("memory_usage_mb", extractTimeSeriesValues(heapMemory, 1.0 / 1024 / 1024));
-            }
-        }
-
-        timeSeries.put("metrics", metrics);
-
-        return timeSeries;
-    }
-
-    private List<Double> extractTimeSeriesValues(PrometheusClient.TimeSeries series, double multiplier) {
-        if (series == null || series.getValues().isEmpty()) {
-            return List.of();
-        }
-        return series.getValues().stream()
-                .map(dp -> round(dp.getValue() * multiplier, 2))
-                .collect(Collectors.toList());
     }
 
     private PrometheusClient.TimeSeries findHeapMemory(PrometheusClient.TimeSeries memorySeries) {
@@ -344,11 +303,6 @@ public class BenchmarkMetricsTransformer {
     private double round(double value, int decimals) {
         double scale = Math.pow(10, decimals);
         return Math.round(value * scale) / scale;
-    }
-
-    private boolean includeTimeSeries() {
-        // Configuration option to include raw time-series data
-        return false; // Can be made configurable
     }
 
     private static class Statistics {

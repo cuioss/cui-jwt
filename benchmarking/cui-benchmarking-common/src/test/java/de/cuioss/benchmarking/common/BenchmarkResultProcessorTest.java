@@ -27,8 +27,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -49,9 +47,9 @@ class BenchmarkResultProcessorTest {
 
         // Process results - use actual benchmark names from the test data
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                BenchmarkType.MICRO,
-                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
-                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
+                BenchmarkType.MICRO
+        // This is in SimpleCoreValidationBenchmark.measureThroughput
+        );  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
 
@@ -83,9 +81,8 @@ class BenchmarkResultProcessorTest {
 
     @Test void emptyResultsHandling(@TempDir Path tempDir) {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                BenchmarkType.MICRO,
-                DEFAULT_THROUGHPUT_BENCHMARK,
-                DEFAULT_LATENCY_BENCHMARK);
+                BenchmarkType.MICRO
+        );
         List<RunResult> emptyResults = List.of();
 
         String outputDir = tempDir.toString();
@@ -105,9 +102,9 @@ class BenchmarkResultProcessorTest {
         Files.copy(sourceJson, targetJson);
 
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                BenchmarkType.MICRO,
-                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
-                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
+                BenchmarkType.MICRO
+        // This is in SimpleCoreValidationBenchmark.measureThroughput
+        );  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = nestedDir.toString();
 
         // Use empty results - processor will read from JSON

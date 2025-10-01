@@ -408,11 +408,11 @@ public class ReportDataGenerator {
 
         Map<String, Object> trendData = new LinkedHashMap<>();
         trendData.put(AVAILABLE, true);
-        trendData.put("direction", trendMetrics.getDirection());
-        trendData.put("changePercentage", trendMetrics.getChangePercentage());
-        trendData.put("movingAverage", trendMetrics.getMovingAverage());
-        trendData.put("throughputTrend", trendMetrics.getThroughputTrend());
-        trendData.put("latencyTrend", trendMetrics.getLatencyTrend());
+        trendData.put("direction", trendMetrics.direction());
+        trendData.put("changePercentage", trendMetrics.changePercentage());
+        trendData.put("movingAverage", trendMetrics.movingAverage());
+        trendData.put("throughputTrend", trendMetrics.throughputTrend());
+        trendData.put("latencyTrend", trendMetrics.latencyTrend());
         trendData.put("chartData", trendProcessor.generateTrendChartData(historicalData, metrics));
         trendData.put("summary", generateTrendSummary(trendMetrics));
 
@@ -427,8 +427,8 @@ public class ReportDataGenerator {
     }
 
     private String generateTrendSummary(TrendDataProcessor.TrendMetrics trendMetrics) {
-        String direction = trendMetrics.getDirection();
-        double change = Math.abs(trendMetrics.getChangePercentage());
+        String direction = trendMetrics.direction();
+        double change = Math.abs(trendMetrics.changePercentage());
 
         if (BenchmarkConstants.Report.Badge.TrendDirection.STABLE.equals(direction)) {
             return BenchmarkConstants.Report.Messages.PERFORMANCE_STABLE_FORMAT.formatted(change);

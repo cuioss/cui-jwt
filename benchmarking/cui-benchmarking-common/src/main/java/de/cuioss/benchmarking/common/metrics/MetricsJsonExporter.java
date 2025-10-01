@@ -59,6 +59,7 @@ public class MetricsJsonExporter {
                 return new JsonPrimitive(src);
             })
             .create();
+    public static final String BEARER_TOKEN_RESULT = "getBearerTokenResult";
 
     private final Path targetDirectory;
 
@@ -235,11 +236,11 @@ public class MetricsJsonExporter {
             Double value = entry.getValue();
 
             if (metricName.contains("bearer_token_validation_seconds")) {
-                if (metricName.contains("_count") && metricName.contains("getBearerTokenResult")) {
+                if (metricName.contains("_count") && metricName.contains(BEARER_TOKEN_RESULT)) {
                     count = value;
-                } else if (metricName.contains("_sum") && metricName.contains("getBearerTokenResult")) {
+                } else if (metricName.contains("_sum") && metricName.contains(BEARER_TOKEN_RESULT)) {
                     sum = value;
-                } else if (metricName.contains("_max") && metricName.contains("getBearerTokenResult")) {
+                } else if (metricName.contains("_max") && metricName.contains(BEARER_TOKEN_RESULT)) {
                     max = value;
                 }
             }
@@ -356,7 +357,7 @@ public class MetricsJsonExporter {
             DecimalFormat df = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.US));
             return Double.parseDouble(df.format(value));
         } else {
-            return Long.valueOf(Math.round(value));
+            return Math.round(value);
         }
     }
 
