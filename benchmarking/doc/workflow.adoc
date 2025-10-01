@@ -72,13 +72,13 @@ ls -la benchmarking/benchmark-library/target/benchmark-results/
 # View WRK benchmark artifacts
 ls -la benchmarking/benchmark-integration-wrk/target/benchmark-results/
 
-# Generate comprehensive reports
-cd benchmarking/cui-benchmarking-common
-mvn test -Dtest=LocalReportGeneratorTest
+# Serve library benchmark reports for viewing
+cd benchmarking/scripts
+./serve-reports.sh library
+# Open http://localhost:8080
 
-# Serve reports locally for viewing
-cd ../scripts
-./serve-reports.sh
+# Or serve WRK benchmark reports
+./serve-reports.sh wrk
 # Open http://localhost:8080
 ----
 

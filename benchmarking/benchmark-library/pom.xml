@@ -262,6 +262,36 @@
             </properties>
         </profile>
 
+        <!-- Analyze JFR recordings -->
+        <profile>
+            <id>analyze-jfr</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>analyze-jfr-recording</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>false</skip>
+                                    <mainClass>de.cuioss.benchmarking.common.jfr.JfrVarianceAnalyzer</mainClass>
+                                    <arguments>
+                                        <argument>${jfr.file}</argument>
+                                    </arguments>
+                                    <classpathScope>compile</classpathScope>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <!-- Quick benchmark profile for faster testing -->
         <profile>
             <id>quick</id>

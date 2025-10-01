@@ -29,13 +29,11 @@ For local development and testing of benchmark results:
 # Run WRK load testing benchmarks
 ./mvnw verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
 
-# Generate and view benchmark reports locally
-cd benchmarking/cui-benchmarking-common
-mvn test -Dtest=LocalReportGeneratorTest
-
-# View generated reports
-cd ../scripts
-./serve-reports.sh
+# View benchmark reports locally
+cd benchmarking/scripts
+./serve-reports.sh library  # For library benchmarks
+# or
+./serve-reports.sh wrk      # For WRK benchmarks
 # Open http://localhost:8080 in your browser
 ----
 
