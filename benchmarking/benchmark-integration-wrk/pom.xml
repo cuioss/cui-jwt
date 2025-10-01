@@ -41,6 +41,7 @@
 
         <!-- Benchmark history directory for trend analysis -->
         <benchmark.history.dir>${wrk.results.dir}/history</benchmark.history.dir>
+        <wrk.jwt.token_count>100</wrk.jwt.token_count>
     </properties>
 
     <dependencies>
@@ -209,7 +210,7 @@
                                 <CLIENT_SECRET>benchmark-secret</CLIENT_SECRET>
                                 <USERNAME>benchmark-user</USERNAME>
                                 <PASSWORD>benchmark-password</PASSWORD>
-                                <TOKEN_COUNT>100</TOKEN_COUNT>
+                                <TOKEN_COUNT>${wrk.jwt.token_count}</TOKEN_COUNT>
                                 <SERVICE_URL>${integration.service.url}</SERVICE_URL>
                                 <WRK_THREADS>${wrk.threads}</WRK_THREADS>
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
