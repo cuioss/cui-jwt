@@ -434,28 +434,34 @@ _See specification: xref:specification/testing.adoc#_compliance_testing[Complian
 [#CUI-JWT-9]
 === CUI-JWT-9: Performance
 
-_See specification: xref:../benchmarking/doc/performance-requirements.adoc[Performance Requirements]_
+Performance requirements are verified through JMH benchmarks in the benchmarking module.
 
 [#CUI-JWT-9.1]
 ==== CUI-JWT-9.1: Token Parsing Performance
 
-Token parsing must process at least 1000 tokens per second on reference hardware (Intel i7 or equivalent, 16GB RAM).
-
-_See specification: xref:../benchmarking/doc/performance-requirements.adoc#_token_validation_performance[Token Validation Performance]_
+* Access token validation: < 1ms average time
+* ID token validation: < 1.5ms average time
+* 99th percentile: < 5ms
 
 [#CUI-JWT-9.2]
 ==== CUI-JWT-9.2: Token Validation Performance
 
-Token validation must process at least 500 tokens per second on reference hardware (Intel i7 or equivalent, 16GB RAM).
-
-_See specification: xref:../benchmarking/doc/performance-requirements.adoc#_token_validation_performance[Token Validation Performance]_
+* Invalid token validation: < 2ms average time
+* Maximum throughput degradation during 50% error rate: < 40%
 
 [#CUI-JWT-9.3]
 ==== CUI-JWT-9.3: Key Retrieval Performance
 
-Key retrieval and caching must add no more than 100ms overhead per new key.
+* Key retrieval (cached): < 0.1ms
+* Key retrieval (uncached): < 50ms
+* JWKS refresh: < 200ms
+* Non-existent key lookup: < 0.5ms (cached mode)
 
-_See specification: xref:../benchmarking/doc/performance-requirements.adoc#_jwks_key_retrieval_performance[JWKS Key Retrieval Performance]_
+[#CUI-JWT-9.4]
+==== CUI-JWT-9.4: Concurrent Performance
+
+* Linear scaling up to 16 threads
+* No more than 50% degradation at 100 threads
 
 [#CUI-JWT-10]
 === CUI-JWT-10: Reliability
