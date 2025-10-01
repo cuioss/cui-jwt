@@ -178,7 +178,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
 
             if (endpoint.contains("scopes")) {
-                LOGGER.info("bearerTokenWithScopes:%s", tokenResponse.accessToken());
+                LOGGER.debug("bearerTokenWithScopes:%s", tokenResponse.accessToken());
             }
 
             given()
@@ -195,7 +195,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
     @Order(99)
     @DisplayName("Verify SecurityEventCounter metrics have sensible bounds after all tests")
     void verifySecurityEventCounterMetrics() {
-        LOGGER.info("Verifying SecurityEventCounter metrics bounds after all integration tests");
+        LOGGER.debug("Verifying SecurityEventCounter metrics bounds after all integration tests");
 
         // Wait for metrics to be collected (collection interval is 2s)
         // Just wait a bit to ensure metrics collection has run at least once
@@ -225,13 +225,13 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                 .body()
                 .asString();
 
-        LOGGER.debug("Raw metrics response length: {}", metricsResponse.length());
+        LOGGER.debug("Raw metrics response length: %s", metricsResponse.length());
 
         // Debug: Print relevant metrics lines
         String[] lines = metricsResponse.split("\n");
         for (String line : lines) {
             if (line.contains("cui_jwt_validation")) {
-                LOGGER.info("Found JWT validation metric: {}", line);
+                LOGGER.debug("Found JWT validation metric: %s", line);
             }
         }
 
@@ -241,7 +241,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
 
         // Check if success metrics are present (may not be if no success events occurred)
         boolean hasSuccessMetrics = metricsResponse.contains("cui_jwt_validation_success_total");
-        LOGGER.info("Success metrics present: {}", hasSuccessMetrics);
+        LOGGER.debug("Success metrics present: %s", hasSuccessMetrics);
 
         // Parse metrics to check bounds
         Map<String, Double> parsedMetrics = parseMetricsResponse(metricsResponse);
@@ -268,11 +268,11 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             assertTrue(totalSuccess >= 10,
                     "Total successful operations should be at least 10: " + totalSuccess);
 
-            LOGGER.info("SecurityEventCounter metrics validation passed - ACCESS_TOKEN_CREATED: {}, " +
-                    "ACCESS_TOKEN_CACHE_HIT: {}, Total Success: {}",
+            LOGGER.debug("SecurityEventCounter metrics validation passed - ACCESS_TOKEN_CREATED: %s, " +
+                    "ACCESS_TOKEN_CACHE_HIT: %s, Total Success: %s",
                     accessTokensCreated, accessTokenCacheHits, totalSuccess);
         } else {
-            LOGGER.warn("Success metrics not found - this indicates SecurityEventCounter success events are not being published");
+            LOGGER.debug("Success metrics not found - this indicates SecurityEventCounter success events are not being published");
             // For now, just verify that we at least have the error metrics structure
             assertFalse(parsedMetrics.isEmpty(), "Should have some metrics available");
         }

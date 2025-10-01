@@ -43,7 +43,7 @@ public abstract class BaseIntegrationTest {
         String testPort = System.getProperty("test.https.port", DEFAULT_TEST_PORT);
         RestAssured.port = Integer.parseInt(testPort);
 
-        LOGGER.info("Integration tests configured for HTTPS port: %s with relaxed HTTPS validation", testPort);
+        LOGGER.debug("Integration tests configured for HTTPS port: %s with relaxed HTTPS validation", testPort);
     }
 
     private static void configureCustomTruststore() {
