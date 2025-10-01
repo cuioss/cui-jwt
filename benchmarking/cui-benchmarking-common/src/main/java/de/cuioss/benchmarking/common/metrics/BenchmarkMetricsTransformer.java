@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /**
  * Transforms Prometheus time-series data into the benchmark server metrics format
- * as defined in metrics-requirements.adoc.
+ * as defined in benchmark-metrics.adoc.
  *
  * @since 1.0
  */

@@ -1,0 +1,324 @@
+= Benchmark Metrics System
+:toc:
+:toclevels: 3
+:icons: font
+
+== Overview
+
+The metrics system captures real-time CPU, memory, and application metrics from the Quarkus application during benchmark execution using Prometheus time-series data collection. All metrics are collected for the exact duration of each benchmark and stored in structured JSON format for performance analysis.
+
+== System Architecture
+
+=== Components
+
+[source]
+----
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   WRK/JMH       │────▶│  Quarkus App     │◀────│   Prometheus    │
+│  (Load Gen)     │     │  :8443/jwt       │     │   :9090         │
+│                 │     │  :8443/q/metrics │     │  (2s scrape)    │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+        │                                                  │
+        ▼                                                  ▼
+┌─────────────────┐                          ┌─────────────────────┐
+│  Benchmark      │                          │  Time-Series        │
+│  Results        │                          │  Metrics Data       │
+└─────────────────┘                          └─────────────────────┘
+        │                                                  │
+        └──────────────────┬───────────────────────────────┘
+                           ▼
+                ┌──────────────────────┐
+                │  MetricsOrchestrator │
+                │  + Transformer       │
+                └──────────────────────┘
+                           │
+                           ▼
+                ┌──────────────────────┐
+                │ {name}-server-       │
+                │      metrics.json    │
+                └──────────────────────┘
+----
+
+=== Data Flow
+
+1. **Prometheus** scrapes Quarkus metrics at `/q/metrics` every 2 seconds
+2. **Benchmark runner** records start/end timestamps during test execution
+3. **MetricsOrchestrator** queries Prometheus API for the exact benchmark time range
+4. **BenchmarkMetricsTransformer** aggregates time-series data into statistics
+5. **MetricsJsonExporter** generates `{benchmarkName}-server-metrics.json`
+
+== Docker Configuration
+
+=== Prometheus Setup
+
+Configuration files:
+
+* **prometheus.yml**: `cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/prometheus.yml`
+* **docker-compose.yml**: `cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/docker-compose.yml`
+
+Key settings:
+
+* Scrape interval: 2 seconds
+* Target: `cui-jwt-integration-tests:8443/q/metrics` (internal service name)
+* HTTPS with self-signed certificates (`insecure_skip_verify: true`)
+* Data retention: 1 hour (sufficient for benchmarking)
+
+NOTE: External port mapping is `10443→8443`. Prometheus uses internal service name and port.
+
+== Collected Metrics
+
+=== System Resources
+
+[cols="2,3,1"]
+|===
+|Metric |Description |Type
+
+|`process_cpu_usage`
+|JVM process CPU utilization (0.0-1.0)
+|Gauge
+
+|`system_cpu_usage`
+|Container CPU usage (0.0-1.0)
+|Gauge
+
+|`system_cpu_count`
+|Available CPU cores to container
+|Gauge
+
+|`jvm_memory_used_bytes{area="heap"}`
+|Heap memory usage in bytes
+|Gauge
+
+|`jvm_threads_live_threads`
+|Active thread count
+|Gauge
+
+|`jvm_threads_daemon_threads`
+|Daemon thread count
+|Gauge
+
+|`jvm_threads_peak_threads`
+|Peak thread count during benchmark
+|Gauge
+
+|`jvm_gc_overhead`
+|GC overhead percentage (0.0-1.0)
+|Gauge
+|===
+
+=== Application Metrics
+
+[cols="2,3,1"]
+|===
+|Metric |Description |Type
+
+|`cui_jwt_validation_success_operations_total`
+|Successful JWT validations by event type
+|Counter
+
+|`cui_jwt_validation_errors_total`
+|JWT validation errors by category
+|Counter
+
+|`cui_jwt_bearer_token_validation_seconds_count`
+|JWT validation count
+|Histogram
+
+|`cui_jwt_bearer_token_validation_seconds_sum`
+|Total JWT validation time in seconds
+|Histogram
+|===
+
+== Output Format
+
+=== File Location
+
+[source]
+----
+target/benchmark-results/
+├── prometheus/
+│   └── {benchmarkName}-server-metrics.json
+├── wrk/
+│   └── {benchmarkName}-results.json
+└── gh-pages-ready/
+    ├── data/       # Deployable metrics copies
+    ├── api/        # API endpoints (status, benchmarks, latest)
+    └── badges/     # Status badges
+----
+
+=== JSON Structure
+
+[source,json]
+----
+{
+  "benchmark": {
+    "name": "jwtValidation",
+    "start_time": "2025-09-26T18:05:06Z",
+    "end_time": "2025-09-26T18:05:38Z",
+    "duration_seconds": 32
+  },
+  "resources": {
+    "cpu": {
+      "process": {
+        "average_percent": 91.0,
+        "peak_percent": 100.0,
+        "std_dev": 20.29,
+        "percentiles": {
+          "p50": 88.5,
+          "p75": 95.2,
+          "p90": 98.7,
+          "p99": 100.0
+        }
+      },
+      "system": {
+        "average_percent": 91.0,
+        "peak_percent": 100.0,
+        "std_dev": 20.15
+      },
+      "cores_available": 4
+    },
+    "memory": {
+      "heap": {
+        "average_mb": 10.9,
+        "peak_mb": 62.0,
+        "final_mb": 8.0
+      },
+      "gc": {
+        "overhead_percent": 0.12
+      }
+    },
+    "threads": {
+      "average": 38,
+      "peak": 52,
+      "final": 42,
+      "daemon": 7
+    }
+  },
+  "application": {
+    "jwt_validations": {
+      "total": 247681,
+      "success": 247681,
+      "errors": 0,
+      "cache_hits": 223413,
+      "cache_hit_rate_percent": 90.2,
+      "average_validation_time_ms": 0.12
+    }
+  }
+}
+----
+
+== Implementation
+
+=== Core Classes
+
+* **PrometheusClient**: Prometheus API communication (query_range operations)
+* **MetricsOrchestrator**: Coordinates metrics collection and timestamps
+* **BenchmarkMetricsTransformer**: Aggregates time-series into statistics
+* **MetricsJsonExporter**: Exports structured JSON output
+* **PrometheusMetricsManager**: Manages Prometheus availability checks
+
+Location: `benchmarking/cui-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/metrics/`
+
+=== Integration
+
+* **WrkResultPostProcessor**: WRK benchmark integration
+* **OutputDirectoryStructure**: Directory structure management
+
+== CPU Percentage Interpretation
+
+IMPORTANT: CPU percentages in containerized environments are relative to allocated cores, not host CPU.
+
+=== Understanding Container CPU
+
+* **100% = All allocated cores fully utilized**
+* In a 4-core container: 100% = 4 cores at full capacity
+* Metrics normalize to 100% maximum regardless of core count
+
+[cols="1,2,3"]
+|===
+| Value | 4-Core Container | Interpretation
+
+| 25%
+| 1 core fully utilized
+| Single-threaded or low load
+
+| 50%
+| 2 cores fully utilized
+| Moderate load, good headroom
+
+| 85%
+| 3.4 cores utilized
+| Heavy load (typical JWT validation)
+
+| 98-100%
+| ~4 cores fully utilized
+| CPU saturation, throughput limited
+|===
+
+* **process_cpu_usage**: JVM process only
+* **system_cpu_usage**: Entire container (all processes)
+* **Efficiency**: Lower CPU for same throughput = better efficiency
+
+== Error Handling
+
+The system ensures build stability through resilient error handling:
+
+[cols="2,3"]
+|===
+|Scenario |Response
+
+|Prometheus unavailable
+|Log warning, continue with empty metrics
+
+|Missing metrics
+|Skip unavailable metrics, use collected data
+
+|Network timeout (>30s)
+|Log warning, continue build
+
+|Invalid JSON response
+|Log error details, use empty metrics structure
+|===
+
+IMPORTANT: **Metrics collection failures NEVER fail the build**. Builds continue even without metrics.
+
+== Testing
+
+Comprehensive test coverage:
+
+* **PrometheusClientTest**: API client testing with mock responses
+* **MetricsTransformerTest**: Aggregation and transformation logic
+* **MetricsIntegrationTest**: End-to-end metrics collection
+
+Test data: `cui-benchmarking-common/src/test/resources/metrics/`
+
+Uses real Prometheus metrics from actual benchmark runs.
+
+== Performance Debugging
+
+Collected metrics enable analysis of:
+
+1. **CPU Bottlenecks**: Is the service CPU-bound?
+2. **Memory Pressure**: Is GC impacting performance?
+3. **Thread Pool Health**: Stable thread count or growth?
+4. **Cache Effectiveness**: JWT cache hit rates under load
+5. **Validation Performance**: Average JWT validation times
+6. **Error Patterns**: Error types and frequencies under load
+
+== Benefits
+
+1. **Accurate**: Measures application metrics, not load generator
+2. **Real-time**: Captures metrics during actual benchmark execution
+3. **Time-aligned**: Metrics correlate with benchmark phases
+4. **Unified**: Single orchestrator handles WRK and JMH benchmarks
+5. **Professional**: Industry-standard Prometheus/Grafana stack
+6. **Build-safe**: Failures never break builds
+7. **Testable**: Comprehensive test coverage with real data
+
+== References
+
+* link:../cui-benchmarking-common/README.adoc[Benchmarking Common Module]
+* link:Architecture.adoc[Benchmark Architecture]
+* link:workflow.adoc[Benchmark Workflow]
+* https://prometheus.io/docs/prometheus/latest/querying/api/[Prometheus API Documentation]
+* https://quarkus.io/guides/micrometer[Quarkus Micrometer Guide]

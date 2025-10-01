@@ -126,7 +126,7 @@ public class MetricsOrchestrator {
             Map<String, Object> metricsOutput = transformer.transformToServerMetrics(
                     benchmarkName, startTime, endTime, timeSeriesData);
 
-            // Export to JSON file in the format specified in metrics-requirements.adoc
+            // Export to JSON file in the format specified in benchmark-metrics.adoc
             Files.createDirectories(outputDir);
             String fileName = "%s-server-metrics.json".formatted(benchmarkName);
             MetricsJsonExporter exporter = new MetricsJsonExporter(outputDir);
