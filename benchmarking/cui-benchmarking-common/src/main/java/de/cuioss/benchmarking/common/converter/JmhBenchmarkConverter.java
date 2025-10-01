@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Locale;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -160,9 +161,9 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
 
     private String formatScore(double score, String unit) {
         if (score >= 1000) {
-            return "%.1fK %s".formatted(score / 1000, unit);
+            return String.format(Locale.GERMAN, "%.1fK %s", score / 1000, unit);
         }
-        return "%.1f %s".formatted(score, unit);
+        return String.format(Locale.GERMAN, "%.1f %s", score, unit);
     }
 
     private int calculatePerformanceScore(double throughput, double latency) {
