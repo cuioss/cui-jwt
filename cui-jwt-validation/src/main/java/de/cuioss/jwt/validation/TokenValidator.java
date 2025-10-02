@@ -127,7 +127,7 @@ import java.util.Map;
  *
  * @since 1.0
  */
-@SuppressWarnings({"JavadocLinkAsPlainText", "java:S6539"}) // S1200: Intentional facade pattern - high coupling is by design
+@SuppressWarnings({"JavadocLinkAsPlainText", "java:S6539"}) // java:S6539: Intentional facade pattern - high coupling is by design
 public class TokenValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidator.class);
