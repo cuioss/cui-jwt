@@ -237,6 +237,7 @@ public class NonValidatingJwtParser {
      * @return the DecodedJwt if parsing is successful
      * @throws TokenValidationException if the token is invalid or cannot be parsed
      */
+    @SuppressWarnings("java:S3776") // owolff: Justified - complexity due to logging and security event tracking
     private DecodedJwt decodeInternal(String token, boolean logWarnings, boolean trackSecurityEvents) {
         // Check if token is empty
         if (MoreStrings.isEmpty(token)) {
