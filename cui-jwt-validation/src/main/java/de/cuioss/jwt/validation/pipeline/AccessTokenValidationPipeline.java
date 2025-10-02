@@ -103,6 +103,7 @@ public class AccessTokenValidationPipeline {
      * @param securityEventCounter the security event counter for tracking operations
      * @param performanceMonitor the monitor for recording performance metrics
      */
+    @SuppressWarnings("java:S107") // Many dependencies are required
     public AccessTokenValidationPipeline(@NonNull NonValidatingJwtParser jwtParser,
             @NonNull IssuerConfigResolver issuerConfigResolver,
             @NonNull Map<String, TokenSignatureValidator> signatureValidators,
