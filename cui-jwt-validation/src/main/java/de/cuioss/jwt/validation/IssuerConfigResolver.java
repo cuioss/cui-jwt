@@ -152,7 +152,7 @@ public class IssuerConfigResolver {
      * @return the resolved issuer configuration, never null
      * @throws TokenValidationException if no healthy configuration is found for the issuer
      */
-    IssuerConfig resolveConfig(@NonNull String issuer) {
+    public IssuerConfig resolveConfig(@NonNull String issuer) {
         // Fast path - check cache for already loaded configs
         IssuerConfig cached = getCachedConfig(issuer);
         if (cached != null && cached.getJwksLoader().getLoaderStatus() == LoaderStatus.OK) {

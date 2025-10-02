@@ -62,11 +62,9 @@ public class ScopeMapper implements ClaimMapper {
                         .toList();
                 originalValue = String.join(" ", scopes);
             }
-            default -> {
-                // Reject other types as non-compliant with OAuth 2.0 specification
+            default -> // Reject other types as non-compliant with OAuth 2.0 specification
                 throw new IllegalArgumentException("Unsupported value type for scope: " +
                         value.getClass().getSimpleName() + ". According to OAuth 2.0 specification, scope should be a space-delimited string.");
-            }
         }
 
         return ClaimValue.forList(originalValue, new TreeSet<>(scopes).stream().toList());

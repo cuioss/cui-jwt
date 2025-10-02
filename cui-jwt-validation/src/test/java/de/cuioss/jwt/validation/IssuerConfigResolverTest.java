@@ -127,6 +127,35 @@ class IssuerConfigResolverTest {
     }
 
     @Nested
+    @DisplayName("Empty Configuration Tests")
+    class EmptyConfigurationTests {
+
+        @Test
+        @DisplayName("Handle resolver with no enabled configs")
+        void handlesResolverWithNoEnabledConfigs() {
+            // Create resolver with all disabled configs
+            IssuerConfig disabledConfig = IssuerConfig.builder()
+                    .enabled(false)
+                    .issuerIdentifier("https://disabled-issuer.com")
+                    .build();
+
+            IssuerConfigResolver resolver = new IssuerConfigResolver(
+                    List.of(disabledConfig),
+                    securityEventCounter
+            );
+
+            // Try to resolve any issuer - should throw exception
+            TokenValidationException exception = assertThrows(
+                    TokenValidationException.class,
+                    () -> resolver.resolveConfig("https://disabled-issuer.com")
+            );
+
+            assertTrue(exception.getMessage().contains("disabled-issuer.com"));
+            assertEquals(SecurityEventCounter.EventType.NO_ISSUER_CONFIG, exception.getEventType());
+        }
+    }
+
+    @Nested
     @DisplayName("Error Handling Tests")
     class ErrorHandlingTests {
 

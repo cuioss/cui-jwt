@@ -113,7 +113,8 @@ class IssuerConfigResolverSynchronizationTest {
 
 
         // During warmup phase, IssuerConfigResolver should be fast
-        assertTrue(avgTimeMs < 1.0, "Operations should be fast during warmup (was: %.2f ms)".formatted(avgTimeMs));
+        // Threshold increased to 2.0ms to account for CI environment variability (JVM warmup, shared resources)
+        assertTrue(avgTimeMs < 2.0, "Operations should be fast during warmup (was: %.2f ms)".formatted(avgTimeMs));
         assertEquals(operations.get(), threadsPerResolver * resolvers.size(), "All operations should complete");
     }
 

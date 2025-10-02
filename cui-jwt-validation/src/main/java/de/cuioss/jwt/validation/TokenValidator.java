@@ -15,21 +15,19 @@
  */
 package de.cuioss.jwt.validation;
 
-import de.cuioss.jwt.validation.cache.AccessTokenCache;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
-import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.metrics.*;
 import de.cuioss.jwt.validation.pipeline.*;
+import de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator;
+import de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator;
+import de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator;
+import de.cuioss.jwt.validation.pipeline.validator.TokenStringValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.string.MoreStrings;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -38,7 +36,6 @@ import lombok.Singular;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Main entry point for creating and validating JWT tokens.
@@ -58,6 +55,11 @@ import java.util.Optional;
  * <p>
  * This class is thread-safe after construction.
  * All validation methods can be called concurrently from multiple threads.
+ * <p>
+ * <strong>Design Note:</strong> This class intentionally implements the facade/factory pattern,
+ * orchestrating the creation and wiring of all JWT validation components. The higher dependency
+ * count is a natural consequence of this design pattern and is acceptable for a public API
+ * entry point that encapsulates significant complexity.
  * <p>
  * Usage example:
  * <pre>
@@ -125,18 +127,10 @@ import java.util.Optional;
  *
  * @since 1.0
  */
-@SuppressWarnings("JavadocLinkAsPlainText")
+@SuppressWarnings({"JavadocLinkAsPlainText", "java:S6539"}) // java:S6539: Intentional facade pattern - high coupling is by design
 public class TokenValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidator.class);
-
-    private final NonValidatingJwtParser jwtParser;
-
-    /**
-     * Resolver for issuer configurations that handles caching and concurrency.
-     * This encapsulates the complex logic for resolving issuer configs thread-safely.
-     */
-    private final IssuerConfigResolver issuerConfigResolver;
 
     /**
      * Counter for security events that occur during token processing.
@@ -155,37 +149,28 @@ public class TokenValidator {
     private final TokenValidatorMonitor performanceMonitor;
 
     /**
-     * Immutable map of signature validators per issuer to avoid creating new instances on every validation.
-     * This optimization addresses the critical performance bottleneck in JWT signature validation.
-     * Key: issuer identifier, Value: cached TokenSignatureValidator instance
+     * Validator for pre-pipeline token string validation (null, blank, size checks).
+     * This validator runs before any pipeline processing to fail fast on invalid inputs.
      */
-    private final Map<String, TokenSignatureValidator> signatureValidators;
+    private final TokenStringValidator tokenStringValidator;
 
     /**
-     * Immutable map of token builders per issuer to avoid creating new instances on every token validation.
-     * Key: issuer identifier, Value: cached TokenBuilder instance
+     * Pipeline for validating access tokens with caching support.
+     * Handles full validation including early cache checks before expensive operations.
      */
-    private final Map<String, TokenBuilder> tokenBuilders;
+    private final AccessTokenValidationPipeline accessTokenPipeline;
 
     /**
-     * Immutable map of claim validators per issuer to avoid creating new instances on every token validation.
-     * This optimization eliminates the 1.3ms p99 spikes from object allocation.
-     * Key: issuer identifier, Value: cached TokenClaimValidator instance
+     * Pipeline for validating ID tokens without caching.
+     * Handles full validation for ID tokens used during authentication flows.
      */
-    private final Map<String, TokenClaimValidator> claimValidators;
+    private final IdTokenValidationPipeline idTokenPipeline;
 
     /**
-     * Immutable map of header validators per issuer to avoid creating new instances on every request.
-     * This optimization reduces object allocation overhead in the validation pipeline.
-     * Key: issuer identifier, Value: cached TokenHeaderValidator instance
+     * Pipeline for validating refresh tokens with minimal validation.
+     * Handles opaque or lightly validated refresh tokens.
      */
-    private final Map<String, TokenHeaderValidator> headerValidators;
-
-    /**
-     * Optional cache for validated access tokens to avoid redundant validation.
-     * This cache significantly improves performance for repeated token validations.
-     */
-    private final AccessTokenCache accessTokenCache;
+    private final RefreshTokenValidationPipeline refreshTokenPipeline;
 
 
     /**
@@ -220,13 +205,14 @@ public class TokenValidator {
             this.performanceMonitor = TokenValidatorMonitorConfig.disabled().createMonitor();
         }
 
-        this.jwtParser = NonValidatingJwtParser.builder()
+        // Construction-time dependencies - used only to build pipelines, not stored as fields
+        NonValidatingJwtParser jwtParser = NonValidatingJwtParser.builder()
                 .config(parserConfig)
                 .securityEventCounter(this.securityEventCounter)
                 .build();
 
         // Let the IssuerConfigResolver handle all issuer config processing
-        this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
+        IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
 
         // Initialize immutable map of TokenSignatureValidator instances for each issuer
         // This eliminates the performance bottleneck of creating new instances on every validation
@@ -263,18 +249,50 @@ public class TokenValidator {
             LOGGER.debug("Pre-created TokenHeaderValidator for issuer: %s", issuerIdentifier);
         }
 
-        this.signatureValidators = Map.copyOf(signatureValidatorsMap);
-        this.tokenBuilders = Map.copyOf(tokenBuildersMap);
-        this.claimValidators = Map.copyOf(claimValidatorsMap);
-        this.headerValidators = Map.copyOf(headerValidatorsMap);
+        Map<String, TokenSignatureValidator> signatureValidators = Map.copyOf(signatureValidatorsMap);
+        Map<String, TokenBuilder> tokenBuilders = Map.copyOf(tokenBuildersMap);
+        Map<String, TokenClaimValidator> claimValidators = Map.copyOf(claimValidatorsMap);
+        Map<String, TokenHeaderValidator> headerValidators = Map.copyOf(headerValidatorsMap);
 
-        // Initialize access token cache based on configuration
+        // Use default cache config if not provided
         if (cacheConfig == null) {
             cacheConfig = AccessTokenCacheConfig.defaultConfig();
         }
 
-        this.accessTokenCache = new AccessTokenCache(cacheConfig, this.securityEventCounter);
-        LOGGER.debug("AccessTokenCache initialized with maxSize=%s, evictionInterval=%ss",
+        // Construct TokenStringValidator for pre-pipeline validation
+        this.tokenStringValidator = new TokenStringValidator(
+                parserConfig, this.securityEventCounter);
+        LOGGER.debug("TokenStringValidator initialized");
+
+        // Construct RefreshTokenValidationPipeline (minimal validation, no cache, no metrics, no security events)
+        // Uses jwtParser.decodeOpaqueToken() internally to avoid false-positive events for opaque tokens
+        this.refreshTokenPipeline = new RefreshTokenValidationPipeline(jwtParser);
+        LOGGER.debug("RefreshTokenValidationPipeline initialized");
+
+        // Construct IdTokenValidationPipeline (full validation, no cache, no metrics)
+        this.idTokenPipeline = new IdTokenValidationPipeline(
+                jwtParser,
+                issuerConfigResolver,
+                signatureValidators,
+                tokenBuilders,
+                claimValidators,
+                headerValidators,
+                this.securityEventCounter);
+        LOGGER.debug("IdTokenValidationPipeline initialized");
+
+        // Construct AccessTokenValidationPipeline (full validation, with cache and metrics)
+        // Pipeline creates its own AccessTokenCache from config
+        this.accessTokenPipeline = new AccessTokenValidationPipeline(
+                jwtParser,
+                issuerConfigResolver,
+                signatureValidators,
+                tokenBuilders,
+                claimValidators,
+                headerValidators,
+                cacheConfig,
+                this.securityEventCounter,
+                this.performanceMonitor);
+        LOGGER.debug("AccessTokenValidationPipeline initialized with cache maxSize=%s, evictionInterval=%ss",
                 cacheConfig.getMaxSize(), cacheConfig.getEvictionIntervalSeconds());
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
@@ -295,8 +313,11 @@ public class TokenValidator {
         // Record complete validation time
         MetricsTicker completeTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.COMPLETE_VALIDATION, performanceMonitor);
         try {
-            // Use cache-aware processing for access tokens
-            AccessTokenContent result = processAccessTokenWithCache(tokenString);
+            // Pre-pipeline validation (null, blank, size)
+            tokenStringValidator.validate(tokenString);
+
+            // Delegate to access token pipeline (handles caching, metrics, full validation)
+            AccessTokenContent result = accessTokenPipeline.validate(tokenString);
 
             LOGGER.debug("Successfully created access token");
             securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CREATED);
@@ -318,17 +339,11 @@ public class TokenValidator {
     public IdTokenContent createIdToken(@NonNull String tokenString) {
         LOGGER.debug("Creating ID token");
 
-        validateTokenFormat(tokenString, NoOpMetricsTicker.INSTANCE);
-        DecodedJwt decodedJwt = decodeToken(tokenString, NoOpMetricsTicker.INSTANCE);
-        String issuer = validateAndExtractIssuer(decodedJwt, NoOpMetricsTicker.INSTANCE);
-        IssuerConfig issuerConfig = resolveIssuerConfig(issuer, NoOpMetricsTicker.INSTANCE);
+        // Pre-pipeline validation (null, blank, size)
+        tokenStringValidator.validate(tokenString);
 
-        validateTokenHeader(decodedJwt, issuerConfig, NoOpMetricsTicker.INSTANCE);
-        validateTokenSignature(decodedJwt, issuerConfig, NoOpMetricsTicker.INSTANCE);
-
-        TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-        IdTokenContent token = buildIdToken(decodedJwt, cachedBuilder);
-        IdTokenContent validatedToken = validateTokenClaims(token, issuerConfig, NoOpMetricsTicker.INSTANCE);
+        // Delegate to ID token pipeline (handles full validation, no caching, no metrics)
+        IdTokenContent validatedToken = idTokenPipeline.validate(tokenString);
 
         LOGGER.debug("Successfully created ID-Token");
         securityEventCounter.increment(SecurityEventCounter.EventType.ID_TOKEN_CREATED);
@@ -344,214 +359,18 @@ public class TokenValidator {
      * @throws TokenValidationException if the token is invalid
      */
     @NonNull
-    @SuppressWarnings("java:S3655") //owolff: False Positive: isPresent is checked
     public RefreshTokenContent createRefreshToken(@NonNull String tokenString) {
         LOGGER.debug("Creating refresh token");
-        // For refresh tokens, we don't need the full pipeline
-        if (MoreStrings.isBlank(tokenString)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
-            securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.TOKEN_EMPTY,
-                    "Token is empty or null"
-            );
-        }
-        Map<String, ClaimValue> claims = Map.of();
-        try {
-            DecodedJwt decoded = jwtParser.decode(tokenString, false);
-            MapRepresentation body = decoded.getBody();
-            if (!body.isEmpty()) {
-                LOGGER.debug("Adding claims, because of being a JWT");
-                claims = TokenBuilder.extractClaimsForRefreshToken(body);
-            }
-        } catch (TokenValidationException e) {
-            // Ignore validation exceptions for refresh tokens
-            LOGGER.debug("Ignoring validation exception for refresh token: %s", e.getMessage());
-        }
-        var refreshToken = new RefreshTokenContent(tokenString, claims);
+
+        // Pre-pipeline validation (null, blank, size)
+        tokenStringValidator.validate(tokenString);
+
+        // Delegate to refresh token pipeline (handles minimal validation, no caching, no metrics)
+        RefreshTokenContent refreshToken = refreshTokenPipeline.validate(tokenString);
+
         LOGGER.debug("Successfully created Refresh-Token");
         securityEventCounter.increment(SecurityEventCounter.EventType.REFRESH_TOKEN_CREATED);
+
         return refreshToken;
     }
-
-
-    /**
-     * Process access token with cache support.
-     * This method integrates caching into the validation pipeline for access tokens.
-     *
-     * @param tokenString the JWT token string
-     * @return the validated access token
-     * @throws TokenValidationException if validation fails
-     */
-    private AccessTokenContent processAccessTokenWithCache(@NonNull String tokenString) {
-        // Perform minimal validation to get issuer for cache key
-        validateTokenFormat(tokenString, MetricsTickerFactory.createTicker(MeasurementType.TOKEN_FORMAT_CHECK, performanceMonitor));
-        DecodedJwt decodedJwt = decodeToken(tokenString, MetricsTickerFactory.createTicker(MeasurementType.TOKEN_PARSING, performanceMonitor));
-        String issuer = validateAndExtractIssuer(decodedJwt, MetricsTickerFactory.createTicker(MeasurementType.ISSUER_EXTRACTION, performanceMonitor));
-
-        // Use transparent cache - handles enabled/disabled states internally
-        return accessTokenCache.computeIfAbsent(
-                tokenString,
-                token -> {
-                    // Continue with expensive validation steps
-                    // We already have the decodedJwt and issuer, so continue from issuer config resolution
-                    IssuerConfig issuerConfig = resolveIssuerConfig(issuer, MetricsTickerFactory.createTicker(MeasurementType.ISSUER_CONFIG_RESOLUTION, performanceMonitor));
-                    validateTokenHeader(decodedJwt, issuerConfig, MetricsTickerFactory.createTicker(MeasurementType.HEADER_VALIDATION, performanceMonitor));
-                    validateTokenSignature(decodedJwt, issuerConfig, MetricsTickerFactory.createTicker(MeasurementType.SIGNATURE_VALIDATION, performanceMonitor));
-
-                    TokenBuilder cachedBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-                    AccessTokenContent accessToken = buildAccessToken(decodedJwt, cachedBuilder,
-                            MetricsTickerFactory.createTicker(MeasurementType.TOKEN_BUILDING, performanceMonitor));
-
-                    AccessTokenContent validatedToken = validateTokenClaims(accessToken, issuerConfig,
-                            MetricsTickerFactory.createTicker(MeasurementType.CLAIMS_VALIDATION, performanceMonitor));
-
-                    LOGGER.debug("Token successfully validated");
-                    return validatedToken;
-                },
-                performanceMonitor
-        );
-    }
-
-    private void validateTokenFormat(String tokenString, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            if (MoreStrings.isBlank(tokenString)) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
-                securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
-                throw new TokenValidationException(
-                        SecurityEventCounter.EventType.TOKEN_EMPTY,
-                        "Token is empty or null"
-                );
-            }
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    private DecodedJwt decodeToken(String tokenString, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            return jwtParser.decode(tokenString);
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    private String validateAndExtractIssuer(DecodedJwt decodedJwt, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            Optional<String> issuer = decodedJwt.getIssuer();
-            if (issuer.isEmpty()) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
-                securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-                throw new TokenValidationException(
-                        SecurityEventCounter.EventType.MISSING_CLAIM,
-                        "Missing required issuer (iss) claim in token"
-                );
-            }
-            return issuer.get();
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    /**
-     * Resolves the appropriate issuer configuration for the given issuer.
-     * Delegates to the IssuerConfigResolver for thread-safe resolution.
-     *
-     * @param issuer the issuer to resolve configuration for
-     * @return the issuer configuration if healthy and available
-     * @throws TokenValidationException if no configuration found or issuer is unhealthy
-     */
-    private IssuerConfig resolveIssuerConfig(String issuer, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            return issuerConfigResolver.resolveConfig(issuer);
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    private void validateTokenHeader(DecodedJwt decodedJwt, IssuerConfig issuerConfig, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            TokenHeaderValidator cachedValidator = headerValidators.get(issuerConfig.getIssuerIdentifier());
-            cachedValidator.validate(decodedJwt);
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    private void validateTokenSignature(DecodedJwt decodedJwt, IssuerConfig issuerConfig, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            // Get pre-created TokenSignatureValidator for this issuer
-            String issuerIdentifier = issuerConfig.getIssuerIdentifier();
-            TokenSignatureValidator signatureValidator = signatureValidators.get(issuerIdentifier);
-
-            if (signatureValidator == null) {
-                throw new IllegalStateException("No signature validator found for issuer: " + issuerIdentifier);
-            }
-
-            // Use the cached signature validator for validation
-            signatureValidator.validateSignature(decodedJwt);
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    @NonNull
-    private IdTokenContent buildIdToken(
-            DecodedJwt decodedJwt,
-            TokenBuilder tokenBuilder) {
-        Optional<IdTokenContent> token = tokenBuilder.createIdToken(decodedJwt);
-        if (token.isEmpty()) {
-            LOGGER.debug("ID token building failed");
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Failed to build ID token from decoded JWT"
-            );
-        }
-        return token.get();
-    }
-
-    @NonNull
-    private AccessTokenContent buildAccessToken(
-            DecodedJwt decodedJwt,
-            TokenBuilder tokenBuilder,
-            MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            Optional<AccessTokenContent> token = tokenBuilder.createAccessToken(decodedJwt);
-            if (token.isEmpty()) {
-                LOGGER.debug("Access token building failed");
-                throw new TokenValidationException(
-                        SecurityEventCounter.EventType.MISSING_CLAIM,
-                        "Failed to build access token from decoded JWT"
-                );
-            }
-            return token.get();
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T extends TokenContent> T validateTokenClaims(TokenContent token, IssuerConfig issuerConfig, MetricsTicker ticker) {
-        ticker.startRecording();
-        try {
-            // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
-            // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
-            ValidationContext context = new ValidationContext(60);
-
-            TokenClaimValidator cachedValidator = claimValidators.get(issuerConfig.getIssuerIdentifier());
-            TokenContent validatedContent = cachedValidator.validate(token, context);
-            return (T) validatedContent;
-        } finally {
-            ticker.stopAndRecord();
-        }
-    }
-
-
 }

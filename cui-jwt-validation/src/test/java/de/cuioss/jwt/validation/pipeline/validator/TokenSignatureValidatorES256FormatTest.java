@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline;
+package de.cuioss.jwt.validation.pipeline.validator;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.json.JwtHeader;
 import de.cuioss.jwt.validation.json.MapRepresentation;
+import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;

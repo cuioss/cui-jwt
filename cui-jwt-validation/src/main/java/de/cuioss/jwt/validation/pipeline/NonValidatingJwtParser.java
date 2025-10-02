@@ -185,6 +185,28 @@ public class NonValidatingJwtParser {
     }
 
     /**
+     * Decodes a JWT token without logging warnings or tracking security events.
+     * <p>
+     * This method is specifically designed for opaque tokens (like refresh tokens) where
+     * parsing failures are expected and should not be logged or tracked as security events.
+     * <p>
+     * Security considerations:
+     * <ul>
+     *   <li>Does not validate signatures - use only for inspection</li>
+     *   <li>Implements size checks to prevent overflow attacks</li>
+     *   <li>Uses standard Java Base64 decoder</li>
+     *   <li>No logging or security event tracking on failures</li>
+     * </ul>
+     *
+     * @param token the JWT token string to parse (may be opaque)
+     * @return the DecodedJwt if parsing is successful
+     * @throws TokenValidationException if the token is invalid or cannot be parsed
+     */
+    public DecodedJwt decodeOpaqueToken(String token) {
+        return decodeInternal(token, false, false);
+    }
+
+    /**
      * Decodes a JWT token and returns a DecodedJwt object containing the decoded parts.
      * <p>
      * Security considerations:
@@ -203,10 +225,26 @@ public class NonValidatingJwtParser {
      * @throws TokenValidationException if the token is invalid or cannot be parsed
      */
     public DecodedJwt decode(String token, boolean logWarnings) {
+        return decodeInternal(token, logWarnings, true);
+    }
+
+    /**
+     * Internal method that handles token decoding with configurable logging and security tracking.
+     *
+     * @param token the JWT token string to parse
+     * @param logWarnings whether to log warnings when decoding fails
+     * @param trackSecurityEvents whether to track security events on failures
+     * @return the DecodedJwt if parsing is successful
+     * @throws TokenValidationException if the token is invalid or cannot be parsed
+     */
+    @SuppressWarnings("java:S3776") // owolff: Justified - complexity due to logging and security event tracking
+    private DecodedJwt decodeInternal(String token, boolean logWarnings, boolean trackSecurityEvents) {
         // Check if token is empty
         if (MoreStrings.isEmpty(token)) {
             if (logWarnings) {
                 LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
+            }
+            if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
             }
             throw new TokenValidationException(
@@ -219,6 +257,8 @@ public class NonValidatingJwtParser {
         if (token.getBytes(StandardCharsets.UTF_8).length > config.getMaxTokenSize()) {
             if (logWarnings) {
                 LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.format(config.getMaxTokenSize()));
+            }
+            if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED);
             }
             throw new TokenValidationException(
@@ -232,6 +272,8 @@ public class NonValidatingJwtParser {
         if (parts.length != 3) {
             if (logWarnings) {
                 LOGGER.warn(JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.format(parts.length));
+            }
+            if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.INVALID_JWT_FORMAT);
             }
             throw new TokenValidationException(
@@ -242,10 +284,12 @@ public class NonValidatingJwtParser {
 
         try {
             // Decode token parts
-            return decodeTokenParts(parts, token, logWarnings);
+            return decodeTokenParts(parts, token, logWarnings, trackSecurityEvents);
         } catch (IllegalArgumentException e) {
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+            }
+            if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
             }
             throw new TokenValidationException(
@@ -260,13 +304,14 @@ public class NonValidatingJwtParser {
     /**
      * Decodes the token parts and creates a DecodedJwt object using DSL-JSON.
      *
-     * @param parts       the token parts
-     * @param token       the original token
-     * @param logWarnings whether to log warnings
+     * @param parts                the token parts
+     * @param token                the original token
+     * @param logWarnings          whether to log warnings
+     * @param trackSecurityEvents  whether to track security events
      * @return the DecodedJwt if decoding is successful
      * @throws TokenValidationException if decoding fails
      */
-    private DecodedJwt decodeTokenParts(String[] parts, String token, boolean logWarnings) {
+    private DecodedJwt decodeTokenParts(String[] parts, String token, boolean logWarnings, boolean trackSecurityEvents) {
         try {
             // Decode the header (first part) to JwtHeader using DSL-JSON
             JwtHeader header = decodeJwtHeader(parts[0]);
@@ -283,7 +328,9 @@ public class NonValidatingJwtParser {
             if (logWarnings) {
                 LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
             }
-            securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
+            if (trackSecurityEvents) {
+                securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
+            }
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT,
                     "Failed to decode JWT parts: " + e.getMessage(),
