@@ -143,7 +143,14 @@ public class AccessTokenValidationPipeline {
 
         // TokenStringValidator has already checked: null, blank, size
 
-        // 1. Parse token (with TOKEN_PARSING metrics)
+        // 1. CHECK CACHE FIRST - before any expensive parsing
+        Optional<AccessTokenContent> cached = cache.get(tokenString, performanceMonitor);
+        if (cached.isPresent()) {
+            LOGGER.debug("Access token retrieved from cache");
+            return cached.get();
+        }
+
+        // 2. Parse token (with TOKEN_PARSING metrics)
         MetricsTicker parsingTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.TOKEN_PARSING, performanceMonitor);
         DecodedJwt decodedJwt;
         try {
@@ -152,7 +159,7 @@ public class AccessTokenValidationPipeline {
             parsingTicker.stopAndRecord();
         }
 
-        // 2. Extract issuer (with ISSUER_EXTRACTION metrics)
+        // 3. Extract issuer (with ISSUER_EXTRACTION metrics)
         MetricsTicker extractionTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.ISSUER_EXTRACTION, performanceMonitor);
         String issuer;
         try {
@@ -168,82 +175,72 @@ public class AccessTokenValidationPipeline {
             extractionTicker.stopAndRecord();
         }
 
-        // 3. CHECK CACHE HERE ← EARLY, before expensive operations (issue #131 optimization)
-        // Use transparent cache - handles enabled/disabled states internally
-        // Cache metrics (CACHE_LOOKUP, CACHE_STORE) are handled inside AccessTokenCache.computeIfAbsent
-        return cache.computeIfAbsent(
-                tokenString,
-                token -> {
-                    // Continue with expensive validation steps
-                    // We already have the decodedJwt and issuer, so continue from issuer config resolution
+        // 4. Resolve issuer config (with ISSUER_CONFIG_RESOLUTION metrics)
+        MetricsTicker configTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.ISSUER_CONFIG_RESOLUTION, performanceMonitor);
+        IssuerConfig issuerConfig;
+        try {
+            issuerConfig = issuerConfigResolver.resolveConfig(issuer);
+        } finally {
+            configTicker.stopAndRecord();
+        }
 
-                    // 4. Resolve issuer config (with ISSUER_CONFIG_RESOLUTION metrics)
-                    MetricsTicker configTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.ISSUER_CONFIG_RESOLUTION, performanceMonitor);
-                    IssuerConfig issuerConfig;
-                    try {
-                        issuerConfig = issuerConfigResolver.resolveConfig(issuer);
-                    } finally {
-                        configTicker.stopAndRecord();
-                    }
+        // 5. Validate header (with HEADER_VALIDATION metrics)
+        MetricsTicker headerTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.HEADER_VALIDATION, performanceMonitor);
+        try {
+            TokenHeaderValidator headerValidator = headerValidators.get(issuerConfig.getIssuerIdentifier());
+            headerValidator.validate(decodedJwt);
+        } finally {
+            headerTicker.stopAndRecord();
+        }
 
-                    // 5. Validate header (with HEADER_VALIDATION metrics)
-                    MetricsTicker headerTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.HEADER_VALIDATION, performanceMonitor);
-                    try {
-                        TokenHeaderValidator headerValidator = headerValidators.get(issuerConfig.getIssuerIdentifier());
-                        headerValidator.validate(decodedJwt);
-                    } finally {
-                        headerTicker.stopAndRecord();
-                    }
+        // 6. Validate signature (with SIGNATURE_VALIDATION metrics) ← MOST expensive operation
+        MetricsTicker signatureTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.SIGNATURE_VALIDATION, performanceMonitor);
+        try {
+            TokenSignatureValidator signatureValidator = signatureValidators.get(issuerConfig.getIssuerIdentifier());
+            if (signatureValidator == null) {
+                throw new IllegalStateException("No signature validator found for issuer: " + issuerConfig.getIssuerIdentifier());
+            }
+            signatureValidator.validateSignature(decodedJwt);
+        } finally {
+            signatureTicker.stopAndRecord();
+        }
 
-                    // 6. Validate signature (with SIGNATURE_VALIDATION metrics) ← MOST expensive operation
-                    MetricsTicker signatureTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.SIGNATURE_VALIDATION, performanceMonitor);
-                    try {
-                        TokenSignatureValidator signatureValidator = signatureValidators.get(issuerConfig.getIssuerIdentifier());
-                        if (signatureValidator == null) {
-                            throw new IllegalStateException("No signature validator found for issuer: " + issuerConfig.getIssuerIdentifier());
-                        }
-                        signatureValidator.validateSignature(decodedJwt);
-                    } finally {
-                        signatureTicker.stopAndRecord();
-                    }
+        // 7. Build token (with TOKEN_BUILDING metrics)
+        MetricsTicker buildingTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.TOKEN_BUILDING, performanceMonitor);
+        AccessTokenContent accessToken;
+        try {
+            TokenBuilder tokenBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
+            Optional<AccessTokenContent> tokenOpt = tokenBuilder.createAccessToken(decodedJwt);
+            if (tokenOpt.isEmpty()) {
+                LOGGER.debug("Access token building failed");
+                throw new TokenValidationException(
+                        SecurityEventCounter.EventType.MISSING_CLAIM,
+                        "Failed to build access token from decoded JWT"
+                );
+            }
+            accessToken = tokenOpt.get();
+        } finally {
+            buildingTicker.stopAndRecord();
+        }
 
-                    // 7. Build token (with TOKEN_BUILDING metrics)
-                    MetricsTicker buildingTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.TOKEN_BUILDING, performanceMonitor);
-                    AccessTokenContent accessToken;
-                    try {
-                        TokenBuilder tokenBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-                        Optional<AccessTokenContent> tokenOpt = tokenBuilder.createAccessToken(decodedJwt);
-                        if (tokenOpt.isEmpty()) {
-                            LOGGER.debug("Access token building failed");
-                            throw new TokenValidationException(
-                                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                                    "Failed to build access token from decoded JWT"
-                            );
-                        }
-                        accessToken = tokenOpt.get();
-                    } finally {
-                        buildingTicker.stopAndRecord();
-                    }
+        // 8. Validate claims (with CLAIMS_VALIDATION metrics)
+        MetricsTicker claimsTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.CLAIMS_VALIDATION, performanceMonitor);
+        AccessTokenContent validatedToken;
+        try {
+            // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
+            // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
+            ValidationContext context = new ValidationContext(60);
+            TokenClaimValidator claimValidator = claimValidators.get(issuerConfig.getIssuerIdentifier());
+            validatedToken = (AccessTokenContent) claimValidator.validate(accessToken, context);
+        } finally {
+            claimsTicker.stopAndRecord();
+        }
 
-                    // 8. Validate claims (with CLAIMS_VALIDATION metrics)
-                    MetricsTicker claimsTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.CLAIMS_VALIDATION, performanceMonitor);
-                    AccessTokenContent validatedToken;
-                    try {
-                        // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
-                        // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
-                        ValidationContext context = new ValidationContext(60);
-                        TokenClaimValidator claimValidator = claimValidators.get(issuerConfig.getIssuerIdentifier());
-                        validatedToken = (AccessTokenContent) claimValidator.validate(accessToken, context);
-                    } finally {
-                        claimsTicker.stopAndRecord();
-                    }
+        LOGGER.debug("Token successfully validated");
 
-                    LOGGER.debug("Token successfully validated");
+        // 9. Store in cache for future lookups
+        cache.put(tokenString, validatedToken, performanceMonitor);
 
-                    // 9. Return validated token (cache.computeIfAbsent will store it with CACHE_STORE metrics)
-                    return validatedToken;
-                },
-                performanceMonitor
-        );
+        return validatedToken;
     }
 }

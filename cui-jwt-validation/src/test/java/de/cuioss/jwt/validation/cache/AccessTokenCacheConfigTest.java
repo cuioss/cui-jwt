@@ -25,6 +25,7 @@ import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -111,7 +112,14 @@ class AccessTokenCacheConfigTest {
                 .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
                 .build()
                 .createMonitor();
-        AccessTokenContent result = cache.computeIfAbsent("token", token -> expectedContent, performanceMonitor);
+        Optional<AccessTokenContent> cached = cache.get("token", performanceMonitor);
+        AccessTokenContent result;
+        if (cached.isEmpty()) {
+            result = expectedContent;
+            cache.put("token", result, performanceMonitor);
+        } else {
+            result = cached.get();
+        }
         assertEquals(expectedContent, result);
 
         // Verify cache remains empty (no caching occurred)
