@@ -244,7 +244,6 @@ public class AccessTokenCache {
 
         if (previous == null) {
             // Successfully stored - we won the race (or no race occurred)
-            storeTicker.stopAndRecord();
             LOGGER.debug("Token cached, current size: %s", cache.size());
 
             // Enforce size limit after successful insertion
@@ -253,9 +252,10 @@ public class AccessTokenCache {
             }
         } else {
             // Another thread won the race and already stored this token
-            // Don't record metrics - we didn't actually store anything
             LOGGER.debug("Token already cached by concurrent thread");
         }
+
+        storeTicker.stopAndRecord();
     }
 
 
