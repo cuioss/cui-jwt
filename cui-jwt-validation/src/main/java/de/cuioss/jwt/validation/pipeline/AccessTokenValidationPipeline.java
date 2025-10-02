@@ -155,16 +155,14 @@ public class AccessTokenValidationPipeline {
         MetricsTicker extractionTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.ISSUER_EXTRACTION, performanceMonitor);
         String issuer;
         try {
-            Optional<String> issuerOpt = decodedJwt.getIssuer();
-            if (issuerOpt.isEmpty()) {
+            issuer = decodedJwt.getIssuer().orElseThrow(() -> {
                 LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
                 securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-                throw new TokenValidationException(
+                return new TokenValidationException(
                         SecurityEventCounter.EventType.MISSING_CLAIM,
                         "Missing required issuer (iss) claim in token"
                 );
-            }
-            issuer = issuerOpt.get();
+            });
         } finally {
             extractionTicker.stopAndRecord();
         }

@@ -123,16 +123,14 @@ public class IdTokenValidationPipeline {
         DecodedJwt decodedJwt = jwtParser.decode(tokenString);
 
         // 2. Extract issuer
-        Optional<String> issuer = decodedJwt.getIssuer();
-        if (issuer.isEmpty()) {
+        String issuerString = decodedJwt.getIssuer().orElseThrow(() -> {
             LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
-            throw new TokenValidationException(
+            return new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
                     "Missing required issuer (iss) claim in token"
             );
-        }
-        String issuerString = issuer.get();
+        });
 
         // 3. Resolve issuer config
         IssuerConfig issuerConfig = issuerConfigResolver.resolveConfig(issuerString);

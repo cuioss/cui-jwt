@@ -211,6 +211,12 @@ public class TokenValidator {
                 .securityEventCounter(this.securityEventCounter)
                 .build();
 
+        // Create a separate parser without security event tracking for refresh tokens
+        // Opaque refresh tokens are expected to fail parsing, which should not be counted as security events
+        NonValidatingJwtParser refreshTokenParser = NonValidatingJwtParser.builder()
+                .config(parserConfig)
+                .build();
+
         // Let the IssuerConfigResolver handle all issuer config processing
         IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
 
@@ -265,7 +271,8 @@ public class TokenValidator {
         LOGGER.debug("TokenStringValidator initialized");
 
         // Construct RefreshTokenValidationPipeline (minimal validation, no cache, no metrics, no security events)
-        this.refreshTokenPipeline = new RefreshTokenValidationPipeline(jwtParser);
+        // Uses refreshTokenParser without SecurityEventCounter to avoid false-positive events for opaque tokens
+        this.refreshTokenPipeline = new RefreshTokenValidationPipeline(refreshTokenParser);
         LOGGER.debug("RefreshTokenValidationPipeline initialized");
 
         // Construct IdTokenValidationPipeline (full validation, no cache, no metrics)

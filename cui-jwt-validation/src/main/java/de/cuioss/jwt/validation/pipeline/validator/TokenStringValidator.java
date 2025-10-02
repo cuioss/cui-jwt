@@ -70,8 +70,7 @@ public class TokenStringValidator {
      * <p>
      * This method performs the following checks in order:
      * <ol>
-     *   <li>Null check - throws if token is null</li>
-     *   <li>Blank check - throws if token is empty or contains only whitespace</li>
+     *   <li>Null/blank check - throws if token is null, empty, or contains only whitespace</li>
      *   <li>Size limit check - throws if token exceeds maximum byte size</li>
      * </ol>
      *
@@ -79,23 +78,13 @@ public class TokenStringValidator {
      * @throws TokenValidationException if the token string is invalid
      */
     public void validate(String tokenString) {
-        // Check null
-        if (tokenString == null) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
-            securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.TOKEN_EMPTY,
-                    "Token is null"
-            );
-        }
-
-        // Check blank/empty
+        // Check null/blank/empty (MoreStrings.isBlank handles null internally)
         if (MoreStrings.isBlank(tokenString)) {
             LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
             securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_EMPTY,
-                    "Token is empty or blank"
+                    "Token is null, empty, or blank"
             );
         }
 
