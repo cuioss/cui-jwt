@@ -87,9 +87,10 @@ public class RefreshTokenValidationPipeline {
         // TokenStringValidator has already checked: null, blank, size
 
         // Try to parse as JWT (failure is allowed for opaque refresh tokens)
+        // Use decodeOpaqueToken() to avoid logging warnings or tracking security events for expected failures
         Map<String, ClaimValue> claims = Map.of();
         try {
-            DecodedJwt decoded = jwtParser.decode(tokenString, false);
+            DecodedJwt decoded = jwtParser.decodeOpaqueToken(tokenString);
             MapRepresentation body = decoded.getBody();
             if (!body.isEmpty()) {
                 LOGGER.debug("Adding claims, because of being a JWT");
