@@ -51,7 +51,7 @@
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/security.adoc">Security Specification</a>
  *
  * @author Oliver Wolff
- * @see de.cuioss.jwt.validation.pipeline.TokenSignatureValidator
+ * @see de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator
  * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoader
  * @since 1.0
  */

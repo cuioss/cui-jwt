@@ -49,7 +49,7 @@ import java.util.Map;
  * @author Oliver Wolff
  * @since 1.0
  */
-final class SignatureTemplateManager {
+public final class SignatureTemplateManager {
 
     private static final CuiLogger LOGGER = new CuiLogger(SignatureTemplateManager.class);
     private static final String RSASSA_PSS = "RSASSA-PSS";
@@ -76,7 +76,7 @@ final class SignatureTemplateManager {
      *
      * @param algorithmPreferences the signature algorithm preferences for provider optimization
      */
-    SignatureTemplateManager(SignatureAlgorithmPreferences algorithmPreferences) {
+    public SignatureTemplateManager(SignatureAlgorithmPreferences algorithmPreferences) {
         Map<String, Provider> providers = new HashMap<>();
         Map<String, SignatureTemplate> templates = new HashMap<>();
 
@@ -110,7 +110,7 @@ final class SignatureTemplateManager {
      * @throws UnsupportedAlgorithmException if the algorithm is not supported by the JDK or PSS parameters are invalid
      * @throws IllegalArgumentException if the algorithm is not recognized
      */
-    Signature getSignatureInstance(String algorithm) {
+    public Signature getSignatureInstance(String algorithm) {
         // Use cached template to create signature instance
         SignatureTemplate template = signatureTemplateCache.get(algorithm);
         if (template == null) {
@@ -203,7 +203,7 @@ final class SignatureTemplateManager {
      * Exception thrown when an algorithm is not supported.
      * This is a more specific exception than generic RuntimeException.
      */
-    static final class UnsupportedAlgorithmException extends RuntimeException {
+    public static final class UnsupportedAlgorithmException extends RuntimeException {
         UnsupportedAlgorithmException(String message, Throwable cause) {
             super(message, cause);
         }
