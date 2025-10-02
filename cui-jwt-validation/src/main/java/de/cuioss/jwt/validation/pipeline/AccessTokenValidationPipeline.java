@@ -19,6 +19,7 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.IssuerConfigResolver;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.cache.AccessTokenCache;
+import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.domain.context.ValidationContext;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
@@ -98,7 +99,7 @@ public class AccessTokenValidationPipeline {
      * @param tokenBuilders pre-created token builders keyed by issuer
      * @param claimValidators pre-created claim validators keyed by issuer
      * @param headerValidators pre-created header validators keyed by issuer
-     * @param cache the cache for validated access tokens
+     * @param cacheConfig the cache configuration for access token caching
      * @param securityEventCounter the security event counter for tracking operations
      * @param performanceMonitor the monitor for recording performance metrics
      */
@@ -108,7 +109,7 @@ public class AccessTokenValidationPipeline {
             @NonNull Map<String, TokenBuilder> tokenBuilders,
             @NonNull Map<String, TokenClaimValidator> claimValidators,
             @NonNull Map<String, TokenHeaderValidator> headerValidators,
-            @NonNull AccessTokenCache cache,
+            @NonNull AccessTokenCacheConfig cacheConfig,
             @NonNull SecurityEventCounter securityEventCounter,
             @NonNull TokenValidatorMonitor performanceMonitor) {
         this.jwtParser = jwtParser;
@@ -117,7 +118,7 @@ public class AccessTokenValidationPipeline {
         this.tokenBuilders = tokenBuilders;
         this.claimValidators = claimValidators;
         this.headerValidators = headerValidators;
-        this.cache = cache;
+        this.cache = new AccessTokenCache(cacheConfig, securityEventCounter);
         this.securityEventCounter = securityEventCounter;
         this.performanceMonitor = performanceMonitor;
     }

@@ -43,7 +43,7 @@ class RefreshTokenValidationPipelineTest {
         jwtParser = NonValidatingJwtParser.builder()
                 .securityEventCounter(securityEventCounter)
                 .build();
-        pipeline = new RefreshTokenValidationPipeline(jwtParser, securityEventCounter);
+        pipeline = new RefreshTokenValidationPipeline(jwtParser);
     }
 
     @Test

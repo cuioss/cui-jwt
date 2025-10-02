@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation;
 
-import de.cuioss.jwt.validation.cache.AccessTokenCache;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
@@ -56,6 +55,11 @@ import java.util.Map;
  * <p>
  * This class is thread-safe after construction.
  * All validation methods can be called concurrently from multiple threads.
+ * <p>
+ * <strong>Design Note:</strong> This class intentionally implements the facade/factory pattern,
+ * orchestrating the creation and wiring of all JWT validation components. The higher dependency
+ * count is a natural consequence of this design pattern and is acceptable for a public API
+ * entry point that encapsulates significant complexity.
  * <p>
  * Usage example:
  * <pre>
@@ -123,18 +127,10 @@ import java.util.Map;
  *
  * @since 1.0
  */
-@SuppressWarnings("JavadocLinkAsPlainText")
+@SuppressWarnings({"JavadocLinkAsPlainText", "java:S6539"}) // S1200: Intentional facade pattern - high coupling is by design
 public class TokenValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidator.class);
-
-    private final NonValidatingJwtParser jwtParser;
-
-    /**
-     * Resolver for issuer configurations that handles caching and concurrency.
-     * This encapsulates the complex logic for resolving issuer configs thread-safely.
-     */
-    private final IssuerConfigResolver issuerConfigResolver;
 
     /**
      * Counter for security events that occur during token processing.
@@ -151,39 +147,6 @@ public class TokenValidator {
     @Getter
     @NonNull
     private final TokenValidatorMonitor performanceMonitor;
-
-    /**
-     * Immutable map of signature validators per issuer to avoid creating new instances on every validation.
-     * This optimization addresses the critical performance bottleneck in JWT signature validation.
-     * Key: issuer identifier, Value: cached TokenSignatureValidator instance
-     */
-    private final Map<String, TokenSignatureValidator> signatureValidators;
-
-    /**
-     * Immutable map of token builders per issuer to avoid creating new instances on every token validation.
-     * Key: issuer identifier, Value: cached TokenBuilder instance
-     */
-    private final Map<String, TokenBuilder> tokenBuilders;
-
-    /**
-     * Immutable map of claim validators per issuer to avoid creating new instances on every token validation.
-     * This optimization eliminates the 1.3ms p99 spikes from object allocation.
-     * Key: issuer identifier, Value: cached TokenClaimValidator instance
-     */
-    private final Map<String, TokenClaimValidator> claimValidators;
-
-    /**
-     * Immutable map of header validators per issuer to avoid creating new instances on every request.
-     * This optimization reduces object allocation overhead in the validation pipeline.
-     * Key: issuer identifier, Value: cached TokenHeaderValidator instance
-     */
-    private final Map<String, TokenHeaderValidator> headerValidators;
-
-    /**
-     * Optional cache for validated access tokens to avoid redundant validation.
-     * This cache significantly improves performance for repeated token validations.
-     */
-    private final AccessTokenCache accessTokenCache;
 
     /**
      * Validator for pre-pipeline token string validation (null, blank, size checks).
@@ -242,13 +205,14 @@ public class TokenValidator {
             this.performanceMonitor = TokenValidatorMonitorConfig.disabled().createMonitor();
         }
 
-        this.jwtParser = NonValidatingJwtParser.builder()
+        // Construction-time dependencies - used only to build pipelines, not stored as fields
+        NonValidatingJwtParser jwtParser = NonValidatingJwtParser.builder()
                 .config(parserConfig)
                 .securityEventCounter(this.securityEventCounter)
                 .build();
 
         // Let the IssuerConfigResolver handle all issuer config processing
-        this.issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
+        IssuerConfigResolver issuerConfigResolver = new IssuerConfigResolver(issuerConfigs, this.securityEventCounter);
 
         // Initialize immutable map of TokenSignatureValidator instances for each issuer
         // This eliminates the performance bottleneck of creating new instances on every validation
@@ -285,53 +249,50 @@ public class TokenValidator {
             LOGGER.debug("Pre-created TokenHeaderValidator for issuer: %s", issuerIdentifier);
         }
 
-        this.signatureValidators = Map.copyOf(signatureValidatorsMap);
-        this.tokenBuilders = Map.copyOf(tokenBuildersMap);
-        this.claimValidators = Map.copyOf(claimValidatorsMap);
-        this.headerValidators = Map.copyOf(headerValidatorsMap);
+        Map<String, TokenSignatureValidator> signatureValidators = Map.copyOf(signatureValidatorsMap);
+        Map<String, TokenBuilder> tokenBuilders = Map.copyOf(tokenBuildersMap);
+        Map<String, TokenClaimValidator> claimValidators = Map.copyOf(claimValidatorsMap);
+        Map<String, TokenHeaderValidator> headerValidators = Map.copyOf(headerValidatorsMap);
 
-        // Initialize access token cache based on configuration
+        // Use default cache config if not provided
         if (cacheConfig == null) {
             cacheConfig = AccessTokenCacheConfig.defaultConfig();
         }
-
-        this.accessTokenCache = new AccessTokenCache(cacheConfig, this.securityEventCounter);
-        LOGGER.debug("AccessTokenCache initialized with maxSize=%s, evictionInterval=%ss",
-                cacheConfig.getMaxSize(), cacheConfig.getEvictionIntervalSeconds());
 
         // Construct TokenStringValidator for pre-pipeline validation
         this.tokenStringValidator = new TokenStringValidator(
                 parserConfig, this.securityEventCounter);
         LOGGER.debug("TokenStringValidator initialized");
 
-        // Construct RefreshTokenValidationPipeline (minimal validation, no cache, no metrics)
-        this.refreshTokenPipeline = new RefreshTokenValidationPipeline(
-                this.jwtParser, this.securityEventCounter);
+        // Construct RefreshTokenValidationPipeline (minimal validation, no cache, no metrics, no security events)
+        this.refreshTokenPipeline = new RefreshTokenValidationPipeline(jwtParser);
         LOGGER.debug("RefreshTokenValidationPipeline initialized");
 
         // Construct IdTokenValidationPipeline (full validation, no cache, no metrics)
         this.idTokenPipeline = new IdTokenValidationPipeline(
-                this.jwtParser,
-                this.issuerConfigResolver,
-                this.signatureValidators,
-                this.tokenBuilders,
-                this.claimValidators,
-                this.headerValidators,
+                jwtParser,
+                issuerConfigResolver,
+                signatureValidators,
+                tokenBuilders,
+                claimValidators,
+                headerValidators,
                 this.securityEventCounter);
         LOGGER.debug("IdTokenValidationPipeline initialized");
 
         // Construct AccessTokenValidationPipeline (full validation, with cache and metrics)
+        // Pipeline creates its own AccessTokenCache from config
         this.accessTokenPipeline = new AccessTokenValidationPipeline(
-                this.jwtParser,
-                this.issuerConfigResolver,
-                this.signatureValidators,
-                this.tokenBuilders,
-                this.claimValidators,
-                this.headerValidators,
-                this.accessTokenCache,
+                jwtParser,
+                issuerConfigResolver,
+                signatureValidators,
+                tokenBuilders,
+                claimValidators,
+                headerValidators,
+                cacheConfig,
                 this.securityEventCounter,
                 this.performanceMonitor);
-        LOGGER.debug("AccessTokenValidationPipeline initialized");
+        LOGGER.debug("AccessTokenValidationPipeline initialized with cache maxSize=%s, evictionInterval=%ss",
+                cacheConfig.getMaxSize(), cacheConfig.getEvictionIntervalSeconds());
 
         LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
     }

@@ -18,9 +18,14 @@ package de.cuioss.jwt.validation.pipeline.validator;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.test.generator.Generators;
+import de.cuioss.test.generator.junit.EnableGeneratorController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,62 +35,42 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests pre-pipeline token string validation including null, blank, and size checks.
  */
 @DisplayName("TokenStringValidator Tests")
+@EnableGeneratorController
 class TokenStringValidatorTest {
 
     private TokenStringValidator validator;
     private SecurityEventCounter securityEventCounter;
-    private ParserConfig parserConfig;
 
     @BeforeEach
     void setUp() {
         securityEventCounter = new SecurityEventCounter();
-        parserConfig = ParserConfig.builder()
+        ParserConfig parserConfig = ParserConfig.builder()
                 .maxTokenSize(1000)
                 .build();
         validator = new TokenStringValidator(parserConfig, securityEventCounter);
     }
 
-    @Test
-    @DisplayName("Should throw exception for null token")
-    void shouldThrowExceptionForNullToken() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    @DisplayName("Should throw exception for null, empty, or blank token")
+    void shouldThrowExceptionForInvalidToken(String token) {
+        long initialCount = securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY);
+
         TokenValidationException exception = assertThrows(
                 TokenValidationException.class,
-                () -> validator.validate(null)
+                () -> validator.validate(token)
         );
 
         assertEquals(SecurityEventCounter.EventType.TOKEN_EMPTY, exception.getEventType());
-        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY));
-    }
-
-    @Test
-    @DisplayName("Should throw exception for empty token")
-    void shouldThrowExceptionForEmptyToken() {
-        TokenValidationException exception = assertThrows(
-                TokenValidationException.class,
-                () -> validator.validate("")
-        );
-
-        assertEquals(SecurityEventCounter.EventType.TOKEN_EMPTY, exception.getEventType());
-        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY));
-    }
-
-    @Test
-    @DisplayName("Should throw exception for blank token")
-    void shouldThrowExceptionForBlankToken() {
-        TokenValidationException exception = assertThrows(
-                TokenValidationException.class,
-                () -> validator.validate("   ")
-        );
-
-        assertEquals(SecurityEventCounter.EventType.TOKEN_EMPTY, exception.getEventType());
-        assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY));
+        assertEquals(initialCount + 1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY));
     }
 
     @Test
     @DisplayName("Should throw exception for token exceeding max size")
     void shouldThrowExceptionForTokenExceedingMaxSize() {
         // Create a token larger than maxTokenSize (1000 bytes)
-        String largeToken = "a".repeat(1001);
+        String largeToken = Generators.letterStrings(1001, 1001).next();
 
         TokenValidationException exception = assertThrows(
                 TokenValidationException.class,
@@ -110,7 +95,7 @@ class TokenStringValidatorTest {
     @DisplayName("Should accept token exactly at max size")
     void shouldAcceptTokenExactlyAtMaxSize() {
         // Create a token exactly at maxTokenSize (1000 bytes)
-        String tokenAtMaxSize = "a".repeat(1000);
+        String tokenAtMaxSize = Generators.letterStrings(1000, 1000).next();
 
         assertDoesNotThrow(() -> validator.validate(tokenAtMaxSize));
         assertEquals(0, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED));
@@ -120,9 +105,11 @@ class TokenStringValidatorTest {
     @DisplayName("Should count security events correctly")
     void shouldCountSecurityEventsCorrectly() {
         // Multiple violations should increment counters
+        String oversizedToken = Generators.letterStrings(1001, 1001).next();
+
         assertThrows(TokenValidationException.class, () -> validator.validate(null));
         assertThrows(TokenValidationException.class, () -> validator.validate(""));
-        assertThrows(TokenValidationException.class, () -> validator.validate("a".repeat(1001)));
+        assertThrows(TokenValidationException.class, () -> validator.validate(oversizedToken));
 
         assertEquals(2, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_EMPTY));
         assertEquals(1, securityEventCounter.getCount(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED));

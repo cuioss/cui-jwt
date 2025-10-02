@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.json.MapRepresentation;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
@@ -47,6 +46,9 @@ import java.util.Map;
  * <p>
  * <strong>No Caching:</strong> Refresh tokens are not cached.
  * <p>
+ * <strong>No Security Events:</strong> This pipeline does not track security events.
+ * The {@code REFRESH_TOKEN_CREATED} event is incremented by the caller (TokenValidator).
+ * <p>
  * This class is thread-safe and stateless after construction.
  *
  * @author Oliver Wolff
@@ -57,18 +59,14 @@ public class RefreshTokenValidationPipeline {
     private static final CuiLogger LOGGER = new CuiLogger(RefreshTokenValidationPipeline.class);
 
     private final NonValidatingJwtParser jwtParser;
-    private final SecurityEventCounter securityEventCounter;
 
     /**
      * Creates a new RefreshTokenValidationPipeline.
      *
      * @param jwtParser the JWT parser for attempting to parse tokens
-     * @param securityEventCounter the security event counter for tracking operations
      */
-    public RefreshTokenValidationPipeline(@NonNull NonValidatingJwtParser jwtParser,
-            @NonNull SecurityEventCounter securityEventCounter) {
+    public RefreshTokenValidationPipeline(@NonNull NonValidatingJwtParser jwtParser) {
         this.jwtParser = jwtParser;
-        this.securityEventCounter = securityEventCounter;
     }
 
     /**
