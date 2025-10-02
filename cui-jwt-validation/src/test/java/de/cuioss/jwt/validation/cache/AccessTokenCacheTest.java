@@ -223,8 +223,11 @@ class AccessTokenCacheTest {
         executor.shutdown();
         assertTrue(executor.awaitTermination(1, TimeUnit.SECONDS), "Executor should terminate cleanly");
 
-        // Then - validation should happen only once despite concurrent access
-        assertEquals(1, validationCount.get());
+        // Then - with optimistic caching, validation may happen 1-5 times (race condition)
+        // Each thread validates in parallel, first to putIfAbsent wins
+        int actualValidationCount = validationCount.get();
+        assertTrue(actualValidationCount >= 1 && actualValidationCount <= threadCount,
+                "Validation should happen at least once, at most " + threadCount + " times, actual: " + actualValidationCount);
         assertEquals(1, cache.size());
 
         // Verify subsequent access is a cache hit
@@ -235,7 +238,125 @@ class AccessTokenCacheTest {
 
         assertNotNull(cachedResult);
         assertEquals(content, cachedResult);
-        assertEquals(1, validationCount.get()); // Still only called once
+        // Validation count doesn't change after cache hit
+        assertEquals(actualValidationCount, validationCount.get());
+    }
+
+    @Test
+    void concurrentAccessHighContention() throws InterruptedException {
+        // Test optimistic caching under high contention (issue #131/#132 fix verification)
+        // Given
+        String token = "high-contention-token";
+        AtomicInteger validationCount = new AtomicInteger(0);
+        AtomicInteger successCount = new AtomicInteger(0);
+        AccessTokenContent content = createAccessToken("https://example.com", OffsetDateTime.now().plusHours(1));
+
+        int threadCount = 50; // High concurrency to trigger race conditions
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
+        // When - many threads access the same token simultaneously
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    // Wait for all threads to be ready
+                    startLatch.await();
+
+                    AccessTokenContent result = cache.computeIfAbsent(token, t -> {
+                        validationCount.incrementAndGet();
+                        // Simulate some work to increase race window
+                        await()
+                                .pollDelay(1, TimeUnit.MILLISECONDS)
+                                .atMost(10, TimeUnit.MILLISECONDS)
+                                .until(() -> true);
+                        return content;
+                    }, performanceMonitor);
+
+                    assertNotNull(result);
+                    assertEquals(content, result);
+                    successCount.incrementAndGet();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    fail("Thread was interrupted: " + e.getMessage());
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        // Start all threads simultaneously
+        startLatch.countDown();
+
+        // Wait for completion
+        assertTrue(doneLatch.await(5, TimeUnit.SECONDS), "All threads should complete without blocking");
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS), "Executor should terminate cleanly");
+
+        // Then - verify optimistic caching behavior
+        assertEquals(threadCount, successCount.get(), "All threads should successfully retrieve the token");
+        int actualValidationCount = validationCount.get();
+        assertTrue(actualValidationCount >= 1, "Validation should happen at least once");
+        assertTrue(actualValidationCount <= threadCount, "Validation should not exceed thread count");
+        assertEquals(1, cache.size(), "Only one token should be cached");
+
+        // Note: Multiple validations are expected (optimistic caching trades duplicate work for no blocking)
+        // This is the fix for issue #131/#132
+    }
+
+    @Test
+    void concurrentAccessMultipleTokens() throws InterruptedException {
+        // Test that different tokens can be validated in parallel without contention
+        // Given
+        int tokenCount = 10;
+        int threadsPerToken = 5;
+        AtomicInteger totalValidationCount = new AtomicInteger(0);
+        AtomicInteger successCount = new AtomicInteger(0);
+
+        int totalThreads = tokenCount * threadsPerToken;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(totalThreads);
+        ExecutorService executor = Executors.newFixedThreadPool(totalThreads);
+
+        // When - many threads access different tokens concurrently
+        for (int tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
+            final String token = "token-" + tokenIndex;
+            final AccessTokenContent content = createAccessToken("https://example.com", OffsetDateTime.now().plusHours(1));
+
+            for (int threadIndex = 0; threadIndex < threadsPerToken; threadIndex++) {
+                executor.submit(() -> {
+                    try {
+                        startLatch.await();
+
+                        AccessTokenContent result = cache.computeIfAbsent(token, t -> {
+                            totalValidationCount.incrementAndGet();
+                            return content;
+                        }, performanceMonitor);
+
+                        assertNotNull(result);
+                        successCount.incrementAndGet();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        fail("Thread was interrupted: " + e.getMessage());
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                });
+            }
+        }
+
+        // Start all threads simultaneously
+        startLatch.countDown();
+
+        // Wait for completion
+        assertTrue(doneLatch.await(5, TimeUnit.SECONDS), "All threads should complete quickly");
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS), "Executor should terminate cleanly");
+
+        // Then
+        assertEquals(totalThreads, successCount.get(), "All threads should successfully retrieve tokens");
+        assertTrue(totalValidationCount.get() >= tokenCount, "Each token should be validated at least once");
+        assertEquals(tokenCount, cache.size(), "All unique tokens should be cached");
     }
 
     private AccessTokenContent createAccessToken(String issuer, OffsetDateTime expiration) {
