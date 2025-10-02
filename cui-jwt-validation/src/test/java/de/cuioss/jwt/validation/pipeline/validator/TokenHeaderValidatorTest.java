@@ -191,6 +191,151 @@ class TokenHeaderValidatorTest {
     }
 
     @Nested
+    @DisplayName("Key ID Validation Tests")
+    class KeyIdValidationTests {
+
+        @Test
+        @DisplayName("Should reject token with missing key ID (kid)")
+        void shouldRejectTokenWithMissingKeyId() {
+            // Get initial count
+            long initialCount = SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_CLAIM);
+
+            // Given a validator
+            var issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                    .build();
+            TokenHeaderValidator validator = createValidator(issuerConfig);
+
+            // And a token with a missing kid in the header
+            var headerWithoutKid = new JwtHeader(
+                    "RS256",  // alg
+                    "JWT",    // typ
+                    null,     // kid - missing
+                    null,     // jku
+                    null,     // jwk
+                    null,     // x5u
+                    null,     // x5c
+                    null,     // x5t
+                    null,     // x5tS256
+                    null,     // cty
+                    null      // crit
+            );
+
+            // Create a DecodedJwt without kid
+            DecodedJwt decodedJwt = new DecodedJwt(
+                    headerWithoutKid,
+                    MapRepresentation.empty(),
+                    "fake-signature",
+                    new String[]{"header", "payload", "signature"},
+                    "header.payload.signature"
+            );
+
+            // When validating the token, it should throw an exception
+            var exception = assertThrows(TokenValidationException.class,
+                    () -> validator.validate(decodedJwt));
+
+            // Verify the exception has the correct event type
+            assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType());
+
+            // And the exception message should mention kid
+            assertTrue(exception.getMessage().contains("kid"));
+
+            // And a warning should be logged
+            LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN, "Token is missing required claim: kid");
+
+            // Verify security event was recorded
+            assertEquals(initialCount + 1, SECURITY_EVENT_COUNTER.getCount(SecurityEventCounter.EventType.MISSING_CLAIM));
+        }
+
+        @Test
+        @DisplayName("Should reject token with missing kid and provide header info when typ is missing")
+        void shouldRejectTokenWithMissingKidAndMissingTyp() {
+            // Given a validator
+            var issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                    .build();
+            TokenHeaderValidator validator = createValidator(issuerConfig);
+
+            // And a token with missing kid and missing typ
+            var headerWithoutKidAndTyp = new JwtHeader(
+                    "RS256",  // alg
+                    null,     // typ - missing
+                    null,     // kid - missing
+                    null,     // jku
+                    null,     // jwk
+                    null,     // x5u
+                    null,     // x5c
+                    null,     // x5t
+                    null,     // x5tS256
+                    null,     // cty
+                    null      // crit
+            );
+
+            // Create a DecodedJwt
+            DecodedJwt decodedJwt = new DecodedJwt(
+                    headerWithoutKidAndTyp,
+                    MapRepresentation.empty(),
+                    "fake-signature",
+                    new String[]{"header", "payload", "signature"},
+                    "header.payload.signature"
+            );
+
+            // When validating the token, it should throw an exception
+            var exception = assertThrows(TokenValidationException.class,
+                    () -> validator.validate(decodedJwt));
+
+            // Verify the exception message includes available header info (only alg)
+            assertTrue(exception.getMessage().contains("alg=RS256"));
+        }
+
+        @Test
+        @DisplayName("Should reject token with missing kid and all other headers also missing")
+        void shouldRejectTokenWithMissingKidAndAllHeadersMissing() {
+            // Given a validator
+            var issuerConfig = IssuerConfig.builder()
+                    .issuerIdentifier("test-issuer")
+                    .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
+                    .build();
+            TokenHeaderValidator validator = createValidator(issuerConfig);
+
+            // And a token with ALL headers missing (including alg)
+            var headerWithNothing = new JwtHeader(
+                    null,     // alg - missing
+                    null,     // typ - missing
+                    null,     // kid - missing
+                    null,     // jku
+                    null,     // jwk
+                    null,     // x5u
+                    null,     // x5c
+                    null,     // x5t
+                    null,     // x5tS256
+                    null,     // cty
+                    null      // crit
+            );
+
+            // Create a DecodedJwt
+            DecodedJwt decodedJwt = new DecodedJwt(
+                    headerWithNothing,
+                    MapRepresentation.empty(),
+                    "fake-signature",
+                    new String[]{"header", "payload", "signature"},
+                    "header.payload.signature"
+            );
+
+            // When validating the token, it should throw an exception for missing alg first
+            // (alg validation comes before kid validation)
+            var exception = assertThrows(TokenValidationException.class,
+                    () -> validator.validate(decodedJwt));
+
+            // Verify the exception is for missing alg (not kid, since alg is checked first)
+            assertEquals(SecurityEventCounter.EventType.MISSING_CLAIM, exception.getEventType());
+            assertTrue(exception.getMessage().contains("alg"));
+        }
+    }
+
+    @Nested
     @DisplayName("Embedded JWK Protection Tests (CVE-2018-0114)")
     class EmbeddedJwkProtectionTests {
 
