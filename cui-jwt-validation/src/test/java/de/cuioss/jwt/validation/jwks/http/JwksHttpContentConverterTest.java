@@ -16,6 +16,9 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.jwt.validation.json.Jwks;
+import de.cuioss.test.juli.LogAsserts;
+import de.cuioss.test.juli.TestLogLevel;
+import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
@@ -25,11 +28,13 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for JwksHttpContentConverter.
  */
+@EnableTestLogger
 class JwksHttpContentConverterTest {
 
     private final JwksHttpContentConverter converter = new JwksHttpContentConverter();
@@ -86,6 +91,10 @@ class JwksHttpContentConverterTest {
         String invalidJson = "not valid json";
         Optional<Jwks> result = converter.convert(invalidJson);
         assertTrue(result.isEmpty());
+
+        // Verify LogRecord is logged for IO error during parsing
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                WARN.JWKS_PARSE_IO_ERROR.resolveIdentifierString());
     }
 
     @Test
@@ -102,6 +111,23 @@ class JwksHttpContentConverterTest {
     }
 
     @Test
+    void shouldLogWarningForTypeMismatch() {
+        // Test case where JSON is syntactically valid but has type mismatches
+        // DSL-JSON throws IOException for type mismatches (expecting array, got string)
+        String invalidStructure = """
+            {
+              "keys": "this should be an array not a string"
+            }
+            """;
+        Optional<Jwks> result = converter.convert(invalidStructure);
+        assertTrue(result.isEmpty());
+
+        // Verify LogRecord is logged - DSL-JSON treats this as IO error
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                WARN.JWKS_PARSE_IO_ERROR.resolveIdentifierString());
+    }
+
+    @Test
     void shouldHandleEmptyKeysArray() {
         String emptyKeys = """
             {
@@ -112,5 +138,17 @@ class JwksHttpContentConverterTest {
         assertTrue(result.isPresent());
         assertNotNull(result.get().keys());
         assertTrue(result.get().keys().isEmpty());
+    }
+
+    @Test
+    void shouldLogWarningWhenDslJsonReturnsNull() {
+        // DSL-JSON returns null when deserializing the JSON literal "null"
+        String nullJson = "null";
+        Optional<Jwks> result = converter.convert(nullJson);
+        assertTrue(result.isEmpty());
+
+        // Verify LogRecord is logged when DSL-JSON returns null
+        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.WARN,
+                WARN.JWKS_PARSE_NULL_RESULT.resolveIdentifierString());
     }
 }

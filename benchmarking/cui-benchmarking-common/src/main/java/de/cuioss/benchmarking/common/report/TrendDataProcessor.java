@@ -20,8 +20,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,7 +53,9 @@ public class TrendDataProcessor {
     private static final CuiLogger LOGGER = new CuiLogger(TrendDataProcessor.class);
     private static final int MAX_HISTORY_ENTRIES = 10;
     private static final double STABILITY_THRESHOLD = 0.02; // 2% change threshold for "stable"
-    
+    private static final String KEY_THROUGHPUT = "throughput";
+    private static final String KEY_LATENCY = "latency";
+
     private final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
@@ -63,23 +63,15 @@ public class TrendDataProcessor {
     /**
      * Represents a single historical data point.
      */
-    @Getter @RequiredArgsConstructor public static class HistoricalDataPoint {
-        private final String timestamp;
-        private final double throughput;
-        private final double latency;
-        private final double performanceScore;
-        private final String commitSha;
+    public record HistoricalDataPoint(String timestamp, double throughput, double latency,
+    double performanceScore, String commitSha) {
     }
 
     /**
      * Represents calculated trend metrics.
      */
-    @Getter @RequiredArgsConstructor public static class TrendMetrics {
-        private final String direction; // "up", "down", or "stable"
-        private final double changePercentage;
-        private final double movingAverage;
-        private final double throughputTrend;
-        private final double latencyTrend;
+    public record TrendMetrics(String direction, double changePercentage, double movingAverage,
+    double throughputTrend, double latencyTrend) {
     }
 
     /**
@@ -104,23 +96,33 @@ public class TrendDataProcessor {
                     .toList();
 
             for (Path file : historyFiles) {
-                try {
-                    String jsonContent = Files.readString(file);
-                    JsonObject data = gson.fromJson(jsonContent, JsonObject.class);
-
-                    HistoricalDataPoint point = extractDataPoint(data, file.getFileName().toString());
-                    if (point != null) {
-                        dataPoints.add(point);
-                    }
-                } catch (IOException | JsonSyntaxException e) {
-                    LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("parsing history file: " + file), e);
-                }
+                processHistoryFile(file, dataPoints);
             }
         } catch (IOException e) {
             LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("loading historical data"), e);
         }
 
         return dataPoints;
+    }
+
+    /**
+     * Processes a single history file and adds its data point to the list.
+     *
+     * @param file the history file to process
+     * @param dataPoints the list to add the data point to
+     */
+    private void processHistoryFile(Path file, List<HistoricalDataPoint> dataPoints) {
+        try {
+            String jsonContent = Files.readString(file);
+            JsonObject data = gson.fromJson(jsonContent, JsonObject.class);
+
+            HistoricalDataPoint point = extractDataPoint(data, file.getFileName().toString());
+            if (point != null) {
+                dataPoints.add(point);
+            }
+        } catch (IOException | JsonSyntaxException e) {
+            LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("parsing history file: " + file), e);
+        }
     }
 
     /**
@@ -139,7 +141,7 @@ public class TrendDataProcessor {
         // Compare with most recent historical data
         HistoricalDataPoint previousRun = historicalData.getFirst();
         double changePercentage = StatisticsCalculator.calculatePercentageChange(
-                previousRun.getPerformanceScore(),
+                previousRun.performanceScore(),
                 currentMetrics.performanceScore());
 
         // Determine trend direction
@@ -151,17 +153,17 @@ public class TrendDataProcessor {
         recentScores.add(currentMetrics.performanceScore());
         historicalData.stream()
                 .limit(4)
-                .map(HistoricalDataPoint::getPerformanceScore)
+                .map(HistoricalDataPoint::performanceScore)
                 .forEach(recentScores::add);
         double movingAverage = StatisticsCalculator.calculateMovingAverage(recentScores, 5);
 
         // Calculate throughput and latency trends
         double throughputTrend = StatisticsCalculator.calculatePercentageChange(
-                previousRun.getThroughput(),
+                previousRun.throughput(),
                 currentMetrics.throughput()
         );
         double latencyTrend = StatisticsCalculator.calculatePercentageChange(
-                previousRun.getLatency(),
+                previousRun.latency(),
                 currentMetrics.latency()
         );
 
@@ -187,14 +189,13 @@ public class TrendDataProcessor {
         List<Double> performanceScores = new ArrayList<>();
 
         // Add historical data (reversed to show oldest first in chart)
-        List<HistoricalDataPoint> reversedData = new ArrayList<>(historicalData);
-        Collections.reverse(reversedData);
+        List<HistoricalDataPoint> reversedData = historicalData.reversed();
 
         for (HistoricalDataPoint point : reversedData) {
-            timestamps.add(point.getTimestamp());
-            throughputValues.add(point.getThroughput());
-            latencyValues.add(point.getLatency());
-            performanceScores.add(point.getPerformanceScore());
+            timestamps.add(point.timestamp());
+            throughputValues.add(point.throughput());
+            latencyValues.add(point.latency());
+            performanceScores.add(point.performanceScore());
         }
 
         // Add current data if provided
@@ -206,8 +207,8 @@ public class TrendDataProcessor {
         }
 
         chartData.put("timestamps", timestamps);
-        chartData.put("throughput", throughputValues);
-        chartData.put("latency", latencyValues);
+        chartData.put(KEY_THROUGHPUT, throughputValues);
+        chartData.put(KEY_LATENCY, latencyValues);
         chartData.put("performanceScores", performanceScores);
 
         // Add statistical analysis
@@ -239,12 +240,12 @@ public class TrendDataProcessor {
                     ? metadata.get("timestamp").getAsString()
                     : extractTimestampFromFilename(filename);
 
-            double throughput = overview.has("throughput")
-                    ? parseMetricValue(overview.get("throughput").getAsString())
+            double throughput = overview.has(KEY_THROUGHPUT)
+                    ? parseMetricValue(overview.get(KEY_THROUGHPUT).getAsString())
                     : 0.0;
 
-            double latency = overview.has("latency")
-                    ? parseMetricValue(overview.get("latency").getAsString())
+            double latency = overview.has(KEY_LATENCY)
+                    ? parseMetricValue(overview.get(KEY_LATENCY).getAsString())
                     : 0.0;
 
             double performanceScore = overview.has("performanceScore")

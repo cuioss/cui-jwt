@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.producer;
 
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
-
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.DisplayName;

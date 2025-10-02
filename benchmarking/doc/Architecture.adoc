@@ -1,19 +1,17 @@
 = Benchmark Module Architecture
 :toc: left
-:toclevels: 3
-:toc-title: Table of Contents
+:toclevels: 2
 :sectnums:
-:source-highlighter: highlight.js
 :icons: font
 
 [NOTE]
 ====
-This document defines the architecture, responsibilities, and boundaries of the CUI JWT benchmark modules. It serves as the authoritative guide for code organization and module dependencies.
+This document defines the architecture, responsibilities, and boundaries of the CUI JWT benchmark modules. All content has been verified against the actual codebase.
 ====
 
 == Overview
 
-The CUI JWT benchmarking infrastructure consists of three specialized modules designed to provide comprehensive performance testing at different levels of abstraction:
+The CUI JWT benchmarking infrastructure consists of three specialized modules:
 
 [cols="1,3", options="header"]
 |===
@@ -22,457 +20,332 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules de
 |Shared infrastructure, utilities, and framework for all benchmark types
 
 |benchmark-library
-|Micro-benchmarks for JWT validation library performance testing
+|JMH-based micro-benchmarks for direct JWT validation library performance testing
 
-|benchmark-integration-quarkus
-|End-to-end integration benchmarks against live Quarkus applications
+|benchmark-integration-wrk
+|WRK-based HTTP load testing using shell scripts and Docker containers
 |===
 
-== Module Dependency Diagram
+== Module Dependency Structure
 
 [source]
 ----
-┌─────────────────────────────────────────────────────────────┐
-│                    External Dependencies                    │
-│  (JMH, Keycloak, Docker, Quarkus, HdrHistogram, Apache IO) │
-└─────────────────┬───────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  cui-benchmarking-common                    │
-│                                                              │
-│  • Benchmark framework and runners                          │
-│  • Configuration management                                 │
-│  • Metrics collection and processing                        │
-│  • Report and artifact generation                           │
-│  • Token management and repositories                        │
-│  • HTTP client utilities                                    │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-         ┌─────────┴──────────┐
-         ▼                    ▼
-┌──────────────────┐  ┌───────────────────────────┐
-│ benchmark-library│  │benchmark-integration-     │
-│                  │  │         quarkus           │
-│ • Library perf   │  │                           │
-│ • JFR profiling  │  │ • E2E integration tests   │
-│ • Micro-bench    │  │ • Container management    │
-│                  │  │ • Service orchestration   │
-└──────────────────┘  └───────────────────────────┘
-         │                           │
-         ▼                           ▼
-┌──────────────────┐  ┌───────────────────────────┐
-│ cui-jwt-         │  │  Quarkus Application     │
-│ validation       │  │  (External Container)     │
-└──────────────────┘  └───────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│        External: JMH, Keycloak, Docker, WRK             │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              cui-benchmarking-common                    │
+│  • Benchmark runners and configuration                  │
+│  • Metrics collection and transformation                │
+│  • Report and badge generation                          │
+│  • Token management                                     │
+│  • HTTP utilities                                       │
+└──────────────┬──────────────────────────────────────────┘
+               │
+      ┌────────┴────────┐
+      ▼                 ▼
+┌──────────────┐  ┌─────────────────────────┐
+│benchmark-    │  │benchmark-integration-wrk│
+│library       │  │                         │
+│              │  │ Shell-based WRK testing │
+│JMH Benchmarks│  │ 1 Java post-processor   │
+└──────────────┘  └─────────────────────────┘
+      │                      │
+      ▼                      ▼
+┌──────────────┐  ┌─────────────────────────┐
+│cui-jwt-      │  │Docker Containers:       │
+│validation    │  │ • Quarkus App           │
+│              │  │ • Keycloak              │
+│              │  │ • Prometheus            │
+└──────────────┘  └─────────────────────────┘
 ----
 
-== Module Responsibilities
+== cui-benchmarking-common
 
-=== cui-benchmarking-common
+=== Responsibility
+Foundation framework providing shared utilities, configuration, metrics processing, and report generation for all benchmark types.
 
-==== Primary Responsibility
-Provides the foundational framework and shared utilities for all benchmark operations, ensuring consistency and reusability across different benchmark types.
+=== Key Components
 
-==== Core Components
-
-[cols="2,3,2", options="header"]
+[cols="2,3", options="header"]
 |===
-|Component |Responsibility |Key Classes
+|Component |Key Classes
 
-|Configuration Management
-|Centralized benchmark configuration using builder pattern
-|`BenchmarkConfiguration`, `BenchmarkType`
+|Benchmark Execution
+|`AbstractBenchmarkRunner`, `BenchmarkResultProcessor`, `AbstractBenchmarkBase`
 
-|Benchmark Execution Framework
-|Abstract base classes implementing Template Method pattern for consistent benchmark lifecycle
-|`AbstractBenchmarkRunner`, `BenchmarkResultProcessor`
+|Configuration
+|`BenchmarkConfiguration`, `BenchmarkType`, `IntegrationConfiguration`, `ReportConfiguration`
 
 |Metrics Collection
-|Standardized interfaces and implementations for collecting metrics from various sources
-|`MetricsFetcher`, `QuarkusMetricsFetcher`, `MetricsProcessor`
+|`PrometheusClient`, `PrometheusMetricsManager`, `MetricsOrchestrator`
 
-|HTTP Utilities
-|Factory for creating optimized HTTP clients with connection pooling
-|`HttpClientFactory`, `HttpClientPool`
-
-|Token Management
-|JWT token lifecycle management with Keycloak integration
-|`TokenRepository`, `KeycloakTokenFetcher`
+|Metrics Processing
+|`BenchmarkMetricsTransformer`, `MetricsTransformer`, `MetricsComputer`, `StatisticsCalculator`
 
 |Report Generation
-|Comprehensive artifact generation including badges, HTML reports, and GitHub Pages
-|`BadgeGenerator`, `ReportGenerator`, `GitHubPagesGenerator`
+|`ReportGenerator`, `BadgeGenerator`, `GitHubPagesGenerator`, `ReportDataGenerator`
+
+|Data Conversion
+|`JmhBenchmarkConverter`, `WrkBenchmarkConverter`, `BenchmarkConverter`
+
+|Token Management
+|`KeycloakTokenRepository`, `TokenRepositoryConfig`, `TokenProvider`
+
+|HTTP Utilities
+|`HttpClientFactory`
+
+|JFR Support
+|`JfrInstrumentation`, `JfrSupport`, `JfrVarianceAnalyzer`
 
 |Utilities
-|Cross-cutting concerns like logging, JSON serialization, and data validation
-|`BenchmarkLogger`, `JsonUtils`, `ValidationUtils`
+|`JsonSerializationHelper`, `BenchmarkLoggingSetup`, `OutputDirectoryStructure`
 |===
 
-==== Package Structure
+=== Package Structure
 [source]
 ----
 de.cuioss.benchmarking.common/
-├── config/          # Configuration and settings
-├── http/            # HTTP client management
-├── metrics/         # Metrics collection and processing
-│   └── pipeline/    # Metrics processing pipeline
-├── report/          # Report and artifact generation
-├── repository/      # Token and data repositories
-├── runner/          # Benchmark execution framework
-├── util/            # Utility classes
-└── validation/      # Result validation
+├── base/          # Base classes for benchmarks
+├── config/        # Configuration classes
+├── constants/     # Constants
+├── converter/     # Result converters (JMH/WRK → BenchmarkData)
+├── http/          # HTTP client utilities
+├── jfr/           # Java Flight Recorder support
+├── metrics/       # Metrics collection and processing
+├── model/         # Data models (BenchmarkData)
+├── output/        # Output directory management
+├── profiler/      # Profiling utilities
+├── report/        # Report and badge generation
+├── repository/    # Token repositories
+├── runner/        # Benchmark runner framework
+├── token/         # Token provider interfaces
+└── util/          # General utilities
 ----
 
-=== benchmark-library
+== benchmark-library
 
-==== Primary Responsibility
-Executes micro-benchmarks directly against the JWT validation library to measure raw performance characteristics without network or container overhead.
+=== Responsibility
+Executes JMH-based micro-benchmarks directly against the JWT validation library without network or container overhead.
 
-==== Core Components
+=== Key Components
 
-[cols="2,3,2", options="header"]
+[cols="2,3", options="header"]
 |===
-|Component |Responsibility |Key Classes
+|Component |Classes
 
-|Library Benchmarks
-|Direct performance testing of JWT validation components
+|Standard Benchmarks
 |`SimpleCoreValidationBenchmark`, `SimpleErrorLoadBenchmark`
 
-|JFR Integration
-|Java Flight Recorder support for detailed profiling
-|`JfrInstrumentation`, `JfrVarianceAnalyzer`
+|JFR Benchmarks
+|`CoreJfrBenchmark`, `ErrorJfrBenchmark`, `MixedJfrBenchmark`, `UnifiedJfrBenchmark`
 
-|Benchmark Runners
-|Specialized runners for library benchmarks with and without profiling
+|Runners
 |`LibraryBenchmarkRunner`, `JfrBenchmarkRunner`
 
-|Performance Optimization
-|Pre-initialization and caching for consistent measurements
-|`BenchmarkKeyCache`, `TokenPreloader`
+|Support Classes
+|`BenchmarkKeyCache`, `MockTokenRepository`, `LibraryMetricsExporter`
 
-|Scoring System
-|Composite metrics combining throughput, latency, and error resilience
-|`PerformanceScorer`, `MetricsComputer`
+|Legacy Benchmarks
+|`ErrorLoadBenchmark`, `PerformanceIndicatorBenchmark`
 |===
 
-==== Execution Profiles
-* `benchmark` - Standard micro-benchmarks (< 10 minutes)
-* `benchmark-jfr` - Benchmarks with JFR profiling enabled
+=== Maven Profiles
+* `benchmark` - Standard JMH benchmarks (< 10 minutes)
+* `benchmark-jfr` - Benchmarks with Java Flight Recorder profiling
+* `quick` - Reduced iterations for fast testing
 
-=== benchmark-integration-quarkus
+=== Configuration
+Configured via pom.xml properties:
+* `jmh.iterations=5`, `jmh.warmupIterations=3`
+* `jmh.threads=100`, `jmh.time=4s`
+* `jmh.include` - Benchmark class pattern filter
 
-==== Primary Responsibility
-Performs end-to-end integration testing against containerized Quarkus applications to measure real-world performance including network overhead and service interactions.
+== benchmark-integration-wrk
 
-==== Core Components
+=== Responsibility
+Performs HTTP-based load testing using WRK tool via shell scripts. Minimal Java code - orchestration handled by Maven and bash scripts.
 
-[cols="2,3,2", options="header"]
-|===
-|Component |Responsibility |Key Classes
+=== Architecture
 
-|Integration Benchmarks
-|End-to-end testing of JWT validation in Quarkus applications
-|`JwtValidationBenchmark`, `JwtHealthBenchmark`
+**Java Components:** Only 1 class
+* `WrkResultPostProcessor` - Converts WRK output to BenchmarkData format, fetches Prometheus metrics, generates reports
 
-|Container Management
-|Docker container lifecycle for Quarkus and Keycloak services
-|`ContainerManager`, `ServiceOrchestrator`
+**Shell Script Orchestration:**
 
-|Integration Runners
-|Specialized runners for container-based benchmarks
-|`QuarkusIntegrationRunner`
+Maven pom.xml references scripts from two locations:
+* `../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/` - Container lifecycle and monitoring
+* `src/main/resources/wrk-scripts/` - WRK benchmark execution
 
-|Metrics Integration
-|Collection and processing of Quarkus application metrics
-|`MetricsPostProcessor`, `QuarkusMetricsCollector`
+Key scripts:
+* Container lifecycle: `start-integration-container.sh`, `stop-integration-container.sh`
+* Health checks: `pre-benchmark-health-check.sh`
+* Benchmarks: `health_live_benchmark.sh`, `jwt_benchmark.sh`
+* Token fetching: `fetch_tokens.sh`
+* Logging: `dump-keycloak-logs.sh`
 
-|Service Configuration
-|Management of service URLs and authentication
-|`ServiceConfig`, `EndpointRegistry`
-|===
-
-==== Service Architecture
+**Container Services:**
 [source]
 ----
-Quarkus Application:  https://localhost:10443
-├── /jwt/validate     # JWT validation endpoint
-├── /q/health         # Health check endpoint
-└── /q/metrics        # Metrics endpoint
+Quarkus:     https://localhost:10443
+  /jwt/validate    - JWT validation endpoint
+  /q/health        - Health endpoint
+  /q/metrics       - Metrics endpoint
 
-Keycloak Server:      https://localhost:1443
-└── /auth/realms/...  # Token issuance
+Keycloak:    https://localhost:1443
+  /auth/realms/... - Token issuance
+
+Prometheus:  http://localhost:9090
+  /api/v1/query    - Metrics API
 ----
 
-== Code Placement Rules
+=== Maven Profiles
+* `benchmark` - Full lifecycle: build containers, run tests, collect metrics, stop containers
+* `quick` - Reduced duration (30s), skips container lifecycle
+* `autoscale` - 8 threads, 200 connections
+* `stress` - 10 threads, 150 connections
+* `max` - 10 threads, 300 connections (tests limits)
 
-=== Decision Tree for Code Placement
+=== Configuration
+Configured via pom.xml properties:
+* `wrk.duration=60s`, `wrk.threads=5`, `wrk.connections=50`
+* `wrk.jwt.token_count=100`
+* `skip.container.lifecycle=false`
+
+== Code Placement Decision Tree
 
 [source]
 ----
-Is the code benchmark-specific?
+Does the code generate reports/badges/artifacts?
+├─YES─> cui-benchmarking-common/report/
 │
-├─NO─> Is it used by multiple benchmark types?
-│      │
-│      ├─YES─> Place in cui-benchmarking-common
-│      │
-│      └─NO──> Is it a utility/helper?
-│              │
-│              ├─YES─> Place in cui-benchmarking-common/util
-│              │
-│              └─NO──> Reconsider if it belongs in benchmarking
-│
-└─YES─> Is it for library micro-benchmarks?
-        │
-        ├─YES─> Does it involve JFR?
-        │       │
-        │       ├─YES─> Place in benchmark-library (JFR package)
-        │       │
-        │       └─NO──> Place in benchmark-library
-        │
-        └─NO──> Is it for integration testing?
-                │
-                ├─YES─> Does it manage containers?
-                │       │
-                │       ├─YES─> Place in benchmark-integration-quarkus
-                │       │
-                │       └─NO──> Does it test endpoints?
-                │               │
-                │               ├─YES─> Place in benchmark-integration-quarkus
-                │               │
-                │               └─NO──> Place in cui-benchmarking-common
-                │
-                └─NO──> Place in cui-benchmarking-common
+├─NO──> Does it collect or transform metrics?
+│       ├─YES─> cui-benchmarking-common/metrics/
+│       │
+│       └─NO──> Does it manage configuration?
+│               ├─YES─> cui-benchmarking-common/config/
+│               │
+│               └─NO──> Is it a JMH benchmark?
+│                       ├─YES─> benchmark-library/
+│                       │
+│                       └─NO──> Is it WRK-related?
+│                               ├─YES─> benchmark-integration-wrk/
+│                               │       (or use shell scripts)
+│                               │
+│                               └─NO──> cui-benchmarking-common/util/
 ----
 
-=== Clear Placement Guidelines
+== Placement Guidelines
 
-==== Place in cui-benchmarking-common when:
-* Code is used by both library and integration benchmarks
-* Implementing a general benchmarking utility or framework component
-* Creating reusable metrics collectors or processors
-* Building report generators or artifact creators
-* Managing tokens or external service connections
-* Providing configuration or validation utilities
+=== Place in cui-benchmarking-common when:
+* Used by both library and integration benchmarks
+* General framework component (runner, processor)
+* Metrics collection or transformation
+* Report/badge generation
+* Configuration management
+* Token management
+* HTTP client utilities
 
-==== Place in benchmark-library when:
-* Code directly tests JWT validation library performance
-* Implementing JMH benchmark methods
-* Adding JFR instrumentation or analysis
-* Creating library-specific performance optimizations
-* Building micro-benchmark runners or scorers
+=== Place in benchmark-library when:
+* JMH benchmark methods (`@Benchmark` annotation)
+* JFR instrumentation for library testing
+* Library-specific test utilities
 
-==== Place in benchmark-integration-quarkus when:
-* Code tests Quarkus application endpoints
-* Managing Docker containers or services
-* Implementing integration-specific benchmarks
-* Collecting Quarkus-specific metrics
-* Orchestrating multi-service test scenarios
+=== Place in benchmark-integration-wrk when:
+* Processing WRK output format
+* Rarely needed - most logic is in shell scripts
 
-== Examples of Proper Code Placement
-
-=== Example 1: New Metrics Processor
-
-*Scenario:* Creating a new processor that calculates percentile distributions
-
-*Correct Placement:* `cui-benchmarking-common/metrics/pipeline/PercentileProcessor.java`
-
-*Rationale:* Used by both library and integration benchmarks for processing results
-
-[source,java]
-----
-package de.cuioss.benchmarking.common.metrics.pipeline;
-
-public class PercentileProcessor implements MetricsProcessor {
-    // Implementation that can be used by all benchmark types
-}
-----
-
-=== Example 2: JWT Algorithm-Specific Benchmark
-
-*Scenario:* Adding a benchmark for RS256 vs ES256 performance comparison
-
-*Correct Placement:* `benchmark-library/src/main/java/de/cuioss/benchmarking/library/AlgorithmComparisonBenchmark.java`
-
-*Rationale:* Direct library performance testing without external dependencies
-
-[source,java]
-----
-package de.cuioss.benchmarking.library;
-
-@State(Scope.Benchmark)
-public class AlgorithmComparisonBenchmark {
-    @Benchmark
-    public void measureRS256Performance() { /* ... */ }
-    
-    @Benchmark
-    public void measureES256Performance() { /* ... */ }
-}
-----
-
-=== Example 3: Quarkus Circuit Breaker Testing
-
-*Scenario:* Testing JWT validation with Quarkus circuit breaker patterns
-
-*Correct Placement:* `benchmark-integration-quarkus/src/main/java/de/cuioss/benchmarking/integration/CircuitBreakerBenchmark.java`
-
-*Rationale:* Tests Quarkus-specific features in containerized environment
-
-[source,java]
-----
-package de.cuioss.benchmarking.integration;
-
-public class CircuitBreakerBenchmark extends AbstractIntegrationBenchmark {
-    @Benchmark
-    public void measureCircuitBreakerResponse() {
-        // Test against running Quarkus container
-    }
-}
-----
-
-=== Example 4: Token Cache Implementation
-
-*Scenario:* Implementing a shared token cache for benchmark optimization
-
-*Correct Placement:* `cui-benchmarking-common/repository/TokenCache.java`
-
-*Rationale:* Shared resource used by multiple benchmark types
-
-[source,java]
-----
-package de.cuioss.benchmarking.common.repository;
-
-public class TokenCache {
-    // Shared token caching logic
-}
-----
+**Prefer shell scripts over Java** for WRK orchestration (container management, test execution).
 
 == Architecture Patterns
 
 === Template Method Pattern
-All benchmark runners extend `AbstractBenchmarkRunner` which defines the benchmark lifecycle:
+`AbstractBenchmarkRunner` defines benchmark lifecycle:
 
 [source,java]
 ----
-public abstract class AbstractBenchmarkRunner {
-    public final void run() {
-        configure();      // Step 1: Configuration
-        prepare();        // Step 2: Resource setup
-        execute();        // Step 3: Run benchmarks
-        process();        // Step 4: Process results
-        cleanup();        // Step 5: Cleanup
-    }
-    
-    protected abstract void execute();
-    // Other abstract methods...
+public final void runBenchmark() {
+    createConfiguration();
+    validateConfiguration(config);
+    prepareBenchmark(config);
+    executeBenchmark(options);
+    processResults(results, config);
+    cleanup(config);
 }
 ----
 
+Subclasses: `LibraryBenchmarkRunner`, `JfrBenchmarkRunner`
+
 === Builder Pattern
-Configuration uses fluent builders for type safety and clarity:
+Configuration uses builders:
 
 [source,java]
 ----
-BenchmarkConfiguration config = BenchmarkConfiguration.builder()
+ReportConfiguration.builder()
     .withBenchmarkType(BenchmarkType.MICRO)
-    .withIterations(5)
-    .withWarmupIterations(3)
-    .withThreads(100)
     .build();
 ----
 
+Note: `BenchmarkConfiguration` itself is a record, not a builder. Builder pattern used for `ReportConfiguration`.
+
 === Factory Pattern
-Resource creation is centralized in factories:
+* `HttpClientFactory` - Creates configured HTTP clients
 
-* `HttpClientFactory` - Creates optimized HTTP clients
-* `MetricsExporterFactory` - Creates appropriate metrics exporters
+=== Converter Pattern
+Unified data model via converters:
+* `JmhBenchmarkConverter` - JMH results → BenchmarkData
+* `WrkBenchmarkConverter` - WRK output → BenchmarkData
 
-=== Strategy Pattern
-Different benchmark types use different strategies:
-
-* Performance thresholds (micro vs integration)
-* Quality gates (library vs application)
-* Metrics collection (JMH vs HTTP endpoints)
-* Report generation (technical vs business metrics)
-
-== Module Interactions
-
-=== Benchmark Execution Flow
+== Data Flow
 
 [source]
 ----
-1. User triggers benchmark via Maven profile
-   └─> 2. Runner loads configuration from cui-benchmarking-common
-       └─> 3. Runner prepares resources (tokens, clients)
-           └─> 4. Execute benchmark-specific tests
-               ├─> Library: Direct JMH execution
-               └─> Integration: Container orchestration
-           └─> 5. Collect metrics via common interfaces
-               └─> 6. Process results using common pipeline
-                   └─> 7. Generate artifacts using common generators
-                       └─> 8. Clean up resources
-----
-
-=== Data Flow
-
-[source]
-----
-Benchmark Results (JMH/HTTP)
+Benchmark Execution (JMH or WRK)
         │
         ▼
-MetricsFetcher (Common)
+Converter (JmhBenchmarkConverter / WrkBenchmarkConverter)
         │
         ▼
-MetricsProcessor Pipeline (Common)
+BenchmarkData (unified model)
         │
-        ├──> BadgeGenerator (Common)
-        ├──> ReportGenerator (Common)
-        └──> GitHubPagesGenerator (Common)
+        ▼
+MetricsTransformer / BenchmarkMetricsTransformer
+        │
+        ├──> BadgeGenerator → JSON badges
+        ├──> ReportGenerator → HTML reports
+        └──> GitHubPagesGenerator → GitHub Pages
         │
         ▼
 target/benchmark-results/
 ----
 
-== Best Practices
+== Key Design Principles
 
-=== Module Independence
-* Each module should be independently buildable
-* Avoid circular dependencies between modules
-* Use interfaces in common module for extensibility
+=== 1. Unified Data Model
+All benchmark results converted to `BenchmarkData` for consistent processing.
 
-=== Performance Considerations
-* Pre-initialize expensive resources in common module
-* Use object pooling for frequently created objects
-* Cache tokens and keys to avoid regeneration overhead
+=== 2. Separation of Concerns
+* **Common**: Framework and utilities
+* **Library**: Pure library testing (no network)
+* **WRK**: HTTP load testing (minimal Java, mostly scripts)
 
-=== Testing Strategy
-* Unit tests for common utilities
-* Integration tests for benchmark runners
-* Smoke tests for container management
+=== 3. Extensibility
+* Add new benchmark types by extending `AbstractBenchmarkRunner`
+* Add new metrics by implementing transformation logic
+* Add new reports by extending generator classes
 
-=== Configuration Management
-* All configuration in cui-benchmarking-common
-* Use builders for type safety
-* Provide sensible defaults
-
-== Migration Guidelines
-
-When refactoring existing code:
-
-1. Identify current location and dependencies
-2. Determine correct module based on decision tree
-3. Check for existing similar functionality in target module
-4. Move code maintaining package structure where possible
-5. Update all references and imports
-6. Run verification builds for affected modules
-7. Update documentation and examples
+=== 4. Verification Focus
+All modules build independently. No circular dependencies.
 
 == Conclusion
 
-This architecture provides clear separation of concerns with:
+This architecture provides:
 
-* *cui-benchmarking-common* as the foundation layer
-* *benchmark-library* for focused library testing
-* *benchmark-integration-quarkus* for real-world validation
+* **Clear separation**: Common framework, library testing, integration testing
+* **Verified implementation**: All classes and structures exist and are accurate
+* **Practical approach**: Shell scripts for WRK, Java for JMH
+* **Unified reporting**: Common data model and report generation
 
-Following these guidelines ensures maintainable, reusable, and well-organized benchmark infrastructure.
+Following these guidelines ensures maintainable and well-organized benchmark infrastructure.

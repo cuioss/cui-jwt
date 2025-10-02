@@ -55,6 +55,7 @@ public class HttpClientFactory {
         return CLIENT;
     }
 
+    @SuppressWarnings("java:S4830") // ok for testing purposes
     private static HttpClient createClient() {
         try {
             TrustManager[] trustAllCerts = new TrustManager[]{
@@ -99,14 +100,15 @@ public class HttpClientFactory {
     private static HttpClient.Version getHttpVersion() {
         String protocol = System.getProperty(HTTP_PROTOCOL_PROPERTY, DEFAULT_HTTP_PROTOCOL).toLowerCase();
 
-        switch (protocol) {
-            case "http1":
+        return switch (protocol) {
+            case "http1" -> {
                 LOGGER.info("Using HTTP/1.1 only (configured via -D{}=http1)", HTTP_PROTOCOL_PROPERTY);
-                return HttpClient.Version.HTTP_1_1;
-            case "http2":
-            default:
+                yield HttpClient.Version.HTTP_1_1;
+            }
+            default -> {
                 LOGGER.info("Using HTTP/2 (default or -D{}=http2)", HTTP_PROTOCOL_PROPERTY);
-                return HttpClient.Version.HTTP_2;
-        }
+                yield HttpClient.Version.HTTP_2;
+            }
+        };
     }
 }

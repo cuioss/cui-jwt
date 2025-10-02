@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+
 /**
  * HTTP content converter for JSON Web Key Set (JWKS) content.
  * <p>
@@ -75,7 +77,7 @@ public class JwksHttpContentConverter extends StringContentConverter<Jwks> {
             Jwks jwks = dslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
 
             if (jwks == null) {
-                LOGGER.warn("DSL-JSON returned null for JWKS parsing");
+                LOGGER.warn(WARN.JWKS_PARSE_NULL_RESULT::format);
                 return Optional.empty();
             }
 
@@ -84,10 +86,7 @@ public class JwksHttpContentConverter extends StringContentConverter<Jwks> {
             return Optional.of(jwks);
 
         } catch (IOException e) {
-            LOGGER.warn("Failed to parse JWKS content: %s", e.getMessage());
-            return Optional.empty();
-        } catch (IllegalArgumentException e) {
-            LOGGER.warn("Invalid JWKS JSON structure: %s", e.getMessage());
+            LOGGER.warn(WARN.JWKS_PARSE_IO_ERROR.format(e.getMessage()));
             return Optional.empty();
         }
     }

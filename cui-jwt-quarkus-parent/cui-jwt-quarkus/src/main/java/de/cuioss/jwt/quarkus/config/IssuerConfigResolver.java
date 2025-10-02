@@ -22,7 +22,6 @@ import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
-
 import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 

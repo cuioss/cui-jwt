@@ -62,9 +62,9 @@ class TrendDataProcessorTest {
         assertEquals(3, data.size());
 
         // Should be sorted newest first
-        assertEquals(85.0, data.getFirst().getPerformanceScore());
-        assertEquals(80.0, data.get(1).getPerformanceScore());
-        assertEquals(75.0, data.get(2).getPerformanceScore());
+        assertEquals(85.0, data.getFirst().performanceScore());
+        assertEquals(80.0, data.get(1).performanceScore());
+        assertEquals(75.0, data.get(2).performanceScore());
     }
 
     @Test void calculateTrendsNoHistory() {
@@ -77,9 +77,9 @@ class TrendDataProcessorTest {
                 currentMetrics, List.of()
         );
 
-        assertEquals("stable", trends.getDirection());
-        assertEquals(0.0, trends.getChangePercentage());
-        assertEquals(75.0, trends.getMovingAverage());
+        assertEquals("stable", trends.direction());
+        assertEquals(0.0, trends.changePercentage());
+        assertEquals(75.0, trends.movingAverage());
     }
 
     @Test void calculateTrendsImprovement() {
@@ -97,10 +97,10 @@ class TrendDataProcessorTest {
                 currentMetrics, List.of(previousRun)
         );
 
-        assertEquals("up", trends.getDirection());
-        assertTrue(trends.getChangePercentage() > 0);
-        assertEquals(20.0, trends.getThroughputTrend()); // 20% improvement
-        assertEquals(-20.0, trends.getLatencyTrend()); // 20% better (lower is better)
+        assertEquals("up", trends.direction());
+        assertTrue(trends.changePercentage() > 0);
+        assertEquals(20.0, trends.throughputTrend()); // 20% improvement
+        assertEquals(-20.0, trends.latencyTrend()); // 20% better (lower is better)
     }
 
     @Test void calculateTrendsDecline() {
@@ -118,10 +118,10 @@ class TrendDataProcessorTest {
                 currentMetrics, List.of(previousRun)
         );
 
-        assertEquals("down", trends.getDirection());
-        assertTrue(trends.getChangePercentage() < 0);
-        assertEquals(-10.0, trends.getThroughputTrend()); // 10% worse
-        assertEquals(20.0, trends.getLatencyTrend()); // 20% worse (higher is worse)
+        assertEquals("down", trends.direction());
+        assertTrue(trends.changePercentage() < 0);
+        assertEquals(-10.0, trends.throughputTrend()); // 10% worse
+        assertEquals(20.0, trends.latencyTrend()); // 20% worse (higher is worse)
     }
 
     @Test void calculateTrendsStable() {
@@ -140,8 +140,8 @@ class TrendDataProcessorTest {
         );
 
         // Small change (< 2%) should be considered stable
-        assertEquals("stable", trends.getDirection());
-        assertTrue(Math.abs(trends.getChangePercentage()) < 2.0);
+        assertEquals("stable", trends.direction());
+        assertTrue(Math.abs(trends.changePercentage()) < 2.0);
     }
 
     @Test void movingAverage() {
@@ -170,7 +170,7 @@ class TrendDataProcessorTest {
         );
 
         // Moving average should be (90 + 85 + 80 + 75 + 70) / 5 = 80
-        assertEquals(80.0, trends.getMovingAverage());
+        assertEquals(80.0, trends.movingAverage());
     }
 
     @Test void generateTrendChartData() {
@@ -244,8 +244,8 @@ class TrendDataProcessorTest {
         assertEquals(10, data.size());
 
         // Verify it's the 10 newest
-        assertEquals(85.0, data.getFirst().getPerformanceScore()); // Day 15: 70+15=85
-        assertEquals(84.0, data.get(1).getPerformanceScore()); // Day 14: 70+14=84
+        assertEquals(85.0, data.getFirst().performanceScore()); // Day 15: 70+15=85
+        assertEquals(84.0, data.get(1).performanceScore()); // Day 14: 70+14=84
     }
 
     private void createTestHistoryFile(Path historyDir, String filename,

@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 
-import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.CoreValidationDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -73,7 +72,7 @@ import java.util.concurrent.TimeUnit;
 
     /**
      * Common method to perform validation with JFR instrumentation.
-     * 
+     *
      * @param operationName the name of the operation for JFR recording
      * @param tokenType the type of token to retrieve
      * @param validationSupplier the validation operation to perform

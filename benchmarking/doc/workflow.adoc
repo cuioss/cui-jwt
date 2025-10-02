@@ -25,10 +25,11 @@ The benchmark processing is automatically triggered in GitHub Actions:
    - Automatically generates artifacts in `target/benchmark-results`
    - Creates performance badges, reports, and metrics
 
-3. **Integration Benchmarks**
-   - Build native Quarkus image
-   - Run integration tests with real services
-   - Automatically generates integration-specific artifacts
+3. **WRK Load Testing Benchmarks**
+   - Start Quarkus and Keycloak containers
+   - Run WRK HTTP load tests
+   - Collect Prometheus metrics
+   - Automatically generates WRK-specific artifacts
 
 4. **Artifact Combination**
    - Merge artifacts from both benchmark modules
@@ -55,8 +56,8 @@ The benchmark processing is automatically triggered in GitHub Actions:
 # With profiling
 ./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
 
-# Integration benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-integration-quarkus -Pbenchmark
+# WRK load testing benchmarks
+./mvnw clean verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
 ----
 
 === Viewing Generated Artifacts
@@ -68,16 +69,16 @@ After running benchmarks, artifacts are automatically generated:
 # View micro benchmark artifacts
 ls -la benchmarking/benchmark-library/target/benchmark-results/
 
-# View integration benchmark artifacts  
-ls -la benchmarking/benchmark-integration-quarkus/target/benchmark-results/
+# View WRK benchmark artifacts
+ls -la benchmarking/benchmark-integration-wrk/target/benchmark-results/
 
-# Generate comprehensive reports
-cd benchmarking/cui-benchmarking-common
-mvn test -Dtest=LocalReportGeneratorTest
+# Serve library benchmark reports for viewing
+cd benchmarking/scripts
+./serve-reports.sh library
+# Open http://localhost:8080
 
-# Serve reports locally for viewing
-cd ../scripts
-./serve-reports.sh
+# Or serve WRK benchmark reports
+./serve-reports.sh wrk
 # Open http://localhost:8080
 ----
 
@@ -111,7 +112,7 @@ target/benchmark-results/
 * **Performance Score** - Weighted composite score (0-100)
 * **Trend** - Up/down/stable indicator with percentage change
 * **Last Run** - Timestamp of most recent benchmark
-* **Integration Performance** - Integration-specific score
+* **WRK Performance** - WRK load testing specific score
 
 === Quality Gates
 
@@ -133,7 +134,7 @@ The generated artifacts include JSON API endpoints:
 
 == Performance Requirements
 
-See link:performance-requirements.adoc[Performance Requirements] for specific targets and thresholds.
+See xref:../../doc/Requirements.adoc#CUI-JWT-9[Performance Requirements] for specific targets and thresholds.
 
 == Troubleshooting
 

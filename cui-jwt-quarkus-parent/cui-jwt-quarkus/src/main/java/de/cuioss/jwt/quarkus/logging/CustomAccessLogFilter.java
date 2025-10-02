@@ -18,7 +18,6 @@ package de.cuioss.jwt.quarkus.logging;
 import de.cuioss.jwt.quarkus.config.AccessLogFilterConfig;
 import de.cuioss.jwt.quarkus.config.AccessLogFilterConfigResolver;
 import de.cuioss.tools.logging.CuiLogger;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

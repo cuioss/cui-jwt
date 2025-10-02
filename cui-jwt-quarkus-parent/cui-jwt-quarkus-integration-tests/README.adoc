@@ -26,7 +26,7 @@ Integration tests for the CUI JWT Quarkus extension with native container testin
 
 === Prerequisites
 
-* Java 21+, Maven 3.9+ (via `./mvnw`), Docker
+* Java 21+ or Java 25+ (recommended for native image compilation), Maven 3.9+ (via `./mvnw`), Docker
 
 === Test Execution
 
@@ -100,6 +100,25 @@ ls -la -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/jfr-r
 |Production Ready |✅ |⚠️ (Local Development Only)
 |CI/CD Support |✅ |❌ (Disabled in GitHub Actions)
 |===
+
+== Native Compilation
+
+=== Java 25 Builder Image
+
+The module uses the `jdk-25` Mandrel builder image for native compilation to leverage modern JVM improvements:
+
+[source,properties]
+----
+quarkus.native.builder-image=quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25
+----
+
+**Key Benefits:**
+
+* **JEP 491 Support**: "Synchronize Virtual Threads without Pinning" - eliminates carrier thread pinning when virtual threads execute synchronized blocks
+* **Virtual Thread Performance**: Improved concurrency handling for JWT validation operations under high connection loads
+* **Modern Optimizations**: Enhanced native image compilation with latest GraalVM/Mandrel improvements
+
+The builder image handles native compilation in a Docker container, so the local JDK version (Java 21+) is used only for regular Maven compilation. Native builds automatically use Java 25 via the specified builder image.
 
 == Module Structure
 
@@ -323,8 +342,8 @@ DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
 
 [source,bash]
 ----
-# Dump all container logs (Quarkus + Keycloak with access logs)
-./scripts/dump-quarkus-logs.sh target
+# Dump Keycloak container logs (Quarkus logs are written to target/quarkus.log)
+./scripts/dump-keycloak-logs.sh target
 
 # Manual log inspection
 docker logs cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1
@@ -383,7 +402,7 @@ Follows link:https://github.com/cuioss/cui-llm-rules/tree/main/standards/cdi-qua
 
 === Performance Benchmarking
 
-Performance benchmarking is available in the `benchmarking/benchmark-integration-quarkus` module. It builds upon this module's infrastructure patterns:
+Performance benchmarking is available in the `benchmarking/benchmark-integration-wrk` module. It builds upon this module's infrastructure patterns:
 
 * Docker Compose and container configuration
 * Keycloak realm setup and integration patterns

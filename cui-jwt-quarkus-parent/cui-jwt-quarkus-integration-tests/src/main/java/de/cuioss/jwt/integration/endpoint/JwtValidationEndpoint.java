@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.integration.endpoint;
 
-import de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages;
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
@@ -68,7 +67,7 @@ public class JwtValidationEndpoint {
         this.tokenWithRoles = tokenWithRoles;
         this.tokenWithGroups = tokenWithGroups;
         this.tokenWithAll = tokenWithAll;
-        LOGGER.info(CuiJwtQuarkusLogMessages.INFO.JWT_VALIDATION_ENDPOINT_INITIALIZED.format());
+        LOGGER.debug("JwtValidationEndpoint initialized with TokenValidator and lazy BearerTokenResult instances");
     }
 
     /**
@@ -123,7 +122,7 @@ public class JwtValidationEndpoint {
                     token.getSubject().orElse("none"), token.getRoles(), token.getGroups(), token.getScopes());
             return Response.ok(createTokenResponse(token, "Access token is valid")).build();
         } catch (TokenValidationException e) {
-            LOGGER.warn(CuiJwtQuarkusLogMessages.WARN.EXPLICIT_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.debug("Explicit token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(new ValidationResponse(false, "Token validation failed: " + e.getMessage()))
                     .build();
@@ -146,7 +145,7 @@ public class JwtValidationEndpoint {
             tokenValidator.createIdToken(tokenRequest.token().trim());
             return Response.ok(new ValidationResponse(true, "ID token is valid")).build();
         } catch (TokenValidationException e) {
-            LOGGER.warn(CuiJwtQuarkusLogMessages.WARN.ID_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.debug("ID token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(new ValidationResponse(false, "ID token validation failed: " + e.getMessage()))
                     .build();
@@ -169,7 +168,7 @@ public class JwtValidationEndpoint {
             tokenValidator.createRefreshToken(tokenRequest.token().trim());
             return Response.ok(new ValidationResponse(true, "Refresh token is valid")).build();
         } catch (TokenValidationException e) {
-            LOGGER.warn(CuiJwtQuarkusLogMessages.WARN.REFRESH_TOKEN_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.debug("Refresh token validation failed: %s", e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(new ValidationResponse(false, "Refresh token validation failed: " + e.getMessage()))
                     .build();
@@ -270,7 +269,7 @@ public class JwtValidationEndpoint {
             return Response.ok(createTokenResponse(token, description + " is valid")).build();
         } else {
             // This shouldn't happen in normal cases with successful authorization
-            LOGGER.error(CuiJwtQuarkusLogMessages.ERROR.BEARER_TOKEN_CONTENT_MISSING_AFTER_SUCCESS.format(description));
+            LOGGER.debug("Bearer token authorized but no AccessTokenContent present for: %s", description);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ValidationResponse(false, "Internal error: token content missing"))
                     .build();

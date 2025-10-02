@@ -17,6 +17,8 @@ package de.cuioss.benchmarking.common;
 
 import com.google.gson.JsonParser;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
+import de.cuioss.benchmarking.common.converter.JmhBenchmarkConverter;
+import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.report.ReportGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -25,7 +27,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static de.cuioss.benchmarking.common.TestHelper.createTestMetrics;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -77,10 +78,13 @@ class TemplateAndCssTest {
         Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
+        JmhBenchmarkConverter converter = new JmhBenchmarkConverter(BenchmarkType.MICRO);
+        BenchmarkData benchmarkData = converter.convert(jsonFile);
+
+        ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, BenchmarkType.MICRO, outputDir);
+        generator.generateIndexPage(benchmarkData, BenchmarkType.MICRO, outputDir);
         generator.generateTrendsPage(outputDir);
         generator.generateDetailedPage(outputDir);
         generator.copySupportFiles(outputDir);
@@ -99,10 +103,13 @@ class TemplateAndCssTest {
         Path jsonFile = tempDir.resolve("integration-result.json");
         Files.copy(sourceJson, jsonFile);
 
-        ReportGenerator generator = new ReportGenerator(createTestMetrics(jsonFile));
+        JmhBenchmarkConverter converter = new JmhBenchmarkConverter(BenchmarkType.INTEGRATION);
+        BenchmarkData benchmarkData = converter.convert(jsonFile);
+
+        ReportGenerator generator = new ReportGenerator();
         String outputDir = tempDir.toString();
 
-        generator.generateIndexPage(jsonFile, BenchmarkType.INTEGRATION, outputDir);
+        generator.generateIndexPage(benchmarkData, BenchmarkType.INTEGRATION, outputDir);
 
         // The important output is the JSON data file
         Path dataFile = Path.of(outputDir, "data", "benchmark-data.json");

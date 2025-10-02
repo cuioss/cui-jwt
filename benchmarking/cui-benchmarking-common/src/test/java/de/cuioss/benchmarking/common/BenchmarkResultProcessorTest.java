@@ -27,8 +27,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_LATENCY_BENCHMARK;
-import static de.cuioss.benchmarking.common.TestConstants.DEFAULT_THROUGHPUT_BENCHMARK;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -49,30 +47,30 @@ class BenchmarkResultProcessorTest {
 
         // Process results - use actual benchmark names from the test data
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                BenchmarkType.MICRO,
-                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
-                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
+                BenchmarkType.MICRO
+        // This is in SimpleCoreValidationBenchmark.measureThroughput
+        );  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = tempDir.toString();
         processor.processResults(results, outputDir);
 
-        // Verify all artifacts were created using JUnit Jupiter assertions
-        assertTrue(Files.exists(Path.of(outputDir, "badges/performance-badge.json")),
+        // Verify all artifacts were created in gh-pages-ready structure
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/badges/performance-badge.json")),
                 "Performance badge should be generated");
-        assertTrue(Files.exists(Path.of(outputDir, "badges/trend-badge.json")),
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/badges/trend-badge.json")),
                 "Trend badge should be generated");
-        assertTrue(Files.exists(Path.of(outputDir, "badges/last-run-badge.json")),
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/badges/last-run-badge.json")),
                 "Last run badge should be generated");
-        assertTrue(Files.exists(Path.of(outputDir, "data/original-jmh-result.json")),
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/data/original-jmh-result.json")),
                 "Original JMH result file should be copied to data directory");
-        assertTrue(Files.exists(Path.of(outputDir, "index.html")),
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/index.html")),
                 "Index HTML report should be generated");
-        assertTrue(Files.exists(Path.of(outputDir, "trends.html")),
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/trends.html")),
                 "Trends HTML report should be generated");
         assertTrue(Files.isDirectory(Path.of(outputDir, "gh-pages-ready")),
                 "GitHub Pages directory should be created");
 
         // Verify badge content structure
-        String badgeContent = Files.readString(Path.of(outputDir, "badges/performance-badge.json"));
+        String badgeContent = Files.readString(Path.of(outputDir, "gh-pages-ready/badges/performance-badge.json"));
         assertNotNull(badgeContent, "Badge content should not be null");
         assertFalse(badgeContent.isEmpty(), "Badge content should not be empty");
         assertTrue(badgeContent.contains("\"schemaVersion\""), "Badge should have schema version");
@@ -83,9 +81,8 @@ class BenchmarkResultProcessorTest {
 
     @Test void emptyResultsHandling(@TempDir Path tempDir) {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                BenchmarkType.MICRO,
-                DEFAULT_THROUGHPUT_BENCHMARK,
-                DEFAULT_LATENCY_BENCHMARK);
+                BenchmarkType.MICRO
+        );
         List<RunResult> emptyResults = List.of();
 
         String outputDir = tempDir.toString();
@@ -94,12 +91,6 @@ class BenchmarkResultProcessorTest {
         assertThrows(IllegalStateException.class,
                 () -> processor.processResults(emptyResults, outputDir),
                 "Processing should fail when JSON file doesn't exist");
-
-        // Basic directory structure should still be created
-        assertTrue(Files.exists(Path.of(outputDir, "badges")),
-                "Badges directory should be created even with empty results");
-        assertTrue(Files.exists(Path.of(outputDir, "data")),
-                "Data directory should be created even with empty results");
     }
 
     @Test void directoryCreation(@TempDir Path tempDir) throws Exception {
@@ -111,18 +102,18 @@ class BenchmarkResultProcessorTest {
         Files.copy(sourceJson, targetJson);
 
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
-                BenchmarkType.MICRO,
-                "measureThroughput",  // This is in SimpleCoreValidationBenchmark.measureThroughput
-                "measureAverageTime");  // This is in SimpleCoreValidationBenchmark.measureAverageTime
+                BenchmarkType.MICRO
+        // This is in SimpleCoreValidationBenchmark.measureThroughput
+        );  // This is in SimpleCoreValidationBenchmark.measureAverageTime
         String outputDir = nestedDir.toString();
 
         // Use empty results - processor will read from JSON
         processor.processResults(List.of(), outputDir);
 
-        // Verify nested directories are created
-        assertTrue(Files.exists(Path.of(outputDir, "badges")),
+        // Verify nested directories are created in gh-pages-ready
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/badges")),
                 "Nested badges directory should be created");
-        assertTrue(Files.exists(Path.of(outputDir, "data")),
+        assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready/data")),
                 "Nested data directory should be created");
         assertTrue(Files.exists(Path.of(outputDir, "gh-pages-ready")),
                 "Nested GitHub Pages directory should be created");

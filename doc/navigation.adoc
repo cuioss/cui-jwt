@@ -45,11 +45,10 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 === Benchmarking
 * xref:../benchmarking/README.adoc[Benchmarking Overview]
 * xref:../benchmarking/benchmark-library/README.adoc[Benchmark Library]
-* xref:../benchmarking/benchmark-integration-quarkus/README.adoc[Integration Benchmarks]
+* xref:../benchmarking/benchmark-integration-wrk/README.adoc[WRK Load Testing]
 
 ==== Benchmark Documentation
 * xref:../benchmarking/doc/workflow.adoc[Benchmark Workflow]
-* xref:../benchmarking/doc/performance-requirements.adoc[Performance Requirements]
 * xref:../benchmarking/doc/performance-scoring.adoc[Performance Scoring]
 * xref:../benchmarking/doc/JFR-Instrumentation.adoc[JFR Instrumentation]
 
@@ -68,10 +67,10 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 === Testing
 * xref:../cui-jwt-validation/doc/UnitTesting.adoc[Unit Testing]
 * xref:../cui-jwt-quarkus-parent/doc/configuration/testing-configuration.adoc[Integration Testing]
-* xref:../benchmarking/benchmark-integration-quarkus/doc/Understanding Results.adoc[Benchmark Results]
+* xref:../benchmarking/doc/workflow.adoc[Benchmark Workflow]
 
 === Performance
-* xref:../benchmarking/doc/performance-requirements.adoc[Performance Requirements]
+* xref:Requirements.adoc#CUI-JWT-9[Performance Requirements]
 * xref:../cui-jwt-quarkus-parent/doc/performance/jwt-validation-performance.adoc[Performance Analysis]
 * xref:../cui-jwt-quarkus-parent/doc/performance/native-optimization-guide.adoc[Optimization Guide]
 
@@ -89,5 +88,4 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 
 == Analysis and Reports
 * xref:../benchmarking/benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis - Library]
-* xref:../benchmarking/benchmark-integration-quarkus/doc/Analysis-08.2025.adoc[Benchmark Analysis - Integration]
 * xref:../cui-jwt-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[GraalVM RSA Analysis]

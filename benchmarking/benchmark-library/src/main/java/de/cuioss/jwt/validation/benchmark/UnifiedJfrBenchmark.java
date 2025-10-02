@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 
     // Configuration constants
     private static final int APPROXIMATE_TOKEN_SIZE = 200;
+    public static final String ISSUER = "issuer";
 
     private MockTokenRepository tokenRepository;
     private TokenValidator tokenValidator;
@@ -107,7 +108,7 @@ import java.util.concurrent.TimeUnit;
         // Export metrics
         if (tokenValidator != null) {
             try {
-                SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+                LibraryMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
                 LOGGER.debug("Failed to export metrics during teardown", e);
             }
@@ -127,7 +128,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
@@ -143,7 +144,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
@@ -159,7 +160,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("measureConcurrentValidationWithJfr", VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = coreValidationDelegate.validateWithRotation();
             recorder.withSuccess(true);
@@ -176,7 +177,7 @@ import java.util.concurrent.TimeUnit;
         try (var recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", VALIDATION_OPERATION)) {
             String token = coreValidationDelegate.getCurrentToken(TOKEN_TYPE_FULL_SPECTRUM);
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
 
             AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
@@ -190,7 +191,7 @@ import java.util.concurrent.TimeUnit;
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateExpiredTokenWithJfr() {
         try (var recorder = jfrInstrumentation.recordOperation("validateExpiredTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(APPROXIMATE_TOKEN_SIZE)
-                    .withMetadata("issuer", BENCHMARK_ISSUER)
+                    .withMetadata(ISSUER, BENCHMARK_ISSUER)
                     .withError(ERROR_EXPIRED);
 
             Object result = errorLoadDelegate0.validateExpired();
@@ -205,7 +206,7 @@ import java.util.concurrent.TimeUnit;
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMalformedTokenWithJfr() {
         try (var recorder = jfrInstrumentation.recordOperation("validateMalformedTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(25) // Length of malformed token
-                    .withMetadata("issuer", UNKNOWN_ISSUER)
+                    .withMetadata(ISSUER, UNKNOWN_ISSUER)
                     .withError(ERROR_MALFORMED);
 
             Object result = errorLoadDelegate0.validateMalformed();
@@ -220,7 +221,7 @@ import java.util.concurrent.TimeUnit;
     @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateInvalidSignatureTokenWithJfr() {
         try (var recorder = jfrInstrumentation.recordOperation("validateInvalidSignatureTokenWithJfr", ERROR_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(APPROXIMATE_TOKEN_SIZE)
-                    .withMetadata("issuer", BENCHMARK_ISSUER)
+                    .withMetadata(ISSUER, BENCHMARK_ISSUER)
                     .withError(ERROR_INVALID_SIGNATURE);
 
             Object result = errorLoadDelegate0.validateInvalidSignature();
@@ -250,7 +251,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation(operationName, MIXED_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token) : BENCHMARK_ISSUER);
+                    .withMetadata(ISSUER, isValid ? tokenRepository.getTokenIssuer(token) : BENCHMARK_ISSUER);
 
             if (!isValid) {
                 recorder.withError(errorType);

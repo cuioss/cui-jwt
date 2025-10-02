@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.cuioss.jwt</groupId>
+        <artifactId>benchmarking</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>benchmark-integration-wrk</artifactId>
+    <name>WRK-based JWT Integration Benchmarks</name>
+    <description>WRK-based HTTP benchmarks for JWT validation endpoints with integration test infrastructure</description>
+
+    <properties>
+        <!-- Skip benchmarks by default (enable with -Pbenchmark) -->
+        <skip.benchmark>true</skip.benchmark>
+
+        <!-- Skip container lifecycle management (useful when containers are already running) -->
+        <skip.container.lifecycle>false</skip.container.lifecycle>
+
+        <!-- Scripts location -->
+        <integration.scripts.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts</integration.scripts.dir>
+
+        <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
+        <integration.service.url>https://localhost:10443</integration.service.url>
+        <keycloak.url>https://localhost:1443</keycloak.url>
+        <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
+
+        <!-- WRK Configuration Properties -->
+        <wrk.duration>60s</wrk.duration>  <!-- Default: 1 minute per benchmark -->
+        <wrk.threads>5</wrk.threads>
+        <wrk.connections>50</wrk.connections>
+        <wrk.timeout>2s</wrk.timeout>
+        <wrk.latency>true</wrk.latency>
+        <wrk.script.dir>${project.basedir}/src/main/resources/wrk-scripts</wrk.script.dir>
+        <wrk.results.dir>${project.build.directory}/benchmark-results</wrk.results.dir>
+        <wrk.output.dir>${wrk.results.dir}/wrk</wrk.output.dir>
+
+        <!-- Benchmark history directory for trend analysis -->
+        <benchmark.history.dir>${wrk.results.dir}/history</benchmark.history.dir>
+        <wrk.jwt.token_count>100</wrk.jwt.token_count>
+    </properties>
+
+    <dependencies>
+        <!-- Core benchmark common utilities -->
+        <dependency>
+            <groupId>de.cuioss.jwt</groupId>
+            <artifactId>cui-benchmarking-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Gson for JSON processing -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+
+        <!-- Lombok for code generation -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Apache Commons IO for TeeOutputStream -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <!-- JMH Core for benchmark infrastructure -->
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+        </dependency>
+
+        <!-- CUI Java Tools for logging -->
+        <dependency>
+            <groupId>de.cuioss</groupId>
+            <artifactId>cui-java-tools</artifactId>
+        </dependency>
+
+        <!-- JUnit for basic testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Awaitility for better async testing -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Configure surefire for unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>false</skipTests>
+                    <argLine>-XX:+IgnoreUnrecognizedVMOptions -Djava.awt.headless=true</argLine>
+                </configuration>
+            </plugin>
+
+            <!-- Simplified compiler configuration -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${version.lombok}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+
+            <!-- Execute wrk benchmarks when skip.benchmark is false -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+
+                    <!-- Pre-benchmark health check for all required services -->
+                    <execution>
+                        <id>pre-benchmark-health-check</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${wrk.script.dir}/pre-benchmark-health-check.sh</argument>
+                            </arguments>
+                            <environmentVariables>
+                                <INTEGRATION_SERVICE_URL>${integration.service.url}</INTEGRATION_SERVICE_URL>
+                                <PROMETHEUS_URL>http://localhost:9090</PROMETHEUS_URL>
+                                <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
+                            </environmentVariables>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                        </configuration>
+                    </execution>
+
+                    <!-- Run WRK health/live endpoint benchmark -->
+                    <execution>
+                        <id>run-wrk-health-live-benchmark</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${wrk.script.dir}/health_live_benchmark.sh</argument>
+                            </arguments>
+                            <outputFile>${wrk.output.dir}/wrk-health-live-results.txt</outputFile>
+                            <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
+                            <environmentVariables>
+                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <WRK_THREADS>${wrk.threads}</WRK_THREADS>
+                                <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
+                                <WRK_DURATION>${wrk.duration}</WRK_DURATION>
+                                <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+
+                    <!-- Run WRK JWT benchmark with in-memory tokens -->
+                    <execution>
+                        <id>run-wrk-jwt-benchmark</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${wrk.script.dir}/jwt_benchmark.sh</argument>
+                            </arguments>
+                            <outputFile>${wrk.output.dir}/wrk-jwt-results.txt</outputFile>
+                            <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
+                            <environmentVariables>
+                                <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
+                                <REALM>benchmark</REALM>
+                                <CLIENT_ID>benchmark-client</CLIENT_ID>
+                                <CLIENT_SECRET>benchmark-secret</CLIENT_SECRET>
+                                <USERNAME>benchmark-user</USERNAME>
+                                <PASSWORD>benchmark-password</PASSWORD>
+                                <TOKEN_COUNT>${wrk.jwt.token_count}</TOKEN_COUNT>
+                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <WRK_THREADS>${wrk.threads}</WRK_THREADS>
+                                <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
+                                <WRK_DURATION>${wrk.duration}</WRK_DURATION>
+                                <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+
+                    <!-- Process WRK results, collect metrics, and generate reports -->
+                    <!-- IMPORTANT: Must run BEFORE containers are stopped in post-integration-test phase -->
+                    <execution>
+                        <id>process-wrk-results</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.benchmark}</skip>
+                            <mainClass>de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor</mainClass>
+                            <arguments>
+                                <argument>${wrk.results.dir}</argument>
+                            </arguments>
+                            <systemProperties>
+                                <systemProperty>
+                                    <key>quarkus.metrics.url</key>
+                                    <value>${quarkus.metrics.url}</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>prometheus.url</key>
+                                    <value>http://localhost:9090</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>integration.service.url</key>
+                                    <value>${integration.service.url}</value>
+                                </systemProperty>
+                            </systemProperties>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Build classpath for benchmark execution -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <!-- Configuration inherited from parent pluginManagement -->
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>benchmark</id>
+            <properties>
+                <skip.benchmark>false</skip.benchmark>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Build integration tests (using smart native build script) -->
+                            <execution>
+                                <id>maven-build-integration-tests</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.container.lifecycle}</skip>
+                                    <executable>../../mvnw</executable>
+                                    <arguments>
+                                        <argument>compile</argument>
+                                        <argument>exec:exec@build-native-if-needed</argument>
+                                        <argument>exec:exec@docker-build-distroless</argument>
+                                        <argument>-Pintegration-tests</argument>
+                                        <argument>-DskipTests</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+
+                            <!-- Start integration test containers -->
+                            <execution>
+                                <id>start-integration-containers</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.container.lifecycle}</skip>
+                                    <executable>${integration.scripts.dir}/start-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <environmentVariables>
+                                        <!-- Pass target directory for Quarkus file logging -->
+                                        <LOG_TARGET_DIR>${wrk.results.dir}</LOG_TARGET_DIR>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+
+                            <!-- Create benchmark results directory -->
+                            <execution>
+                                <id>create-benchmark-dirs</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>mkdir</executable>
+                                    <arguments>
+                                        <argument>-p</argument>
+                                        <argument>${wrk.results.dir}</argument>
+                                        <argument>${wrk.output.dir}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- Create metrics download directory -->
+                            <execution>
+                                <id>create-metrics-download-dir</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.benchmark}</skip>
+                                    <executable>mkdir</executable>
+                                    <arguments>
+                                        <argument>-p</argument>
+                                        <argument>${project.build.directory}/metrics-download</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+
+                            <!-- Dump Keycloak logs for debugging -->
+                            <execution>
+                                <id>dump-keycloak-logs</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${integration.scripts.dir}/dump-keycloak-logs.sh</executable>
+                                    <arguments>
+                                        <argument>${wrk.results.dir}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- Stop integration test containers -->
+                            <execution>
+                                <id>stop-integration-containers</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.container.lifecycle}</skip>
+                                    <executable>${integration.scripts.dir}/stop-integration-container.sh</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <!-- Don't fail build if cleanup fails -->
+                                    <successCodes>
+                                        <successCode>0</successCode>
+                                        <successCode>1</successCode>
+                                    </successCodes>
+                                </configuration>
+                            </execution>
+
+                            <!-- Clean integration tests to force container rebuild -->
+                            <execution>
+                                <id>clean-integration-tests-for-rebuild</id>
+                                <phase>clean</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.container.lifecycle}</skip>
+                                    <executable>../../mvnw</executable>
+                                    <arguments>
+                                        <argument>clean</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Quick benchmark profile for faster testing -->
+        <profile>
+            <id>quick</id>
+            <properties>
+                <!-- Override duration for quick benchmarks -->
+                <wrk.duration>30s</wrk.duration>
+                <!-- Skip container lifecycle management (assumes containers are already running) -->
+                <skip.container.lifecycle>true</skip.container.lifecycle>
+            </properties>
+        </profile>
+        <!-- Auto-scaling profile for optimal load generation -->
+        <profile>
+            <id>autoscale</id>
+            <properties>
+                <!-- Auto-scale threads to 80% of available CPUs (conservative) -->
+                <wrk.threads>8</wrk.threads>  <!-- Assuming 10 cores, use 8 threads -->
+                <!-- 25 connections per thread for balanced load -->
+                <wrk.connections>200</wrk.connections>
+            </properties>
+        </profile>
+
+        <!-- Stress testing profile (moderate stress, good balance) -->
+        <profile>
+            <id>stress</id>
+            <properties>
+                <!-- Match threads to CPU count -->
+                <wrk.threads>10</wrk.threads>
+                <!-- 150 connections - tests moderate stress without severe degradation -->
+                <wrk.connections>150</wrk.connections>
+            </properties>
+        </profile>
+
+        <!-- Maximum load profile (tests limits, expect degradation) -->
+        <profile>
+            <id>max</id>
+            <properties>
+                <wrk.threads>10</wrk.threads>
+                <!-- 300 connections - tests maximum capacity, severe JWT degradation expected -->
+                <wrk.connections>300</wrk.connections>
+            </properties>
+        </profile>
+    </profiles>
+</project>

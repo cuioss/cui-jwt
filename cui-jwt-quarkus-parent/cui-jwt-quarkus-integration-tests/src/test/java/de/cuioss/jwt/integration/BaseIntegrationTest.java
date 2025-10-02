@@ -18,7 +18,6 @@ package de.cuioss.jwt.integration;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;
 import io.restassured.RestAssured;
-
 import org.junit.jupiter.api.BeforeAll;
 
 /**
@@ -44,7 +43,7 @@ public abstract class BaseIntegrationTest {
         String testPort = System.getProperty("test.https.port", DEFAULT_TEST_PORT);
         RestAssured.port = Integer.parseInt(testPort);
 
-        LOGGER.info("Integration tests configured for HTTPS port: %s with relaxed HTTPS validation", testPort);
+        LOGGER.debug("Integration tests configured for HTTPS port: %s with relaxed HTTPS validation", testPort);
     }
 
     private static void configureCustomTruststore() {

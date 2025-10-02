@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.health;
 
 import de.cuioss.jwt.quarkus.config.JwtTestProfile;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;

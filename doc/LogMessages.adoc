@@ -49,9 +49,11 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-006 |TOKEN |Skipping disabled issuer configuration %s |Logged when an issuer configuration is skipped because it's disabled
 |JWTValidation-007 |JWKS |Successfully resolved JWKS URI from well-known endpoint: %s |Logged when JWKS URI is successfully resolved via well-known discovery
 |JWTValidation-008 |RETRY |Retry operation '%s' completed successfully after %s attempts in %sms |Logged when a retry operation completes successfully with timing information
+|JWTValidation-009 |JWKS |JWKS loaded successfully for issuer: %s |Logged when JWKS is successfully loaded for a specific issuer
+|JWTValidation-010 |ISSUER |Issuer configuration loaded successfully: %s |Logged when an issuer configuration is successfully loaded
 |===
 
-== WARN Level (100-134)
+== WARN Level (100-146)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -91,9 +93,21 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-132 |RETRY |Retry operation '%s' failed after %s attempts in %sms |Logged when a retry operation fails after exhausting all attempts
 |JWTValidation-133 |JSON |Failed to parse JWKS JSON: %s |Logged when JSON parsing fails for JWKS content and an empty result is returned as fallback
 |JWTValidation-134 |ISSUER |IssuerConfig for issuer '%s' has claimSubOptional=true. This is not conform to RFC 7519 which requires the 'sub' claim for ACCESS_TOKEN and ID_TOKEN types. Use this setting only when necessary and ensure appropriate alternative validation mechanisms. |Logged when an issuer configuration has the subject claim marked as optional, which violates RFC 7519 requirements
+|JWTValidation-135 |JWKS |Invalid Base64 URL encoding detected for JWK field: %s |Logged when Base64 URL encoding validation fails for a JWK field
+|JWTValidation-136 |JWKS |Background refresh skipped - no HTTP handler available |Logged when background JWKS refresh is skipped because no HTTP handler is available
+|JWTValidation-137 |JWKS |Background refresh IO error: %s for issuer: %s |Logged when an IO error occurs during background JWKS refresh for a specific issuer
+|JWTValidation-138 |JWKS |Background refresh parse error: %s for issuer: %s |Logged when a JSON parsing error occurs during background JWKS refresh for a specific issuer
+|JWTValidation-139 |JWKS |Background refresh key processing error: %s for issuer: %s |Logged when a key processing error occurs during background JWKS refresh for a specific issuer
+|JWTValidation-140 |ISSUER |Failed to load issuer configuration for %s, status: %s |Logged when issuer configuration loading fails with a specific status
+|JWTValidation-141 |JWKS |Timeout waiting for JWKS to load for issuer: %s |Logged when JWKS loading times out for a specific issuer
+|JWTValidation-142 |JWKS |Interrupted while waiting for JWKS to load for issuer: %s |Logged when the thread is interrupted while waiting for JWKS to load
+|JWTValidation-143 |JWKS |Configured issuer '%s' does not match discovered issuer '%s' from well-known document |Logged when there is a mismatch between configured and discovered issuer from well-known endpoint
+|JWTValidation-144 |JWKS |Using insecure HTTP protocol for JWKS endpoint: %s - HTTPS should be used in production |Logged when an insecure HTTP protocol is used for JWKS endpoint instead of HTTPS
+|JWTValidation-145 |JWKS |DSL-JSON returned null for JWKS parsing |Logged when DSL-JSON parser returns null while parsing JWKS content
+|JWTValidation-146 |JWKS |Failed to parse JWKS content: %s |Logged when JWKS content parsing fails due to IO error or invalid JSON structure
 |===
 
-== ERROR Level (200-209)
+== ERROR Level (200-211)
 
 [cols="1,1,2,2", options="header"]
 |===
@@ -108,6 +122,8 @@ For more details about security events related to these log messages, see the Se
 |JWTValidation-207 |CACHE |Unexpected error while caching token |Logged when an unexpected error occurs while storing a validated token in the cache
 |JWTValidation-208 |CACHE |Validation function returned null instead of throwing exception |Logged when a validation function unexpectedly returns null instead of throwing an exception on failure
 |JWTValidation-209 |CACHE |Error during cache eviction |Logged when an error occurs during background cache eviction operations
+|JWTValidation-210 |JWKS |JWKS initialization failed: %s for issuer: %s |Logged when JWKS initialization fails for a specific issuer with error details
+|JWTValidation-211 |JWKS |JWKS load execution failed: %s for issuer: %s |Logged when JWKS load execution fails for a specific issuer with error details
 |===
 
 == Quarkus Integration Messages
@@ -116,61 +132,122 @@ This section documents log messages specific to the Quarkus integration module (
 
 === Quarkus INFO Level (001-099)
 
-[cols="1,1,2,2", options="header"]
+==== Configuration Messages (001-010)
+
+[cols="1,2,3,4", options="header"]
 |===
-|ID |Component |Message |Description
+|ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-001 |CONFIG |Resolving issuer configurations from properties |Logged when starting to resolve issuer configurations from Quarkus properties
-|CUI_JWT_QUARKUS-002 |CONFIG |Resolved issuer configuration: %s |Logged when an issuer configuration is successfully resolved
-|CUI_JWT_QUARKUS-003 |CONFIG |Resolved %s enabled issuer configurations |Logged with the total number of enabled issuer configurations
-|CUI_JWT_QUARKUS-004 |CONFIG |Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s |Logged when parser configuration is resolved with its limits
+|CUI_JWT_QUARKUS-001 |RESOLVING_ISSUER_CONFIGURATIONS |"Resolving issuer configurations from properties" |Indicates the start of issuer configuration resolution from application properties
+|CUI_JWT_QUARKUS-002 |RESOLVED_ISSUER_CONFIGURATION |"Resolved issuer configuration: %s" |Shows a single resolved issuer configuration with its details
+|CUI_JWT_QUARKUS-003 |RESOLVED_ENABLED_ISSUER_CONFIGURATIONS |"Resolved %s enabled issuer configurations" |Summary count of all enabled issuer configurations found
+|CUI_JWT_QUARKUS-004 |RESOLVED_PARSER_CONFIG |"Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s" |Shows the resolved JWT parser configuration limits
+|===
 
-|CUI_JWT_QUARKUS-011 |VALIDATION |Initializing JWT validation components from configuration |Logged when JWT validation components initialization starts
-|CUI_JWT_QUARKUS-012 |VALIDATION |JWT validation components initialized successfully with %s issuers |Logged when JWT validation components are successfully initialized
-|CUI_JWT_QUARKUS-013 |VALIDATION |Resolving access log filter configuration from properties |Logged when access log filter configuration resolution starts
+==== Validation Messages (011-020)
 
-|CUI_JWT_QUARKUS-021 |METRICS |Initializing JwtMetricsCollector |Logged when JWT metrics collector initialization starts
-|CUI_JWT_QUARKUS-022 |METRICS |JwtMetricsCollector initialized with %s event types |Logged when JWT metrics collector is successfully initialized
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-041 |CACHE |Resolving access token cache configuration from properties |Logged when access token cache configuration resolution starts
-|CUI_JWT_QUARKUS-042 |CACHE |Access token cache disabled (maxSize=0) |Logged when access token cache is disabled due to zero max size
-|CUI_JWT_QUARKUS-043 |CACHE |Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s |Logged when access token cache is successfully configured
+|CUI_JWT_QUARKUS-011 |INITIALIZING_JWT_VALIDATION_COMPONENTS |"Initializing JWT validation components from configuration" |Indicates the start of JWT validation component initialization
+|CUI_JWT_QUARKUS-012 |JWT_VALIDATION_COMPONENTS_INITIALIZED |"JWT validation components initialized successfully with %s issuers" |Confirms successful initialization with issuer count
+|CUI_JWT_QUARKUS-013 |RESOLVING_ACCESS_LOG_FILTER_CONFIG |"Resolving access log filter configuration from properties" |Indicates the start of access log filter configuration resolution
+|===
 
-|CUI_JWT_QUARKUS-051 |METRICS |Clearing all JWT metrics |Logged when JWT metrics clearing starts
-|CUI_JWT_QUARKUS-052 |METRICS |JWT metrics cleared successfully |Logged when JWT metrics are successfully cleared
+==== Metrics Messages (021-030)
 
-|CUI_JWT_QUARKUS-060 |JWKS |JWKS startup service activated for background key loading |Logged when JWKS startup service is activated
-|CUI_JWT_QUARKUS-061 |JWKS |Starting asynchronous JWKS initialization for %s issuer(s) |Logged when asynchronous JWKS initialization starts
-|CUI_JWT_QUARKUS-062 |JWKS |No issuer configurations found - skipping JWKS initialization |Logged when no issuer configurations are found
-|CUI_JWT_QUARKUS-063 |JWKS |Background JWKS initialization completed successfully |Logged when background JWKS initialization completes successfully
-|CUI_JWT_QUARKUS-064 |JWKS |Background JWKS loading completed for issuer: %s with status: %s |Logged when background JWKS loading completes for a specific issuer
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-065 |ACCESS_LOG |CustomAccessLogFilter initialized: %s |Logged when custom access log filter is initialized
-|CUI_JWT_QUARKUS-066 |ACCESS_LOG |%s |Logged for access log entries
+|CUI_JWT_QUARKUS-021 |INITIALIZING_JWT_METRICS_COLLECTOR |"Initializing JwtMetricsCollector" |Indicates the start of JWT metrics collector initialization
+|CUI_JWT_QUARKUS-022 |JWT_METRICS_COLLECTOR_INITIALIZED |"JwtMetricsCollector initialized with %s event types" |Confirms successful initialization with event type count
+|===
+
+==== Cache Messages (041-050)
+
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
+
+|CUI_JWT_QUARKUS-041 |RESOLVING_ACCESS_TOKEN_CACHE_CONFIG |"Resolving access token cache configuration from properties" |Indicates the start of access token cache configuration resolution
+|CUI_JWT_QUARKUS-042 |ACCESS_TOKEN_CACHE_DISABLED |"Access token cache disabled (maxSize=0)" |Indicates that the access token cache is disabled
+|CUI_JWT_QUARKUS-043 |ACCESS_TOKEN_CACHE_CONFIGURED |"Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s" |Shows the configured access token cache settings
+|===
+
+==== Metrics Management Messages (051-060)
+
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
+
+|CUI_JWT_QUARKUS-051 |CLEARING_JWT_METRICS |"Clearing all JWT metrics" |Indicates that all JWT metrics are being cleared
+|CUI_JWT_QUARKUS-052 |JWT_METRICS_CLEARED |"JWT metrics cleared successfully" |Confirms successful clearing of JWT metrics
+|===
+
+==== JWKS Startup Messages (061-070)
+
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
+
+|CUI_JWT_QUARKUS-060 |JWKS_STARTUP_SERVICE_INITIALIZED |"JWKS startup service activated for background key loading" |Indicates that the JWKS startup service has been activated
+|CUI_JWT_QUARKUS-061 |STARTING_ASYNCHRONOUS_JWKS_INITIALIZATION |"Starting asynchronous JWKS initialization for %s issuer(s)" |Indicates the start of background JWKS loading with issuer count
+|CUI_JWT_QUARKUS-062 |NO_ISSUER_CONFIGURATIONS_FOUND |"No issuer configurations found - skipping JWKS initialization" |Indicates that JWKS initialization is skipped due to no configured issuers
+|CUI_JWT_QUARKUS-063 |BACKGROUND_JWKS_INITIALIZATION_COMPLETED |"Background JWKS initialization completed successfully" |Confirms successful completion of background JWKS initialization
+|CUI_JWT_QUARKUS-064 |BACKGROUND_JWKS_LOADING_COMPLETED_FOR_ISSUER |"Background JWKS loading completed for issuer: %s with status: %s" |Shows the completion status for a specific issuer's JWKS loading
+|===
+
+==== Access Log Filter Messages (065-070)
+
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
+
+|CUI_JWT_QUARKUS-065 |CUSTOM_ACCESS_LOG_FILTER_INITIALIZED |"CustomAccessLogFilter initialized: %s" |Shows the initialized access log filter configuration
+|CUI_JWT_QUARKUS-066 |ACCESS_LOG_ENTRY |"%s" |Individual access log entry in the configured format
 |===
 
 === Quarkus WARN Level (100-199)
 
-[cols="1,1,2,2", options="header"]
+==== Health Check Warnings (100-110)
+
+[cols="1,2,3,4", options="header"]
 |===
-|ID |Component |Message |Description
+|ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-100 |HEALTH |Error checking JWKS loader for issuer %s: %s |Logged when error occurs checking JWKS loader during health check
+|CUI_JWT_QUARKUS-100 |ERROR_CHECKING_JWKS_LOADER |"Error checking JWKS loader for issuer %s: %s" |Indicates an error occurred while checking JWKS loader status in health check
+|===
 
-|CUI_JWT_QUARKUS-128 |BEARER_TOKEN |Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s |Logged when bearer token doesn't meet all requirements
+==== Bearer Token Warnings (121-130)
 
-|CUI_JWT_QUARKUS-131 |JWKS |Background JWKS loading failed for issuer %s: %s |Logged when background JWKS loading fails for an issuer
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-133 |METRICS |No Micrometer counter found for event type %s, delta %s lost |Logged when Micrometer counter is not found for an event type
-|CUI_JWT_QUARKUS-134 |JWKS |JWKS loading failed for issuer %s: %s - will retry via background refresh |Logged when JWKS loading fails and will be retried
-|CUI_JWT_QUARKUS-135 |JWKS |Background JWKS initialization encountered issues: %s - on-demand loading will handle this |Logged when background JWKS initialization has issues
+|CUI_JWT_QUARKUS-128 |BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED |"Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s" |Details about which requirements are missing from a bearer token
+|===
+
+==== JWKS Startup Warnings (131-140)
+
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
+
+|CUI_JWT_QUARKUS-131 |BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER |"Background JWKS loading failed for issuer %s: %s" |Indicates that background JWKS loading failed for a specific issuer
+|CUI_JWT_QUARKUS-133 |NO_MICROMETER_COUNTER_FOUND |"No Micrometer counter found for event type %s, delta %s lost" |Indicates that a metrics counter was not found and a delta value was lost
+|CUI_JWT_QUARKUS-134 |JWKS_LOADING_RETRY_WARNING |"JWKS loading failed for issuer %s: %s - will retry via background refresh" |Indicates that JWKS loading failed but will be retried
+|CUI_JWT_QUARKUS-135 |BACKGROUND_JWKS_ISSUES_WARNING |"Background JWKS initialization encountered issues: %s - on-demand loading will handle this" |Indicates issues during background JWKS initialization with fallback to on-demand loading
 |===
 
 === Quarkus ERROR Level (200-299)
 
-[cols="1,1,2,2", options="header"]
-|===
-|ID |Component |Message |Description
+==== Infrastructure Errors (200-210)
 
-|CUI_JWT_QUARKUS-201 |INFRASTRUCTURE |Vertx HttpServerRequest context is unavailable - no active request context found |Logged when Vertx request context is not available
+[cols="1,2,3,4", options="header"]
+|===
+|ID |LogRecord |Template |Description
+
+|CUI_JWT_QUARKUS-201 |VERTX_REQUEST_CONTEXT_UNAVAILABLE |"Vertx HttpServerRequest context is unavailable - no active request context found" |Indicates that the Vertx HTTP server request context could not be resolved
 |===

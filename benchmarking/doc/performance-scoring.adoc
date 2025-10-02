@@ -17,7 +17,8 @@ Where:
 - Throughput = Average operations/second from benchmarks
 - Latency_ms = Average latency in milliseconds
 
-Note: Scores are not capped, allowing exceptional performance to exceed 100
+Note: Scores are not capped, allowing exceptional performance to exceed 100.
+Final scores are rounded to the nearest integer.
 ----
 
 == Metrics
@@ -40,7 +41,11 @@ Note: Scores are not capped, allowing exceptional performance to exceed 100
 |===
 |Score Range |Grade |Description
 
-|≥ 90
+|≥ 95
+|A+
+|Exceptional performance - exceeds all targets
+
+|90-94
 |A
 |Excellent performance - high-scale production ready
 
@@ -72,20 +77,24 @@ Average Latency: 1.17 ms
 Throughput_Score = 5847 ÷ 100 = 58.47
 Latency_Score = 100 ÷ 1.17 = 85.47
 
-Performance Score = (58.47 × 0.5) + (85.47 × 0.5)
-                  = 29.24 + 42.74
-                  = 71.98 (Grade C)
+Raw Score = (58.47 × 0.5) + (85.47 × 0.5)
+          = 29.24 + 42.74
+          = 71.97
+
+Performance Score = round(71.97) = 72 (Grade C)
 
 Micro Benchmark:
-Average Throughput: 83,909 ops/sec  
+Average Throughput: 83,909 ops/sec
 Average Latency: 0.35 ms
 
 Throughput_Score = 83909 ÷ 100 = 839.09
 Latency_Score = 100 ÷ 0.35 = 285.71
 
-Performance Score = (839.09 × 0.5) + (285.71 × 0.5)
-                  = 419.55 + 142.86
-                  = 562.41 (Grade A, exceptional performance)
+Raw Score = (839.09 × 0.5) + (285.71 × 0.5)
+          = 419.55 + 142.86
+          = 562.41
+
+Performance Score = round(562.41) = 562 (Grade A+, exceptional performance)
 ----
 
 == Badge Format

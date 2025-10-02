@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.health;
 
 import de.cuioss.jwt.validation.IssuerConfig;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

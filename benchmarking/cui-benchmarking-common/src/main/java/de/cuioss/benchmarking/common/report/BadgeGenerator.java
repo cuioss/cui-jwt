@@ -97,10 +97,10 @@ public class BadgeGenerator {
         badge.put(SCHEMA_VERSION, 1);
         badge.put(LABEL, Labels.TREND);
 
-        String arrow = getTrendArrow(trendMetrics.getDirection());
-        String percentage = String.format(Locale.US, "%.1f%%", Math.abs(trendMetrics.getChangePercentage()));
+        String arrow = getTrendArrow(trendMetrics.direction());
+        String percentage = String.format(Locale.US, "%.1f%%", Math.abs(trendMetrics.changePercentage()));
         badge.put(MESSAGE, arrow + " " + percentage);
-        badge.put(COLOR, getTrendColor(trendMetrics.getDirection()));
+        badge.put(COLOR, getTrendColor(trendMetrics.direction()));
 
         return gson.toJson(badge);
     }

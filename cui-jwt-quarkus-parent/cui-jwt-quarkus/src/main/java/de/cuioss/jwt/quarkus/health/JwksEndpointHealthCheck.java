@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.tools.logging.CuiLogger;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

@@ -15,11 +15,7 @@
  */
 package de.cuioss.jwt.validation.domain.claim;
 
-import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper;
+import de.cuioss.jwt.validation.domain.claim.mapper.*;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.Getter;
 import lombok.NonNull;

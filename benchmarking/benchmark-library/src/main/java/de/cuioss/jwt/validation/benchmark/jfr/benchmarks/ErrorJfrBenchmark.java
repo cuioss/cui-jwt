@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.benchmark.jfr.benchmarks;
 
-import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.jwt.validation.benchmark.base.AbstractJfrBenchmark;
 import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;

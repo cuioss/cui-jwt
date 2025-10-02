@@ -261,5 +261,48 @@
                 <benchmark.runner>de.cuioss.jwt.validation.benchmark.JfrBenchmarkRunner</benchmark.runner>
             </properties>
         </profile>
+
+        <!-- Analyze JFR recordings -->
+        <profile>
+            <id>analyze-jfr</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>analyze-jfr-recording</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>false</skip>
+                                    <mainClass>de.cuioss.benchmarking.common.jfr.JfrVarianceAnalyzer</mainClass>
+                                    <arguments>
+                                        <argument>${jfr.file}</argument>
+                                    </arguments>
+                                    <classpathScope>compile</classpathScope>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Quick benchmark profile for faster testing -->
+        <profile>
+            <id>quick</id>
+            <properties>
+                <!-- Override JMH parameters for quick benchmarks -->
+                <jmh.iterations>2</jmh.iterations>
+                <jmh.warmupIterations>1</jmh.warmupIterations>
+                <jmh.forks>1</jmh.forks>
+                <jmh.time>5s</jmh.time>
+                <jmh.warmupTime>2s</jmh.warmupTime>
+            </properties>
+        </profile>
     </profiles>
 </project>

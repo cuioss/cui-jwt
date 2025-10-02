@@ -18,7 +18,7 @@
     <modules>
         <module>cui-benchmarking-common</module>
         <module>benchmark-library</module>
-        <module>benchmark-integration-quarkus</module>
+        <module>benchmark-integration-wrk</module>
     </modules>
 
     <properties>
@@ -65,9 +65,15 @@
                 <artifactId>commons-io</artifactId>
                 <version>${version.commons-io}</version>
             </dependency>
+                <dependency>
+                    <groupId>de.cuioss.jwt</groupId>
+                    <artifactId>bom</artifactId>
+                    <version>${project.version}</version>
+                    <type>pom</type>
+                    <scope>import</scope>
+                </dependency>
         </dependencies>
     </dependencyManagement>
-
     <build>
         <pluginManagement>
             <plugins>

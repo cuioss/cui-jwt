@@ -75,10 +75,10 @@ import java.util.concurrent.TimeUnit;
 
 
     @TearDown(Level.Trial) public void exportMetrics() {
-        // Export metrics using SimplifiedMetricsExporter
+        // Export metrics using LibraryMetricsExporter
         if (tokenValidator != null) {
             try {
-                SimplifiedMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
+                LibraryMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
                 // Ignore errors during metrics export - likely file I/O issues
             }
