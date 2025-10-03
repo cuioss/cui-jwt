@@ -6,10 +6,10 @@
 
 Performance testing using WRK with stress profile (10 threads, 150 connections) shows:
 
-* **JWT Validation**: 17,400 ops/s (moderate stress, good balance)
-* **Health Check**: 50,300 ops/s (excellent scaling)
-* **CPU Utilization**: 82.3% for JWT, 59.3% for health
-* **Target Achievement**: 35% of minimum target (50k ops/s)
+* **JWT Validation (cache disabled)**: 20,400 ops/s (strong performance)
+* **JWT Validation (cache enabled, size 20)**: 21,900 ops/s (+7.4% with caching)
+* **Health Check**: 77,600 ops/s (excellent scaling)
+* **Target Achievement**: 44% of minimum target (50k ops/s)
 * **Error Rate**: 0% (no timeouts)
 
 == WRK Stress Profile Results
@@ -33,26 +33,34 @@ Performance testing using WRK with stress profile (10 threads, 150 connections) 
 |Error Rate
 |CPU Usage
 
-|JWT Validation
-|17,400 ops/s
-|1.04M
-|7.32ms / 22.64ms / 54.7ms
+|JWT Validation (cache OFF)
+|20,400 ops/s
+|1.22M
+|6.30ms / 17.55ms / 39.38ms
 |0 timeouts (0%)
-|82.3%
+|Not measured
+
+|JWT Validation (cache ON, 20)
+|21,900 ops/s
+|1.31M
+|5.88ms / 16.16ms / 39.98ms
+|0 timeouts (0%)
+|89.9% peak (74.3% avg)
 
 |Health Check
-|50,300 ops/s
-|3.02M
-|2.35ms / 7.0ms / 14.75ms
+|77,600 ops/s
+|4.66M
+|1.53ms / 4.79ms / 10.88ms
 |0 timeouts (0%)
-|59.3%
+|56.2% peak (52.2% avg)
 |===
 
 === Resource Utilization
 
-* **CPU**: JWT: 82.3% peak | Health: 59.3% peak
-* **Memory**: Heap usage varies by load
-* **Threads**: 162 peak threads at 150 connections
+* **CPU**: JWT (cache ON): 89.9% peak (74.3% avg) | Health: 56.2% peak (52.2% avg)
+* **Memory**: Heap peak 127.5MB (JWT), 122.5MB (Health) | GC overhead: 0%
+* **Threads**: JWT: 133 peak (116 avg) | Health: 52 peak (26 avg)
+* **System CPU**: JWT: 91.1% peak | Health: 87.8% peak
 * **GC**: Zero overhead (native compilation)
 
 == Performance Analysis
@@ -88,12 +96,12 @@ A systematic investigation was conducted to identify the optimal connection coun
 |116
 
 |150 (Stress)
-|2.35 / 7.0 / 14.75
-|50.3K ops/s
-|7.32 / 22.64 / 54.7
-|17.4K ops/s
-|82.3%
-|162
+|1.53 / 4.79 / 10.88
+|77.6K ops/s
+|6.30 / 17.55 / 39.38 (cache OFF)
+|20.4K ops/s (21.9K with cache)
+|-
+|-
 
 |200
 |3.18 / 9.43 / 19.27
@@ -123,11 +131,11 @@ A systematic investigation was conducted to identify the optimal connection coun
 **Key Findings:**
 
 * **50 connections** is the sweet spot for CI/CD - excellent performance across all metrics
-* **100 connections** marks JWT degradation beginning (CPU 87.1%, P90 2.6x slower than baseline)
-* **150 connections** provides good stress testing balance (no timeouts, moderate degradation)
-* **200+ connections** causes severe JWT degradation (P90 5-8x slower, CPU approaches saturation)
-* **Health checks** scale excellently up to 200 connections, then degrade gradually
-* **Thread count** grows linearly with connections, reaching 200+ threads at maximum load
+* **100 connections** marks JWT degradation beginning
+* **150 connections** provides good stress testing balance (77.6K ops/s health, 20.4-21.9K ops/s JWT)
+* **200+ connections** causes degradation
+* **Health checks** scale excellently to high connection counts
+* **Cache effectiveness** verified at 150 connections: +7.4% throughput with size 20
 
 === Bottleneck Identification
 
@@ -142,24 +150,25 @@ Testing inside Docker network (container-to-container) vs host-to-container reve
 
 **Secondary Bottlenecks (Application-Level):**
 
-1. **JWT processing overhead** (32,900 ops/s gap from health check)
-2. **Token cache disabled** - Every validation performs full crypto (maxSize=0)
-3. **JWKS refresh every 10 seconds** - Constant Keycloak communication overhead
+1. **JWT processing overhead** (55,700 ops/s gap from health check with cache enabled)
+2. **Token cache effectiveness** - Cache size of 20 achieved 100% hit rate (239,156/239,156 validations), providing 7.4% throughput improvement
+3. **Average validation time** - 0.33ms per cached token (vs ~6ms for full validation)
+4. **JWKS refresh every 10 seconds** - Constant Keycloak communication overhead
 
 === Performance Ceiling
 
-* **Health check capacity**: 50,300 ops/s (excellent scaling)
-* **JWT validation capacity**: 17,400 ops/s (moderate stress)
-* **Performance gap**: 32,900 ops/s between health and JWT endpoints
-* **CPU bottleneck**: Begins at 100 connections (87% CPU)
+* **Health check capacity**: 77,600 ops/s (excellent scaling)
+* **JWT validation capacity (cache OFF)**: 20,400 ops/s (strong performance)
+* **JWT validation capacity (cache ON)**: 21,900 ops/s (+7.4% improvement)
+* **Performance gap**: 55,700 ops/s between health and JWT endpoints (cache ON)
 
 == Conclusion
 
 WRK stress testing with 150 connections reveals:
 
-* **Health endpoint**: 50,300 ops/s with 2.35ms P50 / 7.0ms P90 latency
-* **JWT endpoint**: 17,400 ops/s with 7.32ms P50 / 22.64ms P90 latency
-* **Container-to-container test** (50 conns, health only): 74.3K ops/s (0.91ms) shows ~2x improvement over standard host-to-container setup (37.6K ops/s)
+* **Health endpoint**: 77,600 ops/s with 1.53ms P50 / 4.79ms P90 latency
+* **JWT endpoint (cache OFF)**: 20,400 ops/s with 6.30ms P50 / 17.55ms P90 latency
+* **JWT endpoint (cache ON, size 20)**: 21,900 ops/s with 5.88ms P50 / 16.16ms P90 latency (+7.4% throughput)
 * **Test profiles**: 50 connections (default), 150 connections (stress), 300 connections (max load)
 * **Primary bottleneck**: JWT cryptographic validation overhead
-* **Infrastructure finding**: Container networking has less overhead than host-to-container Docker bridge
+* **Cache effectiveness**: Lock-free cache delivers 7.4% throughput improvement without performance collapse
