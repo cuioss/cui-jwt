@@ -208,54 +208,56 @@ public class AccessTokenCache {
         // Start metrics for cache store operation
         MetricsTicker storeTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.CACHE_STORE, performanceMonitor);
 
-        // Generate cache key from token string
-        int cacheKey = tokenString.hashCode();
-
-        // Wrap validated token in CachedToken for storage
-        CachedToken newCachedToken;
+        // Use try-finally to ensure ticker is always stopped, even on unexpected exceptions
         try {
-            // Get expiration time - this should always be present for valid tokens
-            OffsetDateTime expirationTime = content.getExpirationTime();
+            // Generate cache key from token string
+            int cacheKey = tokenString.hashCode();
 
-            newCachedToken = CachedToken.builder()
-                    .rawToken(tokenString)
-                    .content(content)
-                    .expirationTime(expirationTime)
-                    .build();
-        } catch (IllegalStateException e) {
-            // This should not happen as TokenContent.getExpirationTime() throws
-            // IllegalStateException only when expiration claim is missing,
-            // which should have been caught during token validation
-            storeTicker.stopAndRecord();
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
-            throw new InternalCacheException(
-                    "Token passed validation but has no expiration time", e);
-        } catch (IllegalArgumentException | SecurityException e) {
-            // Handle specific runtime exceptions that could occur during token caching
-            storeTicker.stopAndRecord();
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
-            throw new InternalCacheException(
-                    "Failed to cache validated token", e);
-        }
+            // Wrap validated token in CachedToken for storage
+            CachedToken newCachedToken;
+            try {
+                // Get expiration time - this should always be present for valid tokens
+                OffsetDateTime expirationTime = content.getExpirationTime();
 
-        // putIfAbsent: only store if no value exists (handles concurrent validation races)
-        // If another thread already stored, their value wins - we silently discard ours
-        CachedToken previous = cache.putIfAbsent(cacheKey, newCachedToken);
-
-        if (previous == null) {
-            // Successfully stored - we won the race (or no race occurred)
-            LOGGER.debug("Token cached, current size: %s", cache.size());
-
-            // Enforce size limit after successful insertion
-            if (cache.size() > maxSize) {
-                enforceSize();
+                newCachedToken = CachedToken.builder()
+                        .rawToken(tokenString)
+                        .content(content)
+                        .expirationTime(expirationTime)
+                        .build();
+            } catch (IllegalStateException e) {
+                // This should not happen as TokenContent.getExpirationTime() throws
+                // IllegalStateException only when expiration claim is missing,
+                // which should have been caught during token validation
+                LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
+                throw new InternalCacheException(
+                        "Token passed validation but has no expiration time", e);
+            } catch (IllegalArgumentException | SecurityException e) {
+                // Handle specific runtime exceptions that could occur during token caching
+                LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
+                throw new InternalCacheException(
+                        "Failed to cache validated token", e);
             }
-        } else {
-            // Another thread won the race and already stored this token
-            LOGGER.debug("Token already cached by concurrent thread");
-        }
 
-        storeTicker.stopAndRecord();
+            // putIfAbsent: only store if no value exists (handles concurrent validation races)
+            // If another thread already stored, their value wins - we silently discard ours
+            CachedToken previous = cache.putIfAbsent(cacheKey, newCachedToken);
+
+            if (previous == null) {
+                // Successfully stored - we won the race (or no race occurred)
+                LOGGER.debug("Token cached, current size: %s", cache.size());
+
+                // Enforce size limit after successful insertion
+                if (cache.size() > maxSize) {
+                    enforceSize();
+                }
+            } else {
+                // Another thread won the race and already stored this token
+                LOGGER.debug("Token already cached by concurrent thread");
+            }
+        } finally {
+            // Always stop and record metrics, even if exceptions occur
+            storeTicker.stopAndRecord();
+        }
     }
 
 
