@@ -29,18 +29,15 @@ import lombok.NonNull;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
 
 /**
- * Thread-safe cache for validated access tokens.
+ * Thread-safe cache for validated access tokens using optimistic caching strategy.
  * <p>
  * This cache stores successfully validated access tokens to avoid redundant validation
  * of the same tokens. It uses integer hashCode for cache keys to optimize performance
@@ -49,7 +46,9 @@ import java.util.function.Function;
  * Features:
  * <ul>
  *   <li>Integer hashCode of tokens for cache keys</li>
- *   <li>Configurable maximum cache size with LRU eviction</li>
+ *   <li>Simple get/put API for explicit caching control</li>
+ *   <li>Lock-free concurrent access via ConcurrentHashMap</li>
+ *   <li>Configurable maximum cache size with automatic overflow eviction</li>
  *   <li>Automatic expiration checking on retrieval</li>
  *   <li>Background thread for periodic expired token cleanup</li>
  *   <li>Security event tracking for cache hits</li>
@@ -57,6 +56,7 @@ import java.util.function.Function;
  * </ul>
  * <p>
  * The cache verifies token content on each hit to handle potential hash collisions.
+ * JWTs self-expire via their exp claim, reducing need for complex eviction strategies.
  *
  * @author Oliver Wolff
  * @since 1.0
@@ -76,17 +76,6 @@ public class AccessTokenCache {
      * Value: CachedToken wrapper
      */
     private final Map<Integer, CachedToken> cache;
-
-    /**
-     * LRU tracking map protected by read-write lock.
-     * This separate map tracks access order for LRU eviction.
-     */
-    private final LinkedHashMap<Integer, Long> lruMap;
-
-    /**
-     * Read-write lock for protecting LRU operations.
-     */
-    private final ReadWriteLock lruLock = new ReentrantReadWriteLock();
 
     /**
      * Security event counter for tracking cache hits.
@@ -115,14 +104,8 @@ public class AccessTokenCache {
         if (this.maxSize > 0) {
             // Only initialize cache structures when caching is enabled
             this.cache = new ConcurrentHashMap<>(this.maxSize);
-            this.lruMap = new LinkedHashMap<>(this.maxSize, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<Integer, Long> eldest) {
-                    return size() > AccessTokenCache.this.maxSize;
-                }
-            };
 
-            // Use provided executor or create default
+            // Use provided executor or create default for background expiration cleanup
             this.evictionExecutor = config.getOrCreateScheduledExecutorService();
 
             if (this.evictionExecutor != null) {
@@ -138,40 +121,30 @@ public class AccessTokenCache {
         } else {
             // Cache disabled - no cache structures or background threads needed
             this.cache = null;
-            this.lruMap = null;
             this.evictionExecutor = null;
             LOGGER.debug("AccessTokenCache disabled (maxSize=0) - no executor started");
         }
     }
 
     /**
-     * Computes and caches a token if absent, following the Map.computeIfAbsent pattern.
+     * Retrieves a cached access token if present and valid.
      * <p>
-     * This method first checks if a valid cached token exists. If found and still valid,
-     * it returns the cached token and increments the cache hit counter. Otherwise, it
-     * calls the validation function to validate the token and caches the result.
-     * <p>
-     * Note on cache hit counting: Cache hits are only counted when a pre-existing cached
-     * value is found. When multiple threads concurrently request the same uncached token,
-     * only the first thread performs validation while others wait for the result. These
-     * waiting threads are not counted as cache hits since no pre-existing value was found.
+     * This method checks if a token exists in cache and is still valid (not expired,
+     * raw token matches). If found and valid, returns the cached token and increments
+     * cache hit counter. If expired, removes it from cache and throws exception.
      *
-     * @param tokenString the raw JWT token string
-     * @param validationFunction the function to validate the token if not cached
-     * @param performanceMonitor the monitor for recording cache metrics
-     * @return the cached or newly validated access token content, never null
+     * @param tokenString the raw JWT token string to look up
+     * @param performanceMonitor the monitor for recording CACHE_LOOKUP metrics
+     * @return Optional containing the cached token if found and valid, empty otherwise
      * @throws TokenValidationException if the cached token is expired
-     * @throws InternalCacheException if an internal cache error occurs
      */
-    @SuppressWarnings("java:S3776") // owolff: 16 instead of 15 is acceptable here due to complexity of cache logic
-    public AccessTokenContent computeIfAbsent(
+    public Optional<AccessTokenContent> get(
             @NonNull String tokenString,
-            @NonNull Function<String, AccessTokenContent> validationFunction,
             @NonNull TokenValidatorMonitor performanceMonitor) {
 
-        // If cache size is 0, caching is disabled - call validation function directly without caching
+        // If cache size is 0, caching is disabled
         if (maxSize == 0) {
-            return validationFunction.apply(tokenString);
+            return Optional.empty();
         }
 
         // Create metrics ticker for cache lookup
@@ -180,7 +153,7 @@ public class AccessTokenCache {
         // Generate cache key from token string
         int cacheKey = tokenString.hashCode();
 
-        // First, try to get existing cached value
+        // Try to get existing cached value
         CachedToken existing = cache.get(cacheKey);
         lookupTicker.stopAndRecord();
 
@@ -188,14 +161,11 @@ public class AccessTokenCache {
             OffsetDateTime now = OffsetDateTime.now();
             if (existing.verifyToken(tokenString) && !existing.isExpired(now)) {
                 // True cache hit - valid cached token
-                LOGGER.debug("Access token retrieved from cache");
                 securityEventCounter.increment(SecurityEventCounter.EventType.ACCESS_TOKEN_CACHE_HIT);
-                updateLru(cacheKey);
-                return existing.getContent();
+                return Optional.of(existing.getContent());
             } else if (existing.isExpired(now)) {
                 // Token is expired - remove from cache and throw exception
                 cache.remove(cacheKey, existing);
-                removeLru(cacheKey);
                 LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED::format);
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EXPIRED);
                 throw new TokenValidationException(
@@ -205,140 +175,129 @@ public class AccessTokenCache {
             } else {
                 // Token verification failed - different token with same hash (unlikely but possible)
                 cache.remove(cacheKey, existing);
-                removeLru(cacheKey);
                 LOGGER.debug("Cached token verification failed - hash collision detected");
             }
         }
 
-        // Create metrics ticker for cache store
-        MetricsTicker storeTicker = MetricsTickerFactory.createTicker(MeasurementType.CACHE_STORE, performanceMonitor);
+        // Cache miss
+        return Optional.empty();
+    }
 
-        // Cache miss - use computeIfAbsent to ensure only one thread validates
-        CachedToken newCached = cache.computeIfAbsent(cacheKey, key -> {
-            // Validate the token (only happens once for concurrent requests)
-            AccessTokenContent validated = validationFunction.apply(tokenString);
-            if (validated != null) {
-                storeTicker.startRecording();
-                try {
-                    // Get expiration time - this should always be present for valid tokens
-                    OffsetDateTime expirationTime = validated.getExpirationTime();
+    /**
+     * Stores a validated access token in the cache.
+     * <p>
+     * Wraps the token in a CachedToken and stores it using putIfAbsent to handle
+     * concurrent storage attempts. If multiple threads attempt to store the same
+     * token simultaneously, only the first succeeds.
+     *
+     * @param tokenString the raw JWT token string as cache key
+     * @param content the validated access token content to cache
+     * @param performanceMonitor the monitor for recording CACHE_STORE metrics
+     * @throws InternalCacheException if token has no expiration or cache store fails
+     */
+    public void put(
+            @NonNull String tokenString,
+            @NonNull AccessTokenContent content,
+            @NonNull TokenValidatorMonitor performanceMonitor) {
 
-                    CachedToken newCachedToken = CachedToken.builder()
-                            .rawToken(tokenString)
-                            .content(validated)
-                            .expirationTime(expirationTime)
-                            .build();
+        // If cache size is 0, caching is disabled
+        if (maxSize == 0) {
+            return;
+        }
 
-                    updateLru(cacheKey);
-                    LOGGER.debug("Token cached, current size: %s", cache.size());
-                    return newCachedToken;
-                } catch (IllegalStateException e) {
-                    // This should not happen as TokenContent.getExpirationTime() throws
-                    // IllegalStateException only when expiration claim is missing,
-                    // which should have been caught during token validation
-                    LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
-                    throw new InternalCacheException(
-                            "Token passed validation but has no expiration time", e);
-                } catch (IllegalArgumentException | SecurityException e) {
-                    // Handle specific runtime exceptions that could occur during token caching
-                    LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
-                    throw new InternalCacheException(
-                            "Failed to cache validated token", e);
-                } finally {
-                    storeTicker.stopAndRecord();
-                }
+        // Start metrics for cache store operation
+        MetricsTicker storeTicker = MetricsTickerFactory.createStartedTicker(MeasurementType.CACHE_STORE, performanceMonitor);
+
+        // Use try-finally to ensure ticker is always stopped, even on unexpected exceptions
+        try {
+            // Generate cache key from token string
+            int cacheKey = tokenString.hashCode();
+
+            // Wrap validated token in CachedToken for storage
+            CachedToken newCachedToken;
+            try {
+                // Get expiration time - this should always be present for valid tokens
+                OffsetDateTime expirationTime = content.getExpirationTime();
+
+                newCachedToken = CachedToken.builder()
+                        .rawToken(tokenString)
+                        .content(content)
+                        .expirationTime(expirationTime)
+                        .build();
+            } catch (IllegalStateException e) {
+                // This should not happen as TokenContent.getExpirationTime() throws
+                // IllegalStateException only when expiration claim is missing,
+                // which should have been caught during token validation
+                LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.format());
+                throw new InternalCacheException(
+                        "Token passed validation but has no expiration time", e);
+            } catch (IllegalArgumentException | SecurityException e) {
+                // Handle specific runtime exceptions that could occur during token caching
+                LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED.format());
+                throw new InternalCacheException(
+                        "Failed to cache validated token", e);
             }
-            // Validation returned null - don't cache
-            return null;
-        });
 
-        // Enforce size limit after computeIfAbsent completes to avoid recursive update
-        if (newCached != null && cache.size() > maxSize) {
-            enforceSize();
-        }
+            // putIfAbsent: only store if no value exists (handles concurrent validation races)
+            // If another thread already stored, their value wins - we silently discard ours
+            CachedToken previous = cache.putIfAbsent(cacheKey, newCachedToken);
 
-        // Return the content if we got a valid cached token
-        if (newCached != null) {
-            return newCached.getContent();
-        }
+            if (previous == null) {
+                // Successfully stored - we won the race (or no race occurred)
+                LOGGER.debug("Token cached, current size: %s", cache.size());
 
-        // If we reach here, the validation function returned null.
-        // This should not happen as validation functions should throw on failure.
-        LOGGER.error(JWTValidationLogMessages.ERROR.CACHE_VALIDATION_FUNCTION_NULL.format());
-        throw new InternalCacheException(
-                "Validation function returned null - expected exception on failure"
-        );
-    }
-
-
-    /**
-     * Updates LRU tracking for a cache key.
-     * Only called when caching is enabled (maxSize > 0).
-     */
-    private void updateLru(int key) {
-        lruLock.writeLock().lock();
-        try {
-            lruMap.put(key, System.currentTimeMillis());
+                // Enforce size limit after successful insertion
+                if (cache.size() > maxSize) {
+                    enforceSize();
+                }
+            } else {
+                // Another thread won the race and already stored this token
+                LOGGER.debug("Token already cached by concurrent thread");
+            }
         } finally {
-            lruLock.writeLock().unlock();
+            // Always stop and record metrics, even if exceptions occur
+            storeTicker.stopAndRecord();
         }
     }
 
-    /**
-     * Removes a key from LRU tracking.
-     * Only called when caching is enabled (maxSize > 0).
-     */
-    private void removeLru(int key) {
-        lruLock.writeLock().lock();
-        try {
-            lruMap.remove(key);
-        } finally {
-            lruLock.writeLock().unlock();
-        }
-    }
 
     /**
-     * Enforces cache size limit using LRU eviction.
-     * Evicts oldest 10% of entries when cache is full to reduce eviction frequency.
+     * Enforces cache size limit by evicting entries when cache exceeds maxSize.
+     * <p>
+     * Evicts 10% of entries (minimum 1) when cache is full to reduce eviction frequency.
+     * Uses iteration order for eviction. Since JWTs self-expire, complex eviction
+     * strategies are unnecessary - expired tokens are removed by background cleanup.
      */
     private void enforceSize() {
         if (cache != null && cache.size() >= maxSize) {
-            lruLock.writeLock().lock();
-            try {
-                if (!lruMap.isEmpty()) {
-                    // Calculate batch size: evict 10% or at least 1 entry
-                    int batchSize = Math.max(1, maxSize / 10);
-                    int evicted = 0;
+            // Calculate batch size: evict 10% or at least 1 entry
+            int batchSize = Math.max(1, maxSize / 10);
+            int evicted = 0;
 
-                    var iterator = lruMap.entrySet().iterator();
-                    while (iterator.hasNext() && evicted < batchSize) {
-                        Integer keyToEvict = iterator.next().getKey();
-                        cache.remove(keyToEvict);
-                        iterator.remove();
-                        evicted++;
-                    }
-
-                    LOGGER.debug("Evicted %s oldest tokens from cache due to size limit", evicted);
-                }
-            } finally {
-                lruLock.writeLock().unlock();
+            // Iterate and remove first N entries (random based on HashMap iteration order)
+            var iterator = cache.entrySet().iterator();
+            while (iterator.hasNext() && evicted < batchSize) {
+                iterator.next();
+                iterator.remove();
+                evicted++;
             }
+
+            LOGGER.debug("Evicted %s tokens from cache due to size limit (current size: %s)", evicted, cache.size());
         }
     }
 
     /**
      * Background task to evict expired tokens.
+     * <p>
+     * Scans cache for expired tokens and removes them in batches.
+     * Only called when cache is enabled (maxSize > 0) and executor is configured.
      */
     private void evictExpiredTokens() {
-        if (cache == null) {
-            return; // No cache to evict from
-        }
-
         try {
             OffsetDateTime now = OffsetDateTime.now();
             List<Integer> expiredKeys = new ArrayList<>();
 
-            // Phase 1: Collect expired keys (no locking needed, ConcurrentHashMap is thread-safe for iteration)
+            // Collect expired keys (thread-safe iteration)
             for (Map.Entry<Integer, CachedToken> entry : cache.entrySet()) {
                 if (entry.getValue().isExpired(now)) {
                     expiredKeys.add(entry.getKey());
@@ -346,17 +305,8 @@ public class AccessTokenCache {
             }
 
             if (!expiredKeys.isEmpty()) {
-                // Phase 2: Batch remove from cache (thread-safe operations)
+                // Batch remove from cache (thread-safe operations)
                 expiredKeys.forEach(cache::remove);
-
-                // Phase 3: Batch remove from LRU with single lock acquisition
-                lruLock.writeLock().lock();
-                try {
-                    expiredKeys.forEach(lruMap::remove);
-                } finally {
-                    lruLock.writeLock().unlock();
-                }
-
                 LOGGER.debug("Evicted %s expired tokens from cache", expiredKeys.size());
             }
         } catch (IllegalStateException | SecurityException e) {
@@ -383,12 +333,6 @@ public class AccessTokenCache {
 
         if (cache != null) {
             cache.clear();
-            lruLock.writeLock().lock();
-            try {
-                lruMap.clear();
-            } finally {
-                lruLock.writeLock().unlock();
-            }
         }
         LOGGER.debug("AccessTokenCache shut down");
     }
