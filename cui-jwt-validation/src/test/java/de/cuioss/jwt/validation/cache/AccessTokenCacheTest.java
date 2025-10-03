@@ -102,6 +102,7 @@ class AccessTokenCacheTest {
 
         validationCount.incrementAndGet();
         cache.put(token, expectedContent, performanceMonitor);
+        //noinspection UnnecessaryLocalVariable - Variable needed to avoid second cache access in assertions
         AccessTokenContent result = expectedContent;
 
         // Then
@@ -209,34 +210,35 @@ class AccessTokenCacheTest {
 
         int threadCount = 5; // Reduced thread count for stability
         CountDownLatch doneLatch = new CountDownLatch(threadCount);
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
         // When - multiple threads access the same token concurrently
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
-                    AccessTokenContent result;
-                    if (cached.isEmpty()) {
-                        validationCount.incrementAndGet();
-                        // Simple atomic operation, no complex simulation
-                        result = content;
-                        cache.put(token, result, performanceMonitor);
-                    } else {
-                        result = cached.get();
+        try (ExecutorService executor = Executors.newFixedThreadPool(threadCount)) {
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
+                        AccessTokenContent result;
+                        if (cached.isEmpty()) {
+                            validationCount.incrementAndGet();
+                            // Simple atomic operation, no complex simulation
+                            result = content;
+                            cache.put(token, result, performanceMonitor);
+                        } else {
+                            result = cached.get();
+                        }
+                        assertNotNull(result);
+                        assertEquals(content, result);
+                    } finally {
+                        doneLatch.countDown();
                     }
-                    assertNotNull(result);
-                    assertEquals(content, result);
-                } finally {
-                    doneLatch.countDown();
-                }
-            });
-        }
+                });
+            }
 
-        // Wait for completion with shorter timeout
-        assertTrue(doneLatch.await(2, TimeUnit.SECONDS), "All threads should complete quickly");
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(1, TimeUnit.SECONDS), "Executor should terminate cleanly");
+            // Wait for completion with shorter timeout
+            assertTrue(doneLatch.await(2, TimeUnit.SECONDS), "All threads should complete quickly");
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(1, TimeUnit.SECONDS), "Executor should terminate cleanly");
+        }
 
         // Then - with optimistic caching, validation may happen 1-5 times (race condition)
         // Each thread validates in parallel, first to putIfAbsent wins
@@ -266,49 +268,50 @@ class AccessTokenCacheTest {
         int threadCount = 50; // High concurrency to trigger race conditions
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(threadCount);
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
         // When - many threads access the same token simultaneously
-        for (int i = 0; i < threadCount; i++) {
-            executor.submit(() -> {
-                try {
-                    // Wait for all threads to be ready
-                    startLatch.await();
+        try (ExecutorService executor = Executors.newFixedThreadPool(threadCount)) {
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        // Wait for all threads to be ready
+                        startLatch.await();
 
-                    Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
-                    AccessTokenContent result;
-                    if (cached.isEmpty()) {
-                        validationCount.incrementAndGet();
-                        // Simulate some work to increase race window
-                        await()
-                                .pollDelay(1, TimeUnit.MILLISECONDS)
-                                .atMost(10, TimeUnit.MILLISECONDS)
-                                .until(() -> true);
-                        result = content;
-                        cache.put(token, result, performanceMonitor);
-                    } else {
-                        result = cached.get();
+                        Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
+                        AccessTokenContent result;
+                        if (cached.isEmpty()) {
+                            validationCount.incrementAndGet();
+                            // Simulate some work to increase race window
+                            await()
+                                    .pollDelay(1, TimeUnit.MILLISECONDS)
+                                    .atMost(10, TimeUnit.MILLISECONDS)
+                                    .until(() -> true);
+                            result = content;
+                            cache.put(token, result, performanceMonitor);
+                        } else {
+                            result = cached.get();
+                        }
+
+                        assertNotNull(result);
+                        assertEquals(content, result);
+                        successCount.incrementAndGet();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        fail("Thread was interrupted: " + e.getMessage());
+                    } finally {
+                        doneLatch.countDown();
                     }
+                });
+            }
 
-                    assertNotNull(result);
-                    assertEquals(content, result);
-                    successCount.incrementAndGet();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    fail("Thread was interrupted: " + e.getMessage());
-                } finally {
-                    doneLatch.countDown();
-                }
-            });
+            // Start all threads simultaneously
+            startLatch.countDown();
+
+            // Wait for completion
+            assertTrue(doneLatch.await(5, TimeUnit.SECONDS), "All threads should complete without blocking");
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS), "Executor should terminate cleanly");
         }
-
-        // Start all threads simultaneously
-        startLatch.countDown();
-
-        // Wait for completion
-        assertTrue(doneLatch.await(5, TimeUnit.SECONDS), "All threads should complete without blocking");
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS), "Executor should terminate cleanly");
 
         // Then - verify optimistic caching behavior
         assertEquals(threadCount, successCount.get(), "All threads should successfully retrieve the token");
@@ -333,47 +336,48 @@ class AccessTokenCacheTest {
         int totalThreads = tokenCount * threadsPerToken;
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(totalThreads);
-        ExecutorService executor = Executors.newFixedThreadPool(totalThreads);
 
         // When - many threads access different tokens concurrently
-        for (int tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
-            final String token = "token-" + tokenIndex;
-            final AccessTokenContent content = createAccessToken("https://example.com", OffsetDateTime.now().plusHours(1));
+        try (ExecutorService executor = Executors.newFixedThreadPool(totalThreads)) {
+            for (int tokenIndex = 0; tokenIndex < tokenCount; tokenIndex++) {
+                final String token = "token-" + tokenIndex;
+                final AccessTokenContent content = createAccessToken("https://example.com", OffsetDateTime.now().plusHours(1));
 
-            for (int threadIndex = 0; threadIndex < threadsPerToken; threadIndex++) {
-                executor.submit(() -> {
-                    try {
-                        startLatch.await();
+                for (int threadIndex = 0; threadIndex < threadsPerToken; threadIndex++) {
+                    executor.submit(() -> {
+                        try {
+                            startLatch.await();
 
-                        Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
-                        AccessTokenContent result;
-                        if (cached.isEmpty()) {
-                            totalValidationCount.incrementAndGet();
-                            result = content;
-                            cache.put(token, result, performanceMonitor);
-                        } else {
-                            result = cached.get();
+                            Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
+                            AccessTokenContent result;
+                            if (cached.isEmpty()) {
+                                totalValidationCount.incrementAndGet();
+                                result = content;
+                                cache.put(token, result, performanceMonitor);
+                            } else {
+                                result = cached.get();
+                            }
+
+                            assertNotNull(result);
+                            successCount.incrementAndGet();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            fail("Thread was interrupted: " + e.getMessage());
+                        } finally {
+                            doneLatch.countDown();
                         }
-
-                        assertNotNull(result);
-                        successCount.incrementAndGet();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        fail("Thread was interrupted: " + e.getMessage());
-                    } finally {
-                        doneLatch.countDown();
-                    }
-                });
+                    });
+                }
             }
+
+            // Start all threads simultaneously
+            startLatch.countDown();
+
+            // Wait for completion
+            assertTrue(doneLatch.await(5, TimeUnit.SECONDS), "All threads should complete quickly");
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS), "Executor should terminate cleanly");
         }
-
-        // Start all threads simultaneously
-        startLatch.countDown();
-
-        // Wait for completion
-        assertTrue(doneLatch.await(5, TimeUnit.SECONDS), "All threads should complete quickly");
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(2, TimeUnit.SECONDS), "Executor should terminate cleanly");
 
         // Then
         assertEquals(totalThreads, successCount.get(), "All threads should successfully retrieve tokens");
@@ -381,6 +385,7 @@ class AccessTokenCacheTest {
         assertEquals(tokenCount, cache.size(), "All unique tokens should be cached");
     }
 
+    @SuppressWarnings("SameParameterValue") // Test helper - intentionally uses consistent test data
     private AccessTokenContent createAccessToken(String issuer, OffsetDateTime expiration) {
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         tokenHolder.withClaim(ClaimName.ISSUER.getName(), ClaimValue.forPlainString(issuer));
@@ -392,6 +397,7 @@ class AccessTokenCacheTest {
         return tokenHolder.asAccessTokenContent();
     }
 
+    @SuppressWarnings("SameParameterValue") // Test helper - intentionally uses consistent test data
     private AccessTokenContent createAccessTokenWithRawToken(String issuer, OffsetDateTime expiration, String rawToken) {
         // Create a simple AccessTokenContent with the specified raw token
         // This simulates what would happen in real JWT validation where the raw token matches the input
@@ -416,16 +422,16 @@ class AccessTokenCacheTest {
         String token = "test-token";
 
         Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
+        assertTrue(cached.isEmpty(), "Cache should be empty initially");
 
         // When & Then - attempting to put null should throw NullPointerException
         // In the new API, validation function returning null means caller should not call put()
         // But if they do call put(null), they get NPE from @NonNull annotation
-        NullPointerException exception = assertThrows(NullPointerException.class, () -> {
-            if (cached.isEmpty()) {
+        //noinspection DataFlowIssue - Intentionally testing null handling
+        NullPointerException exception = assertThrows(NullPointerException.class, () ->
                 // Validation returned null - calling put(null) is a programming error
-                cache.put(token, null, performanceMonitor);
-            }
-        });
+                cache.put(token, null, performanceMonitor)
+        );
 
         // The NPE message comes from Lombok's @NonNull annotation
         assertTrue(exception.getMessage().contains("content is marked non-null but is null"));
@@ -503,45 +509,46 @@ class AccessTokenCacheTest {
         int threadCount = 5; // Reduced thread count
         int tokensPerThread = 3; // Reduced tokens per thread
         CountDownLatch doneLatch = new CountDownLatch(threadCount);
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);
 
         // When - multiple threads add different tokens concurrently
-        for (int i = 0; i < threadCount; i++) {
-            final int threadId = i;
-            executor.submit(() -> {
-                try {
-                    // Create thread-local performance monitor to avoid contention
-                    TokenValidatorMonitor threadMonitor = TokenValidatorMonitorConfig.builder()
-                            .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
-                            .build()
-                            .createMonitor();
+        try (ExecutorService executor = Executors.newFixedThreadPool(threadCount)) {
+            for (int i = 0; i < threadCount; i++) {
+                final int threadId = i;
+                executor.submit(() -> {
+                    try {
+                        // Create thread-local performance monitor to avoid contention
+                        TokenValidatorMonitor threadMonitor = TokenValidatorMonitorConfig.builder()
+                                .measurementTypes(TokenValidatorMonitorConfig.ALL_MEASUREMENT_TYPES)
+                                .build()
+                                .createMonitor();
 
-                    for (int j = 0; j < tokensPerThread; j++) {
-                        String token = "thread-" + threadId + "-token-" + j;
-                        AccessTokenContent content = createAccessToken("https://example.com",
-                                OffsetDateTime.now().plusHours(1));
-                        Optional<AccessTokenContent> cached = cache.get(token, threadMonitor);
-                        AccessTokenContent result;
-                        if (cached.isEmpty()) {
-                            result = content;
-                            cache.put(token, result, threadMonitor);
-                        } else {
-                            result = cached.get();
+                        for (int j = 0; j < tokensPerThread; j++) {
+                            String token = "thread-" + threadId + "-token-" + j;
+                            AccessTokenContent content = createAccessToken("https://example.com",
+                                    OffsetDateTime.now().plusHours(1));
+                            Optional<AccessTokenContent> cached = cache.get(token, threadMonitor);
+                            AccessTokenContent result;
+                            if (cached.isEmpty()) {
+                                result = content;
+                                cache.put(token, result, threadMonitor);
+                            } else {
+                                result = cached.get();
+                            }
+                            assertNotNull(result);
+                            successCount.incrementAndGet();
                         }
-                        assertNotNull(result);
-                        successCount.incrementAndGet();
+                    } finally {
+                        doneLatch.countDown();
                     }
-                } finally {
-                    doneLatch.countDown();
-                }
-            });
-        }
+                });
+            }
 
-        // Wait for completion with longer timeout (test may be slow on CI)
-        assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "All threads should complete");
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(1, TimeUnit.SECONDS), "Executor should terminate cleanly");
+            // Wait for completion with longer timeout (test may be slow on CI)
+            assertTrue(doneLatch.await(10, TimeUnit.SECONDS), "All threads should complete");
+            executor.shutdown();
+            assertTrue(executor.awaitTermination(1, TimeUnit.SECONDS), "Executor should terminate cleanly");
+        }
 
         // Then - all operations should succeed
         assertEquals(threadCount * tokensPerThread, successCount.get());
@@ -599,13 +606,12 @@ class AccessTokenCacheTest {
         AccessTokenContent contentWithoutExp = tokenHolder.asAccessTokenContent();
 
         Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
+        assertTrue(cached.isEmpty(), "Cache should be empty initially");
 
         // When/Then - should throw InternalCacheException
-        InternalCacheException exception = assertThrows(InternalCacheException.class, () -> {
-            if (cached.isEmpty()) {
-                cache.put(token, contentWithoutExp, performanceMonitor);
-            }
-        });
+        InternalCacheException exception = assertThrows(InternalCacheException.class, () ->
+                cache.put(token, contentWithoutExp, performanceMonitor)
+        );
 
         assertEquals("Token passed validation but has no expiration time", exception.getMessage());
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
