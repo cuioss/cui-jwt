@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +63,8 @@ class AuthorizedPartyValidatorTest {
         try {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, "{}");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        } catch (IOException e) {
+            throw new AssertionError("Failed to create empty MapRepresentation", e);
         }
     }
 

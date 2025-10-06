@@ -109,7 +109,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
 
                 // Log appropriate message based on failure type
                 if (config.getWellKnownConfig() != null) {
-                    LOGGER.warn(WARN.JWKS_URI_RESOLUTION_FAILED.format());
+                    LOGGER.warn(WARN.JWKS_URI_RESOLUTION_FAILED::format);
                 }
                 LOGGER.error(ERROR.JWKS_INITIALIZATION_FAILED.format(errorDetail, getIssuerIdentifier().orElse(ISSUER_NOT_CONFIGURED)));
                 return LoaderStatus.ERROR;
@@ -141,7 +141,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
             if (result.getResultDetail().isPresent()) {
                 String detailMessage = result.getResultDetail().get().getDetail().toString();
                 if (detailMessage.contains("no cached content")) {
-                    LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE.format());
+                    LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE::format);
                 }
             }
 
@@ -313,7 +313,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                     try {
                         ResilientHttpHandler<Jwks> handler = httpHandler.get();
                         if (handler == null) {
-                            LOGGER.warn(WARN.BACKGROUND_REFRESH_NO_HANDLER.format());
+                            LOGGER.warn(WARN.BACKGROUND_REFRESH_NO_HANDLER::format);
                             return;
                         }
 
@@ -330,8 +330,8 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                     } catch (IllegalArgumentException e) {
                         // JSON parsing or validation errors
                         LOGGER.warn(WARN.BACKGROUND_REFRESH_PARSE_ERROR.format(e.getMessage(), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED))));
-                    } catch (RuntimeException e) {
-                        // Catch any other runtime exceptions
+                    } catch (IllegalStateException e) {
+                        // State errors (e.g., from orElseThrow when issuer not resolved)
                         LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED.format(e.getMessage()));
                     }
                 },

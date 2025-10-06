@@ -89,7 +89,7 @@ public class JwksParser {
                 // We have a valid JWKS with keys field, let parseJwks handle validation and logging
                 return parseJwks(jwks);
             }
-            jwksParsed = (jwks != null);  // Remember if we parsed a JWKS structure
+            jwksParsed = jwks != null;  // Remember if we parsed a JWKS structure
         } catch (IOException e) {
             // JSON syntax error - continue to try single JWK parsing
         }

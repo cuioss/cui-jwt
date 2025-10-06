@@ -17,14 +17,11 @@ package de.cuioss.jwt.validation;
 
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
 import de.cuioss.jwt.validation.test.junit.TestTokenSource;
-import de.cuioss.tools.logging.CuiLogger;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,8 +33,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ClientConfusionAttackTest {
 
-    private static final CuiLogger LOGGER = new CuiLogger(ClientConfusionAttackTest.class);
-
     // Client ID constants
     private static final String ALTERNATIVE_CLIENT_ID = "alternative-client";
 
@@ -46,56 +41,13 @@ class ClientConfusionAttackTest {
      */
     private TokenValidator tokenValidator;
 
-    /**
-     * Set up the test environment.
-     */
-    @BeforeEach
-    void setUp() {
-        // Use the InMemoryJWKSFactory to create a proper JWKS document with the default key ID
-        String jwksContent = InMemoryJWKSFactory.createDefaultJwks();
-
-        // Print the JWKS content for debugging
-        LOGGER.debug("JWKS content: " + jwksContent);
-    }
-
     @ParameterizedTest
     @TestTokenSource(value = TokenType.ID_TOKEN)
     @DisplayName("Token with valid azp claim should be accepted")
     void verify_azp_validation(TestTokenHolder tokenHolder) {
         // Get the token
         String token = tokenHolder.getRawToken();
-        LOGGER.debug("Token: " + token);
 
-        // Print the token headers using NonValidatingJwtParser to debug
-        try {
-            var decoder = NonValidatingJwtParser.builder().securityEventCounter(new SecurityEventCounter()).build();
-            var jwt = decoder.decode(token);
-            var header = jwt.getHeader();
-            var kid = jwt.getKid().orElse("null");
-            var body = jwt.getBody();
-
-            LOGGER.debug("Token headers: " + header);
-            LOGGER.debug("Token kid: " + kid);
-            LOGGER.debug("Token body: " + body);
-
-            // Add more detailed debugging for audience claim
-            if (body != null) {
-                if (body.containsKey("aud")) {
-                    LOGGER.debug("Audience claim found: " + body.getValue("aud").orElse(null));
-                    LOGGER.debug("Audience claim type: " + body.getValue("aud").map(obj -> obj.getClass().getSimpleName()).orElse("null"));
-                } else {
-                    LOGGER.debug("No audience claim found in token");
-                }
-
-                if (body.containsKey("azp")) {
-                    LOGGER.debug("AZP claim found: " + body.getValue("azp").orElse(null));
-                } else {
-                    LOGGER.debug("No azp claim found in token");
-                }
-            }
-        } catch (Exception e) {
-            // Error handling is done by the test assertions
-        }
         // Create a token validator with the issuer config
         tokenValidator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();
 
@@ -159,48 +111,6 @@ class ClientConfusionAttackTest {
     void verify_audience_validation_without_azp(TestTokenHolder tokenHolder) {
         // Get the token
         String token = tokenHolder.getRawToken();
-        LOGGER.debug("Generated token: " + token);
-
-        // Print the token headers using NonValidatingJwtParser to debug
-        try {
-            var decoder = NonValidatingJwtParser.builder().securityEventCounter(new SecurityEventCounter()).build();
-            var jwt = decoder.decode(token);
-            var header = jwt.getHeader();
-            var kid = jwt.getKid().orElse("null");
-            var body = jwt.getBody();
-
-            LOGGER.debug("Token headers: " + header);
-            LOGGER.debug("Token kid: " + kid);
-            LOGGER.debug("Token body: " + body);
-
-            // Add more detailed debugging for audience claim
-            if (body != null) {
-                if (body.containsKey("aud")) {
-                    LOGGER.debug("Audience claim found: " + body.getValue("aud").orElse(null));
-                    LOGGER.debug("Audience claim type: " + body.getValue("aud").map(obj -> obj.getClass().getSimpleName()).orElse("null"));
-                } else {
-                    LOGGER.debug("No audience claim found in token");
-                }
-
-                if (body.containsKey("azp")) {
-                    LOGGER.debug("AZP claim found: " + body.getValue("azp").orElse(null));
-                } else {
-                    LOGGER.debug("No azp claim found in token");
-                }
-            }
-        } catch (Exception e) {
-            // Error handling is done by the test assertions
-        }
-
-        // Create an IssuerConfig with the correct audience but no client ID
-        IssuerConfig issuerConfig = IssuerConfig.builder()
-                .issuerIdentifier(TestTokenHolder.TEST_ISSUER)
-                .expectedAudience(tokenHolder.getAuthorizedParty())
-                .jwksContent(InMemoryJWKSFactory.createDefaultJwks())
-                .build();
-
-        LOGGER.debug("IssuerConfig: expectedAudience=" + issuerConfig.getExpectedAudience() +
-                ", expectedClientId=" + issuerConfig.getExpectedClientId());
 
         // Create a token validator with the issuer config
         tokenValidator = TokenValidator.builder().issuerConfig(tokenHolder.getIssuerConfig()).build();

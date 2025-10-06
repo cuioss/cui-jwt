@@ -99,7 +99,7 @@ public class TrendDataProcessor {
                 processHistoryFile(file, dataPoints);
             }
         } catch (IOException e) {
-            LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("loading historical data"), e);
+            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION.format("loading historical data"));
         }
 
         return dataPoints;
@@ -121,7 +121,7 @@ public class TrendDataProcessor {
                 dataPoints.add(point);
             }
         } catch (IOException | JsonSyntaxException e) {
-            LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("parsing history file: " + file), e);
+            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION.format("parsing history file: " + file));
         }
     }
 
@@ -256,7 +256,7 @@ public class TrendDataProcessor {
 
             return new HistoricalDataPoint(timestamp, throughput, latency, performanceScore, commitSha);
         } catch (NullPointerException | ClassCastException | IllegalStateException | UnsupportedOperationException e) {
-            LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("extracting data point"), e);
+            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION.format("extracting data point"));
             return null;
         }
     }

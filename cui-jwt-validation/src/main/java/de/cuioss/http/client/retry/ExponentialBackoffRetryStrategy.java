@@ -60,7 +60,8 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    @SuppressWarnings({"java:S3776", "java:S135"}) // Complexity is inherent to retry logic; multiple breaks needed for different failure scenarios
+    @SuppressWarnings({"java:S3776", "java:S135"})
+    // Complexity is inherent to retry logic; multiple breaks needed for different failure scenarios
     public <T> HttpResultObject<T> execute(HttpOperation<T> operation, RetryContext context) {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(context, "context");
@@ -73,7 +74,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             long attemptStartTime = System.nanoTime();
 
-            LOGGER.debug("Starting retry attempt {} for operation '{}'", attempt, context.operationName());
+            LOGGER.debug("Starting retry attempt %s for operation '%s'", attempt, context.operationName());
 
             // Execute operation - no exceptions to catch
             HttpResultObject<T> result = operation.execute();
@@ -107,11 +108,11 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
 
                 // Check if this error is retryable
                 if (!result.isRetryable()) {
-                    LOGGER.debug("Operation failed with non-retryable error for '{}' after {}ms", context.operationName(), attemptDuration.toMillis());
+                    LOGGER.debug("Operation failed with non-retryable error for '%s' after %sms", context.operationName(), attemptDuration.toMillis());
                     break;
                 }
 
-                LOGGER.debug("Retry attempt {} failed for operation '{}' after {}ms - retryable error",
+                LOGGER.debug("Retry attempt %s failed for operation '%s' after %sms - retryable error",
                         attempt, context.operationName(), attemptDuration.toMillis());
 
                 Duration delay = calculateDelay(attempt);
@@ -122,7 +123,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
                     // Delay interrupted - return the actual operation failure (not synthetic result)
                     Duration totalDuration = Duration.ofNanos(System.nanoTime() - totalStartTime);
                     retryMetrics.recordRetryComplete(context, totalDuration, false, attempt);
-                    LOGGER.debug("Retry delay interrupted for '{}', returning last operation result", context.operationName());
+                    LOGGER.debug("Retry delay interrupted for '%s', returning last operation result", context.operationName());
                     return lastResult; // Return real operation result, not synthetic one
                 }
             }
@@ -157,7 +158,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
             // Log significant delay deviations
             long delayDifference = Math.abs(actualDelay.toMillis() - plannedDelay.toMillis());
             if (delayDifference > 50) {
-                LOGGER.debug("Retry delay deviation for '{}': planned={}ms, actual={}ms, difference={}ms",
+                LOGGER.debug("Retry delay deviation for '%s': planned=%sms, actual=%sms, difference=%sms",
                         context.operationName(), plannedDelay.toMillis(), actualDelay.toMillis(), delayDifference);
             }
 

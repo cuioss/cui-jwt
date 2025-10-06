@@ -147,7 +147,7 @@ public class HistoricalDataManager {
                     .filter(Files::isRegularFile)
                     .anyMatch(p -> p.toString().endsWith(JSON_EXTENSION));
         } catch (IOException e) {
-            LOGGER.warn(WARN.ISSUE_DURING_INDEX_GENERATION.format("checking historical data"), e);
+            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION.format("checking historical data"));
             return false;
         }
     }

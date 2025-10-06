@@ -84,8 +84,9 @@ class TokenValidatorMetricsVerificationTest {
         // due to measurement precision. We now only verify that the gap is reasonable (not huge).
         // A negative gap can occur when individual measurements have slightly more overhead than the complete measurement.
         assertTrue(timingGap > -1_000_000,
-                String.format("Timing gap should be reasonable (within -1ms tolerance for measurement precision). " +
-                        "Complete validation: %d ns, Sum of steps: %d ns, Gap: %d ns (%.3f ms)",
+                """
+                        Timing gap should be reasonable (within -1ms tolerance for measurement precision). \
+                        Complete validation: %d ns, Sum of steps: %d ns, Gap: %d ns (%.3f ms)""".formatted(
                         completeValidationNanos, totalIndividualSteps, timingGap, timingGapMillis));
 
         // Check specific metrics that were missing in the benchmark

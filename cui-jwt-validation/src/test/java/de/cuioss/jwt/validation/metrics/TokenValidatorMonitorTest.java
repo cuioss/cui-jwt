@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests TokenValidatorMonitor functionality")
 class TokenValidatorMonitorTest {
 
-    private static final CuiLogger log = new CuiLogger(TokenValidatorMonitorTest.class);
+    private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorMonitorTest.class);
 
     @Test
     @DisplayName("Should create monitor with default window size")
@@ -397,9 +397,9 @@ class TokenValidatorMonitorTest {
         double measurementsPerMs = totalMeasurements.get() / (double) totalDurationMs;
 
         assertTrue(measurementsPerMs > 1000, // Should handle at least 1000 measurements per millisecond
-                "Performance too slow: %.1f measurements/ms (expected > 1000)".formatted(measurementsPerMs));
+                "Performance too slow: %s measurements/ms (expected > 1000)".formatted(measurementsPerMs));
 
-        log.info("Massive parallel test: {} threads, {} measurements/thread, {:.1f} measurements/ms",
+        LOGGER.info("Massive parallel test: %s threads, %s measurements/thread, %s measurements/ms",
                 threadCount, measurementsPerThread, measurementsPerMs);
     }
 
@@ -496,10 +496,10 @@ class TokenValidatorMonitorTest {
 
         // Overhead should be minimal (less than 1 microsecond per measurement)
         assertTrue(overheadPerMeasurementNanos < 1000,
-                "Performance overhead too high: %.1f ns/measurement (expected < 1000)".formatted(
+                "Performance overhead too high: %s ns/measurement (expected < 1000)".formatted(
                         overheadPerMeasurementNanos));
 
-        log.info("Performance overhead: {:.1f} ns per measurement", overheadPerMeasurementNanos);
+        LOGGER.info("Performance overhead: %s ns per measurement", overheadPerMeasurementNanos);
     }
 
     @Test

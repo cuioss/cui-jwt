@@ -408,6 +408,125 @@ public final class BenchmarkingLogMessages {
                 .template("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer %s")
                 .build();
 
+        /** Message when iteration windows are parsed from timestamp file. */
+        public static final LogRecord ITERATION_WINDOWS_PARSED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(53)
+                .template("Parsed %s iteration windows from %s")
+                .build();
+
+        /** Message when using precise timestamps for benchmark. */
+        public static final LogRecord USING_PRECISE_TIMESTAMPS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(54)
+                .template("Using precise timestamps for benchmark '%s': %s to %s")
+                .build();
+
+        /** Message when starting benchmark runner with configuration details. */
+        public static final LogRecord BENCHMARK_RUNNER_STARTING_WITH_DETAILS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(55)
+                .template("Starting CUI benchmark runner - Type: %s, Output: %s")
+                .build();
+
+        /** Message when benchmarks complete with artifact location. */
+        public static final LogRecord BENCHMARKS_COMPLETED_WITH_ARTIFACTS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(56)
+                .template("Benchmarks completed successfully with %s results, artifacts in %s")
+                .build();
+
+        /** Message when Prometheus metrics collection is enabled. */
+        public static final LogRecord PROMETHEUS_ENABLED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(57)
+                .template("Prometheus metrics collection enabled - URL: %s")
+                .build();
+
+        /** Message when Prometheus metrics collection is disabled. */
+        public static final LogRecord PROMETHEUS_DISABLED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(58)
+                .template("Prometheus metrics collection disabled - Prometheus not available at: %s")
+                .build();
+
+        /** Message when collecting real-time metrics from Prometheus. */
+        public static final LogRecord COLLECTING_PROMETHEUS_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(59)
+                .template("Collecting real-time metrics from Prometheus at: %s")
+                .build();
+
+        /** Message when collecting real-time metrics for WRK benchmark. */
+        public static final LogRecord COLLECTING_WRK_PROMETHEUS_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(60)
+                .template("Collecting real-time metrics for WRK benchmark '%s' from Prometheus")
+                .build();
+
+        /** Message when Prometheus metrics are saved. */
+        public static final LogRecord PROMETHEUS_METRICS_SAVED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(61)
+                .template("Prometheus metrics saved to: %s/%s%s")
+                .build();
+
+        /** Message when using session timestamps for benchmark. */
+        public static final LogRecord USING_SESSION_TIMESTAMPS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(62)
+                .template("Using session timestamps for benchmark '%s': %s to %s")
+                .build();
+
+        /** Message when collecting Prometheus metrics for benchmark. */
+        public static final LogRecord COLLECTING_BENCHMARK_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(63)
+                .template("Collecting Prometheus metrics for benchmark '%s'")
+                .build();
+
+        /** Message when collecting real-time metrics for benchmark with time range. */
+        public static final LogRecord COLLECTING_REALTIME_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(64)
+                .template("Collecting real-time metrics for benchmark '%s' from %s to %s")
+                .build();
+
+        /** Message when real-time metrics are exported. */
+        public static final LogRecord REALTIME_METRICS_EXPORTED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(65)
+                .template("Exported real-time metrics for '%s' to: %s")
+                .build();
+
+        /** Message when HTTP client is created. */
+        public static final LogRecord HTTP_CLIENT_CREATED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(66)
+                .template("Created Java HttpClient with version: %s, timeout: %ss")
+                .build();
+
+        /** Message when using HTTP/1.1. */
+        public static final LogRecord USING_HTTP_1_1 = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(67)
+                .template("Using HTTP/1.1 only (configured via -D%s=http1)")
+                .build();
+
+        /** Message when using HTTP/2. */
+        public static final LogRecord USING_HTTP_2 = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(68)
+                .template("Using HTTP/2 (default or -D%s=http2)")
+                .build();
+
+        /** Message when Prometheus connectivity advice is given. */
+        public static final LogRecord PROMETHEUS_CONNECTIVITY_ADVICE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(69)
+                .template("Ensure Prometheus is running and accessible. You can verify with: curl %s/api/v1/query?query=up")
+                .build();
+
     }
 
     /**
@@ -460,6 +579,139 @@ public final class BenchmarkingLogMessages {
                 .prefix(PREFIX)
                 .identifier(105)
                 .template("Invalid metrics data type: expected TokenValidatorMonitor, got %s")
+                .build();
+
+        /** Warning when timestamp file does not exist. */
+        public static final LogRecord TIMESTAMP_FILE_NOT_EXIST = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(106)
+                .template("Timestamp file does not exist: %s")
+                .build();
+
+        /** Warning when failed to parse timestamp line. */
+        public static final LogRecord FAILED_PARSE_TIMESTAMP_LINE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(107)
+                .template("Failed to parse timestamp line: %s")
+                .build();
+
+        /** Warning when failed to parse timestamp file. */
+        public static final LogRecord FAILED_PARSE_TIMESTAMP_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(108)
+                .template("Failed to parse timestamp file, using session-wide timestamps: %s")
+                .build();
+
+        /** Warning when no timestamp data found for benchmark. */
+        public static final LogRecord NO_TIMESTAMP_DATA = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(109)
+                .template("No timestamp data found for benchmark '%s', using session timestamps")
+                .build();
+
+        /** Warning when no measurement windows found for benchmark. */
+        public static final LogRecord NO_MEASUREMENT_WINDOWS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(110)
+                .template("No measurement windows found for benchmark '%s', using session timestamps")
+                .build();
+
+        /** Warning when failed to query metric. */
+        public static final LogRecord FAILED_QUERY_METRIC = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(111)
+                .template("Failed to query metric '%s': %s")
+                .build();
+
+        /** Warning when overwriting existing start time. */
+        public static final LogRecord OVERWRITING_START_TIME = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(112)
+                .template("Overwriting existing start time for benchmark: %s")
+                .build();
+
+        /** Warning when invalid timestamps detected. */
+        public static final LogRecord INVALID_TIMESTAMPS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(113)
+                .template("Invalid timestamps for benchmark '%s': start=%s, end=%s")
+                .build();
+
+        /** Warning when failed to collect Prometheus metrics. */
+        public static final LogRecord FAILED_COLLECT_PROMETHEUS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(114)
+                .template("Failed to collect Prometheus metrics: %s")
+                .build();
+
+        /** Warning when skipping Prometheus metrics collection. */
+        public static final LogRecord SKIPPING_PROMETHEUS_COLLECTION = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(115)
+                .template("Skipping Prometheus metrics collection - Prometheus not available at URL: %s")
+                .build();
+
+        /** Warning when cannot collect metrics due to missing timestamps. */
+        public static final LogRecord MISSING_TIMESTAMPS_FOR_COLLECTION = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(116)
+                .template("Cannot collect metrics for benchmark '%s' - missing timestamps")
+                .build();
+
+        /** Warning when no valid timestamps found. */
+        public static final LogRecord NO_VALID_TIMESTAMPS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(117)
+                .template("No valid timestamps found for benchmark '%s', skipping metrics collection. Available timestamps: %s")
+                .build();
+
+        /** Warning when failed to collect metrics for benchmark. */
+        public static final LogRecord FAILED_COLLECT_BENCHMARK_METRICS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(118)
+                .template("Failed to collect metrics for benchmark '%s': %s")
+                .build();
+
+        /** Warning when failed to create target directory. */
+        public static final LogRecord FAILED_CREATE_TARGET_DIR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(119)
+                .template("Failed to create target directory: %s")
+                .build();
+
+        /** Warning when failed to read existing metrics file. */
+        public static final LogRecord FAILED_READ_METRICS_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(120)
+                .template("Failed to read existing metrics file %s: %s")
+                .build();
+
+        /** Warning when failed to delete corrupted metrics file. */
+        public static final LogRecord FAILED_DELETE_CORRUPTED_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(121)
+                .template("Failed to delete corrupted metrics file")
+                .build();
+
+        /** Warning when unknown result format detected. */
+        public static final LogRecord UNKNOWN_RESULT_FORMAT = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(122)
+                .template("Unknown result format: %s, defaulting to JSON")
+                .build();
+
+        /** Warning when unknown time unit detected. */
+        public static final LogRecord UNKNOWN_TIME_UNIT = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(123)
+                .template("Unknown time unit '%s' in '%s', defaulting to seconds")
+                .build();
+
+        /** Warning when token pool is empty. */
+        public static final LogRecord TOKEN_POOL_EMPTY = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(124)
+                .template("Token pool is empty, fetching single token")
                 .build();
     }
 
@@ -562,6 +814,48 @@ public final class BenchmarkingLogMessages {
                 .prefix(PREFIX)
                 .identifier(212)
                 .template("Incomplete metadata in file %s (name=%s, start=%s, end=%s)")
+                .build();
+
+        /** Error when failed to collect Prometheus metrics for benchmark. */
+        public static final LogRecord FAILED_COLLECT_PROMETHEUS_BENCHMARK = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(213)
+                .template("Failed to collect Prometheus metrics for benchmark '%s' from URL: %s")
+                .build();
+
+        /** Error when Prometheus connectivity check failed. */
+        public static final LogRecord PROMETHEUS_CONNECTIVITY_FAILED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(214)
+                .template("Prometheus connectivity check failed at URL: %s - Error: %s (%s)")
+                .build();
+
+        /** Error when failed to collect real-time Prometheus metrics. */
+        public static final LogRecord FAILED_COLLECT_REALTIME_PROMETHEUS = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(215)
+                .template("Failed to collect Prometheus metrics for benchmark '%s': %s")
+                .build();
+
+        /** Error when failed to fetch token. */
+        public static final LogRecord FAILED_FETCH_TOKEN = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(216)
+                .template("Failed to fetch token. Status: %s, Body: %s")
+                .build();
+
+        /** Error when failed to parse WRK file. */
+        public static final LogRecord FAILED_PARSE_WRK_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(217)
+                .template("Failed to parse WRK file: %s")
+                .build();
+
+        /** Error for JfrVarianceAnalyzer usage. */
+        public static final LogRecord JFR_VARIANCE_USAGE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(218)
+                .template("Usage: JfrVarianceAnalyzer <path-to-jfr-file>")
                 .build();
     }
 

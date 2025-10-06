@@ -59,7 +59,7 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
     @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
-        LOGGER.info(INFO.JWT_BENCHMARKS_STARTING.format());
+        LOGGER.info(INFO.JWT_BENCHMARKS_STARTING::format);
     }
 
     @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {

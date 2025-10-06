@@ -27,6 +27,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO.*;
+
 /**
  * Factory for creating Java HttpClient instances for benchmarking.
  * Uses singleton pattern for efficient resource usage.
@@ -85,7 +87,7 @@ public class HttpClientFactory {
                     .sslContext(sslContext)
                     .build();
 
-            LOGGER.info("Created Java HttpClient with version: {}, timeout: {}s", version, CONNECT_TIMEOUT_SECONDS);
+            LOGGER.info(HTTP_CLIENT_CREATED.format(version, CONNECT_TIMEOUT_SECONDS));
             return client;
 
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -102,11 +104,11 @@ public class HttpClientFactory {
 
         return switch (protocol) {
             case "http1" -> {
-                LOGGER.info("Using HTTP/1.1 only (configured via -D{}=http1)", HTTP_PROTOCOL_PROPERTY);
+                LOGGER.info(USING_HTTP_1_1.format(HTTP_PROTOCOL_PROPERTY));
                 yield HttpClient.Version.HTTP_1_1;
             }
             default -> {
-                LOGGER.info("Using HTTP/2 (default or -D{}=http2)", HTTP_PROTOCOL_PROPERTY);
+                LOGGER.info(USING_HTTP_2.format(HTTP_PROTOCOL_PROPERTY));
                 yield HttpClient.Version.HTTP_2;
             }
         };

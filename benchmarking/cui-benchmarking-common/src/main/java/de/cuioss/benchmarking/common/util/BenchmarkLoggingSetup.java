@@ -29,7 +29,7 @@ import java.util.logging.*;
 /**
  * Centralized logging configuration for JMH benchmarks.
  * Sets up logging to write to both console and a timestamped file in benchmark-results.
- * 
+ *
  * <p>This class provides:
  * <ul>
  *   <li>Dual output to console and file via TeeOutputStream</li>
@@ -37,7 +37,7 @@ import java.util.logging.*;
  *   <li>Timestamped log files in benchmark results directory</li>
  *   <li>Configurable java.util.logging levels</li>
  * </ul>
- * 
+ *
  * @since 1.0
  */
 @SuppressWarnings("java:S106") // System.out and System.err usage is intentional for logging setup
@@ -67,6 +67,8 @@ public final class BenchmarkLoggingSetup {
      *
      * @param benchmarkResultsDir the directory where benchmark results are stored
      */
+    // cui-rewrite:disable CuiLoggerStandardsRecipe
+    // System.err is appropriate here as logging infrastructure is not yet set up
     public static void configureLogging(String benchmarkResultsDir) {
         // Prepare paths and directories
         Path resultsPath = Path.of(benchmarkResultsDir);
@@ -107,7 +109,6 @@ public final class BenchmarkLoggingSetup {
             System.out.println("All console output (System.out/err and JMH) will be captured to both console and file");
 
         } catch (IOException e) {
-            // System.err is appropriate here as logging infrastructure may not be set up yet
             System.err.println("Failed to configure file logging: " + e.getMessage());
             System.err.println("Continuing with console-only logging");
             closeCurrentFileOut();

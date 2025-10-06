@@ -236,7 +236,7 @@ class VertxServletObjectsResolverScopingTest {
                 info.append("Timestamp: ").append(System.currentTimeMillis()).append("\n");
 
                 return Response.ok(info.toString()).build();
-            } catch (Exception e) {
+            } catch (IllegalStateException e) {
                 return Response.status(500)
                         .entity("Error resolving request: " + e.getMessage())
                         .build();

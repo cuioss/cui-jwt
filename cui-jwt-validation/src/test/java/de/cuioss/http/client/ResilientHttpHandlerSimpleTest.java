@@ -23,6 +23,8 @@ import de.cuioss.uimodel.result.ResultDetail;
 import de.cuioss.uimodel.result.ResultState;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -63,7 +65,7 @@ class ResilientHttpHandlerSimpleTest {
                 HttpErrorCategory.NETWORK_ERROR,
                 new ResultDetail(
                         new DisplayName("Network error with cached fallback"),
-                        new Exception("network timeout")));
+                        new IOException("network timeout")));
 
         assertFalse(errorWithCache.isValid());
         assertEquals(ResultState.ERROR, errorWithCache.getState());
@@ -80,7 +82,7 @@ class ResilientHttpHandlerSimpleTest {
                 HttpErrorCategory.NETWORK_ERROR,
                 new ResultDetail(
                         new DisplayName("Network error with no cached content"),
-                        new Exception("connection failed")));
+                        new IOException("connection failed")));
 
         assertFalse(errorNoCache.isValid());
         assertEquals(ResultState.ERROR, errorNoCache.getState());
@@ -124,14 +126,14 @@ class ResilientHttpHandlerSimpleTest {
                 "", HttpErrorCategory.NETWORK_ERROR,
                 new ResultDetail(
                         new DisplayName("Retryable network error"),
-                        new Exception("network timeout")));
+                        new IOException("network timeout")));
         assertTrue(retryableError.isRetryable());
 
         HttpResultObject<String> nonRetryableError = HttpResultObject.error(
                 "", HttpErrorCategory.CLIENT_ERROR,
                 new ResultDetail(
                         new DisplayName("Non-retryable client error"),
-                        new Exception("400 Bad Request")));
+                        new IOException("400 Bad Request")));
         assertFalse(nonRetryableError.isRetryable());
     }
 }

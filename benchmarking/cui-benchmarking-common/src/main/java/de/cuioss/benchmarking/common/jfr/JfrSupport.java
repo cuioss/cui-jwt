@@ -26,7 +26,7 @@ import jdk.jfr.FlightRecorder;
  */
 public final class JfrSupport {
 
-    private static final CuiLogger log = new CuiLogger(JfrSupport.class);
+    private static final CuiLogger LOGGER = new CuiLogger(JfrSupport.class);
 
     private static final boolean JFR_AVAILABLE = checkJfrAvailability();
 
@@ -56,10 +56,10 @@ public final class JfrSupport {
 
             return true;
         } catch (ClassNotFoundException e) {
-            log.debug("JFR classes not found: %s", e.getMessage());
+            LOGGER.debug("JFR classes not found: %s", e.getMessage());
             return false;
         } catch (SecurityException | UnsupportedOperationException | IllegalStateException e) {
-            log.debug("JFR not available: %s", e.getMessage());
+            LOGGER.debug("JFR not available: %s", e.getMessage());
             return false;
         }
     }

@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -58,8 +59,8 @@ class AccessTokenCacheTest {
         try {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, "{}");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        } catch (IOException e) {
+            throw new AssertionError("Failed to create empty MapRepresentation", e);
         }
     }
 

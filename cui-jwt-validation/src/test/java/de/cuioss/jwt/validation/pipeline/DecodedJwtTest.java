@@ -315,7 +315,7 @@ class DecodedJwtTest {
             byte[] headerBytes = headerJson.getBytes();
             return dslJson.deserialize(JwtHeader.class, headerBytes, headerBytes.length);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create test header", e);
+            throw new AssertionError("Failed to create test header", e);
         }
     }
 
@@ -325,7 +325,7 @@ class DecodedJwtTest {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, bodyJson);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create test body", e);
+            throw new AssertionError("Failed to create test body", e);
         }
     }
 

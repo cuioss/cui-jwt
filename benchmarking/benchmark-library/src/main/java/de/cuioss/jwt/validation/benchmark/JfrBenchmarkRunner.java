@@ -73,7 +73,7 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
     @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
-        LOGGER.info(INFO.JFR_BENCHMARKS_STARTING.format());
+        LOGGER.info(INFO.JFR_BENCHMARKS_STARTING::format);
         LOGGER.info(INFO.JFR_RECORDING_PATH.format(config.resultsDirectory() + "/jfr-benchmark.jfr"));
     }
 
@@ -92,7 +92,7 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
     }
 
     @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
-        LOGGER.info(INFO.JFR_BENCHMARK_COMPLETED.format());
+        LOGGER.info(INFO.JFR_BENCHMARK_COMPLETED::format);
         LOGGER.info(INFO.JFR_VARIANCE_COMMAND.format(config.resultsDirectory() + "/jfr-benchmark.jfr"));
     }
 

@@ -106,7 +106,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
 @RegisterForReflection(fields = false)
 public class BearerTokenProducer {
 
-    static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);
+    private static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);
     static final String BEARER_PREFIX = "Bearer ";
 
     private final TokenValidator tokenValidator;

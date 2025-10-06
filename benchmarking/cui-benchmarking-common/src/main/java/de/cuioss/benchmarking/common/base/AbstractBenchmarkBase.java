@@ -49,19 +49,12 @@ public abstract class AbstractBenchmarkBase {
         System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
     }
 
-    protected final CuiLogger logger;
+    private static final CuiLogger LOGGER = new CuiLogger(AbstractBenchmarkBase.class);
 
     protected String serviceUrl;
     protected String benchmarkResultsDir;
     protected HttpClient httpClient;
 
-    /**
-     * Constructor for AbstractBenchmarkBase.
-     * Initializes the logger with the concrete class name.
-     */
-    protected AbstractBenchmarkBase() {
-        this.logger = new CuiLogger(this.getClass());
-    }
 
     /**
      * Base setup method that initializes common resources.
@@ -85,7 +78,7 @@ public abstract class AbstractBenchmarkBase {
         // Initialize HttpClient AFTER serviceUrl has been set
         initializeHttpClient();
 
-        logger.debug("Base benchmark setup completed");
+        LOGGER.debug("Base benchmark setup completed");
     }
 
     /**
@@ -95,7 +88,7 @@ public abstract class AbstractBenchmarkBase {
      */
     protected void initializeHttpClient() {
         httpClient = HttpClientFactory.getInsecureClient();
-        logger.debug("Using shared Java HttpClient");
+        LOGGER.debug("Using shared Java HttpClient");
     }
 
     /**
@@ -110,12 +103,12 @@ public abstract class AbstractBenchmarkBase {
      * or override to add additional cleanup logic.
      */
     protected void tearDown() {
-        logger.debug("Benchmark teardown initiated");
+        LOGGER.debug("Benchmark teardown initiated");
 
         // Call template method for subclass-specific teardown
         performAdditionalTeardown();
 
-        logger.debug("Benchmark teardown completed");
+        LOGGER.debug("Benchmark teardown completed");
     }
 
     /**

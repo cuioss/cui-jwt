@@ -114,7 +114,7 @@ class HealthCheckResponsivenessIT extends BaseIntegrationTest {
                     "Health check %s took %dms, exceeding max of %dms".formatted(
                             checkType.name, responseTime.toMillis(), MAX_ACCEPTABLE_RESPONSE_TIME_MS));
 
-            LOGGER.debug("✅ %s health check: %s in %dms", checkType.name, status, responseTime.toMillis());
+            LOGGER.debug("✅ %s health check: %s in %sms", checkType.name, status, responseTime.toMillis());
         }
     }
 

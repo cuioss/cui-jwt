@@ -147,7 +147,7 @@ class TokenValidatorMetricsTest {
             Duration duration = monitor.getValidationMetrics(type)
                     .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
             if (duration.toNanos() > 0) {
-                LOGGER.info("%s: %d ns (%.3f ms)%n",
+                LOGGER.info("%s: %s ns (%s ms)%n",
                         type,
                         duration.toNanos(),
                         duration.toNanos() / 1_000_000.0);
@@ -180,15 +180,15 @@ class TokenValidatorMetricsTest {
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
         LOGGER.info("\nFast operations analysis:");
-        LOGGER.info("TOKEN_FORMAT_CHECK: %d ns (%.6f ms) - %s%n",
+        LOGGER.info("TOKEN_FORMAT_CHECK: %s ns (%s ms) - %s%n",
                 tokenFormatCheck.toNanos(),
                 tokenFormatCheck.toNanos() / 1_000_000.0,
                 tokenFormatCheck.toNanos() == 0 ? "MISSING!" : "OK");
-        LOGGER.info("ISSUER_EXTRACTION: %d ns (%.6f ms) - %s%n",
+        LOGGER.info("ISSUER_EXTRACTION: %s ns (%s ms) - %s%n",
                 issuerExtraction.toNanos(),
                 issuerExtraction.toNanos() / 1_000_000.0,
                 issuerExtraction.toNanos() == 0 ? "MISSING!" : "OK");
-        LOGGER.info("HEADER_VALIDATION: %d ns (%.6f ms) - %s%n",
+        LOGGER.info("HEADER_VALIDATION: %s ns (%s ms) - %s%n",
                 headerValidation.toNanos(),
                 headerValidation.toNanos() / 1_000_000.0,
                 headerValidation.toNanos() < 1000 ? "SUSPICIOUSLY FAST!" : "OK");
@@ -215,10 +215,10 @@ class TokenValidatorMetricsTest {
                 .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO);
 
         LOGGER.info("\nJWKS operations analysis:");
-        LOGGER.info("JWKS_OPERATIONS: %d ns (%.3f ms)%n",
+        LOGGER.info("JWKS_OPERATIONS: %s ns (%s ms)%n",
                 jwksOperations.toNanos(),
                 jwksOperations.toNanos() / 1_000_000.0);
-        LOGGER.info("SIGNATURE_VALIDATION: %d ns (%.3f ms)%n",
+        LOGGER.info("SIGNATURE_VALIDATION: %s ns (%s ms)%n",
                 signatureValidation.toNanos(),
                 signatureValidation.toNanos() / 1_000_000.0);
 

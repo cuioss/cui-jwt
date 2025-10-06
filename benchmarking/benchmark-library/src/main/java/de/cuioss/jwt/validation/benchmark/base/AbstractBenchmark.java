@@ -41,7 +41,7 @@ public abstract class AbstractBenchmark {
         System.setProperty("java.util.logging.manager", "java.util.logging.LogManager");
     }
 
-    protected final CuiLogger logger = new CuiLogger(this.getClass());
+    private static final CuiLogger LOGGER = new CuiLogger(AbstractBenchmark.class);
     protected MockTokenRepository tokenRepository;
     protected TokenValidator tokenValidator;
 
@@ -51,7 +51,7 @@ public abstract class AbstractBenchmark {
      * Subclasses should call this from their @Setup method.
      */
     protected void setupBase() {
-        logger.debug("Setting up JWT library benchmark");
+        LOGGER.debug("Setting up JWT library benchmark");
 
         // Initialize token repository with cache size configured for 10% of tokens
         MockTokenRepository.Config config = MockTokenRepository.Config.builder()
@@ -67,7 +67,7 @@ public abstract class AbstractBenchmark {
                         .build(),
                 config);
 
-        logger.debug("JWT library benchmark setup completed");
+        LOGGER.debug("JWT library benchmark setup completed");
     }
 
     /**
@@ -79,7 +79,7 @@ public abstract class AbstractBenchmark {
             try {
                 LibraryMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
-                logger.error(e, ERROR.EXPORT_FAILED.format());
+                LOGGER.error(e, ERROR.EXPORT_FAILED::format);
             }
         }
     }

@@ -6,7 +6,7 @@
     <parent>
         <groupId>de.cuioss</groupId>
         <artifactId>cui-java-parent</artifactId>
-        <version>1.1.5</version>
+        <version>1.2.5</version>
         <relativePath/>
     </parent>
     <groupId>de.cuioss.jwt</groupId>
@@ -42,6 +42,7 @@
     </issueManagement>
 
     <properties>
+        <maven.compiler.release>21</maven.compiler.release>
         <version.quarkus>3.25.4</version.quarkus>
         <frontend.node.version>v20.19.2</frontend.node.version>
         <frontend.npm.version>10.5.0</frontend.npm.version>

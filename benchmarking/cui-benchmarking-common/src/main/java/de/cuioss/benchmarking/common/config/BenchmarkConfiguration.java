@@ -21,6 +21,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Integration.Jmh;
 import static de.cuioss.benchmarking.common.repository.TokenRepositoryConfig.requireProperty;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.UNKNOWN_TIME_UNIT;
 
 /**
  * Modern configuration API for JMH benchmarks.
@@ -163,7 +164,7 @@ IntegrationConfiguration integrationConfig
             case 'm' -> TimeValue.minutes(value);
             case 'h' -> TimeValue.hours(value);
             default -> {
-                LOGGER.warn("Unknown time unit '{}' in '{}', defaulting to seconds", lastChar, timeStr);
+                LOGGER.warn(UNKNOWN_TIME_UNIT.format(lastChar, timeStr));
                 yield TimeValue.seconds(value);
             }
         };

@@ -83,14 +83,14 @@ public class VertxServletObjectsResolver implements HttpServletRequestResolver {
         LOGGER.debug("Attempting to resolve HttpServletRequest from Vertx context");
 
         if (vertxRequestInstance.isUnsatisfied()) {
-            LOGGER.error(ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.format());
+            LOGGER.error(ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE::format);
             throw new IllegalStateException("Vertx HttpServerRequest bean is not available in CDI context");
         }
 
         HttpServerRequest vertxRequest = vertxRequestInstance.get();
 
         if (vertxRequest == null) {
-            LOGGER.error(ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.format());
+            LOGGER.error(ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE::format);
             throw new IllegalStateException("Vertx HttpServerRequest is null - no active request context available");
         }
 

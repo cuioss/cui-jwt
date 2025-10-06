@@ -57,7 +57,7 @@ public class JwtTokenTamperingUtil {
 
     /**
      * Generates a character that is different from the original character.
-     * 
+     *
      * @param originalChar the character to be replaced
      * @param generator the generator to use for generating characters
      * @return a different character
@@ -229,11 +229,11 @@ public class JwtTokenTamperingUtil {
         }
 
         // For base64url, we need to ensure we modify a character that will actually
-        // change the decoded bytes. The last character in base64url might only 
+        // change the decoded bytes. The last character in base64url might only
         // contribute 2 bits when the signature length is certain values.
         // To ensure tampering always changes the decoded bytes, we avoid the last character
         // and pick from the rest of the signature.
-        
+
         int maxIndex = signature.length() - 1;
         // If signature is long enough, avoid the last character to ensure we change decoded bytes
         if (signature.length() > 4) {
@@ -251,10 +251,10 @@ public class JwtTokenTamperingUtil {
             newChar = CHAR_GENERATOR_A_B.next();
         } else if (originalChar >= 'A' && originalChar <= 'Z') {
             // If uppercase, change to lowercase or digit
-            newChar = (originalChar == 'A') ? 'z' : 'a';
+            newChar = originalChar == 'A' ? 'z' : 'a';
         } else if (originalChar >= 'a' && originalChar <= 'z') {
-            // If lowercase, change to uppercase or digit  
-            newChar = (originalChar == 'a') ? 'Z' : 'A';
+            // If lowercase, change to uppercase or digit
+            newChar = originalChar == 'a' ? 'Z' : 'A';
         } else if (originalChar == '-') {
             newChar = '_';
         } else if (originalChar == '_') {
@@ -306,7 +306,7 @@ public class JwtTokenTamperingUtil {
 
             // Return the modified validation
             return encodedHeader + "." + parts[1] + "." + parts[2];
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return token; // In case of any error, return the original validation
         }
     }
@@ -333,7 +333,7 @@ public class JwtTokenTamperingUtil {
 
             // Return the modified validation
             return encodedHeader + "." + parts[1] + "." + parts[2];
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return token; // In case of any error, return the original validation
         }
     }
@@ -365,7 +365,7 @@ public class JwtTokenTamperingUtil {
 
             // Return the original validation with the different signature
             return parts[0] + "." + parts[1] + "." + reversedSignature;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return token; // In case of any error, return the original validation
         }
     }
@@ -392,7 +392,7 @@ public class JwtTokenTamperingUtil {
 
             // Return the modified validation
             return encodedHeader + "." + parts[1] + "." + parts[2];
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return token; // In case of any error, return the original validation
         }
     }
@@ -420,7 +420,7 @@ public class JwtTokenTamperingUtil {
 
             // Return the modified validation
             return encodedHeader + "." + parts[1] + "." + parts[2];
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return token; // In case of any error, return the original validation
         }
     }

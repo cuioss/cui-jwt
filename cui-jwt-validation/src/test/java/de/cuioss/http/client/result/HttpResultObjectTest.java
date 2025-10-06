@@ -20,6 +20,8 @@ import de.cuioss.uimodel.result.ResultDetail;
 import de.cuioss.uimodel.result.ResultState;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -67,7 +69,7 @@ class HttpResultObjectTest {
         HttpErrorCategory errorCode = HttpErrorCategory.NETWORK_ERROR;
         ResultDetail detail = new ResultDetail(
                 new DisplayName("Connection timeout"),
-                new Exception("timeout")
+                new IOException("timeout")
         );
 
         // When
@@ -96,7 +98,7 @@ class HttpResultObjectTest {
         HttpErrorCategory errorCode = HttpErrorCategory.SERVER_ERROR;
         ResultDetail detail = new ResultDetail(
                 new DisplayName("All retry attempts failed"),
-                new Exception("final error")
+                new IOException("final error")
         );
 
         // When

@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.*;
+
 /**
  * Exports metrics data to JSON files in a target directory.
  * Handles JSON serialization, file writing, and metrics aggregation.
@@ -75,7 +77,7 @@ public class MetricsJsonExporter {
             LOGGER.debug("MetricsJsonExporter initialized with target directory: %s (exists: %s)",
                     targetDirectory.toAbsolutePath(), Files.exists(targetDirectory));
         } catch (IOException e) {
-            LOGGER.warn("Failed to create target directory: %s", targetDirectory, e);
+            LOGGER.warn(e, FAILED_CREATE_TARGET_DIR.format(targetDirectory));
         }
     }
 
@@ -203,11 +205,11 @@ public class MetricsJsonExporter {
                     }
                 }
             } catch (IOException | JsonSyntaxException e) {
-                LOGGER.warn("Failed to read existing metrics file {}: {}", fileName, e.getMessage());
+                LOGGER.warn(FAILED_READ_METRICS_FILE.format(fileName, e.getMessage()));
                 try {
                     Files.deleteIfExists(filePath);
                 } catch (IOException deleteException) {
-                    LOGGER.warn("Failed to delete corrupted metrics file", deleteException);
+                    LOGGER.warn(deleteException, FAILED_DELETE_CORRUPTED_FILE::format);
                 }
             }
         }

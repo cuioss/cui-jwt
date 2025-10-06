@@ -52,7 +52,7 @@ public final class BenchmarkKeyCache {
     static {
         // Pre-generate key materials for common issuer counts
         long startTime = System.currentTimeMillis();
-        LOGGER.info(INFO.KEY_PREGENERATION_STARTING.format());
+        LOGGER.info(INFO.KEY_PREGENERATION_STARTING::format);
 
         for (int count = 1; count <= MAX_CACHED_ISSUERS; count++) {
             ISSUER_CACHE.put(count, InMemoryKeyMaterialHandler.createMultipleIssuers(count));

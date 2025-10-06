@@ -503,9 +503,10 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
         private void validateEndpointExclusivity(EndpointSource proposedSource) {
             if (endpointSource != null && endpointSource != proposedSource) {
                 throw new IllegalArgumentException(
-                        ("Cannot use %s endpoint configuration when %s was already configured. " +
-                                "Methods jwksUri(), jwksUrl(), wellKnownUrl(), and wellKnownUri() are mutually exclusive. " +
-                                "When using well-known discovery, the issuer identifier is automatically provided by the discovery document.")
+                        """
+                                Cannot use %s endpoint configuration when %s was already configured. \
+                                Methods jwksUri(), jwksUrl(), wellKnownUrl(), and wellKnownUri() are mutually exclusive. \
+                                When using well-known discovery, the issuer identifier is automatically provided by the discovery document."""
                                 .formatted(proposedSource.name().toLowerCase().replace("_", ""), endpointSource.name().toLowerCase().replace("_", "")));
             }
         }

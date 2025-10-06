@@ -147,7 +147,7 @@ public class TokenSignatureValidator {
             LOGGER.debug("All checks passed, verifying signature");
             verifySignature(decodedJwt, keyInfo.get().key(), algorithm);
         } catch (IllegalArgumentException e) {
-            LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()), e);
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
@@ -175,7 +175,7 @@ public class TokenSignatureValidator {
             dataToVerify = decodedJwt.getDataToVerify();
             signatureBytes = decodedJwt.getSignatureAsDecodedBytes();
         } catch (IllegalStateException e) {
-            LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()), e);
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,

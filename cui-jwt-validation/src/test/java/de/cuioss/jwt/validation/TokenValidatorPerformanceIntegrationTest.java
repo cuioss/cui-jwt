@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.metrics.MeasurementType;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("TokenValidator Performance Monitoring Integration Tests")
 class TokenValidatorPerformanceIntegrationTest {
 
-    private static final CuiLogger log = new CuiLogger(TokenValidatorPerformanceIntegrationTest.class);
+    private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorPerformanceIntegrationTest.class);
 
     @Test
     @DisplayName("Should record performance metrics during token validation attempts")
@@ -67,7 +68,7 @@ class TokenValidatorPerformanceIntegrationTest {
         try {
             tokenValidator.createAccessToken("");
             fail("Should have thrown TokenValidationException for empty token");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException | TokenValidationException e) {
             // Expected - token validation should fail for empty string
         }
 
@@ -82,7 +83,7 @@ class TokenValidatorPerformanceIntegrationTest {
         try {
             tokenValidator.createAccessToken("not.a.valid.jwt.token");
             fail("Should have thrown TokenValidationException for malformed token");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException | TokenValidationException e) {
             // Expected - token validation should fail for malformed token
         }
 
@@ -101,28 +102,28 @@ class TokenValidatorPerformanceIntegrationTest {
                     "Token parsing average should be positive when parsing was attempted");
         }
 
-        log.info("Performance metrics after validation attempts:");
-        log.info("- Complete validation: {} samples, avg {:.2f} μs",
+        LOGGER.info("Performance metrics after validation attempts:");
+        LOGGER.info("- Complete validation: %s samples, avg %s μs",
                 performanceMonitor.getSampleCount(MeasurementType.COMPLETE_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.COMPLETE_VALIDATION)
                         .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
-        log.info("- Token parsing: {} samples, avg {:.2f} μs",
+        LOGGER.info("- Token parsing: %s samples, avg %s μs",
                 performanceMonitor.getSampleCount(MeasurementType.TOKEN_PARSING),
                 performanceMonitor.getValidationMetrics(MeasurementType.TOKEN_PARSING)
                         .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
-        log.info("- Header validation: {} samples, avg {:.2f} μs",
+        LOGGER.info("- Header validation: %s samples, avg %s μs",
                 performanceMonitor.getSampleCount(MeasurementType.HEADER_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.HEADER_VALIDATION)
                         .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
-        log.info("- Signature validation: {} samples, avg {:.2f} μs",
+        LOGGER.info("- Signature validation: %s samples, avg %s μs",
                 performanceMonitor.getSampleCount(MeasurementType.SIGNATURE_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.SIGNATURE_VALIDATION)
                         .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
-        log.info("- Claims validation: {} samples, avg {:.2f} μs",
+        LOGGER.info("- Claims validation: %s samples, avg %s μs",
                 performanceMonitor.getSampleCount(MeasurementType.CLAIMS_VALIDATION),
                 performanceMonitor.getValidationMetrics(MeasurementType.CLAIMS_VALIDATION)
                         .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);
-        log.info("- JWKS operations: {} samples, avg {:.2f} μs",
+        LOGGER.info("- JWKS operations: %s samples, avg %s μs",
                 performanceMonitor.getSampleCount(MeasurementType.JWKS_OPERATIONS),
                 performanceMonitor.getValidationMetrics(MeasurementType.JWKS_OPERATIONS)
                         .map(StripedRingBufferStatistics::p50).orElse(Duration.ZERO).toNanos() / 1000.0);

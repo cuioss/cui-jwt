@@ -28,6 +28,7 @@ import java.util.concurrent.*;
 /**
  * Simple test to verify JFR events are working properly.
  */
+// cui-rewrite:disable CuiLogRecordPatternRecipe)
 @SuppressWarnings("java:S2245") // ThreadLocalRandom is appropriate for test scenarios
 public class JfrEventTest {
 
@@ -155,7 +156,7 @@ public class JfrEventTest {
         LOGGER.debug("  Phase Events: %s", phaseCount);
 
         if (operationCount == 0 && statisticsCount == 0) {
-            LOGGER.error("\nWARNING: No JWT events found in recording!");
+           LOGGER.error("\nWARNING: No JWT events found in recording!");
         }
     }
 }
