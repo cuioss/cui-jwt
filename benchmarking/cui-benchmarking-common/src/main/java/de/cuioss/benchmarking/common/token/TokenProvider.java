@@ -15,8 +15,6 @@
  */
 package de.cuioss.benchmarking.common.token;
 
-import lombok.NonNull;
-
 /**
  * Common interface for providing JWT tokens for benchmark testing.
  * <p>
@@ -46,7 +44,7 @@ public interface TokenProvider {
      * @return a valid JWT access token
      * @throws RuntimeException if a token cannot be provided
      */
-    @NonNull String getNextToken();
+    String getNextToken();
 
     /**
      * Returns the current size of the token pool.

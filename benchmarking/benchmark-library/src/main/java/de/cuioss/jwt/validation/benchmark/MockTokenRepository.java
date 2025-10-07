@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import io.jsonwebtoken.Jwts;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
@@ -264,7 +263,7 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Returns tokens from the pre-generated pool using round-robin rotation.
      * </p>
      */
-    @Override @NonNull public String getNextToken() {
+    @Override public String getNextToken() {
         if (tokenPool.length == 0) {
             throw new IllegalStateException("Token pool is empty");
         }

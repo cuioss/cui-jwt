@@ -35,4 +35,7 @@
  * @since 1.0.0
  * @author CUI-OpenSource-Software
  */
+@NullMarked
 package de.cuioss.benchmarking.common;
+
+import org.jspecify.annotations.NullMarked;

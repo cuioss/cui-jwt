@@ -18,7 +18,6 @@ package de.cuioss.benchmarking.common.metrics.test;
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
@@ -95,7 +94,7 @@ import static jakarta.servlet.http.HttpServletResponse.*;
         return this;
     }
 
-    @Override public Optional<MockResponse> handleGet(@NonNull RecordedRequest recordedRequest) {
+    @Override public Optional<MockResponse> handleGet(RecordedRequest recordedRequest) {
         callCounter++;
 
         String path = recordedRequest.getPath();
@@ -189,7 +188,7 @@ import static jakarta.servlet.http.HttpServletResponse.*;
         """;
     }
 
-    @Override public @NonNull Set<HttpMethodMapper> supportedMethods() {
+    @Override public Set<HttpMethodMapper> supportedMethods() {
         return Set.of(HttpMethodMapper.GET);
     }
 
