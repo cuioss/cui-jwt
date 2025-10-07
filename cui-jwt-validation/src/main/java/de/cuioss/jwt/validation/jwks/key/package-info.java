@@ -49,7 +49,7 @@
  * 
  * @since 1.0
  * @see de.cuioss.jwt.validation.jwks.JwksLoader
- * @see de.cuioss.jwt.validation.pipeline.TokenSignatureValidator
+ * @see de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7517">RFC 7517 - JSON Web Key (JWK)</a>
  */
 package de.cuioss.jwt.validation.jwks.key;
