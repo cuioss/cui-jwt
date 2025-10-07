@@ -87,7 +87,8 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
             // Return empty MapRepresentation for null/empty JSON
             return new MapRepresentation(Map.of());
         }
-        @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
+        @SuppressWarnings({"unchecked", "java:S2259"}) // dslJson.deserialize can return null, handled by check below
+        Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
         if (parsedData == null) {
             // Return empty MapRepresentation for null/empty JSON

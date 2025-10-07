@@ -59,9 +59,8 @@ public class TokenBuilder {
      * @param issuerConfig the issuer configuration
      */
     public TokenBuilder(IssuerConfig issuerConfig) {
-        Map<String, ClaimMapper> customMappers = issuerConfig.getClaimMappers() != null
-                ? Map.copyOf(issuerConfig.getClaimMappers())
-                : Map.of();
+        // IssuerConfig.claimMappers is never null (defaults to Map.of() in constructor)
+        Map<String, ClaimMapper> customMappers = Map.copyOf(issuerConfig.getClaimMappers());
 
         Map<String, ClaimMapper> tempMappers = new HashMap<>();
 

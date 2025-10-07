@@ -21,6 +21,7 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class IssuerConfigResolver {
      * Null value indicates the cache is still in initialization phase; non-null indicates optimization is complete.
      */
     @SuppressWarnings("java:S3077") // Map.copyOf() creates truly immutable map, safe for concurrent reads after volatile publication
-    private volatile Map<String, IssuerConfig> immutableCache;
+    private volatile @Nullable Map<String, IssuerConfig> immutableCache;
 
     /**
      * Security event counter for tracking validation events.
@@ -154,8 +155,10 @@ public class IssuerConfigResolver {
     public IssuerConfig resolveConfig(String issuer) {
         // Fast path - check cache for already loaded configs
         IssuerConfig cached = getCachedConfig(issuer);
-        if (cached != null && cached.getJwksLoader().getLoaderStatus() == LoaderStatus.OK) {
-            return cached;
+        if (cached != null) {
+            if (cached.getJwksLoader().getLoaderStatus() == LoaderStatus.OK) {
+                return cached;
+            }
         }
 
         // Check if loading is in progress
@@ -165,9 +168,9 @@ public class IssuerConfigResolver {
                 // Wait for loading to complete (with timeout)
                 LoaderStatus status = future.get(5, TimeUnit.SECONDS);
                 if (status == LoaderStatus.OK) {
-                    cached = getCachedConfig(issuer);
-                    if (cached != null) {
-                        return cached;
+                    IssuerConfig loadedConfig = getCachedConfig(issuer);
+                    if (loadedConfig != null) {
+                        return loadedConfig;
                     }
                 }
             } catch (TimeoutException e) {
@@ -191,7 +194,7 @@ public class IssuerConfigResolver {
      * @param issuer the issuer identifier to look up
      * @return the cached config if found, null otherwise
      */
-    private IssuerConfig getCachedConfig(String issuer) {
+    private @Nullable IssuerConfig getCachedConfig(String issuer) {
         // Try immutable cache first if available (lock-free)
         if (immutableCache != null) {
             IssuerConfig cached = immutableCache.get(issuer);

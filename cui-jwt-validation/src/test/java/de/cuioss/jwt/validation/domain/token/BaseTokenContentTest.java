@@ -42,8 +42,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests BaseTokenContent functionality")
 class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenContentTest.TestBaseTokenContent> {
 
-    private static final String SAMPLE_TOKEN = TestTokenGenerators.accessTokens().next().getRawToken();
-
     @ParameterizedTest
     @TestTokenSource(value = TokenType.ACCESS_TOKEN, count = 3)
     @DisplayName("Create BaseTokenContent with valid parameters")
