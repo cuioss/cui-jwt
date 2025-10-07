@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
@@ -50,7 +49,7 @@ public class ParserConfigResolver {
      *
      * @param config the configuration instance to use for property resolution
      */
-    public ParserConfigResolver(@NonNull Config config) {
+    public ParserConfigResolver(Config config) {
         this.config = config;
     }
 
@@ -70,7 +69,7 @@ public class ParserConfigResolver {
      * @return a ParserConfig instance configured from properties
      * @throws IllegalArgumentException if parser configuration is invalid (from builder)
      */
-    @NonNull
+   
     public ParserConfig resolveParserConfig() {
         LOGGER.debug("Resolving ParserConfig from properties");
 

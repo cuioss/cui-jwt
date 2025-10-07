@@ -18,7 +18,6 @@ package de.cuioss.jwt.quarkus.config;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -39,7 +38,7 @@ public class AccessLogFilterConfigProducer {
      * @param config the configuration instance to use for property resolution
      */
     @Inject
-    public AccessLogFilterConfigProducer(@NonNull Config config) {
+    public AccessLogFilterConfigProducer(Config config) {
         this.config = config;
     }
 

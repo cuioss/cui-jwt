@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import lombok.NonNull;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -52,7 +51,6 @@ public class TokenValidatorHealthCheck implements HealthCheck {
     }
 
     @Override
-    @NonNull
     public HealthCheckResponse call() {
         if (issuerConfigs == null || issuerConfigs.isEmpty()) {
             return createErrorResponse(ERROR_NO_ISSUER_CONFIGS);

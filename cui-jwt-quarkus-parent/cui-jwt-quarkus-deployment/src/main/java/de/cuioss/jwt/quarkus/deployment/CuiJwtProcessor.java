@@ -63,7 +63,6 @@ import io.quarkus.devui.spi.JsonRPCProvidersBuildItem;
 import io.quarkus.devui.spi.page.CardPageBuildItem;
 import io.quarkus.devui.spi.page.Page;
 import io.quarkus.resteasy.common.spi.ResteasyJaxrsProviderBuildItem;
-import lombok.NonNull;
 import org.jboss.jandex.DotName;
 
 /**
@@ -101,7 +100,6 @@ public class CuiJwtProcessor {
      * @return A {@link FeatureBuildItem} for the CUI JWT feature
      */
     @BuildStep
-    @NonNull
     public FeatureBuildItem feature() {
         LOGGER.info(CUI_JWT_FEATURE_REGISTERED);
         return new FeatureBuildItem(FEATURE);
@@ -115,7 +113,6 @@ public class CuiJwtProcessor {
      * @return A {@link ReflectiveClassBuildItem} for the JWT validation classes with constructors
      */
     @BuildStep
-    @NonNull
     public ReflectiveClassBuildItem registerJwtValidationConstructorClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Classes that need methods + constructors for instantiation
@@ -136,7 +133,6 @@ public class CuiJwtProcessor {
      * @return A {@link ReflectiveClassBuildItem} for the JWT configuration classes
      */
     @BuildStep
-    @NonNull
     public ReflectiveClassBuildItem registerJwtConfigurationClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Configuration classes created via builder pattern
@@ -156,7 +152,6 @@ public class CuiJwtProcessor {
      * @return A {@link ReflectiveClassBuildItem} for JWT validation pipeline classes
      */
     @BuildStep
-    @NonNull
     public ReflectiveClassBuildItem registerJwtPipelineClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Critical validation pipeline classes
@@ -187,7 +182,6 @@ public class CuiJwtProcessor {
      * @return A {@link ReflectiveClassBuildItem} for JWT token content classes
      */
     @BuildStep
-    @NonNull
     public ReflectiveClassBuildItem registerJwtTokenContentClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Token content classes - need full reflection for getter/setter access
@@ -214,7 +208,6 @@ public class CuiJwtProcessor {
      * @return A {@link ReflectiveClassBuildItem} for JWT claim mapper classes
      */
     @BuildStep
-    @NonNull
     public ReflectiveClassBuildItem registerJwtClaimMapperClassesForReflection() {
         return ReflectiveClassBuildItem.builder(
                 // Claim mappers - only need constructors for instantiation
@@ -255,7 +248,6 @@ public class CuiJwtProcessor {
      * @return A {@link RuntimeInitializedClassBuildItem} for classes that need runtime initialization
      */
     @BuildStep
-    @NonNull
     public RuntimeInitializedClassBuildItem runtimeInitializedClasses() {
         return new RuntimeInitializedClassBuildItem(HttpJwksLoader.class.getName());
     }
@@ -278,7 +270,6 @@ public class CuiJwtProcessor {
      * @return A {@link AdditionalBeanBuildItem} for CDI beans that need explicit registration
      */
     @BuildStep
-    @NonNull
     public AdditionalBeanBuildItem additionalBeans() {
         return AdditionalBeanBuildItem.builder()
                 // Explicitly register the CDI producer classes to ensure they're discovered
@@ -304,7 +295,6 @@ public class CuiJwtProcessor {
      * @return A {@link ResteasyJaxrsProviderBuildItem} for the CustomAccessLogFilter
      */
     @BuildStep
-    @NonNull
     public ResteasyJaxrsProviderBuildItem registerCustomAccessLogFilter() {
         return new ResteasyJaxrsProviderBuildItem(CustomAccessLogFilter.class.getName());
     }
@@ -332,7 +322,6 @@ public class CuiJwtProcessor {
      * @return A {@link CardPageBuildItem} for the JWT DevUI card
      */
     @BuildStep(onlyIf = IsDevelopment.class)
-    @NonNull
     public CardPageBuildItem createJwtDevUICard() {
         CardPageBuildItem cardPageBuildItem = new CardPageBuildItem();
 
@@ -373,7 +362,6 @@ public class CuiJwtProcessor {
      * @return A {@link JsonRPCProvidersBuildItem} for JWT DevUI JSON-RPC methods
      */
     @BuildStep(onlyIf = IsDevelopment.class)
-    @NonNull
     public JsonRPCProvidersBuildItem createJwtDevUIJsonRPCService() {
         return new JsonRPCProvidersBuildItem("CuiJwtDevUI", CuiJwtDevUIJsonRPCService.class);
     }

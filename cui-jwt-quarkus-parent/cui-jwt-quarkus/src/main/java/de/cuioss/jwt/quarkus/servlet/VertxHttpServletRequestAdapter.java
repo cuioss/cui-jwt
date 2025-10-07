@@ -21,7 +21,6 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.BufferedReader;
@@ -78,7 +77,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class VertxHttpServletRequestAdapter implements HttpServletRequest {
 
-    @NonNull
+
     private final HttpServerRequest vertxRequest;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
 

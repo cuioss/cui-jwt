@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.http.client.retry.ExponentialBackoffRetryStrategy;
 import de.cuioss.http.client.retry.RetryStrategy;
-import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
 import java.time.Duration;
@@ -48,7 +47,7 @@ public class RetryStrategyConfigResolver {
      *
      * @param config the configuration instance to use for property resolution
      */
-    public RetryStrategyConfigResolver(@NonNull Config config) {
+    public RetryStrategyConfigResolver(Config config) {
         this.config = config;
     }
 
@@ -62,7 +61,7 @@ public class RetryStrategyConfigResolver {
      *
      * @return configured RetryStrategy instance
      */
-    @NonNull
+   
     public RetryStrategy resolveRetryStrategy() {
         // Check if retry is disabled globally
         boolean retryEnabled = config.getOptionalValue(JwtPropertyKeys.RETRY.ENABLED, Boolean.class)

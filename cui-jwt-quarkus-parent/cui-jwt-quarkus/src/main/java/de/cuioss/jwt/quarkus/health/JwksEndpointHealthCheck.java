@@ -24,7 +24,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import lombok.NonNull;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -71,7 +70,6 @@ public class JwksEndpointHealthCheck implements HealthCheck {
     }
 
     @Override
-    @NonNull
     public HealthCheckResponse call() {
         // Use cache to prevent excessive network calls
         CachedResponse cached = healthCheckCache.get(HEALTHCHECK_NAME);

@@ -22,7 +22,6 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.ws.rs.core.Response;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
 
 import java.io.Serial;
@@ -75,7 +74,7 @@ public class BearerTokenResult implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @NonNull
+
     BearerTokenStatus status;
 
     /**
@@ -113,7 +112,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups     the groups that were required for validation
      * @return a BearerTokenResult indicating successful validation
      */
-    @NonNull
+   
     public static BearerTokenResult success(AccessTokenContent accessTokenContent,
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
         // For success case, calculate missing values (should all be empty)
@@ -140,7 +139,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating parsing error
      */
-    @NonNull
+   
     public static BearerTokenResult parsingError(TokenValidationException exception,
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
         var builder = builder();
@@ -165,7 +164,7 @@ public class BearerTokenResult implements Serializable {
      * @param missingGroups the groups that are missing from the token
      * @return a BearerTokenResult indicating constraint violation
      */
-    @NonNull
+   
     public static BearerTokenResult constraintViolation(Set<String> missingScopes,
             Set<String> missingRoles, Set<String> missingGroups) {
         return builder()
@@ -185,7 +184,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating no token was given
      */
-    @NonNull
+   
     public static BearerTokenResult noTokenGiven(Set<String> requiredScopes,
             Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()
@@ -205,7 +204,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating request access failure
      */
-    @NonNull
+   
     public static BearerTokenResult couldNotAccessRequest(Set<String> requiredScopes,
             Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()
@@ -228,7 +227,7 @@ public class BearerTokenResult implements Serializable {
      * @param requiredGroups the groups that were required for validation
      * @return a BearerTokenResult indicating an invalid request
      */
-    @NonNull
+   
     public static BearerTokenResult invalidRequest(String errorMessage, Set<String> requiredScopes,
             Set<String> requiredRoles, Set<String> requiredGroups) {
         return builder()

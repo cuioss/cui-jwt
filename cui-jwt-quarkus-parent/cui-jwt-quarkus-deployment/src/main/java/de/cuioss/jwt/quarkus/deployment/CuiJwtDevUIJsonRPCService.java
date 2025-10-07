@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.deployment;
 
-import lombok.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +38,7 @@ public class CuiJwtDevUIJsonRPCService {
      *
      * @return A map containing build-time validation information
      */
-    @NonNull
+   
     public Map<String, Object> getValidationStatus() {
         Map<String, Object> status = new HashMap<>();
 
@@ -56,7 +55,7 @@ public class CuiJwtDevUIJsonRPCService {
      *
      * @return A map containing build-time JWKS information
      */
-    @NonNull
+   
     public Map<String, Object> getJwksStatus() {
         Map<String, Object> jwksInfo = new HashMap<>();
 
@@ -71,7 +70,7 @@ public class CuiJwtDevUIJsonRPCService {
      *
      * @return A map containing build-time configuration information
      */
-    @NonNull
+   
     public Map<String, Object> getConfiguration() {
         Map<String, Object> config = new HashMap<>();
 
@@ -89,7 +88,7 @@ public class CuiJwtDevUIJsonRPCService {
      * @param token The JWT token to validate
      * @return A map containing validation result
      */
-    @NonNull
+   
     public Map<String, Object> validateToken(String token) {
         Map<String, Object> result = new HashMap<>();
 
@@ -110,7 +109,7 @@ public class CuiJwtDevUIJsonRPCService {
      *
      * @return A map containing build-time health information
      */
-    @NonNull
+   
     public Map<String, Object> getHealthInfo() {
         Map<String, Object> health = new HashMap<>();
 
