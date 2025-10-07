@@ -32,7 +32,6 @@ import de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator;
 import de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.util.Map;
 import java.util.Optional;
@@ -104,15 +103,15 @@ public class AccessTokenValidationPipeline {
      * @param performanceMonitor the monitor for recording performance metrics
      */
     @SuppressWarnings("java:S107") // Many dependencies are required
-    public AccessTokenValidationPipeline(@NonNull NonValidatingJwtParser jwtParser,
-            @NonNull IssuerConfigResolver issuerConfigResolver,
-            @NonNull Map<String, TokenSignatureValidator> signatureValidators,
-            @NonNull Map<String, TokenBuilder> tokenBuilders,
-            @NonNull Map<String, TokenClaimValidator> claimValidators,
-            @NonNull Map<String, TokenHeaderValidator> headerValidators,
-            @NonNull AccessTokenCacheConfig cacheConfig,
-            @NonNull SecurityEventCounter securityEventCounter,
-            @NonNull TokenValidatorMonitor performanceMonitor) {
+    public AccessTokenValidationPipeline(NonValidatingJwtParser jwtParser,
+            IssuerConfigResolver issuerConfigResolver,
+            Map<String, TokenSignatureValidator> signatureValidators,
+            Map<String, TokenBuilder> tokenBuilders,
+            Map<String, TokenClaimValidator> claimValidators,
+            Map<String, TokenHeaderValidator> headerValidators,
+            AccessTokenCacheConfig cacheConfig,
+            SecurityEventCounter securityEventCounter,
+            TokenValidatorMonitor performanceMonitor) {
         this.jwtParser = jwtParser;
         this.issuerConfigResolver = issuerConfigResolver;
         this.signatureValidators = signatureValidators;
@@ -137,8 +136,8 @@ public class AccessTokenValidationPipeline {
      * @return the validated access token content
      * @throws TokenValidationException if any validation step fails
      */
-    @NonNull
-    public AccessTokenContent validate(@NonNull String tokenString) {
+   
+    public AccessTokenContent validate(String tokenString) {
         LOGGER.debug("Validating access token");
 
         // TokenStringValidator has already checked: null, blank, size

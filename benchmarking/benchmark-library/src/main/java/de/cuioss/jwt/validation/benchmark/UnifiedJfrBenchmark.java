@@ -128,7 +128,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("measureAverageTimeWithJfr", VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token).orElse(null));
 
             AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
@@ -144,7 +144,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("measureThroughputWithJfr", VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token).orElse(null));
 
             AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
@@ -160,7 +160,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("measureConcurrentValidationWithJfr", VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token).orElse(null));
 
             AccessTokenContent result = coreValidationDelegate.validateWithRotation();
             recorder.withSuccess(true);
@@ -177,7 +177,7 @@ import java.util.concurrent.TimeUnit;
         try (var recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", VALIDATION_OPERATION)) {
             String token = coreValidationDelegate.getCurrentToken(TOKEN_TYPE_FULL_SPECTRUM);
             recorder.withPayloadSize(token.length())
-                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token).orElse(null));
 
             AccessTokenContent result = coreValidationDelegate.validateWithFullSpectrum();
             recorder.withSuccess(true);
@@ -251,7 +251,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation(operationName, MIXED_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata(ISSUER, isValid ? tokenRepository.getTokenIssuer(token) : BENCHMARK_ISSUER);
+                    .withMetadata(ISSUER, isValid ? tokenRepository.getTokenIssuer(token).orElse(null) : BENCHMARK_ISSUER);
 
             if (!isValid) {
                 recorder.withError(errorType);

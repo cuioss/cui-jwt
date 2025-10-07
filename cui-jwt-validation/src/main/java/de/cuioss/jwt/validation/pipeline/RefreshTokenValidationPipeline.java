@@ -20,7 +20,6 @@ import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.util.Map;
 
@@ -65,7 +64,7 @@ public class RefreshTokenValidationPipeline {
      *
      * @param jwtParser the JWT parser for attempting to parse tokens
      */
-    public RefreshTokenValidationPipeline(@NonNull NonValidatingJwtParser jwtParser) {
+    public RefreshTokenValidationPipeline(NonValidatingJwtParser jwtParser) {
         this.jwtParser = jwtParser;
     }
 
@@ -80,8 +79,8 @@ public class RefreshTokenValidationPipeline {
      * @param tokenString the token string to validate (guaranteed non-null, non-blank, within size limits)
      * @return the validated refresh token content
      */
-    @NonNull
-    public RefreshTokenContent validate(@NonNull String tokenString) {
+   
+    public RefreshTokenContent validate(String tokenString) {
         LOGGER.debug("Validating refresh token");
 
         // TokenStringValidator has already checked: null, blank, size

@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -40,13 +39,13 @@ public final class ActiveMetricsTicker implements MetricsTicker {
     /**
      * The monitor to record measurements to.
      */
-    @NonNull
+   
     private final TokenValidatorMonitor monitor;
 
     /**
      * The type of measurement being recorded.
      */
-    @NonNull
+   
     private final MeasurementType measurementType;
 
     /**

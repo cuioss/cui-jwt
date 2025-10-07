@@ -61,13 +61,6 @@ class CollectionClaimHandlerTest {
     }
 
     @Test
-    @DisplayName("Throw exception when constructor is called with null")
-    void shouldThrowExceptionForNullClaimValue() {
-        assertThrows(NullPointerException.class, () -> new CollectionClaimHandler(null),
-                "Should throw NullPointerException when null is passed to constructor");
-    }
-
-    @Test
     @DisplayName("Check if claim provides all expected values")
     void shouldCheckIfClaimProvidesAllExpectedValues() {
         ClaimValue claimValue = ClaimValue.forList(TEST_STRING, TEST_VALUES);

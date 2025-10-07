@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
-import lombok.NonNull;
 
 import java.nio.charset.StandardCharsets;
 
@@ -59,8 +58,8 @@ public class TokenStringValidator {
      * @param parserConfig the parser configuration containing max token size
      * @param securityEventCounter the security event counter for tracking violations
      */
-    public TokenStringValidator(@NonNull ParserConfig parserConfig,
-            @NonNull SecurityEventCounter securityEventCounter) {
+    public TokenStringValidator(ParserConfig parserConfig,
+            SecurityEventCounter securityEventCounter) {
         this.maxTokenSize = parserConfig.getMaxTokenSize();
         this.securityEventCounter = securityEventCounter;
     }

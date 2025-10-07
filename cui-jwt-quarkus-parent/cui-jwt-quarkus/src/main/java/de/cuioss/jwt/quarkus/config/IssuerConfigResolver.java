@@ -23,8 +23,8 @@ import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.*;
@@ -66,7 +66,7 @@ public class IssuerConfigResolver {
      *
      * @param config the configuration instance to use for property resolution
      */
-    public IssuerConfigResolver(@NonNull Config config) {
+    public IssuerConfigResolver(Config config) {
         this(config, RetryStrategies.exponentialBackoff());
     }
 
@@ -76,7 +76,7 @@ public class IssuerConfigResolver {
      * @param config the configuration instance to use for property resolution
      * @param retryStrategy the retry strategy to use for HTTP operations
      */
-    public IssuerConfigResolver(@NonNull Config config, @NonNull RetryStrategy retryStrategy) {
+    public IssuerConfigResolver(Config config, RetryStrategy retryStrategy) {
         this.config = config;
         this.retryStrategy = retryStrategy;
     }
@@ -96,7 +96,7 @@ public class IssuerConfigResolver {
      * @return list of valid, enabled IssuerConfig instances
      * @throws IllegalStateException if no enabled issuers are found or configuration is invalid
      */
-    @NonNull
+   
     public List<IssuerConfig> resolveIssuerConfigs() {
         LOGGER.info(INFO.RESOLVING_ISSUER_CONFIGURATIONS);
 
@@ -353,7 +353,7 @@ public class IssuerConfigResolver {
      * Uses builder defaults for optional values, letting the builder handle validation.
      * </p>
      */
-    private HttpJwksLoaderConfig createHttpJwksLoaderConfig(String issuerName, String jwksUrl, String wellKnownUrl) {
+    private HttpJwksLoaderConfig createHttpJwksLoaderConfig(String issuerName, @Nullable String jwksUrl, @Nullable String wellKnownUrl) {
         HttpJwksLoaderConfig.HttpJwksLoaderConfigBuilder builder = HttpJwksLoaderConfig.builder();
 
         // Set the issuer identifier (required for direct JWKS configuration)

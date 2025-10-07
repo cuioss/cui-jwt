@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 import de.cuioss.jwt.validation.json.MapRepresentation;
-import lombok.NonNull;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -34,7 +33,7 @@ import java.util.Optional;
  */
 public class OffsetDateTimeMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+    public ClaimValue map(MapRepresentation mapRepresentation, String claimName) {
         Optional<Object> claimValue = mapRepresentation.getValue(claimName);
 
         // If claim doesn't exist, return empty

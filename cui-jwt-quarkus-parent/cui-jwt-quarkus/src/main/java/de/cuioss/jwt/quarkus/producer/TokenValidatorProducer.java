@@ -30,7 +30,6 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import lombok.NonNull;
 import org.eclipse.microprofile.config.Config;
 
 import java.util.List;
@@ -69,25 +68,21 @@ public class TokenValidatorProducer {
 
     @Produces
     @ApplicationScoped
-    @NonNull
     TokenValidator tokenValidator;
 
     @Produces
     @ApplicationScoped
-    @NonNull
     List<IssuerConfig> issuerConfigs;
 
     @Produces
     @ApplicationScoped
-    @NonNull
     SecurityEventCounter securityEventCounter;
 
     @Produces
     @ApplicationScoped
-    @NonNull
     RetryStrategy retryStrategy;
 
-    @SuppressWarnings("java:S2637") // False positive: @NonNull fields are initialized in @PostConstruct
+    @SuppressWarnings("java:S2637") // False positive: fields are initialized in @PostConstruct
     public TokenValidatorProducer(Config config) {
         this.config = config;
     }

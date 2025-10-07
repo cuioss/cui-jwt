@@ -29,7 +29,6 @@ import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 
 import javax.net.ssl.SSLContext;
@@ -170,7 +169,6 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
      * @throws IllegalStateException if no HttpHandler is available in either mode
      */
     @Override
-    @NonNull
     public HttpHandler getHttpHandler() {
         if (httpHandler != null) {
             // Direct HTTP mode - return the configured HttpHandler
@@ -192,8 +190,8 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
      * @param url the URL to create a handler for
      * @return a new HttpHandler instance with configured settings
      */
-    @NonNull
-    public HttpHandler getHttpHandler(@NonNull String url) {
+   
+    public HttpHandler getHttpHandler(String url) {
         // Reuse existing HttpHandler configuration as base
         HttpHandler baseHandler = getHttpHandler();
 
@@ -220,7 +218,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
      *
      * @return the JwksType for this configuration
      */
-    @NonNull
+   
     public JwksType getJwksType() {
         return wellKnownConfig != null ? JwksType.WELL_KNOWN : JwksType.HTTP;
     }
@@ -278,7 +276,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @param issuerIdentifier the issuer identifier
          * @return this builder instance
          */
-        public HttpJwksLoaderConfigBuilder issuerIdentifier(@NonNull String issuerIdentifier) {
+        public HttpJwksLoaderConfigBuilder issuerIdentifier(String issuerIdentifier) {
             this.issuerIdentifier = issuerIdentifier;
             return this;
         }
@@ -290,7 +288,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @param keyRotationGracePeriod the grace period duration
          * @return this builder instance
          */
-        public HttpJwksLoaderConfigBuilder keyRotationGracePeriod(@NonNull Duration keyRotationGracePeriod) {
+        public HttpJwksLoaderConfigBuilder keyRotationGracePeriod(Duration keyRotationGracePeriod) {
             Preconditions.checkArgument(!keyRotationGracePeriod.isNegative(), "keyRotationGracePeriod must not be negative");
             this.keyRotationGracePeriod = keyRotationGracePeriod;
             return this;
@@ -320,7 +318,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @return this builder instance
          * @throws IllegalArgumentException if another endpoint configuration method was already used
          */
-        public HttpJwksLoaderConfigBuilder jwksUri(@NonNull URI jwksUri) {
+        public HttpJwksLoaderConfigBuilder jwksUri(URI jwksUri) {
             validateEndpointExclusivity(EndpointSource.JWKS_URI);
             this.endpointSource = EndpointSource.JWKS_URI;
             httpHandlerBuilder.uri(jwksUri);
@@ -338,7 +336,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @return this builder instance
          * @throws IllegalArgumentException if another endpoint configuration method was already used
          */
-        public HttpJwksLoaderConfigBuilder jwksUrl(@NonNull String jwksUrl) {
+        public HttpJwksLoaderConfigBuilder jwksUrl(String jwksUrl) {
             validateEndpointExclusivity(EndpointSource.JWKS_URL);
             this.endpointSource = EndpointSource.JWKS_URL;
             httpHandlerBuilder.url(jwksUrl);
@@ -361,7 +359,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @throws IllegalArgumentException if another endpoint configuration method was already used
          * @throws IllegalArgumentException if {@code wellKnownUrl} is null or invalid
          */
-        public HttpJwksLoaderConfigBuilder wellKnownUrl(@NonNull String wellKnownUrl) {
+        public HttpJwksLoaderConfigBuilder wellKnownUrl(String wellKnownUrl) {
             validateEndpointExclusivity(EndpointSource.WELL_KNOWN_URL);
             this.endpointSource = EndpointSource.WELL_KNOWN_URL;
             this.wellKnownConfig = WellKnownConfig.builder()
@@ -388,7 +386,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @throws IllegalArgumentException if another endpoint configuration method was already used
          * @throws IllegalArgumentException if {@code wellKnownUri} is null
          */
-        public HttpJwksLoaderConfigBuilder wellKnownUri(@NonNull URI wellKnownUri) {
+        public HttpJwksLoaderConfigBuilder wellKnownUri(URI wellKnownUri) {
             validateEndpointExclusivity(EndpointSource.WELL_KNOWN_URI);
             this.endpointSource = EndpointSource.WELL_KNOWN_URI;
             this.wellKnownConfig = WellKnownConfig.builder()
@@ -474,7 +472,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
          * @return this builder instance
          * @throws IllegalArgumentException if retryStrategy is null
          */
-        public HttpJwksLoaderConfigBuilder retryStrategy(@NonNull RetryStrategy retryStrategy) {
+        public HttpJwksLoaderConfigBuilder retryStrategy(RetryStrategy retryStrategy) {
             this.retryStrategy = retryStrategy;
             return this;
         }

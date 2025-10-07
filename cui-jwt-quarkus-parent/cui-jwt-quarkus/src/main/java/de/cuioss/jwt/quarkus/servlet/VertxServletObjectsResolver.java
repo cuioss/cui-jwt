@@ -23,7 +23,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.NonNull;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR;
 
@@ -77,7 +76,7 @@ public class VertxServletObjectsResolver implements HttpServletRequestResolver {
      *                               (CDI wraps underlying exceptions when @RequestScoped producer fails)
      * @throws IllegalStateException if CDI context is available but HttpServerRequest is null
      */
-    @NonNull
+   
     @Override
     public HttpServletRequest resolveHttpServletRequest() throws IllegalStateException {
         LOGGER.debug("Attempting to resolve HttpServletRequest from Vertx context");

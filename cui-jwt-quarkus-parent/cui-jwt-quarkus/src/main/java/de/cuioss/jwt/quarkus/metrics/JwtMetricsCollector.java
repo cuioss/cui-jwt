@@ -29,7 +29,6 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import lombok.NonNull;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,8 +89,8 @@ public class JwtMetricsCollector {
      * @param tokenValidator the token validator containing the security event counter
      */
     @Inject
-    public JwtMetricsCollector(@NonNull MeterRegistry registry,
-            @NonNull TokenValidator tokenValidator) {
+    public JwtMetricsCollector(MeterRegistry registry,
+            TokenValidator tokenValidator) {
         this.registry = registry;
         this.tokenValidator = tokenValidator;
     }

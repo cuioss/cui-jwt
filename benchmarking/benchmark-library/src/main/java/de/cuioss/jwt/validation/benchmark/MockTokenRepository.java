@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
 import io.jsonwebtoken.Jwts;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
@@ -193,11 +192,11 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Gets the issuer identifier for a specific token
      *
      * @param token The token to get the issuer for
-     * @return The issuer identifier, or null if not found
+     * @return The issuer identifier, or empty if not found
      */
-    public String getTokenIssuer(String token) {
+    public Optional<String> getTokenIssuer(String token) {
         TokenMetadata metadata = tokenMetadata.get(token);
-        return metadata != null ? metadata.getIssuerIdentifier() : null;
+        return metadata != null ? Optional.of(metadata.getIssuerIdentifier()) : Optional.empty();
     }
 
     /**
@@ -264,7 +263,7 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Returns tokens from the pre-generated pool using round-robin rotation.
      * </p>
      */
-    @Override @NonNull public String getNextToken() {
+    @Override public String getNextToken() {
         if (tokenPool.length == 0) {
             throw new IllegalStateException("Token pool is empty");
         }

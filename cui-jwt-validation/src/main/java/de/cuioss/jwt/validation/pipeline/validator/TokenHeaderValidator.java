@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.pipeline.DecodedJwt;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
-import lombok.NonNull;
 
 /**
  * Validator for JWT Token headers.
@@ -52,7 +51,7 @@ public class TokenHeaderValidator {
     /**
      * The counter for security events.
      */
-    @NonNull
+   
     private final SecurityEventCounter securityEventCounter;
 
     /**
@@ -61,7 +60,7 @@ public class TokenHeaderValidator {
      * @param issuerConfig         the issuer configuration
      * @param securityEventCounter the counter for security events
      */
-    public TokenHeaderValidator(IssuerConfig issuerConfig, @NonNull SecurityEventCounter securityEventCounter) {
+    public TokenHeaderValidator(IssuerConfig issuerConfig, SecurityEventCounter securityEventCounter) {
         this.issuerConfig = issuerConfig;
         this.securityEventCounter = securityEventCounter;
     }
@@ -84,7 +83,7 @@ public class TokenHeaderValidator {
      * @param decodedJwt the decoded JWT Token to validate
      * @throws TokenValidationException if the token header is invalid
      */
-    public void validate(@NonNull DecodedJwt decodedJwt) {
+    public void validate(DecodedJwt decodedJwt) {
         LOGGER.trace("Validating token header");
 
         validateAlgorithm(decodedJwt);

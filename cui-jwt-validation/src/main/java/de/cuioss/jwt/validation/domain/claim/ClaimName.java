@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.domain.claim;
 import de.cuioss.jwt.validation.domain.claim.mapper.*;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.Map;
 import java.util.Optional;
@@ -210,7 +209,7 @@ public enum ClaimName {
      *
      * @return the mapped ClaimValue
      */
-    public @NonNull ClaimValue map(@NonNull MapRepresentation mapRepresentation) {
+    public ClaimValue map(MapRepresentation mapRepresentation) {
         return claimMapper.map(mapRepresentation, getName());
     }
 
@@ -219,7 +218,7 @@ public enum ClaimName {
      *
      * @return the ClaimMapper instance
      */
-    public @NonNull ClaimMapper getClaimMapper() {
+    public ClaimMapper getClaimMapper() {
         return claimMapper;
     }
 

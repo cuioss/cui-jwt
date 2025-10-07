@@ -20,7 +20,6 @@ import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.benchmarking.common.token.TokenProvider;
 import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.io.IOException;
 import java.net.URI;
@@ -72,7 +71,7 @@ public class KeycloakTokenRepository implements TokenProvider {
      *
      * @param config the configuration for connecting to Keycloak
      */
-    public KeycloakTokenRepository(@NonNull TokenRepositoryConfig config) {
+    public KeycloakTokenRepository(TokenRepositoryConfig config) {
         this.config = config;
         this.tokenPool = new ArrayList<>(config.getTokenPoolSize());
         this.tokenIndex = new AtomicInteger(0);
@@ -91,7 +90,7 @@ public class KeycloakTokenRepository implements TokenProvider {
      * If the pool is empty, fetches a single token directly from Keycloak.
      * </p>
      */
-    @Override @NonNull public String getNextToken() {
+    @Override public String getNextToken() {
         if (tokenPool.isEmpty()) {
             LOGGER.warn(TOKEN_POOL_EMPTY);
             return fetchSingleToken();
@@ -165,7 +164,7 @@ public class KeycloakTokenRepository implements TokenProvider {
 
     }
 
-    @NonNull private String extractAccessToken(@NonNull HttpResponse<String> response) {
+    private String extractAccessToken(HttpResponse<String> response) {
         String responseBody = response.body();
         if (responseBody == null || responseBody.isEmpty()) {
             throw new TokenFetchException("Empty response body from token endpoint");
@@ -184,7 +183,7 @@ public class KeycloakTokenRepository implements TokenProvider {
         return token;
     }
 
-    private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
+    private void handleTokenFetchError(HttpResponse<String> response) {
         String errorBody = response.body() != null ? response.body() : "<no body>";
 
         LOGGER.error(FAILED_FETCH_TOKEN, response.statusCode(), errorBody);

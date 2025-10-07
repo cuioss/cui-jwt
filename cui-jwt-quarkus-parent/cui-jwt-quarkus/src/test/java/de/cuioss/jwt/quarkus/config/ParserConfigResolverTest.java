@@ -91,13 +91,6 @@ class ParserConfigResolverTest {
     }
 
     @Test
-    @DisplayName("Should require non-null config parameter")
-    void shouldRequireNonNullConfig() {
-        assertThrows(NullPointerException.class, () -> new ParserConfigResolver(null),
-                "Should reject null config");
-    }
-
-    @Test
     @DisplayName("Should resolve default parser config when no properties set")
     void shouldResolveDefaultParserConfig() {
         TestConfig config = new TestConfig(Map.of());

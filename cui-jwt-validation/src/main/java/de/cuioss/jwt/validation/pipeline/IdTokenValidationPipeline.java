@@ -26,7 +26,6 @@ import de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator;
 import de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.util.Map;
 
@@ -85,13 +84,13 @@ public class IdTokenValidationPipeline {
      * @param headerValidators pre-created header validators keyed by issuer
      * @param securityEventCounter the security event counter for tracking operations
      */
-    public IdTokenValidationPipeline(@NonNull NonValidatingJwtParser jwtParser,
-            @NonNull IssuerConfigResolver issuerConfigResolver,
-            @NonNull Map<String, TokenSignatureValidator> signatureValidators,
-            @NonNull Map<String, TokenBuilder> tokenBuilders,
-            @NonNull Map<String, TokenClaimValidator> claimValidators,
-            @NonNull Map<String, TokenHeaderValidator> headerValidators,
-            @NonNull SecurityEventCounter securityEventCounter) {
+    public IdTokenValidationPipeline(NonValidatingJwtParser jwtParser,
+            IssuerConfigResolver issuerConfigResolver,
+            Map<String, TokenSignatureValidator> signatureValidators,
+            Map<String, TokenBuilder> tokenBuilders,
+            Map<String, TokenClaimValidator> claimValidators,
+            Map<String, TokenHeaderValidator> headerValidators,
+            SecurityEventCounter securityEventCounter) {
         this.jwtParser = jwtParser;
         this.issuerConfigResolver = issuerConfigResolver;
         this.signatureValidators = signatureValidators;
@@ -112,8 +111,8 @@ public class IdTokenValidationPipeline {
      * @return the validated ID token content
      * @throws TokenValidationException if any validation step fails
      */
-    @NonNull
-    public IdTokenContent validate(@NonNull String tokenString) {
+   
+    public IdTokenContent validate(String tokenString) {
         LOGGER.debug("Validating ID token");
 
         // TokenStringValidator has already checked: null, blank, size

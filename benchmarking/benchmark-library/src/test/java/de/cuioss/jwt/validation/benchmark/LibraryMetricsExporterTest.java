@@ -107,10 +107,6 @@ class LibraryMetricsExporterTest {
         assertNotNull(parseMetrics.get("p99_us"));
     }
 
-    @Test void shouldHandleNullMonitor() {
-        assertDoesNotThrow(() -> LibraryMetricsExporter.exportMetrics(null));
-    }
-
     @Test void shouldFormatNumbersCorrectly() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
@@ -139,6 +135,4 @@ class LibraryMetricsExporterTest {
         // Verify that values >= 10 are integers without decimal point
         assertTrue(jsonContent.contains("\"p50_us\": 13"), "Values >= 10 should be integers without decimal");
     }
-
-
 }

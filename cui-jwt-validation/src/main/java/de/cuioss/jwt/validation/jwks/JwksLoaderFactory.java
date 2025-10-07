@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
 import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -65,8 +64,8 @@ public class JwksLoaderFactory {
      * @param config the configuration for the HTTP JWKS loader
      * @return an instance of JwksLoader
      */
-    @NonNull
-    public static JwksLoader createHttpLoader(@NonNull HttpJwksLoaderConfig config) {
+   
+    public static JwksLoader createHttpLoader(HttpJwksLoaderConfig config) {
         return new HttpJwksLoader(config);
     }
 
@@ -78,8 +77,8 @@ public class JwksLoaderFactory {
      * @param filePath the path to the JWKS file
      * @return an instance of JwksLoader
      */
-    @NonNull
-    public static JwksLoader createFileLoader(@NonNull String filePath) {
+   
+    public static JwksLoader createFileLoader(String filePath) {
         LOGGER.debug("Resolving key loader for JWKS file: %s", filePath);
         return JWKSKeyLoader.builder()
                 .jwksFilePath(filePath) // Store the file path for deferred loading
@@ -94,8 +93,8 @@ public class JwksLoaderFactory {
      * @param jwksContent the JWKS content as a string
      * @return an instance of JwksLoader
      */
-    @NonNull
-    public static JwksLoader createInMemoryLoader(@NonNull String jwksContent) {
+   
+    public static JwksLoader createInMemoryLoader(String jwksContent) {
         LOGGER.debug("Resolving key loader for in-memory JWKS data");
         return JWKSKeyLoader.builder()
                 .jwksContent(jwksContent) // Store the content for deferred loading

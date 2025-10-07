@@ -29,7 +29,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
-import lombok.NonNull;
 
 import java.util.*;
 
@@ -137,7 +136,7 @@ public class BearerTokenProducer {
      * @param requiredGroups Required groups for the token
      * @return BearerTokenResult containing detailed validation information
      */
-    @NonNull
+   
     @Timed(value = MetricIdentifier.BEARERTOKEN.VALIDATION, description = "Bearer token validation duration")
     BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
@@ -270,7 +269,7 @@ public class BearerTokenProducer {
      * @param injectionPoint the CDI injection point containing the BearerToken annotation
      * @return the BearerTokenResult containing detailed validation information
      */
-    @NonNull
+   
     @Produces
     @BearerToken
     public BearerTokenResult produceBearerTokenResult(InjectionPoint injectionPoint) {

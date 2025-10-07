@@ -17,7 +17,6 @@ package de.cuioss.jwt.quarkus.config;
 
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.Value;
 import org.eclipse.microprofile.config.Config;
 
@@ -51,7 +50,7 @@ public class KeycloakMapperConfigResolver {
      *
      * @param config the configuration instance to use for property resolution
      */
-    public KeycloakMapperConfigResolver(@NonNull Config config) {
+    public KeycloakMapperConfigResolver(Config config) {
         this.config = config;
     }
 

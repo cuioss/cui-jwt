@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.security.spec.InvalidKeySpecException;
 import java.util.Optional;
@@ -44,14 +43,14 @@ public class KeyProcessor {
     private static final String RSA_KEY_TYPE = "RSA";
     private static final String EC_KEY_TYPE = "EC";
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
-    @NonNull
+
     private final JwkAlgorithmPreferences jwkAlgorithmPreferences;
 
-    public KeyProcessor(@NonNull SecurityEventCounter securityEventCounter,
-            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences) {
+    public KeyProcessor(SecurityEventCounter securityEventCounter,
+            JwkAlgorithmPreferences jwkAlgorithmPreferences) {
         this.securityEventCounter = securityEventCounter;
         this.jwkAlgorithmPreferences = jwkAlgorithmPreferences;
     }

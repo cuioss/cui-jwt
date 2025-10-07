@@ -22,7 +22,6 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.json.JsonException;
-import lombok.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +59,7 @@ public class CuiJwtDevUIRuntimeService {
      * @param issuerConfigs the issuer configurations from TokenValidatorProducer
      */
     @Inject
-    public CuiJwtDevUIRuntimeService(TokenValidator tokenValidator, @NonNull List<IssuerConfig> issuerConfigs) {
+    public CuiJwtDevUIRuntimeService(TokenValidator tokenValidator, List<IssuerConfig> issuerConfigs) {
         this.tokenValidator = tokenValidator;
         this.issuerConfigs = issuerConfigs;
     }
@@ -70,7 +69,7 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime validation status information
      */
-    @NonNull
+   
     public Map<String, Object> getValidationStatus() {
         Map<String, Object> status = new HashMap<>();
 
@@ -93,7 +92,7 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime JWKS status information
      */
-    @NonNull
+   
     public Map<String, Object> getJwksStatus() {
         Map<String, Object> jwksInfo = new HashMap<>();
 
@@ -118,7 +117,7 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime configuration information
      */
-    @NonNull
+   
     public Map<String, Object> getConfiguration() {
         Map<String, Object> configMap = new HashMap<>();
 
@@ -146,7 +145,7 @@ public class CuiJwtDevUIRuntimeService {
      * @param token The JWT access token to validate
      * @return A map containing validation result
      */
-    @NonNull
+   
     public Map<String, Object> validateToken(String token) {
         Map<String, Object> result = new HashMap<>();
         // Set default state - token is invalid until proven valid
@@ -194,7 +193,7 @@ public class CuiJwtDevUIRuntimeService {
      *
      * @return A map containing runtime health information
      */
-    @NonNull
+   
     public Map<String, Object> getHealthInfo() {
         Map<String, Object> health = new HashMap<>();
 

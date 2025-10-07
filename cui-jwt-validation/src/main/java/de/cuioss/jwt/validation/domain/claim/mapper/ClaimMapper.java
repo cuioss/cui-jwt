@@ -17,7 +17,6 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.json.MapRepresentation;
-import lombok.NonNull;
 
 /***
  * A functional interface for mapping a claim from a {@link MapRepresentation} to a {@link ClaimValue}.
@@ -56,5 +55,5 @@ public interface ClaimMapper {
      * @param claimName the name of the claim in the map
      * @return the mapped claim as a ClaimValue
      */
-    ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName);
+    ClaimValue map(MapRepresentation mapRepresentation, String claimName);
 }

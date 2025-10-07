@@ -77,12 +77,6 @@ class VertxHttpServletRequestAdapterTest {
     }
 
     @Test
-    @DisplayName("Should reject null vertx request")
-    void shouldRejectNullVertxRequest() {
-        assertThrows(NullPointerException.class, () -> new VertxHttpServletRequestAdapter(null));
-    }
-
-    @Test
     @DisplayName("Should support HTTP header name normalization for RFC compliance")
     void shouldSupportHttpHeaderNameNormalizationForRfcCompliance() {
         // This test verifies that the adapter is architecturally compatible with

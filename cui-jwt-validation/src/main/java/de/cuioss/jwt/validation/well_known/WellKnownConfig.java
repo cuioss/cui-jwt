@@ -23,7 +23,6 @@ import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.ParserConfig;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 
 import javax.net.ssl.SSLContext;
@@ -67,7 +66,6 @@ public class WellKnownConfig implements HttpHandlerProvider {
      * The retry strategy for HTTP operations.
      */
     @Getter
-    @NonNull
     private final RetryStrategy retryStrategy;
 
     /**
@@ -124,7 +122,7 @@ public class WellKnownConfig implements HttpHandlerProvider {
          * @return this builder instance
          * @throws IllegalArgumentException if the URL is invalid
          */
-        public WellKnownConfigBuilder wellKnownUrl(@NonNull String wellKnownUrl) {
+        public WellKnownConfigBuilder wellKnownUrl(String wellKnownUrl) {
             httpHandlerBuilder.url(wellKnownUrl);
             return this;
         }
@@ -135,7 +133,7 @@ public class WellKnownConfig implements HttpHandlerProvider {
          * @param wellKnownUri the well-known endpoint URI. Must not be null.
          * @return this builder instance
          */
-        public WellKnownConfigBuilder wellKnownUri(@NonNull URI wellKnownUri) {
+        public WellKnownConfigBuilder wellKnownUri(URI wellKnownUri) {
             httpHandlerBuilder.uri(wellKnownUri);
             return this;
         }
@@ -193,7 +191,7 @@ public class WellKnownConfig implements HttpHandlerProvider {
          * @param retryStrategy the retry strategy to use for HTTP requests
          * @return this builder instance
          */
-        public WellKnownConfigBuilder retryStrategy(@NonNull RetryStrategy retryStrategy) {
+        public WellKnownConfigBuilder retryStrategy(RetryStrategy retryStrategy) {
             this.retryStrategy = retryStrategy;
             return this;
         }

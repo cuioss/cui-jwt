@@ -27,8 +27,8 @@ import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -107,6 +107,7 @@ public class IssuerConfig implements LoadingStatusProvider {
      * This identifier must match the "iss" claim in validated tokens.
      * </p>
      */
+    @Nullable
     String issuerIdentifier;
 
     /**
@@ -154,10 +155,10 @@ public class IssuerConfig implements LoadingStatusProvider {
 
     /**
      * The JwksLoader instance used for loading JWKS keys.
-     * This must be provided during construction and will be initialized
+     * This can be null initially and will be initialized
      * with the SecurityEventCounter by the TokenValidator.
      */
-    @NonNull
+    @Nullable
     JwksLoader jwksLoader;
 
     /**
@@ -183,9 +184,9 @@ public class IssuerConfig implements LoadingStatusProvider {
      * @param securityEventCounter the counter for security events, must not be null
      * @throws NullPointerException if securityEventCounter is null
      */
-    public void initSecurityEventCounter(@NonNull SecurityEventCounter securityEventCounter) {
-        // Skip initialization if the issuer is disabled
-        if (!enabled) {
+    public void initSecurityEventCounter(SecurityEventCounter securityEventCounter) {
+        // Skip initialization if the issuer is disabled or jwksLoader is not configured
+        if (!enabled || jwksLoader == null) {
             return;
         }
 
@@ -213,10 +214,10 @@ public class IssuerConfig implements LoadingStatusProvider {
      * @return the issuer identifier, never null
      * @since 1.0
      */
-    @NonNull
+   
     public String getIssuerIdentifier() {
         // First try to get issuer identifier from JwksLoader (for well-known discovery)
-        if (jwksLoader.isLoaderStatusOK()) {
+        if (jwksLoader != null && jwksLoader.isLoaderStatusOK()) {
             Optional<String> jwksLoaderIssuer = jwksLoader.getIssuerIdentifier();
             if (jwksLoaderIssuer.isPresent()) {
                 return jwksLoaderIssuer.get();
@@ -257,8 +258,8 @@ public class IssuerConfig implements LoadingStatusProvider {
      */
     @Override
     public LoaderStatus getLoaderStatus() {
-        // Return UNDEFINED if the issuer is disabled
-        if (!enabled) {
+        // Return UNDEFINED if the issuer is disabled or jwksLoader is not configured
+        if (!enabled || jwksLoader == null) {
             return LoaderStatus.UNDEFINED;
         }
         // Delegate to the underlying JwksLoader
@@ -791,9 +792,9 @@ public class IssuerConfig implements LoadingStatusProvider {
      * This is called only by the builder after validation.
      */
     @SuppressWarnings("java:S107") // ok for private constructor
-    private IssuerConfig(boolean enabled, String issuerIdentifier, Set<String> expectedAudience,
-            Set<String> expectedClientId, boolean claimSubOptional, SignatureAlgorithmPreferences algorithmPreferences,
-            Map<String, ClaimMapper> claimMappers, JwksLoader jwksLoader) {
+    private IssuerConfig(boolean enabled, @Nullable String issuerIdentifier, @Nullable Set<String> expectedAudience,
+            @Nullable Set<String> expectedClientId, boolean claimSubOptional, @Nullable SignatureAlgorithmPreferences algorithmPreferences,
+            @Nullable Map<String, ClaimMapper> claimMappers, @Nullable JwksLoader jwksLoader) {
         this.enabled = enabled;
         this.issuerIdentifier = issuerIdentifier;
         this.expectedAudience = expectedAudience != null ? expectedAudience : Set.of();

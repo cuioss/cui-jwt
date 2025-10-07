@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 
 import java.io.Serial;
@@ -62,7 +61,6 @@ public class RefreshTokenContent implements MinimalTokenContent {
     private static final long serialVersionUID = 1L;
 
     @Getter
-    @NonNull
     private final String rawToken;
 
     /**
@@ -72,10 +70,9 @@ public class RefreshTokenContent implements MinimalTokenContent {
      * It is never null but be empty
      */
     @Getter
-    @NonNull
     private final Map<String, ClaimValue> claims;
 
-    public RefreshTokenContent(@NonNull String rawToken, @NonNull Map<String, ClaimValue> claims) {
+    public RefreshTokenContent(String rawToken, Map<String, ClaimValue> claims) {
         this.rawToken = rawToken;
         this.claims = claims;
     }

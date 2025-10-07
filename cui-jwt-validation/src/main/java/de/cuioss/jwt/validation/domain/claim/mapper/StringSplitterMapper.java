@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.string.Splitter;
-import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,15 +50,15 @@ public class StringSplitterMapper implements ClaimMapper {
     /**
      * The character to split the string by.
      */
-    @NonNull
+   
     private final Character splitChar;
 
-    public StringSplitterMapper(@NonNull Character splitChar) {
+    public StringSplitterMapper(Character splitChar) {
         this.splitChar = splitChar;
     }
 
     @Override
-    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+    public ClaimValue map(MapRepresentation mapRepresentation, String claimName) {
         Optional<Object> claimValue = mapRepresentation.getValue(claimName);
 
         // If claim doesn't exist, return empty

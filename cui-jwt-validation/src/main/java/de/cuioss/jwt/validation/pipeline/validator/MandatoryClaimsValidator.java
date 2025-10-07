@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Set;
@@ -50,10 +49,10 @@ public class MandatoryClaimsValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(MandatoryClaimsValidator.class);
 
-    @NonNull
+
     private final IssuerConfig issuerConfig;
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
     /**

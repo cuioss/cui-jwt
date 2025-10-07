@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.metrics;
 import de.cuioss.http.client.retry.RetryContext;
 import de.cuioss.http.client.retry.RetryMetrics;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.time.Duration;
 
@@ -58,7 +57,7 @@ public class JwtRetryMetrics implements RetryMetrics {
      *
      * @param monitor the token validator monitor to record metrics to (must not be null)
      */
-    public JwtRetryMetrics(@NonNull TokenValidatorMonitor monitor) {
+    public JwtRetryMetrics(TokenValidatorMonitor monitor) {
         this.monitor = monitor;
     }
 

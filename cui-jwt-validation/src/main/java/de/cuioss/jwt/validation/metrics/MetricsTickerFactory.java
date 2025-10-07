@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.metrics;
 
-import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -42,9 +41,9 @@ public class MetricsTickerFactory {
      * @param monitor the monitor to record measurements to (or check for enabled status)
      * @return a MetricsTicker instance appropriate for the monitor's configuration
      */
-    @NonNull
-    public static MetricsTicker createTicker(@NonNull MeasurementType measurementType,
-            @NonNull TokenValidatorMonitor monitor) {
+   
+    public static MetricsTicker createTicker(MeasurementType measurementType,
+            TokenValidatorMonitor monitor) {
         if (!monitor.isEnabled(measurementType)) {
             return NoOpMetricsTicker.INSTANCE;
         }
@@ -66,9 +65,9 @@ public class MetricsTickerFactory {
      * @param monitor the monitor to record measurements to (or check for enabled status)
      * @return a started MetricsTicker instance appropriate for the monitor's configuration
      */
-    @NonNull
-    public static MetricsTicker createStartedTicker(@NonNull MeasurementType measurementType,
-            @NonNull TokenValidatorMonitor monitor) {
+   
+    public static MetricsTicker createStartedTicker(MeasurementType measurementType,
+            TokenValidatorMonitor monitor) {
         MetricsTicker ticker = createTicker(measurementType, monitor);
         ticker.startRecording();
         return ticker;

@@ -41,11 +41,13 @@ class WrkResultPostProcessorTest {
 
     private WrkResultPostProcessor processor;
 
-    @BeforeEach void setUp() {
+    @BeforeEach
+    void setUp() {
         processor = new WrkResultPostProcessor();
     }
 
-    @Test void comprehensiveStructureGeneration() throws IOException {
+    @Test
+    void comprehensiveStructureGeneration() throws IOException {
         // Copy real benchmark outputs to temp directory wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -62,7 +64,8 @@ class WrkResultPostProcessorTest {
         verifyComprehensiveStructure();
     }
 
-    @Test void parseWrkHealthOutput() throws IOException {
+    @Test
+    void parseWrkHealthOutput() throws IOException {
         // Copy real health output to temp directory wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -115,7 +118,8 @@ class WrkResultPostProcessorTest {
         assertTrue(p90 <= p99, "P90 should be <= P99");
     }
 
-    @Test void parseWrkJwtOutput() throws IOException {
+    @Test
+    void parseWrkJwtOutput() throws IOException {
         // Copy real JWT output to temp directory wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -169,7 +173,8 @@ class WrkResultPostProcessorTest {
         assertTrue(p90 <= p99, "P90 should be <= P99");
     }
 
-    @Test void handlesCompleteWrkOutput() throws IOException {
+    @Test
+    void handlesCompleteWrkOutput() throws IOException {
         // Test with actual WRK output that includes shell wrapper output
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -198,7 +203,8 @@ class WrkResultPostProcessorTest {
         assertTrue(foundJwt, "Should parse JWT benchmark from wrapped output");
     }
 
-    @Test void generateGitHubPagesStructure() throws IOException {
+    @Test
+    void generateGitHubPagesStructure() throws IOException {
         // Setup test files in wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -223,7 +229,8 @@ class WrkResultPostProcessorTest {
         assertTrue(htmlContent.contains("data-loader.js"), "HTML should reference data loader");
     }
 
-    @Test void overviewGeneration() throws IOException {
+    @Test
+    void overviewGeneration() throws IOException {
         // Setup test files in wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -250,7 +257,8 @@ class WrkResultPostProcessorTest {
         assertTrue(overview.has("performanceGrade"));
     }
 
-    @Test void missingFileHandling() throws IOException {
+    @Test
+    void missingFileHandling() throws IOException {
         // Create wrk directory but with no WRK output files - should throw exception
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -262,7 +270,8 @@ class WrkResultPostProcessorTest {
         assertFalse(Files.exists(jsonFile), "JSON should not be created with missing inputs");
     }
 
-    @Test void parseRealWrkFormatVariations() throws IOException {
+    @Test
+    void parseRealWrkFormatVariations() throws IOException {
         // Test with actual WRK output showing various time units
         String wrkOutput = """
             === BENCHMARK METADATA ===
@@ -315,7 +324,8 @@ class WrkResultPostProcessorTest {
         assertTrue(p50 > 0, "P50 should be positive");
     }
 
-    @Test void systemMetricsIntegration() throws IOException {
+    @Test
+    void systemMetricsIntegration() throws IOException {
         // Setup test files in wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);
@@ -339,7 +349,8 @@ class WrkResultPostProcessorTest {
         assertTrue(json.getAsJsonArray("benchmarks").size() > 0);
     }
 
-    @Test void shouldPlacePrometheusMetricsInGitHubPagesDataDirectory() throws IOException {
+    @Test
+    void shouldPlacePrometheusMetricsInGitHubPagesDataDirectory() throws IOException {
         // Setup test files in wrk subdirectory
         Path wrkDir = tempDir.resolve("wrk");
         Files.createDirectories(wrkDir);

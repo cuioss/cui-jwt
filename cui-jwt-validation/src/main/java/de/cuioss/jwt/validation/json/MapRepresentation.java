@@ -17,7 +17,6 @@ package de.cuioss.jwt.validation.json;
 
 import com.dslplatform.json.DslJson;
 import de.cuioss.tools.string.MoreStrings;
-import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -68,7 +67,7 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
      * @return a new MapRepresentation containing the parsed data
      * @throws IOException if the JSON content cannot be parsed
      */
-    public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, String jsonContent) throws IOException {
+    public static MapRepresentation fromJson(DslJson<Object> dslJson, String jsonContent) throws IOException {
         return fromJson(dslJson, MoreStrings.nullToEmpty(jsonContent).getBytes());
     }
 
@@ -83,12 +82,13 @@ public record MapRepresentation(Map<String, Object> data) implements Serializabl
      * @return a new MapRepresentation containing the parsed data
      * @throws IOException if the JSON content cannot be parsed
      */
-    public static MapRepresentation fromJson(@NonNull DslJson<Object> dslJson, byte [] jsonBytes) throws IOException {
+    public static MapRepresentation fromJson(DslJson<Object> dslJson, byte [] jsonBytes) throws IOException {
         if (null == jsonBytes || jsonBytes.length == 0) {
             // Return empty MapRepresentation for null/empty JSON
             return new MapRepresentation(Map.of());
         }
-        @SuppressWarnings("unchecked") Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
+        @SuppressWarnings({"unchecked", "javabugs:S2259"}) // dslJson.deserialize can return null, handled by check below
+        Map<String, Object> parsedData = dslJson.deserialize(Map.class, jsonBytes, jsonBytes.length);
 
         if (parsedData == null) {
             // Return empty MapRepresentation for null/empty JSON

@@ -49,13 +49,6 @@ class IssuerConfigResolverTest {
     class ConstructorValidation {
 
         @Test
-        @DisplayName("should require non-null config")
-        void shouldRequireNonNullConfig() {
-            assertThrows(NullPointerException.class, () -> new IssuerConfigResolver(null),
-                    "Should reject null config");
-        }
-
-        @Test
         @DisplayName("should accept valid config")
         void shouldAcceptValidConfig() {
             TestConfig config = new TestConfig(Map.of(

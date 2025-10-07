@@ -22,7 +22,6 @@ import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.domain.token.IdTokenContent;
 import de.cuioss.jwt.validation.json.MapRepresentation;
-import lombok.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,10 +58,9 @@ public class TokenBuilder {
      *
      * @param issuerConfig the issuer configuration
      */
-    public TokenBuilder(@NonNull IssuerConfig issuerConfig) {
-        Map<String, ClaimMapper> customMappers = issuerConfig.getClaimMappers() != null
-                ? Map.copyOf(issuerConfig.getClaimMappers())
-                : Map.of();
+    public TokenBuilder(IssuerConfig issuerConfig) {
+        // IssuerConfig.claimMappers is never null (defaults to Map.of() in constructor)
+        Map<String, ClaimMapper> customMappers = Map.copyOf(issuerConfig.getClaimMappers());
 
         Map<String, ClaimMapper> tempMappers = new HashMap<>();
 
@@ -82,7 +80,7 @@ public class TokenBuilder {
      * @param decodedJwt the decoded JWT
      * @return an Optional containing the AccessTokenContent if it could be created, empty otherwise
      */
-    public Optional<AccessTokenContent> createAccessToken(@NonNull DecodedJwt decodedJwt) {
+    public Optional<AccessTokenContent> createAccessToken(DecodedJwt decodedJwt) {
         MapRepresentation body = decodedJwt.getBody();
         if (body.isEmpty()) {
             return Optional.empty();
@@ -99,7 +97,7 @@ public class TokenBuilder {
      * @param decodedJwt the decoded JWT
      * @return an Optional containing the IdTokenContent if it could be created, empty otherwise
      */
-    public Optional<IdTokenContent> createIdToken(@NonNull DecodedJwt decodedJwt) {
+    public Optional<IdTokenContent> createIdToken(DecodedJwt decodedJwt) {
         MapRepresentation body = decodedJwt.getBody();
         if (body.isEmpty()) {
             return Optional.empty();
@@ -151,7 +149,7 @@ public class TokenBuilder {
      * @param mapRepresentation the MapRepresentation containing claims
      * @return a map of claim names to claim values
      */
-    public static Map<String, ClaimValue> extractClaimsForRefreshToken(@NonNull MapRepresentation mapRepresentation) {
+    public static Map<String, ClaimValue> extractClaimsForRefreshToken(MapRepresentation mapRepresentation) {
         Map<String, ClaimValue> claims = HashMap.newHashMap(mapRepresentation.size());
 
         for (String key : mapRepresentation.keySet()) {

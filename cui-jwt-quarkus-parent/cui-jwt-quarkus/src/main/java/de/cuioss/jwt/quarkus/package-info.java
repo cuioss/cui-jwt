@@ -37,4 +37,7 @@
  * 
  * @since 1.0
  */
+@NullMarked
 package de.cuioss.jwt.quarkus;
+
+import org.jspecify.annotations.NullMarked;

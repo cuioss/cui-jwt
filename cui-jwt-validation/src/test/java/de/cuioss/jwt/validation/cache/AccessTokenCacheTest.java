@@ -414,27 +414,6 @@ class AccessTokenCacheTest {
     }
 
     @Test
-    void validationFunctionReturnsNull() {
-        // Given
-        String token = "test-token";
-
-        Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
-        assertTrue(cached.isEmpty(), "Cache should be empty initially");
-
-        // When & Then - attempting to put null should throw NullPointerException
-        // In the new API, validation function returning null means caller should not call put()
-        // But if they do call put(null), they get NPE from @NonNull annotation
-        //noinspection DataFlowIssue - Intentionally testing null handling
-        NullPointerException exception = assertThrows(NullPointerException.class, () ->
-                // Validation returned null - calling put(null) is a programming error
-                cache.put(token, null, performanceMonitor)
-        );
-
-        // The NPE message comes from Lombok's @NonNull annotation
-        assertTrue(exception.getMessage().contains("content is marked non-null but is null"));
-    }
-
-    @Test
     void cacheEvictionUnderLoad() {
         // Given - cache with maxSize 10
         assertEquals(0, cache.size());

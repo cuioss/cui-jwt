@@ -25,7 +25,6 @@ import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.jwt.validation.util.EcdsaSignatureFormatConverter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -62,13 +61,12 @@ public class TokenSignatureValidator {
     private static final CuiLogger LOGGER = new CuiLogger(TokenSignatureValidator.class);
 
     @Getter
-    @NonNull
     private final JwksLoader jwksLoader;
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
-    @NonNull
+
     private final SignatureTemplateManager signatureTemplateManager;
 
     /**
@@ -78,9 +76,9 @@ public class TokenSignatureValidator {
      * @param securityEventCounter   the counter for security events
      * @param algorithmPreferences   the signature algorithm preferences for provider optimization
      */
-    public TokenSignatureValidator(@NonNull JwksLoader jwksLoader,
-            @NonNull SecurityEventCounter securityEventCounter,
-            @NonNull SignatureAlgorithmPreferences algorithmPreferences) {
+    public TokenSignatureValidator(JwksLoader jwksLoader,
+            SecurityEventCounter securityEventCounter,
+            SignatureAlgorithmPreferences algorithmPreferences) {
         this.jwksLoader = jwksLoader;
         this.securityEventCounter = securityEventCounter;
         this.signatureTemplateManager = new SignatureTemplateManager(algorithmPreferences);
@@ -108,7 +106,7 @@ public class TokenSignatureValidator {
      * @throws TokenValidationException if the signature is invalid
      */
     @SuppressWarnings("java:S3655") // owolff: False Positive: isPresent is checked before calling get()
-    public void validateSignature(@NonNull DecodedJwt decodedJwt) {
+    public void validateSignature(DecodedJwt decodedJwt) {
         LOGGER.debug("Validating validation signature");
 
         // Get the kid from the validation header - precondition: already validated by TokenHeaderValidator

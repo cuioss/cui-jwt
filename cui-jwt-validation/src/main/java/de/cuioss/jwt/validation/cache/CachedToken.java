@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.cache;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.time.OffsetDateTime;
@@ -45,21 +44,21 @@ public final class CachedToken {
      * The raw JWT token string as received from the client.
      * Used to verify cache hits by comparing against the queried token.
      */
-    @NonNull
+   
     private final String rawToken;
 
     /**
      * The validated access token content.
      * This is the result of successful JWT validation and parsing.
      */
-    @NonNull
+   
     private final AccessTokenContent content;
 
     /**
      * The expiration time of the token.
      * Used for efficient expiration checks and background eviction.
      */
-    @NonNull
+   
     private final OffsetDateTime expirationTime;
 
     /**

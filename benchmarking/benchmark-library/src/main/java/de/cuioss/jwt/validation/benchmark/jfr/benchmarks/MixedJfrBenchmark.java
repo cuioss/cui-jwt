@@ -62,7 +62,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("validateMixedTokens0WithJfr", MIXED_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
+                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token).orElse(null) : "benchmark-issuer");
 
             if (!isValid) {
                 recorder.withError(errorType);
@@ -84,7 +84,7 @@ import java.util.concurrent.TimeUnit;
 
         try (var recorder = jfrInstrumentation.recordOperation("validateMixedTokens50WithJfr", MIXED_VALIDATION_OPERATION)) {
             recorder.withPayloadSize(token.length())
-                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token) : "benchmark-issuer");
+                    .withMetadata("issuer", isValid ? tokenRepository.getTokenIssuer(token).orElse(null) : "benchmark-issuer");
 
             if (!isValid) {
                 recorder.withError(errorType);

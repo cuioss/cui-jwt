@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.security;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +63,7 @@ public class SignatureAlgorithmPreferences {
      *
      * @param preferredAlgorithms the list of preferred algorithms in order of preference
      */
-    public SignatureAlgorithmPreferences(@NonNull List<String> preferredAlgorithms) {
+    public SignatureAlgorithmPreferences(List<String> preferredAlgorithms) {
         this.preferredAlgorithms = Collections.unmodifiableList(preferredAlgorithms);
     }
 

@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.servlet;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.NonNull;
 
 import java.util.*;
 
@@ -50,7 +49,7 @@ public interface HttpServletRequestResolver {
      *                               (CDI wraps underlying exceptions when @RequestScoped producer fails)
      * @throws IllegalStateException if the infrastructure is not available to resolve the request
      */
-    @NonNull
+   
     HttpServletRequest resolveHttpServletRequest() throws IllegalStateException;
 
     /**
@@ -77,7 +76,7 @@ public interface HttpServletRequestResolver {
      * @see <a href="https://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230 Section 3.2: Header Fields</a>
      * @see <a href="https://tools.ietf.org/html/rfc9113#section-8.1.2">RFC 9113 Section 8.1.2: HTTP Header Fields</a>
      */
-    @NonNull
+   
     default Map<String, List<String>> resolveHeaderMap() throws IllegalStateException {
         return createHeaderMapFromRequest(resolveHttpServletRequest());
     }
@@ -96,8 +95,8 @@ public interface HttpServletRequestResolver {
      * @return Map of HTTP headers with normalized lowercase header names
      * @throws IllegalStateException if headers cannot be extracted from the request
      */
-    @NonNull
-    default Map<String, List<String>> createHeaderMapFromRequest(@NonNull HttpServletRequest request)
+   
+    default Map<String, List<String>> createHeaderMapFromRequest(HttpServletRequest request)
             throws IllegalStateException {
 
         Map<String, List<String>> headerMap = new HashMap<>();
