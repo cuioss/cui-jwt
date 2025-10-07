@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * object containing the validation status, the validated token (if successful), and detailed
  * error information (if validation failed).
  * <p>
- * <strong>Note:</strong> For declarative security with automatic validation, use {@link SecuredByBearerToken} instead.
+ * <strong>Note:</strong> For declarative security with automatic validation, use {@link BearerAuth} instead.
  *
  * <h2>Usage Pattern: CDI Producer Pattern (Explicit Validation)</h2>
  * Inject {@link de.cuioss.jwt.quarkus.producer.BearerTokenResult} and manually check authorization:
@@ -97,10 +97,10 @@ import java.lang.annotation.Target;
  *   <li>Returns a BearerTokenResult with detailed status information</li>
  * </ul>
  * <p>
- * <strong>Declarative Alternative:</strong> For automatic validation without manual checks, use {@link SecuredByBearerToken} annotation.
+ * <strong>Declarative Alternative:</strong> For automatic validation without manual checks, use {@link BearerAuth} annotation.
  *
  * @author Oliver Wolff
- * @see SecuredByBearerToken
+ * @see BearerAuth
  * @since 1.0
  */
 @Qualifier

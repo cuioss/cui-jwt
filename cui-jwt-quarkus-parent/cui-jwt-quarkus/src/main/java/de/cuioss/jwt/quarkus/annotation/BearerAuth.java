@@ -42,7 +42,7 @@ import java.lang.annotation.Target;
  * public class SecureResource {
  *
  *     @GET
- *     @SecuredByBearerToken(requiredScopes = {"read"}, requiredRoles = {"user"})
+ *     @BearerAuth(requiredScopes = {"read"}, requiredRoles = {"user"})
  *     public Response getData() {
  *         // Only business logic - security handled by interceptor
  *         // If validation fails, error response is returned automatically
@@ -54,7 +54,7 @@ import java.lang.annotation.Target;
  * <h2>Class-Level Application:</h2>
  * <pre>{@code
  * @Path("/api")
- * @SecuredByBearerToken(requiredRoles = {"admin"})
+ * @BearerAuth(requiredRoles = {"admin"})
  * public class AdminResource {
  *
  *     @GET
@@ -66,7 +66,7 @@ import java.lang.annotation.Target;
  *
  *     @GET
  *     @Path("/settings")
- *     @SecuredByBearerToken(requiredScopes = {"admin:settings"})
+ *     @BearerAuth(requiredScopes = {"admin:settings"})
  *     public Response getSettings() {
  *         // Method-level annotation adds additional requirements
  *         // Requires both admin role (from class) and admin:settings scope
@@ -82,7 +82,7 @@ import java.lang.annotation.Target;
  * BearerTokenContextHolder contextHolder;
  *
  * @GET
- * @SecuredByBearerToken(requiredScopes = {"read"})
+ * @BearerAuth(requiredScopes = {"read"})
  * public Response getData() {
  *     BearerTokenResult result = contextHolder.get()
  *         .orElseThrow(() -> new IllegalStateException("Token not available"));
@@ -143,7 +143,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 @RegisterForReflection(methods = true, fields = false)
-public @interface SecuredByBearerToken {
+public @interface BearerAuth {
 
     /**
      * Specifies the required scopes that the bearer token must contain.

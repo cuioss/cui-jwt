@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.interceptor;
 
-import de.cuioss.jwt.quarkus.annotation.SecuredByBearerToken;
+import de.cuioss.jwt.quarkus.annotation.BearerAuth;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.tools.logging.CuiLogger;
@@ -35,7 +35,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_A
  * Interceptor for declarative Bearer token validation at method level.
  * <p>
  * This interceptor provides automatic Bearer token validation and error handling
- * when methods or classes are annotated with {@link SecuredByBearerToken}. It follows
+ * when methods or classes are annotated with {@link BearerAuth}. It follows
  * Quarkus 2025 best practices for security interceptors.
  * <p>
  * The interceptor:
@@ -53,7 +53,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_A
  * public class SecureResource {
  *
  *     @GET
- *     @SecuredByBearerToken(requiredScopes = {"read"}, requiredRoles = {"user"})
+ *     @BearerAuth(requiredScopes = {"read"}, requiredRoles = {"user"})
  *     public Response getData() {
  *         // Only business logic - security handled by interceptor
  *         return Response.ok(data).build();
@@ -76,7 +76,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_A
  * @author Oliver Wolff
  * @since 1.0
  */
-@SecuredByBearerToken
+@BearerAuth
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 200)
 @RegisterForReflection
@@ -114,7 +114,7 @@ public class BearerTokenInterceptor {
         LOGGER.trace("BearerTokenInterceptor invoked for method: %s", ctx.getMethod().getName());
 
         // Extract annotation from method or class level
-        SecuredByBearerToken annotation = extractAnnotation(ctx);
+        BearerAuth annotation = extractAnnotation(ctx);
         if (annotation == null) {
             LOGGER.warn(BEARER_TOKEN_ANNOTATION_NOT_FOUND, ctx.getMethod().getName());
             return ctx.proceed();
@@ -161,20 +161,20 @@ public class BearerTokenInterceptor {
     }
 
     /**
-     * Extracts the SecuredByBearerToken annotation from the invocation context.
+     * Extracts the BearerAuth annotation from the invocation context.
      * Checks both method level and class level annotations (method takes precedence).
      *
      * @param ctx the invocation context
-     * @return the SecuredByBearerToken annotation, or null if not found
+     * @return the BearerAuth annotation, or null if not found
      */
-    private SecuredByBearerToken extractAnnotation(InvocationContext ctx) {
+    private BearerAuth extractAnnotation(InvocationContext ctx) {
         // Check method level first
-        SecuredByBearerToken annotation = ctx.getMethod().getAnnotation(SecuredByBearerToken.class);
+        BearerAuth annotation = ctx.getMethod().getAnnotation(BearerAuth.class);
         if (annotation != null) {
             return annotation;
         }
 
         // Fallback to class level
-        return ctx.getTarget().getClass().getAnnotation(SecuredByBearerToken.class);
+        return ctx.getTarget().getClass().getAnnotation(BearerAuth.class);
     }
 }
