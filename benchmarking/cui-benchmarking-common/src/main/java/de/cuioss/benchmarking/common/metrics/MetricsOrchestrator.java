@@ -25,6 +25,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR.FAILED_COLLECT_REALTIME_PROMETHEUS;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO.COLLECTING_REALTIME_METRICS;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO.REALTIME_METRICS_EXPORTED;
+
 /**
  * Orchestrator for metrics processing.
  * Coordinates the transformation and export of real-time Prometheus metrics.
@@ -59,8 +63,7 @@ public class MetricsOrchestrator {
      */
     public void collectBenchmarkMetrics(String benchmarkName, Instant startTime, Instant endTime, Path outputDir)
             throws IOException {
-        LOGGER.info("Collecting real-time metrics for benchmark '{}' from {} to {}",
-                benchmarkName, startTime, endTime);
+        LOGGER.info(COLLECTING_REALTIME_METRICS, benchmarkName, startTime, endTime);
 
         // Define metrics to collect during benchmark execution
         // Using actual metric names from Prometheus
@@ -108,11 +111,10 @@ public class MetricsOrchestrator {
             exporter.exportToFile(fileName, metricsOutput);
 
             Path outputFile = outputDir.resolve(fileName);
-            LOGGER.info("Exported real-time metrics for '{}' to: {}", benchmarkName, outputFile);
+            LOGGER.info(REALTIME_METRICS_EXPORTED, benchmarkName, outputFile);
 
         } catch (PrometheusClient.PrometheusException e) {
-            LOGGER.error("Failed to collect Prometheus metrics for benchmark '{}': {}",
-                    benchmarkName, e.getMessage());
+            LOGGER.error(e, FAILED_COLLECT_REALTIME_PROMETHEUS, benchmarkName, e.getMessage());
             throw new IOException("Failed to collect Prometheus metrics", e);
         }
     }

@@ -71,7 +71,7 @@ class TokenBuilderTest {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, json);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+            throw new AssertionError("Failed to convert JsonObject to MapRepresentation", e);
         }
     }
 
@@ -197,13 +197,13 @@ class TokenBuilderTest {
     @DisplayName("Thread Safety Tests")
     class ThreadSafetyTests {
 
-        private static final CuiLogger log = new CuiLogger(ThreadSafetyTests.class);
+        private static final CuiLogger LOGGER = new CuiLogger(ThreadSafetyTests.class);
         private static final int CONCURRENT_THREADS = 8;
 
         @Test
         @DisplayName("TokenBuilder should be thread-safe under concurrent access")
         void shouldBeThreadSafeUnderConcurrentAccess() throws InterruptedException {
-            log.info("Verifying thread safety of TokenBuilder implementation");
+            LOGGER.info("Verifying thread safety of TokenBuilder implementation");
 
             // Generate test tokens
             TypedGenerator<TestTokenHolder> generator = TestTokenGenerators.accessTokens();
@@ -239,8 +239,8 @@ class TokenBuilderTest {
                                     assertFalse(accessToken.getClaims().isEmpty(), "Claims should not be empty");
                                     assertTrue(accessToken.getClaims().containsKey("iss"), "Should contain issuer");
                                     assertTrue(accessToken.getClaims().containsKey("sub"), "Should contain subject");
-                                } catch (Exception e) {
-                                    log.error("Error in concurrent test", e);
+                                } catch (IllegalArgumentException | IllegalStateException e) {
+                                    LOGGER.error(e, "Error in concurrent test");
                                     errorCount.incrementAndGet();
                                 }
                             }
@@ -263,7 +263,7 @@ class TokenBuilderTest {
                 executor.shutdownNow();
             }
 
-            log.info("Concurrent access verification completed successfully");
+            LOGGER.info("Concurrent access verification completed successfully");
         }
     }
 

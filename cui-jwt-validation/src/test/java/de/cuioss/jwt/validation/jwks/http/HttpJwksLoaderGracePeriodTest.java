@@ -223,8 +223,9 @@ class HttpJwksLoaderGracePeriodTest {
             // This verifies the timing bug fix - the key should be properly retired and immediately cleaned up
             Optional<KeyInfo> retiredKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
             assertFalse(retiredKey.isPresent(),
-                    "Original key should NOT be accessible with zero grace period after rotation. " +
-                            "This verifies the timing bug fix works correctly.");
+                    """
+                    Original key should NOT be accessible with zero grace period after rotation. \
+                    This verifies the timing bug fix works correctly.""");
 
             loader.close();
         }
@@ -266,8 +267,9 @@ class HttpJwksLoaderGracePeriodTest {
 
             Optional<KeyInfo> retiredKey = loader.getKeyInfo(ORIGINAL_KEY_ID);
             assertTrue(retiredKey.isPresent(),
-                    "Original key should still be accessible within 5-minute grace period. " +
-                            "This verifies the grace period mechanism works correctly.");
+                    """
+                    Original key should still be accessible within 5-minute grace period. \
+                    This verifies the grace period mechanism works correctly.""");
 
             loader.close();
         }
@@ -412,9 +414,10 @@ class HttpJwksLoaderGracePeriodTest {
 
             // THIS IS THE BUG: Original key disappears even though within grace period!
             assertTrue(loader.getKeyInfo(ORIGINAL_KEY_ID).isPresent(),
-                    "Step 5b: BUG - Original key LOST after 2nd refresh with unchanged content! " +
-                            "The key is within the 5-minute grace period but was pushed out because " +
-                            "updateKeys() is called on every HTTP 200, even with unchanged content.");
+                    """
+                    Step 5b: BUG - Original key LOST after 2nd refresh with unchanged content! \
+                    The key is within the 5-minute grace period but was pushed out because \
+                    updateKeys() is called on every HTTP 200, even with unchanged content.""");
 
             loader.close();
         }
@@ -526,8 +529,9 @@ class HttpJwksLoaderGracePeriodTest {
             // This should STILL WORK due to the 5-minute grace period
             AccessTokenContent validationResult3 = validator.createAccessToken(tokenSignedWithOriginalKey);
             assertNotNull(validationResult3,
-                    "Token signed with ORIGINAL key should STILL validate within grace period. " +
-                            "This is the key test for Issue #110 - old tokens remain valid during grace period!");
+                    """
+                    Token signed with ORIGINAL key should STILL validate within grace period. \
+                    This is the key test for Issue #110 - old tokens remain valid during grace period!""");
             assertEquals("test-subject", validationResult3.getSubject().orElse(null),
                     "Original token subject should still be accessible");
 
@@ -617,8 +621,9 @@ class HttpJwksLoaderGracePeriodTest {
             // CRITICAL: With zero grace period, the original token should immediately fail validation
             TokenValidationException exception = assertThrows(TokenValidationException.class,
                     () -> validator.createAccessToken(tokenSignedWithOriginalKey),
-                    "Token signed with original key should IMMEDIATELY FAIL with zero grace period. " +
-                            "This verifies that zero grace period immediately invalidates old tokens!");
+                    """
+                    Token signed with original key should IMMEDIATELY FAIL with zero grace period. \
+                    This verifies that zero grace period immediately invalidates old tokens!""");
 
             // Verify the exception is about key not found
             assertTrue(exception.getMessage().contains("key") || exception.getMessage().contains("Key"),

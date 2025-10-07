@@ -157,7 +157,7 @@ class IssuerConfigTest implements ShouldImplementToString<IssuerConfig>, ShouldI
             config.initSecurityEventCounter(securityEventCounter);
             assertNotNull(config.getJwksLoader());
             JwksLoader jwksLoader = config.getJwksLoader();
-            LOGGER.debug("JwksLoader initialized: {}", jwksLoader);
+            LOGGER.debug("JwksLoader initialized: %s", jwksLoader);
         }
 
         @Test

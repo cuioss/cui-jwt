@@ -30,7 +30,7 @@ class KeycloakTokenRepositoryTest {
         KeycloakTokenRepository.TokenFetchException ex = new KeycloakTokenRepository.TokenFetchException("Test error");
         assertEquals("Test error", ex.getMessage());
 
-        Exception cause = new RuntimeException("Cause");
+        Exception cause = new IllegalStateException("Cause");
         KeycloakTokenRepository.TokenFetchException exWithCause = new KeycloakTokenRepository.TokenFetchException("Test error", cause);
         assertEquals("Test error", exWithCause.getMessage());
         assertEquals(cause, exWithCause.getCause());

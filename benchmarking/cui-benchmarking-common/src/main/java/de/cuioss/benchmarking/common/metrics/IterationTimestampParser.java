@@ -16,6 +16,7 @@
 package de.cuioss.benchmarking.common.metrics;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -26,6 +27,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO.ITERATION_WINDOWS_PARSED;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.FAILED_PARSE_TIMESTAMP_LINE;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.TIMESTAMP_FILE_NOT_EXIST;
 
 /**
  * Parses JMH iteration timestamp files to extract precise timing windows
@@ -63,7 +68,7 @@ public class IterationTimestampParser {
      */
     public static List<IterationWindow> parseJsonlFile(Path timestampFile) throws IOException {
         if (!Files.exists(timestampFile)) {
-            LOGGER.warn("Timestamp file does not exist: {}", timestampFile);
+            LOGGER.warn(TIMESTAMP_FILE_NOT_EXIST, timestampFile);
             return Collections.emptyList();
         }
 
@@ -76,13 +81,15 @@ public class IterationTimestampParser {
                 try {
                     JsonObject node = JsonParser.parseString(line).getAsJsonObject();
                     windows.add(parseIterationNode(node));
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to parse timestamp line: {}", line, e);
+                } catch (JsonParseException | IllegalStateException e) {
+                    // JsonParseException: malformed JSON
+                    // IllegalStateException: not a JSON object (getAsJsonObject on wrong type)
+                    LOGGER.warn(e, FAILED_PARSE_TIMESTAMP_LINE, line);
                 }
             });
         }
 
-        LOGGER.info("Parsed {} iteration windows from {}", windows.size(), timestampFile);
+        LOGGER.info(ITERATION_WINDOWS_PARSED, windows.size(), timestampFile);
         return windows;
     }
 

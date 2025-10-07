@@ -51,7 +51,7 @@ class IdentityMapperTest {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, json);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to convert JsonObject to MapRepresentation", e);
+            throw new AssertionError("Failed to convert JsonObject to MapRepresentation", e);
         }
     }
 

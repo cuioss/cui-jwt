@@ -38,6 +38,88 @@ Verify that the codebase complies with CUI logging standards by:
 
 **Usage:** When user says "verifyCuiLoggingGuidelines", execute this comprehensive logging standards audit.
 
+### fixOpenRewriteMarkers <module-path>
+
+Fix all OpenRewrite TODO markers in a module following CUI standards:
+
+**CRITICAL UNDERSTANDING**: Markers like `/*~~(TODO: INFO needs LogRecord)~~>*/` indicate **ACTUAL BUGS**, not just style issues.
+
+**Execution Steps**:
+
+1. **Locate All Markers**:
+   ```bash
+   grep -r "~~(TODO:" <module-path>/src --include="*.java"
+   ```
+   - Count markers: `grep -r "~~(TODO:" <module-path>/src --include="*.java" | wc -l`
+   - Group by type: INFO needs LogRecord, WARN needs LogRecord, placeholder mismatches, etc.
+
+2. **Analyze and Fix Each Marker**:
+
+   **Production Code (src/main/java)**:
+   - **Placeholder Mismatches**: Fix bugs like `LOGGER.info("value: %s", x, y)` (2 params, 1 placeholder)
+     - Add missing `%s` placeholders or remove extra parameters
+   - **Wrong Format Specifiers**: Change `%.2f`, `{:.2f}`, `{}`, `%d` → **ALWAYS use `%s`**
+   - **Missing LogRecords**: Create LogRecord constants for INFO/WARN/ERROR messages
+   - **Generic Exceptions**: Replace `Exception` with specific types (IOException, IllegalStateException)
+   - **RuntimeException**: Replace with specific exception types (TokenValidationException, etc.)
+
+   **Test Code (src/test/java)**:
+   - **Diagnostic Logging** (performance tests, concurrency tests):
+     - Add class-level suppression comment:
+       ```java
+       // cui-rewrite:disable CuiLogRecordPatternRecipe
+       // This is a test/utility class that outputs diagnostic information for analysis
+       ```
+     - **NEVER create LogRecords for test diagnostic output**
+   - **Placeholder Mismatches**: Fix bugs even in tests (change to %s)
+   - **RuntimeException Throws**: Replace with AssertionError for test failures
+   - **Generic Exception Catches**: Replace with specific types + InterruptedException/BrokenBarrierException
+
+3. **Remove Markers After Fixing**:
+
+   **macOS (BSD sed)**:
+   ```bash
+   find <module-path>/src -name "*.java" -exec sed -i '' 's|/\*~~(TODO: INFO needs LogRecord)~~>\*/||g; s|/\*~~(TODO: WARN needs LogRecord)~~>\*/||g; s|/\*~~(TODO: ERROR needs LogRecord)~~>\*/||g' {} +
+   ```
+
+   **Linux (GNU sed)**:
+   ```bash
+   find <module-path>/src -name "*.java" -exec sed -i 's|/\*~~(TODO: INFO needs LogRecord)~~>\*/||g; s|/\*~~(TODO: WARN needs LogRecord)~~>\*/||g; s|/\*~~(TODO: ERROR needs LogRecord)~~>\*/||g' {} +
+   ```
+
+   - Verify removal: `grep -r "~~(TODO:" <module-path>/src --include="*.java" | wc -l` (should be 0)
+
+4. **Verify Fixes**:
+   ```bash
+   cd <module-path> && ../mvnw -Ppre-commit clean verify
+   ```
+   - All tests must pass
+   - No compilation errors
+   - Markers may reappear if bugs not truly fixed
+   - If markers reappear, repeat steps 2-4
+
+5. **Final Validation**:
+   - Run full test suite: `cd <module-path> && ../mvnw clean install`
+   - Confirm zero markers: `grep -r "~~(TODO:" <module-path>/src --include="*.java"`
+   - Verify test count matches previous successful run (no tests accidentally broken)
+
+**Common Bugs to Watch For**:
+- `LOGGER.info("value %s", x, y)` → Missing placeholder for `y`
+- `LOGGER.info("avg %.2f ms", avg)` → Use `%s` not `%.2f`
+- `LOGGER.info("result {}", value)` → Use `%s` not `{}`
+- `catch (Exception e)` → Use specific exception types
+- `catch (RuntimeException e)` → Use IllegalArgumentException | IllegalStateException | TokenValidationException
+- Test logging creating LogRecords → Use suppression comment instead
+
+**Critical Rules**:
+- ❌ **NEVER remove markers without fixing bugs**
+- ❌ **NEVER create LogRecords for test diagnostic logging**
+- ✅ **ALWAYS use `%s` for ALL string substitutions** (never `%.2f`, `{}`, `%d`)
+- ✅ **ALWAYS fix placeholder/parameter count mismatches**
+- ✅ **ALWAYS use specific exception types** (never Exception/RuntimeException)
+
+**Usage:** When user says "fixOpenRewriteMarkers cui-jwt-validation", execute this complete marker fixing workflow.
+
 ### verifyAndCommit <module-name>
 
 Execute comprehensive quality verification and commit workflow for a specific module:

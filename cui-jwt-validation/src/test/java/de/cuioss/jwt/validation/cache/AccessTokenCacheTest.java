@@ -16,13 +16,11 @@
 package de.cuioss.jwt.validation.cache;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.TokenType;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.InternalCacheException;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
@@ -30,13 +28,12 @@ import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-import de.cuioss.test.juli.LogAsserts;
-import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -58,8 +55,8 @@ class AccessTokenCacheTest {
         try {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, "{}");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        } catch (IOException e) {
+            throw new AssertionError("Failed to create empty MapRepresentation", e);
         }
     }
 
@@ -599,6 +596,9 @@ class AccessTokenCacheTest {
     @Test
     void tokenWithoutExpirationThrowsException() {
         // Given a token without expiration claim
+        // Note: This scenario should never occur in practice because tokens are validated
+        // before caching, and validation requires a valid exp claim. This test verifies
+        // that if somehow an invalid token reaches the cache, it fails immediately.
         String token = "token-without-exp";
         TestTokenHolder tokenHolder = TestTokenGenerators.accessTokens().next();
         // Remove expiration claim
@@ -608,14 +608,12 @@ class AccessTokenCacheTest {
         Optional<AccessTokenContent> cached = cache.get(token, performanceMonitor);
         assertTrue(cached.isEmpty(), "Cache should be empty initially");
 
-        // When/Then - should throw InternalCacheException
-        InternalCacheException exception = assertThrows(InternalCacheException.class, () ->
+        // When/Then - should throw IllegalStateException from getExpirationTime()
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
                 cache.put(token, contentWithoutExp, performanceMonitor)
         );
 
-        assertEquals("Token passed validation but has no expiration time", exception.getMessage());
-        LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
-                JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION.resolveIdentifierString());
+        assertEquals("ExpirationTime claim not present in token", exception.getMessage());
     }
 
     @Test

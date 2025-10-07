@@ -177,7 +177,7 @@ class TokenSecurityPropertiesTest {
 
     /**
      * Calculates the Shannon entropy of a byte array.
-     * 
+     *
      * @param bytes the byte array
      * @return the Shannon entropy
      */

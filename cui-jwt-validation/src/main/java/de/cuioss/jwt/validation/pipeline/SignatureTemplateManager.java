@@ -183,7 +183,7 @@ public final class SignatureTemplateManager {
             try {
                 // Use pre-configured provider if available to bypass synchronized Provider.getService()
                 Provider provider = algorithmProviders.get(jdkAlgorithm);
-                Signature signature = (provider != null)
+                Signature signature = provider != null
                         ? Signature.getInstance(jdkAlgorithm, provider)
                         : Signature.getInstance(jdkAlgorithm);
 

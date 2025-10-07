@@ -24,6 +24,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR.JFR_VARIANCE_USAGE;
+
 /**
  * Analyzes JFR recordings to extract operation variance metrics.
  * <p>
@@ -45,7 +47,7 @@ import java.util.*;
  */
 public class JfrVarianceAnalyzer {
 
-    private static final CuiLogger log = new CuiLogger(JfrVarianceAnalyzer.class);
+    private static final CuiLogger LOGGER = new CuiLogger(JfrVarianceAnalyzer.class);
 
     /**
      * Analyzes a JFR recording file and generates a variance report.
@@ -119,31 +121,41 @@ public class JfrVarianceAnalyzer {
         /**
          * Prints a summary of the variance analysis to stdout.
          */
+        // cui-rewrite:disable CuiLogRecordPatternRecipe
+        // This is a CLI analysis tool that outputs formatted reports to console
         public void printSummary() {
-            log.info("\n=== JFR Variance Analysis Report ===\n");
+            LOGGER.info("\n=== JFR Variance Analysis Report ===\n");
 
             operationMetrics.values().stream()
                     .sorted(Comparator.comparing(m -> m.benchmarkName))
                     .forEach(metrics -> {
-                        log.info("Benchmark: %s - Operation: %s%n",
+                        // Report output - suppressed from LogRecord requirements
+                        LOGGER.info("Benchmark: %s - Operation: %s%n",
                                 metrics.benchmarkName, metrics.operationType);
-                        log.info("  Total Operations: %d (Success: %d, Failed: %d)%n",
+                        LOGGER.info("  Total Operations: %s (Success: %s, Failed: %s)%n",
                                 metrics.totalOperations, metrics.successfulOperations, metrics.failedOperations);
-                        log.info("  Latency (μs) - P50: %.2f, P95: %.2f, P99: %.2f, Max: %.2f%n",
-                                metrics.p50Latency / 1000.0, metrics.p95Latency / 1000.0,
-                                metrics.p99Latency / 1000.0, metrics.maxLatency / 1000.0);
-                        log.info("  Variance: %.2e ns² (StdDev: %.2f μs)%n",
-                                metrics.variance, metrics.standardDeviation / 1000.0);
-                        log.info("  Coefficient of Variation: %.2f%%%n", metrics.coefficientOfVariation);
-                        log.info("  Max Concurrent Operations: %d%n", metrics.maxConcurrentOperations);
+                        LOGGER.info("  Latency (μs) - P50: %s, P95: %s, P99: %s, Max: %s%n",
+                                "%.2f".formatted(metrics.p50Latency / 1000.0),
+                                "%.2f".formatted(metrics.p95Latency / 1000.0),
+                                "%.2f".formatted(metrics.p99Latency / 1000.0),
+                                "%.2f".formatted(metrics.maxLatency / 1000.0));
+                        LOGGER.info("  Variance: %s ns² (StdDev: %s μs)%n",
+                                "%.2e".formatted(metrics.variance),
+                                "%.2f".formatted(metrics.standardDeviation / 1000.0));
+                        LOGGER.info("  Coefficient of Variation: %s%%%n",
+                                "%.2f".formatted(metrics.coefficientOfVariation));
+                        LOGGER.info("  Max Concurrent Operations: %s%n", metrics.maxConcurrentOperations);
 
                         if (!metrics.statisticsSnapshots.isEmpty()) {
-                            log.info("  Periodic Statistics:");
-                            log.info("    Average CV over time: %.2f%%%n", metrics.averageCV);
-                            log.info("    CV Range: %.2f%% - %.2f%%%n", metrics.minCV, metrics.maxCV);
+                            LOGGER.info("  Periodic Statistics:");
+                            LOGGER.info("    Average CV over time: %s%%%n",
+                                    "%.2f".formatted(metrics.averageCV));
+                            LOGGER.info("    CV Range: %s%% - %s%%%n",
+                                    "%.2f".formatted(metrics.minCV),
+                                    "%.2f".formatted(metrics.maxCV));
                         }
 
-                        log.info("");
+                        LOGGER.info("");
                     });
         }
 
@@ -236,7 +248,7 @@ public class JfrVarianceAnalyzer {
             standardDeviation = Math.sqrt(variance);
 
             // Calculate coefficient of variation
-            coefficientOfVariation = (mean > 0) ? (standardDeviation / mean * 100) : 0;
+            coefficientOfVariation = mean > 0 ? (standardDeviation / mean * 100) : 0;
 
             // Calculate average CV from periodic snapshots
             if (!statisticsSnapshots.isEmpty()) {
@@ -266,7 +278,7 @@ public class JfrVarianceAnalyzer {
      */
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
-            log.error("Usage: JfrVarianceAnalyzer <path-to-jfr-file>");
+            LOGGER.error(JFR_VARIANCE_USAGE);
             System.exit(1);
         }
 

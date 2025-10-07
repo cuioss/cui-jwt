@@ -15,12 +15,13 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
+import de.cuioss.http.client.handler.SecureSSLContextProvider;
+import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
-import de.cuioss.tools.net.http.SecureSSLContextProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -297,7 +298,7 @@ class HttpJwksLoaderConfigTest {
     @DisplayName("Should test equals and hashCode methods")
     void shouldTestEqualsAndHashCode() {
         // Use same RetryStrategy instance for both configs since it's now part of equals/hashCode
-        RetryStrategy sharedRetryStrategy = RetryStrategy.exponentialBackoff();
+        RetryStrategy sharedRetryStrategy = RetryStrategies.exponentialBackoff();
 
         HttpJwksLoaderConfig config1 = HttpJwksLoaderConfig.builder()
                 .jwksUrl(VALID_URL)

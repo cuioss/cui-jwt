@@ -89,7 +89,9 @@ class IssuerConfigResolverPerformanceTest {
                         assertEquals(issuerIdentifier, result.getIssuerIdentifier());
                         successCount.incrementAndGet();
                     }
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (IllegalArgumentException | IllegalStateException e) {
                     fail("Thread execution failed: " + e.getMessage());
                 } finally {
                     endLatch.countDown();
@@ -157,7 +159,7 @@ class IssuerConfigResolverPerformanceTest {
                         totalOperations.incrementAndGet();
 
                         assertNotNull(result);
-                    } catch (Exception e) {
+                    } catch (IllegalArgumentException | IllegalStateException e) {
                         fail("Warmup test failed: " + e.getMessage());
                     } finally {
                         latch.countDown();
@@ -202,7 +204,11 @@ class IssuerConfigResolverPerformanceTest {
 
                     executionTimes.add(duration);
                     assertNotNull(result);
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (BrokenBarrierException e) {
+                    fail("Barrier broken: " + e.getMessage());
+                } catch (IllegalArgumentException | IllegalStateException e) {
                     fail("Thread failed: " + e.getMessage());
                 } finally {
                     latch.countDown();

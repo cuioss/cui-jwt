@@ -102,7 +102,7 @@ public class JwtMetricsCollector {
      */
     @PostConstruct
     void initialize() {
-        LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
+        LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR);
         securityEventCounter = tokenValidator.getSecurityEventCounter();
 
         // Register counters for all event types
@@ -112,7 +112,7 @@ public class JwtMetricsCollector {
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
         lastKnownCounts.putAll(currentCounts);
 
-        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size()));
+        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED, counters.size());
 
         // Force initial update to ensure metrics are visible immediately
         updateCounters();
@@ -188,7 +188,7 @@ public class JwtMetricsCollector {
      * themselves will retain their values until the next scheduled update cycle.
      */
     public void clear() {
-        LOGGER.info(INFO.CLEARING_JWT_METRICS::format);
+        LOGGER.info(INFO.CLEARING_JWT_METRICS);
 
         // Clear security event counter
         if (securityEventCounter != null) {
@@ -198,7 +198,7 @@ public class JwtMetricsCollector {
         // Clear tracking maps to reset delta calculations
         lastKnownCounts.clear();
 
-        LOGGER.info(INFO.JWT_METRICS_CLEARED::format);
+        LOGGER.info(INFO.JWT_METRICS_CLEARED);
     }
 
     /**
@@ -238,7 +238,7 @@ public class JwtMetricsCollector {
                     counter.increment(delta);
                     LOGGER.debug("Updated counter for event type %s by %s (total: %s)", eventType.name(), delta, counter.count());
                 } else {
-                    LOGGER.warn(WARN.NO_MICROMETER_COUNTER_FOUND.format(eventType.name(), delta));
+                    LOGGER.warn(WARN.NO_MICROMETER_COUNTER_FOUND, eventType.name(), delta);
                 }
 
                 // Update the last known count

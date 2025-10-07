@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 import static io.restassured.RestAssured.given;
@@ -271,7 +272,7 @@ class VertxServletObjectsResolverQuarkusTest {
                 result.append("parameterMap size: ").append(paramMap.size()).append("\n");
 
                 return Response.ok(result.toString()).build();
-            } catch (Exception e) {
+            } catch (IllegalStateException e) {
                 return Response.serverError().entity("Error: " + e.getMessage()).build();
             }
         }
@@ -308,7 +309,7 @@ class VertxServletObjectsResolverQuarkusTest {
                 result.append("ServerPort: ").append(request.getServerPort()).append("\n");
 
                 return Response.ok(result.toString()).build();
-            } catch (Exception e) {
+            } catch (IllegalStateException e) {
                 return Response.serverError().entity("Error: " + e.getMessage()).build();
             }
         }
@@ -333,7 +334,7 @@ class VertxServletObjectsResolverQuarkusTest {
                 }
 
                 return Response.ok(result.toString()).build();
-            } catch (Exception e) {
+            } catch (IllegalStateException e) {
                 return Response.serverError().entity("Error: " + e.getMessage()).build();
             }
         }
@@ -363,7 +364,7 @@ class VertxServletObjectsResolverQuarkusTest {
                 result.append("Attribute names: ").append(String.join(",", namesList)).append("\n");
 
                 return Response.ok(result.toString()).build();
-            } catch (Exception e) {
+            } catch (IllegalStateException e) {
                 return Response.serverError().entity("Error: " + e.getMessage()).build();
             }
         }
@@ -396,12 +397,12 @@ class VertxServletObjectsResolverQuarkusTest {
                 try {
                     request.setCharacterEncoding("ISO-8859-1");
                     result.append("SetCharacterEncoding: ISO-8859-1\n");
-                } catch (Exception e) {
+                } catch (UnsupportedEncodingException e) {
                     result.append("SetCharacterEncoding Error: ").append(e.getMessage()).append("\n");
                 }
 
                 return Response.ok(result.toString()).build();
-            } catch (Exception e) {
+            } catch (IllegalStateException e) {
                 return Response.serverError().entity("Error: " + e.getMessage()).build();
             }
         }

@@ -35,7 +35,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO.*;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.*;
 
 /**
  * Abstract base class for JMH benchmark runners that integrates with CUI benchmarking infrastructure.
@@ -217,7 +218,7 @@ public abstract class AbstractBenchmarkRunner {
         try {
             processPreciseTimestamps(results, timestampsFile);
         } catch (IOException e) {
-            LOGGER.warn("Failed to parse timestamp file, using session-wide timestamps: {}", e.getMessage());
+            LOGGER.warn(FAILED_PARSE_TIMESTAMP_FILE, e.getMessage());
             recordSessionTimestamps(results);
         }
     }
@@ -242,7 +243,7 @@ public abstract class AbstractBenchmarkRunner {
             List<IterationTimestampParser.IterationWindow> benchmarkWindows = byBenchmark.get(benchmarkName);
 
             if (benchmarkWindows == null || benchmarkWindows.isEmpty()) {
-                LOGGER.warn("No timestamp data found for benchmark '{}', using session timestamps", benchmarkName);
+                LOGGER.warn(NO_TIMESTAMP_DATA, benchmarkName);
                 recordBenchmarkTimestamp(benchmarkName);
                 continue;
             }
@@ -266,12 +267,11 @@ public abstract class AbstractBenchmarkRunner {
 
         if (measurementWindow.isPresent()) {
             IterationTimestampParser.IterationWindow window = measurementWindow.get();
-            LOGGER.info("Using precise timestamps for benchmark '{}': {} to {}",
-                    benchmarkName, window.startTime(), window.endTime());
+            LOGGER.info(USING_PRECISE_TIMESTAMPS, benchmarkName, window.startTime(), window.endTime());
             prometheusMetricsManager.recordBenchmarkTimestamps(
                     benchmarkName, window.startTime(), window.endTime());
         } else {
-            LOGGER.warn("No measurement windows found for benchmark '{}', using session timestamps", benchmarkName);
+            LOGGER.warn(NO_MEASUREMENT_WINDOWS, benchmarkName);
             recordBenchmarkTimestamp(benchmarkName);
         }
     }
@@ -385,7 +385,7 @@ public abstract class AbstractBenchmarkRunner {
         prometheusMetricsManager.clear();
 
         String outputDir = config.resultsDirectory();
-        LOGGER.info(INFO.BENCHMARK_RUNNER_STARTING.format() + " - Type: " + config.benchmarkType() + ", Output: " + outputDir);
+        LOGGER.info(BENCHMARK_RUNNER_STARTING_WITH_DETAILS, config.benchmarkType(), outputDir);
 
         // Step 2: Ensure output directory exists
         Path outputPath = Path.of(outputDir);
@@ -418,7 +418,7 @@ public abstract class AbstractBenchmarkRunner {
             // Step 9: Post-benchmark hook
             afterBenchmark(results, config);
 
-            LOGGER.info(INFO.BENCHMARKS_COMPLETED.format(results.size()) + ", artifacts in " + outputDir);
+            LOGGER.info(BENCHMARKS_COMPLETED_WITH_ARTIFACTS, results.size(), outputDir);
 
         } finally {
             // Step 9: Cleanup (always executed)

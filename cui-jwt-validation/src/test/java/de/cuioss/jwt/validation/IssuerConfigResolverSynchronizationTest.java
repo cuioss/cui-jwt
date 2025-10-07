@@ -95,7 +95,7 @@ class IssuerConfigResolverSynchronizationTest {
                         operations.incrementAndGet();
 
                         assertNotNull(result);
-                    } catch (Exception e) {
+                    } catch (IllegalArgumentException | IllegalStateException e) {
                         fail("Warmup test failed: " + e.getMessage());
                     } finally {
                         latch.countDown();
@@ -147,7 +147,7 @@ class IssuerConfigResolverSynchronizationTest {
 
                     long threadTime = System.nanoTime() - threadStartTime;
                     totalTime.addAndGet(threadTime);
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | IllegalStateException e) {
                     fail("Post-warmup test failed: " + e.getMessage());
                 } finally {
                     latch.countDown();

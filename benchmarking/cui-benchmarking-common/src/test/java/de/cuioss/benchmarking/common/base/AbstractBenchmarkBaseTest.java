@@ -60,7 +60,6 @@ class AbstractBenchmarkBaseTest {
         assertNotNull(testBenchmark.benchmarkResultsDir);
         assertNotNull(testBenchmark.httpClient);
         assertTrue(testBenchmark.additionalSetupCalled);
-        assertNotNull(testBenchmark.logger);
     }
 
     @Test void shouldUseBenchmarkResultsDirFromSystemProperty() {

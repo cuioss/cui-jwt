@@ -225,8 +225,9 @@ public class IssuerConfig implements LoadingStatusProvider {
 
         // Fall back to configured issuer identifier (for file-based, in-memory, etc.)
         Preconditions.checkState(issuerIdentifier != null,
-                "issuerIdentifier is null - this indicates a bug in validation logic. " +
-                        "Non-well-known JWKS loaders should have been validated to require issuerIdentifier during initialization.");
+                """
+                issuerIdentifier is null - this indicates a bug in validation logic. \
+                Non-well-known JWKS loaders should have been validated to require issuerIdentifier during initialization.""");
         return issuerIdentifier;
     }
 
@@ -739,8 +740,7 @@ public class IssuerConfig implements LoadingStatusProvider {
 
             // Warn about RFC compliance when subject claim is made optional
             if (claimSubOptional) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING.format(
-                        issuerIdentifier != null ? issuerIdentifier : "unknown"));
+                LOGGER.warn(JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING, issuerIdentifier != null ? issuerIdentifier : "unknown");
             }
 
             return new IssuerConfig(enabled, issuerIdentifier, expectedAudience, expectedClientId,
@@ -751,8 +751,9 @@ public class IssuerConfig implements LoadingStatusProvider {
             // Validate that at least one JWKS loading method is configured
             if (httpJwksLoaderConfig == null && jwksFilePath == null &&
                     jwksContent == null && jwksLoader == null) {
-                throw new IllegalArgumentException("No JwksLoader configuration is present for enabled issuer. " +
-                        "One of httpJwksLoaderConfig, jwksFilePath, jwksContent, or a custom jwksLoader must be provided.");
+                throw new IllegalArgumentException("""
+                        No JwksLoader configuration is present for enabled issuer. \
+                        One of httpJwksLoaderConfig, jwksFilePath, jwksContent, or a custom jwksLoader must be provided.""");
             }
 
             // Validate issuerIdentifier requirements based on JWKS loading method

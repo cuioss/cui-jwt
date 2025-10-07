@@ -242,7 +242,7 @@ public class NonValidatingJwtParser {
         // Check if token is empty
         if (MoreStrings.isEmpty(token)) {
             if (logWarnings) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
+                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
@@ -256,7 +256,7 @@ public class NonValidatingJwtParser {
         // Check if token size exceeds maximum
         if (token.getBytes(StandardCharsets.UTF_8).length > config.getMaxTokenSize()) {
             if (logWarnings) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.format(config.getMaxTokenSize()));
+                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED, config.getMaxTokenSize());
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED);
@@ -271,7 +271,7 @@ public class NonValidatingJwtParser {
         String[] parts = token.split("\\.");
         if (parts.length != 3) {
             if (logWarnings) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT.format(parts.length));
+                LOGGER.warn(JWTValidationLogMessages.WARN.INVALID_JWT_FORMAT, parts.length);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.INVALID_JWT_FORMAT);
@@ -287,7 +287,7 @@ public class NonValidatingJwtParser {
             return decodeTokenParts(parts, token, logWarnings, trackSecurityEvents);
         } catch (IllegalArgumentException e) {
             if (logWarnings) {
-                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
@@ -326,7 +326,7 @@ public class NonValidatingJwtParser {
         } catch (IOException e) {
             // IOException from DSL-JSON deserialization
             if (logWarnings) {
-                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT.format());
+                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
@@ -389,7 +389,7 @@ public class NonValidatingJwtParser {
 
             // Check payload size limit to prevent memory exhaustion attacks
             if (decodedBytes.length > config.getMaxPayloadSize()) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED.format(config.getMaxPayloadSize()));
+                LOGGER.warn(JWTValidationLogMessages.WARN.DECODED_PART_SIZE_EXCEEDED, config.getMaxPayloadSize());
                 securityEventCounter.increment(SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED);
                 throw new TokenValidationException(
                         SecurityEventCounter.EventType.DECODED_PART_SIZE_EXCEEDED,

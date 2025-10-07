@@ -19,6 +19,7 @@ import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.http.client.ResilientHttpHandler;
 import de.cuioss.http.client.result.HttpResultObject;
+import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
 
@@ -52,7 +53,7 @@ public class HttpWellKnownResolver implements LoadingStatusProvider {
      */
     public HttpWellKnownResolver(WellKnownConfig config) {
         var converter = new WellKnownConfigurationConverter(config.getParserConfig().getDslJson());
-        this.wellKnownHandler = new ResilientHttpHandler<>(config.getHttpHandler(), converter);
+        this.wellKnownHandler = new ResilientHttpHandler<>(config.getHttpHandler(), RetryStrategies.exponentialBackoff(), converter);
         LOGGER.debug("Created HttpWellKnownResolver for well-known endpoint discovery");
     }
 

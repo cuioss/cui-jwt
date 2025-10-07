@@ -97,7 +97,7 @@ public class ReportDataGenerator {
         Path dataFile = dataDir.resolve(DATA_FILE_NAME);
         Files.writeString(dataFile, JsonSerializationHelper.toJson(data));
 
-        LOGGER.info(INFO.METRICS_FILE_GENERATED.format(dataFile));
+        LOGGER.info(INFO.METRICS_FILE_GENERATED, dataFile);
 
         // Archive current run to history
         String commitSha = System.getenv("GITHUB_SHA");
@@ -365,7 +365,7 @@ public class ReportDataGenerator {
         if (externalHistoryPath != null && !externalHistoryPath.isEmpty()) {
             // Use external history directory (e.g., for CI/CD workflows)
             historyDir = Path.of(externalHistoryPath);
-            LOGGER.info(INFO.PROCESSING_RESULTS.format("Using external history directory: " + historyDir));
+            LOGGER.info(INFO.USING_EXTERNAL_HISTORY_DIR, historyDir);
         } else {
             // Default to output directory/history (for local runs and tests)
             historyDir = Path.of(outputDir, "history");
@@ -373,7 +373,7 @@ public class ReportDataGenerator {
 
         if (!Files.exists(historyDir)) {
             // First run, no history available
-            LOGGER.info(INFO.PROCESSING_RESULTS.format("History directory not found: " + historyDir));
+            LOGGER.info(INFO.HISTORY_DIR_NOT_FOUND, historyDir);
             return createNoHistoryResponse();
         }
 

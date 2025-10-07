@@ -59,9 +59,9 @@ public class ExpirationValidator {
      * @throws TokenValidationException if the token is expired
      */
     public void validateNotExpired(TokenContent token, @NonNull ValidationContext context) {
-        LOGGER.debug("validate expiration. Can be done directly, because ", token);
+        LOGGER.debug("validate expiration. Can be done directly, because %s", token);
         if (token.isExpired(context)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED);
             securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EXPIRED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_EXPIRED,
@@ -98,7 +98,7 @@ public class ExpirationValidator {
         }
 
         if (context.isNotBeforeInvalid(notBefore.get())) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_NBF_FUTURE::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_NBF_FUTURE);
             securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_NBF_FUTURE);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_NBF_FUTURE,

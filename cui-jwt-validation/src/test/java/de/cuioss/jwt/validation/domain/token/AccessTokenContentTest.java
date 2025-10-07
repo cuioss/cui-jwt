@@ -34,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -66,8 +67,8 @@ class AccessTokenContentTest implements ShouldHandleObjectContracts<AccessTokenC
         try {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, "{}");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create empty MapRepresentation", e);
+        } catch (IOException e) {
+            throw new AssertionError("Failed to create empty MapRepresentation", e);
         }
     }
 

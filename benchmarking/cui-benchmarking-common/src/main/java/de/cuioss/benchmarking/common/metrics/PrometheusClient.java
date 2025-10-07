@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import de.cuioss.benchmarking.common.http.HttpClientFactory;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
@@ -36,6 +37,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.FAILED_QUERY_METRIC;
 
 /**
  * HTTP client for querying Prometheus API endpoints.
@@ -92,7 +95,7 @@ public class PrometheusClient {
                 TimeSeries timeSeries = queryRangeForMetric(metricName, startTime, endTime, step);
                 results.put(metricName, timeSeries);
             } catch (PrometheusException e) {
-                LOGGER.warn("Failed to query metric '{}': {}", metricName, e.getMessage());
+                LOGGER.warn(FAILED_QUERY_METRIC, metricName, e.getMessage());
                 throw e;
             }
         }
@@ -157,7 +160,10 @@ public class PrometheusClient {
 
             return new TimeSeries(metricName, labels, dataPoints);
 
-        } catch (Exception e) {
+        } catch (JsonParseException | IllegalStateException | NullPointerException e) {
+            // JsonParseException: malformed JSON
+            // IllegalStateException: JSON element is wrong type (e.g., not an object/array when expected)
+            // NullPointerException: missing expected JSON fields
             throw new PrometheusException("Unexpected error parsing response: " + e.getMessage(), e);
         }
     }

@@ -356,10 +356,6 @@ Health checks scale better but also degrade at 300 connections (P90 15ms vs 2.5m
 |Cause
 |Solution
 
-|WRK not found
-|Not installed
-|`brew install wrk` (macOS)
-
 |High latency (>10ms)
 |Connection pool saturation
 |Reduce connections: `-Dwrk.connections=10`
@@ -394,50 +390,7 @@ curl -k https://localhost:1443/realms/benchmark
 
 == CI/CD Integration
 
-=== GitHub Actions
-
-[source,yaml]
-----
-- name: Install WRK
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y wrk
-
-- name: Run WRK Benchmarks
-  run: |
-    ./mvnw clean verify -Pbenchmark \
-      -pl benchmarking/benchmark-integration-wrk \
-      -DskipTests
-
-- name: Archive Results
-  uses: actions/upload-artifact@v3
-  with:
-    name: wrk-benchmark-results
-    path: benchmarking/benchmark-integration-wrk/target/benchmark-results/
-----
-
-=== Performance Regression Detection
-
-[source,bash]
-----
-#!/bin/bash
-BASELINE_RPS=$(jq '.performance.requests_per_second' baseline/wrk-jwt-results.json)
-CURRENT_RPS=$(jq '.performance.requests_per_second' target/benchmark-results/wrk-jwt-results.json)
-
-if (( $(echo "$CURRENT_RPS < $BASELINE_RPS * 0.9" | bc -l) )); then
-  echo "Performance regression detected: ${CURRENT_RPS} < ${BASELINE_RPS} * 0.9"
-  exit 1
-fi
-----
-
-== Future Enhancements
-
-* [ ] JWT token generation with proper authentication
-* [ ] Request body variations and payload testing
-* [ ] WebSocket performance benchmarking
-* [ ] Grafana dashboard integration
-* [ ] Distributed load testing support
-* [ ] Automatic performance regression alerts
+See link:../../.github/workflows/benchmark.yml[GitHub Actions Benchmark Workflow] for automated benchmark execution and performance regression detection.
 
 == Related Documentation
 

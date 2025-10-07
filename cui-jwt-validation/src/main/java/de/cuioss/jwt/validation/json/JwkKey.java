@@ -176,7 +176,7 @@ String y      // EC y coordinate (Base64url-encoded, EC only)
 
         // Validate Base64 URL format
         if (!BASE64_URL_PATTERN.matcher(base64String).matches()) {
-            LOGGER.warn(WARN.INVALID_BASE64_URL_ENCODING.format(base64String));
+            LOGGER.warn(WARN.INVALID_BASE64_URL_ENCODING, base64String);
             return Optional.empty();
         }
 
@@ -185,7 +185,7 @@ String y      // EC y coordinate (Base64url-encoded, EC only)
             return Optional.of(new BigInteger(1, decoded));
         } catch (IllegalArgumentException e) {
             // Invalid Base64 URL encoding (e.g., contains padding or invalid characters)
-            LOGGER.warn(WARN.INVALID_BASE64_URL_ENCODING.format(base64String));
+            LOGGER.warn(WARN.INVALID_BASE64_URL_ENCODING, base64String);
             return Optional.empty();
         }
     }

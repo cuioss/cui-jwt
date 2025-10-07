@@ -22,6 +22,7 @@ import java.io.File;
 
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Files.Directories;
 import static de.cuioss.benchmarking.common.constants.BenchmarkConstants.Integration.Jmh;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.UNKNOWN_RESULT_FORMAT;
 
 /**
  * Configuration for benchmark report generation.
@@ -178,7 +179,7 @@ ResultFormatType resultFormat
                 case "LATEX" -> ResultFormatType.LATEX;
                 case "TEXT" -> ResultFormatType.TEXT;
                 default -> {
-                    LOGGER.warn("Unknown result format: {}, defaulting to JSON", format);
+                    LOGGER.warn(UNKNOWN_RESULT_FORMAT, format);
                     yield ResultFormatType.JSON;
                 }
             };

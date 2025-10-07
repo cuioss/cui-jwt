@@ -118,7 +118,7 @@ public class InMemoryKeyMaterialHandler {
             KeyPair keyPair = algorithm.getAlgorithm().keyPair().build();
             KEY_PAIRS.get(algorithm).put(keyId, keyPair);
             return keyPair;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             throw new IllegalStateException("Failed to generate key pair for algorithm " + algorithm, e);
         }
     }

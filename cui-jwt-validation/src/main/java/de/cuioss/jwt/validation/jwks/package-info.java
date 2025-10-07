@@ -48,7 +48,7 @@
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#_jwksloader">Technical Components Specification - JwksLoader</a>
  * 
  * @since 1.0
- * @see de.cuioss.jwt.validation.pipeline.TokenSignatureValidator
+ * @see de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7517">RFC 7517 - JSON Web Key (JWK)</a>
  */
 package de.cuioss.jwt.validation.jwks;

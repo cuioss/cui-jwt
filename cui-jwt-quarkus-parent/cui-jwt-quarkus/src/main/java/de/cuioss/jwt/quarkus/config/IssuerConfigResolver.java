@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
+import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
@@ -66,7 +67,7 @@ public class IssuerConfigResolver {
      * @param config the configuration instance to use for property resolution
      */
     public IssuerConfigResolver(@NonNull Config config) {
-        this(config, RetryStrategy.exponentialBackoff());
+        this(config, RetryStrategies.exponentialBackoff());
     }
 
     /**
@@ -97,7 +98,7 @@ public class IssuerConfigResolver {
      */
     @NonNull
     public List<IssuerConfig> resolveIssuerConfigs() {
-        LOGGER.info(INFO.RESOLVING_ISSUER_CONFIGURATIONS::format);
+        LOGGER.info(INFO.RESOLVING_ISSUER_CONFIGURATIONS);
 
         Set<String> issuerNames = discoverIssuerNames();
         if (issuerNames.isEmpty()) {
@@ -110,7 +111,7 @@ public class IssuerConfigResolver {
             if (isIssuerEnabled(issuerName)) {
                 IssuerConfig issuerConfig = createIssuerConfig(issuerName);
                 enabledIssuers.add(issuerConfig);
-                LOGGER.info(INFO.RESOLVED_ISSUER_CONFIGURATION.format(issuerName));
+                LOGGER.info(INFO.RESOLVED_ISSUER_CONFIGURATION, issuerName);
             } else {
                 LOGGER.debug("Skipping disabled issuer: %s", issuerName);
             }
@@ -120,7 +121,7 @@ public class IssuerConfigResolver {
             throw new IllegalStateException("No enabled issuer configurations found");
         }
 
-        LOGGER.info(INFO.RESOLVED_ENABLED_ISSUER_CONFIGURATIONS.format(enabledIssuers.size()));
+        LOGGER.info(INFO.RESOLVED_ENABLED_ISSUER_CONFIGURATIONS, enabledIssuers.size());
         return enabledIssuers;
     }
 

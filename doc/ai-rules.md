@@ -80,7 +80,11 @@ Execute in sequence before ANY commit:
 
 1. **Quality Verification**: `./mvnw -Ppre-commit clean verify`
     - Fix ALL errors and warnings (mandatory)
-    - Some recipes may add markers: Either fix them, or suppress them with proper justification. Never commit the markers.
+    - **OpenRewrite Markers**: Build may add markers like `/*~~(TODO: INFO needs LogRecord)~~>*/`
+      - Markers indicate ACTUAL BUGS (e.g., placeholder/parameter mismatches), not just style warnings
+      - MUST fix the underlying issue OR suppress with proper justification
+      - NEVER commit code with markers
+      - See OpenRewrite Marker Handling section below
     - Address code quality, formatting, and linting issues
 
 2. **Final Verification**: `./mvnw clean install`
@@ -165,7 +169,7 @@ Common Maven commands for CUI projects:
 - Make proper use of `lombok.config` settings
 
 ## Logging Standards
-**References**: 
+**References**:
 - Logging Core Standards: `{STANDARDS_BASE_URL}/standards/logging`
 - Logging Implementation Guide: `{STANDARDS_BASE_URL}/standards/logging/implementation-guide.adoc`
 - Logging Testing Guide: `{STANDARDS_BASE_URL}/standards/logging/testing-guide.adoc`
@@ -178,6 +182,52 @@ Common Maven commands for CUI projects:
 - Follow logging level ranges: INFO (001-99), WARN (100-199), ERROR (200-299), FATAL (300-399)
 - All log messages must be documented in doc/LogMessages.adoc
 - No log4j, slf4j, System.out, or System.err usage
+
+### OpenRewrite Marker Handling
+**CRITICAL**: Pre-commit builds run OpenRewrite recipes that add markers to flag violations.
+
+**Marker Pattern**: `/*~~(TODO: INFO needs LogRecord)~~>*/` or `/*~~(TODO: [message])~~>*/`
+
+**What Markers Indicate**:
+- **ACTUAL BUGS**: Markers often indicate real issues like:
+  - Placeholder/parameter count mismatches: `"value: %s"` with 0 parameters
+  - Wrong format specifiers: Using `%.2f`, `{:.2f}`, `{}`, `%d` instead of `%s`
+  - Missing LogRecord definitions for production INFO/WARN/ERROR logs
+  - Generic Exception usage instead of specific types
+  - RuntimeException catches that should be specific exceptions
+
+**Handling Strategy**:
+1. **Production Code Violations**:
+   - Fix the actual bug (add missing placeholders, change format to %s, etc.)
+   - Create LogRecord constant for INFO/WARN/ERROR messages
+   - Replace generic Exception with specific types (IOException, IllegalStateException, etc.)
+   - Never catch or throw RuntimeException - use specific exception types
+
+2. **Test Code Violations**:
+   - **Diagnostic/Performance Logging**: Add suppression comment at class level:
+     ```java
+     // cui-rewrite:disable CuiLogRecordPatternRecipe
+     // This is a test/utility class that outputs diagnostic information for analysis
+     ```
+   - **Exception Handling**: Replace RuntimeException with AssertionError in test failures
+   - **Format Bugs**: Fix placeholder mismatches even in tests (change to %s)
+
+3. **Removing Markers**:
+   - After fixing issues, remove markers: `find src -name "*.java" -exec sed -i '' 's|/\*~~(TODO: [^)]*)~~>\*/||g' {} +`
+   - Verify removal: `grep -r "~~(TODO:" src --include="*.java"`
+   - Re-run pre-commit build - markers may reappear if issues not truly fixed
+
+**Common Mistakes**:
+- ❌ Removing markers without fixing the underlying bug
+- ❌ Creating LogRecords for test diagnostic logging (use suppression instead)
+- ❌ Using `%.2f`, `{:.2f}`, or `%d` format specifiers (always use `%s`)
+- ❌ Catching generic Exception/RuntimeException (use specific types like TokenValidationException)
+- ❌ Committing code with markers present
+
+**Validation**:
+- After fixing all markers, run `./mvnw -Ppre-commit clean verify` again
+- Verify all tests still pass
+- Confirm no new markers appear (or are intentionally suppressed)
 
 ## Testing Standards
 **References**: 

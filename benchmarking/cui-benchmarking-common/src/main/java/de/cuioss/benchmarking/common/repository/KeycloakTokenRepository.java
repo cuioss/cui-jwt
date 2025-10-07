@@ -34,6 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR.FAILED_FETCH_TOKEN;
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.WARN.TOKEN_POOL_EMPTY;
+
 /**
  * Keycloak-based token repository for fetching real JWT tokens from a Keycloak server.
  * <p>
@@ -90,7 +93,7 @@ public class KeycloakTokenRepository implements TokenProvider {
      */
     @Override @NonNull public String getNextToken() {
         if (tokenPool.isEmpty()) {
-            LOGGER.warn("Token pool is empty, fetching single token");
+            LOGGER.warn(TOKEN_POOL_EMPTY);
             return fetchSingleToken();
         }
 
@@ -184,8 +187,7 @@ public class KeycloakTokenRepository implements TokenProvider {
     private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
         String errorBody = response.body() != null ? response.body() : "<no body>";
 
-        LOGGER.error("Failed to fetch token. Status: {}, Body: {}",
-                response.statusCode(), errorBody);
+        LOGGER.error(FAILED_FETCH_TOKEN, response.statusCode(), errorBody);
 
         throw new TokenFetchException(
                 "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(

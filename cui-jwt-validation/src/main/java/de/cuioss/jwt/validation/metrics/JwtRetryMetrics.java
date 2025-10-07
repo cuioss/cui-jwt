@@ -75,9 +75,9 @@ public class JwtRetryMetrics implements RetryMetrics {
         }
 
         if (successful) {
-            LOGGER.info(INFO.RETRY_OPERATION_COMPLETED.format(context.operationName(), totalAttempts, totalDuration.toMillis()));
+            LOGGER.info(INFO.RETRY_OPERATION_COMPLETED, context.operationName(), totalAttempts, totalDuration.toMillis());
         } else {
-            LOGGER.warn(WARN.RETRY_OPERATION_FAILED.format(context.operationName(), totalAttempts, totalDuration.toMillis()));
+            LOGGER.warn(WARN.RETRY_OPERATION_FAILED, context.operationName(), totalAttempts, totalDuration.toMillis());
         }
     }
 
@@ -89,9 +89,9 @@ public class JwtRetryMetrics implements RetryMetrics {
         }
 
         if (successful) {
-            LOGGER.debug("Retry attempt {} succeeded for operation '{}' in {}ms", attemptNumber, context.operationName(), attemptDuration.toMillis());
+            LOGGER.debug("Retry attempt %s succeeded for operation '%s' in %sms", attemptNumber, context.operationName(), attemptDuration.toMillis());
         } else {
-            LOGGER.debug("Retry attempt {} failed for operation '{}' after {}ms",
+            LOGGER.debug("Retry attempt %s failed for operation '%s' after %sms",
                     attemptNumber, context.operationName(), attemptDuration.toMillis());
         }
     }
@@ -108,7 +108,7 @@ public class JwtRetryMetrics implements RetryMetrics {
         // Log if there was a significant difference between planned and actual delay
         long delayDifference = Math.abs(actualDelay.toMillis() - plannedDelay.toMillis());
         if (delayDifference > 50) { // More than 50ms difference
-            LOGGER.debug("Retry delay deviation for '{}': planned={}ms, actual={}ms, difference={}ms",
+            LOGGER.debug("Retry delay deviation for '%s': planned=%sms, actual=%sms, difference=%sms",
                     context.operationName(), plannedDelay.toMillis(), actualDelay.toMillis(), delayDifference);
         }
     }

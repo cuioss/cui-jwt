@@ -237,7 +237,7 @@ public class JwtValidationEndpoint {
         long totalEvents = securityEventCounter.getCounters().values().stream()
                 .mapToLong(Long::longValue)
                 .sum();
-        LOGGER.debug("Echo endpoint called - total security events: %d", totalEvents);
+        LOGGER.debug("Echo endpoint called - total security events: %s", totalEvents);
 
         // Return the exact same data that was sent
         Map<String, Object> responseData = new HashMap<>();

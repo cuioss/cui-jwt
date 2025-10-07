@@ -106,7 +106,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
 @RegisterForReflection(fields = false)
 public class BearerTokenProducer {
 
-    static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);
+    private static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);
     static final String BEARER_PREFIX = "Bearer ";
 
     private final TokenValidator tokenValidator;
@@ -177,7 +177,7 @@ public class BearerTokenProducer {
                         .accessTokenContent(tokenContent)
                         .build();
             } else {
-                LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED.format(missingScopes, missingRoles, missingGroups));
+                LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED, missingScopes, missingRoles, missingGroups);
                 return BearerTokenResult.builder()
                         .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
                         .missingScopes(missingScopes)

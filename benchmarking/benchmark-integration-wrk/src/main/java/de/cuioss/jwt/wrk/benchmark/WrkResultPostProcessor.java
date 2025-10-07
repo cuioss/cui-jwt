@@ -81,7 +81,7 @@ public class WrkResultPostProcessor {
      */
     public static void main(String[] args) {
         if (args.length == 0) {
-            LOGGER.error(ERROR.WRK_USAGE_ERROR.format());
+            LOGGER.error(ERROR.WRK_USAGE_ERROR);
             System.exit(1);
         }
 
@@ -96,10 +96,10 @@ public class WrkResultPostProcessor {
 
             processor.process(inputDir, outputDir);
 
-            LOGGER.info(INFO.RESULTS_AVAILABLE.format(outputDir));
+            LOGGER.info(INFO.RESULTS_AVAILABLE, outputDir);
 
         } catch (IOException e) {
-            LOGGER.error(e, ERROR.WRK_PROCESSOR_FAILED.format());
+            LOGGER.error(e, ERROR.WRK_PROCESSOR_FAILED);
             System.exit(1);
         }
     }
@@ -112,7 +112,7 @@ public class WrkResultPostProcessor {
      * @throws IOException if processing fails
      */
     public void process(Path inputDir, Path outputDir) throws IOException {
-        LOGGER.info(INFO.WRK_PROCESSING_START.format());
+        LOGGER.info(INFO.WRK_PROCESSING_START);
 
         // Parse all WRK result files to extract metadata
         parseBenchmarkMetadata(inputDir);
@@ -136,13 +136,13 @@ public class WrkResultPostProcessor {
         }
 
         if (!hasWrkFiles) {
-            LOGGER.error(ERROR.NO_WRK_FILES.format(wrkDir));
+            LOGGER.error(ERROR.NO_WRK_FILES, wrkDir);
         }
 
         // Convert WRK output to BenchmarkData from wrk subdirectory
         BenchmarkData benchmarkData;
         if (!Files.exists(wrkDir)) {
-            LOGGER.error(ERROR.WRK_DIR_NOT_EXIST.format(wrkDir));
+            LOGGER.error(ERROR.WRK_DIR_NOT_EXIST, wrkDir);
             benchmarkData = BenchmarkData.builder()
                     .metadata(BenchmarkData.Metadata.builder()
                             .reportVersion("2.0")
@@ -166,7 +166,7 @@ public class WrkResultPostProcessor {
         }
 
         if (benchmarkData.getBenchmarks() == null || benchmarkData.getBenchmarks().isEmpty()) {
-            LOGGER.error(ERROR.NO_BENCHMARK_DATA.format());
+            LOGGER.error(ERROR.NO_BENCHMARK_DATA);
         }
 
         // Generate reports using new OutputDirectoryStructure (no duplication)
@@ -202,7 +202,7 @@ public class WrkResultPostProcessor {
     private void collectPrometheusMetrics(BenchmarkData benchmarkData, OutputDirectoryStructure structure) {
         // Skip if no metadata available
         if (benchmarkMetadataMap.isEmpty()) {
-            LOGGER.error(ERROR.NO_PROMETHEUS_METADATA.format());
+            LOGGER.error(ERROR.NO_PROMETHEUS_METADATA);
             return;
         }
 
@@ -213,7 +213,7 @@ public class WrkResultPostProcessor {
                 BenchmarkMetadata metadata = findMetadataForBenchmark(benchmark.getName());
 
                 if (metadata == null) {
-                    LOGGER.error(ERROR.NO_METADATA_FOR_BENCHMARK.format(benchmark.getName()));
+                    LOGGER.error(ERROR.NO_METADATA_FOR_BENCHMARK, benchmark.getName());
                     continue;
                 }
 
@@ -255,12 +255,12 @@ public class WrkResultPostProcessor {
                                 Path targetFile = deploymentDataDir.resolve(sourceFile.getFileName());
                                 Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
                             } catch (IOException e) {
-                                LOGGER.error(e, ERROR.FAILED_COPY_PROMETHEUS.format(sourceFile));
+                                LOGGER.error(e, ERROR.FAILED_COPY_PROMETHEUS, sourceFile);
                             }
                         });
             }
         } catch (IOException e) {
-            LOGGER.error(e, ERROR.FAILED_COPY_PROMETHEUS_DIR.format());
+            LOGGER.error(e, ERROR.FAILED_COPY_PROMETHEUS_DIR);
         }
     }
 
@@ -286,7 +286,7 @@ public class WrkResultPostProcessor {
             if (wrkFiles.isEmpty()) {
                 String message = "CRITICAL: No WRK result files (*%s) found in %s. Ensure benchmarks were run successfully."
                         .formatted(WRK_OUTPUT_FILE_SUFFIX, inputDir);
-                LOGGER.error(ERROR.NO_WRK_FILES.format(inputDir));
+                LOGGER.error(ERROR.NO_WRK_FILES, inputDir);
                 throw new IllegalStateException(message);
             }
 
@@ -297,7 +297,7 @@ public class WrkResultPostProcessor {
 
             if (benchmarkMetadataMap.isEmpty()) {
                 String message = "CRITICAL: No valid benchmark metadata found in any result files";
-                LOGGER.error(ERROR.NO_BENCHMARK_DATA.format());
+                LOGGER.error(ERROR.NO_BENCHMARK_DATA);
                 throw new IllegalStateException(message);
             }
         }
@@ -336,7 +336,7 @@ public class WrkResultPostProcessor {
 
             // Validate we have all required metadata
             if (benchmarkName == null || startTime == null || endTime == null) {
-                LOGGER.error(ERROR.INCOMPLETE_METADATA.format(resultFile, benchmarkName, startTime, endTime));
+                LOGGER.error(ERROR.INCOMPLETE_METADATA, resultFile, benchmarkName, startTime, endTime);
                 return;
             }
 
@@ -345,7 +345,7 @@ public class WrkResultPostProcessor {
             benchmarkMetadataMap.put(benchmarkName, metadata);
 
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error(ERROR.FAILED_PARSE_METADATA.format(resultFile, e.getMessage()));
+            LOGGER.error(ERROR.FAILED_PARSE_METADATA, resultFile, e.getMessage());
         }
     }
 

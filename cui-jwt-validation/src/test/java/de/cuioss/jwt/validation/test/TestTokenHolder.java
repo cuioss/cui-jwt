@@ -187,7 +187,7 @@ public class TestTokenHolder implements TokenContent {
             // Build and return the JWT string
             cachedRawToken = builder.compact();
             return cachedRawToken;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             throw new IllegalStateException("Failed to generate JWT token", e);
         }
     }
@@ -511,7 +511,7 @@ public class TestTokenHolder implements TokenContent {
             DslJson<Object> dslJson = ParserConfig.builder().build().getDslJson();
             return MapRepresentation.fromJson(dslJson, jsonBuilder.toString());
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create MapRepresentation from claims", e);
+            throw new AssertionError("Failed to create MapRepresentation from claims", e);
         }
     }
 

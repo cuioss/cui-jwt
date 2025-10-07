@@ -78,8 +78,7 @@ public class LibraryMetricsExporter {
 
     public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
         if (!(metricsData instanceof TokenValidatorMonitor)) {
-            LOGGER.warn(WARN.INVALID_METRICS_TYPE.format(
-                    metricsData != null ? metricsData.getClass().getName() : "null"));
+            LOGGER.warn(WARN.INVALID_METRICS_TYPE, metricsData != null ? metricsData.getClass().getName() : "null");
             return;
         }
 

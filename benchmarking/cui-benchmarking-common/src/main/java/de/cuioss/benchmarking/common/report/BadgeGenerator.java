@@ -171,7 +171,7 @@ public class BadgeGenerator {
         String perfBadge = generatePerformanceBadge(metrics);
         Path perfBadgePath = badgesDir.resolve(type.getPerformanceBadgeFileName());
         Files.writeString(perfBadgePath, perfBadge);
-        LOGGER.info(INFO.GENERATING_REPORTS.format("Performance badge written to " + perfBadgePath));
+        LOGGER.info(INFO.BADGE_GENERATED, "performance", perfBadgePath);
 
         // Write trend badge with appropriate file name based on benchmark type
         String trendBadge = trendMetrics != null
@@ -179,13 +179,13 @@ public class BadgeGenerator {
                 : generateDefaultTrendBadge();
         Path trendBadgePath = badgesDir.resolve(type.getTrendBadgeFileName());
         Files.writeString(trendBadgePath, trendBadge);
-        LOGGER.info(INFO.GENERATING_REPORTS.format("Trend badge written to " + trendBadgePath));
+        LOGGER.info(INFO.BADGE_GENERATED, "trend", trendBadgePath);
 
         // Write last run badge (same for both types)
         String lastRunBadge = generateLastRunBadge(Instant.now());
         Path lastRunBadgePath = badgesDir.resolve(FileNames.LAST_RUN_BADGE_JSON);
         Files.writeString(lastRunBadgePath, lastRunBadge);
-        LOGGER.info(INFO.GENERATING_REPORTS.format("Last run badge written to " + lastRunBadgePath));
+        LOGGER.info(INFO.BADGE_GENERATED, "last-run", lastRunBadgePath);
     }
 
     /**

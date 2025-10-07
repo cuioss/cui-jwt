@@ -87,7 +87,7 @@ public class AudienceValidator {
         }
 
         if (TokenType.ID_TOKEN.equals(token.getTokenType())) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format(ClaimName.AUDIENCE.getName()));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, ClaimName.AUDIENCE.getName());
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
@@ -116,7 +116,7 @@ public class AudienceValidator {
         } else if (claim.getType() == ClaimValueType.STRING) {
             validateStringAudience(claim.getOriginalString());
         } else {
-            LOGGER.warn(JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH.format(claim.getOriginalString(), expectedAudience));
+            LOGGER.warn(JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH, claim.getOriginalString(), expectedAudience);
             securityEventCounter.increment(SecurityEventCounter.EventType.AUDIENCE_MISMATCH);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.AUDIENCE_MISMATCH,
@@ -140,7 +140,7 @@ public class AudienceValidator {
             return;
         }
 
-        LOGGER.warn(JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH.format(audienceList, expectedAudience));
+        LOGGER.warn(JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH, audienceList, expectedAudience);
         securityEventCounter.increment(SecurityEventCounter.EventType.AUDIENCE_MISMATCH);
         throw new TokenValidationException(
                 SecurityEventCounter.EventType.AUDIENCE_MISMATCH,
@@ -154,7 +154,7 @@ public class AudienceValidator {
             return;
         }
 
-        LOGGER.warn(JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH.format(singleAudience, expectedAudience));
+        LOGGER.warn(JWTValidationLogMessages.WARN.AUDIENCE_MISMATCH, singleAudience, expectedAudience);
         securityEventCounter.increment(SecurityEventCounter.EventType.AUDIENCE_MISMATCH);
         throw new TokenValidationException(
                 SecurityEventCounter.EventType.AUDIENCE_MISMATCH,

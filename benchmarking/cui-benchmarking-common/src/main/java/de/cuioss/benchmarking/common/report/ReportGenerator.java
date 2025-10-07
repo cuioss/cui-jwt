@@ -68,11 +68,11 @@ public class ReportGenerator {
         dataGenerator.generateDataFile(benchmarkData, benchmarkType, outputDir);
 
         // Then copy the index template
-        LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));
+        LOGGER.info(INFO.GENERATING_INDEX_PAGE, 0);
         copyTemplate(INDEX, outputDir);
 
         Path indexFile = Path.of(outputDir).resolve(INDEX);
-        LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
+        LOGGER.info(INFO.INDEX_PAGE_GENERATED, indexFile);
     }
 
     /**
@@ -82,13 +82,13 @@ public class ReportGenerator {
      * @throws IOException if writing HTML files fails
      */
     public void generateTrendsPage(String outputDir) throws IOException {
-        LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
+        LOGGER.info(INFO.GENERATING_TRENDS_PAGE);
 
         // Copy the trends template
         copyTemplate(TRENDS, outputDir);
 
         Path trendsFile = Path.of(outputDir).resolve(TRENDS);
-        LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
+        LOGGER.info(INFO.TRENDS_PAGE_GENERATED, trendsFile);
     }
 
     /**
@@ -98,13 +98,13 @@ public class ReportGenerator {
      * @throws IOException if writing HTML files fails
      */
     public void generateDetailedPage(String outputDir) throws IOException {
-        LOGGER.info(INFO.GENERATING_REPORTS::format);
+        LOGGER.info(INFO.GENERATING_REPORTS);
 
         // Copy the detailed template
         copyTemplate(DETAILED, outputDir);
 
         Path detailedFile = Path.of(outputDir).resolve(DETAILED);
-        LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(detailedFile));
+        LOGGER.info(INFO.DETAILED_PAGE_GENERATED, detailedFile);
     }
 
     /**

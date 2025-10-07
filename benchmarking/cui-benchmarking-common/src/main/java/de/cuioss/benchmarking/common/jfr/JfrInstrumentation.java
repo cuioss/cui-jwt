@@ -103,7 +103,7 @@ public class JfrInstrumentation {
                 event.maxLatency = snapshot.getMaxValue();
                 event.standardDeviation = (long) snapshot.getStdDeviation();
                 event.variance = Math.pow(snapshot.getStdDeviation(), 2);
-                event.coefficientOfVariation = (snapshot.getMean() > 0) ?
+                event.coefficientOfVariation = snapshot.getMean() > 0 ?
                         (snapshot.getStdDeviation() / snapshot.getMean() * 100) : 0;
                 event.concurrentThreads = stats.maxConcurrentThreads.getAndSet(0);
                 event.cacheHitRate = stats.cacheHits.getAndSet(0) * 100.0 / snapshot.getTotalCount();

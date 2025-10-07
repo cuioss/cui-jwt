@@ -295,7 +295,7 @@ public class TokenValidator {
         LOGGER.debug("AccessTokenValidationPipeline initialized with cache maxSize=%s, evictionInterval=%ss",
                 cacheConfig.getMaxSize(), cacheConfig.getEvictionIntervalSeconds());
 
-        LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED.format(issuerConfigResolver.toString()));
+        LOGGER.info(JWTValidationLogMessages.INFO.TOKEN_FACTORY_INITIALIZED, issuerConfigResolver.toString());
     }
 
 

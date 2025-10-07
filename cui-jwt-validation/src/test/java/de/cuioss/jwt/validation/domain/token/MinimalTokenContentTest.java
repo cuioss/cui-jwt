@@ -79,10 +79,11 @@ class MinimalTokenContentTest {
     @Test
     @DisplayName("Should handle long raw token")
     void shouldHandleLongRawToken() {
-        String longToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0" +
-                ".eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdC11c2VyIiwiYXVkIjoiY2xpZW50LWlkIiwi" +
-                "ZXhwIjoxNjQwOTk1MjAwLCJpYXQiOjE2NDA5OTE2MDBdfQ" +
-                ".signature-part-here";
+        String longToken = """
+                eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0\
+                .eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdC11c2VyIiwiYXVkIjoiY2xpZW50LWlkIiwi\
+                ZXhwIjoxNjQwOTk1MjAwLCJpYXQiOjE2NDA5OTE2MDBdfQ\
+                .signature-part-here""";
 
         MinimalTokenContent content = new TestMinimalTokenContent(longToken, TokenType.ACCESS_TOKEN);
 

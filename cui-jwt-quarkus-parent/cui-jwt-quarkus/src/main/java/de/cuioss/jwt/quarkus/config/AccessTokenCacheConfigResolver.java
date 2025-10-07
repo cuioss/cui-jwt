@@ -52,7 +52,7 @@ public class AccessTokenCacheConfigResolver {
      * @return The resolved AccessTokenCacheConfig
      */
     public AccessTokenCacheConfig resolveCacheConfig() {
-        LOGGER.info(INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG::format);
+        LOGGER.info(INFO.RESOLVING_ACCESS_TOKEN_CACHE_CONFIG);
 
         // Get max size with default value of 1000
         int maxSize = config.getOptionalValue(CACHE.MAX_SIZE, Integer.class)
@@ -63,7 +63,7 @@ public class AccessTokenCacheConfigResolver {
                 .orElse(10L);
 
         if (maxSize == 0) {
-            LOGGER.info(INFO.ACCESS_TOKEN_CACHE_DISABLED::format);
+            LOGGER.info(INFO.ACCESS_TOKEN_CACHE_DISABLED);
             return AccessTokenCacheConfig.disabled();
         }
 
@@ -72,7 +72,7 @@ public class AccessTokenCacheConfigResolver {
                 .evictionIntervalSeconds(evictionIntervalSeconds)
                 .build();
 
-        LOGGER.info(INFO.ACCESS_TOKEN_CACHE_CONFIGURED.format(maxSize, evictionIntervalSeconds));
+        LOGGER.info(INFO.ACCESS_TOKEN_CACHE_CONFIGURED, maxSize, evictionIntervalSeconds);
 
         return cacheConfig;
     }

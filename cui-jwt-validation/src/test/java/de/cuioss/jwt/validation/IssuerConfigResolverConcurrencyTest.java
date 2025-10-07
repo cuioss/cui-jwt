@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.validation;
 
+import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.test.TestTokenHolder;
 import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
@@ -91,8 +92,10 @@ class IssuerConfigResolverConcurrencyTest {
                 } catch (UnsupportedOperationException e) {
                     // Expected during race condition - don't fail the test
                     LOGGER.info("Caught expected UnsupportedOperationException: %s", e.getMessage());
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | IllegalStateException e) {
                     unexpectedException.compareAndSet(null, e);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } finally {
                     endLatch.countDown();
                 }
@@ -143,8 +146,12 @@ class IssuerConfigResolverConcurrencyTest {
                     assertSame(config, result);
                     successCount.incrementAndGet();
 
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | IllegalStateException e) {
                     LOGGER.warn("Thread failed: %s", e.getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (BrokenBarrierException e) {
+                    LOGGER.warn("Barrier broken: %s", e.getMessage());
                 } finally {
                     endLatch.countDown();
                 }
@@ -202,11 +209,11 @@ class IssuerConfigResolverConcurrencyTest {
                         try {
                             resolver.resolveConfig("https://unknown-issuer-" + threadIndex + ".com");
                             fail("Should have thrown exception for unknown issuer");
-                        } catch (Exception e) {
+                        } catch (IllegalArgumentException | IllegalStateException | TokenValidationException e) {
                             unhealthyExceptionCount.incrementAndGet();
                         }
                     }
-                } catch (Exception e) {
+                } catch (IllegalArgumentException | IllegalStateException | TokenValidationException e) {
                     LOGGER.warn("Unexpected exception: %s", e.getMessage());
                 } finally {
                     latch.countDown();

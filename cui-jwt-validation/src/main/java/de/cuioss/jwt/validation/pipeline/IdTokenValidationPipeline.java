@@ -29,7 +29,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Pipeline for validating ID tokens.
@@ -124,7 +123,7 @@ public class IdTokenValidationPipeline {
 
         // 2. Extract issuer
         String issuerString = decodedJwt.getIssuer().orElseThrow(() -> {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, "iss");
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             return new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
@@ -140,29 +139,32 @@ public class IdTokenValidationPipeline {
         headerValidator.validate(decodedJwt);
 
         // 5. Validate signature
+        // Note: signatureValidator is guaranteed to exist because TokenValidator
+        // creates validators for all configured issuers during construction
         TokenSignatureValidator signatureValidator = signatureValidators.get(issuerConfig.getIssuerIdentifier());
-        if (signatureValidator == null) {
-            throw new IllegalStateException("No signature validator found for issuer: " + issuerConfig.getIssuerIdentifier());
-        }
         signatureValidator.validateSignature(decodedJwt);
 
         // 6. Build token
+        // Note: tokenBuilder is guaranteed to exist because TokenValidator
+        // creates builders for all configured issuers during construction
         TokenBuilder tokenBuilder = tokenBuilders.get(issuerConfig.getIssuerIdentifier());
-        Optional<IdTokenContent> token = tokenBuilder.createIdToken(decodedJwt);
-        if (token.isEmpty()) {
-            LOGGER.debug("ID token building failed");
-            throw new TokenValidationException(
-                    SecurityEventCounter.EventType.MISSING_CLAIM,
-                    "Failed to build ID token from decoded JWT"
-            );
-        }
+        IdTokenContent token = tokenBuilder.createIdToken(decodedJwt)
+                .orElseThrow(() -> {
+                    LOGGER.debug("ID token building failed");
+                    return new TokenValidationException(
+                            SecurityEventCounter.EventType.MISSING_CLAIM,
+                            "Failed to build ID token from decoded JWT"
+                    );
+                });
 
         // 7. Validate claims
         // Create ValidationContext with cached current time to eliminate synchronous OffsetDateTime.now() calls
         // Use clock skew of 60 seconds as per ExpirationValidator.CLOCK_SKEW_SECONDS
+        // Note: claimValidator is guaranteed to exist because TokenValidator
+        // creates validators for all configured issuers during construction
         ValidationContext context = new ValidationContext(60);
         TokenClaimValidator claimValidator = claimValidators.get(issuerConfig.getIssuerIdentifier());
-        IdTokenContent validatedToken = (IdTokenContent) claimValidator.validate(token.get(), context);
+        IdTokenContent validatedToken = (IdTokenContent) claimValidator.validate(token, context);
 
         LOGGER.debug("Successfully validated ID token");
 

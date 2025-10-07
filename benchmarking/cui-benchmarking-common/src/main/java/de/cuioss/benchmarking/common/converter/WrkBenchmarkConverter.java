@@ -29,6 +29,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR.FAILED_PARSE_WRK_FILE;
+
 /**
  * Converts WRK benchmark output to the central BenchmarkData model
  */
@@ -76,7 +78,7 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
                                 benchmarks.add(benchmark);
                             }
                         } catch (IOException e) {
-                            LOGGER.error("Failed to parse WRK file: " + file, e);
+                            LOGGER.error(e, FAILED_PARSE_WRK_FILE, file);
                         }
                     });
         }

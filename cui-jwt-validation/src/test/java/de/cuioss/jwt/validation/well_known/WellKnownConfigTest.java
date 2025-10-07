@@ -15,7 +15,7 @@
  */
 package de.cuioss.jwt.validation.well_known;
 
-import de.cuioss.tools.net.http.SecureSSLContextProvider;
+import de.cuioss.http.client.handler.SecureSSLContextProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

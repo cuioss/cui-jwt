@@ -161,7 +161,7 @@ public class JwksEndpointHealthCheck implements HealthCheck {
 
                 return new EndpointResult(issuer, jwksLoader.getJwksType().toString(), status);
             } catch (IllegalStateException | IllegalArgumentException e) {
-                LOGGER.warn(e, WARN.ERROR_CHECKING_JWKS_LOADER.format(issuer, e.getMessage()));
+                LOGGER.warn(e, WARN.ERROR_CHECKING_JWKS_LOADER, issuer, e.getMessage());
                 return new EndpointResult(issuer, JwksType.NONE.toString(), LoaderStatus.ERROR);
             }
         }

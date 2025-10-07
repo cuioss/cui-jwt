@@ -103,7 +103,7 @@ public class CuiJwtProcessor {
     @BuildStep
     @NonNull
     public FeatureBuildItem feature() {
-        LOGGER.info(CUI_JWT_FEATURE_REGISTERED::format);
+        LOGGER.info(CUI_JWT_FEATURE_REGISTERED);
         return new FeatureBuildItem(FEATURE);
     }
 

@@ -268,8 +268,9 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
             assertTrue(totalSuccess >= 10,
                     "Total successful operations should be at least 10: " + totalSuccess);
 
-            LOGGER.debug("SecurityEventCounter metrics validation passed - ACCESS_TOKEN_CREATED: %s, " +
-                    "ACCESS_TOKEN_CACHE_HIT: %s, Total Success: %s",
+            LOGGER.debug("""
+                    SecurityEventCounter metrics validation passed - ACCESS_TOKEN_CREATED: %s, \
+                    ACCESS_TOKEN_CACHE_HIT: %s, Total Success: %s""",
                     accessTokensCreated, accessTokenCacheHits, totalSuccess);
         } else {
             LOGGER.debug("Success metrics not found - this indicates SecurityEventCounter success events are not being published");

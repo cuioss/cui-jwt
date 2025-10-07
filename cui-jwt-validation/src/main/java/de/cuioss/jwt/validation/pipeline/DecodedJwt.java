@@ -40,7 +40,7 @@ import java.util.Optional;
  * <p>
  * <strong>Security Note:</strong> This record is not guaranteed to contain a validated token.
  * It is usually created by {@link NonValidatingJwtParser} and should be passed to
- * {@link TokenHeaderValidator}, {@link TokenSignatureValidator}, and {@link TokenClaimValidator}
+ * {@link de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator}, {@link de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator}, and {@link de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator}
  * for proper validation.
  * <p>
  * The record provides immutability guarantees and value-based equality by default, making it

@@ -16,6 +16,9 @@
 package de.cuioss.jwt.validation.jwks.http;
 
 import de.cuioss.http.client.HttpHandlerProvider;
+import de.cuioss.http.client.handler.HttpHandler;
+import de.cuioss.http.client.handler.SecureSSLContextProvider;
+import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
@@ -24,8 +27,6 @@ import de.cuioss.jwt.validation.jwks.JwksType;
 import de.cuioss.jwt.validation.well_known.WellKnownConfig;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.SecureSSLContextProvider;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -365,7 +366,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             this.endpointSource = EndpointSource.WELL_KNOWN_URL;
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUrl(wellKnownUrl)
-                    .retryStrategy(RetryStrategy.exponentialBackoff())
+                    .retryStrategy(RetryStrategies.exponentialBackoff())
                     .parserConfig(ParserConfig.builder().build())
                     .build();
             return this;
@@ -392,7 +393,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
             this.endpointSource = EndpointSource.WELL_KNOWN_URI;
             this.wellKnownConfig = WellKnownConfig.builder()
                     .wellKnownUri(wellKnownUri)
-                    .retryStrategy(RetryStrategy.exponentialBackoff())
+                    .retryStrategy(RetryStrategies.exponentialBackoff())
                     .parserConfig(ParserConfig.builder().build())
                     .build();
             return this;
@@ -503,9 +504,10 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
         private void validateEndpointExclusivity(EndpointSource proposedSource) {
             if (endpointSource != null && endpointSource != proposedSource) {
                 throw new IllegalArgumentException(
-                        ("Cannot use %s endpoint configuration when %s was already configured. " +
-                                "Methods jwksUri(), jwksUrl(), wellKnownUrl(), and wellKnownUri() are mutually exclusive. " +
-                                "When using well-known discovery, the issuer identifier is automatically provided by the discovery document.")
+                        """
+                                Cannot use %s endpoint configuration when %s was already configured. \
+                                Methods jwksUri(), jwksUrl(), wellKnownUrl(), and wellKnownUri() are mutually exclusive. \
+                                When using well-known discovery, the issuer identifier is automatically provided by the discovery document."""
                                 .formatted(proposedSource.name().toLowerCase().replace("_", ""), endpointSource.name().toLowerCase().replace("_", "")));
             }
         }
@@ -528,7 +530,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
 
             // Ensure RetryStrategy is configured
             if (retryStrategy == null) {
-                retryStrategy = RetryStrategy.exponentialBackoff();
+                retryStrategy = RetryStrategies.exponentialBackoff();
             }
 
             HttpHandler jwksHttpHandler = null;
@@ -540,17 +542,14 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
                 // Build the HttpHandler for direct URL/URI configuration
                 try {
                     jwksHttpHandler = httpHandlerBuilder.build();
-                    if (jwksHttpHandler == null) {
-                        throw new IllegalArgumentException("HttpHandler build() returned null - this indicates a programming error in the builder");
-                    }
 
                     // Check for insecure HTTP protocol
                     URI uri = jwksHttpHandler.getUri();
-                    if (uri != null && "http".equalsIgnoreCase(uri.getScheme())) {
-                        LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS.format(uri.toString()));
+                    if ("http".equalsIgnoreCase(uri.getScheme())) {
+                        LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS, uri.toString());
                     }
                 } catch (IllegalArgumentException | IllegalStateException e) {
-                    LOGGER.warn(WARN.INVALID_JWKS_URI::format);
+                    LOGGER.warn(WARN.INVALID_JWKS_URI);
                     throw new IllegalArgumentException("Invalid URL or HttpHandler configuration", e);
                 }
             }

@@ -72,7 +72,7 @@ public class AuthorizedPartyValidator {
 
         var azpObj = token.getClaimOption(ClaimName.AUTHORIZED_PARTY);
         if (azpObj.isEmpty() || azpObj.get().isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format(ClaimName.AUTHORIZED_PARTY.getName()));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, ClaimName.AUTHORIZED_PARTY.getName());
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
@@ -82,7 +82,7 @@ public class AuthorizedPartyValidator {
 
         String azp = azpObj.get().getOriginalString();
         if (!expectedClientId.contains(azp)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.AZP_MISMATCH.format(azp, expectedClientId));
+            LOGGER.warn(JWTValidationLogMessages.WARN.AZP_MISMATCH, azp, expectedClientId);
             securityEventCounter.increment(SecurityEventCounter.EventType.AZP_MISMATCH);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.AZP_MISMATCH,

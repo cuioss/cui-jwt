@@ -101,7 +101,7 @@ public class TokenValidatorProducer {
      */
     @PostConstruct
     void init() {
-        LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS::format);
+        LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS);
 
         // Create RetryStrategy from configuration
         RetryStrategyConfigResolver retryResolver = new RetryStrategyConfigResolver(config);
@@ -145,7 +145,7 @@ public class TokenValidatorProducer {
         // Note: tokenValidator.getSecurityEventCounter() returns the same instance
         this.securityEventCounter = eventCounter;
 
-        LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED.format(issuerConfigs.size()));
+        LOGGER.info(INFO.JWT_VALIDATION_COMPONENTS_INITIALIZED, issuerConfigs.size());
     }
 
 

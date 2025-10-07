@@ -37,7 +37,7 @@ class CollectionClaimHandlerTest {
 
     private static final String TEST_STRING = "test-value";
     private static final List<String> TEST_VALUES = List.of("value1", "value2", "value3");
-    private static final CuiLogger TEST_LOGGER = new CuiLogger(CollectionClaimHandlerTest.class);
+    private static final CuiLogger LOGGER = new CuiLogger(CollectionClaimHandlerTest.class);
 
     @Test
     @DisplayName("Get values from claim")
@@ -119,11 +119,11 @@ class CollectionClaimHandlerTest {
 
         // When, Then
         assertTrue(handler.providesValuesAndDebugIfValuesMissing(
-                        List.of("value1"), logContext, TEST_LOGGER),
+                        List.of("value1"), logContext, LOGGER),
                 "Should return true when all expected values are present");
 
         assertFalse(handler.providesValuesAndDebugIfValuesMissing(
-                        List.of("value1", "value4"), logContext, TEST_LOGGER),
+                        List.of("value1", "value4"), logContext, LOGGER),
                 "Should return false when not all expected values are present");
     }
 

@@ -72,8 +72,8 @@ public class BenchmarkResultProcessor {
      * @throws IOException if file operations fail
      */
     public void processResults(Collection<RunResult> results, String outputDir) throws IOException {
-        LOGGER.info(INFO.PROCESSING_RESULTS.format(results.size()));
-        LOGGER.info(INFO.BENCHMARK_TYPE_DETECTED.format(benchmarkType));
+        LOGGER.info(INFO.PROCESSING_RESULTS, results.size());
+        LOGGER.info(INFO.BENCHMARK_TYPE_DETECTED, benchmarkType);
 
         // Create OutputDirectoryStructure for organized file generation
         Path benchmarkResultsPath = Path.of(outputDir);
@@ -106,7 +106,7 @@ public class BenchmarkResultProcessor {
 
         // Copy JMH result to gh-pages-ready/data directory with unified name
         Files.copy(jsonFile, targetJsonFile, StandardCopyOption.REPLACE_EXISTING);
-        LOGGER.info(INFO.JMH_RESULT_COPIED.format(targetJsonFile));
+        LOGGER.info(INFO.JMH_RESULT_COPIED, targetJsonFile);
 
         // Generate reports directly to gh-pages-ready structure
         generateReportsToDeploymentDir(benchmarkData, structure);
@@ -114,7 +114,7 @@ public class BenchmarkResultProcessor {
         // Generate deployment-specific assets (404.html, robots.txt, sitemap.xml)
         generateGitHubPagesAssets(structure);
 
-        LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
+        LOGGER.info(INFO.ARTIFACTS_GENERATED);
     }
 
 
@@ -122,7 +122,7 @@ public class BenchmarkResultProcessor {
      * Generates HTML reports directly to the deployment directory.
      */
     private void generateReportsToDeploymentDir(BenchmarkData benchmarkData, OutputDirectoryStructure structure) throws IOException {
-        LOGGER.info(INFO.GENERATING_REPORTS::format);
+        LOGGER.info(INFO.GENERATING_REPORTS);
 
         // Generate HTML reports to gh-pages-ready/ using standard API
         // This will generate files in the deployment directory only
@@ -141,7 +141,7 @@ public class BenchmarkResultProcessor {
     private void generateGitHubPagesAssets(OutputDirectoryStructure structure) throws IOException {
         GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
 
-        LOGGER.info(INFO.GENERATING_GITHUB_PAGES::format);
+        LOGGER.info(INFO.GENERATING_GITHUB_PAGES);
         ghGen.generateDeploymentAssets(structure);
     }
 

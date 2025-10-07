@@ -93,7 +93,7 @@ public class SignatureAlgorithmPreferences {
 
         // Check if the algorithm is explicitly rejected
         if (REJECTED_ALGORITHMS.contains(algorithm)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.ALGORITHM_REJECTED.format(algorithm));
+            LOGGER.warn(JWTValidationLogMessages.WARN.ALGORITHM_REJECTED, algorithm);
             return false;
         }
 

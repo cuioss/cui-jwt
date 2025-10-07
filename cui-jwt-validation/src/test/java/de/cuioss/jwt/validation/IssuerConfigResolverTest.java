@@ -277,7 +277,7 @@ class IssuerConfigResolverTest {
                     try {
                         IssuerConfig result = resolver.resolveConfig(issuerIdentifier);
                         results.add(result);
-                    } catch (Exception e) {
+                    } catch (IllegalArgumentException | IllegalStateException e) {
                         exceptionCount.incrementAndGet();
                     } finally {
                         latch.countDown();
@@ -316,6 +316,7 @@ class IssuerConfigResolverTest {
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger successCount = new AtomicInteger(0);
+            AtomicInteger exceptionCount = new AtomicInteger(0);
 
             for (int i = 0; i < threadCount; i++) {
                 final String targetIssuer = issuerIds.get(i % issuerIds.size());
@@ -325,8 +326,8 @@ class IssuerConfigResolverTest {
                         assertNotNull(result);
                         assertEquals(targetIssuer, result.getIssuerIdentifier());
                         successCount.incrementAndGet();
-                    } catch (Exception ignored) {
-                        // Noop, not tested here
+                    } catch (IllegalArgumentException | IllegalStateException e) {
+                        exceptionCount.incrementAndGet();
                     } finally {
                         latch.countDown();
                     }
@@ -336,7 +337,8 @@ class IssuerConfigResolverTest {
             assertTrue(latch.await(10, TimeUnit.SECONDS));
             executor.shutdown();
 
-            assertTrue(successCount.get() > 0, "At least some operations should succeed");
+            assertEquals(0, exceptionCount.get(), "No exceptions should occur during concurrent access");
+            assertEquals(threadCount, successCount.get(), "All operations should succeed");
         }
     }
 
@@ -392,8 +394,10 @@ class IssuerConfigResolverTest {
                         assertSame(config, result);
                         successCount.incrementAndGet();
 
-                    } catch (Exception ignored) {
+                    } catch (IllegalArgumentException | IllegalStateException | BrokenBarrierException ignored) {
                         // Noop, not tested here
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     } finally {
                         latch.countDown();
                     }

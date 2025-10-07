@@ -77,20 +77,20 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     @Override
     public Optional<WellKnownResult> convert(Object rawContent) {
         if (!(rawContent instanceof String stringContent)) {
-            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Expected String content, got: " +
-                    (rawContent != null ? rawContent.getClass().getSimpleName() : "null")));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Expected String content, got: %s",
+                    rawContent != null ? rawContent.getClass().getSimpleName() : "null");
             return Optional.empty();
         }
 
         if (stringContent.trim().isEmpty()) {
-            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Empty well-known response"));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Empty well-known response");
             return Optional.empty();
         }
 
         // Check content size limit
         byte[] contentBytes = stringContent.getBytes(StandardCharsets.UTF_8);
         if (contentBytes.length > maxContentSize) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format("Well-known response size exceeds maximum allowed size"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED, "Well-known response size exceeds maximum allowed size");
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             throw new TokenValidationException(
                     EventType.JWKS_JSON_PARSE_FAILED,
@@ -103,17 +103,17 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
             WellKnownResult config = dslJson.deserialize(WellKnownResult.class, contentBytes, contentBytes.length);
 
             if (config == null) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Failed to deserialize well-known configuration"));
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Failed to deserialize well-known configuration");
                 return Optional.empty();
             }
 
             // Validate required fields
             if (config.issuer() == null || config.issuer().trim().isEmpty()) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Missing required field: issuer"));
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Missing required field: issuer");
                 return Optional.empty();
             }
             if (config.jwksUri() == null || config.jwksUri().trim().isEmpty()) {
-                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Missing required field: jwks_uri"));
+                LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Missing required field: jwks_uri");
                 return Optional.empty();
             }
 
@@ -123,7 +123,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
             // Check if this is a security limit violation
             String errorMessage = e.getMessage();
             if (isSecurityLimitViolation(errorMessage)) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED.format(errorMessage));
+                LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_JSON_PARSE_FAILED, errorMessage);
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 throw new TokenValidationException(
                         EventType.JWKS_JSON_PARSE_FAILED,
@@ -132,11 +132,11 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
             }
 
             // Regular parsing errors
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format(e.getMessage()));
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, e.getMessage());
             return Optional.empty();
         } catch (IllegalArgumentException e) {
             // Invalid well-known configuration (missing required fields)
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED.format("Invalid well-known configuration: " + e.getMessage()));
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Invalid well-known configuration: %s", e.getMessage());
             return Optional.empty();
         }
     }
