@@ -104,7 +104,7 @@ public class ReportGenerator {
         copyTemplate(DETAILED, outputDir);
 
         Path detailedFile = Path.of(outputDir).resolve(DETAILED);
-        LOGGER.info(INFO.INDEX_PAGE_GENERATED, detailedFile);
+        LOGGER.info(INFO.DETAILED_PAGE_GENERATED, detailedFile);
     }
 
     /**

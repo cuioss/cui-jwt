@@ -114,7 +114,7 @@ public class MetricsOrchestrator {
             LOGGER.info(REALTIME_METRICS_EXPORTED, benchmarkName, outputFile);
 
         } catch (PrometheusClient.PrometheusException e) {
-            LOGGER.error(FAILED_COLLECT_REALTIME_PROMETHEUS, benchmarkName, e.getMessage());
+            LOGGER.error(e, FAILED_COLLECT_REALTIME_PROMETHEUS, benchmarkName, e.getMessage());
             throw new IOException("Failed to collect Prometheus metrics", e);
         }
     }

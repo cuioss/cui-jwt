@@ -261,7 +261,7 @@ public class PrometheusMetricsManager {
             LOGGER.debug("Prometheus is available and responding at: %s", prometheusUrl);
             return true;
         } catch (PrometheusClient.PrometheusException e) {
-            LOGGER.error(PROMETHEUS_CONNECTIVITY_FAILED, prometheusUrl, e.getMessage(), e.getClass().getSimpleName());
+            LOGGER.error(e, PROMETHEUS_CONNECTIVITY_FAILED, prometheusUrl, e.getMessage(), e.getClass().getSimpleName());
             LOGGER.info(PROMETHEUS_CONNECTIVITY_ADVICE, prometheusUrl);
             return false;
         }

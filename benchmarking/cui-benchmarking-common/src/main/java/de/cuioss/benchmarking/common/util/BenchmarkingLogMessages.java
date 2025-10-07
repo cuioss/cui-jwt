@@ -205,6 +205,13 @@ public final class BenchmarkingLogMessages {
                 .template("Generated trends page: %s")
                 .build();
 
+        /** Message when detailed page is generated. */
+        public static final LogRecord DETAILED_PAGE_GENERATED = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(2)
+                .template("Generated detailed page: %s")
+                .build();
+
         /** Message when writing benchmark summary. */
         public static final LogRecord WRITING_BENCHMARK_SUMMARY = LogRecordModel.builder()
                 .prefix(PREFIX)

@@ -76,9 +76,17 @@ Fix all OpenRewrite TODO markers in a module following CUI standards:
    - **Generic Exception Catches**: Replace with specific types + InterruptedException/BrokenBarrierException
 
 3. **Remove Markers After Fixing**:
+
+   **macOS (BSD sed)**:
    ```bash
    find <module-path>/src -name "*.java" -exec sed -i '' 's|/\*~~(TODO: INFO needs LogRecord)~~>\*/||g; s|/\*~~(TODO: WARN needs LogRecord)~~>\*/||g; s|/\*~~(TODO: ERROR needs LogRecord)~~>\*/||g' {} +
    ```
+
+   **Linux (GNU sed)**:
+   ```bash
+   find <module-path>/src -name "*.java" -exec sed -i 's|/\*~~(TODO: INFO needs LogRecord)~~>\*/||g; s|/\*~~(TODO: WARN needs LogRecord)~~>\*/||g; s|/\*~~(TODO: ERROR needs LogRecord)~~>\*/||g' {} +
+   ```
+
    - Verify removal: `grep -r "~~(TODO:" <module-path>/src --include="*.java" | wc -l` (should be 0)
 
 4. **Verify Fixes**:
