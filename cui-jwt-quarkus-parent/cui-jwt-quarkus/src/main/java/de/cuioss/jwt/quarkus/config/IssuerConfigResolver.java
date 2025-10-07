@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.quarkus.config;
 
+import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
@@ -66,7 +67,7 @@ public class IssuerConfigResolver {
      * @param config the configuration instance to use for property resolution
      */
     public IssuerConfigResolver(@NonNull Config config) {
-        this(config, RetryStrategy.exponentialBackoff());
+        this(config, RetryStrategies.exponentialBackoff());
     }
 
     /**

@@ -18,6 +18,7 @@ package de.cuioss.jwt.validation.jwks.http;
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.http.client.ResilientHttpHandler;
+import de.cuioss.http.client.handler.HttpHandler;
 import de.cuioss.http.client.result.HttpResultObject;
 import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
@@ -27,7 +28,6 @@ import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.http.HttpHandler;
 import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
@@ -215,8 +215,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
             handler = config.getHttpHandler();
             resolvedIssuerIdentifier.set(config.getIssuerIdentifier());
         }
-
-        return Optional.of(new ResilientHttpHandler<>(handler, new JwksHttpContentConverter()));
+        return Optional.of(new ResilientHttpHandler<>(handler, config.getRetryStrategy(), new JwksHttpContentConverter()));
     }
 
     @Override

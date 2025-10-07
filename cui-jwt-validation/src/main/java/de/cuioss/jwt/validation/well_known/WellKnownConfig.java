@@ -16,10 +16,11 @@
 package de.cuioss.jwt.validation.well_known;
 
 import de.cuioss.http.client.HttpHandlerProvider;
+import de.cuioss.http.client.handler.HttpHandler;
+import de.cuioss.http.client.handler.SecureSSLContextProvider;
+import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
 import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.tools.net.http.HttpHandler;
-import de.cuioss.tools.net.http.SecureSSLContextProvider;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -104,7 +105,7 @@ public class WellKnownConfig implements HttpHandlerProvider {
      */
     public static class WellKnownConfigBuilder {
         private final HttpHandler.HttpHandlerBuilder httpHandlerBuilder;
-        private RetryStrategy retryStrategy = RetryStrategy.exponentialBackoff();
+        private RetryStrategy retryStrategy = RetryStrategies.exponentialBackoff();
         private ParserConfig parserConfig;
 
         /**
