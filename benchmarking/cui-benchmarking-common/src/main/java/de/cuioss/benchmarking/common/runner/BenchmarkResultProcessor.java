@@ -114,7 +114,7 @@ public class BenchmarkResultProcessor {
         // Generate deployment-specific assets (404.html, robots.txt, sitemap.xml)
         generateGitHubPagesAssets(structure);
 
-        LOGGER.info(INFO.ARTIFACTS_GENERATED::format);
+        LOGGER.info(INFO.ARTIFACTS_GENERATED);
     }
 
 
@@ -122,7 +122,7 @@ public class BenchmarkResultProcessor {
      * Generates HTML reports directly to the deployment directory.
      */
     private void generateReportsToDeploymentDir(BenchmarkData benchmarkData, OutputDirectoryStructure structure) throws IOException {
-        LOGGER.info(INFO.GENERATING_REPORTS::format);
+        LOGGER.info(INFO.GENERATING_REPORTS);
 
         // Generate HTML reports to gh-pages-ready/ using standard API
         // This will generate files in the deployment directory only
@@ -141,7 +141,7 @@ public class BenchmarkResultProcessor {
     private void generateGitHubPagesAssets(OutputDirectoryStructure structure) throws IOException {
         GitHubPagesGenerator ghGen = new GitHubPagesGenerator();
 
-        LOGGER.info(INFO.GENERATING_GITHUB_PAGES::format);
+        LOGGER.info(INFO.GENERATING_GITHUB_PAGES);
         ghGen.generateDeploymentAssets(structure);
     }
 

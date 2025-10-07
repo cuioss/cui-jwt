@@ -71,7 +71,7 @@ public class KeyProcessor {
         // Extract key type directly from JwkKey
         String kty = jwk.kty();
         if (kty == null || kty.trim().isEmpty()) {
-            LOGGER.warn(WARN.JWK_MISSING_KTY::format);
+            LOGGER.warn(WARN.JWK_MISSING_KTY);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return Optional.empty();
         }
@@ -99,7 +99,7 @@ public class KeyProcessor {
     private boolean validateKeyParameters(JwkKey jwkKey) {
         // Validate required key type
         if (jwkKey.kty() == null || jwkKey.kty().trim().isEmpty()) {
-            LOGGER.warn(WARN.JWK_MISSING_KTY::format);
+            LOGGER.warn(WARN.JWK_MISSING_KTY);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return false;
         }

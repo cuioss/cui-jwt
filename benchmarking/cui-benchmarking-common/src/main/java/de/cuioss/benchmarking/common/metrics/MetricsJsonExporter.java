@@ -209,7 +209,7 @@ public class MetricsJsonExporter {
                 try {
                     Files.deleteIfExists(filePath);
                 } catch (IOException deleteException) {
-                    LOGGER.warn(deleteException, FAILED_DELETE_CORRUPTED_FILE::format);
+                    LOGGER.warn(deleteException, FAILED_DELETE_CORRUPTED_FILE);
                 }
             }
         }

@@ -109,7 +109,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
 
                 // Log appropriate message based on failure type
                 if (config.getWellKnownConfig() != null) {
-                    LOGGER.warn(WARN.JWKS_URI_RESOLUTION_FAILED::format);
+                    LOGGER.warn(WARN.JWKS_URI_RESOLUTION_FAILED);
                 }
                 LOGGER.error(ERROR.JWKS_INITIALIZATION_FAILED, errorDetail, getIssuerIdentifier().orElse(ISSUER_NOT_CONFIGURED));
                 return LoaderStatus.ERROR;
@@ -141,7 +141,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
             if (result.getResultDetail().isPresent()) {
                 String detailMessage = result.getResultDetail().get().getDetail().toString();
                 if (detailMessage.contains("no cached content")) {
-                    LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE::format);
+                    LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE);
                 }
             }
 
@@ -312,7 +312,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                     try {
                         ResilientHttpHandler<Jwks> handler = httpHandler.get();
                         if (handler == null) {
-                            LOGGER.warn(WARN.BACKGROUND_REFRESH_NO_HANDLER::format);
+                            LOGGER.warn(WARN.BACKGROUND_REFRESH_NO_HANDLER);
                             return;
                         }
 

@@ -58,7 +58,7 @@ public class AccessLogFilterConfigResolver {
      * @return The resolved AccessLogFilterConfig
      */
     public AccessLogFilterConfig resolveConfig() {
-        LOGGER.info(INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG::format);
+        LOGGER.info(INFO.RESOLVING_ACCESS_LOG_FILTER_CONFIG);
 
         return AccessLogFilterConfig.builder()
                 .minStatusCode(config.getOptionalValue(JwtPropertyKeys.ACCESSLOG.MIN_STATUS_CODE, Integer.class)

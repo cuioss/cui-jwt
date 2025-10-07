@@ -102,7 +102,7 @@ public class JwtMetricsCollector {
      */
     @PostConstruct
     void initialize() {
-        LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR::format);
+        LOGGER.info(INFO.INITIALIZING_JWT_METRICS_COLLECTOR);
         securityEventCounter = tokenValidator.getSecurityEventCounter();
 
         // Register counters for all event types
@@ -188,7 +188,7 @@ public class JwtMetricsCollector {
      * themselves will retain their values until the next scheduled update cycle.
      */
     public void clear() {
-        LOGGER.info(INFO.CLEARING_JWT_METRICS::format);
+        LOGGER.info(INFO.CLEARING_JWT_METRICS);
 
         // Clear security event counter
         if (securityEventCounter != null) {
@@ -198,7 +198,7 @@ public class JwtMetricsCollector {
         // Clear tracking maps to reset delta calculations
         lastKnownCounts.clear();
 
-        LOGGER.info(INFO.JWT_METRICS_CLEARED::format);
+        LOGGER.info(INFO.JWT_METRICS_CLEARED);
     }
 
     /**

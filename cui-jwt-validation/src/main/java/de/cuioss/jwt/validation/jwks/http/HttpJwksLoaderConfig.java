@@ -549,7 +549,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
                         LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS, uri.toString());
                     }
                 } catch (IllegalArgumentException | IllegalStateException e) {
-                    LOGGER.warn(WARN.INVALID_JWKS_URI::format);
+                    LOGGER.warn(WARN.INVALID_JWKS_URI);
                     throw new IllegalArgumentException("Invalid URL or HttpHandler configuration", e);
                 }
             }

@@ -98,7 +98,7 @@ public class IssuerConfigResolver {
      */
     @NonNull
     public List<IssuerConfig> resolveIssuerConfigs() {
-        LOGGER.info(INFO.RESOLVING_ISSUER_CONFIGURATIONS::format);
+        LOGGER.info(INFO.RESOLVING_ISSUER_CONFIGURATIONS);
 
         Set<String> issuerNames = discoverIssuerNames();
         if (issuerNames.isEmpty()) {

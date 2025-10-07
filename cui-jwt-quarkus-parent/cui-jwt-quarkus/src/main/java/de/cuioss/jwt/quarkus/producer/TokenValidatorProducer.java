@@ -101,7 +101,7 @@ public class TokenValidatorProducer {
      */
     @PostConstruct
     void init() {
-        LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS::format);
+        LOGGER.info(INFO.INITIALIZING_JWT_VALIDATION_COMPONENTS);
 
         // Create RetryStrategy from configuration
         RetryStrategyConfigResolver retryResolver = new RetryStrategyConfigResolver(config);

@@ -166,7 +166,7 @@ public class AccessTokenCache {
             } else if (existing.isExpired(now)) {
                 // Token is expired - remove from cache and throw exception
                 cache.remove(cacheKey, existing);
-                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED::format);
+                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED);
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EXPIRED);
                 throw new TokenValidationException(
                         SecurityEventCounter.EventType.TOKEN_EXPIRED,

@@ -50,6 +50,7 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 public class GitHubPagesGenerator {
 
     private static final CuiLogger LOGGER = new CuiLogger(GitHubPagesGenerator.class);
+    public static final String CREATED_API_ENDPOINT_S = "Created API endpoint: %s";
 
     /**
      * Generates deployment-specific assets for GitHub Pages.
@@ -59,7 +60,7 @@ public class GitHubPagesGenerator {
      * @throws IOException if file operations fail
      */
     public void generateDeploymentAssets(OutputDirectoryStructure structure) throws IOException {
-        LOGGER.info(INFO.PREPARING_GITHUB_PAGES::format);
+        LOGGER.info(INFO.PREPARING_GITHUB_PAGES);
 
         // Ensure deployment directory exists
         structure.ensureDirectories();
@@ -75,7 +76,7 @@ public class GitHubPagesGenerator {
         // Generate API endpoints
         generateApiEndpoints(structure);
 
-        LOGGER.info(INFO.GITHUB_PAGES_READY::format);
+        LOGGER.info(INFO.GITHUB_PAGES_READY);
     }
 
     /**
@@ -145,7 +146,7 @@ public class GitHubPagesGenerator {
         latestData.put(LINKS, links);
 
         Files.writeString(latestFile, JsonSerializationHelper.toJson(latestData));
-        LOGGER.debug("Created API endpoint: %s", latestFile);
+        LOGGER.debug(CREATED_API_ENDPOINT_S, latestFile);
     }
 
     private void createBenchmarksEndpoint(Path deployDir, Path apiDir) throws IOException {
@@ -169,7 +170,7 @@ public class GitHubPagesGenerator {
             Files.writeString(benchmarksFile, JsonSerializationHelper.toJson(benchmarksData));
         }
 
-        LOGGER.debug("Created API endpoint: %s", benchmarksFile);
+        LOGGER.debug(CREATED_API_ENDPOINT_S, benchmarksFile);
     }
 
     private void createStatusEndpoint(Path deployDir, Path apiDir) throws IOException {
@@ -189,7 +190,7 @@ public class GitHubPagesGenerator {
         }
 
         Files.writeString(statusFile, JsonSerializationHelper.toJson(statusData));
-        LOGGER.debug("Created API endpoint: %s", statusFile);
+        LOGGER.debug(CREATED_API_ENDPOINT_S, statusFile);
     }
 
     /**

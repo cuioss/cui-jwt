@@ -110,11 +110,11 @@ public class JwksParser {
 
         // If we successfully parsed a JWKS but it had no keys field
         if (jwksParsed) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         } else {
             // If both parsing attempts failed with no IOException, it's likely a structure issue
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
         return result;
@@ -183,7 +183,7 @@ public class JwksParser {
             extractKeysFromArray(jwks, result);
         } else {
             // Keys field present but empty
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
     }
@@ -197,7 +197,7 @@ public class JwksParser {
     private boolean validateJwksStructure(Jwks jwks) {
         // Basic null check
         if (jwks == null) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_OBJECT_NULL);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return false;
         }
@@ -239,7 +239,7 @@ public class JwksParser {
                 }
             }
         } else {
-            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY::format);
+            LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_EMPTY);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
         }
     }

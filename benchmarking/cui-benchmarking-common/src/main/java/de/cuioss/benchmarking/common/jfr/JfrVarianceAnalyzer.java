@@ -278,7 +278,7 @@ public class JfrVarianceAnalyzer {
      */
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
-            LOGGER.error(JFR_VARIANCE_USAGE::format);
+            LOGGER.error(JFR_VARIANCE_USAGE);
             System.exit(1);
         }
 

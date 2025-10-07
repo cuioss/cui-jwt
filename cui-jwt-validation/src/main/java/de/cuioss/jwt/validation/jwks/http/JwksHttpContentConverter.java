@@ -77,7 +77,7 @@ public class JwksHttpContentConverter extends StringContentConverter<Jwks> {
             Jwks jwks = dslJson.deserialize(Jwks.class, bodyBytes, bodyBytes.length);
 
             if (jwks == null) {
-                LOGGER.warn(WARN.JWKS_PARSE_NULL_RESULT::format);
+                LOGGER.warn(WARN.JWKS_PARSE_NULL_RESULT);
                 return Optional.empty();
             }
 

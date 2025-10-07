@@ -79,7 +79,7 @@ public abstract class AbstractBenchmark {
             try {
                 LibraryMetricsExporter.exportMetrics(tokenValidator.getPerformanceMonitor());
             } catch (IOException e) {
-                LOGGER.error(e, ERROR.EXPORT_FAILED::format);
+                LOGGER.error(e, ERROR.EXPORT_FAILED);
             }
         }
     }

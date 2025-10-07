@@ -242,7 +242,7 @@ public class NonValidatingJwtParser {
         // Check if token is empty
         if (MoreStrings.isEmpty(token)) {
             if (logWarnings) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY::format);
+                LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_IS_EMPTY);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_EMPTY);
@@ -287,7 +287,7 @@ public class NonValidatingJwtParser {
             return decodeTokenParts(parts, token, logWarnings, trackSecurityEvents);
         } catch (IllegalArgumentException e) {
             if (logWarnings) {
-                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT::format);
+                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);
@@ -326,7 +326,7 @@ public class NonValidatingJwtParser {
         } catch (IOException e) {
             // IOException from DSL-JSON deserialization
             if (logWarnings) {
-                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT::format);
+                LOGGER.warn(e, JWTValidationLogMessages.WARN.FAILED_TO_DECODE_JWT);
             }
             if (trackSecurityEvents) {
                 securityEventCounter.increment(SecurityEventCounter.EventType.FAILED_TO_DECODE_JWT);

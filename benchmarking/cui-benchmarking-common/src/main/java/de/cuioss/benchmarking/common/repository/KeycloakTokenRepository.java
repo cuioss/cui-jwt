@@ -93,7 +93,7 @@ public class KeycloakTokenRepository implements TokenProvider {
      */
     @Override @NonNull public String getNextToken() {
         if (tokenPool.isEmpty()) {
-            LOGGER.warn(TOKEN_POOL_EMPTY::format);
+            LOGGER.warn(TOKEN_POOL_EMPTY);
             return fetchSingleToken();
         }
 

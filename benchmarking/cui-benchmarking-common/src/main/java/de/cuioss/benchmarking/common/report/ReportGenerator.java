@@ -82,7 +82,7 @@ public class ReportGenerator {
      * @throws IOException if writing HTML files fails
      */
     public void generateTrendsPage(String outputDir) throws IOException {
-        LOGGER.info(INFO.GENERATING_TRENDS_PAGE::format);
+        LOGGER.info(INFO.GENERATING_TRENDS_PAGE);
 
         // Copy the trends template
         copyTemplate(TRENDS, outputDir);
@@ -98,7 +98,7 @@ public class ReportGenerator {
      * @throws IOException if writing HTML files fails
      */
     public void generateDetailedPage(String outputDir) throws IOException {
-        LOGGER.info(INFO.GENERATING_REPORTS::format);
+        LOGGER.info(INFO.GENERATING_REPORTS);
 
         // Copy the detailed template
         copyTemplate(DETAILED, outputDir);
