@@ -155,10 +155,8 @@ public class IssuerConfigResolver {
     public IssuerConfig resolveConfig(String issuer) {
         // Fast path - check cache for already loaded configs
         IssuerConfig cached = getCachedConfig(issuer);
-        if (cached != null) {
-            if (cached.getJwksLoader().getLoaderStatus() == LoaderStatus.OK) {
-                return cached;
-            }
+        if (cached != null && cached.getJwksLoader().getLoaderStatus() == LoaderStatus.OK) {
+            return cached;
         }
 
         // Check if loading is in progress
