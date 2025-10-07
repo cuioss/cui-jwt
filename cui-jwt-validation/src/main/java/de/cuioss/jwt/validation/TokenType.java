@@ -82,13 +82,10 @@ public enum TokenType {
      * against the known token types. If no match is found, it logs a warning and returns
      * the {@link #UNKNOWN} token type.
      *
-     * @param typeClaimName the string value of the type claim, may be null
-     * @return the matching TokenType, or {@link #UNKNOWN} if no match is found or the input is null
+     * @param typeClaimName the string value of the type claim, must not be null
+     * @return the matching TokenType, or {@link #UNKNOWN} if no match is found
      */
     public static TokenType fromTypClaim(String typeClaimName) {
-        if (typeClaimName == null) {
-            return UNKNOWN;
-        }
         for (TokenType tokenType : TokenType.values()) {
             if (tokenType.typeClaimName.equalsIgnoreCase(typeClaimName)) {
                 return tokenType;
