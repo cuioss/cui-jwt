@@ -16,6 +16,7 @@
 package de.cuioss.jwt.integration.endpoint;
 
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import de.cuioss.jwt.quarkus.annotation.SecuredByBearerToken;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -219,6 +220,62 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/basic")
     public Response testBasicToken() {
         return processBearerTokenResult(basicToken.get(), "Basic token");
+    }
+
+    /**
+     * Tests interceptor-based validation without requirements.
+     * Demonstrates declarative security - no manual validation needed.
+     */
+    @GET
+    @Path("/interceptor/basic")
+    @SecuredByBearerToken
+    public Response testInterceptorBasic() {
+        LOGGER.debug("testInterceptorBasic - business logic executed (token already validated by interceptor)");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (basic)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with scope requirements.
+     */
+    @GET
+    @Path("/interceptor/with-scopes")
+    @SecuredByBearerToken(requiredScopes = {"read"})
+    public Response testInterceptorWithScopes() {
+        LOGGER.debug("testInterceptorWithScopes - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with scopes)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with role requirements.
+     */
+    @GET
+    @Path("/interceptor/with-roles")
+    @SecuredByBearerToken(requiredRoles = {"user"})
+    public Response testInterceptorWithRoles() {
+        LOGGER.debug("testInterceptorWithRoles - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with roles)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with group requirements.
+     */
+    @GET
+    @Path("/interceptor/with-groups")
+    @SecuredByBearerToken(requiredGroups = {"test-group"})
+    public Response testInterceptorWithGroups() {
+        LOGGER.debug("testInterceptorWithGroups - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with groups)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with all requirements (scopes, roles, groups).
+     */
+    @GET
+    @Path("/interceptor/with-all")
+    @SecuredByBearerToken(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"})
+    public Response testInterceptorWithAll() {
+        LOGGER.debug("testInterceptorWithAll - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with all requirements)")).build();
     }
 
     /**

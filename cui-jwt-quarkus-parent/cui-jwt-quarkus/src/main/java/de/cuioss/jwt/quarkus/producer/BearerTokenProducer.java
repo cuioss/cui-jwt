@@ -136,9 +136,9 @@ public class BearerTokenProducer {
      * @param requiredGroups Required groups for the token
      * @return BearerTokenResult containing detailed validation information
      */
-   
+
     @Timed(value = MetricIdentifier.BEARERTOKEN.VALIDATION, description = "Bearer token validation duration")
-    BearerTokenResult getBearerTokenResult(
+    public BearerTokenResult getBearerTokenResult(
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
 
         LOGGER.debug("Validating bearer token with required scopes: %s, roles: %s, groups: %s",

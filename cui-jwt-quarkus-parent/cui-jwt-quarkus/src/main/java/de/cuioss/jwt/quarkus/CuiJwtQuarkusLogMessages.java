@@ -240,6 +240,14 @@ public final class CuiJwtQuarkusLogMessages {
                 .prefix(PREFIX)
                 .identifier(135)
                 .build();
+
+        // Interceptor Warnings (136-145)
+
+        public static final LogRecord BEARER_TOKEN_ANNOTATION_NOT_FOUND = LogRecordModel.builder()
+                .template("@BearerToken annotation not found on method or class: %s")
+                .prefix(PREFIX)
+                .identifier(136)
+                .build();
     }
 
     /**

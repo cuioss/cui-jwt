@@ -284,6 +284,9 @@ public class CuiJwtProcessor {
                 // Register additional configuration producers using class references
                 .addBeanClass(AccessLogFilterConfigProducer.class)
                 .addBeanClass(CustomAccessLogFilter.class)
+                // Register interceptor infrastructure
+                .addBeanClass(de.cuioss.jwt.quarkus.interceptor.BearerTokenInterceptor.class)
+                .addBeanClass(de.cuioss.jwt.quarkus.interceptor.BearerTokenContextHolder.class)
                 .setUnremovable()
                 .build();
     }
