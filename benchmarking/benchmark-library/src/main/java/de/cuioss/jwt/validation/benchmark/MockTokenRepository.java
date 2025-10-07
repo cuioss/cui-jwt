@@ -29,7 +29,6 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Optional;
 
 /**
  * Mock token repository for generating JWT tokens in-memory for library benchmark testing.
