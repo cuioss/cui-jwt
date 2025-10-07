@@ -26,7 +26,6 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -132,10 +131,10 @@ public class NonValidatingJwtParser {
     /**
      * Counter for security events that occur during token processing.
      */
-    @NonNull
+   
     private final SecurityEventCounter securityEventCounter;
 
-    private NonValidatingJwtParser(ParserConfig config, @NonNull SecurityEventCounter securityEventCounter) {
+    private NonValidatingJwtParser(ParserConfig config, SecurityEventCounter securityEventCounter) {
         this.config = config != null ? config : ParserConfig.builder().build();
         this.securityEventCounter = securityEventCounter;
     }

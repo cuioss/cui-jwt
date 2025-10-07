@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.collect.MoreCollections;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.Set;
 
@@ -83,7 +82,7 @@ public class TokenClaimValidator {
      * @param issuerConfig the issuer configuration containing expected audience and client ID
      * @param securityEventCounter the counter for security events
      */
-    public TokenClaimValidator(@NonNull IssuerConfig issuerConfig, @NonNull SecurityEventCounter securityEventCounter) {
+    public TokenClaimValidator(IssuerConfig issuerConfig, SecurityEventCounter securityEventCounter) {
         this.expectedAudience = issuerConfig.getExpectedAudience();
         this.expectedClientId = issuerConfig.getExpectedClientId();
 
@@ -116,7 +115,7 @@ public class TokenClaimValidator {
      * @return The validated token content
      * @throws TokenValidationException if validation fails
      */
-    public TokenContent validate(@NonNull TokenContent token, @NonNull ValidationContext context) {
+    public TokenContent validate(TokenContent token, ValidationContext context) {
         LOGGER.trace("Validating token: %s", token);
         mandatoryClaimsValidator.validateMandatoryClaims(token);
         audienceValidator.validateAudience(token);

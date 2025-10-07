@@ -23,7 +23,6 @@ import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
-import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
@@ -55,7 +54,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
      *
      * @param dslJson the DSL-JSON instance containing JSON security settings
      */
-    public WellKnownConfigurationConverter(@NonNull DslJson<Object> dslJson) {
+    public WellKnownConfigurationConverter(DslJson<Object> dslJson) {
         this(dslJson, new SecurityEventCounter(), 8 * 1024); // Default 8KB limit
     }
 
@@ -66,8 +65,8 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
      * @param securityEventCounter the security event counter for tracking violations
      * @param maxContentSize maximum allowed JSON content size in bytes
      */
-    public WellKnownConfigurationConverter(@NonNull DslJson<Object> dslJson,
-            @NonNull SecurityEventCounter securityEventCounter,
+    public WellKnownConfigurationConverter(DslJson<Object> dslJson,
+            SecurityEventCounter securityEventCounter,
             int maxContentSize) {
         this.dslJson = dslJson;
         this.securityEventCounter = securityEventCounter;
@@ -161,7 +160,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     }
 
     @Override
-    public @NonNull WellKnownResult emptyValue() {
+    public WellKnownResult emptyValue() {
         return WellKnownResult.EMPTY;
     }
 }

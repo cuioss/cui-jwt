@@ -20,7 +20,6 @@ import de.cuioss.http.client.converter.StringContentConverter;
 import de.cuioss.jwt.validation.ParserConfig;
 import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -60,7 +59,7 @@ public class JwksHttpContentConverter extends StringContentConverter<Jwks> {
      *
      * @param parserConfig the parser configuration to use for DSL-JSON
      */
-    public JwksHttpContentConverter(@NonNull ParserConfig parserConfig) {
+    public JwksHttpContentConverter(ParserConfig parserConfig) {
         super(StandardCharsets.UTF_8);
         this.dslJson = parserConfig.getDslJson();
     }
@@ -92,7 +91,6 @@ public class JwksHttpContentConverter extends StringContentConverter<Jwks> {
     }
 
     @Override
-    @NonNull
     public Jwks emptyValue() {
         return Jwks.empty();
     }

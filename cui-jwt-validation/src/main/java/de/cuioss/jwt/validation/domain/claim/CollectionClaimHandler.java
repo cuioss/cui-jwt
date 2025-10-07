@@ -16,8 +16,6 @@
 package de.cuioss.jwt.validation.domain.claim;
 
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
@@ -54,13 +52,15 @@ import java.util.*;
  * @author Oliver Wolff
  * @since 1.0
  */
-@RequiredArgsConstructor
 public class CollectionClaimHandler {
 
     private static final CuiLogger LOGGER = new CuiLogger(CollectionClaimHandler.class);
 
-    @NonNull
     private final ClaimValue claimValue;
+
+    public CollectionClaimHandler(ClaimValue claimValue) {
+        this.claimValue = claimValue;
+    }
 
     /**
      * Gets the values from the claim.

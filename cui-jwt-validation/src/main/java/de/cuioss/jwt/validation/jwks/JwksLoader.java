@@ -19,7 +19,6 @@ import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import lombok.NonNull;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -94,5 +93,5 @@ public interface JwksLoader extends LoadingStatusProvider {
      * @return a CompletableFuture that completes when keys are loaded, with the final LoaderStatus
      * @throws NullPointerException if securityEventCounter is null
      */
-    CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter);
+    CompletableFuture<LoaderStatus> initJWKSLoader(SecurityEventCounter securityEventCounter);
 }

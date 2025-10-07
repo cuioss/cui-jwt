@@ -28,7 +28,6 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import lombok.ToString;
 
 import java.io.IOException;
@@ -73,9 +72,9 @@ public class JWKSKeyLoader implements JwksLoader {
 
     private final ParserConfig parserConfig;
     private SecurityEventCounter securityEventCounter;
-    @NonNull
+
     private final JwkAlgorithmPreferences jwkAlgorithmPreferences;
-    @NonNull
+
     private final JwksType jwksType;
     private volatile LoaderStatus status;
     private Map<String, KeyInfo> keyInfoMap;
@@ -178,7 +177,7 @@ public class JWKSKeyLoader implements JwksLoader {
          * @return a new JWKSKeyLoader
          * @throws IllegalArgumentException if neither jwksContent nor jwksFilePath is provided or if jwksFilePath cannot be read
          */
-        @NonNull
+       
         public JWKSKeyLoader build() {
             if (jwksContent == null && jwks == null && jwksFilePath == null) {
                 throw new IllegalArgumentException("Either jwksContent, jwks, or jwksFilePath must be provided");
@@ -221,7 +220,7 @@ public class JWKSKeyLoader implements JwksLoader {
      *
      * @return a new builder
      */
-    @NonNull
+   
     public static JWKSKeyLoaderBuilder builder() {
         return new JWKSKeyLoaderBuilder();
     }
@@ -237,10 +236,10 @@ public class JWKSKeyLoader implements JwksLoader {
      * @param jwksType the type of JWKS source, must not be null
      */
     public JWKSKeyLoader(
-            @NonNull String jwksContent,
+            String jwksContent,
             ParserConfig parserConfig,
-            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences,
-            @NonNull JwksType jwksType) {
+            JwkAlgorithmPreferences jwkAlgorithmPreferences,
+            JwksType jwksType) {
         this.jwksContent = jwksContent;
         this.jwks = null;
         this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
@@ -259,10 +258,10 @@ public class JWKSKeyLoader implements JwksLoader {
      * @param jwksType the type of JWKS source, must not be null
      */
     public JWKSKeyLoader(
-            @NonNull Jwks jwks,
+            Jwks jwks,
             ParserConfig parserConfig,
-            @NonNull JwkAlgorithmPreferences jwkAlgorithmPreferences,
-            @NonNull JwksType jwksType) {
+            JwkAlgorithmPreferences jwkAlgorithmPreferences,
+            JwksType jwksType) {
         this.jwksContent = null;
         this.jwks = jwks;
         this.parserConfig = parserConfig != null ? parserConfig : ParserConfig.builder().build();
@@ -307,7 +306,7 @@ public class JWKSKeyLoader implements JwksLoader {
      * @return the JWKS source type
      */
     @Override
-    public @NonNull JwksType getJwksType() {
+    public JwksType getJwksType() {
         return jwksType;
     }
 
@@ -320,7 +319,7 @@ public class JWKSKeyLoader implements JwksLoader {
      * @return the current health status, considering both loader status and key availability
      */
     @Override
-    public @NonNull LoaderStatus getLoaderStatus() {
+    public LoaderStatus getLoaderStatus() {
         return status; // Return cached status immediately - NO I/O
     }
 
@@ -331,7 +330,7 @@ public class JWKSKeyLoader implements JwksLoader {
     }
 
     @Override
-    public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter securityEventCounter) {
+    public CompletableFuture<LoaderStatus> initJWKSLoader(SecurityEventCounter securityEventCounter) {
         if (!initialized) {
             this.securityEventCounter = securityEventCounter;
             this.initialized = true;

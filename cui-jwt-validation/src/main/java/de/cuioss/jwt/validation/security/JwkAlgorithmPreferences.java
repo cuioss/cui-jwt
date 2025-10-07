@@ -17,7 +17,6 @@ package de.cuioss.jwt.validation.security;
 
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,7 +56,7 @@ public class JwkAlgorithmPreferences {
      *
      * @param supportedAlgorithms the list of supported algorithms for JWK parsing
      */
-    public JwkAlgorithmPreferences(@NonNull List<String> supportedAlgorithms) {
+    public JwkAlgorithmPreferences(List<String> supportedAlgorithms) {
         this.supportedAlgorithms = Collections.unmodifiableList(supportedAlgorithms);
     }
 

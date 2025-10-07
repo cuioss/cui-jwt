@@ -25,7 +25,6 @@ import de.cuioss.jwt.validation.metrics.MetricsTickerFactory;
 import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -80,7 +79,7 @@ public class AccessTokenCache {
     /**
      * Security event counter for tracking cache hits.
      */
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
     /**
@@ -95,8 +94,8 @@ public class AccessTokenCache {
      * @param securityEventCounter the security event counter for tracking cache hits
      */
     public AccessTokenCache(
-            @NonNull AccessTokenCacheConfig config,
-            @NonNull SecurityEventCounter securityEventCounter) {
+            AccessTokenCacheConfig config,
+            SecurityEventCounter securityEventCounter) {
 
         this.maxSize = config.getMaxSize();
         this.securityEventCounter = securityEventCounter;
@@ -139,8 +138,8 @@ public class AccessTokenCache {
      * @throws TokenValidationException if the cached token is expired
      */
     public Optional<AccessTokenContent> get(
-            @NonNull String tokenString,
-            @NonNull TokenValidatorMonitor performanceMonitor) {
+            String tokenString,
+            TokenValidatorMonitor performanceMonitor) {
 
         // If cache size is 0, caching is disabled
         if (maxSize == 0) {
@@ -196,9 +195,9 @@ public class AccessTokenCache {
      * @throws InternalCacheException if token has no expiration or cache store fails
      */
     public void put(
-            @NonNull String tokenString,
-            @NonNull AccessTokenContent content,
-            @NonNull TokenValidatorMonitor performanceMonitor) {
+            String tokenString,
+            AccessTokenContent content,
+            TokenValidatorMonitor performanceMonitor) {
 
         // If cache size is 0, caching is disabled
         if (maxSize == 0) {

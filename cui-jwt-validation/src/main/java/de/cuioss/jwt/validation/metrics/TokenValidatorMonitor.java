@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.metrics;
 import de.cuioss.tools.concurrent.StripedRingBuffer;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.util.Optional;
 import java.util.Set;
@@ -95,7 +94,7 @@ public class TokenValidatorMonitor {
      * @param enabledTypes set of measurement types to monitor (others will be no-op)
      * @throws IllegalArgumentException if windowSize is not positive
      */
-    TokenValidatorMonitor(int windowSize, @NonNull Set<MeasurementType> enabledTypes) {
+    TokenValidatorMonitor(int windowSize, Set<MeasurementType> enabledTypes) {
         if (windowSize <= 0) {
             throw new IllegalArgumentException("Window size must be positive, got: " + windowSize);
         }
@@ -126,7 +125,7 @@ public class TokenValidatorMonitor {
      * @param measurementType the type of measurement being recorded
      * @param durationNanos   the duration in nanoseconds
      */
-    public void recordMeasurement(@NonNull MeasurementType measurementType, long durationNanos) {
+    public void recordMeasurement(MeasurementType measurementType, long durationNanos) {
         // Early return for disabled measurement types (no-op)
         if (!enabledTypes.contains(measurementType)) {
             return;
@@ -157,7 +156,7 @@ public class TokenValidatorMonitor {
      * @return optional containing striped ring buffer statistics, empty if measurement type is not enabled
      * @since 1.0
      */
-    public Optional<StripedRingBufferStatistics> getValidationMetrics(@NonNull MeasurementType measurementType) {
+    public Optional<StripedRingBufferStatistics> getValidationMetrics(MeasurementType measurementType) {
         StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
         if (buffer == null) {
             return Optional.empty(); // Measurement type not enabled
@@ -173,7 +172,7 @@ public class TokenValidatorMonitor {
      * @param measurementType the type of measurement to check
      * @return the number of samples currently recorded (up to window size), or 0 if type is disabled
      */
-    public int getSampleCount(@NonNull MeasurementType measurementType) {
+    public int getSampleCount(MeasurementType measurementType) {
         StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
         return buffer != null ? buffer.getStatistics().sampleCount() : 0;
     }
@@ -183,7 +182,7 @@ public class TokenValidatorMonitor {
      *
      * @param measurementType the type of measurement to reset
      */
-    public void reset(@NonNull MeasurementType measurementType) {
+    public void reset(MeasurementType measurementType) {
         StripedRingBuffer buffer = measurementBuffers[measurementType.ordinal()];
         if (buffer != null) {
             buffer.reset();
@@ -207,7 +206,7 @@ public class TokenValidatorMonitor {
      * @param measurementType the measurement type to check
      * @return true if the measurement type is enabled and will record metrics, false otherwise
      */
-    public boolean isEnabled(@NonNull MeasurementType measurementType) {
+    public boolean isEnabled(MeasurementType measurementType) {
         return enabledTypes.contains(measurementType);
     }
 

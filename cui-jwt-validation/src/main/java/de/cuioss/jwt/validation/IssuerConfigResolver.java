@@ -20,7 +20,6 @@ import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.Collection;
@@ -84,8 +83,8 @@ public class IssuerConfigResolver {
      * @param issuerConfigs        collection of issuer configurations to manage, must not be null
      * @param securityEventCounter counter for security events, must not be null
      */
-    IssuerConfigResolver(@NonNull Collection<IssuerConfig> issuerConfigs,
-            @NonNull SecurityEventCounter securityEventCounter) {
+    IssuerConfigResolver(Collection<IssuerConfig> issuerConfigs,
+            SecurityEventCounter securityEventCounter) {
         this.securityEventCounter = securityEventCounter;
         this.mutableCache = new ConcurrentHashMap<>();
         this.loadingFutures = new ConcurrentHashMap<>();
@@ -152,7 +151,7 @@ public class IssuerConfigResolver {
      * @return the resolved issuer configuration, never null
      * @throws TokenValidationException if no healthy configuration is found for the issuer
      */
-    public IssuerConfig resolveConfig(@NonNull String issuer) {
+    public IssuerConfig resolveConfig(String issuer) {
         // Fast path - check cache for already loaded configs
         IssuerConfig cached = getCachedConfig(issuer);
         if (cached != null && cached.getJwksLoader().getLoaderStatus() == LoaderStatus.OK) {

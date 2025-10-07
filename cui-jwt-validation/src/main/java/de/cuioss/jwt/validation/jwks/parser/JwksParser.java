@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -47,19 +46,19 @@ public class JwksParser {
 
     private static final CuiLogger LOGGER = new CuiLogger(JwksParser.class);
 
-    @NonNull
+
     private final DslJson<Object> dslJson;
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
-    @NonNull
+
     private final ParserConfig parserConfig;
 
     /**
      * Create JwksParser with ParserConfig and SecurityEventCounter.
      */
-    public JwksParser(@NonNull ParserConfig parserConfig, @NonNull SecurityEventCounter securityEventCounter) {
+    public JwksParser(ParserConfig parserConfig, SecurityEventCounter securityEventCounter) {
         this.dslJson = parserConfig.getDslJson();
         this.securityEventCounter = securityEventCounter;
         this.parserConfig = parserConfig;

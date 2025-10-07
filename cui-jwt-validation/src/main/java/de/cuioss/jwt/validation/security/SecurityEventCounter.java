@@ -17,7 +17,6 @@ package de.cuioss.jwt.validation.security;
 
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.tools.logging.LogRecord;
-import lombok.NonNull;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -150,7 +149,7 @@ public class SecurityEventCounter {
      * @param eventType the type of security event to count
      * @return the new count value
      */
-    public long increment(@NonNull EventType eventType) {
+    public long increment(EventType eventType) {
         return counters.computeIfAbsent(eventType, k -> new AtomicLong(0)).incrementAndGet();
     }
 
@@ -160,7 +159,7 @@ public class SecurityEventCounter {
      * @param eventType the type of security event
      * @return the current count, or 0 if the event has never been counted
      */
-    public long getCount(@NonNull EventType eventType) {
+    public long getCount(EventType eventType) {
         AtomicLong counter = counters.get(eventType);
         return counter != null ? counter.get() : 0;
     }
@@ -189,7 +188,7 @@ public class SecurityEventCounter {
      * 
      * @param eventType the type of security event to reset
      */
-    public void reset(@NonNull EventType eventType) {
+    public void reset(EventType eventType) {
         counters.remove(eventType);
     }
 }

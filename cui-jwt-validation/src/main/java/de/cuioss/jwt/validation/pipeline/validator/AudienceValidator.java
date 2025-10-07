@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -53,10 +52,10 @@ public class AudienceValidator {
     private static final CuiLogger LOGGER = new CuiLogger(AudienceValidator.class);
     private static final String AUDIENCE_MATCHES_EXPECTED_AUDIENCE_S = "Token audience matches expected audience: %s";
 
-    @NonNull
+
     private final Set<String> expectedAudience;
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
     /**

@@ -28,7 +28,6 @@ import de.cuioss.jwt.validation.jwks.key.KeyInfo;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
 import de.cuioss.tools.logging.CuiLogger;
-import org.jspecify.annotations.NonNull;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -86,13 +85,13 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
      *
      * @param config the configuration for this loader
      */
-    public HttpJwksLoader(@NonNull HttpJwksLoaderConfig config) {
+    public HttpJwksLoader(HttpJwksLoaderConfig config) {
         this.config = config;
     }
 
     @Override
     @SuppressWarnings("java:S3776") // Cognitive complexity - initialization logic requires these checks
-    public CompletableFuture<LoaderStatus> initJWKSLoader(@NonNull SecurityEventCounter counter) {
+    public CompletableFuture<LoaderStatus> initJWKSLoader(SecurityEventCounter counter) {
         this.securityEventCounter = counter;
 
         // Execute initialization asynchronously

@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.pipeline;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.json.JwtHeader;
 import de.cuioss.jwt.validation.json.MapRepresentation;
-import lombok.NonNull;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -220,7 +219,7 @@ String rawToken
      * @return a string representation of this object
      */
     @Override
-    public @NonNull String toString() {
+    public String toString() {
         return "DecodedJwt[" +
                 "header=" + header +
                 ", body=" + body +

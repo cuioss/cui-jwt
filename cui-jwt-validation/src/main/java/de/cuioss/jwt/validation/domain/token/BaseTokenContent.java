@@ -20,7 +20,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
@@ -58,15 +57,12 @@ public abstract class BaseTokenContent implements TokenContent {
     private static final long serialVersionUID = 1L;
 
     @Getter
-    @NonNull
     private final Map<String, ClaimValue> claims;
 
     @Getter
-    @NonNull
     private final String rawToken;
 
     @Getter
-    @NonNull
     private final TokenType tokenType;
 
     /**
@@ -75,7 +71,6 @@ public abstract class BaseTokenContent implements TokenContent {
      * before it's processed into typed ClaimValue objects.
      */
     @Getter
-    @NonNull
     private final MapRepresentation rawPayload;
 
 
@@ -87,8 +82,8 @@ public abstract class BaseTokenContent implements TokenContent {
      * @param tokenType  the token type
      * @param rawPayload the raw JSON payload for ClaimMapper processing
      */
-    protected BaseTokenContent(@NonNull Map<String, ClaimValue> claims, @NonNull String rawToken,
-            @NonNull TokenType tokenType, @NonNull MapRepresentation rawPayload) {
+    protected BaseTokenContent(Map<String, ClaimValue> claims, String rawToken,
+            TokenType tokenType, MapRepresentation rawPayload) {
         this.claims = claims;
         this.rawToken = rawToken;
         this.tokenType = tokenType;

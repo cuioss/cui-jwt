@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +61,7 @@ public class KeycloakDefaultGroupsMapper implements ClaimMapper {
     private static final String GROUPS_CLAIM = "groups";
 
     @Override
-    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+    public ClaimValue map(MapRepresentation mapRepresentation, String claimName) {
         LOGGER.debug("KeycloakDefaultGroupsMapper.map called for claim: %s", claimName);
         LOGGER.debug("Input MapRepresentation: %s", mapRepresentation.toString());
 

@@ -170,10 +170,4 @@ class StringSplitterMapperTest {
         );
     }
 
-    @Test
-    @DisplayName("Throw exception when constructor is called with null")
-    void shouldThrowExceptionForNullSplitChar() {
-        assertThrows(NullPointerException.class, () -> new StringSplitterMapper(null),
-                "Should throw NullPointerException when constructor is called with null");
-    }
 }

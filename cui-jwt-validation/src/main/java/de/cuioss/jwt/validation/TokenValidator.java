@@ -30,8 +30,8 @@ import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Singular;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -137,7 +137,6 @@ public class TokenValidator {
      * This counter is thread-safe and can be accessed from outside to monitor security events.
      */
     @Getter
-    @NonNull
     private final SecurityEventCounter securityEventCounter;
 
     /**
@@ -145,7 +144,6 @@ public class TokenValidator {
      * This monitor is thread-safe and provides detailed timing measurements for each validation step.
      */
     @Getter
-    @NonNull
     private final TokenValidatorMonitor performanceMonitor;
 
     /**
@@ -178,10 +176,10 @@ public class TokenValidator {
      */
     @Builder
     private TokenValidator(
-            ParserConfig parserConfig,
-            @Singular @NonNull List<IssuerConfig> issuerConfigs,
-            TokenValidatorMonitorConfig monitorConfig,
-            AccessTokenCacheConfig cacheConfig) {
+            @Nullable ParserConfig parserConfig,
+            @Singular List<IssuerConfig> issuerConfigs,
+            @Nullable TokenValidatorMonitorConfig monitorConfig,
+            @Nullable AccessTokenCacheConfig cacheConfig) {
 
         if (issuerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one issuer configuration must be provided");
@@ -306,8 +304,8 @@ public class TokenValidator {
      * @return The parsed access token
      * @throws TokenValidationException if the token is invalid
      */
-    @NonNull
-    public AccessTokenContent createAccessToken(@NonNull String tokenString) {
+   
+    public AccessTokenContent createAccessToken(String tokenString) {
         LOGGER.debug("Creating access token");
 
         // Record complete validation time
@@ -335,8 +333,8 @@ public class TokenValidator {
      * @return The parsed ID token
      * @throws TokenValidationException if the token is invalid
      */
-    @NonNull
-    public IdTokenContent createIdToken(@NonNull String tokenString) {
+   
+    public IdTokenContent createIdToken(String tokenString) {
         LOGGER.debug("Creating ID token");
 
         // Pre-pipeline validation (null, blank, size)
@@ -358,8 +356,8 @@ public class TokenValidator {
      * @return The parsed refresh token
      * @throws TokenValidationException if the token is invalid
      */
-    @NonNull
-    public RefreshTokenContent createRefreshToken(@NonNull String tokenString) {
+   
+    public RefreshTokenContent createRefreshToken(String tokenString) {
         LOGGER.debug("Creating refresh token");
 
         // Pre-pipeline validation (null, blank, size)

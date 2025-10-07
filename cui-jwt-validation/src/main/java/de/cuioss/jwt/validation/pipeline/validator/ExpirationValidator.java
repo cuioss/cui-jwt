@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -44,7 +43,7 @@ public class ExpirationValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(ExpirationValidator.class);
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
     /**
@@ -58,7 +57,7 @@ public class ExpirationValidator {
      * @param context the validation context containing cached current time
      * @throws TokenValidationException if the token is expired
      */
-    public void validateNotExpired(TokenContent token, @NonNull ValidationContext context) {
+    public void validateNotExpired(TokenContent token, ValidationContext context) {
         LOGGER.debug("validate expiration. Can be done directly, because %s", token);
         if (token.isExpired(context)) {
             LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_EXPIRED);
@@ -90,7 +89,7 @@ public class ExpirationValidator {
      * @param context the validation context containing cached current time
      * @throws TokenValidationException if the "not before" time is invalid
      */
-    public void validateNotBefore(TokenContent token, @NonNull ValidationContext context) {
+    public void validateNotBefore(TokenContent token, ValidationContext context) {
         var notBefore = token.getNotBefore();
         if (notBefore.isEmpty()) {
             LOGGER.debug("Not before claim is optional, so if it's not present, validation passes");

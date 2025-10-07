@@ -59,12 +59,6 @@ class JwtRetryMetricsTest {
     }
 
     @Test
-    @DisplayName("Should require non-null monitor")
-    void shouldRequireNonNullMonitor() {
-        assertThrows(NullPointerException.class, () -> new JwtRetryMetrics(null), "JwtRetryMetrics constructor should reject null monitor");
-    }
-
-    @Test
     @DisplayName("Should record retry completion metrics")
     void shouldRecordRetryCompletionMetrics() {
         Duration totalDuration = Duration.ofMillis(1500);

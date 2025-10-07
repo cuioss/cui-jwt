@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.exception;
 import de.cuioss.jwt.validation.security.EventCategory;
 import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.io.Serial;
 
@@ -57,7 +56,7 @@ public class TokenValidationException extends RuntimeException {
      * @param eventType the event type that caused the validation failure
      * @param message the detail message
      */
-    public TokenValidationException(@NonNull EventType eventType, String message) {
+    public TokenValidationException(EventType eventType, String message) {
         super(message);
         this.eventType = eventType;
     }
@@ -69,7 +68,7 @@ public class TokenValidationException extends RuntimeException {
      * @param message the detail message
      * @param cause the cause of the validation failure
      */
-    public TokenValidationException(@NonNull EventType eventType, String message, Throwable cause) {
+    public TokenValidationException(EventType eventType, String message, Throwable cause) {
         super(message, cause);
         this.eventType = eventType;
     }

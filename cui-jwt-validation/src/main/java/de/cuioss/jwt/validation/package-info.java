@@ -44,7 +44,10 @@
  * <p>
  * Note: The implementation is primarily tested with Keycloak as the identity provider.
  * Some features may be specific to Keycloak's token implementation.
- * 
+ *
  * @since 1.0
  */
+@NullMarked
 package de.cuioss.jwt.validation;
+
+import org.jspecify.annotations.NullMarked;

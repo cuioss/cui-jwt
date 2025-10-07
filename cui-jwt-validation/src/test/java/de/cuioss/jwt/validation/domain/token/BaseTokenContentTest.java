@@ -26,7 +26,6 @@ import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.valueobjects.junit5.contracts.ShouldHandleObjectContracts;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 
 import java.io.Serial;
@@ -55,15 +54,6 @@ class BaseTokenContentTest implements ShouldHandleObjectContracts<BaseTokenConte
         assertEquals(tokenHolder.getClaims(), baseTokenContent.getClaims(), "Claims should match");
         assertEquals(tokenHolder.getRawToken(), baseTokenContent.getRawToken(), "Raw token should match");
         assertEquals(TokenType.ACCESS_TOKEN, baseTokenContent.getTokenType(), "Token type should match");
-    }
-
-    @Test
-    @DisplayName("Throw NullPointerException when claims is null")
-    @SuppressWarnings("java:S5778")
-    void shouldThrowExceptionWhenClaimsIsNull() {
-        assertThrows(NullPointerException.class,
-                () -> new TestBaseTokenContent(null, SAMPLE_TOKEN, TokenType.ACCESS_TOKEN, MapRepresentation.empty()),
-                "Should throw NullPointerException for null claims");
     }
 
     @ParameterizedTest

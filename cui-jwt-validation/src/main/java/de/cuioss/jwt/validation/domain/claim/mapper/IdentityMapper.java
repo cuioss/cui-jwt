@@ -18,7 +18,6 @@ package de.cuioss.jwt.validation.domain.claim.mapper;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 import de.cuioss.jwt.validation.json.MapRepresentation;
-import lombok.NonNull;
 
 import java.util.Optional;
 
@@ -31,7 +30,7 @@ import java.util.Optional;
  */
 public class IdentityMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+    public ClaimValue map(MapRepresentation mapRepresentation, String claimName) {
 
         Optional<Object> optionalValue = mapRepresentation.getValue(claimName);
         if (optionalValue.isEmpty()) {

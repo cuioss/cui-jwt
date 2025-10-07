@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.IssuerConfig;
 import de.cuioss.jwt.validation.domain.claim.ClaimName;
 import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.context.ValidationContext;
-import lombok.NonNull;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -58,7 +57,7 @@ public interface TokenContent extends MinimalTokenContent {
      *
      * @return a map of claim names to claim objects
      */
-    @NonNull
+   
     Map<String, ClaimValue> getClaims();
 
     /**
@@ -80,7 +79,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @throws IllegalStateException if the issuer claim is not present (should never happen
      *                               for a properly constructed validation)
      */
-    @NonNull
+   
     default String getIssuer() {
         return getClaimOption(ClaimName.ISSUER)
                 .map(ClaimValue::getOriginalString)
@@ -120,7 +119,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @throws IllegalStateException if the expiration claim is not present (should never happen
      *                               for a properly constructed validation)
      */
-    @NonNull
+   
     default OffsetDateTime getExpirationTime() {
         return getClaimOption(ClaimName.EXPIRATION)
                 .map(ClaimValue::getDateTime)
@@ -136,7 +135,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @throws IllegalStateException if the issued at claim is not present (should never happen
      *                               for a properly constructed validation)
      */
-    @NonNull
+   
     default OffsetDateTime getIssuedAtTime() {
         return getClaimOption(ClaimName.ISSUED_AT)
                 .map(ClaimValue::getDateTime)
@@ -165,7 +164,7 @@ public interface TokenContent extends MinimalTokenContent {
      * @param context the validation context containing cached current time
      * @return true if the token has expired, false otherwise
      */
-    default boolean isExpired(@NonNull ValidationContext context) {
+    default boolean isExpired(ValidationContext context) {
         return context.isExpired(getExpirationTime());
     }
 }

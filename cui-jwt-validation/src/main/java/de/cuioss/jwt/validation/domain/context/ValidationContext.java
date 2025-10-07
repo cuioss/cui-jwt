@@ -16,7 +16,6 @@
 package de.cuioss.jwt.validation.domain.context;
 
 import lombok.Getter;
-import lombok.NonNull;
 
 import java.time.OffsetDateTime;
 
@@ -48,7 +47,6 @@ public class ValidationContext {
      * multiple OffsetDateTime.now() system calls.
      */
     @Getter
-    @NonNull
     private final OffsetDateTime currentTime;
 
     /**
@@ -75,7 +73,7 @@ public class ValidationContext {
      * @param currentTime the current time to use for validation
      * @param clockSkewSeconds the clock skew tolerance in seconds
      */
-    public ValidationContext(@NonNull OffsetDateTime currentTime, int clockSkewSeconds) {
+    public ValidationContext(OffsetDateTime currentTime, int clockSkewSeconds) {
         this.currentTime = currentTime;
         this.clockSkewSeconds = clockSkewSeconds;
     }
@@ -96,7 +94,7 @@ public class ValidationContext {
      * @param expirationTime the token's expiration time
      * @return true if the token is expired, false otherwise
      */
-    public boolean isExpired(@NonNull OffsetDateTime expirationTime) {
+    public boolean isExpired(OffsetDateTime expirationTime) {
         return expirationTime.isBefore(currentTime);
     }
 
@@ -106,7 +104,7 @@ public class ValidationContext {
      * @param notBeforeTime the token's not-before time
      * @return true if the not-before time is invalid, false otherwise
      */
-    public boolean isNotBeforeInvalid(@NonNull OffsetDateTime notBeforeTime) {
+    public boolean isNotBeforeInvalid(OffsetDateTime notBeforeTime) {
         return notBeforeTime.isAfter(getCurrentTimeWithClockSkew());
     }
 }

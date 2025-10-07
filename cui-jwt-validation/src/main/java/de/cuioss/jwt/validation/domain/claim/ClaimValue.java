@@ -17,7 +17,6 @@ package de.cuioss.jwt.validation.domain.claim;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 
 import java.io.Serial;
@@ -76,14 +75,13 @@ public class ClaimValue implements Serializable {
      * The type of this claim value.
      */
     @Getter
-    @NonNull
     private final ClaimValueType type;
 
     /**
      * Only relevant for {@link ClaimValueType#STRING_LIST}
      */
     @Getter
-    @NonNull // Must not be null, but may be empty
+    // Must not be null, but may be empty
     private final List<String> asList;
 
     /**
@@ -100,8 +98,8 @@ public class ClaimValue implements Serializable {
      * @param asList the list of string values (only relevant for STRING_LIST)
      * @param dateTime the OffsetDateTime value (only relevant for DATETIME)
      */
-    public ClaimValue(String originalString, @NonNull ClaimValueType type,
-            @NonNull List<String> asList, OffsetDateTime dateTime) {
+    public ClaimValue(String originalString, ClaimValueType type,
+            List<String> asList, OffsetDateTime dateTime) {
         this.originalString = originalString;
         this.type = type;
         this.asList = asList;
@@ -160,7 +158,7 @@ public class ClaimValue implements Serializable {
      * @param originalString the original string representation of the claim value
      * @param sortedSet      the sorted set of string values
      */
-    public static ClaimValue forSortedSet(String originalString, @NonNull SortedSet<String> sortedSet) {
+    public static ClaimValue forSortedSet(String originalString, SortedSet<String> sortedSet) {
         return new ClaimValue(originalString, ClaimValueType.STRING_LIST, new ArrayList<>(sortedSet), null);
     }
 

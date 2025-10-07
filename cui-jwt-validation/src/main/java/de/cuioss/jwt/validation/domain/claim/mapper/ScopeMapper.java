@@ -19,7 +19,6 @@ import de.cuioss.jwt.validation.domain.claim.ClaimValue;
 import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
 import de.cuioss.jwt.validation.json.MapRepresentation;
 import de.cuioss.tools.string.Splitter;
-import lombok.NonNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +35,7 @@ import java.util.TreeSet;
  */
 public class ScopeMapper implements ClaimMapper {
     @Override
-    public ClaimValue map(@NonNull MapRepresentation mapRepresentation, @NonNull String claimName) {
+    public ClaimValue map(MapRepresentation mapRepresentation, String claimName) {
         Optional<Object> optionalValue = mapRepresentation.getValue(claimName);
         if (optionalValue.isEmpty()) {
             return ClaimValue.createEmptyClaimValue(ClaimValueType.STRING_LIST);

@@ -21,7 +21,6 @@ import de.cuioss.jwt.validation.domain.token.TokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Set;
@@ -43,10 +42,10 @@ public class AuthorizedPartyValidator {
 
     private static final CuiLogger LOGGER = new CuiLogger(AuthorizedPartyValidator.class);
 
-    @NonNull
+
     private final Set<String> expectedClientId;
 
-    @NonNull
+
     private final SecurityEventCounter securityEventCounter;
 
     /**
