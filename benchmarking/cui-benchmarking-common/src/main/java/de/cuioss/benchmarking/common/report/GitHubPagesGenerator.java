@@ -65,7 +65,7 @@ public class GitHubPagesGenerator {
         structure.ensureDirectories();
 
         Path deployDir = structure.getDeploymentDir();
-        LOGGER.info(INFO.DEPLOY_DIRECTORY.format(deployDir));
+        LOGGER.info(INFO.DEPLOY_DIRECTORY, deployDir);
 
         // Generate deployment-specific pages
         generate404Page(deployDir);

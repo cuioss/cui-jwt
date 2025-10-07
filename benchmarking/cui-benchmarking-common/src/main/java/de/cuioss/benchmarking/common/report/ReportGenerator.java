@@ -68,11 +68,11 @@ public class ReportGenerator {
         dataGenerator.generateDataFile(benchmarkData, benchmarkType, outputDir);
 
         // Then copy the index template
-        LOGGER.info(INFO.GENERATING_INDEX_PAGE.format(0));
+        LOGGER.info(INFO.GENERATING_INDEX_PAGE, 0);
         copyTemplate(INDEX, outputDir);
 
         Path indexFile = Path.of(outputDir).resolve(INDEX);
-        LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(indexFile));
+        LOGGER.info(INFO.INDEX_PAGE_GENERATED, indexFile);
     }
 
     /**
@@ -88,7 +88,7 @@ public class ReportGenerator {
         copyTemplate(TRENDS, outputDir);
 
         Path trendsFile = Path.of(outputDir).resolve(TRENDS);
-        LOGGER.info(INFO.TRENDS_PAGE_GENERATED.format(trendsFile));
+        LOGGER.info(INFO.TRENDS_PAGE_GENERATED, trendsFile);
     }
 
     /**
@@ -104,7 +104,7 @@ public class ReportGenerator {
         copyTemplate(DETAILED, outputDir);
 
         Path detailedFile = Path.of(outputDir).resolve(DETAILED);
-        LOGGER.info(INFO.INDEX_PAGE_GENERATED.format(detailedFile));
+        LOGGER.info(INFO.INDEX_PAGE_GENERATED, detailedFile);
     }
 
     /**

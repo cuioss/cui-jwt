@@ -75,7 +75,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
         this.includePathMatchers = config.getIncludePathMatchers();
         this.excludePathMatchers = config.getExcludePathMatchers();
 
-        LOGGER.info(INFO.CUSTOM_ACCESS_LOG_FILTER_INITIALIZED.format(config));
+        LOGGER.info(INFO.CUSTOM_ACCESS_LOG_FILTER_INITIALIZED, config);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class CustomAccessLogFilter implements ContainerRequestFilter, ContainerR
 
         // Format and log the access entry
         String logEntry = formatLogEntry(requestContext, responseContext, duration);
-        LOGGER.info(INFO.ACCESS_LOG_ENTRY.format(logEntry));
+        LOGGER.info(INFO.ACCESS_LOG_ENTRY, logEntry);
     }
 
     /**

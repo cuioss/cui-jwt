@@ -740,8 +740,7 @@ public class IssuerConfig implements LoadingStatusProvider {
 
             // Warn about RFC compliance when subject claim is made optional
             if (claimSubOptional) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING.format(
-                        issuerIdentifier != null ? issuerIdentifier : "unknown"));
+                LOGGER.warn(JWTValidationLogMessages.WARN.CLAIM_SUB_OPTIONAL_WARNING, issuerIdentifier != null ? issuerIdentifier : "unknown");
             }
 
             return new IssuerConfig(enabled, issuerIdentifier, expectedAudience, expectedClientId,

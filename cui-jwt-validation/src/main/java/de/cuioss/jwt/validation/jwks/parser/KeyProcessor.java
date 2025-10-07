@@ -108,7 +108,7 @@ public class KeyProcessor {
 
         // Validate key type is supported
         if (!"RSA".equals(keyType) && !"EC".equals(keyType)) {
-            LOGGER.warn(WARN.JWK_UNSUPPORTED_KEY_TYPE.format(keyType));
+            LOGGER.warn(WARN.JWK_UNSUPPORTED_KEY_TYPE, keyType);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return false;
         }
@@ -117,7 +117,7 @@ public class KeyProcessor {
         if (jwkKey.getKid().isPresent()) {
             String keyId = jwkKey.kid();
             if (keyId.length() > 100) {
-                LOGGER.warn(WARN.JWK_KEY_ID_TOO_LONG.format(keyId.length()));
+                LOGGER.warn(WARN.JWK_KEY_ID_TOO_LONG, keyId.length());
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 return false;
             }
@@ -127,7 +127,7 @@ public class KeyProcessor {
         if (jwkKey.alg() != null) {
             String algorithm = jwkKey.alg();
             if (!jwkAlgorithmPreferences.isSupported(algorithm)) {
-                LOGGER.warn(WARN.JWK_INVALID_ALGORITHM.format(algorithm));
+                LOGGER.warn(WARN.JWK_INVALID_ALGORITHM, algorithm);
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 return false;
             }
@@ -151,7 +151,7 @@ public class KeyProcessor {
             LOGGER.debug("Parsed RSA key with ID: %s and algorithm: %s", kid, alg);
             return new KeyInfo(publicKey, alg, kid);
         } catch (InvalidKeySpecException | IllegalStateException e) {
-            LOGGER.warn(e, WARN.RSA_KEY_PARSE_FAILED.format(kid, e.getMessage()));
+            LOGGER.warn(e, WARN.RSA_KEY_PARSE_FAILED, kid, e.getMessage());
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return null;
         }
@@ -172,7 +172,7 @@ public class KeyProcessor {
             LOGGER.debug("Parsed EC key with ID: %s and algorithm: %s", kid, alg);
             return new KeyInfo(publicKey, alg, kid);
         } catch (InvalidKeySpecException | IllegalStateException e) {
-            LOGGER.warn(e, WARN.EC_KEY_PARSE_FAILED.format(kid, e.getMessage()));
+            LOGGER.warn(e, WARN.EC_KEY_PARSE_FAILED, kid, e.getMessage());
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return null;
         }

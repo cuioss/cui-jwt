@@ -179,7 +179,7 @@ ResultFormatType resultFormat
                 case "LATEX" -> ResultFormatType.LATEX;
                 case "TEXT" -> ResultFormatType.TEXT;
                 default -> {
-                    LOGGER.warn(UNKNOWN_RESULT_FORMAT.format(format));
+                    LOGGER.warn(UNKNOWN_RESULT_FORMAT, format);
                     yield ResultFormatType.JSON;
                 }
             };

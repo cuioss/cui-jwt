@@ -112,7 +112,7 @@ public class JwtMetricsCollector {
         Map<SecurityEventCounter.EventType, Long> currentCounts = securityEventCounter.getCounters();
         lastKnownCounts.putAll(currentCounts);
 
-        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED.format(counters.size()));
+        LOGGER.info(INFO.JWT_METRICS_COLLECTOR_INITIALIZED, counters.size());
 
         // Force initial update to ensure metrics are visible immediately
         updateCounters();
@@ -238,7 +238,7 @@ public class JwtMetricsCollector {
                     counter.increment(delta);
                     LOGGER.debug("Updated counter for event type %s by %s (total: %s)", eventType.name(), delta, counter.count());
                 } else {
-                    LOGGER.warn(WARN.NO_MICROMETER_COUNTER_FOUND.format(eventType.name(), delta));
+                    LOGGER.warn(WARN.NO_MICROMETER_COUNTER_FOUND, eventType.name(), delta);
                 }
 
                 // Update the last known count

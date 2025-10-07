@@ -138,7 +138,7 @@ public class MandatoryClaimsValidator {
     }
 
     private void handleMissingClaims(TokenContent tokenContent, SortedSet<String> missingClaims) {
-        LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format(missingClaims));
+        LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, missingClaims);
         securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
 
         String errorMessage = buildErrorMessage(tokenContent, missingClaims);

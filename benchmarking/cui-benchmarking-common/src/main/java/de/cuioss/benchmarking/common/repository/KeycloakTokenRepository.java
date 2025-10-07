@@ -187,7 +187,7 @@ public class KeycloakTokenRepository implements TokenProvider {
     private void handleTokenFetchError(@NonNull HttpResponse<String> response) {
         String errorBody = response.body() != null ? response.body() : "<no body>";
 
-        LOGGER.error(FAILED_FETCH_TOKEN.format(response.statusCode(), errorBody));
+        LOGGER.error(FAILED_FETCH_TOKEN, response.statusCode(), errorBody);
 
         throw new TokenFetchException(
                 "Failed to fetch token from Keycloak. Status: %d, Body: %s".formatted(

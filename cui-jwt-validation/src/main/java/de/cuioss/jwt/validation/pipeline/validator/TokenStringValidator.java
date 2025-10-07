@@ -91,7 +91,7 @@ public class TokenStringValidator {
         // Check size limit (use byte length for accurate size measurement)
         int tokenByteLength = tokenString.getBytes(StandardCharsets.UTF_8).length;
         if (tokenByteLength > maxTokenSize) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED.format(maxTokenSize));
+            LOGGER.warn(JWTValidationLogMessages.WARN.TOKEN_SIZE_EXCEEDED, maxTokenSize);
             securityEventCounter.increment(SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.TOKEN_SIZE_EXCEEDED,

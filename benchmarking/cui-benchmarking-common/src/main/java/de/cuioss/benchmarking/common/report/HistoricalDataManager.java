@@ -78,7 +78,7 @@ public class HistoricalDataManager {
         String jsonContent = JsonSerializationHelper.toJson(currentData);
         Files.writeString(archiveFile, jsonContent);
 
-        LOGGER.info(INFO.GENERATING_REPORTS.format("Archived benchmark data to " + archiveFile));
+        LOGGER.info(INFO.GENERATING_REPORTS, "Archived benchmark data to " + archiveFile);
     }
 
     /**
@@ -103,7 +103,7 @@ public class HistoricalDataManager {
                 List<Path> filesToDelete = jsonFiles.subList(RETENTION_COUNT, jsonFiles.size());
                 for (Path file : filesToDelete) {
                     Files.delete(file);
-                    LOGGER.info(INFO.GENERATING_REPORTS.format("Removed old history file: " + file.getFileName()));
+                    LOGGER.info(INFO.GENERATING_REPORTS, "Removed old history file: " + file.getFileName());
                 }
             }
         }
@@ -147,7 +147,7 @@ public class HistoricalDataManager {
                     .filter(Files::isRegularFile)
                     .anyMatch(p -> p.toString().endsWith(JSON_EXTENSION));
         } catch (IOException e) {
-            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION.format("checking historical data"));
+            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION, "checking historical data");
             return false;
         }
     }

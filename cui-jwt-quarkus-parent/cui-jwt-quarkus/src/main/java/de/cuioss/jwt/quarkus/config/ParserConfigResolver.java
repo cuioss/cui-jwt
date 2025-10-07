@@ -106,9 +106,8 @@ public class ParserConfigResolver {
         // Let the builder validate and create the instance
         ParserConfig result = builder.build();
 
-        LOGGER.info(INFO.RESOLVED_PARSER_CONFIG.format(
-                result.getMaxTokenSize(), result.getMaxPayloadSize(), result.getMaxStringLength(),
-                result.getMaxBufferSize()));
+        LOGGER.info(INFO.RESOLVED_PARSER_CONFIG, result.getMaxTokenSize(), result.getMaxPayloadSize(), result.getMaxStringLength(),
+                result.getMaxBufferSize());
 
         return result;
     }

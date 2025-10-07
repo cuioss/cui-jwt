@@ -111,16 +111,16 @@ public class IssuerConfigResolver {
                 future.thenAccept(status -> {
                     if (status == LoaderStatus.OK) {
                         mutableCache.put(issuer, config);
-                        LOGGER.info(INFO.ISSUER_CONFIG_LOADED.format(issuer));
+                        LOGGER.info(INFO.ISSUER_CONFIG_LOADED, issuer);
                     } else {
-                        LOGGER.warn(WARN.ISSUER_CONFIG_LOAD_FAILED.format(issuer, status));
+                        LOGGER.warn(WARN.ISSUER_CONFIG_LOAD_FAILED, issuer, status);
                     }
                 });
 
                 enabledCount++;
                 LOGGER.debug("Triggered async loading for issuer: %s", issuer);
             } else {
-                LOGGER.info(INFO.ISSUER_CONFIG_SKIPPED.format(config));
+                LOGGER.info(INFO.ISSUER_CONFIG_SKIPPED, config);
             }
         }
 
@@ -172,12 +172,12 @@ public class IssuerConfigResolver {
                     }
                 }
             } catch (TimeoutException e) {
-                LOGGER.warn(WARN.JWKS_LOAD_TIMEOUT.format(issuer));
+                LOGGER.warn(WARN.JWKS_LOAD_TIMEOUT, issuer);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOGGER.warn(WARN.JWKS_LOAD_INTERRUPTED.format(issuer));
+                LOGGER.warn(WARN.JWKS_LOAD_INTERRUPTED, issuer);
             } catch (ExecutionException e) {
-                LOGGER.error(ERROR.JWKS_LOAD_EXECUTION_FAILED.format(e.getCause(), issuer));
+                LOGGER.error(e.getCause(), ERROR.JWKS_LOAD_EXECUTION_FAILED, issuer);
             }
         }
 
@@ -252,7 +252,7 @@ public class IssuerConfigResolver {
      * @throws TokenValidationException always thrown with NO_ISSUER_CONFIG event type
      */
     private void handleIssuerNotFound(String issuer) {
-        LOGGER.warn(WARN.NO_ISSUER_CONFIG.format(issuer));
+        LOGGER.warn(WARN.NO_ISSUER_CONFIG, issuer);
         securityEventCounter.increment(SecurityEventCounter.EventType.NO_ISSUER_CONFIG);
         throw new TokenValidationException(
                 SecurityEventCounter.EventType.NO_ISSUER_CONFIG,

@@ -63,7 +63,7 @@ public class MetricsOrchestrator {
      */
     public void collectBenchmarkMetrics(String benchmarkName, Instant startTime, Instant endTime, Path outputDir)
             throws IOException {
-        LOGGER.info(COLLECTING_REALTIME_METRICS.format(benchmarkName, startTime, endTime));
+        LOGGER.info(COLLECTING_REALTIME_METRICS, benchmarkName, startTime, endTime);
 
         // Define metrics to collect during benchmark execution
         // Using actual metric names from Prometheus
@@ -111,10 +111,10 @@ public class MetricsOrchestrator {
             exporter.exportToFile(fileName, metricsOutput);
 
             Path outputFile = outputDir.resolve(fileName);
-            LOGGER.info(REALTIME_METRICS_EXPORTED.format(benchmarkName, outputFile));
+            LOGGER.info(REALTIME_METRICS_EXPORTED, benchmarkName, outputFile);
 
         } catch (PrometheusClient.PrometheusException e) {
-            LOGGER.error(FAILED_COLLECT_REALTIME_PROMETHEUS.format(benchmarkName, e.getMessage()));
+            LOGGER.error(FAILED_COLLECT_REALTIME_PROMETHEUS, benchmarkName, e.getMessage());
             throw new IOException("Failed to collect Prometheus metrics", e);
         }
     }

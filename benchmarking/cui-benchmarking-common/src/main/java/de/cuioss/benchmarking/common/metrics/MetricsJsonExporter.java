@@ -77,7 +77,7 @@ public class MetricsJsonExporter {
             LOGGER.debug("MetricsJsonExporter initialized with target directory: %s (exists: %s)",
                     targetDirectory.toAbsolutePath(), Files.exists(targetDirectory));
         } catch (IOException e) {
-            LOGGER.warn(e, FAILED_CREATE_TARGET_DIR.format(targetDirectory));
+            LOGGER.warn(e, FAILED_CREATE_TARGET_DIR, targetDirectory);
         }
     }
 
@@ -205,7 +205,7 @@ public class MetricsJsonExporter {
                     }
                 }
             } catch (IOException | JsonSyntaxException e) {
-                LOGGER.warn(FAILED_READ_METRICS_FILE.format(fileName, e.getMessage()));
+                LOGGER.warn(FAILED_READ_METRICS_FILE, fileName, e.getMessage());
                 try {
                     Files.deleteIfExists(filePath);
                 } catch (IOException deleteException) {

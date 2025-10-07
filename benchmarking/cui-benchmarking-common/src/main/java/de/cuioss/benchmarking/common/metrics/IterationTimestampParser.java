@@ -68,7 +68,7 @@ public class IterationTimestampParser {
      */
     public static List<IterationWindow> parseJsonlFile(Path timestampFile) throws IOException {
         if (!Files.exists(timestampFile)) {
-            LOGGER.warn(TIMESTAMP_FILE_NOT_EXIST.format(timestampFile));
+            LOGGER.warn(TIMESTAMP_FILE_NOT_EXIST, timestampFile);
             return Collections.emptyList();
         }
 
@@ -84,12 +84,12 @@ public class IterationTimestampParser {
                 } catch (JsonParseException | IllegalStateException e) {
                     // JsonParseException: malformed JSON
                     // IllegalStateException: not a JSON object (getAsJsonObject on wrong type)
-                    LOGGER.warn(e, FAILED_PARSE_TIMESTAMP_LINE.format(line));
+                    LOGGER.warn(e, FAILED_PARSE_TIMESTAMP_LINE, line);
                 }
             });
         }
 
-        LOGGER.info(ITERATION_WINDOWS_PARSED.format(windows.size(), timestampFile));
+        LOGGER.info(ITERATION_WINDOWS_PARSED, windows.size(), timestampFile);
         return windows;
     }
 

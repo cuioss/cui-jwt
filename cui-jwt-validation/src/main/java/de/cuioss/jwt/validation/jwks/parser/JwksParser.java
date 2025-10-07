@@ -103,7 +103,7 @@ public class JwksParser {
             }
         } catch (IOException e) {
             // If both parsers threw IOException, it's invalid JSON
-            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format(e.getMessage()));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON, e.getMessage());
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return result;
         }
@@ -128,7 +128,7 @@ public class JwksParser {
      */
     public List<JwkKey> parse(Jwks jwks) {
         if (jwks == null) {
-            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON.format("JWKS object is null"));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_INVALID_JSON, "JWKS object is null");
             return new ArrayList<>();
         }
         return parseJwks(jwks);
@@ -157,7 +157,7 @@ public class JwksParser {
         int upperLimit = parserConfig.getMaxPayloadSize();
 
         if (actualSize > upperLimit) {
-            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED.format(upperLimit, actualSize));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED, upperLimit, actualSize);
             securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
             return false;
         }
@@ -208,7 +208,7 @@ public class JwksParser {
 
             // Check array size limits
             if (keysArray.size() > 50) {
-                LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_TOO_LARGE.format(keysArray.size()));
+                LOGGER.warn(JWTValidationLogMessages.WARN.JWKS_KEYS_ARRAY_TOO_LARGE, keysArray.size());
                 securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 return false;
             }
@@ -234,7 +234,7 @@ public class JwksParser {
                     result.add(key);
                 } else if (key != null) {
                     // Key exists but missing kty field
-                    LOGGER.warn(JWTValidationLogMessages.WARN.JWK_MISSING_KTY.format(key.kid()));
+                    LOGGER.warn(JWTValidationLogMessages.WARN.JWK_MISSING_KTY, key.kid());
                     securityEventCounter.increment(EventType.JWKS_JSON_PARSE_FAILED);
                 }
             }

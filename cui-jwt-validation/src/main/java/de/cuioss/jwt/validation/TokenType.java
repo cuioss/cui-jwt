@@ -94,7 +94,7 @@ public enum TokenType {
                 return tokenType;
             }
         }
-        LOGGER.warn(JWTValidationLogMessages.WARN.UNKNOWN_TOKEN_TYPE.format(typeClaimName));
+        LOGGER.warn(JWTValidationLogMessages.WARN.UNKNOWN_TOKEN_TYPE, typeClaimName);
         return UNKNOWN;
     }
 }

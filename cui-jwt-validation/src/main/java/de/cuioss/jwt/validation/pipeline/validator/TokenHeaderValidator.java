@@ -106,7 +106,7 @@ public class TokenHeaderValidator {
     private void validateNoEmbeddedJwk(DecodedJwt decodedJwt) {
         JwtHeader header = decodedJwt.getHeader();
         if (header.getJwk().isPresent()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format("Embedded JWK"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM, "Embedded JWK");
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
@@ -125,7 +125,7 @@ public class TokenHeaderValidator {
         var algorithm = decodedJwt.getAlg();
 
         if (algorithm.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("alg"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, "alg");
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,
@@ -134,7 +134,7 @@ public class TokenHeaderValidator {
         }
 
         if (!issuerConfig.getAlgorithmPreferences().isSupported(algorithm.get())) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format(algorithm.get()));
+            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM, algorithm.get());
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
@@ -155,7 +155,7 @@ public class TokenHeaderValidator {
     private void validateKeyId(DecodedJwt decodedJwt) {
         var kid = decodedJwt.getKid();
         if (kid.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("kid"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, "kid");
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             JwtHeader header = decodedJwt.getHeader();
             StringBuilder headerInfo = new StringBuilder("Available header claims:");

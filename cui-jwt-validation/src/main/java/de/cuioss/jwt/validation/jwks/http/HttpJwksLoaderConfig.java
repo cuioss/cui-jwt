@@ -546,7 +546,7 @@ public class HttpJwksLoaderConfig implements HttpHandlerProvider {
                     // Check for insecure HTTP protocol
                     URI uri = jwksHttpHandler.getUri();
                     if ("http".equalsIgnoreCase(uri.getScheme())) {
-                        LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS.format(uri.toString()));
+                        LOGGER.warn(JWTValidationLogMessages.WARN.INSECURE_HTTP_JWKS, uri.toString());
                     }
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     LOGGER.warn(WARN.INVALID_JWKS_URI::format);

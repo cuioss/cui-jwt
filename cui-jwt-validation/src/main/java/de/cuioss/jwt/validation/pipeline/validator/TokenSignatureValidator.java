@@ -124,7 +124,7 @@ public class TokenSignatureValidator {
         // Get the key from the JwksLoader
         var keyInfo = jwksLoader.getKeyInfo(kid);
         if (keyInfo.isEmpty()) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.KEY_NOT_FOUND.format(kid));
+            LOGGER.warn(JWTValidationLogMessages.WARN.KEY_NOT_FOUND, kid);
             securityEventCounter.increment(SecurityEventCounter.EventType.KEY_NOT_FOUND);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.KEY_NOT_FOUND,
@@ -134,7 +134,7 @@ public class TokenSignatureValidator {
 
         // Verify that the key's algorithm matches the validation's algorithm
         if (!isAlgorithmCompatible(algorithm, keyInfo.get().algorithm())) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM.format(algorithm));
+            LOGGER.warn(JWTValidationLogMessages.WARN.UNSUPPORTED_ALGORITHM, algorithm);
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,
@@ -147,7 +147,7 @@ public class TokenSignatureValidator {
             LOGGER.debug("All checks passed, verifying signature");
             verifySignature(decodedJwt, keyInfo.get().key(), algorithm);
         } catch (IllegalArgumentException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED, e.getMessage());
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
@@ -175,7 +175,7 @@ public class TokenSignatureValidator {
             dataToVerify = decodedJwt.getDataToVerify();
             signatureBytes = decodedJwt.getSignatureAsDecodedBytes();
         } catch (IllegalStateException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED, e.getMessage());
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
@@ -204,7 +204,7 @@ public class TokenSignatureValidator {
             if (isValid) {
                 LOGGER.debug("Signature is valid");
             } else {
-                LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format("Invalid signature"));
+                LOGGER.warn(JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED, "Invalid signature");
                 securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
                 throw new TokenValidationException(
                         SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
@@ -212,7 +212,7 @@ public class TokenSignatureValidator {
                 );
             }
         } catch (InvalidKeyException | SignatureException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED, e.getMessage());
             securityEventCounter.increment(SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.SIGNATURE_VALIDATION_FAILED,
@@ -220,7 +220,7 @@ public class TokenSignatureValidator {
                     e
             );
         } catch (SignatureTemplateManager.UnsupportedAlgorithmException e) {
-            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED.format(e.getMessage()));
+            LOGGER.warn(e, JWTValidationLogMessages.ERROR.SIGNATURE_VALIDATION_FAILED, e.getMessage());
             securityEventCounter.increment(SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM);
             throw new TokenValidationException(
                     SecurityEventCounter.EventType.UNSUPPORTED_ALGORITHM,

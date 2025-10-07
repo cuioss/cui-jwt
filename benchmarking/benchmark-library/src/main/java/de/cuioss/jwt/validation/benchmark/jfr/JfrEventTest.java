@@ -28,7 +28,7 @@ import java.util.concurrent.*;
 /**
  * Simple test to verify JFR events are working properly.
  */
-// cui-rewrite:disable CuiLogRecordPatternRecipe)
+// cui-rewrite:disable CuiLogRecordPatternRecipe
 @SuppressWarnings("java:S2245") // ThreadLocalRandom is appropriate for test scenarios
 public class JfrEventTest {
 
@@ -75,9 +75,9 @@ public class JfrEventTest {
                             } catch (InterruptedException e) {
                                 // Restore interrupt status and exit
                                 Thread.currentThread().interrupt();
-                                LOGGER.error("Test operation interrupted", e);
+                                LOGGER.error(e, "Test operation interrupted");
                             } catch (IllegalStateException | UnsupportedOperationException e) {
-                                LOGGER.error("Error during JFR event test operation", e);
+                                LOGGER.error(e, "Error during JFR event test operation");
                             } finally {
                                 latch.countDown();
                             }
@@ -156,7 +156,7 @@ public class JfrEventTest {
         LOGGER.debug("  Phase Events: %s", phaseCount);
 
         if (operationCount == 0 && statisticsCount == 0) {
-           LOGGER.error("\nWARNING: No JWT events found in recording!");
+            LOGGER.error("\nWARNING: No JWT events found in recording!");
         }
     }
 }

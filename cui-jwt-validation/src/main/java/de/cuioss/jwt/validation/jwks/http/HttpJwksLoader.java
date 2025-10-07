@@ -111,7 +111,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                 if (config.getWellKnownConfig() != null) {
                     LOGGER.warn(WARN.JWKS_URI_RESOLUTION_FAILED::format);
                 }
-                LOGGER.error(ERROR.JWKS_INITIALIZATION_FAILED.format(errorDetail, getIssuerIdentifier().orElse(ISSUER_NOT_CONFIGURED)));
+                LOGGER.error(ERROR.JWKS_INITIALIZATION_FAILED, errorDetail, getIssuerIdentifier().orElse(ISSUER_NOT_CONFIGURED));
                 return LoaderStatus.ERROR;
             }
 
@@ -131,7 +131,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                 updateKeys(result.getResult());
 
                 // Log successful HTTP load
-                LOGGER.info(INFO.JWKS_LOADED.format(getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED))));
+                LOGGER.info(INFO.JWKS_LOADED, getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED)));
 
                 status.set(LoaderStatus.OK);
                 return LoaderStatus.OK;
@@ -145,7 +145,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                 }
             }
 
-            LOGGER.error(ERROR.JWKS_LOAD_FAILED.format(result.getResultDetail(), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED))));
+            LOGGER.error(ERROR.JWKS_LOAD_FAILED, result.getResultDetail(), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED)));
 
             // If background refresh is enabled, keep status as UNDEFINED to allow retries
             // Otherwise set to ERROR for permanent failure
@@ -188,7 +188,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                 if (configuredIssuer != null) {
                     // Configured issuer takes precedence, but validate against discovered
                     if (!configuredIssuer.equals(discoveredIssuer.get())) {
-                        LOGGER.warn(WARN.ISSUER_MISMATCH.format(configuredIssuer, discoveredIssuer.get()));
+                        LOGGER.warn(WARN.ISSUER_MISMATCH, configuredIssuer, discoveredIssuer.get());
                         securityEventCounter.increment(SecurityEventCounter.EventType.ISSUER_MISMATCH);
                     }
                     resolvedIssuerIdentifier.set(configuredIssuer);
@@ -203,7 +203,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                     resolvedIssuerIdentifier.set(configuredIssuer);
                 } else {
                     // No issuer available at all - fail
-                    LOGGER.error(ERROR.JWKS_INITIALIZATION_FAILED.format("No issuer identifier found", "well-known"));
+                    LOGGER.error(ERROR.JWKS_INITIALIZATION_FAILED, "No issuer identifier found", "well-known");
                     return Optional.empty();
                 }
             }
@@ -304,7 +304,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
         }
 
         // Log keys update
-        LOGGER.info(INFO.JWKS_KEYS_UPDATED.format(status.get()));
+        LOGGER.info(INFO.JWKS_KEYS_UPDATED, status.get());
     }
 
     private void startBackgroundRefresh() {
@@ -324,21 +324,21 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                         } else if (result.getHttpStatus().map(s -> s == 304).orElse(false)) {
                             LOGGER.debug("Background refresh: keys unchanged (304)");
                         } else {
-                            LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED.format(result.getState()));
+                            LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED, result.getState());
                         }
                     } catch (IllegalArgumentException e) {
                         // JSON parsing or validation errors
-                        LOGGER.warn(WARN.BACKGROUND_REFRESH_PARSE_ERROR.format(e.getMessage(), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED))));
+                        LOGGER.warn(WARN.BACKGROUND_REFRESH_PARSE_ERROR, e.getMessage(), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED)));
                     } catch (IllegalStateException e) {
                         // State errors (e.g., from orElseThrow when issuer not resolved)
-                        LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED.format(e.getMessage()));
+                        LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED, e.getMessage());
                     }
                 },
                 config.getRefreshIntervalSeconds(),
                 config.getRefreshIntervalSeconds(),
                 TimeUnit.SECONDS));
 
-        LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_STARTED.format(config.getRefreshIntervalSeconds()));
+        LOGGER.info(INFO.JWKS_BACKGROUND_REFRESH_STARTED, config.getRefreshIntervalSeconds());
     }
 
     @Override

@@ -86,7 +86,7 @@ public class JwksHttpContentConverter extends StringContentConverter<Jwks> {
             return Optional.of(jwks);
 
         } catch (IOException e) {
-            LOGGER.warn(WARN.JWKS_PARSE_IO_ERROR.format(e.getMessage()));
+            LOGGER.warn(WARN.JWKS_PARSE_IO_ERROR, e.getMessage());
             return Optional.empty();
         }
     }

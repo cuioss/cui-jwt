@@ -95,7 +95,7 @@ public class PrometheusClient {
                 TimeSeries timeSeries = queryRangeForMetric(metricName, startTime, endTime, step);
                 results.put(metricName, timeSeries);
             } catch (PrometheusException e) {
-                LOGGER.warn(FAILED_QUERY_METRIC.format(metricName, e.getMessage()));
+                LOGGER.warn(FAILED_QUERY_METRIC, metricName, e.getMessage());
                 throw e;
             }
         }

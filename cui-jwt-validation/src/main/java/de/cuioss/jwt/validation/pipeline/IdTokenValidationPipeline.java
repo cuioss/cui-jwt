@@ -124,7 +124,7 @@ public class IdTokenValidationPipeline {
 
         // 2. Extract issuer
         String issuerString = decodedJwt.getIssuer().orElseThrow(() -> {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM.format("iss"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_CLAIM, "iss");
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_CLAIM);
             return new TokenValidationException(
                     SecurityEventCounter.EventType.MISSING_CLAIM,

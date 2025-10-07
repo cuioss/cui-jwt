@@ -177,7 +177,7 @@ public class BearerTokenProducer {
                         .accessTokenContent(tokenContent)
                         .build();
             } else {
-                LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED.format(missingScopes, missingRoles, missingGroups));
+                LOGGER.warn(BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED, missingScopes, missingRoles, missingGroups);
                 return BearerTokenResult.builder()
                         .status(BearerTokenStatus.CONSTRAINT_VIOLATION)
                         .missingScopes(missingScopes)

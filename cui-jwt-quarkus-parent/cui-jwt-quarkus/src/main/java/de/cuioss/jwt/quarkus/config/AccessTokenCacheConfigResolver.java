@@ -72,7 +72,7 @@ public class AccessTokenCacheConfigResolver {
                 .evictionIntervalSeconds(evictionIntervalSeconds)
                 .build();
 
-        LOGGER.info(INFO.ACCESS_TOKEN_CACHE_CONFIGURED.format(maxSize, evictionIntervalSeconds));
+        LOGGER.info(INFO.ACCESS_TOKEN_CACHE_CONFIGURED, maxSize, evictionIntervalSeconds);
 
         return cacheConfig;
     }

@@ -87,7 +87,7 @@ public class HttpClientFactory {
                     .sslContext(sslContext)
                     .build();
 
-            LOGGER.info(HTTP_CLIENT_CREATED.format(version, CONNECT_TIMEOUT_SECONDS));
+            LOGGER.info(HTTP_CLIENT_CREATED, version, CONNECT_TIMEOUT_SECONDS);
             return client;
 
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -104,11 +104,11 @@ public class HttpClientFactory {
 
         return switch (protocol) {
             case "http1" -> {
-                LOGGER.info(USING_HTTP_1_1.format(HTTP_PROTOCOL_PROPERTY));
+                LOGGER.info(USING_HTTP_1_1, HTTP_PROTOCOL_PROPERTY);
                 yield HttpClient.Version.HTTP_1_1;
             }
             default -> {
-                LOGGER.info(USING_HTTP_2.format(HTTP_PROTOCOL_PROPERTY));
+                LOGGER.info(USING_HTTP_2, HTTP_PROTOCOL_PROPERTY);
                 yield HttpClient.Version.HTTP_2;
             }
         };

@@ -82,9 +82,9 @@ public class PrometheusMetricsManager {
         this.metricsEnabled = isPrometheusAvailable();
 
         if (metricsEnabled) {
-            LOGGER.info(PROMETHEUS_ENABLED.format(prometheusUrl));
+            LOGGER.info(PROMETHEUS_ENABLED, prometheusUrl);
         } else {
-            LOGGER.info(PROMETHEUS_DISABLED.format(prometheusUrl));
+            LOGGER.info(PROMETHEUS_DISABLED, prometheusUrl);
         }
     }
 
@@ -98,7 +98,7 @@ public class PrometheusMetricsManager {
         Instant startTime = Instant.now();
         timestampTracker.compute(benchmarkName, (key, existing) -> {
             if (existing != null) {
-                LOGGER.warn(OVERWRITING_START_TIME.format(benchmarkName));
+                LOGGER.warn(OVERWRITING_START_TIME, benchmarkName);
             }
             return new BenchmarkTimestamps(startTime, null);
         });
@@ -115,7 +115,7 @@ public class PrometheusMetricsManager {
      */
     public void recordBenchmarkTimestamps(String benchmarkName, Instant startTime, Instant endTime) {
         if (startTime == null || endTime == null) {
-            LOGGER.warn(INVALID_TIMESTAMPS.format(benchmarkName, startTime, endTime));
+            LOGGER.warn(INVALID_TIMESTAMPS, benchmarkName, startTime, endTime);
             return;
         }
 
@@ -148,7 +148,7 @@ public class PrometheusMetricsManager {
             Path prometheusDir = Path.of(outputDirectory, PROMETHEUS_DIR_NAME);
             Files.createDirectories(prometheusDir);
 
-            LOGGER.info(COLLECTING_PROMETHEUS_METRICS.format(prometheusUrl));
+            LOGGER.info(COLLECTING_PROMETHEUS_METRICS, prometheusUrl);
 
             MetricsOrchestrator orchestrator = new MetricsOrchestrator(
                     new PrometheusClient(prometheusUrl)
@@ -160,7 +160,7 @@ public class PrometheusMetricsManager {
             }
 
         } catch (IOException e) {
-            LOGGER.warn(FAILED_COLLECT_PROMETHEUS.format(e.getMessage()));
+            LOGGER.warn(FAILED_COLLECT_PROMETHEUS, e.getMessage());
         }
     }
 
@@ -177,13 +177,13 @@ public class PrometheusMetricsManager {
     public void collectMetricsForWrkBenchmark(String benchmarkName, Instant startTime,
             Instant endTime, String outputDirectory) {
         if (!metricsEnabled) {
-            LOGGER.warn(SKIPPING_PROMETHEUS_COLLECTION.format(prometheusUrl));
+            LOGGER.warn(SKIPPING_PROMETHEUS_COLLECTION, prometheusUrl);
             LOGGER.debug("To enable metrics collection, ensure Prometheus is running and accessible at the configured URL");
             return;
         }
 
         if (startTime == null || endTime == null) {
-            LOGGER.warn(MISSING_TIMESTAMPS_FOR_COLLECTION.format(benchmarkName));
+            LOGGER.warn(MISSING_TIMESTAMPS_FOR_COLLECTION, benchmarkName);
             return;
         }
 
@@ -191,7 +191,7 @@ public class PrometheusMetricsManager {
             Path prometheusDir = Path.of(outputDirectory, PROMETHEUS_DIR_NAME);
             Files.createDirectories(prometheusDir);
 
-            LOGGER.info(COLLECTING_WRK_PROMETHEUS_METRICS.format(benchmarkName));
+            LOGGER.info(COLLECTING_WRK_PROMETHEUS_METRICS, benchmarkName);
 
             MetricsOrchestrator orchestrator = new MetricsOrchestrator(
                     new PrometheusClient(prometheusUrl)
@@ -204,10 +204,10 @@ public class PrometheusMetricsManager {
                     prometheusDir
             );
 
-            LOGGER.info(PROMETHEUS_METRICS_SAVED.format(prometheusDir, benchmarkName, METRICS_FILE_SUFFIX));
+            LOGGER.info(PROMETHEUS_METRICS_SAVED, prometheusDir, benchmarkName, METRICS_FILE_SUFFIX);
 
         } catch (IOException e) {
-            LOGGER.error(e, FAILED_COLLECT_PROMETHEUS_BENCHMARK.format(benchmarkName, prometheusUrl));
+            LOGGER.error(e, FAILED_COLLECT_PROMETHEUS_BENCHMARK, benchmarkName, prometheusUrl);
             LOGGER.debug("Attempted to query metrics for time range: %s to %s", startTime, endTime);
         }
     }
@@ -221,14 +221,14 @@ public class PrometheusMetricsManager {
         BenchmarkTimestamps timestamps = timestampTracker.get(benchmarkName);
 
         if (timestamps == null || !timestamps.isValid()) {
-            LOGGER.warn(NO_VALID_TIMESTAMPS.format(benchmarkName, timestampTracker.keySet()));
+            LOGGER.warn(NO_VALID_TIMESTAMPS, benchmarkName, timestampTracker.keySet());
             return;
         }
 
-        LOGGER.info(USING_SESSION_TIMESTAMPS.format(benchmarkName, timestamps.startTime(), timestamps.endTime()));
+        LOGGER.info(USING_SESSION_TIMESTAMPS, benchmarkName, timestamps.startTime(), timestamps.endTime());
 
         try {
-            LOGGER.info(COLLECTING_BENCHMARK_METRICS.format(benchmarkName));
+            LOGGER.info(COLLECTING_BENCHMARK_METRICS, benchmarkName);
 
             orchestrator.collectBenchmarkMetrics(
                     benchmarkName,
@@ -237,10 +237,10 @@ public class PrometheusMetricsManager {
                     prometheusDir
             );
 
-            LOGGER.info(PROMETHEUS_METRICS_SAVED.format(prometheusDir, benchmarkName, METRICS_FILE_SUFFIX));
+            LOGGER.info(PROMETHEUS_METRICS_SAVED, prometheusDir, benchmarkName, METRICS_FILE_SUFFIX);
 
         } catch (IOException e) {
-            LOGGER.warn(FAILED_COLLECT_BENCHMARK_METRICS.format(benchmarkName, e.getMessage()));
+            LOGGER.warn(FAILED_COLLECT_BENCHMARK_METRICS, benchmarkName, e.getMessage());
         }
     }
 
@@ -261,8 +261,8 @@ public class PrometheusMetricsManager {
             LOGGER.debug("Prometheus is available and responding at: %s", prometheusUrl);
             return true;
         } catch (PrometheusClient.PrometheusException e) {
-            LOGGER.error(PROMETHEUS_CONNECTIVITY_FAILED.format(prometheusUrl, e.getMessage(), e.getClass().getSimpleName()));
-            LOGGER.info(PROMETHEUS_CONNECTIVITY_ADVICE.format(prometheusUrl));
+            LOGGER.error(PROMETHEUS_CONNECTIVITY_FAILED, prometheusUrl, e.getMessage(), e.getClass().getSimpleName());
+            LOGGER.info(PROMETHEUS_CONNECTIVITY_ADVICE, prometheusUrl);
             return false;
         }
     }

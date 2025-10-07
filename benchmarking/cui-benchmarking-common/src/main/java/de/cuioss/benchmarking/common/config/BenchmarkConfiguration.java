@@ -164,7 +164,7 @@ IntegrationConfiguration integrationConfig
             case 'm' -> TimeValue.minutes(value);
             case 'h' -> TimeValue.hours(value);
             default -> {
-                LOGGER.warn(UNKNOWN_TIME_UNIT.format(lastChar, timeStr));
+                LOGGER.warn(UNKNOWN_TIME_UNIT, lastChar, timeStr);
                 yield TimeValue.seconds(value);
             }
         };

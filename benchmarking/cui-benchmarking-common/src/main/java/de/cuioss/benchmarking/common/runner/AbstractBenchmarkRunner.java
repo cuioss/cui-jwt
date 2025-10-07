@@ -218,7 +218,7 @@ public abstract class AbstractBenchmarkRunner {
         try {
             processPreciseTimestamps(results, timestampsFile);
         } catch (IOException e) {
-            LOGGER.warn(FAILED_PARSE_TIMESTAMP_FILE.format(e.getMessage()));
+            LOGGER.warn(FAILED_PARSE_TIMESTAMP_FILE, e.getMessage());
             recordSessionTimestamps(results);
         }
     }
@@ -243,7 +243,7 @@ public abstract class AbstractBenchmarkRunner {
             List<IterationTimestampParser.IterationWindow> benchmarkWindows = byBenchmark.get(benchmarkName);
 
             if (benchmarkWindows == null || benchmarkWindows.isEmpty()) {
-                LOGGER.warn(NO_TIMESTAMP_DATA.format(benchmarkName));
+                LOGGER.warn(NO_TIMESTAMP_DATA, benchmarkName);
                 recordBenchmarkTimestamp(benchmarkName);
                 continue;
             }
@@ -267,11 +267,11 @@ public abstract class AbstractBenchmarkRunner {
 
         if (measurementWindow.isPresent()) {
             IterationTimestampParser.IterationWindow window = measurementWindow.get();
-            LOGGER.info(USING_PRECISE_TIMESTAMPS.format(benchmarkName, window.startTime(), window.endTime()));
+            LOGGER.info(USING_PRECISE_TIMESTAMPS, benchmarkName, window.startTime(), window.endTime());
             prometheusMetricsManager.recordBenchmarkTimestamps(
                     benchmarkName, window.startTime(), window.endTime());
         } else {
-            LOGGER.warn(NO_MEASUREMENT_WINDOWS.format(benchmarkName));
+            LOGGER.warn(NO_MEASUREMENT_WINDOWS, benchmarkName);
             recordBenchmarkTimestamp(benchmarkName);
         }
     }
@@ -385,7 +385,7 @@ public abstract class AbstractBenchmarkRunner {
         prometheusMetricsManager.clear();
 
         String outputDir = config.resultsDirectory();
-        LOGGER.info(BENCHMARK_RUNNER_STARTING_WITH_DETAILS.format(config.benchmarkType(), outputDir));
+        LOGGER.info(BENCHMARK_RUNNER_STARTING_WITH_DETAILS, config.benchmarkType(), outputDir);
 
         // Step 2: Ensure output directory exists
         Path outputPath = Path.of(outputDir);
@@ -418,7 +418,7 @@ public abstract class AbstractBenchmarkRunner {
             // Step 9: Post-benchmark hook
             afterBenchmark(results, config);
 
-            LOGGER.info(BENCHMARKS_COMPLETED_WITH_ARTIFACTS.format(results.size(), outputDir));
+            LOGGER.info(BENCHMARKS_COMPLETED_WITH_ARTIFACTS, results.size(), outputDir);
 
         } finally {
             // Step 9: Cleanup (always executed)

@@ -75,9 +75,9 @@ public class JwtRetryMetrics implements RetryMetrics {
         }
 
         if (successful) {
-            LOGGER.info(INFO.RETRY_OPERATION_COMPLETED.format(context.operationName(), totalAttempts, totalDuration.toMillis()));
+            LOGGER.info(INFO.RETRY_OPERATION_COMPLETED, context.operationName(), totalAttempts, totalDuration.toMillis());
         } else {
-            LOGGER.warn(WARN.RETRY_OPERATION_FAILED.format(context.operationName(), totalAttempts, totalDuration.toMillis()));
+            LOGGER.warn(WARN.RETRY_OPERATION_FAILED, context.operationName(), totalAttempts, totalDuration.toMillis());
         }
     }
 

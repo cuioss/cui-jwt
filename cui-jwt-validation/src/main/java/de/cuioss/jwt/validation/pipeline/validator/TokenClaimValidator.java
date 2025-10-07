@@ -93,12 +93,12 @@ public class TokenClaimValidator {
         this.authorizedPartyValidator = new AuthorizedPartyValidator(expectedClientId, securityEventCounter);
 
         if (MoreCollections.isEmpty(expectedAudience)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_RECOMMENDED_ELEMENT.format("expectedAudience"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_RECOMMENDED_ELEMENT, "expectedAudience");
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_RECOMMENDED_ELEMENT);
         }
 
         if (MoreCollections.isEmpty(expectedClientId)) {
-            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_RECOMMENDED_ELEMENT.format("azp claim validation (expectedClientId)"));
+            LOGGER.warn(JWTValidationLogMessages.WARN.MISSING_RECOMMENDED_ELEMENT, "azp claim validation (expectedClientId)");
             securityEventCounter.increment(SecurityEventCounter.EventType.MISSING_RECOMMENDED_ELEMENT);
         }
     }

@@ -111,7 +111,7 @@ public class IssuerConfigResolver {
             if (isIssuerEnabled(issuerName)) {
                 IssuerConfig issuerConfig = createIssuerConfig(issuerName);
                 enabledIssuers.add(issuerConfig);
-                LOGGER.info(INFO.RESOLVED_ISSUER_CONFIGURATION.format(issuerName));
+                LOGGER.info(INFO.RESOLVED_ISSUER_CONFIGURATION, issuerName);
             } else {
                 LOGGER.debug("Skipping disabled issuer: %s", issuerName);
             }
@@ -121,7 +121,7 @@ public class IssuerConfigResolver {
             throw new IllegalStateException("No enabled issuer configurations found");
         }
 
-        LOGGER.info(INFO.RESOLVED_ENABLED_ISSUER_CONFIGURATIONS.format(enabledIssuers.size()));
+        LOGGER.info(INFO.RESOLVED_ENABLED_ISSUER_CONFIGURATIONS, enabledIssuers.size());
         return enabledIssuers;
     }
 

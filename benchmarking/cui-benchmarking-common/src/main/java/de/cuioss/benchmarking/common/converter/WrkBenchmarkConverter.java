@@ -78,7 +78,7 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
                                 benchmarks.add(benchmark);
                             }
                         } catch (IOException e) {
-                            LOGGER.error(e, FAILED_PARSE_WRK_FILE.format(file));
+                            LOGGER.error(e, FAILED_PARSE_WRK_FILE, file);
                         }
                     });
         }

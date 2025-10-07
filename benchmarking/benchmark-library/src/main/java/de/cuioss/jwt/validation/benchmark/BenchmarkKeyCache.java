@@ -59,7 +59,7 @@ public final class BenchmarkKeyCache {
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        LOGGER.info(INFO.KEY_PREGENERATION_COMPLETED.format(MAX_CACHED_ISSUERS, duration));
+        LOGGER.info(INFO.KEY_PREGENERATION_COMPLETED, MAX_CACHED_ISSUERS, duration);
     }
 
     /**
@@ -88,7 +88,7 @@ public final class BenchmarkKeyCache {
         }
 
         // Generate on demand if not cached (this should be rare in benchmarks)
-        LOGGER.warn(WARN.KEY_CACHE_MISS.format(count));
+        LOGGER.warn(WARN.KEY_CACHE_MISS, count);
         IssuerKeyMaterial[] generated = InMemoryKeyMaterialHandler.createMultipleIssuers(count);
         ISSUER_CACHE.put(count, generated);
         return generated;
@@ -102,6 +102,6 @@ public final class BenchmarkKeyCache {
      */
     public static void initialize() {
         // The static initializer will run when this method is called
-        LOGGER.info(INFO.KEY_CACHE_INITIALIZED.format(ISSUER_CACHE.size()));
+        LOGGER.info(INFO.KEY_CACHE_INITIALIZED, ISSUER_CACHE.size());
     }
 }
