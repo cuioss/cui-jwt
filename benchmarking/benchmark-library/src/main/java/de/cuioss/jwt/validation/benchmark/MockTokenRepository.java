@@ -29,6 +29,7 @@ import lombok.Value;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
 
 /**
  * Mock token repository for generating JWT tokens in-memory for library benchmark testing.
@@ -192,11 +193,11 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Gets the issuer identifier for a specific token
      *
      * @param token The token to get the issuer for
-     * @return The issuer identifier, or null if not found
+     * @return The issuer identifier, or empty if not found
      */
-    public String getTokenIssuer(String token) {
+    public Optional<String> getTokenIssuer(String token) {
         TokenMetadata metadata = tokenMetadata.get(token);
-        return metadata != null ? metadata.getIssuerIdentifier() : null;
+        return metadata != null ? Optional.of(metadata.getIssuerIdentifier()) : Optional.empty();
     }
 
     /**

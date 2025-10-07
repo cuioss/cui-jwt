@@ -58,7 +58,7 @@ import java.util.concurrent.TimeUnit;
         try (var recorder = jfrInstrumentation.recordOperation("validateValidTokenWithJfr", "validation")) {
             String token = tokenRepository.getPrimaryToken();
             recorder.withPayloadSize(token.length())
-                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token));
+                    .withMetadata(ISSUER, tokenRepository.getTokenIssuer(token).orElse(null));
 
             AccessTokenContent result = errorLoadDelegate.validateValid();
             recorder.withSuccess(true);
