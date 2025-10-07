@@ -16,6 +16,8 @@
 package de.cuioss.jwt.quarkus.deployment;
 
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,8 +90,8 @@ public class CuiJwtDevUIJsonRPCService {
      * @param token The JWT token to validate
      * @return A map containing validation result
      */
-   
-    public Map<String, Object> validateToken(String token) {
+
+    public Map<String, Object> validateToken(@Nullable String token) {
         Map<String, Object> result = new HashMap<>();
 
         if (token == null || token.trim().isEmpty()) {

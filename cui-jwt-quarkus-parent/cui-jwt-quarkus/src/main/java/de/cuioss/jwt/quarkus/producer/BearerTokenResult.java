@@ -116,9 +116,9 @@ public class BearerTokenResult implements Serializable {
     public static BearerTokenResult success(AccessTokenContent accessTokenContent,
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
         // For success case, calculate missing values (should all be empty)
-        Set<String> missingScopes = accessTokenContent != null ? accessTokenContent.determineMissingScopes(requiredScopes) : Set.of();
-        Set<String> missingRoles = accessTokenContent != null ? accessTokenContent.determineMissingRoles(requiredRoles) : Set.of();
-        Set<String> missingGroups = accessTokenContent != null ? accessTokenContent.determineMissingGroups(requiredGroups) : Set.of();
+        Set<String> missingScopes = accessTokenContent.determineMissingScopes(requiredScopes);
+        Set<String> missingRoles = accessTokenContent.determineMissingRoles(requiredRoles);
+        Set<String> missingGroups = accessTokenContent.determineMissingGroups(requiredGroups);
 
         return builder()
                 .status(BearerTokenStatus.FULLY_VERIFIED)
@@ -142,13 +142,10 @@ public class BearerTokenResult implements Serializable {
    
     public static BearerTokenResult parsingError(TokenValidationException exception,
             Set<String> requiredScopes, Set<String> requiredRoles, Set<String> requiredGroups) {
-        var builder = builder();
-        if (exception != null) {
-            builder.errorEventType(exception.getEventType())
-                    .errorMessage(exception.getMessage());
-        }
-        return builder
+        return builder()
                 .status(BearerTokenStatus.PARSING_ERROR)
+                .errorEventType(exception.getEventType())
+                .errorMessage(exception.getMessage())
                 .missingScopes(requiredScopes)
                 .missingRoles(requiredRoles)
                 .missingGroups(requiredGroups)

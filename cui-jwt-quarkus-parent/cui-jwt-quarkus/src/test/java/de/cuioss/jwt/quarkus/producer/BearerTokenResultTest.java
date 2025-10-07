@@ -155,16 +155,6 @@ class BearerTokenResultTest {
             assertTrue(result.getErrorMessage().isPresent());
             assertEquals("Bad signature", result.getErrorMessage().get());
         }
-
-        @Test
-        @DisplayName("parsingError() with null should handle gracefully")
-        void parsingErrorWithNullShouldHandleGracefully() {
-            var result = BearerTokenResult.parsingError(null, Set.of(), Set.of(), Set.of());
-
-            assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
-            assertFalse(result.getErrorEventType().isPresent());
-            assertFalse(result.getErrorMessage().isPresent());
-        }
     }
 
     @Nested
@@ -274,16 +264,6 @@ class BearerTokenResultTest {
             assertTrue(result.getMissingScopes().isEmpty());
             assertTrue(result.getMissingRoles().isEmpty());
             assertTrue(result.getMissingGroups().isEmpty());
-        }
-
-        @Test
-        @DisplayName("factory methods should handle null exception gracefully")
-        void factoryMethodsShouldHandleNullException() {
-            var result = BearerTokenResult.parsingError(null, Set.of(), Set.of(), Set.of());
-
-            assertEquals(BearerTokenStatus.PARSING_ERROR, result.getStatus());
-            assertFalse(result.getErrorEventType().isPresent());
-            assertFalse(result.getErrorMessage().isPresent());
         }
     }
 

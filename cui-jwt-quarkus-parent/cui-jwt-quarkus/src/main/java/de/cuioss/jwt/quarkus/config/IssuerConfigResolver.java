@@ -24,6 +24,7 @@ import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
 import org.eclipse.microprofile.config.Config;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.*;
@@ -352,7 +353,7 @@ public class IssuerConfigResolver {
      * Uses builder defaults for optional values, letting the builder handle validation.
      * </p>
      */
-    private HttpJwksLoaderConfig createHttpJwksLoaderConfig(String issuerName, String jwksUrl, String wellKnownUrl) {
+    private HttpJwksLoaderConfig createHttpJwksLoaderConfig(String issuerName, @Nullable String jwksUrl, @Nullable String wellKnownUrl) {
         HttpJwksLoaderConfig.HttpJwksLoaderConfigBuilder builder = HttpJwksLoaderConfig.builder();
 
         // Set the issuer identifier (required for direct JWKS configuration)
