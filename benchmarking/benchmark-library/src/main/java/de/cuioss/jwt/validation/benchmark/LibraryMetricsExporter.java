@@ -77,12 +77,10 @@ public class LibraryMetricsExporter {
 
 
     public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
-        if (!(metricsData instanceof TokenValidatorMonitor)) {
+        if (!(metricsData instanceof TokenValidatorMonitor monitor)) {
             LOGGER.warn(WARN.INVALID_METRICS_TYPE, metricsData.getClass().getName());
             return;
         }
-
-        TokenValidatorMonitor monitor = (TokenValidatorMonitor) metricsData;
 
         // Create metrics for current benchmark
         Map<String, Object> benchmarkMetrics = new LinkedHashMap<>();
