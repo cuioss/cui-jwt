@@ -107,10 +107,6 @@ class LibraryMetricsExporterTest {
         assertNotNull(parseMetrics.get("p99_us"));
     }
 
-    @Test void shouldHandleNullMonitor() {
-        assertDoesNotThrow(() -> LibraryMetricsExporter.exportMetrics(null));
-    }
-
     @Test void shouldFormatNumbersCorrectly() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()

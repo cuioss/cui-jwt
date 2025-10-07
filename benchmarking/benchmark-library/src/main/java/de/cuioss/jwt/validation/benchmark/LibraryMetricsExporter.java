@@ -78,7 +78,7 @@ public class LibraryMetricsExporter {
 
     public void exportMetrics(String benchmarkMethodName, Instant timestamp, Object metricsData) throws IOException {
         if (!(metricsData instanceof TokenValidatorMonitor)) {
-            LOGGER.warn(WARN.INVALID_METRICS_TYPE, metricsData != null ? metricsData.getClass().getName() : "null");
+            LOGGER.warn(WARN.INVALID_METRICS_TYPE, metricsData.getClass().getName());
             return;
         }
 
@@ -118,21 +118,13 @@ public class LibraryMetricsExporter {
 
     /**
      * Exports metrics from the provided monitor.
-     * 
+     *
      * @param monitor The monitor containing the metrics
      * @throws IOException if writing fails
      */
     public static synchronized void exportMetrics(TokenValidatorMonitor monitor) throws IOException {
-        if (monitor == null) {
-            LOGGER.debug("No monitor provided, skipping metrics export");
-            return;
-        }
-
         // Get current benchmark name from thread or stack trace
         String benchmarkName = getCurrentBenchmarkName();
-        if (benchmarkName == null) {
-            benchmarkName = "unknown_benchmark";
-        }
 
         getInstance().exportMetrics(benchmarkName, Instant.now(), monitor);
     }
@@ -179,7 +171,7 @@ public class LibraryMetricsExporter {
             return extractBenchmarkFromThread(threadName, BENCHMARK);
         }
 
-        return null;
+        return "unknown_benchmark";
     }
 
     /**
