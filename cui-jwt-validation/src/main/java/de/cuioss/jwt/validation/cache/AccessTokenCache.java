@@ -214,29 +214,15 @@ public class AccessTokenCache {
             int cacheKey = tokenString.hashCode();
 
             // Wrap validated token in CachedToken for storage
-            CachedToken newCachedToken;
-            try {
-                // Get expiration time - this should always be present for valid tokens
-                OffsetDateTime expirationTime = content.getExpirationTime();
+            // Note: expirationTime is guaranteed to be present because tokens are validated
+            // before caching, and validation requires a valid exp claim
+            OffsetDateTime expirationTime = content.getExpirationTime();
 
-                newCachedToken = CachedToken.builder()
-                        .rawToken(tokenString)
-                        .content(content)
-                        .expirationTime(expirationTime)
-                        .build();
-            } catch (IllegalStateException e) {
-                // This should not happen as TokenContent.getExpirationTime() throws
-                // IllegalStateException only when expiration claim is missing,
-                // which should have been caught during token validation
-                LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_NO_EXPIRATION::format);
-                throw new InternalCacheException(
-                        "Token passed validation but has no expiration time", e);
-            } catch (IllegalArgumentException | SecurityException e) {
-                // Handle specific runtime exceptions that could occur during token caching
-                LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_TOKEN_STORE_FAILED::format);
-                throw new InternalCacheException(
-                        "Failed to cache validated token", e);
-            }
+            CachedToken newCachedToken = CachedToken.builder()
+                    .rawToken(tokenString)
+                    .content(content)
+                    .expirationTime(expirationTime)
+                    .build();
 
             // putIfAbsent: only store if no value exists (handles concurrent validation races)
             // If another thread already stored, their value wins - we silently discard ours
@@ -291,26 +277,25 @@ public class AccessTokenCache {
      * <p>
      * Scans cache for expired tokens and removes them in batches.
      * Only called when cache is enabled (maxSize > 0) and executor is configured.
+     * <p>
+     * Note: ConcurrentHashMap operations are thread-safe and don't throw
+     * IllegalStateException or SecurityException under normal circumstances.
      */
     private void evictExpiredTokens() {
-        try {
-            OffsetDateTime now = OffsetDateTime.now();
-            List<Integer> expiredKeys = new ArrayList<>();
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Integer> expiredKeys = new ArrayList<>();
 
-            // Collect expired keys (thread-safe iteration)
-            for (Map.Entry<Integer, CachedToken> entry : cache.entrySet()) {
-                if (entry.getValue().isExpired(now)) {
-                    expiredKeys.add(entry.getKey());
-                }
+        // Collect expired keys (thread-safe iteration)
+        for (Map.Entry<Integer, CachedToken> entry : cache.entrySet()) {
+            if (entry.getValue().isExpired(now)) {
+                expiredKeys.add(entry.getKey());
             }
+        }
 
-            if (!expiredKeys.isEmpty()) {
-                // Batch remove from cache (thread-safe operations)
-                expiredKeys.forEach(cache::remove);
-                LOGGER.debug("Evicted %s expired tokens from cache", expiredKeys.size());
-            }
-        } catch (IllegalStateException | SecurityException e) {
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.CACHE_EVICTION_FAILED::format);
+        if (!expiredKeys.isEmpty()) {
+            // Batch remove from cache (thread-safe operations)
+            expiredKeys.forEach(cache::remove);
+            LOGGER.debug("Evicted %s expired tokens from cache", expiredKeys.size());
         }
     }
 
