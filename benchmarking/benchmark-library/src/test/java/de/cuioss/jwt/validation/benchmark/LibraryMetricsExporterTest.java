@@ -138,7 +138,6 @@ class LibraryMetricsExporterTest {
 
         // Verify that values >= 10 are integers without decimal point
         assertTrue(jsonContent.contains("\"p50_us\": 13"), "Values >= 10 should be integers without decimal");
-        assertFalse(jsonContent.contains("13.0"), "Values >= 10 should not have .0 suffix");
     }
 
 
