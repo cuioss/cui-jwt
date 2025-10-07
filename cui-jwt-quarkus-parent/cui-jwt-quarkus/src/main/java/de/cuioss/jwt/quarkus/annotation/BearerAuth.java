@@ -76,18 +76,14 @@ import java.lang.annotation.Target;
  * }</pre>
  *
  * <h2>Accessing Validated Token:</h2>
- * Use {@link de.cuioss.jwt.quarkus.interceptor.BearerTokenContextHolder} to access the validated token:
+ * Use parameter injection with {@link BearerToken} to access the validated token:
  * <pre>{@code
- * @Inject
- * BearerTokenContextHolder contextHolder;
- *
  * @GET
  * @BearerAuth(requiredScopes = {"read"})
- * public Response getData() {
- *     BearerTokenResult result = contextHolder.get()
+ * public Response getData(@BearerToken BearerTokenResult tokenResult) {
+ *     AccessTokenContent token = tokenResult.getAccessTokenContent()
  *         .orElseThrow(() -> new IllegalStateException("Token not available"));
  *
- *     AccessTokenContent token = result.getAccessTokenContent().get();
  *     String userId = token.getSubject().orElse("unknown");
  *
  *     return Response.ok(data).build();
@@ -97,7 +93,7 @@ import java.lang.annotation.Target;
  * <h2>Error Handling:</h2>
  * <ul>
  *   <li>Methods returning {@link jakarta.ws.rs.core.Response}: Automatic error response via {@link de.cuioss.jwt.quarkus.producer.BearerTokenResponseFactory}</li>
- *   <li>Other return types: Validation still occurs, access token via {@link de.cuioss.jwt.quarkus.interceptor.BearerTokenContextHolder}</li>
+ *   <li>Other return types: Validation still occurs, access token via {@link BearerToken} parameter injection</li>
  * </ul>
  *
  * <h2>HTTP Response Codes:</h2>
@@ -135,7 +131,6 @@ import java.lang.annotation.Target;
  * @author Oliver Wolff
  * @see BearerToken
  * @see de.cuioss.jwt.quarkus.interceptor.BearerTokenInterceptor
- * @see de.cuioss.jwt.quarkus.interceptor.BearerTokenContextHolder
  * @see de.cuioss.jwt.quarkus.producer.BearerTokenResult
  * @since 1.0
  */

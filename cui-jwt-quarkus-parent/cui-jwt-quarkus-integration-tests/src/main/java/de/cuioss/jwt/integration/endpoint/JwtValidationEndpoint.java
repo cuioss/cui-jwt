@@ -279,6 +279,31 @@ public class JwtValidationEndpoint {
     }
 
     /**
+     * Tests interceptor-based validation with parameter injection to access token details.
+     * Demonstrates how to access validated token content using @BearerToken parameter injection.
+     */
+    @GET
+    @Path("/interceptor/with-token-access")
+    @BearerAuth(requiredScopes = {"read"})
+    public Response testInterceptorWithTokenAccess(@BearerToken BearerTokenResult tokenResult) {
+        LOGGER.debug("testInterceptorWithTokenAccess - accessing token details via parameter injection");
+
+        AccessTokenContent token = tokenResult.getAccessTokenContent()
+                .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
+
+        String userId = token.getSubject().orElse("unknown");
+        LOGGER.debug("Token subject: %s", userId);
+
+        var data = new HashMap<String, Object>();
+        data.put("userId", userId);
+        data.put("scopes", token.getScopes());
+        data.put("roles", token.getRoles());
+        data.put("groups", token.getGroups());
+
+        return Response.ok(new ValidationResponse(true, "Token access successful", data)).build();
+    }
+
+    /**
      * Echo endpoint for performance analysis.
      * Touches the TokenValidator (via getSecurityEventCounter) to maintain similar dependency injection
      * overhead but skips actual JWT validation work.

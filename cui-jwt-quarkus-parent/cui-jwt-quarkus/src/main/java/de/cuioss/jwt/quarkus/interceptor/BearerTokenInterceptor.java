@@ -85,13 +85,10 @@ public class BearerTokenInterceptor {
     private static final CuiLogger LOGGER = new CuiLogger(BearerTokenInterceptor.class);
 
     private final BearerTokenProducer bearerTokenProducer;
-    private final BearerTokenContextHolder contextHolder;
 
     @Inject
-    public BearerTokenInterceptor(BearerTokenProducer bearerTokenProducer,
-            BearerTokenContextHolder contextHolder) {
+    public BearerTokenInterceptor(BearerTokenProducer bearerTokenProducer) {
         this.bearerTokenProducer = bearerTokenProducer;
-        this.contextHolder = contextHolder;
     }
 
     /**
@@ -145,19 +142,13 @@ public class BearerTokenInterceptor {
             // Always return error response on validation failure
             // Methods must return Response or a compatible type
             LOGGER.trace("Returning automatic error response for failed validation");
-            contextHolder.set(result);
             return result.createErrorResponse();
         }
 
-        // Validation successful - store token in context and proceed
+        // Validation successful - proceed with method execution
+        // Token is available via @BearerToken injection if needed
         LOGGER.trace("Bearer token validation successful - proceeding with method execution");
-        contextHolder.set(result);
-        try {
-            return ctx.proceed();
-        } finally {
-            // Clean up context after method execution
-            contextHolder.clear();
-        }
+        return ctx.proceed();
     }
 
     /**
