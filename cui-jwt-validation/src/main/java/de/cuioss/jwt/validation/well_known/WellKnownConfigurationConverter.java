@@ -77,8 +77,8 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
     @Override
     public Optional<WellKnownResult> convert(Object rawContent) {
         if (!(rawContent instanceof String stringContent)) {
-            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Expected String content, got: " +
-                    (rawContent != null ? rawContent.getClass().getSimpleName() : "null"));
+            LOGGER.error(JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Expected String content, got: %s",
+                    rawContent != null ? rawContent.getClass().getSimpleName() : "null");
             return Optional.empty();
         }
 
@@ -136,7 +136,7 @@ public class WellKnownConfigurationConverter implements HttpContentConverter<Wel
             return Optional.empty();
         } catch (IllegalArgumentException e) {
             // Invalid well-known configuration (missing required fields)
-            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Invalid well-known configuration: " + e.getMessage());
+            LOGGER.error(e, JWTValidationLogMessages.ERROR.JSON_PARSE_FAILED, "Invalid well-known configuration: %s", e.getMessage());
             return Optional.empty();
         }
     }

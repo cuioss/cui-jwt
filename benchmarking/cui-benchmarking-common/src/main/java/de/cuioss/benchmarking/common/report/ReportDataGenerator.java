@@ -365,7 +365,7 @@ public class ReportDataGenerator {
         if (externalHistoryPath != null && !externalHistoryPath.isEmpty()) {
             // Use external history directory (e.g., for CI/CD workflows)
             historyDir = Path.of(externalHistoryPath);
-            LOGGER.info(INFO.PROCESSING_RESULTS, "Using external history directory: " + historyDir);
+            LOGGER.info(INFO.USING_EXTERNAL_HISTORY_DIR, historyDir);
         } else {
             // Default to output directory/history (for local runs and tests)
             historyDir = Path.of(outputDir, "history");
@@ -373,7 +373,7 @@ public class ReportDataGenerator {
 
         if (!Files.exists(historyDir)) {
             // First run, no history available
-            LOGGER.info(INFO.PROCESSING_RESULTS, "History directory not found: " + historyDir);
+            LOGGER.info(INFO.HISTORY_DIR_NOT_FOUND, historyDir);
             return createNoHistoryResponse();
         }
 

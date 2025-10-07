@@ -527,6 +527,34 @@ public final class BenchmarkingLogMessages {
                 .template("Ensure Prometheus is running and accessible. You can verify with: curl %s/api/v1/query?query=up")
                 .build();
 
+        /** Message when using external history directory. */
+        public static final LogRecord USING_EXTERNAL_HISTORY_DIR = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(70)
+                .template("Using external history directory: %s")
+                .build();
+
+        /** Message when history directory not found. */
+        public static final LogRecord HISTORY_DIR_NOT_FOUND = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(71)
+                .template("History directory not found: %s")
+                .build();
+
+        /** Message when benchmark data is archived. */
+        public static final LogRecord ARCHIVED_BENCHMARK_DATA = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(72)
+                .template("Archived benchmark data to %s")
+                .build();
+
+        /** Message when old history file is removed. */
+        public static final LogRecord REMOVED_HISTORY_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(73)
+                .template("Removed old history file: %s")
+                .build();
+
     }
 
     /**
@@ -712,6 +740,13 @@ public final class BenchmarkingLogMessages {
                 .prefix(PREFIX)
                 .identifier(124)
                 .template("Token pool is empty, fetching single token")
+                .build();
+
+        /** Warning when issue parsing history file. */
+        public static final LogRecord ISSUE_PARSING_HISTORY_FILE = LogRecordModel.builder()
+                .prefix(PREFIX)
+                .identifier(125)
+                .template("Issue during parsing history file: %s")
                 .build();
     }
 

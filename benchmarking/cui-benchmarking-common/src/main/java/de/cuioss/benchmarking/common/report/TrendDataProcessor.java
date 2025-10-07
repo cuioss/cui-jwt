@@ -121,7 +121,7 @@ public class TrendDataProcessor {
                 dataPoints.add(point);
             }
         } catch (IOException | JsonSyntaxException e) {
-            LOGGER.warn(e, WARN.ISSUE_DURING_INDEX_GENERATION, "parsing history file: " + file);
+            LOGGER.warn(e, WARN.ISSUE_PARSING_HISTORY_FILE, file);
         }
     }
 
