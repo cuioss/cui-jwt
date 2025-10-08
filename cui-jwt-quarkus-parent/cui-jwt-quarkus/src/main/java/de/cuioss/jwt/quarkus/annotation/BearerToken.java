@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.quarkus.annotation;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.util.Nonbinding;
 import jakarta.inject.Qualifier;
 
@@ -106,7 +105,6 @@ import java.lang.annotation.Target;
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE})
-@RegisterForReflection(methods = false, fields = false)
 public @interface BearerToken {
 
     /**

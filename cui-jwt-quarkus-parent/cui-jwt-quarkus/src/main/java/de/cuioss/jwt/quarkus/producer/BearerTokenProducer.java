@@ -24,7 +24,6 @@ import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
 import de.cuioss.jwt.validation.exception.TokenValidationException;
 import de.cuioss.tools.logging.CuiLogger;
 import io.micrometer.core.annotation.Timed;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
@@ -102,7 +101,6 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
  * @since 1.0
  */
 @ApplicationScoped
-@RegisterForReflection(fields = false)
 public class BearerTokenProducer {
 
     private static final CuiLogger LOGGER = new CuiLogger(BearerTokenProducer.class);
