@@ -7,8 +7,9 @@ set -e
 
 # Get project root to find Dockerfile
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
-DOCKERFILE="$PROJECT_ROOT/Dockerfile.wrk"
+# Navigate from wrk-scripts -> resources -> main -> src -> benchmark-integration-wrk -> benchmarking -> project-root
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../../../.." && pwd)"
+DOCKERFILE="$PROJECT_ROOT/benchmarking/benchmark-integration-wrk/Dockerfile.wrk"
 IMAGE_NAME="wrk:local"
 
 # Build image if it doesn't exist (one-time build)
