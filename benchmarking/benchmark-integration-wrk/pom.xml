@@ -177,6 +177,7 @@
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
                                 <WRK_DURATION>${wrk.duration}</WRK_DURATION>
                                 <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                                <WRK_DOCKER_NETWORK>cui-jwt-quarkus-integration-tests_jwt-integration</WRK_DOCKER_NETWORK>
                             </environmentVariables>
                         </configuration>
                     </execution>
@@ -209,6 +210,7 @@
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
                                 <WRK_DURATION>${wrk.duration}</WRK_DURATION>
                                 <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                                <WRK_DOCKER_NETWORK>cui-jwt-quarkus-integration-tests_jwt-integration</WRK_DOCKER_NETWORK>
                             </environmentVariables>
                         </configuration>
                     </execution>
