@@ -16,7 +16,6 @@
 package de.cuioss.jwt.quarkus.health;
 
 import de.cuioss.jwt.validation.IssuerConfig;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
@@ -35,8 +34,6 @@ import java.util.List;
  */
 @ApplicationScoped
 @Liveness
-// Marks this as a liveness check
-@RegisterForReflection(methods = false, fields = false)
 public class TokenValidatorHealthCheck implements HealthCheck {
 
     private static final String HEALTHCHECK_NAME = "jwt-validator";

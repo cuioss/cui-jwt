@@ -26,7 +26,6 @@ import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
 import de.cuioss.jwt.validation.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -59,7 +58,6 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
  * @since 1.0
  */
 @ApplicationScoped
-@RegisterForReflection(methods = false)
 public class TokenValidatorProducer {
 
     private static final CuiLogger LOGGER = new CuiLogger(TokenValidatorProducer.class);
