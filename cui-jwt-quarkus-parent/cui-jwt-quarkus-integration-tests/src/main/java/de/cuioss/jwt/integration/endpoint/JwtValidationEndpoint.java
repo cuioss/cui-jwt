@@ -330,9 +330,8 @@ public class JwtValidationEndpoint {
     @Path("/interceptor/string-return-fail")
     @BearerAuth(requiredScopes = {"non-existent-scope"})
     @Produces(MediaType.TEXT_PLAIN)
-    // cui-rewrite:disable CuiLogRecordPatternRecipe
-    // This is diagnostic logging for an error condition that should never happen in production
     public String testInterceptorWithStringReturnFailure() {
+        // cui-rewrite:disable CuiLogRecordPatternRecipe
         LOGGER.error("testInterceptorWithStringReturnFailure - this should never execute!");
         throw new IllegalStateException("This method should never be reached due to failed validation");
     }

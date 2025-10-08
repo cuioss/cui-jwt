@@ -33,7 +33,8 @@ import java.util.Set;
 
 import static de.cuioss.test.juli.LogAsserts.assertSingleLogMessagePresentContaining;
 import static org.easymock.EasyMock.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit tests for {@link BearerTokenInterceptor}.
