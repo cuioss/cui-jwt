@@ -22,7 +22,4 @@
  *
  * @since 1.0
  */
-@NullMarked
 package de.cuioss.jwt.quarkus.deployment;
-
-import org.jspecify.annotations.NullMarked;

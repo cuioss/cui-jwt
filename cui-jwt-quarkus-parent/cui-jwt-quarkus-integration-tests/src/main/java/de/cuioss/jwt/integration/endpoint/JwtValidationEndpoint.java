@@ -15,8 +15,8 @@
  */
 package de.cuioss.jwt.integration.endpoint;
 
-import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.annotation.BearerAuth;
+import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
 import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
@@ -301,6 +301,40 @@ public class JwtValidationEndpoint {
         data.put("groups", token.getGroups());
 
         return Response.ok(new ValidationResponse(true, "Token access successful", data)).build();
+    }
+
+    /**
+     * Test endpoint with String return type to verify WebApplicationException handling.
+     * This tests the fix for the ClassCastException bug - when validation fails,
+     * the interceptor should throw WebApplicationException instead of trying to cast
+     * the error Response to String.
+     *
+     * @return String message on success
+     */
+    @GET
+    @Path("/interceptor/string-return")
+    @BearerAuth(requiredScopes = {"read"})
+    @Produces(MediaType.TEXT_PLAIN)
+    public String testInterceptorWithStringReturn() {
+        LOGGER.debug("testInterceptorWithStringReturn - business logic executed");
+        return "String return type validation successful";
+    }
+
+    /**
+     * Test endpoint with String return type requiring non-existent scope.
+     * This will always fail validation, testing the WebApplicationException path.
+     *
+     * @return Never returns - should always throw WebApplicationException
+     */
+    @GET
+    @Path("/interceptor/string-return-fail")
+    @BearerAuth(requiredScopes = {"non-existent-scope"})
+    @Produces(MediaType.TEXT_PLAIN)
+    // cui-rewrite:disable CuiLogRecordPatternRecipe
+    // This is diagnostic logging for an error condition that should never happen in production
+    public String testInterceptorWithStringReturnFailure() {
+        LOGGER.error("testInterceptorWithStringReturnFailure - this should never execute!");
+        throw new IllegalStateException("This method should never be reached due to failed validation");
     }
 
     /**

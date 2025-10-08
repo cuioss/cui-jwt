@@ -17,6 +17,7 @@ package de.cuioss.jwt.quarkus.deployment;
 
 import de.cuioss.jwt.quarkus.config.AccessLogFilterConfigProducer;
 import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
+import de.cuioss.jwt.quarkus.interceptor.BearerTokenInterceptor;
 import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
 import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
 import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
@@ -285,7 +286,7 @@ public class CuiJwtProcessor {
                 .addBeanClass(AccessLogFilterConfigProducer.class)
                 .addBeanClass(CustomAccessLogFilter.class)
                 // Register interceptor infrastructure
-                .addBeanClass(de.cuioss.jwt.quarkus.interceptor.BearerTokenInterceptor.class)
+                .addBeanClass(BearerTokenInterceptor.class)
                 .setUnremovable()
                 .build();
     }

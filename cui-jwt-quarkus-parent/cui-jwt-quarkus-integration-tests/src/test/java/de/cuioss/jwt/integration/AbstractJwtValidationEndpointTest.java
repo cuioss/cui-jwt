@@ -292,39 +292,66 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .statusCode(401);
         }
 
-        @Test
+        @ParameterizedTest
+        @ValueSource(strings = {"/jwt/interceptor/with-scopes", "/jwt/interceptor/with-roles", "/jwt/interceptor/with-groups"})
         @DisplayName("Interceptor validation - token with default scopes/roles/groups succeeds")
-        void interceptorValidationWithDefaultPermissions() {
+        void interceptorValidationWithDefaultPermissions(String endpoint) {
             // Note: obtainValidToken() gets a token with default scopes ("read"), roles, and groups ("/test-group")
             // as configured in the Keycloak realm. These match the requirements of the test endpoints.
             TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
 
-            // Test with-scopes endpoint (requires "read" scope - included in default scopes)
             given()
                     .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                     .when()
-                    .get("/jwt/interceptor/with-scopes")
+                    .get(endpoint)
                     .then()
                     .statusCode(200)
                     .body(VALID, equalTo(true));
+        }
 
-            // Test with-roles endpoint (requires "user" role - verify it succeeds or add role to realm config)
-            given()
-                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
-                    .when()
-                    .get("/jwt/interceptor/with-roles")
-                    .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true));
+        @Test
+        @DisplayName("Interceptor validation with String return type - success")
+        void interceptorValidationWithStringReturnSuccess() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
 
-            // Test with-groups endpoint (requires "test-group" - included in default groups)
+            String response = given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/string-return")
+                    .then()
+                    .statusCode(200)
+                    .contentType("text/plain")
+                    .extract()
+                    .asString();
+
+            assertEquals("String return type validation successful", response);
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with String return type - failure throws WebApplicationException")
+        void interceptorValidationWithStringReturnFailure() {
+            // This tests the critical ClassCastException fix:
+            // When validation fails and method returns String (not Response),
+            // the interceptor should throw WebApplicationException, not try to cast Response to String
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+
             given()
                     .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
                     .when()
-                    .get("/jwt/interceptor/with-groups")
+                    .get("/jwt/interceptor/string-return-fail")
                     .then()
-                    .statusCode(200)
-                    .body(VALID, equalTo(true));
+                    .statusCode(403); // Constraint violation - missing required scope
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with String return type - missing token")
+        void interceptorValidationWithStringReturnMissingToken() {
+            // Test that missing token also properly throws WebApplicationException for String return type
+            given()
+                    .when()
+                    .get("/jwt/interceptor/string-return")
+                    .then()
+                    .statusCode(401); // No token given
         }
     }
 

@@ -146,7 +146,6 @@ public class BearerTokenProducer {
 
         Optional<String> tokenResult = extractBearerTokenFromHeaderMap();
         if (tokenResult.isEmpty()) {
-            // No token found or missing token - don't call validator, outcome is clear
             LOGGER.debug("Bearer token missing or invalid in Authorization header");
             return BearerTokenResult.noTokenGiven(requiredScopes, requiredRoles, requiredGroups);
         }
@@ -161,7 +160,6 @@ public class BearerTokenProducer {
         }
 
         try {
-            LOGGER.trace("Validating bearer token: %s", bearerToken);
             AccessTokenContent tokenContent = tokenValidator.createAccessToken(bearerToken);
 
             // Determine missing scopes, roles, and groups
@@ -206,7 +204,6 @@ public class BearerTokenProducer {
      */
     private Optional<String> extractBearerTokenFromHeaderMap() {
         Map<String, List<String>> headerMap = servletObjectsResolver.resolveHeaderMap();
-        LOGGER.debug("Extracting bearer token from headerMap: %s", headerMap);
 
         // Header names are normalized to lowercase by HttpServletRequestResolver per RFC 9113 (HTTP/2)
         // and RFC 7230 (HTTP/1.1). Direct lookup with lowercase key is sufficient.
@@ -219,13 +216,11 @@ public class BearerTokenProducer {
 
         String authHeader = authHeaders.getFirst();
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            LOGGER.trace("Authorization header does not start with 'Bearer ': %s", authHeader);
             return Optional.empty(); // Not a Bearer token - missing token
         }
 
         // Bearer token found - extract the token part (may be empty string for "Bearer ")
         String token = authHeader.substring(BEARER_PREFIX.length());
-        LOGGER.trace("Extracted bearer token from headerMap: %s", token);
         return Optional.of(token);
     }
 
@@ -275,9 +270,9 @@ public class BearerTokenProducer {
     public BearerTokenResult produceBearerTokenResult(InjectionPoint injectionPoint) {
         BearerToken annotation = injectionPoint.getAnnotated().getAnnotation(BearerToken.class);
 
-        Set<String> requiredScopes = annotation != null ? Set.of(annotation.requiredScopes()) : Collections.emptySet();
-        Set<String> requiredRoles = annotation != null ? Set.of(annotation.requiredRoles()) : Collections.emptySet();
-        Set<String> requiredGroups = annotation != null ? Set.of(annotation.requiredGroups()) : Collections.emptySet();
+        Set<String> requiredScopes = annotation != null ? Set.copyOf(List.of(annotation.requiredScopes())) : Collections.emptySet();
+        Set<String> requiredRoles = annotation != null ? Set.copyOf(List.of(annotation.requiredRoles())) : Collections.emptySet();
+        Set<String> requiredGroups = annotation != null ? Set.copyOf(List.of(annotation.requiredGroups())) : Collections.emptySet();
 
         return getBearerTokenResult(requiredScopes, requiredRoles, requiredGroups);
     }

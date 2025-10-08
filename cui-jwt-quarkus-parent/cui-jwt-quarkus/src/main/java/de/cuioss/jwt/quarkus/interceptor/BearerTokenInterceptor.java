@@ -25,8 +25,10 @@ import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
+import jakarta.ws.rs.WebApplicationException;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_ANNOTATION_NOT_FOUND;
@@ -42,7 +44,7 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_A
  * <ul>
  *   <li>Extracts annotation parameters (requiredScopes, requiredRoles, requiredGroups)</li>
  *   <li>Delegates validation to {@link BearerTokenProducer}</li>
- *   <li>Returns automatic error responses for failed validation (if method returns Response)</li>
+ *   <li>Throws WebApplicationException with error response for failed validation</li>
  *   <li>Proceeds with method execution if validation succeeds</li>
  *   <li>Makes validated token available via CDI event for intercepted methods</li>
  * </ul>
@@ -67,10 +69,11 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_A
  * <strong>Performance:</strong> Minimal object allocation, reuses existing
  * BearerTokenProducer infrastructure, fast-path execution for successful validation.
  * <p>
- * <strong>Return Type Handling:</strong>
+ * <strong>Error Handling:</strong>
  * <ul>
- *   <li>Response return type: Automatic error response creation via BearerTokenResult</li>
- *   <li>Other return types: Proceed with validation, method can access validated token via CDI event</li>
+ *   <li>Failed validation throws WebApplicationException with appropriate error response</li>
+ *   <li>Works for any method return type (Response, String, DTO, etc.)</li>
+ *   <li>Successful validation allows method to proceed and access token via CDI event</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -98,18 +101,17 @@ public class BearerTokenInterceptor {
      * <ol>
      *   <li>Extract annotation parameters from method or class level</li>
      *   <li>Delegate to BearerTokenProducer for validation</li>
-     *   <li>If validation fails and method returns Response, return error response</li>
-     *   <li>If validation succeeds, store token in context and proceed</li>
+     *   <li>If validation fails, throw WebApplicationException with error response</li>
+     *   <li>If validation succeeds, proceed with method execution</li>
      * </ol>
      *
      * @param ctx the invocation context containing method and annotation information
-     * @return the result of the intercepted method, or an error response if validation fails
+     * @return the result of the intercepted method
+     * @throws jakarta.ws.rs.WebApplicationException if validation fails
      * @throws Exception if the intercepted method throws an exception
      */
     @AroundInvoke
     public Object validateBearerToken(InvocationContext ctx) throws Exception {
-        LOGGER.trace("BearerTokenInterceptor invoked for method: %s", ctx.getMethod().getName());
-
         // Extract annotation from method or class level
         BearerAuth annotation = extractAnnotation(ctx);
         if (annotation == null) {
@@ -119,13 +121,13 @@ public class BearerTokenInterceptor {
 
         // Extract requirements from annotation
         Set<String> requiredScopes = annotation.requiredScopes().length > 0
-                ? Set.of(annotation.requiredScopes())
+                ? Set.copyOf(List.of(annotation.requiredScopes()))
                 : Collections.emptySet();
         Set<String> requiredRoles = annotation.requiredRoles().length > 0
-                ? Set.of(annotation.requiredRoles())
+                ? Set.copyOf(List.of(annotation.requiredRoles()))
                 : Collections.emptySet();
         Set<String> requiredGroups = annotation.requiredGroups().length > 0
-                ? Set.of(annotation.requiredGroups())
+                ? Set.copyOf(List.of(annotation.requiredGroups()))
                 : Collections.emptySet();
 
         LOGGER.debug("Validating bearer token with scopes: %s, roles: %s, groups: %s",
@@ -138,16 +140,11 @@ public class BearerTokenInterceptor {
         // Handle validation failure
         if (result.isNotSuccessfullyAuthorized()) {
             LOGGER.debug("Bearer token validation failed: %s", result.getStatus());
-
-            // Always return error response on validation failure
-            // Methods must return Response or a compatible type
-            LOGGER.trace("Returning automatic error response for failed validation");
-            return result.createErrorResponse();
+            throw new WebApplicationException(result.createErrorResponse());
         }
 
         // Validation successful - proceed with method execution
         // Token is available via @BearerToken injection if needed
-        LOGGER.trace("Bearer token validation successful - proceeding with method execution");
         return ctx.proceed();
     }
 

@@ -50,7 +50,7 @@ public final class CuiJwtQuarkusLogMessages {
     public static final class INFO {
 
         // Configuration Messages (001-010)
-        
+
         public static final LogRecord RESOLVING_ISSUER_CONFIGURATIONS = LogRecordModel.builder()
                 .template("Resolving issuer configurations from properties")
                 .prefix(PREFIX)
@@ -76,7 +76,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
         // Validation Messages (011-020)
-        
+
         public static final LogRecord INITIALIZING_JWT_VALIDATION_COMPONENTS = LogRecordModel.builder()
                 .template("Initializing JWT validation components from configuration")
                 .prefix(PREFIX)
@@ -96,7 +96,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
         // Metrics Messages (021-030)
-        
+
         public static final LogRecord INITIALIZING_JWT_METRICS_COLLECTOR = LogRecordModel.builder()
                 .template("Initializing JwtMetricsCollector")
                 .prefix(PREFIX)
@@ -111,7 +111,7 @@ public final class CuiJwtQuarkusLogMessages {
 
 
         // Cache Messages (041-050)
-        
+
         public static final LogRecord RESOLVING_ACCESS_TOKEN_CACHE_CONFIG = LogRecordModel.builder()
                 .template("Resolving access token cache configuration from properties")
                 .prefix(PREFIX)
@@ -131,7 +131,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
         // Metrics Clear Messages (051-060)
-        
+
         public static final LogRecord CLEARING_JWT_METRICS = LogRecordModel.builder()
                 .template("Clearing all JWT metrics")
                 .prefix(PREFIX)
@@ -145,7 +145,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
         // JWKS Startup Messages (061-070)
-        
+
         public static final LogRecord JWKS_STARTUP_SERVICE_INITIALIZED = LogRecordModel.builder()
                 .template("JWKS startup service activated for background key loading")
                 .prefix(PREFIX)
@@ -198,7 +198,7 @@ public final class CuiJwtQuarkusLogMessages {
     public static final class WARN {
 
         // Health Check Warnings (100-110)
-        
+
         public static final LogRecord ERROR_CHECKING_JWKS_LOADER = LogRecordModel.builder()
                 .template("Error checking JWKS loader for issuer %s: %s")
                 .prefix(PREFIX)
@@ -214,7 +214,7 @@ public final class CuiJwtQuarkusLogMessages {
                 .build();
 
         // JWKS Startup Warnings (131-140)
-        
+
         public static final LogRecord BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER = LogRecordModel.builder()
                 .template("Background JWKS loading failed for issuer %s: %s")
                 .prefix(PREFIX)
@@ -244,7 +244,7 @@ public final class CuiJwtQuarkusLogMessages {
         // Interceptor Warnings (136-145)
 
         public static final LogRecord BEARER_TOKEN_ANNOTATION_NOT_FOUND = LogRecordModel.builder()
-                .template("@BearerToken annotation not found on method or class: %s")
+                .template("@BearerAuth annotation not found on method or class: %s")
                 .prefix(PREFIX)
                 .identifier(136)
                 .build();
