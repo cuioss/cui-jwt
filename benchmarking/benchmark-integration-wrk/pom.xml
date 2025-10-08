@@ -197,9 +197,10 @@
                             <skip>${skip.benchmark}</skip>
                             <executable>bash</executable>
                             <arguments>
+                                <argument>-x</argument>
                                 <argument>${wrk.script.dir}/jwt_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.output.dir}/wrk-jwt-results.txt</outputFile>
+                            <!--<outputFile>${wrk.output.dir}/wrk-jwt-results.txt</outputFile>-->
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
                                 <KEYCLOAK_URL>${keycloak.url.docker}</KEYCLOAK_URL>
