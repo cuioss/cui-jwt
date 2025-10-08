@@ -26,7 +26,10 @@
 
         <!-- Integration test service URLs - aligned with docker-compose.yml ports -->
         <integration.service.url>https://localhost:10443</integration.service.url>
+        <!-- Docker-internal URL for WRK container (uses service name, not localhost) -->
+        <integration.service.url.docker>https://cui-jwt-integration-tests:8443</integration.service.url.docker>
         <keycloak.url>https://localhost:1443</keycloak.url>
+        <keycloak.url.docker>https://keycloak:8443</keycloak.url.docker>
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
 
         <!-- WRK Configuration Properties -->
@@ -173,7 +176,7 @@
                             <!--<outputFile>${wrk.output.dir}/wrk-health-live-results.txt</outputFile>-->
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
-                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <SERVICE_URL>${integration.service.url.docker}</SERVICE_URL>
                                 <WRK_THREADS>${wrk.threads}</WRK_THREADS>
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
                                 <WRK_DURATION>${wrk.duration}</WRK_DURATION>
@@ -199,14 +202,14 @@
                             <outputFile>${wrk.output.dir}/wrk-jwt-results.txt</outputFile>
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
-                                <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
+                                <KEYCLOAK_URL>${keycloak.url.docker}</KEYCLOAK_URL>
                                 <REALM>benchmark</REALM>
                                 <CLIENT_ID>benchmark-client</CLIENT_ID>
                                 <CLIENT_SECRET>benchmark-secret</CLIENT_SECRET>
                                 <USERNAME>benchmark-user</USERNAME>
                                 <PASSWORD>benchmark-password</PASSWORD>
                                 <TOKEN_COUNT>${wrk.jwt.token_count}</TOKEN_COUNT>
-                                <SERVICE_URL>${integration.service.url}</SERVICE_URL>
+                                <SERVICE_URL>${integration.service.url.docker}</SERVICE_URL>
                                 <WRK_THREADS>${wrk.threads}</WRK_THREADS>
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
                                 <WRK_DURATION>${wrk.duration}</WRK_DURATION>
