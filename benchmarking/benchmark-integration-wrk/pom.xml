@@ -203,13 +203,15 @@
                             <!--<outputFile>${wrk.output.dir}/wrk-jwt-results.txt</outputFile>-->
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
-                                <KEYCLOAK_URL>${keycloak.url.docker}</KEYCLOAK_URL>
+                                <!-- fetch_tokens.sh runs on host, needs localhost URL -->
+                                <KEYCLOAK_URL>${keycloak.url}</KEYCLOAK_URL>
                                 <REALM>benchmark</REALM>
                                 <CLIENT_ID>benchmark-client</CLIENT_ID>
                                 <CLIENT_SECRET>benchmark-secret</CLIENT_SECRET>
                                 <USERNAME>benchmark-user</USERNAME>
                                 <PASSWORD>benchmark-password</PASSWORD>
                                 <TOKEN_COUNT>${wrk.jwt.token_count}</TOKEN_COUNT>
+                                <!-- WRK runs in Docker, needs Docker service name -->
                                 <SERVICE_URL>${integration.service.url.docker}</SERVICE_URL>
                                 <WRK_THREADS>${wrk.threads}</WRK_THREADS>
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
